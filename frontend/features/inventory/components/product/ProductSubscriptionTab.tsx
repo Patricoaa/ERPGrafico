@@ -1,10 +1,11 @@
+"use client"
+
 import { FormField } from "@/components/ui/form"
 import {LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, LabeledSwitch} from "@/components/shared"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import {CalendarClock, DollarSign, Calendar, Wallet} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { cn } from "@/lib/utils"
 
 interface ProductSubscriptionTabProps {
@@ -43,7 +44,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             <FormField
                                 control={form.control}
                                 name="subscription_start_date"
-                                render={({ field, fieldState }) => (
+                                render={({ field }) => (
                                     <PeriodValidationDateInput
                                         date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                         onDateChange={(date) => {
@@ -196,47 +197,13 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         checked={field.value ?? false}
                                         onCheckedChange={field.onChange}
                                         icon={<Wallet className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                     />
                                 )}
                             />
                         </div>
 
-                        <div className="col-span-1">
-                                <FormField
-                                    control={form.control}
-                                    name="income_account"
-                                    render={({ field, fieldState }) => (
-                                        <AccountSelector
-                                            label="Cuenta Ingreso"
-                                            error={fieldState.error?.message}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="INCOME"
-                                            placeholder="Sel. cuenta..."
-                                        />
-                                    )}
-                                />
-                        </div>
-
-                        <div className="col-span-1">
-                                <FormField
-                                    control={form.control}
-                                    name="expense_account"
-                                    render={({ field, fieldState }) => (
-                                        <AccountSelector
-                                            label="Cuenta Gasto"
-                                            error={fieldState.error?.message}
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="EXPENSE"
-                                            placeholder="Sel. cuenta..."
-                                        />
-                                    )}
-                                />
-                        </div>
-
-                        {/* Validity Section integrated into Grid */}
+{/* Validity Section integrated into Grid */}
                         <div className="col-span-2 mt-4 space-y-4">
                             <FormSection title="Vigencia de Contrato" icon={Calendar} />
                             <FormField
@@ -249,7 +216,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
                                         icon={<Calendar className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/30")} />}
-                                        className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-sm" : "border-dashed")}
+                                        className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
                                     />
                                 )}
                             />
@@ -259,7 +226,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                     <FormField
                                         control={form.control}
                                         name="contract_end_date"
-                                        render={({ field, fieldState }) => (
+                                        render={({ field }) => (
                                             <PeriodValidationDateInput
                                                 date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                 onDateChange={(date) => {

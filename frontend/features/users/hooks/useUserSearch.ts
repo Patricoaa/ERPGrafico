@@ -5,14 +5,14 @@ import { USER_KEYS } from './queryKeys'
 
 export function useUserSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
-        queryKey: USER_KEYS.list(search),
-        queryFn: async ({ signal }) => {
+        queryKey: USER_KEYS.list({ search }),
+        queryFn: async () => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const data = await usersApi.getUsers({ params, signal } as any)
-            return data as AppUser[]
+            const res = await usersApi.getUsers({ params: Object.fromEntries(params) })
+            return (res.results as AppUser[]) ?? []
         },
         enabled,
         staleTime: 5 * 60 * 1000,
@@ -27,9 +27,9 @@ export function useUserSearch(search: string = "", enabled: boolean = true) {
 
 export function useSingleUser(id: string | number | null) {
     const query = useQuery({
-        queryKey: USER_KEYS.detail(id!),
-        queryFn: async ({ signal }) => {
-            const data = await usersApi.getUser(id!)
+        queryKey: USER_KEYS.detail(id as string | number),
+        queryFn: async () => {
+            const data = await usersApi.getUser(id as string | number)
             return data as AppUser
         },
         enabled: !!id,

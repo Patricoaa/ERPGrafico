@@ -31,7 +31,7 @@ export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 // Ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
 // CHECK_PORTFOLIO existe a nivel DB (cuenta puente "Cheques en Cartera" auto-gestionada).
 // LOAN = cuenta-pasivo dedicada a la deuda de un crédito bancario (ADR-0041).
-export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO'
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO' | 'ISSUED_CHECKS'
 
 // Treasury Account types
 export interface TreasuryAccount {
@@ -51,9 +51,13 @@ export interface TreasuryAccount {
     /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
     current_balance?: number
+    available_liquidity?: number
+    credit_limit?: number | null
+    available_credit?: number | null
     bank?: number | null
     bank_name?: string
     account_number?: string | null
+    card_number?: string | null
     identifier?: string
     /** POS terminal providers (Transbank, TUU, etc.) whose destination/bridge account is this one. */
     terminal_providers?: Array<{
@@ -80,6 +84,7 @@ export interface TreasuryAccountCreatePayload {
     allows_transfer: boolean
     bank?: number | null
     account_number?: string | null
+    credit_limit?: number | null
 }
 
 export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
@@ -93,7 +98,7 @@ export interface TreasuryAccountProvisionPayload {
     account_type: TreasuryAccountType
     bank?: number | null
     account_number?: string | null
-    /** Tenders a auto-provisionar (PaymentMethod.method_type). Vacío = defaults del tipo. */
+    credit_limit?: number | null
     tenders: string[]
     usage: 'sales' | 'purchases' | 'both'
 }
@@ -105,6 +110,8 @@ export interface PaymentMethod {
     method_type_display: string
     treasury_account: number
     treasury_account_name: string
+    settlement_account: number | null
+    settlement_account_name?: string
     is_active: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
@@ -130,6 +137,9 @@ export interface PaymentTerminalProvider {
     /** TreasuryAccount (BRIDGE) where this provider settles funds. Auto-created. */
     bank_treasury_account: number | null
     bank_treasury_account_name?: string | null
+    /** TreasuryAccount (CHECKING/CASH) used as default deposit destination for batches. */
+    default_deposit_account: number | null
+    default_deposit_account_name?: string | null
     /** Product used for commission purchase invoices (Stage 3). */
     commission_product: number | null
     commission_product_name?: string
@@ -155,11 +165,16 @@ export interface TerminalBatch {
     provider: number
     provider_name?: string
     batch_number: string
+    sales_date?: string
+    sales_date_end?: string
+    payment_method_name?: string
     opened_at: string
     closed_at?: string
     is_settled: boolean
+    status?: string
     gross_amount: number
     commission_amount: number
+    commission_total?: string
     net_amount: number
     transaction_count: number
 }
@@ -184,19 +199,34 @@ export interface UpcomingInstallment {
     number: number
     due_date: string
     principal_amount: string
+    group_id: number
     group_uuid: string
     group_display_id: string
+    purchase_order_id: number | null
+    purchase_order_display_id: string | null
     partner_name: string | null
     total_installments: number
 }
 
-export type UnbilledItemSource = 'charge' | 'installment'
+/** Cargo pendiente de facturar (CardPendingCharge) — comisión, impuesto, etc. */
+export interface PendingChargeRow {
+    id: number
+    amount: string
+    date: string
+    charge_type: string
+    charge_type_display: string
+    description: string
+    reference: string
+    source: 'pending'
+}
+
+export type UnbilledItemSource = 'pending' | 'installment'
 
 /** Fila unificada para la tabla de cargos no facturados.
- *  Representa tanto un TreasuryMovement (cargo suelto) como una
+ *  Representa un CardPendingCharge (cargo pendiente) o una
  *  cuota del cronograma (CardPurchaseInstallment). */
 export interface UnbilledItemRow {
-    /** Clave única: "charge-{id}" | "installment-{id}" */
+    /** Clave única: "pending-{id}" | "installment-{id}" */
     id: string
     source: UnbilledItemSource
     date: string
@@ -207,13 +237,33 @@ export interface UnbilledItemRow {
     totalInstallments: number | null
     purchaseGroupDetail: CardPurchaseGroup | null
     partnerName: string | null
-    movementType: string | null
-    movementTypeDisplay: string | null
+    chargeType: string | null
+    chargeTypeDisplay: string | null
     isInstallmentInterest: boolean
-    /** Referencia al TreasuryMovement original (null si es cuota) */
-    originalCharge: TreasuryMovement | null
+    purchaseOrderDisplayId: string | null
+    /** Referencia al PendingChargeRow original (null si es cuota) */
+    originalPendingCharge: PendingChargeRow | null
     /** Referencia a la cuota original (null si es cargo) */
     originalInstallment: UpcomingInstallment | null
+}
+
+export interface ByMonthItem {
+    total: string
+    count: number
+}
+
+export interface UnbilledForecast {
+    next_statement_date: string
+    days_to_next_statement: number
+    next_statement_total: string
+    pending_until_next_statement: string
+    installments_until_next_statement: string
+    by_month: Record<string, ByMonthItem>
+    credit_limit: string | null
+    total_used: string
+    current_debt: string
+    total_unbilled: string
+    available_credit: string | null
 }
 
 export interface TreasuryMovement {
@@ -259,6 +309,7 @@ export interface TreasuryMovement {
 }
 
 export interface TreasuryMovementFilters {
+    bank?: string | number
     treasury_account?: string | number
     movement_type?: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
     date?: string
@@ -268,7 +319,11 @@ export interface TreasuryMovementFilters {
     amount_max?: number | string
     direction?: 'IN' | 'OUT'
     is_reconciled?: boolean
+    payment_method?: string
     payment_method_new?: string | number
+    search?: string
+    display_id?: string
+    partner_name?: string
     page?: number
     page_size?: number
 }
@@ -310,6 +365,8 @@ export interface PaymentTerminalProviderCreatePayload {
     receivable_account: number
     /** Product used for commission purchase invoices. */
     commission_product: number | null
+    /** TreasuryAccount (CHECKING/CASH) used as default deposit destination for batches. */
+    default_deposit_account?: number | null
     config?: Record<string, unknown>
     is_active?: boolean
 }
@@ -347,6 +404,7 @@ export interface PaymentMethodCreatePayload {
     name: string
     method_type: PaymentMethodType
     treasury_account: number
+    settlement_account?: number | null
     requires_reference?: boolean
     allow_for_sales?: boolean
     allow_for_purchases?: boolean

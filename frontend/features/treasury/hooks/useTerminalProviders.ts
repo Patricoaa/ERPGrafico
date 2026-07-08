@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { invalidateCrossFeature } from "@/lib/invalidation"
+import { useRealtime } from "@/features/realtime"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { treasuryApi } from "../api/treasuryApi"
@@ -9,6 +11,7 @@ export type { PaymentTerminalProvider, PaymentTerminalDevice }
 
 export function useTerminalProviders() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: providers, isLoading, error, refetch } = useQuery<PaymentTerminalProvider[]>({
         queryKey: TERMINAL_PROVIDERS_KEYS.lists(),
@@ -17,12 +20,13 @@ export function useTerminalProviders() {
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: TERMINAL_PROVIDERS_KEYS.all })
+        invalidateCrossFeature(queryClient, [TERMINAL_PROVIDERS_KEYS.all])
     }
 
     const createProvider = useMutation({
         mutationFn: (data: PaymentTerminalProviderCreatePayload) => treasuryApi.createTerminalProvider(data),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success("Proveedor creado exitosamente")
         },
@@ -33,6 +37,7 @@ export function useTerminalProviders() {
         mutationFn: ({ id, data }: { id: number; data: PaymentTerminalProviderUpdatePayload }) =>
             treasuryApi.updateTerminalProvider(id, data),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success("Proveedor actualizado")
         },
@@ -42,6 +47,7 @@ export function useTerminalProviders() {
     const deleteProvider = useMutation({
         mutationFn: (id: number) => treasuryApi.deleteTerminalProvider(id),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success("Proveedor eliminado")
         },
@@ -61,19 +67,22 @@ export function useTerminalProviders() {
 
 export function useTerminalDevices(filters?: Record<string, string>) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: devices, isLoading, error, refetch } = useQuery<PaymentTerminalDevice[]>({
         queryKey: [...TERMINAL_DEVICES_KEYS.lists(), filters],
         queryFn: () => treasuryApi.getTerminalDevices(filters),
+        staleTime: 15 * 60 * 1000,
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: TERMINAL_DEVICES_KEYS.all })
+        invalidateCrossFeature(queryClient, [TERMINAL_DEVICES_KEYS.all])
     }
 
     const createDevice = useMutation({
         mutationFn: (data: PaymentTerminalDeviceCreatePayload) => treasuryApi.createTerminalDevice(data),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success("Dispositivo registrado")
         },
@@ -84,6 +93,7 @@ export function useTerminalDevices(filters?: Record<string, string>) {
         mutationFn: ({ id, data }: { id: number; data: PaymentTerminalDeviceUpdatePayload }) =>
             treasuryApi.updateTerminalDevice(id, data),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success("Dispositivo actualizado")
         },
@@ -93,6 +103,7 @@ export function useTerminalDevices(filters?: Record<string, string>) {
     const deleteDevice = useMutation({
         mutationFn: (id: number) => treasuryApi.deleteTerminalDevice(id),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
             toast.success("Dispositivo eliminado")
         },

@@ -1,14 +1,15 @@
-import { InventorySettingsView } from "@/features/settings"
+import type { Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
+import InventorySettingsPageClient from "./InventorySettingsPageClient"
 
-interface PageProps {
-    searchParams: Promise<{ tab?: string }>
+export const metadata: Metadata = {
+    title: "Configuración de Inventario | ERPGrafico",
 }
 
-export default async function InventorySettingsPage({ searchParams }: PageProps) {
-    const { tab } = await searchParams
-    const activeTab = tab || "accounts"
-
+export default function InventorySettingsPage() {
     return (
-        <InventorySettingsView activeTab={activeTab} />
-    )
+        <>
+            <PageSectionHeader title="Configuración de Inventario" description="Parámetros generales del módulo de inventario" />
+            <InventorySettingsPageClient />
+        </>)
 }

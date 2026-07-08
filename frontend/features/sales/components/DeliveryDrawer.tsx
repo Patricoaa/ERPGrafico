@@ -17,13 +17,14 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { useSalesOrders } from "../hooks/useSalesOrders"
-import { fetchProductStockLevel } from "@/features/inventory/hooks/useStockMoves"
+import { fetchProductStockLevel } from "@/features/inventory"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 
 import { useServerDate } from "@/hooks/useServerDate"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface SaleOrderLine {
     id: number
@@ -97,7 +98,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
 
     if (isLoading || !order) {
         return (
-            <Drawer open={open} onOpenChange={onOpenChange} side="right" defaultSize="65%" title="Cargando despacho..." contentClassName="p-0">
+            <Drawer open={open} onOpenChange={onOpenChange} side="right" defaultSize={formDrawerWidth("master", false)} title="Cargando despacho..." contentClassName="p-0">
                 <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -112,7 +113,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="65%"
+            defaultSize={formDrawerWidth("master", false)}
             contentClassName="p-0"
             title={isServiceMode ? "Confirmar Entrega de Servicios" : "Despachar Orden"}
             subtitle={isServiceMode ? "Confirme la entrega de los servicios." : "Ingrese los productos a despachar."}
@@ -145,7 +146,7 @@ const deliverySchema = z.object({
 
 type DeliveryFormValues = z.infer<typeof deliverySchema>
 
-export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, onCancel, filterType = 'ALL' }: DeliveryFormProps) {
+export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, filterType = 'ALL' }: DeliveryFormProps) {
     const { dateString } = useServerDate()
     const { dispatchOrder, dispatchOrderPartial } = useSalesOrders()
 
@@ -165,7 +166,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         })
         return initial
     })
-    const [submitting, setSubmitting] = useState(false)
+    const [, setSubmitting] = useState(false)
     const [isPartialDispatch, setIsPartialDispatch] = useState(false)
     const isServiceMode = filterType === 'SERVICE'
 
@@ -227,20 +228,20 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
             [lineId]: numValue
         }))
 
-        const line = order?.lines.find((l: any) => l.id === lineId)
+        const line = order?.lines.find((l: SaleOrderLine) => l.id === lineId)
         if (line && numValue < line.quantity_pending) {
             setIsPartialDispatch(true)
         }
     }
 
-    const onSubmit = async (values: DeliveryFormValues) => {
+    const onSubmit = async () => {
         if (!isServiceMode && !selectedWarehouse) {
             toast.error("Seleccione una bodega")
             return
         }
 
         if (!isServiceMode) {
-            const insufficientStock = visibleLines.some((line: any) => {
+            const insufficientStock = visibleLines.some((line: SaleOrderLine) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
                 if (requestedQty <= 0) return false
 
@@ -267,7 +268,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                 return
             }
 
-            const pendingProduction = visibleLines.some((line: any) => {
+            const pendingProduction = visibleLines.some((line: SaleOrderLine) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
                 if (requestedQty <= 0) return false
 
@@ -284,14 +285,14 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         setSubmitting(true)
         if (onLoadingChange) onLoadingChange(true)
         try {
-            const hasPartialQuantities = visibleLines.some((line: any) => {
+            const hasPartialQuantities = visibleLines.some((line: SaleOrderLine) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
                 return requestedQty > 0 && requestedQty < line.quantity_pending
             })
 
             if (hasPartialQuantities || isPartialDispatch) {
                 const lineQuantities: { [key: string]: number } = {}
-                visibleLines.forEach((line: any) => {
+                visibleLines.forEach((line: SaleOrderLine) => {
                     const qty = deliveryQuantities[line.id]
                     if (qty > 0) {
                         lineQuantities[line.id.toString()] = qty
@@ -371,8 +372,6 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         return { type: 'warning', message: 'Despacho parcial', icon: AlertTriangle }
     }
 
-    const canSubmit = (isServiceMode || selectedWarehouse) && !visibleLines.some((line: any) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; });
-
     return (
         <div id={id} className="space-y-4">
             <form id={`${id}-form`} onSubmit={form.handleSubmit(onSubmit)} className="hidden">
@@ -388,7 +387,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                             value={selectedWarehouse?.toString() || ''}
                             onChange={(val) => form.setValue("selectedWarehouse", Number(val))}
                             placeholder="Seleccione bodega"
-                            options={warehouses.map((warehouse: any) => ({
+                            options={warehouses.map((warehouse: Warehouse) => ({
                                 value: warehouse.id.toString(),
                                 label: `${warehouse.name} (${warehouse.code})`,
                             }))}
@@ -436,7 +435,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {visibleLines.map((line: any) => {
+                            {visibleLines.map((line: SaleOrderLine) => {
                                 const stockStatus = getStockStatus(line)
                                 const availableStock = stockLevels[line.product] || 0
 

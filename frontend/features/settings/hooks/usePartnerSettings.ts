@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
-import type { PartnerSettings, PartnerSettingsUpdatePayload } from '../types'
-
-export const PARTNER_SETTINGS_QUERY_KEY = ['settings-partner']
+import { ACCOUNTING_SETTINGS_QUERY_KEY } from './useAccountingSettings'
+import type { PartnerSettings, PartnerSettingsUpdatePayload, AccountingSettings } from '../types'
+import { useRealtime } from '@/features/realtime'
 
 interface UsePartnerSettingsReturn {
     settings: PartnerSettings
     isLoading: boolean
     saving: boolean
-    updateSettings: (payload: PartnerSettingsUpdatePayload) => Promise<void>
+    updateSettings: (payload: PartnerSettingsUpdatePayload) => Promise<AccountingSettings>
     refetch: () => Promise<unknown>
 }
 
@@ -18,9 +19,10 @@ interface UsePartnerSettingsReturn {
  */
 export function usePartnerSettings(): UsePartnerSettingsReturn {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: settings, isLoading, refetch } = useQuery({
-        queryKey: PARTNER_SETTINGS_QUERY_KEY,
+        queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getPartnerSettings,
         staleTime: 10 * 60 * 1000, // 10 min
     })
@@ -30,17 +32,16 @@ export function usePartnerSettings(): UsePartnerSettingsReturn {
             return settingsApi.updatePartnerSettings(payload)
         },
         onSuccess: () => {
-            // No toast here to keep it subtle as it auto-saves
-            queryClient.invalidateQueries({ queryKey: PARTNER_SETTINGS_QUERY_KEY })
+            markLocalMutation()
+            toast.success('Configuración de capital aplicada')
+            invalidateCrossFeature(queryClient, [ACCOUNTING_SETTINGS_QUERY_KEY])
         },
         onError: () => {
             toast.error('Error al guardar cambios de capital')
         }
     })
 
-    const updateSettings = async (payload: PartnerSettingsUpdatePayload) => {
-        await updateMutation.mutateAsync(payload)
-    }
+    const updateSettings = updateMutation.mutateAsync
 
     return {
         settings: settings as PartnerSettings,

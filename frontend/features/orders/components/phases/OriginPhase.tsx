@@ -1,14 +1,13 @@
-import { getErrorMessage } from "@/lib/errors"
+"use client"
 
 import { PhaseCard } from "./PhaseCard"
-import { FileText, Trash2, X, Edit, TrendingUp } from "lucide-react"
-import { formatEntity } from '@/features/orders/utils/status'
+import { FileText, Trash2, Ban, Edit, TrendingUp } from "lucide-react"
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { toast } from "sonner"
-import { useAnnulOrder, useDeleteOrder } from "../../hooks/useOrdersMutations"
+import { useCancelOrderFlow } from "../../hooks/useCancelOrderFlow"
 import { useRouter } from "next/navigation"
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, OrderLine, PhaseDocument } from "../../types"
+import { ActionConfirmModal } from '@/components/shared'
+import { type Order, type OrderLine, type PhaseDocument } from "../../types"
 
 interface OriginPhaseProps {
     isNoteMode: boolean
@@ -43,26 +42,24 @@ export function OriginPhase({
     userPermissions
 }: OriginPhaseProps) {
     const isSale = type === 'sale'
-    const registry = isSale ? saleOrderActions : purchaseOrderActions
     const router = useRouter()
     const orderType = type === 'obligation' ? 'purchase' : type
-    const annulOrder = useAnnulOrder(orderType)
-    const deleteOrder = useDeleteOrder(orderType)
 
-    const handleAnnulOrder = async (id: number) => {
-        try {
-            await annulOrder.mutateAsync(id)
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || "Error al anular orden"
-            toast.error(errorMessage)
-        }
-    }
+    // Flujo unificado: cancel y annul pasan por el mismo modal de impacto;
+    // el backend decide soft-cancel vs full-annul según el árbol de documentos.
+    const { requestCancel, modalProps, isAnnulBlocked } = useCancelOrderFlow(
+        orderType,
+        { onSuccess: onActionSuccess, orderId: activeDoc?.id },
+    )
+
+    const canCancelOrder = userPermissions.includes(
+        isSale ? 'sales.delete_saleorder' : 'purchasing.delete_purchaseorder'
+    )
 
     const documents: PhaseDocument[] = isNoteMode ? [
         {
             type: 'Documento Rectificado',
-            number: formatEntity('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
+            number: activeInvoice?.corrected_invoice?.display_id || formatEntityDisplay('billing.invoice', { number: activeInvoice?.corrected_invoice?.number || '---', dte_type: activeInvoice?.dte_type }),
             icon: FileText,
             id: activeInvoice?.corrected_invoice?.id as number,
             docType: 'invoice',
@@ -70,7 +67,7 @@ export function OriginPhase({
         },
         ...(order ? [{
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: order?.display_id || formatEntityDisplay(isSale ? 'sales.saleorder' : 'purchasing.purchaseorder', { number: order?.number || order?.id, id: order?.id }),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -79,29 +76,29 @@ export function OriginPhase({
     ] : (order ? [
         {
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: order?.display_id || formatEntityDisplay(isSale ? 'sales.saleorder' : 'purchasing.purchaseorder', { number: order?.number || order?.id, id: order?.id }),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
             actions: [
-                ...(order?.status === 'DRAFT' ? [{
+                ...(canCancelOrder && order?.status === 'DRAFT' ? [{
                     icon: Trash2,
-                    title: 'Eliminar Borrador',
+                    title: 'Cancelar Orden',
                     color: 'text-destructive hover:bg-destructive/10',
-                    onClick: () => deleteOrder.mutateAsync(order?.id).then(() => { onActionSuccess?.() })
+                    onClick: () => requestCancel(order?.id)
                 }] : []),
-                ...((order?.status !== 'CANCELLED' && order?.status !== 'DRAFT') ? [{
-                    icon: X,
+                ...(canCancelOrder && order?.status !== 'CANCELLED' && order?.status !== 'DRAFT' && !isAnnulBlocked ? [{
+                    icon: Ban,
                     title: 'Anular Orden',
                     color: 'text-destructive hover:bg-destructive/10',
-                    onClick: () => handleAnnulOrder(order?.id)
-                }] : [])
+                    onClick: () => requestCancel(order?.id)
+                }] : []),
             ]
         }
     ] : (activeInvoice ? [
         {
             type: activeInvoice?.dte_type_display || 'Factura Directa',
-            number: formatEntity('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
+            number: activeInvoice?.display_id || formatEntityDisplay('billing.invoice', { number: activeInvoice?.number || '---', dte_type: activeInvoice?.dte_type }),
             icon: FileText,
             id: activeInvoice?.id,
             docType: 'invoice',
@@ -129,10 +126,12 @@ export function OriginPhase({
     ] : [])
 
     return (
+        <>
         <PhaseCard
             title="Origen"
             icon={TrendingUp}
-            variant={(isNoteMode ? noteStatuses.origin : (activeDoc.status === 'CANCELLED' ? 'destructive' : 'success')) as any}
+            variant={(isNoteMode ? noteStatuses.origin : (activeDoc.status === 'CANCELLED' ? 'destructive' : 'success')) as 'success' | 'active' | 'neutral' | 'destructive'}
+            progress={isNoteMode ? undefined : (activeDoc.status === 'CANCELLED' ? 0 : 100)}
             isComplete={isNoteMode && noteStatuses.origin === 'success'}
             documents={documents}
             onViewDetail={openDetails}
@@ -151,7 +150,7 @@ export function OriginPhase({
                             {line.product_name || line.description}
                         </span>
                         <span className="shrink-0 font-black text-primary text-[11px]">
-                            {Math.round(line.quantity as number)} {line.uom_name || line.unit_name || 'un'}
+                            {Math.round(parseFloat(String(line.quantity || 0)))} {line.uom_name || line.unit_name || 'un'}
                         </span>
                     </div>
                 ))}
@@ -163,5 +162,8 @@ export function OriginPhase({
                 )}
             </div>
         </PhaseCard>
+
+            <ActionConfirmModal {...modalProps} />
+        </>
     )
 }

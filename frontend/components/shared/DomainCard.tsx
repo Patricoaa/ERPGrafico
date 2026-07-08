@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useMemo } from "react"
-import { Calendar, ArrowRight, ArrowLeft, Monitor, GitBranch } from "lucide-react"
+import { useMemo } from "react"
+import { Calendar, ArrowRight, ArrowLeft, Monitor, GitBranch, type LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "./MoneyDisplay"
 import { EntityCard } from "./EntityCard"
@@ -11,7 +11,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface DomainCardProps {
     label: string
-    data: any
+    data: object
     onClick?: () => void
     onActionClick?: () => void
     isSelected?: boolean
@@ -20,6 +20,16 @@ interface DomainCardProps {
     visibleColumns?: Record<string, boolean>
     /** Whether it is being used in a detail view header */
     isDetailView?: boolean
+    /** Image URL — renders an <img> in the icon slot, taking precedence over icon */
+    imageSrc?: string
+    /** Override the auto-derived entity icon */
+    icon?: LucideIcon
+    /** Override the auto-derived icon container styling */
+    iconClassName?: string
+    selectable?: boolean
+    checked?: boolean
+    onCheckedChange?: (checked: boolean) => void
+    isAnySelected?: boolean
 }
 
 /**
@@ -36,33 +46,38 @@ export function DomainCard({
     isHubOpen = false,
     className,
     visibleColumns,
-    isDetailView = false
+    isDetailView = false,
+    imageSrc,
+    icon: iconOverride,
+    iconClassName: iconClassNameOverride,
+    selectable = false,
+    checked = false,
+    onCheckedChange,
+    isAnySelected = false
 }: DomainCardProps) {
     const { openHub } = useHubPanel()
-    const Icon = useMemo(() => getEntityIcon(label), [label])
+    const Icon = useMemo(() => iconOverride ?? getEntityIcon(label), [label, iconOverride])
     
     // ─── Identity ─────────────────────────────────────────────────────────────
-    const partnerName = getPartnerName(label, data)
-    const displayId = data.display_id || formatEntityDisplay(label, data)
+    const d = data as { display_id?: string; total?: number; effective_total?: number; balance?: number; pending_amount?: number; date?: string; delivery_date?: string; receipt_date?: string; pos_session?: number; dte_type?: string; lines?: Array<Record<string, unknown>>; items?: Array<Record<string, unknown>>; adjustments?: Array<Record<string, unknown>>; work_orders?: Array<Record<string, unknown>>; [key: string]: unknown }
+    const partnerName = getPartnerName(label, d)
+    const displayId = d.display_id || formatEntityDisplay(label, d)
     
     // ─── Values ───────────────────────────────────────────────────────────────
-    const total = parseFloat(String(data.total || data.effective_total || data.balance || 0))
-    const pending = parseFloat(String(data.pending_amount || 0))
+    const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
+    const pending = parseFloat(String(d.pending_amount || 0))
     const hasPending = total > 0 && pending > 0
 
     // ─── Aesthetics ───────────────────────────────────────────────────────────
-    let iconBg = "bg-primary/5"
-    let iconColor = "text-primary/60"
-    let iconBorder = "border-primary/10"
+    let iconClassName = "bg-accent text-muted-foreground"
 
     if (label === 'purchasing.purchaseorder' || label === 'inventory.product') {
-        iconColor = "text-info/60"
-        iconBorder = "border-primary/20"
-    } else if (label === 'billing.invoice' && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type)) {
-        iconBg = "bg-warning/5"
-        iconColor = "text-warning/60"
-        iconBorder = "border-warning/10"
+        iconClassName = "text-info bg-info/10"
+    } else if (label === 'billing.invoice' && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(d.dte_type ?? '')) {
+        iconClassName = "text-warning bg-warning/10"
     }
+
+    if (iconClassNameOverride) iconClassName = iconClassNameOverride
 
     const handleClick = () => {
         if (isDetailView) return
@@ -75,126 +90,134 @@ export function DomainCard({
             isSelected={isSelected && (isHubOpen || !isDetailView)}
             onClick={isDetailView ? undefined : handleClick}
             className={cn(
+                isHubOpen && isSelected && "accent-visible",
                 !isSelected && isHubOpen && "opacity-40 grayscale-[0.2] blur-[0.2px]",
-                isDetailView && "cursor-default shadow-sm",
+                isDetailView && "cursor-default shadow-card",
                 className
             )}
+            selectable={selectable}
+            checked={checked}
+            onCheckedChange={onCheckedChange}
+            isAnySelected={isAnySelected}
         >
             <EntityCard.Header
-                title={
-                    <div className="flex items-center gap-3">
-                        <div className={cn(
-                            "w-10 h-10 rounded flex flex-col items-center justify-center border transition-all duration-300 group-hover:scale-105 shrink-0",
-                            iconBg, iconColor, iconBorder
-                        )}>
-                            {React.createElement(Icon, { className: "h-4 w-4" })}
-                        </div>
-                        {visibleColumns?.partner_name !== false && (
-                            <span className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[240px] tracking-tight">
-                                {partnerName}
-                            </span>
-                        )}
-                    </div>
-                }
+                imageSrc={imageSrc}
+                icon={imageSrc ? undefined : Icon}
+                iconClassName={iconClassName}
+                title={visibleColumns?.partner_name !== false ? partnerName : undefined}
                 subtitle={
-                    <div className="flex items-center gap-2.5 text-[11px] font-medium text-muted-foreground flex-wrap pl-[52px]">
-                        <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
-                            {displayId}
-                        </span>
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                        <span>{displayId}</span>
+                        <span className="text-muted-foreground/20">·</span>
                         {visibleColumns?.date !== false && (
                             <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3 opacity-70" />
-                                {formatPlainDate(data.date)}
+                                <Calendar className="h-3 w-3 opacity-50" />
+                                {formatPlainDate(d.date)}
                             </span>
                         )}
-                        {/* Domain Extra: POS Session */}
-                        {label === 'sales.saleorder' && data.pos_session && (
+                        {label === 'sales.saleorder' && d.pos_session && (
                             <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
                                 <Monitor className="h-3 w-3" />
-                                #{data.pos_session}
+                                #{d.pos_session}
                             </span>
                         )}
-                    </div>
+                    </span>
                 }
                 trailing={
                     <div className="flex items-center gap-4">
-                        {/* Status Hub */}
                         {visibleColumns?.status !== false && (
                             <div className="hidden sm:flex items-center gap-3">
-                                {/* Domain Extra: Invoice Adjustments Links */}
-                                {label === 'billing.invoice' && data.adjustments && data.adjustments.length > 0 && (
+                                {label === 'billing.invoice' && d.adjustments && d.adjustments.length > 0 && (
                                     <div className="flex items-center gap-1.5">
-                                        {data.adjustments.map((adj: any) => (
+                                        {d.adjustments?.map((adj) => {
+                                            const adjId = adj.id as number | undefined
+                                            return (
                                             <span 
-                                                key={adj.id}
+                                                key={adjId}
                                                 className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/10 cursor-pointer hover:bg-primary/10"
                                                 onClick={(e) => {
                                                     e.stopPropagation()
-                                                    openHub({ invoiceId: adj.id, type: 'sale' })
+                                                    openHub({ invoiceId: adjId, type: 'sale' })
                                                 }}
                                             >
                                                 <GitBranch className="h-3 w-3" />
                                                 {formatEntityDisplay(label, adj)}
                                             </span>
-                                        ))}
+                                        )
+                                    })}
                                     </div>
                                 )}
-                                <DomainHubStatus label={label} data={data} />
-                            </div>
-                        )}
-
-                        {/* Total */}
-                        {visibleColumns?.total !== false && (
-                            <div className="flex flex-col items-end min-w-[90px]">
-                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
-                                    Total
-                                </span>
-                                <MoneyDisplay
-                                    amount={total}
-                                    showColor={false}
-                                    className="text-base font-heading font-bold tracking-tight"
-                                />
+                                <DomainHubStatus label={label} data={d} />
                             </div>
                         )}
 
                         {!isDetailView && (
                             isHubOpen && isSelected ? (
-                                <ArrowLeft className="h-5 w-5 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                                <ArrowLeft className="h-5 w-5 text-muted-foreground" />
                             ) : (
-                                <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
                             )
                         )}
                     </div>
                 }
             />
 
-            {/* ROW 2: Product Lines & Pending Amount */}
-            {((data.lines || data.items || []).length > 0 || hasPending) && (
+            {/* ROW 2: Product Lines & Totals */}
+            {(d.lines || d.items || []).length > 0 && (
                 <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
-                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1">
-                        {(data.lines || data.items || []).map((line: any, idx: number) => (
-                            <span key={idx} className="text-[11px] text-muted-foreground/80 flex items-center gap-1">
-                                <span className="font-semibold text-foreground/70">
-                                    {Math.round(parseFloat(line.quantity || 0))}
+                    <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
+                        {(d.lines || d.items || []).map((raw, idx: number) => {
+                            const line = raw as { quantity?: number | string; product_name?: string; description?: string }
+                            return (
+                            <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                                <span>
+                                    <span className="font-medium text-foreground">
+                                        {Math.round(parseFloat(String(line.quantity || 0)))}
+                                    </span>
+                                    <span className="text-muted-foreground/40 mx-1">×</span>
                                 </span>
-                                <span className="text-muted-foreground/50">×</span>
-                                <span className="truncate max-w-[200px]">
+                                <span className="text-xs text-muted-foreground truncate max-w-[220px]">
                                     {line.product_name || line.description || 'Producto'}
                                 </span>
-                            </span>
-                        ))}
+                            </div>
+                            )
+                        })}
                     </div>
 
-                    {hasPending && visibleColumns?.payment_status !== false && (
-                        <div className="flex flex-col items-end min-w-[90px] shrink-0">
-                            <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
-                                Pendiente
-                            </span>
-                            <MoneyDisplay
-                                amount={pending}
-                                showColor={false}
-                                className="text-sm font-heading font-bold tracking-tight text-warning"
-                            />
+                    {visibleColumns?.total !== false && (
+                        <div className={cn("flex items-start gap-4 shrink-0", !isDetailView && "pr-9")}>
+                            {(d.delivery_date || d.receipt_date) && visibleColumns?.delivery_date !== false && (
+                                <div className="flex flex-col items-end min-w-[80px]">
+                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
+                                        {label === 'purchasing.purchaseorder' ? 'Recepción' : 'Entrega'}
+                                    </span>
+                                    <span className="text-sm  tracking-tight whitespace-nowrap">
+                                        {formatPlainDate(d.delivery_date || d.receipt_date)}
+                                    </span>
+                                </div>
+                            )}
+                            {hasPending && visibleColumns?.payment_status !== false && (
+                                <div className="flex flex-col items-end min-w-[80px]">
+                                    <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
+                                        Pendiente
+                                    </span>
+                                    <MoneyDisplay
+                                        amount={pending}
+                                        showColor={false}
+                                        className="text-sm  tracking-tight text-warning"
+                                    />
+                                </div>
+                            )}
+                            <div className="flex flex-col items-end min-w-[80px]">
+                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
+                                    Total
+                                </span>
+                                <MoneyDisplay
+                                    amount={total}
+                                    showColor={false}
+                                    className="text-sm  tracking-tight"
+                                />
+                            </div>
                         </div>
                     )}
                 </EntityCard.Body>

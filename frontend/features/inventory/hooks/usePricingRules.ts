@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import type { FilterState } from '@/components/shared'
 import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_QUERY_KEY } from './queryKeys'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface PricingRule {
     id: number
@@ -42,14 +43,14 @@ export function usePricingRules(filters?: FilterState) {
             if (filters?.search) params.append('search', filters.search)
             if (filters?.active !== undefined) params.append('active', filters.active)
             const response = await api.get<PricingRule[]>('/inventory/pricing-rules/', { params })
+            // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
+        staleTime: 5 * 60 * 1000,
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
-        // Pricing rule mutations cambian precios computados → invalidar products.
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+        invalidateCrossFeature(queryClient, [PRICING_RULES_QUERY_KEY, PRODUCTS_QUERY_KEY])
     }
 
     const deleteMutation = useMutation({
@@ -101,8 +102,10 @@ export function useProductPricingRules(productId: number | null | undefined) {
         queryFn: async (): Promise<PricingRule[]> => {
             if (!productId) return []
             const response = await api.get<PricingRule[]>(`/inventory/pricing-rules/?product=${productId}`)
+            // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
+        staleTime: 5 * 60 * 1000,
         enabled: !!productId,
     })
 

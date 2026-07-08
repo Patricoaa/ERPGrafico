@@ -1,23 +1,22 @@
 "use client"
 
-import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import React, { useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
-import { Trash2, Calculator, Info } from "lucide-react"
-import { Drawer, DynamicIcon } from '@/components/shared'
+import { Trash2, Calculator, Info, Minus, Plus } from "lucide-react"
+import { Drawer } from '@/components/shared'
 import { ProductSelector } from "@/components/shared"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
-import { resolveMediaUrl } from "@/lib/api"
 
+import type { BaseProduct, ProductCategory } from "@/features/inventory"
 import {
     POSSearchSkeleton,
     POSGridSkeleton,
     POSCartItemsSkeleton
-} from "@/features/pos/components/skeletons/POSLayoutSkeleton"
+} from "@/features/pos"
 
 interface Product {
     id: number
@@ -52,28 +51,25 @@ interface CostCalculatorDrawerProps {
     onOpenChange: (open: boolean) => void
 }
 
+import { useVatRate } from '@/hooks/useVatRate'
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
-import { useWindowWidth } from "@/hooks/useWindowWidth"
-
 export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawerProps) {
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
     const idCounterRef = React.useRef(0)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
 
-    const windowWidth = useWindowWidth(150, open)
-
-    const fullWidth = Math.min(windowWidth * 0.85, 1600)
+    const { rate, multiplier } = useVatRate()
 
     const { products: rawProducts = [], isLoading: loadingProducts } = useProducts({
         filters: {
-            active: true,
+            is_active: true,
             track_inventory: true,
             fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
         }
     })
-    const products = rawProducts as any as Product[]
+    const products = rawProducts as unknown as Product[]
 
     const { categories = [], isLoading: loadingCategories } = useCategories()
 
@@ -161,13 +157,6 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
         return matchesSearch && matchesCategory && isStorable && isSimple
     })
 
-    const handleClose = () => {
-        setSelectedItems([])
-        setSearchTerm("")
-        setSelectedCategoryId(null)
-        onOpenChange(false)
-    }
-
     return (
         <Drawer
             open={open}
@@ -182,32 +171,34 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
             defaultSize="100%"
             contentClassName="p-0 flex flex-col overflow-hidden"
         >
-            <div className="flex-1 overflow-hidden flex divide-x">
+            <div className="flex-1 overflow-hidden flex">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
+                <div className="w-[60%] flex flex-col p-4 gap-4 min-h-0">
                     {loading ? (
-                        <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
-                            <POSSearchSkeleton />
+                        <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-muted/10 py-1.5">
+                            <div className="px-2 pt-1.5 pb-1.5 border-b">
+                                <POSSearchSkeleton />
+                            </div>
                             <div className="p-6">
                                 <POSGridSkeleton count={8} />
                             </div>
                         </Card>
                     ) : (
-                        <ProductSelector 
-                            products={filteredProducts as any}
-                            categories={categories as any}
+                        <ProductSelector
+                            products={filteredProducts as unknown as BaseProduct[]}
+                            categories={categories as unknown as ProductCategory[]}
                             searchTerm={searchTerm}
                             onSearchChange={setSearchTerm}
                             selectedCategoryId={selectedCategoryId}
                             onSelectCategory={setSelectedCategoryId}
-                            onProductClick={(p) => addItem(p as any)}
+                            onProductClick={(p) => addItem(p as unknown as Product)}
                             priceRenderer={(product) => (
                                 <>
                                     <span className="text-base font-black text-primary">
-                                        {formatCurrency((product as any).cost_price || 0)}
+                                        {formatCurrency((product as unknown as Product).cost_price || 0)}
                                     </span>
                                     <span className="text-[10px] text-muted-foreground ml-1 uppercase">
-                                        /{(product as any).uom_name || "UN"}
+                                        /{(product as unknown as Product).uom_name || "UN"}
                                     </span>
                                 </>
                             )}
@@ -216,22 +207,14 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[40%] flex flex-col p-4 bg-muted/10 gap-4 min-h-0">
-                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border bg-background">
-                        {/* List Header */}
-                        <div className="grid grid-cols-12 gap-2 px-6 py-2 bg-muted/20 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
-                            <div className="col-span-6">Descripción</div>
-                            <div className="col-span-2 text-center">Cantidad</div>
-                            <div className="col-span-2">Unidad</div>
-                            <div className="col-span-2 text-right">Subtotal</div>
-                        </div>
-
+                <div className="w-[45%] flex flex-col p-4 gap-4 min-h-0">
+                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border">
                         <ScrollArea className="flex-1">
                             {loading ? (
                                 <POSCartItemsSkeleton count={6} />
                             ) : selectedItems.length === 0 ? (
                                 <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
-                                    <div className="h-16 w-16 rounded-sm bg-muted/50 flex items-center justify-center">
+                                    <div className="h-16 w-16 rounded-sm flex items-center justify-center">
                                         <Calculator className="h-8 w-8 text-muted-foreground/20" />
                                     </div>
                                     <div className="space-y-1">
@@ -242,65 +225,71 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                     </div>
                                 </div>
                             ) : (
-                                <div className="divide-y pb-2">
-                                    {selectedItems.map((item, index) => (
-                                        <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-primary/5 transition-colors">
-                                            <div className="col-span-6 flex items-center gap-3 min-w-0">
-                                                <div className="w-8 h-8 rounded-sm bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
-                                                    {item.product.image ? (
-                                                        <img src={resolveMediaUrl(item.product.image) ?? undefined} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <DynamicIcon
-                                                            name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find(c => c.id === item.product.category)?.icon) || "Package"}
-                                                            className="h-4 w-4 text-muted-foreground/20"
-                                                        />
-                                                    )}
+                                <div className="flex flex-col gap-2 p-3">
+                                    {selectedItems.map((item) => (
+                                        <div key={item.id} className="flex flex-col gap-1 p-3 rounded-md border border-border/40 bg-card/5 group">
+                                            <div className="grid grid-cols-[1fr_auto_1fr_auto_auto_auto] gap-x-1 items-start">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold truncate">{item.product.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-medium">{formatCurrency(item.unit_cost)}/u</span>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-xs font-bold truncate leading-none mb-1">{item.product.name}</p>
-                                                    <p className="text-[9px] text-muted-foreground uppercase font-medium">
-                                                        {item.product.internal_code} • {formatCurrency(item.unit_cost)}
-                                                    </p>
+
+                                                <div className="flex flex-col items-center">
+                                                    <div className="flex items-center gap-0">
+                                                        <Button
+                                                            className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                                                            onClick={() => {
+                                                                const qty = Math.max(0.01, item.quantity - 1)
+                                                                updateQuantity(item.id, qty)
+                                                            }}
+                                                            disabled={item.quantity <= 0.01}
+                                                            type="button"
+                                                        >
+                                                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        </Button>
+
+                                                        <span className="w-10 text-center text-sm font-bold">{item.quantity}</span>
+
+                                                        <Button
+                                                            className="rounded-full h-8 w-8 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 shrink-0 flex items-center justify-center transition-colors"
+                                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                            type="button"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        </Button>
+                                                    </div>
+                                                    <div className="flex justify-center mt-0.5">
+                                                        <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
+                                                            <SelectTrigger className="h-5 text-[9px] border-muted-foreground/20 px-1.5 py-0 bg-background min-w-0">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {(item.product.available_uoms || []).map(uom => (
+                                                                    <SelectItem key={uom.id} value={String(uom.id)} className="text-[9px] py-0.5">
+                                                                        {uom.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="col-span-2">
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
-                                                    value={item.quantity}
-                                                    onChange={e => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
-                                                    className="h-7 px-1 text-center font-bold text-xs border-muted-foreground/20 focus-visible:ring-primary"
-                                                />
-                                            </div>
-                                            <div className="col-span-2">
-                                                <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
-                                                    <SelectTrigger className="h-7 text-[10px] border-muted-foreground/20 px-2 bg-background">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {(item.product.available_uoms || []).map(uom => (
-                                                            <SelectItem key={uom.id} value={String(uom.id)} className="text-[10px]">
-                                                                 {uom.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="col-span-2 flex items-center justify-end gap-2 pr-1">
-                                                <div className="text-right">
-                                                    <p className="text-xs font-black text-primary">
-                                                        {formatCurrency(item.subtotal)}
-                                                    </p>
+
+                                                <div />
+                                                <div />
+
+                                                <div className="flex flex-col items-end ml-6">
+                                                    <span className="text-sm font-bold text-primary leading-none">{formatCurrency(item.subtotal)}</span>
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => removeItem(item.id)}
-                                                    className="h-6 w-6 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
+
+                                                <div>
+                                                    <Button
+                                                        className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-all h-8 w-8 rounded-full hover:bg-destructive/10"
+                                                        onClick={() => removeItem(item.id)}
+                                                        type="button"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -309,15 +298,15 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                         </ScrollArea>
 
                         {/* Totals Section Align with POS */}
-                        <div className="p-6 bg-muted/20 border-t space-y-4 shrink-0">
+                        <div className="p-6 border-t space-y-4 shrink-0">
                             <div className="space-y-1.5">
                                 <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
                                     <span>Costo Neto</span>
                                     <span>{formatCurrency(totalCost)}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
-                                    <span>IVA Estimado (19%)</span>
-                                    <span>{formatCurrency(Math.round(totalCost * 0.19))}</span>
+                                    <span>IVA Estimado ({rate}%)</span>
+                                    <span>{formatCurrency(Math.round(totalCost * (rate / 100)))}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-3 border-t">
                                     <div className="flex flex-col">
@@ -326,7 +315,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                                         </span>
                                     </div>
                                     <span className="text-3xl font-black text-primary tracking-tighter">
-                                        {formatCurrency(Math.round(totalCost * 1.19))}
+                                        {formatCurrency(Math.round(totalCost * multiplier))}
                                     </span>
                                 </div>
                             </div>

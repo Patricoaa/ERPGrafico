@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+import { type Metadata } from "next"
 import { PageContainer } from "@/components/shared"
 import { InventoryHeader } from "./InventoryHeader"
 
@@ -11,7 +11,7 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
     return (
         <PageContainer className="flex flex-col">
             <InventoryHeader />
-            <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
                 {children}
             </div>
         </PageContainer>

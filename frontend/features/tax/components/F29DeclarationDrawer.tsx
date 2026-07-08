@@ -1,8 +1,9 @@
 "use client"
 
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
-import { FileText } from "lucide-react"
+import { useDrawerIdentity } from "@/features/_shared"
 import { useF29Detail } from "../hooks/useTaxQueries"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface F29DeclarationDrawerProps {
     declarationId: number | null
@@ -12,7 +13,11 @@ interface F29DeclarationDrawerProps {
 }
 
 export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29DeclarationDrawerProps) {
-    const { data: declaration, isLoading } = useF29Detail(declarationId ?? undefined)
+    const { f29Detail: declaration, isLoading } = useF29Detail(declarationId ?? undefined)
+
+    const identity = useDrawerIdentity('tax.f29declaration', 'view', declaration, {
+        overrideTitle: declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29",
+    })
 
     return (
         <Drawer
@@ -20,9 +25,10 @@ export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29D
             onOpenChange={onOpenChange}
             side="left"
             boundary="embedded"
-            defaultSize="50%"
-            title={declaration ? `Declaración F29 — ${declaration.period_display || declaration.id}` : "Declaración F29"}
-            icon={FileText}
+            mode="view"
+            defaultSize={formDrawerWidth("master", false)}
+            icon={identity.icon}
+            title={identity.title}
         >
             {isLoading ? (
                 <SkeletonShell isLoading={true} ariaLabel="Cargando declaración" />

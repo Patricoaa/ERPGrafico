@@ -85,9 +85,10 @@ export interface Product {
     track_inventory: boolean
     can_be_sold: boolean
     can_be_purchased: boolean
+    image?: string | null
     image_thumbnail?: string
     image_catalog?: string
-    active: boolean
+    is_active: boolean
     is_dynamic_pricing?: boolean
     cost_price?: string
     uom_category?: number
@@ -122,20 +123,22 @@ export interface ProductUoMPrice {
 }
 
 export interface ProductFilters {
-    active?: string | boolean
+    is_active?: string | boolean
     can_be_sold?: boolean
     can_be_purchased?: boolean
+    has_variants?: boolean
     parent_template__isnull?: boolean
     search?: string
     product_type?: string
     category?: number
+    page?: number
     page_size?: number
     fields?: string
     track_inventory?: boolean
 }
 
 export interface ProductUpdatePayload {
-    active?: boolean;
+    is_active?: boolean;
     sale_price?: string | number;
     code?: string;
     sale_uom?: number;

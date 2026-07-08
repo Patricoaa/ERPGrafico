@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Save } from "lucide-react"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button, type buttonVariants } from "@/components/ui/button"
 import { type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
@@ -52,7 +52,7 @@ export const CancelButton = React.forwardRef<HTMLButtonElement, ButtonBaseProps>
         ref={ref} 
         variant="outline" 
         type={type} 
-        className={cn("h-9 px-5 text-[10px] font-black tracking-widest uppercase shadow-sm", className)}
+        className={cn("h-9 px-5 text-[10px] font-black tracking-widest uppercase shadow-card", className)}
         {...props}
       >
         {children}

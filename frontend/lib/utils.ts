@@ -158,7 +158,6 @@ export function translateFieldName(field: string): string {
     'auto_activate_subscription': 'Activar Suscripción Auto.',
     'is_indefinite': 'Contrato Indefinido',
     'contract_end_date': 'Fin de Contrato',
-    'income_account': 'Cuenta de Ingresos',
     'preferred_supplier': 'Proveedor Preferido',
     'active': 'Activo',
     'sale_price': 'Precio de Venta',
@@ -259,8 +258,13 @@ export function translatePaymentMethod(method: string | null | undefined): strin
   const map: Record<string, string> = {
     'CASH': 'Efectivo',
     'CARD': 'Tarjeta',
+    'CARD_TERMINAL': 'Tarjeta (TUU)',
+    'CREDIT_CARD': 'T. Crédito',
+    'DEBIT_CARD': 'T. Débito',
     'TRANSFER': 'Transferencia',
+    'CHECK': 'Cheque',
     'CREDIT': 'Crédito',
+    'CREDIT_BALANCE': 'Saldo a Favor',
     'WRITE_OFF': 'Castigo',
   }
   return map[method.toUpperCase()] || method
@@ -280,6 +284,24 @@ export function formatBytes(bytes: number, decimals = 2) {
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
+/**
+ * Parse a date-only string (`YYYY-MM-DD`) into a local-timezone Date.
+ * Avoids the UTC midnight shift that `new Date("2024-01-15")` produces
+ * in negative UTC offsets (Chile UTC-3/-4).
+ */
+export function parseDateOnly(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+export function toDate(value: string | Date): Date {
+  return typeof value === 'string' ? parseDateOnly(value) : value
+}
+
+export function toDateOnlyISO(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 export function formatPlainDate(value: string | Date | null | undefined): string {
   if (!value) return '-'
 
@@ -289,8 +311,7 @@ export function formatPlainDate(value: string | Date | null | undefined): string
     // This prevents the browser from applying local timezone offsets
     dateStr = value.split('T')[0]
   } else if (value instanceof Date) {
-    // For Date objects, use ISO format but strip time/tz to remain "plain"
-    dateStr = value.toISOString().split('T')[0]
+    dateStr = toDateOnlyISO(value)
   }
 
   if (dateStr) {
@@ -302,7 +323,9 @@ export function formatPlainDate(value: string | Date | null | undefined): string
   }
 
   // Fallback for non-standard formats
-  const date = new Date(value)
+  const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? parseDateOnly(value)
+    : new Date(value)
   if (isNaN(date.getTime())) return '-'
   return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }

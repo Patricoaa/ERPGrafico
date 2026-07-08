@@ -2,26 +2,36 @@ import { showApiError } from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { contactsApi } from '../api/contactsApi'
 import { toast } from 'sonner'
-import { ContactFilters, ContactPayload } from '../types'
-import { SALES_KEYS } from '@/features/sales/hooks/useSalesOrders'
-import { PURCHASING_KEYS } from '@/features/purchasing/hooks/usePurchasing'
+import { type ContactFilters, type ContactPayload, type Contact } from '../types'
+import { SALES_KEYS } from '@/features/sales'
+import { PURCHASING_KEYS } from '@/features/purchasing'
+import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 import { CONTACTS_KEYS } from './queryKeys'
 
 export { CONTACTS_KEYS }
 
-export function useContacts({ filters }: { filters?: ContactFilters } = {}) {
+export function useContacts({ filters, initialData }: { filters?: ContactFilters, initialData?: Contact[] } = {}) {
     const queryClient = useQueryClient()
 
-    const { data: contacts, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: CONTACTS_KEYS.list(filters || {}),
         queryFn: () => contactsApi.getContacts(filters),
         staleTime: 5 * 60 * 1000, // 5 min
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const contacts = query.data ?? []
+    const showSkeleton = query.isLoading && !contacts.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
+
     return {
-        contacts: contacts ?? [],
-        isLoading,
+        contacts,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         ...useContactMutations()
     }
@@ -29,15 +39,15 @@ export function useContacts({ filters }: { filters?: ContactFilters } = {}) {
 
 export function useContactMutations() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const createMutation = useMutation({
         mutationFn: contactsApi.createContact,
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Contacto creado exitosamente')
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
             // A new contact might appear in order/purchase contact filter dropdowns
-            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.orders() })
+            invalidateCrossFeature(queryClient, [CONTACTS_KEYS.lists(), [...SALES_KEYS.all, 'orders'], PURCHASING_KEYS.orders()])
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear el contacto')
@@ -48,12 +58,10 @@ export function useContactMutations() {
         mutationFn: ({ id, payload }: { id: number, payload: Partial<ContactPayload> }) =>
             contactsApi.updateContact(id, payload),
         onSuccess: (data) => {
+            markLocalMutation()
             toast.success('Contacto actualizado exitosamente')
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.detail(data.id) })
             // Contact name change propagates to order/purchase contact display
-            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.orders() })
+            invalidateCrossFeature(queryClient, [CONTACTS_KEYS.lists(), CONTACTS_KEYS.detail(data.id), [...SALES_KEYS.all, 'orders'], PURCHASING_KEYS.orders()])
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar el contacto')
@@ -63,8 +71,9 @@ export function useContactMutations() {
     const deleteMutation = useMutation({
         mutationFn: contactsApi.deleteContact,
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Contacto eliminado exitosamente')
-            queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
+            invalidateCrossFeature(queryClient, [CONTACTS_KEYS.lists()])
         },
         onError: (error: Error) => {
             console.error(error)
@@ -84,8 +93,8 @@ export function useContactMutations() {
 
 export function useContactInsights(id: number | undefined) {
     return useQuery({
-        queryKey: CONTACTS_KEYS.insights(id!),
-        queryFn: () => contactsApi.getInsights(id!),
+        queryKey: id ? CONTACTS_KEYS.insights(id) : ['contacts', 'insights', 'noop'],
+        queryFn: () => contactsApi.getInsights(id as number),
         enabled: !!id,
         staleTime: 5 * 60 * 1000, // 5 min
     })
@@ -95,7 +104,8 @@ export function useContactInsights(id: number | undefined) {
 export function useContact(id: number | null | undefined) {
     return useQuery({
         queryKey: id ? CONTACTS_KEYS.detail(id) : ['contacts', 'detail', 'noop'],
-        queryFn: () => contactsApi.getContact(id!),
+        queryFn: () => contactsApi.getContact(id as number),
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
 }
@@ -115,9 +125,10 @@ export function useContactCreditLedger(contactId: number | null | undefined) {
     return useQuery<PendingDebt[]>({
         queryKey: contactId ? [...CONTACTS_KEYS.detail(contactId), 'creditLedger'] : ['contacts', 'creditLedger', 'noop'],
         queryFn: async () => {
-            const data = await contactsApi.getCreditLedger(contactId!)
+            const data = await contactsApi.getCreditLedger(contactId as number)
             return data.filter(d => Number(d.balance) > 0)
         },
+        staleTime: 2 * 60 * 1000,
         enabled: !!contactId,
     })
 }

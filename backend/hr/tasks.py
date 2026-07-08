@@ -1,7 +1,9 @@
 """
 Celery tasks for the HR module.
 """
+
 import logging
+
 from celery import shared_task
 from django.db import transaction
 
@@ -9,10 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task(
-    bind=True, 
-    autoretry_for=(Exception,),
-    retry_kwargs={'max_retries': 3},
-    retry_backoff=True
+    bind=True, autoretry_for=(Exception,), retry_kwargs={"max_retries": 3}, retry_backoff=True
 )
 def create_monthly_draft_payrolls(self):
     """
@@ -24,6 +23,7 @@ def create_monthly_draft_payrolls(self):
     document, even before the formal liquidation is calculated.
     """
     from django.utils import timezone
+
     from .models import Employee, Payroll
 
     today = timezone.localdate()
@@ -49,6 +49,7 @@ def create_monthly_draft_payrolls(self):
                     continue
 
                 from .services import PayrollService
+
                 payroll = Payroll.objects.create(
                     employee=employee,
                     period_year=year,
@@ -56,12 +57,14 @@ def create_monthly_draft_payrolls(self):
                     status=Payroll.Status.DRAFT,
                     agreed_days=employee.dias_pactados or 30,
                 )
-                
+
                 # Auto-generate proforma initially
                 try:
                     PayrollService.generate_proforma_payroll(payroll=payroll)
                 except Exception as e:
-                    logger.error(f"[HR] Error auto-generating proforma for payroll {payroll.id}: {e}")
+                    logger.error(
+                        f"[HR] Error auto-generating proforma for payroll {payroll.id}: {e}"
+                    )
 
                 created_count += 1
 
@@ -70,9 +73,9 @@ def create_monthly_draft_payrolls(self):
             f"(period {year}-{month:02d})"
         )
         return {
-            'period': f'{year}-{month:02d}',
-            'created': created_count,
-            'skipped': skipped_count,
+            "period": f"{year}-{month:02d}",
+            "created": created_count,
+            "skipped": skipped_count,
         }
 
     except Exception as exc:

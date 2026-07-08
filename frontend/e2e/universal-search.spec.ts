@@ -254,7 +254,7 @@ test.describe('Universal Search Navigation', () => {
             await route.fulfill({ json });
         });
 
-        await page.route('**/api/inventory/stock_moves/504/', async route => {
+        await page.route('**/api/inventory/moves/504/', async route => {
             const json = {
                 id: 504,
                 display_id: 'MOV-504',

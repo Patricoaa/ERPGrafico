@@ -11,8 +11,8 @@ import {
     Loader2, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
 
-import { cn, formatPlainDate } from "@/lib/utils"
-import type { Payroll, PayrollItem } from "@/types/hr"
+import { cn, formatPlainDate, parseDateOnly } from "@/lib/utils"
+    import type { Payroll, PayrollItem, PayrollPayment } from "@/types/hr"
 import { ActionConfirmModal, DataCell, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -32,7 +32,7 @@ interface PayrollCardProps {
     onEditItem?: (item: PayrollItem) => void
     onDeleteItem?: (item: PayrollItem) => void
     onAddItem?: () => void
-    payments?: any[]
+    payments?: PayrollPayment[]
     className?: string
 }
 
@@ -114,9 +114,8 @@ export function PayrollCard({
 
     const netSalary = parseFloat(payroll.net_salary || "0")
 
-    // Use props if available, otherwise fallback to payroll object fields
-    const isSalaryPaid = isSalaryPaidProp ?? (payroll as any).is_salary_paid ?? (payroll as any).payments?.some((p: any) => p.payment_type === 'SALARIO') ?? false
-    const isPreviredPaid = isPreviredPaidProp ?? (payroll as any).is_previred_paid ?? (payroll as any).payments?.some((p: any) => p.payment_type === 'PREVIRED') ?? false
+    const isSalaryPaid = isSalaryPaidProp ?? (payroll as unknown as Record<string, unknown>).is_salary_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'SALARIO') ?? false
+    const isPreviredPaid = isPreviredPaidProp ?? (payroll as unknown as Record<string, unknown>).is_previred_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'PREVIRED') ?? false
 
     const unifiedPayments = [
         ...(payroll.advances || []).map(a => ({
@@ -135,7 +134,7 @@ export function PayrollCard({
             method: p.notes || "Transferencia",
             isAdvance: false
         }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    ].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
 
     const totalPaid = unifiedPayments.reduce((acc, p) => acc + p.amount, 0)
     const pendingToPay = netSalary - totalPaid
@@ -146,7 +145,7 @@ export function PayrollCard({
     }
 
     return (
-        <Card className={cn("max-w-4xl mx-auto overflow-hidden rounded-none shadow-2xl ring-1 ring-border bg-card", className)}>
+        <Card className={cn("max-w-4xl mx-auto overflow-hidden rounded-none shadow-elevated ring-1 ring-border bg-card", className)}>
             <div className="h-2 w-full bg-primary" />
             {/* 1. DOCUMENT HEADER */}
             <CardHeader className="pb-0 pt-8 px-10">
@@ -166,17 +165,17 @@ export function PayrollCard({
                                 <p className={LABEL_STYLE}>Datos del Empleado</p>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-foreground leading-tight">
-                                        {payroll.employee_detail?.contact_detail?.name || payroll.employee_name || (payroll as any).employee?.name || "—"}
+                                        {payroll.employee_detail?.contact_detail?.name || payroll.employee_name || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.name as string || "—"}
                                     </span>
-                                    {(payroll.employee_detail?.contact_detail?.tax_id || (payroll as any).employee_tax_id || (payroll as any).employee?.tax_id) ? (
+                                    {(payroll.employee_detail?.contact_detail?.tax_id || (payroll as unknown as Record<string, unknown>).employee_tax_id as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.tax_id as string) ? (
                                         <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
-                                            RUT: <span className="font-bold text-foreground">{payroll.employee_detail?.contact_detail?.tax_id || (payroll as any).employee_tax_id || (payroll as any).employee?.tax_id}</span>
+                                            RUT: <span className="font-bold text-foreground">{payroll.employee_detail?.contact_detail?.tax_id || (payroll as unknown as Record<string, unknown>).employee_tax_id as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.tax_id as string}</span>
                                         </span>
                                     ) : (
                                         <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">RUT: —</span>
                                     )}
                                     <span className="text-[10px] text-primary/70 font-bold uppercase tracking-widest mt-1">
-                                        {payroll.employee_detail?.position || (payroll as any).employee_position || (payroll as any).employee?.position || "Personal"} <span className="opacity-30">|</span> {payroll.employee_detail?.department || (payroll as any).employee_department || (payroll as any).employee?.department || "General"}
+                                        {payroll.employee_detail?.position || (payroll as unknown as Record<string, unknown>).employee_position as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.position as string || "Personal"} <span className="opacity-30">|</span> {payroll.employee_detail?.department || (payroll as unknown as Record<string, unknown>).employee_department as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.department as string || "General"}
                                     </span>
                                 </div>
                             </div>
@@ -187,7 +186,7 @@ export function PayrollCard({
                                         {payroll.period_label}
                                     </span>
                                     <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-widest mt-0.5">
-                                        Folio <span className="opacity-30">|</span> <span className="font-bold text-primary/80">{formatEntityDisplay('hr.payroll', payroll)}</span>
+                                        Folio <span className="opacity-30">|</span> <span className="font-bold text-primary/80">{formatEntityDisplay('hr.payroll', payroll as unknown as Record<string, unknown>)}</span>
                                     </span>
                                 </div>
                             </div>
@@ -200,14 +199,14 @@ export function PayrollCard({
                                 status={payroll.status || (isPosted ? 'POSTED' : 'DRAFT')}
                                 label={payroll.status_display}
                                 size="md"
-                                className="px-4 py-1.5 shadow-sm rounded-sm"
+                                className="px-4 py-1.5 shadow-card rounded-sm"
                             />
                         </div>
                     )}
                 </div>
 
                 {/* STATS BAR */}
-                <div className="mt-1 grid grid-cols-4 border rounded-md overflow-hidden bg-muted/50 shadow-sm border/60 divide-x divide-border">
+                <div className="mt-1 grid grid-cols-4 border rounded-md overflow-hidden bg-muted/50 shadow-card border/60 divide-x divide-border">
                     <div className="p-4 text-center space-y-1">
                         <p className={LABEL_STYLE}>Días Pactados</p>
                         <p className="text-sm font-bold text-foreground">{payroll.agreed_days || 0}</p>
@@ -234,7 +233,7 @@ export function PayrollCard({
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
                 <FormSection title="Detalle de Conceptos" icon={Clock} className="pb-6" />
 
-                <div className="border border/60 rounded-md overflow-hidden shadow-sm bg-card transition-all">
+                <div className="border border/60 rounded-md overflow-hidden shadow-card bg-card transition-all">
                     <Table>
                         <TableHeader className="bg-muted/80 border-b border/60 transition-colors">
                             <TableRow className="hover:bg-transparent border-none py-1">
@@ -284,7 +283,7 @@ export function PayrollCard({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="rounded-sm text-[10px] font-bold uppercase tracking-wider h-9 px-4 gap-2 border-dashed bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-sm"
+                            className="rounded-sm text-[10px] font-bold uppercase tracking-wider h-9 px-4 gap-2 border-dashed bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 transition-all shadow-card"
                             onClick={onAddItem}
                         >
                             <Plus className="h-3.5 w-3.5" /> Agregar Concepto Manual
@@ -321,7 +320,7 @@ export function PayrollCard({
 
                     <div className="space-y-4">
                         {/* THE LIQUID CARD */}
-                        <div className="p-7 rounded-md bg-primary shadow-xl shadow-primary/20 border-none text-primary-foreground relative overflow-hidden group">
+                        <div className="p-7 rounded-md bg-primary shadow-elevated shadow-primary/20 border-none text-primary-foreground relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
                                 <DollarSign className="h-20 w-20" />
                             </div>
@@ -369,7 +368,7 @@ export function PayrollCard({
 
                         {/* STATUS MESSAGE FOR EMPLOYEE */}
                         {isPosted && isSalaryPaid && (
-                            <div className="p-5 rounded-md bg-success/10 border border-success/10 flex items-center justify-between transition-all hover:shadow-md">
+                            <div className="p-5 rounded-md bg-success/10 border border-success/10 flex items-center justify-between transition-all hover:shadow-elevated">
                                 <div className="flex items-center gap-3">
                                     <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                                     <div className="flex flex-col">

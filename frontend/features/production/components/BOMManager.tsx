@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Workflow, Box, Layers, Copy, History
+    Plus, Workflow, Box, Layers, History
 } from "lucide-react"
 
 import { BOMDrawer } from "./BOMDrawer"
@@ -11,11 +11,12 @@ import { BOMDrawer } from "./BOMDrawer"
 import { ActionConfirmModal, Chip, LabeledSelect, StatusBadge } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { DataTable } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { bomManagerActions, type BOMManagerActionsCtx } from './bomManagerActions'
 
-import { BOM, ProductMinimal } from "../types"
+import { type BOM, type ProductMinimal } from "../types"
 
 interface BOMManagerProps {
     product: ProductMinimal | null
@@ -39,7 +40,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         : { parent_id: product?.id }
 
     const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs(bomParams)
-    const { variants, isVariantsLoading } = useProductionVariants(product?.id)
+    const { variants } = useProductionVariants(product?.id)
 
     // Sync external boms if needed
     useEffect(() => {
@@ -102,6 +103,12 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         )
     }
 
+    const bomManagerActionsCtx: BOMManagerActionsCtx = {
+        onClone: (bom) => handleClone(bom as BOM),
+        onEdit: (bom) => handleEdit(bom as BOM),
+        onDelete: (bom) => handleDelete(bom as BOM, false),
+    }
+
     const columns: ColumnDef<BOM>[] = [
         {
             accessorKey: "name",
@@ -151,16 +158,17 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <button
+                    <Button
+                        variant="ghost"
                         type="button"
                         onClick={() => !row.original.active && handleToggleActive(row.original)}
-                        className={cn(!row.original.active && "hover:scale-105 transition-transform")}
+                        className={cn("h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", !row.original.active && "hover:scale-105 transition-transform")}
                     >
                         <StatusBadge
                             status={row.original.active ? "active" : "inactive"}
                             className="cursor-pointer"
                         />
-                    </button>
+                    </Button>
                 </div>
             )
         },
@@ -184,31 +192,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 </div>
             )
         },
-        createActionsColumn<BOM>({
-            headerLabel: "Opciones",
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action
-                        icon={Copy}
-                        title="Clonar Receta"
-                        className="text-success hover:text-success"
-                        onClick={() => handleClone(item)}
-                    />
-                    <DataCell.Action
-                        icon={Edit}
-                        title="Editar"
-                        className="text-primary hover:text-primary"
-                        onClick={() => handleEdit(item)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(item)}
-                    />
-                </>
-            )
-        })
+        bomManagerActions.column(bomManagerActionsCtx) as ColumnDef<BOM>
     ]
 
     return (
@@ -234,7 +218,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                         e.stopPropagation()
                                         handleCreate()
                                     }}
-                                    className="h-9 px-5 gap-2 rounded-lg font-black uppercase tracking-widest text-[10px] shadow-sm transition-all hover:-translate-y-0.5"
+                                    className="h-9 px-5 gap-2 rounded-sm font-black uppercase tracking-widest text-[10px] shadow-card transition-all hover:-translate-y-0.5"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Nueva Lista
@@ -243,7 +227,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         </div>
 
                         {product?.has_variants && (
-                            <div className="mt-6 bg-primary/5 p-5 rounded-xl border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-500">
+                            <div className="mt-6 bg-primary/5 p-5 rounded-md border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-500">
                                 <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
                                     <LabeledSelect
                                         label="Contexto de Manufactura"
@@ -272,7 +256,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                             e.stopPropagation()
                                             handleCreate()
                                         }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-lg font-black uppercase tracking-widest text-[11px]  transition-all hover:-translate-y-0.5"
+                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px]  transition-all hover:-translate-y-0.5"
                                         disabled={selectedVariantId === "all"}
                                     >
                                         <Plus className="h-4 w-4" />
@@ -296,7 +280,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 e.stopPropagation()
                                 handleCreate()
                             }}
-                            className="h-8 gap-2 rounded-lg text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
+                            className="h-8 gap-2 rounded-sm text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
                             variant="outline"
                         >
                             <Plus className="h-3.5 w-3.5" />
@@ -313,7 +297,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                             </div>
                             <div className="space-y-1.5 max-w-sm">
                                 <p className="text-base font-black uppercase tracking-widest text-primary">Sin recetas de producción</p>
-                                <p className="text-[13px] font-medium text-muted-foreground/80">
+                                <p className="text-sm font-medium text-muted-foreground/80">
                                     Defina la lista de materiales (BOM) y el ruteo de etapas para fabricar este producto.
                                 </p>
                             </div>
@@ -321,7 +305,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                 <Button
                                     type="button"
                                     onClick={handleCreate}
-                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-md hover:-translate-y-0.5 transition-transform"
+                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-elevated hover:-translate-y-0.5 transition-transform"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Crear receta base

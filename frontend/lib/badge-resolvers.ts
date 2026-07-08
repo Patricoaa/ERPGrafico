@@ -86,12 +86,14 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     SETTLED:        { label: 'Liquidado',    intent: 'success' },
     INVOICED:       { label: 'Facturado',    intent: 'info' },
     PENDING:        { label: 'Pendiente',    intent: 'warning' },
+    PROCESSING:     { label: 'Procesando',  intent: 'primary' },
+    FAILED:         { label: 'Fallido',     intent: 'destructive' },
 
     // ── Subscription / Employee ──────────────────────────────────────────
     ACTIVE:         { label: 'Activo',       intent: 'success' },
     INACTIVE:       { label: 'Inactivo',     intent: 'neutral' },
     PAUSED:         { label: 'Pausado',      intent: 'warning' },
-    EXPIRED:        { label: 'Vencido',      intent: 'neutral' },
+    EXPIRED:        { label: 'Vencido/a', intent: 'warning' },
 
     // ── Semantic universals ───────────────────────────────────────────────
     SUCCESS:        { label: 'Completado',   intent: 'success' },
@@ -130,6 +132,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     CANCELED:      { label: 'Anulada',    intent: 'neutral' },
     REFINANCED:    { label: 'Refinanciado', intent: 'info' },
     DEFAULTED:     { label: 'En Mora',    intent: 'destructive' },
+    SUSPENDED:     { label: 'Suspendida', intent: 'neutral' },
 
     // ── HR ────────────────────────────────────────────────────────────────
     AUSENTISMO:        { label: 'Ausentismo',     intent: 'destructive' },
@@ -208,7 +211,13 @@ export function resolveEntity(label: string, data: Record<string, unknown>): Res
 
 export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type'
 
-const CATEGORY_MAP: Record<CategoryDomain, Record<string, { intent: BadgeIntent; label: string }>> = {
+interface CategoryEntry {
+    intent: BadgeIntent
+    label: string
+    icon?: string
+}
+
+const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
     product_type: {
         'STORABLE': { intent: 'info', label: 'Almacenable' },
         'CONSUMABLE': { intent: 'warning', label: 'Consumible' },
@@ -241,7 +250,7 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, { intent: BadgeIntent;
     }
 }
 
-export function resolveCategory(domain: CategoryDomain, value: string): { intent: BadgeIntent; label: string } {
+export function resolveCategory(domain: CategoryDomain, value: string): CategoryEntry {
     const map = CATEGORY_MAP[domain]
     const upperValue = value?.toUpperCase() || ''
     

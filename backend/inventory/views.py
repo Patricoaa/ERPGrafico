@@ -1,113 +1,151 @@
-from rest_framework import viewsets, status, filters
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .serializers import (
-    ProductSerializer, ProductSimpleSerializer, ProductCategorySerializer, WarehouseSerializer,
-    StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
-    CustomFieldTemplateSerializer, ProductCustomFieldSerializer, SubscriptionSerializer,
-    ProductAttributeSerializer, ProductAttributeValueSerializer, ProductUoMPriceSerializer
-)
-from .models import (
-    Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
-    CustomFieldTemplate, ProductCustomField, Subscription,
-    ProductAttribute, ProductAttributeValue, ProductFavorite, ProductUoMPrice
-)
-from django.shortcuts import get_object_or_404
-from .services import StockService, UoMService
-from .selectors import list_products, get_product_base_queryset, get_stock_report_data
-from django_filters.rest_framework import DjangoFilterBackend
-from decimal import Decimal
 
-from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 from core.api.pagination import StandardResultsSetPagination
+from core.mixins import AuditHistoryMixin as AuditHistory
+from core.mixins import BulkImportMixin, NoDestroyModelMixin
+from core.idempotency import idempotent_endpoint
 
-from .filters import ProductFilter, StockMoveFilter
+from .filters import ProductFilter, StockMoveFilter, UoMFilter
+from .models import (
+    PricingRule,
+    Product,
+    ProductAttribute,
+    ProductAttributeValue,
+    ProductCategory,
+    ProductUoMPrice,
+    StockMove,
+    Subscription,
+    UoM,
+    UoMCategory,
+    Warehouse,
+)
+from .selectors import (
+    ProductSelector,
+    StockMoveSelector,
+    get_product_base_queryset,
+    get_stock_report_data,
+    list_products,
+)
+from .serializers import (
+    PricingRuleSerializer,
+    ProductAttributeSerializer,
+    ProductAttributeValueSerializer,
+    ProductCategorySerializer,
+    ProductSerializer,
+    ProductSimpleSerializer,
+    ProductUoMPriceSerializer,
+    StockMoveSerializer,
+    SubscriptionSerializer,
+    UoMCategorySerializer,
+    UoMSerializer,
+    WarehouseSerializer,
+)
+from .services import StockService, UoMService, ProductService, PricingService
 
-class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
+
+class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
-    search_fields = ['name', 'internal_code', 'code']
+    pagination_class = StandardResultsSetPagination
+    search_fields = ["name", "internal_code", "code"]
 
     def get_queryset(self):
         user = self.request.user
-        if self.kwargs.get('pk') or self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+        if self.kwargs.get("pk") or self.action in [
+            "retrieve",
+            "update",
+            "partial_update",
+            "destroy",
+        ]:
             return get_product_base_queryset(user=user)
         return list_products(user=user, params=self.request.query_params)
 
-    @action(detail=False, methods=['get'], url_path='filter-suggestions')
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        objects = page if page is not None else queryset
+        
+        from .services import ProductService
+        ProductService.bulk_annotate_reserved_qty(objects)
+        ProductService.bulk_annotate_pricing(objects)
+        
+        serializer = self.get_serializer(objects, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="filter-suggestions")
     def filter_suggestions(self, request):
-        q = request.query_params.get('q', '').strip()
+        q = request.query_params.get("q", "").strip()
         if len(q) < 2:
             return Response([])
-        names = (
-            Product.objects.filter(active=True, name__icontains=q)
-            .values_list('name', flat=True)
-            .distinct()
-            .order_by('name')[:10]
-        )
-        return Response(list(names))
+        return Response(ProductSelector.filter_suggestions(q))
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def toggle_favorite(self, request, pk=None):
         product = self.get_object()
-        user = request.user
-        if not user.is_authenticated:
-            return Response({'detail': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        favorite, created = ProductFavorite.objects.get_or_create(user=user, product=product)
-        if not created:
-            favorite.delete()
-            return Response({'is_favorite': False})
-        return Response({'is_favorite': True})
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+        return Response({"is_favorite": ProductService.toggle_favorite(product, request.user)})
 
     def perform_update(self, serializer):
         serializer.save()
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        active_val = request.data.get('active')
-        
-        # If we are archiving (active: True -> False)
-        if active_val is False and instance.active is True:
-            from .services import ProductService
+        active_val = request.data.get("is_active")
+
+        # If we are archiving (is_active: True -> False)
+        if active_val is False and instance.is_active is True:
             restrictions = ProductService.check_archiving_restrictions(instance)
             if restrictions:
-                return Response({
-                    'error': 'No se puede archivar el producto debido a dependencias activas.',
-                    'restrictions': restrictions
-                }, status=status.HTTP_400_BAD_REQUEST)
-                
+                return Response(
+                    {
+                        "error": "No se puede archivar el producto debido a dependencias activas.",
+                        "restrictions": restrictions,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         return super().partial_update(request, *args, **kwargs)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def stock_report(self, request):
-        """
-        Returns a summary of stock per product.
-        Cached in Redis for 60s — invalidated by StockMove signal.
-        """
-        from core.cache import cache_report
         from core.api.throttles import HeavyReportThrottle
-        
-        # Apply heavy report throttle manually
-        throttle = HeavyReportThrottle()
-        if not throttle.allow_request(request, self):
-            from rest_framework.exceptions import Throttled
-            raise Throttled(detail="Demasiadas solicitudes al reporte de stock. Intente en un momento.")
+        from core.cache import cache_report
+        from rest_framework.exceptions import Throttled
 
-        def _generate():
-            return get_stock_report_data()
+        if not HeavyReportThrottle().allow_request(request, self):
+            raise Throttled(
+                detail="Demasiadas solicitudes al reporte de stock. Intente en un momento."
+            )
+
+        warehouse_id = request.query_params.get("warehouse_id")
+        if warehouse_id is not None:
+            try:
+                warehouse_id = int(warehouse_id)
+            except (ValueError, TypeError):
+                warehouse_id = None
 
         data = cache_report(
-            module='inventory',
-            endpoint='stock_report',
+            module="inventory",
+            endpoint="stock_report",
+            params={"warehouse_id": warehouse_id} if warehouse_id else None,
             timeout=60,
-            generator=_generate,
+            generator=lambda: get_stock_report_data(warehouse_id=warehouse_id),
         )
         return Response(data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def insights(self, request, pk=None):
         """
         Returns a unified view of product performance:
@@ -116,351 +154,63 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         3. Sales Performance (Avg Price, Cost, Margin)
         4. Production Usage (OTs)
         """
+        from .selectors import ProductSelector
+
         instance = self.get_object()
-        
-        # Get all relevant product IDs (self + variants)
-        # This ensures that insights for a "Template" product aggregate its variants.
-        product_ids = [instance.id]
-        if instance.has_variants:
-            product_ids += list(instance.variants.values_list('id', flat=True))
+        data = ProductSelector.get_insights(instance)
+        return Response(data)
 
-        # 1. Price History (Calculated from HistoricalRecords)
-        history = instance.history.select_related('history_user').all().order_by('history_date')
-        price_history = []
-        last_sale = None
-        last_cost = None
-        for h in history:
-            if h.sale_price != last_sale or h.cost_price != last_cost:
-                price_history.append({
-                    'date': h.history_date,
-                    'sale_price': float(h.sale_price),
-                    'cost_price': float(h.cost_price),
-                    'user': h.history_user.username if h.history_user else "System"
-                })
-                last_sale = h.sale_price
-                last_cost = h.cost_price
-        price_history.reverse()
-
-        # 2. Kardex (Recent Stock Moves) - Including variants
-        from inventory.models import StockMove
-        moves = StockMove.objects.filter(product_id__in=product_ids).select_related(
-            'warehouse', 'uom', 'product'
-        ).prefetch_related(
-            'sale_delivery_line',
-            'purchase_receipt_line',
-            'sale_return_line',
-            'purchase_return_line'
-        ).all().order_by('-date', '-id')[:100]
-        
-        kardex = []
-        for m in moves:
-            # Priority 1: StockMove's own unit_cost (represents the actual capitalized valuation)
-            # We prioritize this for IN moves to show the gross cost for Boletas.
-            unit_price = float(m.unit_cost or 0)
-            
-            # Priority 2: Transaction-linked price if move cost is 0 or it's an OUT move
-            # For OUT moves, we usually want the Sale Price, not the COGS.
-            if unit_price == 0 or m.move_type == 'OUT':
-                if hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
-                    unit_price = float(m.purchase_receipt_line.unit_cost)
-                elif hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
-                    unit_price = float(m.sale_delivery_line.unit_price)
-                elif hasattr(m, 'sale_return_line') and m.sale_return_line:
-                    unit_price = float(m.sale_return_line.unit_price)
-                elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
-                    unit_price = float(m.purchase_return_line.unit_cost)
-            
-            # Fallback to StockMove cost if still 0 (e.g. legacy data)
-            if unit_price == 0 and m.unit_cost:
-                unit_price = float(m.unit_cost)
-            
-            # Priority 3: Current product cost as last resort
-            if unit_price == 0:
-                unit_price = float(m.product.cost_price)
-
-            description = m.description
-            if instance.has_variants and m.product_id != instance.id:
-                variant_name = m.product.variant_display_name or m.product.name
-                description = f"[{variant_name}] {description}"
-
-            # Determine related document info and custom display_id based on prefixes
-            display_id = m.display_id # Default MOV-XXXX
-            related_id = m.id
-            related_type = 'inventory'
-            
-            if hasattr(m, 'sale_delivery_line') and m.sale_delivery_line:
-                # Already DES-
-                display_id = m.sale_delivery_line.delivery.display_id
-                related_id = m.sale_delivery_line.delivery.id
-                related_type = 'sale_delivery'
-            elif hasattr(m, 'purchase_receipt_line') and m.purchase_receipt_line:
-                # Already REC-
-                display_id = m.purchase_receipt_line.receipt.display_id
-                related_id = m.purchase_receipt_line.receipt.id
-                related_type = 'purchase_receipt'
-            elif hasattr(m, 'sale_return_line') and m.sale_return_line:
-                # Return from customer = Stock Input -> REC
-                display_id = f"REC-{m.sale_return_line.return_doc.number}"
-                related_id = m.sale_return_line.return_doc.id
-                related_type = 'sale_return'
-            elif hasattr(m, 'purchase_return_line') and m.purchase_return_line:
-                # Return to supplier = Stock Output -> DES
-                display_id = f"DES-{m.purchase_return_line.return_doc.number}"
-                related_id = m.purchase_return_line.return_doc.id
-                related_type = 'purchase_return'
-
-            kardex.append({
-                'id': m.id,
-                'display_id': display_id,
-                'related_id': related_id,
-                'related_type': related_type,
-                'date': m.date,
-                'type': m.move_type,
-                'quantity': float(m.quantity),
-                'unit_price': unit_price,
-                'total_price': abs(float(m.quantity) * unit_price),
-                'warehouse': m.warehouse.name,
-                'description': description,
-                'uom': m.uom.name if m.uom else ""
-            })
-
-        # 3. Sales Analysis (from CONFIRMED deliveries and returns) - Including variants
-        from sales.models import SaleDeliveryLine, SaleReturnLine
-        from django.db import models
-        from django.db.models import Avg, Sum, F
-        
-        # Aggregate Deliveries
-        delivery_stats = SaleDeliveryLine.objects.filter(
-            product_id__in=product_ids, 
-            delivery__status='CONFIRMED'
-        ).aggregate(
-            avg_price=Avg('unit_price', filter=models.Q(unit_price__gt=0)),
-            avg_cost=Avg('unit_cost', filter=models.Q(unit_cost__gt=0)),
-            total_qty=Sum('quantity'),
-            total_revenue=Sum(F('quantity') * F('unit_price')),
-            total_cost_basis=Sum(F('quantity') * F('unit_cost'))
-        )
-        
-        # Aggregate Returns (Subtraction)
-        return_stats = SaleReturnLine.objects.filter(
-            product_id__in=product_ids,
-            return_doc__status='CONFIRMED'
-        ).aggregate(
-            total_qty=Sum('quantity'),
-            total_revenue=Sum(F('quantity') * F('unit_price')),
-            total_cost_basis=Sum(F('quantity') * F('unit_cost'))
-        )
-        
-        # Calculate NET totals
-        net_qty = (delivery_stats['total_qty'] or 0) - (return_stats['total_qty'] or 0)
-        net_revenue = (delivery_stats['total_revenue'] or 0) - (return_stats['total_revenue'] or 0)
-        net_cost_basis = (delivery_stats['total_cost_basis'] or 0) - (return_stats['total_cost_basis'] or 0)
-        
-        # Effective averages (weighted by volume to be more accurate if mixed data exists)
-        # However, for simplicity and matching old UI, we use the delivery averages but Net totals for the cards
-        avg_price = float(delivery_stats['avg_price'] or 0)
-        avg_cost = float(delivery_stats['avg_cost'] or 0)
-
-        # 4. Production Analysis (Consumption in OTs) - Including variants
-        from production.models import ProductionConsumption
-        consumptions = ProductionConsumption.objects.filter(
-            product_id__in=product_ids
-        ).select_related('work_order', 'product').all().order_by('-date')[:20]
-        
-        production_usage = []
-        for c in consumptions:
-            desc = f"Consumo en OT-{c.work_order.number}"
-            if instance.has_variants and c.product_id != instance.id:
-                variant_name = c.product.variant_display_name or c.product.name
-                desc = f"[{variant_name}] {desc}"
-                
-            production_usage.append({
-                'date': c.date,
-                'ot_id': c.work_order.id,
-                'ot_number': c.work_order.number,
-                'quantity': float(c.quantity),
-                'description': desc
-            })
-
-        return Response({
-            'price_history': price_history,
-            'kardex': kardex,
-            'sales_analysis': {
-                'avg_price': avg_price,
-                'avg_cost': avg_cost,
-                'total_sold': float(net_qty),
-                'total_revenue': float(net_revenue),
-                'total_cost_basis': float(net_cost_basis),
-            },
-            'production_usage': production_usage
-        })
-
-
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def generate_variants(self, request, pk=None):
-        template = self.get_object()
-        selection = request.data.get('selection', [])  # List of {attribute: id, values: [ids]}
-        
-        if not template.has_variants:
-            return Response({"error": "El producto no tiene activada la opción de variantes."}, status=status.HTTP_400_BAD_REQUEST)
-            
-        import itertools
-        from django.db import transaction
-        
-        # Prepare lists of values for each attribute
-        attr_values_lists = []
-        for item in selection:
-            attr_id = item.get('attribute')
-            val_ids = item.get('values', [])
-            if val_ids:
-                attr_values_lists.append(list(ProductAttributeValue.objects.filter(id__in=val_ids, attribute_id=attr_id)))
-        
-        if not attr_values_lists:
-            return Response({"error": "Debe seleccionar valores de atributos."}, status=status.HTTP_400_BAD_REQUEST)
-            
-        # Cartesian product of attribute values
-        combinations = list(itertools.product(*attr_values_lists))
-        
-        created_count = 0
-        skipped_count = 0
-        
-        with transaction.atomic():
-            for combo in combinations:
-                # Check if variant already exists
-                existing_variants = Product.objects.filter(parent_template=template)
-                for val in combo:
-                    existing_variants = existing_variants.filter(attribute_values=val)
-                
-                # Ensure it has exactly the same number of attributes to avoid partial matches
-                existing_variants = [v for v in existing_variants if v.attribute_values.count() == len(combo)]
-                
-                if existing_variants:
-                    skipped_count += 1
-                    continue
-                
-                # Create the variant
-                variant = Product.objects.create(
-                    name=template.name,
-                    category=template.category,
-                    product_type=template.product_type,
-                    uom=template.uom,
-                    sale_uom=template.sale_uom,
-                    purchase_uom=template.purchase_uom,
-                    receiving_warehouse=template.receiving_warehouse,
-                    track_inventory=template.track_inventory,
-                    can_be_sold=template.can_be_sold,
-                    can_be_purchased=template.can_be_purchased,
-                    parent_template=template,
-                    sale_price=template.sale_price,
-                    cost_price=template.cost_price,
-                    requires_advanced_manufacturing=template.requires_advanced_manufacturing,
-                )
-                variant.attribute_values.set(combo)
-                variant.save()  # Triggers display name generation
-                
-                if getattr(template, 'manufacturing_profile', None):
-                    from inventory.models import ProductManufacturingProfile
-                    profile = ProductManufacturingProfile.objects.get(product=template)
-                    profile.pk = None
-                    profile.product = variant
-                    profile.save()
-                    
-                created_count += 1
-                
-        return Response({
-            "message": f"Se han creado {created_count} variantes. {skipped_count} ya existían.",
-            "created": created_count,
-            "skipped": skipped_count
-        })
+        from django.core.exceptions import ValidationError
 
-    @action(detail=True, methods=['post'], url_path='sync-variant-prices')
+        template = self.get_object()
+        selection = request.data.get("selection", [])  # List of {attribute: id, values: [ids]}
+
+        if not template.has_variants:
+            return Response(
+                {"error": "El producto no tiene activada la opción de variantes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = ProductService.generate_variants(template, selection)
+            return Response(result)
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, "message") else e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": f"Error interno: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["post"], url_path="sync-variant-prices")
     def sync_variant_prices(self, request, pk=None):
-        """Establece price_inheritance_mode=INHERIT en todas las variantes activas del template."""
         template = self.get_object()
         if not template.has_variants:
             return Response(
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        updated = template.variants.filter(active=True).update(
-            price_inheritance_mode=Product.PriceInheritance.INHERIT,
-            price_surcharge=None,
-        )
-        return Response({"updated": updated})
+        return Response(ProductService.sync_variant_prices(template))
 
-    @action(detail=True, methods=['post'], url_path='bulk-clone-bom')
+    @action(detail=True, methods=["post"], url_path="bulk-clone-bom")
     def bulk_clone_bom(self, request, pk=None):
-        """
-        Clona la BOM activa del template a las variantes indicadas.
-        Si variant_ids está vacío, aplica a todas las variantes activas.
-        """
         template = self.get_object()
-        variant_ids = request.data.get('variant_ids', [])  # [] = todas
-
+        variant_ids = request.data.get("variant_ids", [])
         if not template.has_variants:
             return Response(
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        try:
+            result = ProductService.bulk_clone_bom(template, variant_ids or None)
+            return Response(result)
+        except Exception as e:
+            msg = e.message if hasattr(e, "message") else str(e)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
 
-        from production.models import BillOfMaterials, BillOfMaterialsLine
-        from django.db import transaction
-
-        source_bom = template.boms.filter(active=True).first()
-        if not source_bom:
-            return Response(
-                {"error": "El template no tiene una Lista de Materiales activa para clonar."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        variants_qs = template.variants.filter(active=True)
-        if variant_ids:
-            variants_qs = variants_qs.filter(id__in=variant_ids)
-
-        cloned_count = 0
-        with transaction.atomic():
-            for variant in variants_qs:
-                # Remove existing BOMs on this variant before cloning
-                variant.boms.all().delete()
-
-                new_bom = BillOfMaterials.objects.create(
-                    product=variant,
-                    name=source_bom.name,
-                    active=True,
-                    yield_quantity=source_bom.yield_quantity,
-                    yield_uom=source_bom.yield_uom,
-                )
-                for line in source_bom.lines.all():
-                    BillOfMaterialsLine.objects.create(
-                        bom=new_bom,
-                        component=line.component,
-                        quantity=line.quantity,
-                        uom=line.uom,
-                        is_outsourced=line.is_outsourced,
-                        supplier=line.supplier,
-                        unit_price=line.unit_price,
-                        document_type=line.document_type,
-                    )
-                variant.has_bom = True
-                variant.product_type = Product.Type.MANUFACTURABLE
-                variant.save(update_fields=['has_bom', 'product_type'])
-                cloned_count += 1
-
-        return Response({
-            "message": f"BOM clonada en {cloned_count} variante(s).",
-            "cloned": cloned_count,
-        })
-
-    @action(detail=True, methods=['post'], url_path='bulk-set-surcharge')
+    @action(detail=True, methods=["post"], url_path="bulk-set-surcharge")
     def bulk_set_surcharge(self, request, pk=None):
-        """
-        Asigna un sobrecargo a las variantes indicadas (o todas si variant_ids está vacío).
-        Cambia el price_inheritance_mode a SURCHARGE y aplica el valor.
-        """
         template = self.get_object()
-        variant_ids = request.data.get('variant_ids', [])
-        surcharge = request.data.get('surcharge')
-
+        surcharge = request.data.get("surcharge")
         if surcharge is None:
             return Response(
                 {"error": "Debe proporcionar el campo 'surcharge'."},
@@ -471,212 +221,89 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                 {"error": "Este producto no es un template de variantes."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        from decimal import Decimal
-        variants_qs = template.variants.filter(active=True)
-        if variant_ids:
-            variants_qs = variants_qs.filter(id__in=variant_ids)
-
-        updated = variants_qs.update(
-            price_inheritance_mode=Product.PriceInheritance.SURCHARGE,
-            price_surcharge=Decimal(str(surcharge)),
+        updated = ProductService.bulk_set_surcharge(
+            template, request.data.get("variant_ids", []), surcharge
         )
         return Response({"updated": updated})
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def variants(self, request, pk=None):
         template = self.get_object()
-        variants = template.variants.filter(active=True)
-        serializer = ProductSimpleSerializer(variants, many=True, context={'request': request})
+        variants = template.variants.filter(is_active=True)
+        serializer = ProductSimpleSerializer(variants, many=True, context={"request": request})
         return Response(serializer.data)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def effective_price(self, request, pk=None):
         product = self.get_object()
-        quantity = Decimal(request.query_params.get('quantity', 1))
-        uom_id = request.query_params.get('uom_id')
-        uom = None
-        if uom_id:
-            try:
-                uom = UoM.objects.get(pk=uom_id)
-            except UoM.DoesNotExist:
-                pass
-        
-        from .services import PricingService
-        price_gross = PricingService.get_product_price(product, quantity, uom=uom)
-        price_net = (price_gross / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-        
-        return Response({
-            'price': float(price_net),
-            'price_gross': float(price_gross),
-            'price_net': float(price_net)
-        })
+        quantity = request.query_params.get("quantity", 1)
+        uom_id = request.query_params.get("uom_id")
+        data = PricingService.get_effective_price(product, quantity, uom_id)
+        return Response(data)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=["post"])
     def check_availability(self, request):
         """
         Validates stock availability for multiple product lines.
         Checks both storable products and manufacturable products (including components).
-        
-        Request body:
-        {
-            "lines": [
-                {"product_id": 123, "quantity": 10, "uom_id": 5},
-                ...
-            ]
-        }
-        
-        Response:
-        {
-            "available": true/false,
-            "details": [
-                {
-                    "product_id": 123,
-                    "product_name": "Product A",
-                    "requested_qty": 10,
-                    "available_qty": 15,
-                    "is_available": true,
-                    "product_type": "STORABLE",
-                    "missing_components": []
-                },
-                ...
-            ]
-        }
         """
-        lines = request.data.get('lines', [])
+        lines = request.data.get("lines", [])
         if not lines:
-            return Response({'error': 'No lines provided'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        details = []
-        all_available = True
-        
-        for line in lines:
-            product_id = line.get('product_id')
-            requested_qty = Decimal(str(line.get('quantity', 0)))
-            uom_id = line.get('uom_id')
-            
-            try:
-                product = Product.objects.get(pk=product_id)
-            except Product.DoesNotExist:
-                continue
-            
-            # Convert quantity to base UoM if needed
-            if uom_id and product.uom_id != uom_id:
-                try:
-                    uom = UoM.objects.get(pk=uom_id)
-                    # Convert to base UoM
-                    requested_qty = requested_qty * uom.ratio
-                except UoM.DoesNotExist:
-                    pass
-            
-            line_detail = {
-                'product_id': product.id,
-                'product_name': product.name,
-                'requested_qty': float(requested_qty),
-                'product_type': product.product_type,
-                'missing_components': []
-            }
-            
-            # Check availability based on product type
-            if product.product_type == Product.Type.STORABLE:
-                available_qty = product.qty_available
-                line_detail['available_qty'] = float(available_qty)
-                line_detail['is_available'] = requested_qty <= available_qty
-                
-                if not line_detail['is_available']:
-                    all_available = False
-                    
-            elif product.product_type == Product.Type.MANUFACTURABLE:
-                if product.has_bom:
-                    # Check if we can manufacture the requested quantity
-                    manufacturable_qty = product.manufacturable_quantity or 0
-                    line_detail['manufacturable_qty'] = float(manufacturable_qty)
-                    line_detail['is_available'] = requested_qty <= manufacturable_qty
-                    
-                    if not line_detail['is_available']:
-                        all_available = False
-                        
-                        # Get missing components details
-                        from production.models import BillOfMaterials
-                        try:
-                            bom = BillOfMaterials.objects.get(product=product, active=True)
-                            for component in bom.components.all():
-                                comp_product = component.component
-                                required_qty = component.quantity * requested_qty
-                                available_qty = comp_product.qty_available
-                                
-                                if required_qty > available_qty:
-                                    line_detail['missing_components'].append({
-                                        'component_id': comp_product.id,
-                                        'component_name': comp_product.name,
-                                        'required_qty': float(required_qty),
-                                        'available_qty': float(available_qty),
-                                        'missing_qty': float(required_qty - available_qty)
-                                    })
-                        except BillOfMaterials.DoesNotExist:
-                            pass
-                else:
-                    # No BOM = Express manufacturing, always available
-                    line_detail['is_available'] = True
-                    line_detail['manufacturable_qty'] = float('inf')
-                    
-            else:
-                # SERVICE, CONSUMABLE, etc. - always available
-                line_detail['is_available'] = True
-                line_detail['available_qty'] = float('inf')
-            
-            details.append(line_detail)
-        
-        return Response({
-            'available': all_available,
-            'details': details
-        })
+            return Response({"error": "No lines provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = ProductService.check_availability(lines)
+        return Response(result)
 
 
-
-class ProductAttributeViewSet(viewsets.ModelViewSet, AuditHistory):
+class ProductAttributeViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
+    pagination_class = None  # Master data
     filter_backends = [filters.SearchFilter]
-    search_fields = ['name']
+    search_fields = ["name"]
 
-class ProductAttributeValueViewSet(viewsets.ModelViewSet, AuditHistory):
+
+class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttributeValue.objects.all()
     serializer_class = ProductAttributeValueSerializer
-    filterset_fields = ['attribute']
+    pagination_class = None  # Master data
+    filterset_fields = ["attribute"]
 
-class CategoryViewSet(viewsets.ModelViewSet, AuditHistory):
+
+class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
+    pagination_class = None  # Master data
 
-class WarehouseViewSet(viewsets.ModelViewSet, AuditHistory):
+
+class WarehouseViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
+    pagination_class = None  # Master data
 
-class UoMViewSet(viewsets.ModelViewSet, AuditHistory):
+
+class UoMViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
+    pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['category', 'active']
-    search_fields = ['name', 'abbreviation']
+    filterset_class = UoMFilter
+    search_fields = ["name", "abbreviation"]
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def allowed(self, request):
         """
         Returns allowed UoMs for a specific product and context.
         Query params: product_id (required), context (optional, default 'sale')
         """
-        product_id = request.query_params.get('product_id')
-        context = request.query_params.get('context', 'sale')
+        product_id = request.query_params.get("product_id")
+        context = request.query_params.get("context", "sale")
 
         if not product_id:
-            return Response(
-                {"error": "product_id is required"}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "product_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         product = get_object_or_404(Product, id=product_id)
-        
+
         try:
             queryset = UoMService.get_allowed_uoms_for_context(product, context)
             serializer = self.get_serializer(queryset, many=True)
@@ -684,147 +311,70 @@ class UoMViewSet(viewsets.ModelViewSet, AuditHistory):
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class UoMCategoryViewSet(viewsets.ModelViewSet, AuditHistory):
+
+class UoMCategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = UoMCategory.objects.all()
     serializer_class = UoMCategorySerializer
+    pagination_class = None  # Master data
+
 
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
-    queryset = StockMove.objects.all()
+    def get_queryset(self):
+        return StockMove.objects.select_related(
+            "product",
+            "product__uom",
+            "product__category",
+            "uom",
+            "warehouse",
+            "journal_entry",
+        ).all()
     serializer_class = StockMoveSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = StockMoveFilter
 
-    @action(detail=False, methods=['get'], url_path='stock-level')
+    @action(detail=False, methods=["get"], url_path="stock-level")
     def stock_level(self, request):
-        """
-        Aggregated stock for (product, warehouse) computed at DB level.
-        Replaces the previous client-side pattern of fetching all moves and
-        summing in JS — that pattern silently truncated to one page (≤50
-        rows) once the viewset adopted pagination, producing wrong stock
-        figures for any product with a long move history.
-        """
-        from django.db.models import Sum
-        product_id = request.query_params.get('product_id')
-        warehouse_id = request.query_params.get('warehouse_id')
+        product_id = request.query_params.get("product_id")
+        warehouse_id = request.query_params.get("warehouse_id")
         if not product_id or not warehouse_id:
             return Response(
-                {'detail': 'product_id and warehouse_id are required.'},
+                {"detail": "product_id and warehouse_id are required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        total = StockMove.objects.filter(
-            product_id=product_id,
-            warehouse_id=warehouse_id,
-        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0.0')
-        return Response({'stock_level': str(total)})
+        return Response({"stock_level": StockMoveSelector.stock_level(int(product_id), int(warehouse_id))})
 
-    @action(detail=False, methods=['post'])
+    @idempotent_endpoint(scope="inventory.move.create")
+    @action(detail=False, methods=["post"])
     def adjust(self, request):
         """
         Custom endpoint to perform manual stock adjustment.
         Supports partner_contact_id for PARTNER_CONTRIBUTION/PARTNER_WITHDRAWAL reasons.
         """
+        from django.core.exceptions import ValidationError
+
         try:
-            product_id = request.data.get('product_id')
-            warehouse_id = request.data.get('warehouse_id')
-            quantity = Decimal(str(request.data.get('quantity')))
-            unit_cost = Decimal(str(request.data.get('unit_cost', 0)))
-            description = request.data.get('description', 'Manual Adjustment')
-            adjustment_reason = request.data.get('adjustment_reason')
-            uom_id = request.data.get('uom_id')
-            partner_contact_id = request.data.get('partner_contact_id')
-
-            product = Product.objects.get(pk=product_id)
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
-            
-            uom = None
-            if uom_id:
-                try:
-                   uom = UoM.objects.get(pk=uom_id)
-                except UoM.DoesNotExist:
-                   pass
-
-            # Resolve partner contact for partner-related adjustments
-            partner_contact = None
-            partner_reasons = [
-                StockMove.AdjustmentReason.PARTNER_CONTRIBUTION,
-                StockMove.AdjustmentReason.PARTNER_WITHDRAWAL,
-            ]
-            if adjustment_reason in partner_reasons:
-                if not partner_contact_id:
-                    return Response(
-                        {'error': 'Debe seleccionar un socio para aportes o retiros de capital en inventario.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                from contacts.models import Contact
-                try:
-                    partner_contact = Contact.objects.get(pk=partner_contact_id)
-                except Contact.DoesNotExist:
-                    return Response({'error': 'Socio no encontrado.'}, status=status.HTTP_400_BAD_REQUEST)
-                if not partner_contact.is_partner:
-                    return Response({'error': 'El contacto seleccionado no es un socio.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            move = StockService.adjust_stock(
-                product, warehouse, quantity, unit_cost, description,
-                adjustment_reason, uom=uom, partner_contact=partner_contact
-            )
+            move = StockService.adjust_stock_from_payload(request.data)
             return Response(StockMoveSerializer(move).data, status=status.HTTP_201_CREATED)
-
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class PricingRuleViewSet(AuditHistory, viewsets.ModelViewSet):
+
+class PricingRuleViewSet(NoDestroyModelMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
+    pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['product', 'category', 'active']
-    search_fields = ['name']
+    filterset_fields = ["product", "category", "active"]
+    search_fields = ["name"]
 
-class CustomFieldTemplateViewSet(viewsets.ModelViewSet):
-    queryset = CustomFieldTemplate.objects.all()
-    serializer_class = CustomFieldTemplateSerializer
-
-class ProductCustomFieldViewSet(viewsets.ModelViewSet):
-    queryset = ProductCustomField.objects.all()
-    serializer_class = ProductCustomFieldSerializer
-    filterset_fields = ['product']
-
-
-
-class SubscriptionViewSet(viewsets.ModelViewSet):
-    queryset = Subscription.objects.all()
-    serializer_class = SubscriptionSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['status', 'product', 'supplier']
-    search_fields = ['product__name', 'supplier__name', 'supplier__tax_id']
-
-    def get_queryset(self):
-        """
-        Only show subscriptions for products that are currently active (not archived).
-        """
-        return super().get_queryset().filter(product__active=True)
-
-    @action(detail=True, methods=['post'])
-    def pause(self, request, pk=None):
-        sub = self.get_object()
-        sub.status = Subscription.Status.PAUSED
-        sub.save()
-        return Response({'status': 'paused'})
-
-    @action(detail=True, methods=['post'])
-    def resume(self, request, pk=None):
-        sub = self.get_object()
-        sub.status = Subscription.Status.ACTIVE
-        sub.save()
-        return Response({'status': 'active'})
-
-
-class ProductUoMPriceViewSet(viewsets.ModelViewSet):
+class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     serializer_class = ProductUoMPriceSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['product', 'uom']
+    filterset_fields = ["product", "uom"]
 
     def get_queryset(self):
-        return ProductUoMPrice.objects.select_related('uom').filter(
-            product__active=True
-        )
+        return ProductUoMPrice.objects.select_related("uom").filter(product__is_active=True)

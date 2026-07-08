@@ -30,7 +30,11 @@ function SheetPortal({
 
   React.useEffect(() => {
     requestAnimationFrame(() => {
-      setTarget(document.getElementById("module-sheets-portal-container") || document.body)
+      setTarget(
+        document.getElementById("main-content") ??
+        document.getElementById("module-sheets-portal-container") ??
+        document.body
+      )
     })
   }, [])
 
@@ -103,7 +107,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "bg-card text-card-foreground rounded-xl border border-border/15 shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
+          "bg-card text-card-foreground rounded-xl border border-border/15 shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
           side === "right" &&
             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] w-3/4 sm:max-w-sm",
           side === "left" &&

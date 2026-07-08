@@ -1,22 +1,22 @@
 "use client"
 
 import { User, Settings, LogOut, Bell, Store, Calculator, Inbox } from "lucide-react"
-import { EmptyState } from '@/components/shared'
+import { EmptyState, UniversalSearch } from '@/components/shared'
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
 import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { useNotifications, NotificationPayload } from "@/features/notifications/hooks/useNotifications"
+import { useNotifications, type NotificationPayload } from "@/features/notifications/hooks/useNotifications"
 import {
     getNotifications,
     getUnreadNotificationCount,
     markNotificationRead,
     markAllNotificationsRead,
-    Notification,
+    type Notification,
     getTasks
-} from '@/features/workflow/api/workflowApi'
+} from '@/features/workflow'
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 import {
     Tooltip,
@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 // Lazy load cost calculator
@@ -78,7 +77,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     }, [])
 
     useNotifications((newNotification: NotificationPayload) => {
-        setNotifications(prev => [newNotification as any, ...prev].slice(0, 20))
+        setNotifications(prev => [newNotification as Notification, ...prev].slice(0, 20))
         setUnreadCount(prev => prev + 1)
 
         // If it's a task related notification, we might want to refresh tasks too
@@ -97,7 +96,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
             if (!cancelled) fetchData()
         }, 120000)
         return () => { cancelled = true; clearInterval(interval) }
-    }, [user])
+    }, [user, fetchData])
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {
@@ -132,6 +131,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     return (
         <div className="flex items-center gap-2">
             <TooltipProvider delayDuration={0}>
+                {/* Universal Search */}
+                <UniversalSearch />
+
                 {/* POS Action */}
                 <PermissionGuard permission="sales.view_dashboard_sales">
                     <Tooltip>
@@ -153,13 +155,19 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Calculator Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
+                        <Button
+                            variant={isCalculatorOpen ? "default" : "ghost"}
+                            size="icon"
                             onClick={() => setIsCalculatorOpen(true)}
-                            className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                            className={cn(
+                                "rounded-md transition-all duration-200 active:scale-95",
+                                isCalculatorOpen
+                                    ? ""
+                                    : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
+                            )}
                         >
                             <Calculator className="h-5 w-5" />
-                        </motion.button>
+                        </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                         Calculadora de Costos
@@ -169,25 +177,24 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Inbox Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
+                        <Button
+                            variant={isInboxOpen ? "default" : "ghost"}
+                            size="icon"
                             onClick={onInboxToggle}
                             className={cn(
-                                "relative h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200",
+                                "relative rounded-md transition-all duration-200 active:scale-95",
                                 isInboxOpen
-                                    // Active: filled primary to signal open panel
-                                    ? "bg-primary text-primary-foreground"
-                                    // Rest: ghost, barely visible
+                                    ? ""
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
                             <Inbox className="h-5 w-5" />
                             {pendingTasksCount > 0 && !isInboxOpen && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-background">
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[9px] font-black rounded-full px-1 shadow-card border-2 border-background">
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
                                 </span>
                             )}
-                        </motion.button>
+                        </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
                         Bandeja de Entrada {pendingTasksCount > 0 && `(${pendingTasksCount})`}
@@ -201,9 +208,10 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="relative rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95"
                                 >
                                     <Bell className="h-5 w-5" />
                                     {unreadCount > 0 && (
@@ -212,14 +220,14 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                                         </span>
                                     )}
-                                </motion.button>
+                                </Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
                             Notificaciones
                         </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent className="w-[350px] border-sidebar-border shadow-2xl p-0 overflow-hidden" align="end" sideOffset={12}>
+                    <DropdownMenuContent className="w-[350px] border-sidebar-border shadow-overlay p-0 overflow-hidden" align="end" sideOffset={12}>
                         <div className="bg-muted/50 p-3 border-b border-border/50 flex justify-between items-center">
                             <div className="flex flex-col">
                                 <span className="font-bold text-sm tracking-tight text-foreground">Notificaciones</span>
@@ -252,27 +260,37 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <motion.button
-                                    whileTap={{ scale: 0.95 }}
-                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="relative rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
-                                        <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">
+                                        <AvatarFallback className="bg-transparent text-current  font-black text-[10px] rounded-md">
                                             {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                         </AvatarFallback>
                                     </Avatar>
-                                </motion.button>
+                                </Button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
                             {user?.username || 'Usuario'}
                         </TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent className="w-56 border-sidebar-border shadow-2xl" align="end" sideOffset={12}>
-                        <DropdownMenuLabel className="font-normal py-3">
-                            <div className="flex flex-col">
-                                <p className="text-sm font-bold text-foreground">{user?.username || 'Usuario'}</p>
-                                <p className="text-[10px] uppercase text-muted-foreground">{user?.groups?.[0] || 'Sin Rol'}</p>
+                    <DropdownMenuContent className="w-56 border-sidebar-border shadow-overlay" align="end" sideOffset={12}>
+                        <DropdownMenuLabel className="font-normal">
+                            <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
+                                <Avatar className="h-7 w-7 rounded-full">
+                                    <AvatarFallback className=" font-black text-[10px]">
+                                        {user?.username?.substring(0, 2).toUpperCase() || 'US'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col">
+                                    <p className="text-xs font-bold text-foreground leading-tight">
+                                        {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'Usuario'}
+                                    </p>
+                                    <p className="text-[9px] uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
+                                </div>
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
@@ -289,7 +307,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
                             <LogOut className="mr-3 h-4 w-4" />
-                            <span className="font-bold text-xs">Salir</span>
+                            <span className="font-bold text-xs">Cerrar Sesión</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

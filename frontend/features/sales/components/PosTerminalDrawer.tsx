@@ -4,20 +4,21 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer, FileCheck } from "lucide-react"
-import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
-import { treasuryApi } from "@/features/treasury/api/treasuryApi"
+import { usePaymentMethods, useTerminalDevices, type Terminal, type TerminalCreatePayload, type TerminalUpdatePayload } from "@/features/treasury"
+import { treasuryApi } from "@/features/treasury"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const terminalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -75,8 +76,8 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         serial_number: terminal.serial_number || "",
                         ip_address: terminal.ip_address || "",
                         device_id: (() => {
-                            const dId = terminal.payment_terminal_device as any;
-                            return dId?.id ? dId.id.toString() : dId?.toString() || "";
+                            const dId = terminal.payment_terminal_device;
+                            return typeof dId === 'object' && dId !== null ? (dId as { id: number }).id.toString() : dId?.toString() || "";
                         })(),
                     })
                     setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
@@ -137,17 +138,16 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
             }
 
             if (terminal) {
-                await treasuryApi.updateTerminal(terminal.id, payload as any)
+                await treasuryApi.updateTerminal(terminal.id, payload as unknown as TerminalUpdatePayload)
                 toast.success("Caja POS actualizada correctamente")
             } else {
-                await treasuryApi.createTerminal(payload as any)
+                await treasuryApi.createTerminal(payload as unknown as TerminalCreatePayload)
                 toast.success("Caja POS creada correctamente")
             }
             onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
-            const err = error as any
-            toast.error(err.response?.data?.error || "Error al guardar la caja POS")
+            showApiError(error, "Error al guardar la caja POS")
         } finally {
             setIsSubmitting(false)
         }
@@ -176,11 +176,20 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         return acc
     }, {} as Record<string, Array<{ id: number; name: string; treasury_account_name: string; method_type: string }>>)
 
-    const drawerTitle = isView
-        ? `Ficha de Caja POS${terminal?.id ? ` #${terminal.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Caja POS"
-            : "Editar Caja POS"
+    const identity = useDrawerIdentity('pos.terminal', mode, terminal, {
+        feminine: true,
+        overrideSubtitle: (
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                {terminal?.code && (
+                    <>
+                        <span>{terminal.code}</span>
+                        <span className="opacity-30">|</span>
+                    </>
+                )}
+                <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
+            </div>
+        ),
+    })
 
     return (
         <>
@@ -212,28 +221,14 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!terminal)}
                 mode={mode}
-                title={
-                    <div className="flex items-center gap-3">
-                        <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                        <span>{drawerTitle}</span>
-                        {terminal?.id && (mode === 'view' || mode === 'edit') && (
-                            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                                <Printer className="h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
-                }
-                subtitle={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {terminal?.code && (
-                            <>
-                                <span>{terminal.code}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
-                    </div>
-                }
+                title={identity.title}
+                icon={identity.icon}
+                headerActions={terminal?.id && (mode === 'view' || mode === 'edit') && (
+                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                        <Printer className="h-4 w-4" />
+                    </Button>
+                )}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -303,7 +298,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                         name="ip_address"
                                         render={({ field }) => (
                                             <LabeledInput
-                                                label="IP (Opcional)"
+                                                    label="IP (opcional)"
                                                 {...field}
                                                 placeholder="192.168.1.100"
                                             />
@@ -367,7 +362,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                         "flex items-center space-x-3 p-3 rounded-md border transition-all group",
                                                                         isView ? "cursor-default opacity-70" : "cursor-pointer",
                                                                         isSelected
-                                                                            ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
+                                                                            ? "bg-primary/5 border-primary/40 shadow-card ring-1 ring-primary/20"
                                                                             : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
                                                                     )}
                                                                 >
@@ -375,7 +370,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                         checked={isSelected}
                                                                         disabled={isView}
                                                                         onCheckedChange={() => toggleMethod(method.id)}
-                                                                        className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
+                                                                        variant="circle"
                                                                     />
                                                                     <div className="flex flex-col">
                                                                         <span className={cn(

@@ -8,11 +8,12 @@ import {
     Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { useLoan } from './hooks'
+import { useLoan } from '../hooks/useLoans'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 import { PrepayLoanModal } from './PrepayLoanModal'
 import { LoanInstallmentReadonlyModal } from './LoanInstallmentReadonlyModal'
 import type { LoanInstallment } from './types'
+import { parseDateOnly } from '@/lib/utils'
 
 interface Props {
     loanId: number | null
@@ -58,6 +59,8 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
         }).format(n)
     }
 
+    const isActive = loan.status === 'ACTIVE'
+
     return (
         <>
             <BaseModal
@@ -84,7 +87,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                 }
                 size="full"
                 footer={
-                    loan.status === 'ACTIVE' ? (
+                    isActive ? (
                         <FormFooter
                             actions={
                                 <ActionSlideButton
@@ -107,7 +110,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                         <StatCard
                             label="Próx. Vencimiento"
                             value={loan.next_due_date
-                                ? new Date(loan.next_due_date).toLocaleDateString('es-CL')
+                                ? parseDateOnly(loan.next_due_date).toLocaleDateString('es-CL')
                                 : '—'}
                             icon={Calendar}
                             accent="info"
@@ -203,6 +206,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                                 {
                                     accessorKey: 'status',
                                     header: 'Estado',
+                                    // eslint-disable-next-line status/must-use-statusbadge -- DataCell.Status wraps StatusBadge
                                     cell: ({ row }) => <DataCell.Status status={row.original.status} />,
                                 },
                                 {
@@ -253,7 +257,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     </div>
 
                     {loan.notes && (
-                        <div className="rounded-lg border border-border p-4">
+                        <div className="rounded-md border border-border p-4">
                             <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas</h4>
                             <p className="text-sm whitespace-pre-wrap">{loan.notes}</p>
                         </div>

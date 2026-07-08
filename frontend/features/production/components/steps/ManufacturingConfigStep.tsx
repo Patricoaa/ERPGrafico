@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useProduct } from "@/features/inventory/hooks/useProducts";
+import { useProduct } from "@/features/inventory";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler, type Resolver, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { getErrorMessage } from "@/lib/errors";
+import { getErrorMessage } from "@/lib/errors"
+import { toDate } from "@/lib/utils";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -22,10 +23,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileText, User, X } from "lucide-react";
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
-import type { Contact } from "@/features/contacts/types";
+import type { Contact } from "@/features/contacts";
 import { useWizardStore } from "../WorkOrderWizardStore";
 import type { ManufacturingData } from "@/components/shared";
 import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/shared';
+import type { Contact as EntityContact } from "@/types/entities";
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector";
 import { UoMSelector } from "@/components/selectors/UoMSelector";
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput, SkeletonShell } from "@/components/shared";
@@ -67,14 +69,7 @@ export function ManufacturingConfigStep({
     uomId: uomIdFromStore,
     startDate: startDateFromStore,
     dueDate: dueDateFromStore,
-    internalNotes: internalNotesFromStore,
     setSelectedContact,
-    setQuantity: setQuantityStore,
-    setUomId: setUomIdStore,
-    setStartDate: setStartDateStore,
-    setDueDate: setDueDateStore,
-    setInternalNotes: setInternalNotesStore,
-    setMfgConfig: setMfgConfigStore,
   } = useWizardStore();
 
   const otType = chosenOtType;
@@ -82,7 +77,7 @@ export function ManufacturingConfigStep({
   const [mfgData, setMfgData] = useState<ManufacturingData>(
     mfgDataFromStore ?? emptyManufacturingData()
   );
-  const [selectedContact, setSelectedContactLocal] = useState<Contact | null>(
+  const [selectedContact] = useState<Contact | null>(
     selectedContactFromStore
   );
   const [quantity, setQuantity] = useState<string>(
@@ -108,13 +103,13 @@ export function ManufacturingConfigStep({
     return result;
   });
 
-  const { user } = useAuth();
+  useAuth();
   const formIdValue = formId;
-  const { multiplier: vatMultiplier, isLoading: isVatLoading } = useVatRate();
+  const { isLoading: isVatLoading } = useVatRate();
   const { data: uoms = [] } = useUoMs();
 
   // Fetch product details (UoM, mfg flags) when product is selected
-  const { data: selectedProduct } = useProduct(
+  const { product: selectedProduct } = useProduct(
     otType === "NONE" && selectedProductId ? Number(selectedProductId) : null
   );
 
@@ -191,11 +186,11 @@ export function ManufacturingConfigStep({
           quantity: isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""),
           uom_id: isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""),
           start_date: initialData.start_date ?
-            new Date(initialData.start_date) : new Date(),
+            toDate(initialData.start_date) : new Date(),
           due_date: initialData.estimated_completion_date ?
-            new Date(initialData.estimated_completion_date) :
+            toDate(initialData.estimated_completion_date) :
             (initialData.sale_order_delivery_date ?
-              new Date(initialData.sale_order_delivery_date) : null),
+              toDate(initialData.sale_order_delivery_date) : null),
           internal_notes: initialData.stage_data?.internal_notes ?? "",
         } as WorkOrderFormValues);
 
@@ -215,7 +210,7 @@ export function ManufacturingConfigStep({
           existing_design_files: initialData.stage_data?.design_attachments ?? [],
           folio_enabled: initialData.stage_data?.folio_enabled ?? false,
           folio_start: initialData.stage_data?.folio_start ?? '',
-          print_type: (initialData.stage_data?.print_type as any) ?? null,
+          print_type: (initialData.stage_data?.print_type ?? null) as ManufacturingData['print_type'],
           internal_notes: initialData.stage_data?.internal_notes ?? '',
           product_description: initialData.stage_data?.product_description ?? '',
         });
@@ -224,16 +219,16 @@ export function ManufacturingConfigStep({
           id: Number(initialData.stage_data?.contact_id),
           name: initialData.stage_data?.contact_name || "Contacto",
           tax_id: initialData.stage_data?.contact_tax_id || ""
-        } as any);
+        } as unknown as Contact);
 
         setQuantity(isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""));
         setUomId(isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""));
         setStartDate(initialData.start_date ?
-          new Date(initialData.start_date) : new Date());
+          toDate(initialData.start_date) : new Date());
         setDueDate(initialData.estimated_completion_date ?
-          new Date(initialData.estimated_completion_date) :
+          toDate(initialData.estimated_completion_date) :
           (initialData.sale_order_delivery_date ?
-            new Date(initialData.sale_order_delivery_date) : null));
+            toDate(initialData.sale_order_delivery_date) : null));
       })
     }
   }, [initialData]);
@@ -420,7 +415,7 @@ export function ManufacturingConfigStep({
             <div className="space-y-6">
               {/* Product info (read-only) */}
               {otType === "LINKED" ? (
-                <div className="p-4 bg-muted/20 border rounded-lg">
+                <div className="p-4 bg-muted/20 border rounded-md">
                   <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
                     <FileText className="h-3.5 w-3.5" /> Producto de la Nota de Venta
                   </Label>
@@ -445,7 +440,7 @@ export function ManufacturingConfigStep({
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-muted/20 border rounded-lg">
+                <div className="p-4 bg-muted/20 border rounded-md">
                   <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
                     <FileText className="h-3.5 w-3.5" /> Producto Seleccionado
                   </Label>
@@ -465,8 +460,8 @@ export function ManufacturingConfigStep({
                       <UoMSelector
                         value={uomId}
                         onChange={handleUomChange}
-                        uoms={uoms as any}
-                        product={productForUoM as any}
+                        uoms={uoms as unknown as Parameters<typeof UoMSelector>[0]['uoms']}
+                        product={productForUoM as unknown as Parameters<typeof UoMSelector>[0]['product']}
                         context="sale"
                         variant="standalone"
                       />
@@ -481,7 +476,7 @@ export function ManufacturingConfigStep({
                   // Safe: discriminated union forces cast through unknown
                   control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="start_date"
-                  render={({ field }) => (
+                  render={() => (
                     <PeriodValidationDateInput
                       date={startDate ?? undefined}
                       onDateChange={handleStartDateChange}
@@ -495,7 +490,7 @@ export function ManufacturingConfigStep({
                   // Safe: discriminated union forces cast through unknown
                   control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="due_date"
-                  render={({ field }) => (
+                  render={() => (
                     <PeriodValidationDateInput
                       date={dueDate ?? undefined}
                       onDateChange={handleDueDateChange}
@@ -536,7 +531,7 @@ export function ManufacturingConfigStep({
                 ) : (
                   <AdvancedContactSelector
                     // Safe: handleContactSelect only uses fields common to both Contact types (id, name, tax_id)
-                    onSelectContact={handleContactSelect as unknown as (contact: import("@/types/entities").Contact) => void}
+                    onSelectContact={handleContactSelect as unknown as (contact: EntityContact) => void}
                     onChange={() => { }}
                     placeholder="Buscar contacto..."
                     variant="inline"

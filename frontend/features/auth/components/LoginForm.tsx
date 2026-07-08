@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useState } from "react"
-import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 
 import { useAuthLogin } from '../hooks/useAuthLogin'
@@ -35,14 +34,15 @@ export function LoginForm() {
         },
     })
 
-    const { mutateAsync: loginMutation, isPending: isLoggingIn } = useAuthLogin()
+    const { login, isLoggingIn } = useAuthLogin()
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")
         try {
-            await loginMutation(values)
-        } catch (err: any) {
-            if (err.response?.status === 401) {
+            await login(values)
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { status?: number } }
+            if (axiosErr.response?.status === 401) {
                 setError("Usuario o contraseña incorrectos")
             } else {
                 setError("No se pudo conectar con el servidor. Intente nuevamente.")
@@ -51,15 +51,12 @@ export function LoginForm() {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-sm relative z-10"
+        <div
+            className="w-full max-w-sm relative z-10 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms] delay-200"
         >
             {/* Form header */}
-            <div className="mb-8">
-                <h2 className="font-heading font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
+            <div className="mb-8 text-center">
+                <h2 className=" font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
                     Iniciar sesión
                 </h2>
                 <p className="text-sm text-muted-foreground">
@@ -101,15 +98,12 @@ export function LoginForm() {
 
                     {/* Error message */}
                     {error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center gap-2 p-3 rounded-sm bg-destructive/10 border border-destructive/20"
+                        <div className="animate-in fade-in slide-in-from-top-1 duration-200 fill-mode-both flex items-center gap-2 p-3 rounded-sm bg-destructive/10 border border-destructive/20"
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
                             <p className="text-xs font-medium text-destructive">{error}</p>
-                        </motion.div>
-                    )}
+                            </div>
+                        )}
 
                     {/* Submit */}
                     <SubmitButton
@@ -124,6 +118,6 @@ export function LoginForm() {
                 </form>
             </Form>
 
-        </motion.div>
+        </div>
     )
 }

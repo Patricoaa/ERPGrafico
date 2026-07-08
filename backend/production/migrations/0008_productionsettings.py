@@ -4,22 +4,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('production', '0007_task207_nulls_distinct'),
+        ("production", "0007_task207_nulls_distinct"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ProductionSettings',
+            name="ProductionSettings",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('number_format', models.CharField(default='{seq:06d}', max_length=50, verbose_name='Formato de Numeración')),
-                ('use_year_prefix', models.BooleanField(default=False, verbose_name='Usar prefijo de año')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "number_format",
+                    models.CharField(
+                        default="{seq:06d}", max_length=50, verbose_name="Formato de Numeración"
+                    ),
+                ),
+                (
+                    "use_year_prefix",
+                    models.BooleanField(default=False, verbose_name="Usar prefijo de año"),
+                ),
             ],
             options={
-                'verbose_name': 'Configuración de Producción',
-                'verbose_name_plural': 'Configuraciones de Producción',
+                "verbose_name": "Configuración de Producción",
+                "verbose_name_plural": "Configuraciones de Producción",
             },
         ),
     ]

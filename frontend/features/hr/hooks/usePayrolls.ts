@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { getPayrolls, getPayroll, getPayrollConcepts, getPayrollPayments } from '../api/hrApi'
-import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
-import type {Payroll, PayrollConcept} from '@/types/hr'
+import { getEmployeePayrollPreview } from '@/features/profile'
+import type {Payroll, PayrollConcept, PayrollPayment} from '@/types/hr'
 import type { FilterState } from '@/components/shared'
 
 export const PAYROLLS_QUERY_KEY = ['hr', 'payrolls'] as const
 
-export function usePayrolls(filters?: FilterState) {
-    const { data, isLoading, refetch } = useQuery({
+export function usePayrolls(filters?: FilterState, initialData?: Payroll[]) {
+    const query = useQuery({
         queryKey: [...PAYROLLS_QUERY_KEY, filters],
         queryFn: (): Promise<Payroll[]> => {
             const params: Record<string, string> = {}
@@ -17,12 +17,20 @@ export function usePayrolls(filters?: FilterState) {
             return getPayrolls(Object.keys(params).length ? params : undefined)
         },
         staleTime: 2 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const payrolls = query.data ?? []
+    const showSkeleton = query.isLoading && !payrolls.length
+    const refetch = query.refetch
+    const isRefetching = query.isFetching && !showSkeleton
+
     return {
-        payrolls: data ?? [],
-        isLoading,
+        payrolls,
+        isLoading: showSkeleton,
         refetch,
+        isRefetching,
     }
 }
 
@@ -33,20 +41,21 @@ export type EmployeeBasic = {
     department?: string
 }
 
-export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic) {
-    return useQuery({
+export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic | null) {
+    const { data: payrollDetail, isLoading, isError, refetch } = useQuery({
         queryKey: [...PAYROLLS_QUERY_KEY, 'detail', payrollId, viewMode],
+        staleTime: 2 * 60 * 1000,
         queryFn: async () => {
             if (viewMode === 'employee') {
-                const pData = await getEmployeePayrollPreview(payrollId)
+                const pData = await getEmployeePayrollPreview(payrollId) as Record<string, unknown>
                 if (employee && pData) {
-                    pData.employee_detail = pData.employee_detail || {
+                    pData.employee_detail = (pData.employee_detail as Record<string, unknown>) || {
                         contact_detail: employee.contact_detail,
                         position: employee.position,
                         department: employee.department
                     }
                 }
-                return { payroll: pData, concepts: [] as PayrollConcept[], payments: pData.payments || [] }
+                return { payroll: pData as unknown as Payroll, concepts: [] as PayrollConcept[], payments: (pData.payments || []) as PayrollPayment[] }
             } else {
                 const [pData, cData, pmtData] = await Promise.all([
                     getPayroll(payrollId),
@@ -58,4 +67,5 @@ export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employe
         },
         enabled: !!payrollId,
     })
+    return { payrollDetail: payrollDetail ?? null, isLoading, isError, refetch }
 }

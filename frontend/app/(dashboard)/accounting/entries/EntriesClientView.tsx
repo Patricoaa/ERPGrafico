@@ -2,24 +2,26 @@
 
 import React, { useEffect, useState, useRef, useMemo } from "react"
 import {
-    ColumnDef,
+    type ColumnDef,
 } from "@tanstack/react-table"
 
-import { toast } from "sonner"
-import { JournalEntryDrawer } from "@/features/accounting"
-import api from "@/lib/api"
+import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
 
-import { CheckCircle, RotateCcw } from "lucide-react"
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn, Chip } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
+import { DataCell, Chip } from '@/components/shared'
+import { FileEdit, RotateCcw, FileText } from "lucide-react"
+import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
+import { resolveStatus } from '@/lib/badge-resolvers'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { journalEntrySearchDef } from "@/features/accounting/searchDef"
+import { journalEntrySegDef } from "@/features/accounting/segmentationDef"
+import type { JournalEntryInitialData } from '@/types/forms'
 
 interface EntriesPageProps {
     externalOpen?: boolean
@@ -28,8 +30,17 @@ interface EntriesPageProps {
 }
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const { filters, isFiltered } = useSmartSearch(journalEntrySearchDef)
-    const { entries, isLoading, refetch } = useJournalEntries(filters)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(journalEntrySearchDef)
+    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(journalEntrySegDef, basePeriod)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const { page, entries, isLoading, refetch } = useJournalEntries({
+        ...allFilters,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    } as unknown as Parameters<typeof useJournalEntries>[0])
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -107,39 +118,33 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         }
     }
 
+    const { postEntry } = usePostJournalEntry()
+    const { deleteEntry } = useDeleteJournalEntry()
+    const { reverseEntry } = useReverseJournalEntry()
+
     const handlePost = async (id: number) => {
-        try {
-            await api.post(`/accounting/entries/${id}/post_entry/`)
-            toast.success("Asiento publicado exitosamente")
-            refetch()
-        } catch (error) {
-            console.error("Error posting entry:", error)
-            toast.error("Error al publicar el asiento")
-        }
+        await postEntry(id)
+        refetch()
     }
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Está seguro de eliminar este asiento?")) return
-        try {
-            await api.delete(`/accounting/entries/${id}/`)
-            toast.success("Asiento eliminado exitosamente")
-            refetch()
-        } catch (error) {
-            console.error("Error deleting entry:", error)
-            toast.error("Error al eliminar el asiento")
-        }
+        await deleteEntry(id)
+        refetch()
     }
 
     const handleReverse = async (id: number) => {
         if (!confirm("¿Está seguro de reversar este asiento? Se creará un asiento de reversión.")) return
-        try {
-            await api.post(`/accounting/entries/${id}/reverse_entry/`)
-            toast.success("Asiento de reversión creado exitosamente")
-            refetch()
-        } catch (error) {
-            console.error("Error reversing entry:", error)
-            toast.error("Error al reversar el asiento")
-        }
+        await reverseEntry(id)
+        refetch()
+    }
+
+    const journalEntryActionsCtx: JournalEntryActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDetail: (id) => openDetail(id),
+        onPublish: (id) => handlePost(id),
+        onDelete: (id) => handleDelete(id),
+        onReverse: (id) => handleReverse(id),
     }
 
     const columns: ColumnDef<JournalEntry>[] = useMemo(() => [
@@ -193,42 +198,12 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             },
             enableSorting: false,
         },
-        createActionsColumn<JournalEntry>({
-            renderActions: (entry) => (
-                <>
-                    {entry.status === 'DRAFT' ? (
-                        <DataCell.Action action="edit" onClick={() => openSelected(entry.id)} />
-                    ) : (
-                        <DataCell.Action action="detail" onClick={() => openDetail(entry.id)} />
-                    )}
-                    {entry.status === 'DRAFT' && (
-                        <DataCell.Action
-                            icon={CheckCircle}
-                            title="Publicar"
-                            onClick={() => handlePost(entry.id)}
-                        />
-                    )}
-                    {entry.status === 'DRAFT' && (
-                        <DataCell.Action
-                            action="delete"
-                            onClick={() => handleDelete(entry.id)}
-                        />
-                    )}
-                    {(entry.status === 'POSTED' || entry.status === 'CLOSED') && entry.is_manual && (
-                        <DataCell.Action
-                            icon={RotateCcw}
-                            title="Reversar"
-                            onClick={() => handleReverse(entry.id)}
-                        />
-                    )}
-                </>
-            )
-        }),
-    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse])
+        journalEntryActions.column(journalEntryActionsCtx),
+    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse, journalEntryActionsCtx])
 
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="pt-2 flex-1 min-h-0">
                 <DataTableView
                     columns={columns}
@@ -236,8 +211,16 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     isLoading={isLoading}
                     entityLabel="accounting.journalentry"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
+                    segmentation={<SegmentationBar def={journalEntrySegDef} basePeriod={basePeriod} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
+                    manualPagination
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={page?.count ?? 0}
+                    pagination={pageState}
+                    onPaginationChange={setPageState}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{
@@ -245,11 +228,51 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         title: "Aún no hay asientos contables",
                         description: "Los asientos se registran al confirmar operaciones o puedes crear uno manualmente.",
                     }}
+                    cardGroupBy={{
+                        field: 'date',
+                        sort: 'desc',
+                        aggregators: [
+                            { key: 'count', label: 'Asientos', fn: 'count', format: 'integer' },
+                        ],
+                    }}
+                    onRowClick={(m) => openDetail(m.id)}
+                    renderCard={(m) => {
+                        const Icon = m.is_manual ? FileEdit : m.reversal_of ? RotateCcw : FileText
+                        const iconStyle = m.is_manual
+                            ? "text-info bg-info/10"
+                            : m.reversal_of
+                                ? "text-warning bg-warning/10"
+                                : "text-success bg-success/10"
+                        const total = m.items?.reduce((sum: number, item) => sum + (Number(item.debit) || 0), 0) || 0
+                        const originLabel = m.is_manual ? 'Manual' : m.reversal_of ? 'Reversión' : 'Automático'
+                        const statusLabel = resolveStatus(m.status).label
+                        return (
+                            <EntityCard key={m.id} onClick={() => openDetail(m.id)}>
+                                <EntityCard.Header
+                                    icon={Icon}
+                                    iconClassName={iconStyle}
+                                    title={m.display_id}
+                                    subtitle={
+                                        <span className="text-xs text-muted-foreground/70">
+                                            {statusLabel} · {originLabel}
+                                        </span>
+                                    }
+                                    center={
+                                        <span className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
+                                            {m.description}
+                                        </span>
+                                    }
+                                    trailing={<DataCell.Currency value={total} />}
+                                />
+                            </EntityCard>
+                        )
+                    }}
+                    cardSkeleton={{ showBody: false }}
                 />
 
                 <JournalEntryDrawer
-                    accounts={accounts as any}
-                    initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
+                    accounts={accounts as unknown as Record<string, unknown>[]}
+                    initialData={editingEntry as unknown as JournalEntryInitialData | undefined}
                     onSuccess={() => {
                         refetch()
                         handleFormOpenChange(false)

@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0004_fiscal_year'),
+        ("accounting", "0004_fiscal_year"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='fiscalyear',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="fiscalyear",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
         migrations.AlterField(
-            model_name='historicalfiscalyear',
-            name='id',
-            field=models.BigIntegerField(auto_created=True, blank=True, db_index=True, verbose_name='ID'),
+            model_name="historicalfiscalyear",
+            name="id",
+            field=models.BigIntegerField(
+                auto_created=True, blank=True, db_index=True, verbose_name="ID"
+            ),
         ),
     ]

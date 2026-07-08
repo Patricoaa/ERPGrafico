@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { showApiError } from "@/lib/errors"
 import { ArrowLeftRight, DollarSign } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -42,8 +42,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
     const mode: DrawerMode = modeProp ?? 'create'
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+
     const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
     const [isDateValid, setIsDateValid] = useState(true)
 
@@ -57,9 +56,9 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
         }
     })
 
-    const fromAccountId = form.watch("from_account_id")
-    const toAccountId = form.watch("to_account_id")
-    const amount = form.watch("amount")
+    const fromAccountId = useWatch({ control: form.control, name: "from_account_id" })
+    const toAccountId = useWatch({ control: form.control, name: "to_account_id" })
+    const amount = useWatch({ control: form.control, name: "amount" })
 
     useEffect(() => {
         if (serverDate && !form.getValues("date")) {
@@ -80,14 +79,16 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
             onSuccess?.()
             form.reset()
         } catch (error: unknown) {
-            console.error(error)
+            showApiError(error, "Error al realizar traspaso")
         }
     }
 
     const sourceAccount = accounts.find(a => a.id.toString() === fromAccountId)
-    const destAccount = accounts.find(a => a.id.toString() === toAccountId)
 
-    const drawerTitle = isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas"
+    const identity = useDrawerIdentity('treasury.transfer', mode, undefined, {
+        overrideTitle: isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas",
+        overrideSubtitle: "Mueva fondos entre sus cuentas de tesorería de forma inmediata.",
+    })
 
     return (
         <>
@@ -97,8 +98,9 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                 side="left"
                 defaultSize={formDrawerWidth("medium", false)}
                 mode={mode}
-                title={<><span>{drawerTitle}</span></>}
-                subtitle="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
+                title={identity.title}
+                icon={identity.icon}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -132,6 +134,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                                 <div className="relative">
                                                     <TreasuryAccountSelector
                                                         label="Cuenta Origen"
+                                                        required
                                                         value={field.value}
                                                         onChange={(v) => field.onChange(v ?? "")}
                                                         excludeId={toAccountId ? Number(toAccountId) : undefined}
@@ -153,6 +156,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                             render={({ field, fieldState }) => (
                                                 <TreasuryAccountSelector
                                                     label="Cuenta Destino"
+                                                    required
                                                     value={field.value}
                                                     onChange={(v) => field.onChange(v ?? "")}
                                                     excludeId={fromAccountId ? Number(fromAccountId) : undefined}
@@ -196,7 +200,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                             )}
                                         />
                                         {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
-                                            <div className="p-2.5 rounded-lg bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+                                            <div className="p-2.5 rounded-md bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
                                                 <p className="text-[10px] text-warning font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
                                                 <p className="text-xs font-black text-warning">
                                                     <MoneyDisplay amount={(sourceAccount.current_balance ?? 0) - parseFloat(amount)} />
@@ -207,9 +211,9 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                             control={form.control}
                                             name="notes"
                                             render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Notas o Glosa"
-                                                    as="textarea"
+                                                    <LabeledInput
+                                                        label="Notas o Glosa (opcional)"
+                                                        as="textarea"
                                                     placeholder="Describa el motivo del traspaso..."
                                                     rows={2}
                                                     error={fieldState.error?.message}

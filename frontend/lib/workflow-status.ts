@@ -89,10 +89,10 @@ export const getHubStatuses = (order: OrderBase) => {
     const showLogistics = lines.length > 0 && !lines.every((l) => l.product_type === 'SUBSCRIPTION')
 
     let logStatus = 'neutral'
+    let logisticsProgress = 0
     if (!showLogistics) logStatus = 'not_applicable'
     else {
         const totalOrdered = lines.reduce((acc, line) => acc + (parseFloat(String(line.quantity)) || 0), 0)
-        let logisticsProgress = 0
         if (totalOrdered > 0) {
             const totalProcessed = lines.reduce((acc, line) => {
                 const processed = (line.quantity_delivered || line.quantity_received || 0)
@@ -116,26 +116,22 @@ export const getHubStatuses = (order: OrderBase) => {
 
     // 4. Treasury
     const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
-    const hasPendingTransactions = payments.some((pay) => {
-        const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
-            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-        )
-        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
-    })
 
     // Check if fully paid
     const pending = parseFloat(String(order.pending_amount || 0))
-    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (pending <= 0)) && !hasPendingTransactions
+    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (pending <= 0))
 
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
-    else if (pending < parseFloat(String(order.total || 0)) || hasPendingTransactions) treasuryStatus = 'active'
+    else if (pending < parseFloat(String(order.total || 0)) || payments.length > 0) treasuryStatus = 'active'
 
     // 5. Origin Document
     let originStatus = 'neutral'
     if (order.status === 'CANCELLED') originStatus = 'destructive'
     else if (order.status !== 'DRAFT') originStatus = 'success'
+
+    const totalVal = parseFloat(String(order.total || 0))
+    const treasuryProgress = totalVal > 0 ? Math.min(100, Math.round((1 - (pending / totalVal)) * 100)) : 0
 
     return {
         production: prodStatus,
@@ -143,7 +139,10 @@ export const getHubStatuses = (order: OrderBase) => {
         billing: billingStatus,
         treasury: treasuryStatus,
         origin: originStatus,
-        hasPendingTransactions: hasPendingTransactions
+        hasPendingTransactions: false,
+        productionProgress: Math.round(totalOTProgress),
+        logisticsProgress,
+        treasuryProgress,
     }
 }
 
@@ -185,20 +184,15 @@ export const getNoteHubStatuses = (note: NoteBase) => {
 
     // 4. Treasury
     const payments = note.serialized_payments || note.payments_detail || note.related_documents?.payments || []
-    const hasPendingTransactions = payments.some((pay) => {
-        const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
-            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-        )
-        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
-    })
 
     const pendingAmount = parseFloat(String(note.pending_amount || 0))
     const totalAmount = parseFloat(String(note.total || 0))
-    const isPaid = (note.status === 'PAID' || (pendingAmount <= 0)) && !hasPendingTransactions
+    const isPaid = (note.status === 'PAID' || (pendingAmount <= 0))
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
-    else if (pendingAmount < totalAmount || hasPendingTransactions) treasuryStatus = 'active'
+    else if (pendingAmount < totalAmount || payments.length > 0) treasuryStatus = 'active'
+
+    const treasuryProgress = totalAmount > 0 ? Math.min(100, Math.round((1 - (pendingAmount / totalAmount)) * 100)) : 0
 
     return {
         origin: originStatus,
@@ -206,7 +200,8 @@ export const getNoteHubStatuses = (note: NoteBase) => {
         billing: billingStatus,
         treasury: treasuryStatus,
         logisticsProgress,
-        hasPendingTransactions,
+        treasuryProgress,
+        hasPendingTransactions: false,
         isComplete: logStatus === 'success' && billingStatus === 'success' && treasuryStatus === 'success'
     }
 }
@@ -240,7 +235,7 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
             }, 0)
             logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
         } else if ((invoice.related_stock_moves?.length ?? 0) > 0) {
-            const anyCompleted = invoice.related_stock_moves!.some((m) => m.state === 'done')
+            const anyCompleted = invoice.related_stock_moves?.some((m) => m.state === 'done')
             if (anyCompleted) logisticsProgress = 100
         }
 
@@ -254,20 +249,15 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
 
     // 4. Treasury
     const payments = invoice.serialized_payments || invoice.payments_detail || invoice.related_documents?.payments || []
-    const hasPendingTransactions = payments.some((pay) => {
-        const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
-            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-        )
-        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
-    })
 
     const pendingAmount = parseFloat(String(invoice.pending_amount || 0))
     const totalAmount = parseFloat(String(invoice.total || 0))
-    const isPaid = (invoice.status === 'PAID' || (pendingAmount <= 0)) && !hasPendingTransactions
+    const isPaid = (invoice.status === 'PAID' || (pendingAmount <= 0))
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
-    else if (pendingAmount < totalAmount || hasPendingTransactions) treasuryStatus = 'active'
+    else if (pendingAmount < totalAmount || payments.length > 0) treasuryStatus = 'active'
+
+    const treasuryProgress = totalAmount > 0 ? Math.min(100, Math.round((1 - (pendingAmount / totalAmount)) * 100)) : 0
 
     return {
         origin: originStatus,
@@ -275,7 +265,8 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
         billing: billingStatus,
         treasury: treasuryStatus,
         logisticsProgress,
-        hasPendingTransactions
+        treasuryProgress,
+        hasPendingTransactions: false
     }
 }
 
@@ -294,18 +285,11 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
 
     // 3. Treasury
     const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
-    const hasPendingTransactions = payments.some((pay) => {
-        const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
-            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-        )
-        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
-    })
     const pending = parseFloat(String(order.pending_amount || 0))
-    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (pending <= 0)) && !hasPendingTransactions
+    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (pending <= 0))
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
-    else if (pending < parseFloat(String(order.total || 0)) || hasPendingTransactions) treasuryStatus = 'active'
+    else if (pending < parseFloat(String(order.total || 0)) || payments.length > 0) treasuryStatus = 'active'
 
     // 4. Logistics (Reception)
     const lines = order.lines || order.items || []
@@ -324,32 +308,20 @@ export const getPurchaseHubStatuses = (order: OrderBase) => {
     if (receptionProgress === 100) logStatus = 'success'
     else if (receptionProgress > 0) logStatus = 'active'
 
+    const totalVal = parseFloat(String(order.total || 0))
+    const treasuryProgress = totalVal > 0 ? Math.min(100, Math.round((1 - (pending / totalVal)) * 100)) : 0
+
     return {
         origin: originStatus,
         billing: billingStatus,
         treasury: treasuryStatus,
         logistics: logStatus,
-        reception: logStatus, // alias for backwards compat
+        reception: logStatus,
         receptionProgress,
-        hasPendingTransactions
+        treasuryProgress,
+        hasPendingTransactions: false
     }
 }
 
 
-// Helper to prevent duplicate prefixes (e.g. OCS-OCS-123)
-export const formatEntity = (prefix: string, number: string | number, displayId?: string) => {
-    if (displayId) return displayId
 
-    // Standardize prefixes to match registry
-    let standardPrefix = prefix
-    if (prefix === 'OC') standardPrefix = 'OCS'
-    if (prefix === 'FACT') standardPrefix = 'FAC'
-
-    const numStr = String(number || '')
-    const cleanPrefix = standardPrefix.replace('-', '')
-
-    if (numStr.toUpperCase().startsWith(cleanPrefix.toUpperCase())) {
-        return numStr
-    }
-    return `${standardPrefix}-${numStr}`
-}

@@ -4,11 +4,14 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Banknote, LogOut, ArrowRightLeft, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Numpad, LabeledInput, MoneyDisplay, GenericWizard, WizardStep } from "@/components/shared"
+import { showApiError } from "@/lib/errors"
+import { Numpad, LabeledInput, MoneyDisplay, GenericWizard, type WizardStep } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { treasuryApi } from "../api/treasuryApi"
-import { validateAccountingPeriod } from '@/features/accounting/actions'
+import { validateAccountingPeriod } from '@/features/accounting'
+import { useServerDate } from '@/hooks/useServerDate'
+import { usePeriodValidation } from '@/hooks/usePeriodValidation'
 import { toast } from 'sonner'
 
 export interface MovementData {
@@ -72,6 +75,15 @@ export function MovementWizard({
     fixedMoveType,
     variant = 'standard'
 }: MovementWizardProps) {
+    const { dateString } = useServerDate()
+    const { validatePeriod } = usePeriodValidation()
+
+    useEffect(() => {
+        if (dateString) {
+            validatePeriod(dateString, 'accounting')
+        }
+    }, [dateString, validatePeriod])
+
     // Current Step index for GenericWizard
     const [stepIndex, setStepIndex] = useState(0)
 
@@ -103,6 +115,32 @@ export function MovementWizard({
     const [notes, setNotes] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [partnerCapitalInfo, setPartnerCapitalInfo] = useState<{ subscribed: number; balance: number; pending: number } | null>(null)
+
+    // Reset all form state when modal opens
+    const prevOpen = React.useRef(open)
+    useEffect(() => {
+        if (open && !prevOpen.current) {
+            requestAnimationFrame(() => {
+                setStepIndex(0)
+                setImpact(fixedMoveType === 'TRANSFER' ? 'TRANSFER' : (fixedMoveType && MOVEMENT_TYPES.IN.find(t => t.value === fixedMoveType) ? 'IN' : (fixedMoveType && MOVEMENT_TYPES.OUT.find(t => t.value === fixedMoveType) ? 'OUT' : 'IN')))
+                setMoveType(fixedMoveType || 'TIP')
+                setContactId(initialContactId)
+                setContactName(initialContactName)
+                setTransferDirection('OUT')
+                setTransferTargetId("")
+                setFromAccountId(fixedAccountId ? String(fixedAccountId) : "")
+                setToAccountId("")
+                setFromAccountName(fixedAccountName || "")
+                setToAccountName("")
+                setFromAccountBalance(null)
+                setToAccountBalance(null)
+                setAmount('0')
+                setNotes('')
+                setPartnerCapitalInfo(null)
+            })
+        }
+        prevOpen.current = open
+    }, [open, fixedMoveType, fixedAccountId, fixedAccountName, initialContactId, initialContactName])
 
     const showReasonStep = context === 'treasury' && impact !== 'TRANSFER' && variant !== 'partners' && !fixedMoveType
 
@@ -256,14 +294,14 @@ export function MovementWizard({
                                             onChange={(val) => setFromAccountId(val || "")}
                                             onSelect={(acc) => {
                                                 setFromAccountName(acc.name)
-                                                setFromAccountBalance(acc.current_balance)
+                                                setFromAccountBalance(acc.current_balance ?? null)
                                             }}
                                             label="Origen (Retira)"
                                             error={fromAccountId && (fromAccountBalance ?? 0) <= 0 ? "La cuenta de origen no tiene fondos suficientes" : undefined}
                                         />
                                     </div>
                                     <div className="flex justify-center my-1 relative z-10">
-                                        <div className="bg-background border-2 rounded-full p-2 shadow-sm text-muted-foreground">
+                                        <div className="bg-background border-2 rounded-full p-2 shadow-card text-muted-foreground">
                                             <ArrowRightLeft className="w-4 h-4 rotate-90" />
                                         </div>
                                     </div>
@@ -273,7 +311,7 @@ export function MovementWizard({
                                             onChange={(val) => setToAccountId(val || "")}
                                             onSelect={(acc) => {
                                                 setToAccountName(acc.name)
-                                                setToAccountBalance(acc.current_balance)
+                                                setToAccountBalance(acc.current_balance ?? null)
                                             }}
                                             label="Destino (Deposita)"
                                             error={fromAccountId && toAccountId && fromAccountId === toAccountId ? "La cuenta de destino debe ser diferente al origen" : undefined}
@@ -285,13 +323,13 @@ export function MovementWizard({
                                     <TreasuryAccountSelector
                                         value={impact === 'IN' ? toAccountId : fromAccountId}
                                         onChange={(val) => impact === 'IN' ? setToAccountId(val || "") : setFromAccountId(val || "")}
-                                        onSelect={(acc) => {
-                                            if (impact === 'IN') {
-                                                setToAccountName(acc.name)
-                                                setToAccountBalance(acc.current_balance)
-                                            } else {
-                                                setFromAccountName(acc.name)
-                                                setFromAccountBalance(acc.current_balance)
+                                            onSelect={(acc) => {
+                                                if (impact === 'IN') {
+                                                    setToAccountName(acc.name)
+                                                    setToAccountBalance(acc.current_balance ?? null)
+                                                } else {
+                                                    setFromAccountName(acc.name)
+                                                    setFromAccountBalance(acc.current_balance ?? null)
                                             }
                                         }}
                                         label={impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}
@@ -536,7 +574,7 @@ export function MovementWizard({
     const handleFinalComplete = async () => {
         setSubmitting(true)
         try {
-            const today = new Date().toISOString().split('T')[0]
+            const today = dateString || new Date().toISOString().split('T')[0]
             const periodStatus = await validateAccountingPeriod(today)
             if (periodStatus.is_closed) {
                 toast.error("No se puede registrar el movimiento: El periodo contable actual está cerrado.", {
@@ -579,7 +617,7 @@ export function MovementWizard({
             await onComplete(data)
             onOpenChange(false)
         } catch (error) {
-            console.error(error)
+            showApiError(error, "Error al registrar el movimiento")
         } finally {
             setSubmitting(false)
         }

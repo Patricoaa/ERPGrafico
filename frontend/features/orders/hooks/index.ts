@@ -1,15 +1,14 @@
 export { useSaleOrderSearch } from './useSaleOrderSearch'
+export { useCancelOrderFlow } from './useCancelOrderFlow'
+export type { CancelImpact, CancelFlowModalProps } from './useCancelOrderFlow'
 export {
     useAnnulInvoice,
-    useDeleteInvoice,
     useConfirmInvoice,
     useCreateInvoiceFromOrder,
     useProcessLogistics,
-    useAnnulOrder,
-    useDeleteOrder,
+    useCancelOrder,
     useAnnulLogistics,
     useRegisterPaymentMovement,
-    useDeletePayment,
     useAnnulPayment,
     useAnnulWorkOrder,
     ordersApi,

@@ -124,7 +124,7 @@ export function PaymentReferenceModal({
                 {selectedPayment && (
                     <div className="space-y-4">
                         <Card variant="dashed" className="flex items-center gap-4 p-4">
-                            <div className="p-3 bg-card border rounded-full shadow-sm">
+                            <div className="p-3 bg-card border rounded-full shadow-card">
                                 {selectedPayment.payment_method === 'TRANSFER' ? (
                                     <Landmark className="h-6 w-6 text-primary" />
                                 ) : (

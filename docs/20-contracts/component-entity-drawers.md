@@ -66,8 +66,9 @@ export interface EntityDrawerProps {
   id: number
   open: boolean
   onOpenChange: (open: boolean) => void
-  data?: unknown          // datos pre-fetcheados opcionales — evita el round-trip
+  data?: unknown            // datos pre-fetcheados opcionales — evita el round-trip
   onSuccess?: () => void
+  segmenter?: React.ReactNode  // segmentador opcional renderizado al pie del drawer
 }
 
 export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => ReactNode>
@@ -116,7 +117,7 @@ closeEntity()
 
 | API | Tipo | Notas |
 |-----|------|-------|
-| `openEntity` | `(label: string, id: number, data?: unknown) => void` | Advierte en consola (no rompe) si no hay drawer registrado para el label |
+| `openEntity` | `(label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => void` | Advierte en consola (no rompe) si no hay drawer registrado para el label |
 | `closeEntity` | `() => void` | |
 | `useGlobalModals()` | hook | Acciones + estado de stacking de sheets (offsets de `CollapsibleSheet`) |
 | `useGlobalModalActions()` | hook | Solo acciones (sin re-render por estado de sheets) |
@@ -124,7 +125,27 @@ closeEntity()
 **Openers deprecados** (delegan en `openEntity`, no usar en código nuevo):
 `openWorkOrder(id)`, `openContact(id, data?)`, `openTreasuryAccount(id)`.
 
-### 2.3 Cómo registrar una entidad nueva
+### 2.3 `segmenter` — segmentador de datos opcional
+
+El prop `segmenter` permite inyectar un **segmentador de datos** (filtros de rango, categoría, etc.)
+al pie del drawer, útil cuando el drawer contiene visualizaciones (gráficos, tablas resumen).
+
+**Flujo de datos:**
+
+```
+EntityBadge segmenter={...}
+  → openEntity(label, id, data, segmenter)
+    → GlobalModalProvider.renderEntityDrawer()
+      → EntityDrawerProps.segmenter
+        → DrawerComponent (lo renderiza al fondo si existe)
+```
+
+- `EntityBadge` acepta `segmenter?: React.ReactNode` y lo pasa a `openEntity`.
+- `EntityDrawerProps` incluye `segmenter?: React.ReactNode`.
+- Cada drawer **decide** si renderiza el segmenter (típicamente envuelto en `<div className="border-t pt-4 mt-4">{segmenter}</div>` al final de su contenido).
+- Es **totalmente opcional por entidad** — si no se pasa, el drawer no renderiza nada extra.
+
+### 2.4 Cómo registrar una entidad nueva
 
 1. Construir el drawer de entidad (`<EntityName>Drawer`) con `mode?: DrawerMode` (§1).
 2. Exportarlo desde el barrel de su feature.

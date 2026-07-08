@@ -4,20 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0026_bankstatementline_warnings'),
+        ("treasury", "0026_bankstatementline_warnings"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicaltreasuryaccount',
-            name='default_bank_format',
-            field=models.CharField(blank=True, help_text='Formato sugerido para esta cuenta al importar cartolas (ej: BANCO_CHILE_CSV)', max_length=50, null=True, verbose_name='Formato Bancario por Defecto'),
+            model_name="historicaltreasuryaccount",
+            name="default_bank_format",
+            field=models.CharField(
+                blank=True,
+                help_text="Formato sugerido para esta cuenta al importar cartolas (ej: BANCO_CHILE_CSV)",
+                max_length=50,
+                null=True,
+                verbose_name="Formato Bancario por Defecto",
+            ),
         ),
         migrations.AddField(
-            model_name='treasuryaccount',
-            name='default_bank_format',
-            field=models.CharField(blank=True, help_text='Formato sugerido para esta cuenta al importar cartolas (ej: BANCO_CHILE_CSV)', max_length=50, null=True, verbose_name='Formato Bancario por Defecto'),
+            model_name="treasuryaccount",
+            name="default_bank_format",
+            field=models.CharField(
+                blank=True,
+                help_text="Formato sugerido para esta cuenta al importar cartolas (ej: BANCO_CHILE_CSV)",
+                max_length=50,
+                null=True,
+                verbose_name="Formato Bancario por Defecto",
+            ),
         ),
     ]

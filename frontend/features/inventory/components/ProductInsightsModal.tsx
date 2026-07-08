@@ -1,6 +1,4 @@
 "use client"
-import { formatCurrency } from "@/lib/money";
-
 import { BaseModal, Chip, SkeletonShell, StatusBadge } from '@/components/shared'
 
 import {useState} from "react"
@@ -21,21 +19,13 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { parseDateOnly } from "@/lib/utils"
 
-import { FormTabs, FormTabsContent } from "@/components/shared"
-import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
+import { TabBar, TabBarContent } from "@/components/shared"
+import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
-import {
-    ResponsiveContainer,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip as RechartsTooltip,
-    Legend,
-    AreaChart,
-    Area
-} from 'recharts'
+import { LineChart } from "@/components/shared"
 
 interface ProductInsightsModalProps {
     productId: number | null
@@ -93,7 +83,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
     // useProductInsights cachea por PRODUCTS_KEYS.detail(id) + 'insights'.
     // Cualquier mutación del producto invalida también este bundle vía
     // prefix match en PRODUCTS_KEYS.all.
-    const { data, isLoading: loading, refetch: refetchInsights } = useProductInsights<ProductInsights>(open ? productId : null)
+    const { insights: data, isLoading: loading, refetch: refetchInsights } = useProductInsights<ProductInsights>(open ? productId : null)
     const [activeTab, setActiveTab] = useState("overview")
 
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)
@@ -143,11 +133,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                         </div>
                     </SkeletonShell>
                 ) : (
-                    <FormTabs
+                    <TabBar
                         value={activeTab}
                         onValueChange={setActiveTab}
                         orientation="horizontal"
-                        variant="underline"
                         items={[
                             { value: "overview", label: "Resumen", icon: LayoutDashboard },
                             { value: "history", label: "Precios", icon: History },
@@ -159,7 +148,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                         <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
                             {/* OVERVIEW TAB */}
-                            <FormTabsContent value="overview" className="mt-0 space-y-6">
+                            <TabBarContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <StatCard
                                         label="Ventas Totales"
@@ -238,49 +227,52 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         </div>
                                     </div>
                                 </div>
-                            </FormTabsContent>
+                            </TabBarContent>
 
                             {/* HISTORY TAB */}
-                            <FormTabsContent value="history" className="mt-0 space-y-6">
+                            <TabBarContent value="history" className="mt-0 space-y-6">
                                 <div className="h-[250px] w-full bg-card rounded-md border p-4">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={[...data.price_history].reverse()}>
-                                            <defs>
-                                                <linearGradient id="colorSale" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
-                                                </linearGradient>
-                                                <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="var(--destructive)" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis
-                                                dataKey="date"
-                                                tickFormatter={(str) => format(new Date(str), 'MMM d')}
-                                                fontSize={10}
-                                                tickMargin={10}
-                                            />
-                                            <YAxis fontSize={10} />
-                                            <RechartsTooltip
-                                                labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                formatter={(val) => [formatCurrency(Number(val || 0)), '']}
-                                            />
-                                            <Legend verticalAlign="top" height={36} />
-                                            <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="var(--primary)" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />
-                                            <Area type="monotone" name="Costo" dataKey="cost_price" stroke="var(--destructive)" fillOpacity={1} fill="url(#colorCost)" strokeWidth={2} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    <LineChart
+                                        data={[
+                                            {
+                                                id: "Precio Venta",
+                                                data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.sale_price })),
+                                            },
+                                            {
+                                                id: "Costo",
+                                                data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.cost_price })),
+                                            },
+                                        ]}
+                                        axisBottom={{
+                                            tickSize: 0,
+                                            tickPadding: 10,
+                                            format: (v: string) => format(parseDateOnly(v.split('T')[0]), 'MMM d', { locale: es }),
+                                        }}
+                                        axisLeft={{
+                                            tickSize: 0,
+                                            tickPadding: 10,
+                                        }}
+                                        legends={[
+                                            {
+                                                anchor: "top",
+                                                direction: "row",
+                                                translateY: -30,
+                                                itemWidth: 120,
+                                                itemHeight: 20,
+                                                symbolSize: 10,
+                                                symbolShape: "circle",
+                                            },
+                                        ]}
+                                    />
                                 </div>
 
                                 <div className="rounded-md border">
                                     <PriceHistoryTable entries={data.price_history} />
                                 </div>
-                            </FormTabsContent>
+                            </TabBarContent>
 
                             {/* KARDEX TAB */}
-                            <FormTabsContent value="kardex" className="mt-0">
+                            <TabBarContent value="kardex" className="mt-0">
                                 <div className="rounded-md border">
                                     <KardexTable
                                         entries={data.kardex}
@@ -288,19 +280,19 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         onOpenTransaction={openTransaction}
                                     />
                                 </div>
-                            </FormTabsContent>
+                            </TabBarContent>
 
                             {/* PRODUCTION TAB */}
-                            <FormTabsContent value="production" className="mt-0">
+                            <TabBarContent value="production" className="mt-0">
                                 <div className="rounded-md border">
                                     <ProductionUsageTable
                                         entries={data.production_usage}
                                         onOpenWorkOrder={openWorkOrder}
                                     />
                                 </div>
-                            </FormTabsContent>
+                            </TabBarContent>
                         </div>
-                    </FormTabs>
+                    </TabBar>
                 )}
             </div>
 
@@ -379,7 +371,7 @@ function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
         {
             header: "Fecha",
             cell: ({ row }) => (
-                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+                <span className="text-xs">{format(parseDateOnly(row.original.date), "dd/MM/yyyy")}</span>
             ),
         },
         {
@@ -472,7 +464,7 @@ function ProductionUsageTable({ entries, onOpenWorkOrder }: {
         {
             header: "Fecha",
             cell: ({ row }) => (
-                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+                <span className="text-xs">{format(parseDateOnly(row.original.date), "dd/MM/yyyy")}</span>
             ),
         },
         {

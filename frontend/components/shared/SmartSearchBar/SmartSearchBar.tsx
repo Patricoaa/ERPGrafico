@@ -1,13 +1,11 @@
 'use client'
 
-import { useRef, useState, useCallback, useEffect, KeyboardEvent, useMemo } from 'react'
-import { Search, X, ChevronRight, ChevronLeft, CornerDownLeft } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { DateRange } from 'react-day-picker'
+import { Button } from "@/components/ui/button"
+import { useRef, useState, useCallback, useEffect, type KeyboardEvent, useMemo } from 'react'
+import { Search, X, CornerDownLeft } from 'lucide-react'
+import { SEG_TEXT, SEG_DROPDOWN_ITEM } from '../SegmentationBar/styles'
 import { cn } from '@/lib/utils'
-import { Calendar } from '@/components/ui/calendar'
-import type { SearchDefinition, FieldDef, EnumFieldDef, DateRangeFieldDef, TextFieldDef } from '@/types/search'
+import type { SearchDefinition, FieldDef, TextFieldDef } from '@/types/search'
 import { useSmartSearch } from './useSmartSearch'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { Chip } from '@/components/shared'
@@ -16,26 +14,23 @@ interface SmartSearchBarProps {
   searchDef: SearchDefinition
   placeholder?: string
   className?: string
+  /** Contenido opcional renderizado antes del ícono de búsqueda. Útil para badges de filtro contextual (ej. cuenta de tesorería activa). */
+  prefix?: React.ReactNode
 }
 
 type DropdownStage =
   | { type: 'fields' }
-  | { type: 'enum-options'; field: EnumFieldDef }
-  | { type: 'daterange'; field: DateRangeFieldDef }
   | { type: 'closed' }
 
-function hasSubcategories(field: FieldDef): boolean {
-  if (field.type === 'enum') return true
-  if (field.type === 'daterange') return true
-  return false
+function isTextField(field: FieldDef): field is TextFieldDef {
+  return field.type === 'text'
 }
 
-export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className }: SmartSearchBarProps) {
-  const { filters, chips, inputValue, setInputValue, applyFilter, removeFilter, clearAll } = useSmartSearch(searchDef)
+export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className, prefix }: SmartSearchBarProps) {
+  const { chips, inputValue, setInputValue, applyFilter, removeFilter, clearAll } = useSmartSearch(searchDef)
 
   const [stage, setStage] = useState<DropdownStage>({ type: 'closed' })
   const [focusedIndex, setFocusedIndex] = useState(-1)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -48,13 +43,15 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     const value = trimmedInput.slice(colonIndex + 1).trim()
 
     const matchedField = searchDef.fields.find(
-      (f) =>
-        f.label.toLowerCase() === prefix ||
-        f.key.toLowerCase() === prefix ||
-        (f.type === 'text' && f.serverParam.toLowerCase() === prefix)
+      (f): f is TextFieldDef =>
+        isTextField(f) && (
+          f.label.toLowerCase() === prefix ||
+          f.key.toLowerCase() === prefix ||
+          f.serverParam.toLowerCase() === prefix
+        )
     )
 
-    if (matchedField && matchedField.type === 'text') {
+    if (matchedField) {
       return { field: matchedField, value }
     }
     return null
@@ -66,15 +63,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
   const isOpen = stage.type !== 'closed' || !!activeSuggestionsUrl
 
-  // Fields not yet applied (avoid offering duplicates for non-daterange fields)
-  const availableFields = searchDef.fields.filter((f) => {
-    if (f.type === 'daterange') return true
-    return filters[f.serverParam] === undefined
-  })
-
-  const filteredFields = inputValue.trim()
-    ? availableFields.filter((f) => f.label.toLowerCase().includes(inputValue.toLowerCase()))
-    : availableFields
+  const filteredFields: TextFieldDef[] = inputValue.trim()
+    ? searchDef.fields.filter((f): f is TextFieldDef => f.label.toLowerCase().includes(inputValue.toLowerCase()) && isTextField(f))
+    : searchDef.fields.filter(isTextField)
 
   const openFieldList = useCallback(() => {
     setStage({ type: 'fields' })
@@ -88,55 +79,14 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     setInputValue('')
   }, [setInputValue])
 
-  const handleBack = useCallback(() => {
-    setStage({ type: 'fields' })
-    setFocusedIndex(0)
-    setInputValue('')
-    // Focus the main input after a short delay to ensure it's visible
-    setTimeout(() => inputRef.current?.focus(), 0)
-  }, [setInputValue])
-
   const handleFieldSelect = useCallback(
-    (field: FieldDef) => {
+    (field: TextFieldDef) => {
       setFocusedIndex(-1)
-      if (hasSubcategories(field)) {
-        setInputValue('')
-        if (field.type === 'enum') {
-          setStage({ type: 'enum-options', field })
-        } else if (field.type === 'daterange') {
-          setStage({ type: 'daterange', field })
-          setDateRange(undefined)
-        }
-      } else {
-        // Simple text filter: Prefill the exact label as a prefix in the main input
-        setInputValue(`${field.label}: `)
-        setStage({ type: 'closed' })
-        setFocusedIndex(-1)
-        // Focus the main input after a short delay
-        setTimeout(() => inputRef.current?.focus(), 0)
-      }
+      setInputValue(`${field.label}: `)
+      setStage({ type: 'closed' })
+      setTimeout(() => inputRef.current?.focus(), 0)
     },
     [setInputValue],
-  )
-
-  const handleEnumSelect = useCallback(
-    async (field: EnumFieldDef, value: string) => {
-      await applyFilter(field.serverParam, value)
-      setInputValue('')
-      close()
-      inputRef.current?.focus()
-    },
-    [applyFilter, close, setInputValue],
-  )
-
-  const handleDateConfirm = useCallback(
-    async (field: DateRangeFieldDef, range: DateRange | undefined) => {
-      if (range?.from) await applyFilter(field.serverParamStart, format(range.from, 'yyyy-MM-dd'))
-      if (range?.to) await applyFilter(field.serverParamEnd, format(range.to, 'yyyy-MM-dd'))
-      close()
-      inputRef.current?.focus()
-    },
-    [applyFilter, close],
   )
 
   const handleSuggestionSelect = useCallback(
@@ -150,7 +100,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
   )
 
   const handleTextSubmit = useCallback(async () => {
-    // If we are in the main input
     const trimmedInput = inputValue.trim()
     if (!trimmedInput) return
 
@@ -159,25 +108,23 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       const prefix = trimmedInput.slice(0, colonIndex).trim().toLowerCase()
       const value = trimmedInput.slice(colonIndex + 1).trim()
 
-      // Find if the prefix matches any field's label or key
       const matchedField = searchDef.fields.find(
-        (f) =>
-          f.label.toLowerCase() === prefix ||
-          f.key.toLowerCase() === prefix ||
-          (f.type === 'text' && f.serverParam.toLowerCase() === prefix)
+        (f): f is TextFieldDef =>
+          isTextField(f) && (
+            f.label.toLowerCase() === prefix ||
+            f.key.toLowerCase() === prefix ||
+            f.serverParam.toLowerCase() === prefix
+          )
       )
 
-      if (matchedField) {
-        if (value && matchedField.type !== 'daterange') {
-          await applyFilter(matchedField.serverParam, value)
-          setInputValue('')
-          close()
-        }
+      if (matchedField && value) {
+        await applyFilter(matchedField.serverParam, value)
+        setInputValue('')
+        close()
         return
       }
     }
 
-    // Fallback to Global Search (search query parameter)
     await applyFilter('search', trimmedInput)
     setInputValue('')
     close()
@@ -190,10 +137,6 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       const currentVal = inputValue
 
       if (e.key === 'Backspace' && currentVal === '') {
-        if (stage.type !== 'fields' && stage.type !== 'closed') {
-          handleBack()
-          return
-        }
         if (chips.length > 0) {
           removeFilter(chips[chips.length - 1].key)
           return
@@ -206,14 +149,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           handleFieldSelect(filteredFields[focusedIndex])
           return
         }
-        if (stage.type === 'enum-options') {
-          const opt = stage.field.options[focusedIndex]
-          if (opt) { e.preventDefault(); handleEnumSelect(stage.field, opt.value) }
-          return
-        }
-        if (activeSuggestionsUrl && focusedIndex >= 0 && suggestions[focusedIndex]) {
+        if (activeSuggestionsUrl && parsedActiveFieldInfo && focusedIndex >= 0 && suggestions[focusedIndex]) {
           e.preventDefault()
-          handleSuggestionSelect(parsedActiveFieldInfo!.field, suggestions[focusedIndex])
+          handleSuggestionSelect(parsedActiveFieldInfo.field, suggestions[focusedIndex])
           return
         }
         if (stage.type === 'closed' || stage.type === 'fields' || activeSuggestionsUrl) {
@@ -226,11 +164,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         e.preventDefault()
         const list = stage.type === 'fields'
           ? filteredFields
-          : stage.type === 'enum-options'
-            ? stage.field.options
-            : activeSuggestionsUrl
-              ? suggestions
-              : []
+          : activeSuggestionsUrl
+            ? suggestions
+            : []
         setFocusedIndex((i) => Math.min(i + 1, list.length - 1))
         return
       }
@@ -239,7 +175,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         setFocusedIndex((i) => Math.max(i - 1, -1))
       }
     },
-    [inputValue, chips, stage, filteredFields, focusedIndex, suggestions, activeSuggestionsUrl, parsedActiveFieldInfo, close, removeFilter, handleFieldSelect, handleEnumSelect, handleSuggestionSelect, handleTextSubmit, handleBack],
+    [inputValue, chips, stage, filteredFields, focusedIndex, suggestions, activeSuggestionsUrl, parsedActiveFieldInfo, close, removeFilter, handleFieldSelect, handleSuggestionSelect, handleTextSubmit],
   )
 
   // Close dropdown on outside click
@@ -258,15 +194,13 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     focusedIndex < 0
 
   return (
-    <div ref={containerRef} className={cn('relative w-full', className)}>
-      {/* Input row */}
+    <div ref={containerRef} className={cn('relative bg-background rounded-sm px-1 h-9 flex items-center', className)}>
       <div
         className={cn(
-          'flex items-center gap-1.5 h-9 px-2 py-1 rounded-md overflow-x-auto scrollbar-hide',
-          'bg-background border border-border/50 transition-all',
-          'hover:bg-muted/50 hover:ring-2 hover:ring-primary/10',
-          'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
-          isOpen && 'bg-muted/50 border-border/80 rounded-b-md ring-2 ring-primary/20',
+          'group flex items-center gap-1.5 h-7 w-full rounded-sm overflow-x-auto scrollbar-hide',
+          'transition-all',
+          'hover:bg-accent/50 hover:text-foreground',
+          isOpen && 'bg-muted/50',
         )}
         onClick={() => {
           inputRef.current?.focus()
@@ -276,9 +210,9 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           }
         }}
       >
-        <Search className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+        {prefix}
+        <Search className="h-3.5 w-3.5 ml-1 text-muted-foreground/50 shrink-0 transition-colors group-hover:text-foreground" />
 
-        {/* Active chips */}
         {chips.map((chip) => (
           <Chip
             key={chip.key}
@@ -289,24 +223,19 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
             <span className="flex items-center gap-1">
               {!chip.isGlobalSearch && <span className="opacity-60">{chip.label}:</span>}
               <span>{chip.valueLabel}</span>
-              <button
+              <Button
+                variant="ghost"
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeFilter(chip.key) }}
-                className={cn(
-                  'rounded-full p-0.5 transition-colors ml-0.5 -mr-1 flex items-center justify-center shrink-0',
-                  chip.isGlobalSearch ? 'hover:bg-foreground/10' : 'hover:bg-primary/20',
-                )}
+                className="rounded-full p-0.5 ml-0.5 -mr-1 flex items-center justify-center shrink-0 h-auto w-auto border-none bg-transparent hover:bg-muted/50 shadow-none text-current"
                 aria-label={`Eliminar filtro ${chip.label}`}
               >
                 <X className="h-2.5 w-2.5" />
-              </button>
+              </Button>
             </span>
           </Chip>
         ))}
 
-
-
-        {/* Text input */}
         <input
           ref={inputRef}
           value={inputValue}
@@ -317,9 +246,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
             const hasColon = val.includes(':')
 
-            if (stage.type !== 'closed' && stage.type !== 'fields') {
-              setStage({ type: 'fields' })
-            } else if (stage.type === 'closed' && !hasColon) {
+            if (stage.type === 'closed' && !hasColon) {
               openFieldList()
             } else if (stage.type === 'fields' && hasColon) {
               setStage({ type: 'closed' })
@@ -334,31 +261,31 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           }}
           onKeyDown={handleKeyDown}
           placeholder={hasActiveFilters ? '' : placeholder}
-          className="flex-1 h-7 min-w-[80px] bg-transparent border-none outline-none text-xs text-muted-foreground placeholder:text-muted-foreground/40 py-0"
+          className={`flex-1 h-7 min-w-[80px] bg-transparent border-none outline-none ${SEG_TEXT} text-muted-foreground placeholder:text-muted-foreground/40 py-0`}
           role="combobox"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-autocomplete="list"
+          aria-controls={isOpen ? "ssb-listbox" : undefined}
           aria-activedescendant={isOpen && focusedIndex >= 0 ? `ssb-option-${focusedIndex}` : undefined}
         />
 
-        {/* Enter hint — visible when actively typing a text filter */}
         {showEnterHint && (
-          <span className="inline-flex items-center text-[8px] text-muted-foreground/40 shrink-0 select-none">
+          <span className={`inline-flex items-center ${SEG_TEXT} text-muted-foreground/40 shrink-0 select-none`}>
             <CornerDownLeft className="h-2.5 w-2.5" />
           </span>
         )}
 
-        {/* Clear all */}
         {hasActiveFilters && (
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={(e) => { e.stopPropagation(); clearAll() }}
-            className="text-muted-foreground/40 hover:text-foreground transition-colors shrink-0 ml-auto"
+            className="text-muted-foreground/40 hover:text-foreground transition-colors shrink-0 ml-auto h-auto w-auto p-1 border-none bg-transparent shadow-none"
             aria-label="Eliminar todos los filtros"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -366,165 +293,94 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       {isOpen && (
         <div
           className={cn(
-            'absolute z-50 left-0 right-0 top-full',
-            'bg-background border border-border/80 border-t-0 rounded-b-md shadow-xl',
+            'absolute z-50 left-0 right-0 top-full mt-1',
+            'bg-popover/95 backdrop-blur-md rounded-sm shadow-floating',
             'overflow-hidden',
           )}
           role="listbox"
         >
           {/* Stage: field list */}
           {stage.type === 'fields' && (
-            <div className="py-1">
+            <div className="p-1">
               {filteredFields.length === 0 ? (
                 inputValue.trim() ? (
-                  <button
+                  <Button
+                    variant="ghost"
                     type="button"
                     role="option"
                     aria-selected={false}
                     onClick={() => handleTextSubmit()}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-primary/5 rounded-sm shadow-none"
                   >
                     <Search className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-foreground truncate">
-                        Buscar <span className="font-bold">«{inputValue.trim()}»</span>
+                      <p className={`${SEG_TEXT} text-foreground truncate`}>
+                        Buscar <span className={SEG_TEXT}>«{inputValue.trim()}»</span>
                       </p>
-                      <p className="text-[9px] text-muted-foreground/60">Búsqueda general en todos los campos</p>
+                      <p className={`${SEG_TEXT} text-muted-foreground/60`}>Búsqueda general en todos los campos</p>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground/50 uppercase tracking-widest shrink-0">
+                    <span className={`inline-flex items-center gap-1 ${SEG_TEXT} text-muted-foreground/50 tracking-tight shrink-0`}>
                       Enter
                       <CornerDownLeft className="h-2.5 w-2.5" />
                     </span>
-                  </button>
+                  </Button>
                 ) : (
-                  <p className="px-3 py-2 text-[10px] text-muted-foreground uppercase tracking-widest">Sin coincidencias</p>
+                  <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground tracking-tight`}>Sin coincidencias</p>
                 )
               ) : (
                 filteredFields.map((field, i) => (
-                  <button
+                  <Button
                     key={field.key}
                     id={`ssb-option-${i}`}
+                    variant="ghost"
                     type="button"
                     role="option"
                     aria-selected={i === focusedIndex}
                     onClick={() => handleFieldSelect(field)}
-                    className={cn(
-                      'w-full flex items-center justify-between px-3 py-2 text-left transition-colors',
-                      'text-[11px] font-bold uppercase tracking-widest',
-                      i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted/40 text-foreground',
-                    )}
+                      className={cn(
+                        'w-full flex items-center justify-between px-2.5 py-2 text-left transition-colors rounded-sm shadow-none',
+                        SEG_DROPDOWN_ITEM,
+                        i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
+                      )}
                   >
                     <span>{field.label}</span>
-                    {hasSubcategories(field) && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
-                  </button>
+                  </Button>
                 ))
               )}
             </div>
           )}
 
-          {/* Stage: enum options */}
-          {stage.type === 'enum-options' && (
-            <div className="py-1">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleBack() }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 border-b border-border/40 hover:bg-muted/40 transition-colors group text-left"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
-                  {stage.field.label}
-                </span>
-              </button>
-              {stage.field.options.map((opt, i) => (
-                <button
-                  key={opt.value}
-                  id={`ssb-option-${i}`}
-                  type="button"
-                  role="option"
-                  aria-selected={i === focusedIndex}
-                  onClick={() => handleEnumSelect(stage.field, opt.value)}
-                  className={cn(
-                    'w-full flex items-center px-3 py-2 text-left transition-colors',
-                    'text-[11px] font-bold uppercase tracking-widest',
-                    i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted/40 text-foreground',
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Dynamic Suggestions for Text Field under Main Input */}
+          {/* Dynamic Suggestions for Text Field */}
           {activeSuggestionsUrl && (
-            <div className="py-1 border-t border-border/30">
+            <div className="p-1">
               {suggestionQuery.length < 2 ? (
-                <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Escribe 2 o más caracteres para ver sugerencias</p>
+                <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground/60`}>Escribe 2 o más caracteres para ver sugerencias</p>
               ) : isSuggestionsLoading ? (
-                <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Buscando...</p>
+                <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground/60`}>Buscando...</p>
               ) : suggestions.length === 0 ? (
-                <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Sin coincidencias</p>
+                <p className={`px-3 py-2 ${SEG_TEXT} text-muted-foreground/60`}>Sin coincidencias</p>
               ) : (
-                <div className="py-1">
+                <div>
                   {suggestions.map((value, i) => (
-                    <button
+                    <Button
                       key={value}
                       id={`ssb-option-${i}`}
+                      variant="ghost"
                       type="button"
                       role="option"
                       aria-selected={i === focusedIndex}
-                      onClick={() => handleSuggestionSelect(parsedActiveFieldInfo!.field, value)}
+                      onClick={() => parsedActiveFieldInfo && handleSuggestionSelect(parsedActiveFieldInfo.field, value)}
                       className={cn(
-                        'w-full flex items-center px-3 py-1.5 text-left transition-colors',
-                        'text-[11px] font-medium',
-                        i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted/40 text-foreground',
+                        'w-full flex items-center px-2.5 py-1.5 text-left transition-colors rounded-sm shadow-none',
+                        SEG_DROPDOWN_ITEM,
+                        i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-primary/5 text-foreground',
                       )}
                     >
                       {value}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Stage: daterange picker */}
-          {stage.type === 'daterange' && (
-            <div className="p-3 flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleBack() }}
-                className="w-full flex items-center gap-2 px-3 py-1.5 border-b border-border/40 hover:bg-muted/40 transition-colors group text-left -mt-1 -ml-1 mb-1 rounded-t-md"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
-                  {stage.field.label}
-                </span>
-              </button>
-              <Calendar
-                mode="range"
-                selected={dateRange}
-                onSelect={setDateRange}
-                locale={es}
-                numberOfMonths={2}
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={close}
-                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDateConfirm(stage.field, dateRange)}
-                  disabled={!dateRange?.from}
-                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-primary text-primary-foreground rounded-md disabled:opacity-40 transition-opacity"
-                >
-                  Aplicar
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -532,3 +388,5 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
     </div>
   )
 }
+
+

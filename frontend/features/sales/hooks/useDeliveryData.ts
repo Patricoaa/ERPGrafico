@@ -15,7 +15,7 @@ export function useDeliveryData(orderId: number) {
         queryKey: ['warehouses'],
         queryFn: async () => {
             const response = await api.get('/inventory/warehouses/')
-            return response.data
+            return response.data.results
         },
         staleTime: 15 * 60 * 1000, // 15 min — estáticos
     })

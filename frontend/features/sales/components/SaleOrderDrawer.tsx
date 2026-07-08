@@ -2,26 +2,28 @@
 
 import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer, FileText } from 'lucide-react'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import { useSaleOrder } from '@/features/sales/hooks/useSalesOrders'
-import { useReactToPrint } from 'react-to-print'
-import { useRef } from 'react'
 import { formatCurrency } from '@/lib/money'
-import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
-import { ActivitySidebar } from '@/features/audit/components'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
+import { ActivitySidebar } from '@/features/audit'
+import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface SaleOrderDrawerProps extends TransactionDrawerProps {
     orderId?: number
+    segmenter?: React.ReactNode
 }
 
-export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId }: SaleOrderDrawerProps) {
+export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: SaleOrderDrawerProps) {
     const entityId = id ?? orderId ?? null
-    const { data: order, isLoading } = useSaleOrder(entityId)
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { saleOrder: order, isLoading } = useSaleOrder(entityId)
+    const { printRef, handlePrint } = usePrintableDrawer()
+
+    const identity = useDrawerIdentity('sales.saleorder', 'view', order, {
+        overrideTitle: order?.number ?? 'Nota de Venta',
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -50,11 +52,11 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
-                defaultSize="50%"
-                icon={FileText}
-                title={<><span>{order?.number ?? 'Nota de Venta'}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
-                subtitle={order?.customer_name}
-                description={`${formatPlainDate(order?.date)} · ${order?.channel_display ?? ''}`}
+                defaultSize={formDrawerWidth("master", !!entityId)}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
             >
                 <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="sale_order" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando nota de venta">
@@ -101,6 +103,11 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
                     )}
                 </SkeletonShell>
                 </FormSplitLayout>
+                {segmenter && (
+                    <div className="border-t pt-4 mt-4">
+                        {segmenter}
+                    </div>
+                )}
             </Drawer>
         </>
     )

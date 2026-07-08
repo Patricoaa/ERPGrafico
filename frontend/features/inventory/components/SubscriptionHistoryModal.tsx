@@ -1,5 +1,6 @@
 "use client"
-import { formatCurrency } from "@/lib/money";
+import { formatCurrency } from "@/lib/money"
+import { parseDateOnly } from "@/lib/utils"
 
 import { BaseModal, Chip, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
 
@@ -17,18 +18,9 @@ import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 
-import { FormTabs, FormTabsContent } from "@/components/shared"
+import { TabBar, TabBarContent } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
-import {
-    ResponsiveContainer,
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip as RechartsTooltip,
-    Cell
-} from 'recharts'
+import { BarChart } from "@/components/shared"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 import { translateStatus } from "@/lib/utils"
@@ -74,14 +66,7 @@ interface SubscriptionHistory {
     supplier_name: string
 }
 
-// Placeholder tipado para el esqueleto - sigue el patrón del contrato
-const SUBSCRIPTION_HISTORY_SKELETON: SubscriptionHistory = {
-    orders: [],
-    price_history: [],
-    notes: [],
-    product_name: "————————————",
-    supplier_name: "————————————"
-}
+
 
 export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }: SubscriptionHistoryModalProps) {
     // useSubscriptionHistory cachea por subscriptionId; al cerrar y reabrir
@@ -103,7 +88,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
             const from = startOfDay(dateRange.from)
             const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(new Date())
             items = items.filter(item => {
-                const itemDate = new Date(item.date)
+                const itemDate = parseDateOnly(item.date)
                 return isWithinInterval(itemDate, { start: from, end: to })
             })
         }
@@ -135,11 +120,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <p className="text-muted-foreground">Error al cargar datos.</p>
                                 </div>
                             ) : (
-                                <FormTabs
+                                <TabBar
                                     value={activeTab}
                                     onValueChange={setActiveTab}
                                     orientation="horizontal"
-                                    variant="underline"
                                     items={[
                                         { value: "historial", label: "Historial de Costos", icon: History },
                                         { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },
@@ -150,7 +134,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
                                         {/* HISTORIAL TAB */}
-                                        <FormTabsContent value="historial" className="mt-0 space-y-6">
+                                        <TabBarContent value="historial" className="mt-0 space-y-6">
                                             <div className="space-y-4">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <StatCard
@@ -158,21 +142,18 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         value={<DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-left" />}
                                                         variant="compact"
                                                         accent="primary"
-                                                        className="shadow-none"
                                                     />
                                                     <StatCard
                                                         label="OCS Totales"
                                                         value={<>{data.orders.length} <span className="text-xs">documentos</span></>}
                                                         variant="compact"
                                                         accent="warning"
-                                                        className="shadow-none"
                                                     />
                                                     <StatCard
                                                         label="Estado Actual"
                                                         value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" />}
                                                         variant="compact"
                                                         accent="success"
-                                                        className="shadow-none"
                                                     />
                                                 </div>
 
@@ -181,36 +162,22 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 </div>
                                             </div>
 
-                                            <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-sm">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart data={filteredPriceHistory}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
-                                                        <XAxis
-                                                            dataKey="date"
-                                                            tickFormatter={(str) => format(new Date(str), 'MMM d', { locale: es })}
-                                                            fontSize={10}
-                                                            tickMargin={10}
-                                                            stroke="var(--muted-foreground)"
-                                                        />
-                                                        <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => formatCurrency(val)} />
-                                                        <RechartsTooltip
-                                                            labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                            formatter={(val: unknown) => [typeof val === 'number' ? formatCurrency(val) : '---', 'Costo Unitario']}
-                                                            contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
-                                                        />
-                                                        <Bar
-                                                            dataKey="unit_cost"
-                                                            name="Precio"
-                                                            fill="var(--primary)"
-                                                            radius={[6, 6, 0, 0]}
-                                                            barSize={40}
-                                                        >
-                                                            {filteredPriceHistory.map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--primary)' : 'var(--primary)'} fillOpacity={index === 0 ? 1 : 0.7} />
-                                                            ))}
-                                                        </Bar>
-                                                    </BarChart>
-                                                </ResponsiveContainer>
+                                            <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-card">
+                                                <BarChart
+                                                    data={filteredPriceHistory as unknown as { date: string; unit_cost: number }[]}
+                                                    keys={["unit_cost"]}
+                                                    indexBy="date"
+                                                    axisBottom={{
+                                                        tickSize: 0,
+                                                        tickPadding: 10,
+                                                        format: (v: string) => format(parseDateOnly(v.split('T')[0]), 'MMM d', { locale: es }),
+                                                    }}
+                                                    axisLeft={{
+                                                        tickSize: 0,
+                                                        tickPadding: 10,
+                                                        format: (v: number) => formatCurrency(v),
+                                                    }}
+                                                />
                                             </div>
                                             {filteredPriceHistory.length === 0 && (
                                                 <EmptyState
@@ -220,11 +187,11 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     description="No hay datos para el periodo seleccionado."
                                                 />
                                             )}
-                                        </FormTabsContent>
+                                        </TabBarContent>
 
                                         {/* ORDERS TAB */}
-                                        <FormTabsContent value="orders" className="mt-0">
-                                            <div className="rounded-md border shadow-sm overflow-hidden bg-card">
+                                        <TabBarContent value="orders" className="mt-0">
+                                            <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <OrderTable
                                                     orders={data.orders}
                                                     onOpenHub={(orderId) => openHub({
@@ -234,11 +201,11 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     })}
                                                 />
                                             </div>
-                                        </FormTabsContent>
+                                        </TabBarContent>
 
                                         {/* NOTES TAB */}
-                                        <FormTabsContent value="notes" className="mt-0">
-                                            <div className="rounded-md border shadow-sm overflow-hidden bg-card">
+                                        <TabBarContent value="notes" className="mt-0">
+                                            <div className="rounded-md border shadow-card overflow-hidden bg-card">
                                                 <NoteTable
                                                     notes={data.notes}
                                                     onOpenHub={(invoiceId) => openHub({
@@ -248,9 +215,9 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     })}
                                                 />
                                             </div>
-                                        </FormTabsContent>
+                                        </TabBarContent>
                                     </div>
-                                </FormTabs>
+                                </TabBar>
                             )}
                         </SkeletonShell>
                     )}

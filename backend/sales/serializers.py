@@ -1,45 +1,78 @@
 from rest_framework import serializers
-from .models import SaleOrder, SaleLine, SalesSettings, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine
-from treasury.serializers import TreasuryMovementSerializer
-from production.serializers import WorkOrderSerializer
-from inventory.models import Product
-from django.db.models import Sum
-import math
-from decimal import Decimal
+
+from sales.selectors import SaleOrderSelector
+from sales.services import SalesService
+
+from .models import (
+    SaleDelivery,
+    SaleDeliveryLine,
+    SaleLine,
+    SaleOrder,
+    SaleReturn,
+    SaleReturnLine,
+    SalesSettings,
+)
+
 
 class SalesSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalesSettings
-        fields = '__all__'
+        fields = "__all__"
+
 
 class SaleLineSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
+    product_name = serializers.CharField(source="product.name", read_only=True, allow_null=True)
     product_type = serializers.SerializerMethodField()
     track_inventory = serializers.SerializerMethodField()
     manufacturable_quantity = serializers.SerializerMethodField()
     mfg_auto_finalize = serializers.SerializerMethodField()
     has_bom = serializers.SerializerMethodField()
-    
-    product_code = serializers.CharField(source='product.code', read_only=True, allow_null=True)
-    product_id = serializers.ReadOnlyField(source='product.id')
-    
+
+    product_code = serializers.CharField(source="product.code", read_only=True, allow_null=True)
+    product_id = serializers.ReadOnlyField(source="product.id")
+
     quantity_pending = serializers.ReadOnlyField()
-    uom_name = serializers.CharField(source='uom.name', read_only=True, allow_null=True)
+    uom_name = serializers.CharField(source="uom.name", read_only=True, allow_null=True)
     description = serializers.CharField(required=False, allow_blank=True)
-    
+
     # Explicitly define tax_rate to ensure it is writable and passed to validated_data
-    tax_rate = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, default=19.00)
+    tax_rate = serializers.DecimalField(
+        max_digits=5, decimal_places=2, required=False, default=19.00
+    )
 
     class Meta:
         model = SaleLine
         fields = [
-            'id', 'product', 'product_id', 'product_name', 'product_code', 'product_type', 'track_inventory', 
-            'manufacturable_quantity', 'description', 'quantity', 'uom', 'uom_name', 
-            'unit_price', 'unit_price_gross', 'tax_rate', 'discount_percentage', 'discount_amount',
-            'subtotal', 'quantity_delivered', 
-            'quantity_pending', 'manufacturing_data', 'requires_advanced_manufacturing',
-            'is_production_finished', 'work_order_summary', 'mfg_auto_finalize', 'has_bom',
-            'related_note', 'available_stock', 'delivery_status', 'delivery_date'
+            "id",
+            "product",
+            "product_id",
+            "product_name",
+            "product_code",
+            "product_type",
+            "track_inventory",
+            "manufacturable_quantity",
+            "description",
+            "quantity",
+            "uom",
+            "uom_name",
+            "unit_price",
+            "unit_price_gross",
+            "tax_rate",
+            "discount_percentage",
+            "discount_amount",
+            "subtotal",
+            "quantity_delivered",
+            "quantity_pending",
+            "manufacturing_data",
+            "requires_advanced_manufacturing",
+            "is_production_finished",
+            "work_order_summary",
+            "mfg_auto_finalize",
+            "has_bom",
+            "related_note",
+            "available_stock",
+            "delivery_status",
+            "delivery_date",
         ]
 
     def get_product_type(self, obj):
@@ -49,26 +82,30 @@ class SaleLineSerializer(serializers.ModelSerializer):
         return obj.product.track_inventory if obj.product else False
 
     def get_manufacturable_quantity(self, obj):
-        if obj.product and obj.product.product_type == 'MANUFACTURABLE':
+        if obj.product and obj.product.strategy.can_have_bom:
             qty = obj.product.get_manufacturable_quantity()
             return float(qty) if qty is not None else None
         return None
-        
+
     requires_advanced_manufacturing = serializers.SerializerMethodField()
-    
+
     def get_requires_advanced_manufacturing(self, obj):
         return obj.product.requires_advanced_manufacturing if obj.product else False
 
     def get_mfg_auto_finalize(self, obj):
-        return obj.product.mfg_profile.mfg_auto_finalize if (obj.product and obj.product.mfg_profile) else False
+        return (
+            obj.product.mfg_profile.mfg_auto_finalize
+            if (obj.product and obj.product.mfg_profile)
+            else False
+        )
 
     def get_has_bom(self, obj):
         return obj.product.has_bom if obj.product else False
 
     available_stock = serializers.SerializerMethodField()
-    
+
     def get_available_stock(self, obj):
-        if obj.product and obj.product.product_type == 'STORABLE':
+        if obj.product and obj.product.product_type == "STORABLE":
             qty = obj.product.qty_available
             return float(qty) if qty is not None else 0.0
         return None
@@ -78,33 +115,31 @@ class SaleLineSerializer(serializers.ModelSerializer):
 
     def get_is_production_finished(self, obj):
         # If not manufacturable, we consider "production" as N/A (True for dispatch purposes)
-        if not obj.product or obj.product.product_type != 'MANUFACTURABLE':
+        if not obj.product or not obj.product.strategy.requires_manufacturing_profile:
             return True
-        
-        # If it's express manufacturing (mfg_auto_finalize), it's considered finished
-        # but we also need to check if an OT actually exists and is finished
-        # because even express items generate an OT that might be manually handled.
-        ots = obj.work_orders.exclude(status='CANCELLED')
-        if not ots.exists():
+
+        # Use prefetched work_orders
+        ots = [ot for ot in obj.work_orders.all() if ot.status != "CANCELLED"]
+        if not ots:
             # If no OT yet (or all cancelled), but it's manufacturable, it's not finished
             return False
-            
+
         # Check if all OTs have reached the FINISHED stage (not just status)
-        return all(ot.current_stage == 'FINISHED' for ot in ots)
+        return all(ot.current_stage == "FINISHED" for ot in ots)
 
     def get_work_order_summary(self, obj):
-        ots = obj.work_orders.exclude(status='CANCELLED')
-        if not ots.exists():
+        ots = [ot for ot in obj.work_orders.all() if ot.status != "CANCELLED"]
+        if not ots:
             return None
-        
+
         # Return summary of first active OT for simple UI display
-        ot = ots.first()
+        ot = ots[0]
         return {
-            'number': ot.number,
-            'status': ot.status,
-            'status_display': ot.get_status_display(),
-            'current_stage': ot.current_stage,
-            'current_stage_display': ot.get_current_stage_display()
+            "number": ot.number,
+            "status": ot.status,
+            "status_display": ot.get_status_display(),
+            "current_stage": ot.current_stage,
+            "current_stage_display": ot.get_current_stage_display(),
         }
 
     delivery_status = serializers.SerializerMethodField()
@@ -112,57 +147,67 @@ class SaleLineSerializer(serializers.ModelSerializer):
 
     def get_delivery_status(self, obj):
         if obj.quantity_delivered >= obj.quantity:
-            return 'ENTREGADO'
+            return "ENTREGADO"
         if obj.quantity_delivered > 0:
-            return 'PARCIAL'
-        return 'PENDIENTE'
+            return "PARCIAL"
+        return "PENDIENTE"
 
     def get_delivery_date(self, obj):
         return obj.order.delivery_date if obj.order else None
 
     def validate(self, data):
-        product = data.get('product')
-        uom = data.get('uom')
-        
+        product = data.get("product")
+        uom = data.get("uom")
+
         if product and uom:
             from inventory.services import UoMService
-            allowed_uoms = UoMService.get_allowed_uoms_for_context(product, 'sale')
-            
-            if uom.id not in allowed_uoms.values_list('id', flat=True):
-                allowed_names = ', '.join(allowed_uoms.values_list('name', flat=True))
-                raise serializers.ValidationError({
-                    'uom': f"La unidad '{uom.name}' no está permitida para este producto. "
-                           f"Unidades permitidas: {allowed_names}"
-                })
-        
+
+            allowed_uoms = UoMService.get_allowed_uoms_for_context(product, "sale")
+
+            if uom.id not in allowed_uoms.values_list("id", flat=True):
+                allowed_names = ", ".join(allowed_uoms.values_list("name", flat=True))
+                raise serializers.ValidationError(
+                    {
+                        "uom": f"La unidad '{uom.name}' no está permitida para este producto. "
+                        f"Unidades permitidas: {allowed_names}"
+                    }
+                )
+
         return data
 
+
 class SaleOrderSerializer(serializers.ModelSerializer):
-    customer_name = serializers.CharField(source='customer.name', read_only=True, allow_null=True)
-    channel_display = serializers.CharField(source='get_channel_display', read_only=True)
+    customer_name = serializers.CharField(source="customer.name", read_only=True, allow_null=True)
+    channel_display = serializers.CharField(source="get_channel_display", read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
-    serialized_payments = TreasuryMovementSerializer(source='payments', many=True, read_only=True)
+    serialized_payments = serializers.SerializerMethodField()
     related_documents = serializers.SerializerMethodField()
     work_orders = serializers.SerializerMethodField()
     production_progress = serializers.SerializerMethodField()
     has_pending_work_orders = serializers.SerializerMethodField()
     pos_session_display = serializers.SerializerMethodField()
+    lines = serializers.SerializerMethodField()
 
     def get_pos_session_display(self, obj):
         return str(obj.pos_session) if obj.pos_session else None
 
-    credit_assignment_origin_display = serializers.CharField(source='get_credit_assignment_origin_display', read_only=True)
+    credit_assignment_origin_display = serializers.CharField(
+        source="get_credit_assignment_origin_display", read_only=True
+    )
     credit_approval_task_details = serializers.SerializerMethodField()
 
     def get_credit_approval_task_details(self, obj):
         if obj.credit_approval_task:
             return {
-                'id': obj.credit_approval_task.id,
-                'status': obj.credit_approval_task.status,
-                'status_display': obj.credit_approval_task.get_status_display(),
-                'completed_at': obj.credit_approval_task.completed_at,
-                'completed_by_name': obj.credit_approval_task.completed_by.get_full_name() or obj.credit_approval_task.completed_by.username if obj.credit_approval_task.completed_by else None
+                "id": obj.credit_approval_task.id,
+                "status": obj.credit_approval_task.status,
+                "status_display": obj.credit_approval_task.get_status_display(),
+                "completed_at": obj.credit_approval_task.completed_at,
+                "completed_by_name": obj.credit_approval_task.completed_by.get_full_name()
+                or obj.credit_approval_task.completed_by.username
+                if obj.credit_approval_task.completed_by
+                else None,
             }
         return None
 
@@ -171,80 +216,72 @@ class SaleOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleOrder
         fields = [
-            'id', 'number', 'display_id', 'customer', 'customer_name', 'date', 'status', 'channel', 'channel_display',
-            'notes', 'payment_method', 'delivery_status', 'delivery_date', 'salesperson',
-            'total_net', 'total_tax', 'total_discount_amount', 'total', 'effective_total', 'total_paid', 'pending_amount',
-            'lines', 'serialized_payments', 'related_documents', 'work_orders', 
-            'production_progress', 'has_pending_work_orders', 'pos_session', 'pos_session_display',
-            'credit_assignment_origin', 'credit_assignment_origin_display', 'credit_approval_task_details',
-            'created_at', 'updated_at'
+            "id",
+            "number",
+            "display_id",
+            "customer",
+            "customer_name",
+            "date",
+            "status",
+            "channel",
+            "channel_display",
+            "notes",
+            "payment_method",
+            "delivery_status",
+            "delivery_date",
+            "salesperson",
+            "total_net",
+            "total_tax",
+            "total_discount_amount",
+            "total",
+            "effective_total",
+            "total_paid",
+            "pending_amount",
+            "lines",
+            "serialized_payments",
+            "related_documents",
+            "work_orders",
+            "production_progress",
+            "has_pending_work_orders",
+            "pos_session",
+            "pos_session_display",
+            "credit_assignment_origin",
+            "credit_assignment_origin_display",
+            "credit_approval_task_details",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ['id', 'number', 'status', 'total_net', 'total_tax', 'total', 'journal_entry']
+        read_only_fields = [
+            "id",
+            "number",
+            "status",
+            "total_net",
+            "total_tax",
+            "total",
+            "journal_entry",
+        ]
+
+    def get_serialized_payments(self, obj):
+        from treasury.serializers import TreasuryMovementSerializer
+        return TreasuryMovementSerializer(obj.payments.all(), many=True).data
 
     def get_related_documents(self, obj):
-        from billing.models import Invoice
-        docs = {
-            'invoices': [],
-            'notes': [],
-            'payments': [],
-            'deliveries': []
-        }
+        return SaleOrderSelector.get_related_documents(obj)
 
-        for inv in obj.invoices.all():
-            doc_info = {
-                'id': inv.id,
-                'number': inv.number or 'Draft',
-                'display_id': inv.display_id,
-                'dte_type': inv.dte_type,
-                'type_display': inv.get_dte_type_display(),
-                'status': inv.status,
-                'total': inv.total
-            }
-            if inv.dte_type in [Invoice.DTEType.NOTA_CREDITO, Invoice.DTEType.NOTA_DEBITO]:
-                docs['notes'].append(doc_info)
-            else:
-                docs['invoices'].append(doc_info)
-
-        # Only include deliveries NOT linked to a note (original order deliveries)
-        for deliv in obj.deliveries.filter(related_note__isnull=True):
-            docs['deliveries'].append({
-                'id': deliv.id,
-                'number': deliv.number,
-                'display_id': deliv.display_id,
-                'status': deliv.status,
-                'date': deliv.delivery_date,
-                'docType': 'sale_delivery'
-            })
-
-        for pay in obj.payments.all():
-            docs['payments'].append({
-                'id': pay.id,
-                'amount': pay.amount,
-                'date': pay.date,
-                'payment_method': pay.payment_method,
-                'payment_method_display': pay.get_payment_method_display(),
-                'method': pay.get_payment_method_display(), # Legacy support
-                'transaction_number': pay.transaction_number,
-                'is_pending_registration': pay.is_pending_registration,
-                'reference': pay.reference,
-                'invoice_id': pay.invoice_id,
-                'display_id': pay.display_id,
-                'code': pay.display_id # Use display_id for consistency
-            })
-
-        return docs
-    
     def get_lines(self, obj):
         # Only include original lines (not those from notes)
-        return SaleLineSerializer(obj.lines.filter(related_note__isnull=True), many=True).data
-    
+        lines = [line for line in obj.lines.all() if getattr(line, "related_note_id", None) is None]
+        return SaleLineSerializer(lines, many=True).data
+
     def get_work_orders(self, obj):
         # Only include OTs NOT linked to a note (original order OTs)
-        ots = obj.work_orders.filter(related_note__isnull=True)
+        ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None]
+        from production.serializers import WorkOrderSerializer
         return WorkOrderSerializer(ots, many=True).data
 
     def get_has_pending_work_orders(self, obj):
-        return obj.work_orders.filter(related_note__isnull=True).exclude(status='FINISHED').exists()
+        ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "FINISHED"]
+        return len(ots) > 0
 
     def get_total_paid(self, obj):
         return sum(p.amount for p in obj.payments.all())
@@ -253,12 +290,15 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return obj.effective_total - self.get_total_paid(obj)
 
     def get_production_progress(self, obj):
-        # Only calculate progress for OTs NOT linked to notes and NOT cancelled
-        wos = obj.work_orders.filter(related_note__isnull=True).exclude(status='CANCELLED')
-        if not wos.exists():
+        from production.serializers import WorkOrderSerializer
+        wos = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "CANCELLED"]
+        if not wos:
             return 0
-        total_progress = sum(WorkOrderSerializer(wo).data.get('production_progress', 0) for wo in wos)
-        return total_progress / wos.count()
+        total_progress = sum(
+            WorkOrderSerializer(wo).data.get("production_progress", 0) for wo in wos
+        )
+        return total_progress / len(wos)
+
 
 class CreateSaleOrderSerializer(serializers.ModelSerializer):
     """
@@ -268,86 +308,95 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
         Si se provee, se guarda en payment_method_ref (FK nuevo).
         El campo legacy payment_method se normaliza desde el tipo del método si no viene explícito.
     """
+
     lines = SaleLineSerializer(many=True)
     payment_method_id = serializers.IntegerField(required=False, allow_null=True, write_only=True)
 
     class Meta:
         model = SaleOrder
-        fields = ['id', 'number', 'customer', 'notes', 'payment_method', 'payment_method_id', 'total_discount_amount', 'lines']
-        read_only_fields = ['id', 'number', 'status', 'journal_entry']
+        fields = [
+            "id",
+            "number",
+            "customer",
+            "notes",
+            "payment_method",
+            "payment_method_id",
+            "total_discount_amount",
+            "lines",
+        ]
+        read_only_fields = ["id", "number", "status", "journal_entry"]
 
     def validate(self, attrs):
         settings = SalesSettings.get_solo()
         if settings and settings.restrict_stock_sales:
-            for line in attrs.get('lines', []):
-                product = line.get('product')
-                quantity = line.get('quantity')
-                if product and product.product_type == 'STORABLE':
-                     current_stock = product.moves.aggregate(total=Sum('quantity'))['total'] or 0
-                     if current_stock < quantity:
-                         raise serializers.ValidationError(
-                             f"Stock insuficiente para {product.name}. Disponible: {current_stock}, Solicitado: {quantity}"
-                         )
+            for line in attrs.get("lines", []):
+                product = line.get("product")
+                quantity = line.get("quantity")
+                if product and product.product_type == "STORABLE":
+                    current_stock = float(product.qty_on_hand or 0)
+                    if current_stock < quantity:
+                        raise serializers.ValidationError(
+                            f"Stock insuficiente para {product.name}. Disponible: {current_stock}, Solicitado: {quantity}"
+                        )
         return attrs
 
     def create(self, validated_data):
-        lines_data = validated_data.pop('lines')
-        payment_method_id = validated_data.pop('payment_method_id', None)
+        return SalesService.create_sale_order(validated_data)
 
-        # Resolve PaymentMethod FK if ID provided
-        pm_ref = None
-        if payment_method_id:
-            from treasury.models import PaymentMethod as TreasuryPM
-            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
-
-        order = SaleOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
-
-        for line_data in lines_data:
-            SaleLine.objects.create(order=order, **line_data)
-
-        order.recalculate_totals()
-        order.save()
-
-        return order
 
 class SaleDeliveryLineSerializer(serializers.ModelSerializer):
-    product_code = serializers.CharField(source='product.code', read_only=True)
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
-    order_quantity = serializers.DecimalField(source='sale_line.quantity', max_digits=12, decimal_places=2, read_only=True)
-    
+    product_code = serializers.CharField(source="product.code", read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    uom_name = serializers.CharField(source="uom.name", read_only=True)
+    order_quantity = serializers.DecimalField(
+        source="sale_line.quantity", max_digits=12, decimal_places=2, read_only=True
+    )
+
     class Meta:
         model = SaleDeliveryLine
-        fields = '__all__'
+        fields = "__all__"
+
 
 class SaleDeliverySerializer(serializers.ModelSerializer):
     lines = SaleDeliveryLineSerializer(many=True, read_only=True)
-    sale_order_number = serializers.CharField(source='sale_order.number', read_only=True)
-    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
-    customer_name = serializers.CharField(source='sale_order.customer.name', read_only=True)
-    customer_id = serializers.IntegerField(source='sale_order.customer_id', read_only=True)
-    
+    sale_order_number = serializers.CharField(source="sale_order.number", read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    customer_name = serializers.CharField(source="sale_order.customer.name", read_only=True)
+    customer_id = serializers.IntegerField(source="sale_order.customer_id", read_only=True)
+    delivery_type = serializers.SerializerMethodField()
+    related_note_display = serializers.SerializerMethodField()
+
     class Meta:
         model = SaleDelivery
-        fields = '__all__'
-        read_only_fields = ['id', 'number', 'status']
+        fields = "__all__"
+        read_only_fields = ["id", "number", "status"]
+
+    def get_delivery_type(self, obj):
+        return "debit_note" if obj.related_note_id else "normal"
+
+    def get_related_note_display(self, obj):
+        if obj.related_note_id and obj.related_note:
+            return obj.related_note.display_id
+        return None
+
 
 class SaleReturnLineSerializer(serializers.ModelSerializer):
-    product_code = serializers.CharField(source='product.code', read_only=True)
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    uom_name = serializers.CharField(source='uom.name', read_only=True)
-    
+    product_code = serializers.CharField(source="product.code", read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    uom_name = serializers.CharField(source="uom.name", read_only=True)
+
     class Meta:
         model = SaleReturnLine
-        fields = '__all__'
+        fields = "__all__"
+
 
 class SaleReturnSerializer(serializers.ModelSerializer):
     lines = SaleReturnLineSerializer(many=True, read_only=True)
-    sale_order_number = serializers.CharField(source='sale_order.number', read_only=True)
-    warehouse_name = serializers.CharField(source='warehouse.name', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    
+    sale_order_number = serializers.CharField(source="sale_order.number", read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
     class Meta:
         model = SaleReturn
-        fields = '__all__'
-        read_only_fields = ['id', 'number', 'status']
+        fields = "__all__"
+        read_only_fields = ["id", "number", "status"]

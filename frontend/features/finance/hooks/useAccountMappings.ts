@@ -1,12 +1,15 @@
 import { useMemo, useCallback } from 'react'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
-import { accountingApi } from '@/features/accounting/api/accountingApi'
-import { Account } from '@/features/accounting/types'
+import { accountingApi } from '@/features/accounting'
+import { type Account } from '@/features/accounting'
+import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export type MappingType = 'is' | 'cf' | 'bs'
 
 export function useAccountMappings(mappingType: MappingType) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     // Load ALL accounts since filtering happens mostly on the frontend based on mappingType
     const { data: accounts = [], isLoading, error } = useQuery<Account[]>({
@@ -52,7 +55,8 @@ export function useAccountMappings(mappingType: MappingType) {
         mutationFn: (updates: { id: number; field: string; value: string | null }[]) =>
             accountingApi.updateAccountMappings(updates),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['accounts'] })
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [['accounts']])
         }
     })
 

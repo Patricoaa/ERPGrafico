@@ -9,26 +9,27 @@ Data migration:
 Schema:
   Remueve la columna allows_check de posterminal e historicalposterminal.
 """
+
 from django.db import migrations
 
 
 def wire_check_payment_method(apps, schema_editor):
-    POSTerminal = apps.get_model('treasury', 'POSTerminal')
-    PaymentMethod = apps.get_model('treasury', 'PaymentMethod')
-    TreasuryAccount = apps.get_model('treasury', 'TreasuryAccount')
+    POSTerminal = apps.get_model("treasury", "POSTerminal")
+    PaymentMethod = apps.get_model("treasury", "PaymentMethod")
+    TreasuryAccount = apps.get_model("treasury", "TreasuryAccount")
 
-    portfolio = TreasuryAccount.objects.filter(account_type='CHECK_PORTFOLIO').first()
+    portfolio = TreasuryAccount.objects.filter(account_type="CHECK_PORTFOLIO").first()
     if not portfolio:
         return
 
     check_pm, _ = PaymentMethod.objects.get_or_create(
-        method_type='CHECK',
+        method_type="CHECK",
         treasury_account=portfolio,
         defaults={
-            'name': 'Cheque en Cartera',
-            'allow_for_sales': True,
-            'allow_for_purchases': False,
-            'is_active': True,
+            "name": "Cheque en Cartera",
+            "allow_for_sales": True,
+            "allow_for_purchases": False,
+            "is_active": True,
         },
     )
 
@@ -37,19 +38,18 @@ def wire_check_payment_method(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0062_alter_historicaltreasuryaccount_account_type_and_more'),
+        ("treasury", "0062_alter_historicaltreasuryaccount_account_type_and_more"),
     ]
 
     operations = [
         migrations.RunPython(wire_check_payment_method, migrations.RunPython.noop),
         migrations.RemoveField(
-            model_name='posterminal',
-            name='allows_check',
+            model_name="posterminal",
+            name="allows_check",
         ),
         migrations.RemoveField(
-            model_name='historicalposterminal',
-            name='allows_check',
+            model_name="historicalposterminal",
+            name="allows_check",
         ),
     ]

@@ -5,10 +5,11 @@ import { showApiError } from "@/lib/errors"
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
 
 import type { BulkAction } from "@/components/shared"
 import { UoMDrawer } from "./UoMDrawer"
@@ -68,6 +69,10 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
         }
     })
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+    const actionsCtx: UoMActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDelete: (id) => handleDelete(id),
+    }
     const columns = useMemo<ColumnDef<UoM>[]>(() => [
         {
             id: "select",
@@ -76,6 +81,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -83,6 +89,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             enableSorting: false,
@@ -133,15 +140,8 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                 <DataCell.Number value={row.getValue("ratio")} />
             ),
         },
-        createActionsColumn<UoM>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => openSelected(item.id)} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
-                </>
-            ),
-        }),
-    ], [handleDelete, openSelected])
+        uomActions.column(actionsCtx),
+    ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
         {
@@ -151,10 +151,10 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             intent: "destructive",
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteUoM, bulkDeleteConfirm])
+    ], [bulkDeleteConfirm])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     columns={columns}
@@ -162,7 +162,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     isLoading={isLoading}
                     entityLabel="inventory.uom"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
                     bulkActions={bulkActions}
                     createAction={createAction}
                     isFiltered={isFiltered}
@@ -184,7 +184,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                                     />
                                 }
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={uomActions.render(uom, actionsCtx)}>
                                 <EntityCard.Field label="Ratio" value={<DataCell.Number value={uom.ratio} />} />
                             </EntityCard.Body>
                         </EntityCard>

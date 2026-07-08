@@ -5,21 +5,35 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0019_alter_journalentry_is_manual_default'),
-        ('treasury', '0047_fts_gin_index'),
+        ("accounting", "0019_alter_journalentry_is_manual_default"),
+        ("treasury", "0047_fts_gin_index"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicaltreasuryaccount',
-            name='account',
-            field=models.ForeignKey(blank=True, db_constraint=False, limit_choices_to={'account_type__in': ['ASSET', 'LIABILITY']}, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='accounting.account', verbose_name='Cuenta Contable'),
+            model_name="historicaltreasuryaccount",
+            name="account",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                limit_choices_to={"account_type__in": ["ASSET", "LIABILITY"]},
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="accounting.account",
+                verbose_name="Cuenta Contable",
+            ),
         ),
         migrations.AlterField(
-            model_name='treasuryaccount',
-            name='account',
-            field=models.ForeignKey(limit_choices_to={'account_type__in': ['ASSET', 'LIABILITY']}, on_delete=django.db.models.deletion.PROTECT, related_name='treasury_accounts', to='accounting.account', verbose_name='Cuenta Contable'),
+            model_name="treasuryaccount",
+            name="account",
+            field=models.ForeignKey(
+                limit_choices_to={"account_type__in": ["ASSET", "LIABILITY"]},
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="treasury_accounts",
+                to="accounting.account",
+                verbose_name="Cuenta Contable",
+            ),
         ),
     ]

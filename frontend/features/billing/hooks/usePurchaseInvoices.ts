@@ -1,12 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { billingApi } from '../api/billingApi'
 import { toast } from 'sonner'
-import type {InvoiceFilters} from '../types'
+import type { Invoice, InvoiceFilters } from '../types'
 import { PURCHASING_KEYS } from '@/features/purchasing'
+import { useRealtime } from '@/features/realtime'
+import { useAuth } from '@/contexts/AuthContext'
 
-import { PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'
+import { PURCHASE_INVOICES_KEYS, PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'
 
-export { PURCHASE_INVOICES_QUERY_KEY }
+export { PURCHASE_INVOICES_KEYS, PURCHASE_INVOICES_QUERY_KEY }
 
 interface UsePurchaseInvoicesProps {
     filters?: Omit<InvoiceFilters, 'mode'>
@@ -14,23 +17,32 @@ interface UsePurchaseInvoicesProps {
 
 export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+    const { isAuthenticated } = useAuth()
 
-    const { data: invoices, isLoading, refetch } = useQuery({
-        queryKey: [...PURCHASE_INVOICES_QUERY_KEY, filters],
+    const query = useQuery({
+        queryKey: PURCHASE_INVOICES_KEYS.list(filters),
         queryFn: () => billingApi.getInvoices({ ...filters, mode: 'purchase' }),
         staleTime: 2 * 60 * 1000,
+        enabled: isAuthenticated,
+        placeholderData: (prev) => prev,
     })
 
+    const invoices = query.data ?? []
+    const showSkeleton = query.isLoading && !invoices.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
+
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: PURCHASE_INVOICES_QUERY_KEY })
-        queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.all })
+        invalidateCrossFeature(queryClient, [PURCHASE_INVOICES_KEYS.all, PURCHASING_KEYS.all])
     }
 
     const annulMutation = useMutation({
-        mutationFn: async ({ id, force }: { id: number, force: boolean }) => {
-            return billingApi.annulInvoice(id, { force })
+        mutationFn: async ({ id, force, reason }: { id: number, force: boolean, reason?: string }) => {
+            return billingApi.annulInvoice(id, { force, reason })
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Documento anulado correctamente')
             invalidate()
         },
@@ -39,10 +51,12 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         }
     })
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: number) => billingApi.deleteInvoice(id),
+    const cancelMutation = useMutation({
+        mutationFn: async ({ id, reason }: { id: number, reason?: string }) =>
+            billingApi.cancelInvoice(id, reason ?? ''),
         onSuccess: () => {
-            toast.success('Documento eliminado correctamente')
+            markLocalMutation()
+            toast.success('Documento cancelado correctamente')
             invalidate()
         },
     })
@@ -51,6 +65,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
         mutationFn: async ({ id, payload }: { id: number; payload: FormData | Record<string, unknown> }) =>
             billingApi.confirmInvoice(id, payload),
         onSuccess: () => {
+            markLocalMutation()
             invalidate()
         },
     })
@@ -58,19 +73,31 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     const payMutation = useMutation({
         mutationFn: async (formData: FormData) => billingApi.createPayment(formData),
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Operación registrada correctamente')
             invalidate()
         },
     })
 
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number) => billingApi.deleteInvoice(id),
+        onSuccess: () => {
+            markLocalMutation()
+            toast.success('Documento eliminado correctamente')
+            invalidate()
+        },
+    })
+
     return {
-        invoices: invoices ?? [],
-        isLoading,
+        invoices,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         annulInvoice: annulMutation.mutateAsync,
         isAnnulling: annulMutation.isPending,
-        deleteInvoice: deleteMutation.mutateAsync,
+        cancelInvoice: cancelMutation.mutateAsync,
         confirmInvoice: confirmMutation.mutateAsync,
         makePayment: payMutation.mutateAsync,
+        deleteInvoice: deleteMutation.mutateAsync,
     }
 }

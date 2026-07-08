@@ -1,9 +1,11 @@
 "use client"
 
 import { Drawer } from "@/components/shared"
-import { FileText } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { useState } from "react"
-import { PayrollDetailContent } from "./PayrollDetailContent"
+import { PayrollDetailView } from "./PayrollDetailView"
+import type { EmployeeBasic } from "@/features/hr/hooks/usePayrolls"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface PayrollDetailDrawerProps {
     payrollId: number | null
@@ -11,14 +13,14 @@ interface PayrollDetailDrawerProps {
     onOpenChange: (open: boolean) => void
     onUpdate?: () => void
     viewMode?: 'admin' | 'employee'
-    employee?: any
+    employee?: EmployeeBasic | null
 }
 
 export function PayrollDetailDrawer({ payrollId, open, onOpenChange, onUpdate, viewMode = 'admin', employee }: PayrollDetailDrawerProps) {
     const [headerData, setHeaderData] = useState<{
         title?: React.ReactNode | string
         subtitle?: React.ReactNode | string
-        icon?: any
+        icon?: React.ElementType
         headerActions?: React.ReactNode
     }>({})
 
@@ -28,15 +30,15 @@ export function PayrollDetailDrawer({ payrollId, open, onOpenChange, onUpdate, v
                 onOpenChange={onOpenChange}
                 side="left"
                 boundary="embedded"
-                defaultSize="60%"
+                defaultSize={formDrawerWidth("master", false)}
                 contentClassName="p-0 flex flex-col overflow-hidden"
                 title={headerData.title}
                 subtitle={headerData.subtitle}
-                icon={headerData.icon || FileText}
+                icon={headerData.icon || getEntityIcon('hr.payroll')}
                 headerActions={headerData.headerActions}
             >
                 {payrollId && (
-                    <PayrollDetailContent 
+                    <PayrollDetailView 
                         payrollId={payrollId} 
                         onClose={() => onOpenChange(false)}
                         onUpdate={onUpdate}

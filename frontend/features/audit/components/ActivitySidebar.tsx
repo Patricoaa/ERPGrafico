@@ -3,7 +3,7 @@
 import React from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Loader2, Plus, Edit, Trash2, User, Clock, ArrowRight, ChevronDown } from "lucide-react"
-import { HistoricalRecord } from "@/types/audit"
+import { type HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -174,7 +174,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
                                             {/* Badge de Historial Tipo Swatch Angular */}
                                             <div className={cn(
-                                                "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border shadow-sm transition-all duration-normal ease-premium group-hover:scale-105",
+                                                "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border shadow-card transition-all duration-normal ease-premium group-hover:scale-105",
                                                 getIconColor(record.history_type)
                                             )}>
                                                 {getChangeIcon(record.history_type)}
@@ -183,7 +183,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                             {/* Bloque de Información del Registro */}
                                             <div className="flex-1 min-w-0 pt-0.5 flex flex-col">
                                                 {/* Cabecera del Item de Línea de Tiempo */}
-                                                <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground flex-wrap">
+                                                <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-wrap">
                                                     <span className="font-semibold text-foreground group-hover:text-primary transition-colors duration-normal">
                                                         {username}
                                                     </span>

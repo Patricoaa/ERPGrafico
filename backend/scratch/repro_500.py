@@ -1,10 +1,11 @@
 import os
-import django
 import sys
 
+import django
+
 # Setup Django
-sys.path.append('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend')
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+sys.path.append("/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from accounting.models import Account
@@ -20,4 +21,5 @@ try:
 except Exception as e:
     print(f"Error during serialization: {e}")
     import traceback
+
     traceback.print_exc()

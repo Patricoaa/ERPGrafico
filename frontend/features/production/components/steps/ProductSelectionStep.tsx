@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {FileText, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { BaseProduct } from "@/features/inventory/types";
+import type { BaseProduct } from "@/features/inventory";
+import { resolveMediaUrl } from '@/lib/media-url';
 import { ProductSelector } from '@/components/shared';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
@@ -24,7 +26,7 @@ export function ProductSelectionStep({
   initialOtType,
   initialProductId
 }: ProductSelectionStepProps) {
-  const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(
+  const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
   );
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -32,13 +34,11 @@ export function ProductSelectionStep({
 
   const {
     data,
-    fetchNextPage,
-    hasNextPage,
     isLoading,
     isError,
   } = useWorkOrderProducts(otType, searchTerm);
 
-  const products = (data?.pages ?? []).flat()
+  const products = (data?.pages ?? []).flatMap(page => page.results ?? [])
     .filter(p => !p.mfg_auto_finalize);
 
   useEffect(() => {
@@ -107,12 +107,14 @@ export function ProductSelectionStep({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {selectedProduct.image ? (
-                  <img
-                    src={selectedProduct.image}
-                    alt={selectedProduct.name || ""}
-                    className="h-8 w-8 rounded object-cover"
-                  />
+{selectedProduct.image ? (
+                                  <Image
+                                    src={resolveMediaUrl(selectedProduct.image) ?? ""}
+                                    alt={selectedProduct.name || ""}
+                                    width={32}
+                                    height={32}
+                                    className="rounded object-cover"
+                                  />
                 ) : (
                   <div className="h-8 w-8 flex items-center justify-center rounded bg-muted/20">
                     <FileText className="h-4 w-4 text-muted-foreground" />

@@ -1,20 +1,22 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Package, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatEntity } from '@/features/orders/utils/status'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { useAnnulLogistics } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, OrderLine, PhaseDocument } from "../../types"
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
+import { type Order, type OrderLine, type PhaseDocument } from "../../types"
 
 interface LogisticsPhaseProps {
     activeDoc: Order
     isNoteMode: boolean
-    noteStatuses: Record<string, string>
+    noteStatuses: Record<string, string | boolean | number>
     isSale: boolean
     invoices: Order[]
     isTimeline?: boolean
@@ -49,15 +51,16 @@ export function LogisticsPhase({
 }: LogisticsPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
 
-    const annulLogistics = useAnnulLogistics()
+    const { annulLogistics } = useAnnulLogistics()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -65,7 +68,11 @@ export function LogisticsPhase({
         onConfirm: () => { }
     })
 
-    const handleAnnulLogistics = async (id: number, docType: string) => {
+    const canAnnulLogistics = userPermissions.includes(
+        isSale ? 'sales.delete_saledelivery' : 'purchasing.delete_purchasereceipt'
+    )
+
+    const handleAnnulLogistics = (id: number, docType: string) => {
         const label = docType === 'sale_delivery' ? 'Despacho' :
             (docType === 'purchase_receipt' ? 'Recepción' : 'Devolución')
 
@@ -74,13 +81,15 @@ export function LogisticsPhase({
             title: `Anular ${label}`,
             variant: "destructive",
             confirmText: `Anular ${label}`,
-            onConfirm: async () => {
+            requireReason: true,
+            onConfirm: async (reason?: string) => {
                 try {
-                    await annulLogistics.mutateAsync({ id, docType })
+                    await annulLogistics({ id, docType, reason })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
                     showApiError(error, `Error al anular ${label}`)
+                    throw error
                 }
             },
             description: `Esta acción reverterá los movimientos de inventario asociados. ¿Está seguro de anular este ${label.toLowerCase()}?`
@@ -93,19 +102,19 @@ export function LogisticsPhase({
 
         // 1. Returns for Notes/Orders
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
-            docs.push(...activeDoc.related_returns.map((doc: any) => ({
+            docs.push(...activeDoc.related_returns.map((doc: Record<string, unknown>) => ({
                 type: doc.type as string,
-                number: formatEntity('DEV', doc.number || doc.id, doc.display_id),
+                number: (doc.display_id as string) || formatEntityDisplay(isSale ? 'sales.salereturn' : 'purchasing.purchasereturn', { number: (doc.number as string | number) || (doc.id as string | number) }),
                 icon: Package,
-                id: doc.id,
+                id: doc.id as string | number,
                 docType: doc.docType as string,
-                status: doc.status,
+                status: doc.status as string,
                 actions: [
-                    ...((doc.status !== 'CANCELLED') ? [{
+                    ...(canAnnulLogistics && doc.status !== 'CANCELLED' ? [{
                         icon: Ban,
                         title: 'Anular Devolución',
                         color: 'text-warning hover:bg-warning/10',
-                        onClick: () => handleAnnulLogistics(doc.id, doc.docType as string)
+                        onClick: () => handleAnnulLogistics(doc.id as number, doc.docType as string)
                     }] : [])
                 ]
             })))
@@ -116,13 +125,13 @@ export function LogisticsPhase({
         if (specificDocs && specificDocs.length > 0) {
             docs.push(...specificDocs.map((doc: Record<string, unknown>) => ({
                 type: isSale ? 'Despacho' : 'Recepción',
-                number: formatEntity(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
+                number: (doc.display_id as string) || formatEntityDisplay(isSale ? 'sales.saledelivery' : 'purchasing.purchasereceipt', { number: (doc.number as string) || (doc.id as number) }),
                 icon: Package,
                 id: doc.id as number,
-                docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'inventory'),
+                docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'purchase_receipt'),
                 status: doc.status as string,
                 actions: [
-                    ...((doc.status !== 'CANCELLED' && invoices.some((inv: Order) => inv.status === 'DRAFT')) ? [{
+                    ...(canAnnulLogistics && doc.status !== 'CANCELLED' && invoices.some((inv: Order) => inv.status === 'DRAFT') ? [{
                         icon: Ban,
                         title: isSale ? 'Anular Despacho' : 'Anular Recepción',
                         color: 'text-warning hover:bg-warning/10',
@@ -136,7 +145,7 @@ export function LogisticsPhase({
         if (docs.length === 0 && (activeDoc.related_stock_moves?.length || 0) > 0) {
             docs.push(...(activeDoc.related_stock_moves || []).map((m: Record<string, unknown>) => ({
                 type: (m.move_type_display as string) || 'Movimiento',
-                number: formatEntity('MOV', m.id as number, m.display_id as string),
+                number: (m.display_id as string) || formatEntityDisplay('inventory.stockmove', { id: m.id as number }),
                 icon: Package,
                 id: m.id as number,
                 docType: 'inventory',
@@ -167,7 +176,8 @@ export function LogisticsPhase({
             <PhaseCard
                 title={title}
                 icon={Package}
-                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as any}
+                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as 'success' | 'active' | 'neutral' | 'destructive'}
+                progress={isNoteMode ? undefined : logisticsProgress}
                 documents={logisticsDocs}
                 onViewDetail={openDetails}
                 actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: { id: string }) => !a.id.includes('view-'))}
@@ -233,6 +243,8 @@ export function LogisticsPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
         </>
     )

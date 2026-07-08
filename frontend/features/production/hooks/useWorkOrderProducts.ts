@@ -1,16 +1,17 @@
 'use client'
 
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { inventoryApi } from '@/features/inventory/api/inventoryApi'
-import type { ProductFilters } from '@/features/inventory/types'
+import { inventoryApi } from '@/features/inventory'
+import type { ProductFilters } from '@/features/inventory'
 
 export function useWorkOrderProducts(otType: 'LINKED' | 'NONE' | null, searchTerm: string) {
   return useInfiniteQuery({
     queryKey: ['production', 'products', otType, searchTerm],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam = 1 }) => {
       const filters: ProductFilters = {
-        active: true,
+        is_active: true,
         search: searchTerm,
+        page: pageParam as number,
         page_size: 20,
         ...(otType === "NONE"
           ? { product_type: "MANUFACTURABLE", track_inventory: true }
@@ -18,9 +19,9 @@ export function useWorkOrderProducts(otType: 'LINKED' | 'NONE' | null, searchTer
       }
       return inventoryApi.getProducts(filters)
     },
-    initialPageParam: 0,
+    initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === 20 ? allPages.length : undefined,
+      (lastPage.results?.length ?? 0) === 20 ? allPages.length + 1 : undefined,
     enabled: otType === "NONE",
   })
 }

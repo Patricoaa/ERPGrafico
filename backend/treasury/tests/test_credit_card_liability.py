@@ -3,11 +3,12 @@ Tests: la tarjeta de crédito propia (CREDIT_CARD) debe vincularse a una cuenta 
 PASIVO, no a Efectivo (1.1.01). Verifica también que no hay regresión en los tipos
 cash-equivalent ni en la provisión vía servicio.
 """
+
 import pytest
 from django.core.exceptions import ValidationError
 
 from accounting.models import Account, AccountType
-from treasury.models import Bank, PaymentMethod, TreasuryAccount
+from treasury.models import Bank, TreasuryAccount
 from treasury.provisioning_service import TreasuryProvisioningService
 
 
@@ -16,10 +17,14 @@ def base(db):
     bank = Bank.objects.create(name="Banco CC", code="BCC")
 
     def asset(code):
-        return Account.objects.create(name=f"Activo {code}", code=code, account_type=AccountType.ASSET)
+        return Account.objects.create(
+            name=f"Activo {code}", code=code, account_type=AccountType.ASSET
+        )
 
     def liability(code):
-        return Account.objects.create(name=f"Pasivo {code}", code=code, account_type=AccountType.LIABILITY)
+        return Account.objects.create(
+            name=f"Pasivo {code}", code=code, account_type=AccountType.LIABILITY
+        )
 
     return {"bank": bank, "asset": asset, "liability": liability}
 
@@ -54,25 +59,30 @@ def test_credit_card_with_asset_account_is_rejected(base):
 def test_cash_and_checking_still_require_asset_1101(base):
     # CASH con 1.1.01 → válido
     cash = TreasuryAccount.objects.create(
-        name="Caja", account=base["asset"]("1.1.01.071"),
+        name="Caja",
+        account=base["asset"]("1.1.01.071"),
         account_type=TreasuryAccount.Type.CASH,
     )
     assert cash.pk is not None
 
     # CHECKING con 1.1.01 → válido
     checking = TreasuryAccount.objects.create(
-        name="BCI Cte", account=base["asset"]("1.1.01.072"),
+        name="BCI Cte",
+        account=base["asset"]("1.1.01.072"),
         account_type=TreasuryAccount.Type.CHECKING,
-        bank=base["bank"], account_number="123",
+        bank=base["bank"],
+        account_number="123",
     )
     assert checking.pk is not None
 
     # CHECKING con una cuenta de pasivo → rechazado (sigue exigiendo 1.1.01)
     with pytest.raises(ValidationError):
         TreasuryAccount.objects.create(
-            name="BCI Mal", account=base["liability"]("2.1.09.002"),
+            name="BCI Mal",
+            account=base["liability"]("2.1.09.002"),
             account_type=TreasuryAccount.Type.CHECKING,
-            bank=base["bank"], account_number="456",
+            bank=base["bank"],
+            account_number="456",
         )
 
 

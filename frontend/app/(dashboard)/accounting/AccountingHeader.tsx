@@ -1,60 +1,49 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function AccountingHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
+    const { getViewModeUrl } = useViewModePreference()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'ledger'
 
-    const segmentToTab: Record<string, string> = {
-        ledger: 'ledger',
-        entries: 'entries',
-        closures: 'closures',
-        tax: 'tax',
-        settings: 'config',
-    }
-
-    const activeValue = segmentToTab[currentSegment] || 'ledger'
-    const subActiveValue = searchParams.get('tab') ?? undefined
+    const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
+    const subActiveValue = currentSegment === 'settings' ? (segments[2] || 'vat-rates') : undefined
 
     const tabs = [
-        { value: "ledger", label: "Plan de Cuentas", iconName: "list-tree", href: "/accounting/ledger" },
-        { value: "entries", label: "Asientos", iconName: "file-text", href: "/accounting/entries" },
-        { value: "closures", label: "Cierre Contable", iconName: "calendar", href: "/accounting/closures" },
-        { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: "/accounting/tax" },
+        { value: "ledger", label: "Plan de Cuentas", iconName: getEntityIconName('accounting.account'), href: getViewModeUrl('accounting.account', "/accounting/ledger") },
+        { value: "entries", label: "Asientos", iconName: getEntityIconName('accounting.journalentry'), href: getViewModeUrl('accounting.journalentry', "/accounting/entries") },
+        { value: "closures", label: "Cierres", iconName: getEntityIconName('accounting.fiscalyear'), href: getViewModeUrl('accounting.fiscalyear', "/accounting/closures") },
         {
             value: "config",
             label: "Configuración",
             iconName: "settings",
             href: "/accounting/settings",
             subTabs: [
-                { value: "structure", label: "Estructura Contable", href: "/accounting/settings?tab=structure", iconName: "settings-2" },
-                { value: "defaults", label: "Cuentas por Defecto", href: "/accounting/settings?tab=defaults", iconName: "book-open" },
-                { value: "tax", label: "Impuestos", href: "/accounting/settings?tab=tax", iconName: "receipt" }
+                { value: "vat-rates", label: "Tasas de IVA", href: "/accounting/settings/vat-rates", iconName: "percent" }
             ]
         },
     ]
 
     const navigation = {
         moduleName: "Contabilidad",
-        moduleHref: "/accounting",
+        moduleHref: getViewModeUrl('accounting.account', "/accounting/ledger"),
         tabs,
         activeValue,
         subActiveValue,
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración Contable", description: "Gestione la estructura del plan de cuentas, prefijos y reglas de negocio.", iconName: "settings" as const }
-        if (activeValue === 'ledger') return { title: "Plan de Cuentas", description: "Estructura contable y clasificación de cuentas.", iconName: "list-tree" as const }
-        if (activeValue === 'entries') return { title: "Asientos Contables", description: "Libro diario y registro cronológico de transacciones.", iconName: "file-text" as const }
-        if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Control de validación mensual y cierres de ejercicios anuales.", iconName: "calendar" as const }
-        if (activeValue === 'tax') return { title: "Cumplimiento Tributario", description: "Declaraciones F29 y gestión de periodos fiscales.", iconName: "calculator" as const }
-        return { title: "Contabilidad", description: "", iconName: getModuleIconName('accounting') ?? "calculator" }
+        if (activeValue === 'ledger') return { title: "Plan de Cuentas", description: "Estructura contable y clasificación de cuentas.", iconName: getEntityIconName('accounting.account') }
+        if (activeValue === 'entries') return { title: "Asientos Contables", description: "Libro diario y registro cronológico de transacciones.", iconName: getEntityIconName('accounting.journalentry') }
+        if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Periodos tributarios (F29), cierres contables mensuales y cierre de ejercicios anuales.", iconName: getEntityIconName('accounting.fiscalyear') }
+        if (activeValue === 'config') return { title: "Configuración de Contabilidad", description: "Gestión de tasas de IVA y parámetros contables.", iconName: "settings" }
+        return { title: "Contabilidad", description: "", iconName: getEntityIconName('accounting.account') ?? "calculator" }
     }
 
     const config = getHeaderConfig()

@@ -65,7 +65,7 @@ export function getErrorMessage(error: unknown): string {
                 const errObj = data.error as Record<string, unknown>;
                 if (typeof errObj.message === "string") return errObj.message;
                 if (Array.isArray(errObj.message) && errObj.message.length > 0) {
-                    const firstMsg = errObj.message[0];
+                    const firstMsg = (errObj.message as unknown[])[0];
                     if (typeof firstMsg === "string") return firstMsg;
                 }
             }

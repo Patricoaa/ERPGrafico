@@ -1,6 +1,6 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 
 export const SETTINGS_TABS = [
@@ -16,8 +16,8 @@ export const SETTINGS_TABS = [
         iconName: "building-2",
         href: "/settings/company",
         subTabs: [
-            { value: "general", label: "General", iconName: "building", href: "/settings/company?tab=general" },
-            { value: "branding", label: "Identidad Visual", iconName: "palette", href: "/settings/company?tab=branding" },
+            { value: "general", label: "General", iconName: "building", href: "/settings/company/general" },
+            { value: "branding", label: "Identidad Visual", iconName: "palette", href: "/settings/company/branding" },
         ]
     },
     {
@@ -26,8 +26,8 @@ export const SETTINGS_TABS = [
         iconName: "shield-check",
         href: "/settings/users",
         subTabs: [
-            { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users?tab=users" },
-            { value: "groups", label: "Grupos y Equipos", iconName: "user-plus", href: "/settings/users?tab=groups" },
+            { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users" },
+            { value: "groups", label: "Grupos y Equipos", iconName: "user-plus", href: "/settings/users/groups" },
         ]
     },
     {
@@ -37,27 +37,38 @@ export const SETTINGS_TABS = [
         href: "/settings/audit",
     },
     {
+        value: "accounts",
+        label: "Cuentas Contables",
+        iconName: "book-open",
+        href: "/settings/accounts",
+    },
+    {
+        value: "jobs",
+        label: "Procesos",
+        iconName: "server-cog",
+        href: "/settings/jobs",
+    },
+    {
         value: "workflow",
         label: "Workflow",
         iconName: "git-branch",
         href: "/settings/workflow",
         subTabs: [
-            { value: "approvals", label: "Aprobaciones", iconName: "check-circle-2", href: "/settings/workflow?tab=approvals" },
-            { value: "tasks", label: "Tareas", iconName: "list-todo", href: "/settings/workflow?tab=tasks" },
-            { value: "notif", label: "Notificaciones", iconName: "bell", href: "/settings/workflow?tab=notif" },
+            { value: "approvals", label: "Aprobaciones", iconName: "check-circle-2", href: "/settings/workflow/approvals" },
+            { value: "tasks", label: "Tareas", iconName: "list-todo", href: "/settings/workflow/tasks" },
+            { value: "notif", label: "Notificaciones", iconName: "bell", href: "/settings/workflow/notifications" },
         ]
     },
 ]
 
 export function SettingsHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'overview'
 
     const activeValue = currentSegment
-    const subActiveValue = searchParams.get('tab') ?? undefined
+    const subActiveValue = segments[2] ?? undefined
 
     const navigation = {
         moduleName: "Configuración Global",
@@ -100,6 +111,18 @@ export function SettingsHeader() {
                     title: "Registro de Auditoría", 
                     description: "Trazabilidad completa de acciones y cambios realizados en el sistema.", 
                     iconName: "history" 
+                }
+            case 'accounts':
+                return {
+                    title: "Cuentas Contables",
+                    description: "Configure las cuentas contables por defecto de cada módulo del sistema.",
+                    iconName: "book-open"
+                }
+            case 'jobs':
+                return {
+                    title: "Procesos en Segundo Plano",
+                    description: "Gestión de importaciones, exportaciones y reportes asíncronos.",
+                    iconName: "server-cog"
                 }
             case 'workflow':
                 if (subActiveValue === 'tasks') return { title: "Tareas Automáticas", description: "Configuración de responsables y disparadores de tareas.", iconName: "list-todo" }

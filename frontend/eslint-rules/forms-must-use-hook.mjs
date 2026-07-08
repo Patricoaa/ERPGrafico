@@ -13,7 +13,7 @@
  * Severity is `warn` during the migration window; bump to `error` when
  * the global violation count reaches 0.
  */
-export default {
+const rule = {
   meta: {
     type: 'suggestion',
     docs: {
@@ -94,3 +94,5 @@ export default {
     };
   },
 };
+
+export default rule;

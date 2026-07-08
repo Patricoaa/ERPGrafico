@@ -1,18 +1,18 @@
 "use client"
 
-
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function ContactsHeader() {
+    const { getViewModeUrl } = useViewModePreference()
     const tabs = [
-        { value: "contacts", label: "Directorio", iconName: "users-2", href: "/contacts" },
-        { value: "config", label: "Configuración", iconName: "settings", href: "/contacts/settings" },
+        { value: "contacts", label: "Directorio", iconName: getEntityIconName('contacts.contact'), href: getViewModeUrl('contacts.contact', "/contacts") },
     ]
 
     const navigation = {
         moduleName: "Contactos",
-        moduleHref: "/contacts",
+        moduleHref: getViewModeUrl('contacts.contact', "/contacts"),
         tabs,
         activeValue: "contacts",
     }
@@ -21,7 +21,7 @@ export function ContactsHeader() {
         <PageHeader
             title="Contactos"
             description="Directorio de clientes, proveedores y contactos."
-            iconName={getModuleIconName('contacts') ?? "users"}
+            iconName={getEntityIconName('contacts.contact') ?? "users"}
             variant="minimal"
             navigation={navigation}
         />

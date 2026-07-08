@@ -11,21 +11,22 @@ import { createEmployee, updateEmployee } from '@/features/hr/api/hrApi'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck, Printer } from "lucide-react"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { FormSplitLayout } from "@/components/shared"
 
 import {
     Form, FormField
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { cn } from "@/lib/utils"
+import { cn, toDateOnlyISO } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Drawer, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, type FormTabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, TabBar, TabBarContent, FormSection, type TabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useServerDate } from "@/hooks/useServerDate"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -35,7 +36,7 @@ export const employeeSchema = z.object({
     base_salary: z.string().min(1, "Sueldo base requerido"),
     status: z.enum(["ACTIVE", "INACTIVE"]),
     contract_type: z.enum(["INDEFINIDO", "PLAZO_FIJO"]),
-    afp: z.string().nullable(),
+    afp: z.string().min(1, "Institución Previsional requerida"),
     salud_type: z.enum(["FONASA", "ISAPRE"]),
     isapre_amount_uf: z.string(),
     jornada_type: z.enum(["ORDINARIA_22", "PARCIAL_40BIS", "EXENTA_22", "EXTRAORDINARIA_30"]),
@@ -74,6 +75,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
 
     const mode: DrawerMode = modeProp ?? (employee ? 'edit' : 'create')
     const isView = mode === 'view'
+    const { dateString } = useServerDate()
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const [activeTab, setActiveTab] = useState("contratacion")
@@ -88,7 +90,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
             base_salary: "0",
             status: "ACTIVE",
             contract_type: "INDEFINIDO",
-            afp: null,
+            afp: "",
             salud_type: "FONASA",
             isapre_amount_uf: "0",
             jornada_type: "ORDINARIA_22",
@@ -103,7 +105,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
         }
     })
 
-    const { data: hrData, isLoading: depsLoading } = useEmployeeFormDeps(open)
+    const { employeeFormDeps: hrData, isLoading: depsLoading } = useEmployeeFormDeps(open)
 
     const isFetchingInitialData = open && depsLoading
 
@@ -120,7 +122,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 base_salary: String(employee.base_salary),
                 status: employee.status,
                 contract_type: employee.contract_type,
-                afp: employee.afp ? String(employee.afp) : null,
+                afp: employee.afp ? String(employee.afp) : "",
                 salud_type: employee.salud_type,
                 isapre_amount_uf: String(employee.isapre_amount_uf || "0"),
                 jornada_type: (employee.jornada_type as EmployeeFormValues["jornada_type"]) || "ORDINARIA_22",
@@ -141,11 +143,11 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 contact: "",
                 position: "",
                 department: "",
-                start_date: new Date().toISOString().split("T")[0],
+                start_date: dateString,
                 base_salary: "0",
                 status: "ACTIVE",
                 contract_type: "INDEFINIDO",
-                afp: null,
+                afp: "",
                 salud_type: "FONASA",
                 isapre_amount_uf: "0",
                 jornada_type: "ORDINARIA_22",
@@ -223,7 +225,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
         }
     }
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "contratacion",
             label: "Contratación",
@@ -246,11 +248,9 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
 
     const watchSalud = form.watch("salud_type")
 
-    const drawerTitle = isView
-        ? `Ficha de Empleado${employee?.display_id ? ` • ${employee.display_id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Empleado"
-            : "Editar Empleado"
+    const identity = useDrawerIdentity('hr.employee', mode, employee, {
+        overrideSubtitle: employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos",
+    })
 
     const footer = isView ? undefined : (
         <FormFooter
@@ -288,9 +288,10 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
             <Drawer
                 open={open}
                 onOpenChange={onOpenChange}
-                icon={UserCog}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!employee)}
                 className="h-[90vh]"
                 mode={mode}
@@ -308,7 +309,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                     ) : undefined}
                                     className="min-w-0 h-full overflow-hidden p-0"
                                 >
-                                    <FormTabs
+                                    <TabBar
                                         items={tabItems}
                                         value={activeTab}
                                         onValueChange={setActiveTab}
@@ -318,7 +319,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                         contentClassName="bg-transparent"
                                     >
                                         <fieldset disabled={saving} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                            <FormTabsContent
+                                            <TabBarContent
                                                 value="contratacion"
                                                 className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
                                             >
@@ -330,6 +331,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                 render={({ field, fieldState }) => (
                                                                     <AdvancedContactSelector
                                                                         label="Contacto"
+                                                                        required
                                                                         value={field.value || null}
                                                                         onChange={(val) => field.onChange(val || "")}
                                                                         error={fieldState.error?.message}
@@ -340,7 +342,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         <div className="col-span-2">
                                                             <FormField control={form.control} name="position" render={({ field, fieldState }) => (
                                                                 <LabeledInput
-                                                                    label="Cargo"
+                                                                    label="Cargo (opcional)"
                                                                     placeholder="Ej: Vendedor"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -350,7 +352,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         <div className="col-span-2">
                                                             <FormField control={form.control} name="department" render={({ field, fieldState }) => (
                                                                 <LabeledInput
-                                                                    label="Departamento"
+                                                                    label="Departamento (opcional)"
                                                                     placeholder="Ventas"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -373,6 +375,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="contract_type" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Tipo de Contrato"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -386,7 +389,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         <div className="col-span-2">
                                                             <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
                                                                 <LabeledContainer
-                                                                    label="Fecha Ingreso"
+                                                                    label="Fecha Ingreso (opcional)"
                                                                     error={fieldState.error?.message}
                                                                 >
                                                                     <DatePicker
@@ -396,12 +399,9 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                                 field.onChange("")
                                                                                 return
                                                                             }
-                                                                            const year = d.getFullYear()
-                                                                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                                                                            const day = String(d.getDate()).padStart(2, '0')
-                                                                            field.onChange(`${year}-${month}-${day}`)
+                                                                            field.onChange(toDateOnlyISO(d))
                                                                         }}
-                                                                        className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                                                        className="h-[1.5rem] p-0 w-full border-none bg-transparent hover:bg-transparent shadow-none"
                                                                     />
                                                                 </LabeledContainer>
                                                             )} />
@@ -410,6 +410,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="status" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Estado Ficha"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -422,8 +423,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </FormTabsContent>
-                                            <FormTabsContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
+                                            </TabBarContent>
+                                            <TabBarContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
                                                 <div className="space-y-8">
                                                     <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
                                                     <div className="grid grid-cols-4 gap-6 items-start">
@@ -431,6 +432,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Régimen de Trabajo"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -447,6 +449,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="dias_pactados" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Días Mensuales"
+                                                                    required
                                                                     type="number"
                                                                     min="1"
                                                                     max="31"
@@ -461,6 +464,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="jornada_hours" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Horas / Sem"
+                                                                    required
                                                                     type="number"
                                                                     step="0.5"
                                                                     error={fieldState.error?.message}
@@ -476,7 +480,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                 { name: "trabajo_pesado", label: "Trabajo Pesado" },
                                                                 { name: "trabajo_agricola", label: "Trabajo Agrícola" }
                                                             ].map((sw) => (
-                                                                <FormField key={sw.name} control={form.control} name={sw.name as any} render={({ field }) => (
+                                                                <FormField key={sw.name} control={form.control} name={sw.name as 'gratificacion' | 'trabajo_pesado' | 'trabajo_agricola'} render={({ field }) => (
                                                                     <div className={cn(
                                                                         "flex items-center justify-between p-3.5 rounded-md border transition-all",
                                                                         field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
@@ -497,6 +501,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="afp" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Institución Previsional (AFP)"
+                                                                    required
                                                                     value={field.value || ""}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -512,6 +517,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="salud_type" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Sistema de Salud"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -528,6 +534,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                                 <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
                                                                     <LabeledInput
                                                                         label="Monto Pactado (UF)"
+                                                                        required
                                                                         type="number"
                                                                         step="0.0001"
                                                                         hint="Se descontará el mayor entre el 7% y este monto."
@@ -543,6 +550,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="asignacion_familiar" render={({ field, fieldState }) => (
                                                                 <LabeledSelect
                                                                     label="Tramo Asignación Familiar"
+                                                                    required
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                     error={fieldState.error?.message}
@@ -559,6 +567,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             <FormField control={form.control} name="cargas_familiares" render={({ field, fieldState }) => (
                                                                 <LabeledInput
                                                                     label="Número de Cargas"
+                                                                    required
                                                                     type="number"
                                                                     min="0"
                                                                     error={fieldState.error?.message}
@@ -570,8 +579,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </FormTabsContent>
-                                            <FormTabsContent value="haberes" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                            </TabBarContent>
+                                            <TabBarContent value="haberes" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                                 <div className="space-y-8">
                                                     {availableConcepts.length > 0 ? (
                                                         <div className="grid grid-cols-4 gap-6 items-start">
@@ -593,7 +602,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <div className="py-20 border-4 border-dashed rounded-lg flex flex-col items-center justify-center text-center px-10 bg-muted/5">
+                                                        <div className="py-20 border-4 border-dashed rounded-md flex flex-col items-center justify-center text-center px-10 bg-muted/5">
                                                             <Plus className="h-10 w-10 text-muted-foreground/20 mb-4" />
                                                             <h4 className="font-black uppercase tracking-widest text-muted-foreground/80 text-xs">Sin Conceptos Definidos</h4>
                                                             <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
@@ -602,9 +611,9 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                         </div>
                                                     )}
                                                 </div>
-                                            </FormTabsContent>
+                                            </TabBarContent>
                                         </fieldset>
-                                    </FormTabs>
+                                    </TabBar>
                                 </FormSplitLayout>
                             </fieldset>
                         </form>

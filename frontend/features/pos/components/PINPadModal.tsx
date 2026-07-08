@@ -36,7 +36,7 @@ export function PINPadModal({
             title={
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span className="font-heading font-black uppercase tracking-tighter text-lg">{title}</span>
+                    <span className=" font-black uppercase tracking-tighter text-lg">{title}</span>
                 </div>
             }
             description={description}
@@ -48,7 +48,7 @@ export function PINPadModal({
                     {[0, 1, 2, 3].map((i) => (
                         <div 
                             key={i} 
-                            className={`w-5 h-5 rounded-full border-2 transition-all duration-300 shadow-sm ${
+                            className={`w-5 h-5 rounded-full border-2 transition-all duration-300 shadow-card ${
                                 pin.length > i 
                                     ? "bg-primary border-primary scale-125 shadow-primary/20" 
                                     : "bg-muted border-muted-foreground/10"

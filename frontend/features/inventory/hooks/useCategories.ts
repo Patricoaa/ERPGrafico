@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface Category {
     id: number
@@ -31,21 +32,28 @@ export const CATEGORIES_QUERY_KEY = CATEGORIES_KEYS.all
 
 // ─── Hook principal ──────────────────────────────────────────────────────────
 
-export function useCategories() {
+export function useCategories(initialData?: Category[]) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: categories, isLoading, refetch } = useQuery({
+    const query = useQuery({
         queryKey: CATEGORIES_KEYS.list(),
         queryFn: async (): Promise<Category[]> => {
             const response = await api.get<Category[]>('/inventory/categories/')
+            // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
         staleTime: 15 * 60 * 1000, // 15 min — datos quasi-estáticos
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const categories = query.data ?? []
+    const showSkeleton = query.isLoading && !categories.length
+    const refetch = query.refetch
+
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: CATEGORIES_KEYS.all })
+        invalidateCrossFeature(queryClient, [CATEGORIES_KEYS.all])
     }
 
     const saveCategoryMutation = useMutation({
@@ -79,8 +87,9 @@ export function useCategories() {
     })
 
     return {
-        categories: categories ?? [],
-        isLoading,
+        categories,
+        isLoading: showSkeleton,
+        isRefetching: query.isFetching && !showSkeleton,
         refetch,
         saveCategory: saveCategoryMutation.mutateAsync,
         isSaving: saveCategoryMutation.isPending,
@@ -93,12 +102,14 @@ export function useCategories() {
  * Fetch a single category by id. Returns null while loading or when id is null.
  */
 export function useCategory(id: number | null | undefined) {
-    return useQuery({
+    const { data: category, isLoading, isError } = useQuery({
         queryKey: id ? CATEGORIES_KEYS.detail(id) : ['categories', 'detail', 'noop'],
         queryFn: async (): Promise<Category> => {
-            const res = await api.get<Category>(`/inventory/categories/${id!}/`)
+            const res = await api.get<Category>(`/inventory/categories/${id as number}/`)
             return res.data
         },
+        staleTime: 15 * 60 * 1000,
         enabled: !!id,
     })
+    return { category: category ?? null, isLoading, isError }
 }

@@ -13,14 +13,14 @@ from django.db import migrations
 def _has_journal_entry(model_cls) -> bool:
     """Defensive check: the historical model has a `journal_entry` field."""
     try:
-        model_cls._meta.get_field('journal_entry')
+        model_cls._meta.get_field("journal_entry")
         return True
     except Exception:
         return False
 
 
 def forwards(apps, schema_editor):
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    ContentType = apps.get_model("contenttypes", "ContentType")
 
     def process_model(app_label, model_name):
         try:
@@ -39,34 +39,33 @@ def forwards(apps, schema_editor):
             if not je.source_content_type_id:
                 je.source_content_type_id = ct.id
                 je.source_object_id = obj.id
-                je.save(update_fields=['source_content_type', 'source_object_id'])
+                je.save(update_fields=["source_content_type", "source_object_id"])
 
-    process_model('billing', 'Invoice')
-    process_model('treasury', 'TreasuryMovement')
-    process_model('sales', 'SaleOrder')
-    process_model('purchasing', 'PurchaseOrder')
-    process_model('inventory', 'StockMove')
+    process_model("billing", "Invoice")
+    process_model("treasury", "TreasuryMovement")
+    process_model("sales", "SaleOrder")
+    process_model("purchasing", "PurchaseOrder")
+    process_model("inventory", "StockMove")
 
 
 def backwards(apps, schema_editor):
-    JournalEntry = apps.get_model('accounting', 'JournalEntry')
+    JournalEntry = apps.get_model("accounting", "JournalEntry")
     JournalEntry.objects.update(source_content_type=None, source_object_id=None)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0013_journal_entry_gfk_source'),
-        ('contenttypes', '0002_remove_content_type_name'),
+        ("accounting", "0013_journal_entry_gfk_source"),
+        ("contenttypes", "0002_remove_content_type_name"),
         # Cross-app dependencies — guarantee `journal_entry` field exists on
         # every model consulted by `forwards()`. Each entry points to the
         # migration that establishes that field's schema or the post-
         # TransactionalDocument migration where it is redeclared.
-        ('billing', '0008_invoice_transactional_document'),
-        ('sales', '0006_saleorder_transactional_document'),
-        ('purchasing', '0002_purchaseorder_transactional_document'),
-        ('inventory', '0001_initial'),
-        ('treasury', '0001_initial'),
+        ("billing", "0008_invoice_transactional_document"),
+        ("sales", "0006_saleorder_transactional_document"),
+        ("purchasing", "0002_purchaseorder_transactional_document"),
+        ("inventory", "0001_initial"),
+        ("treasury", "0001_initial"),
     ]
 
     operations = [

@@ -11,6 +11,9 @@ const backendHostname =
     ? new URL(process.env.NEXT_PUBLIC_API_URL).hostname
     : "erpgrafico-production.up.railway.app";
 
+// Hostname del bucket R2 para imágenes de productos
+const r2Hostname = process.env.AWS_S3_CUSTOM_DOMAIN ?? "pub-a723d7beee0f4252b2707f783af03a80.r2.dev";
+
 const nextConfig: NextConfig = {
   // standalone solo para Docker/self-hosted — Vercel gestiona el output por su cuenta
   output: process.env.VERCEL ? undefined : "standalone",
@@ -37,11 +40,15 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "backend",
       },
+      {
+        protocol: "https",
+        hostname: r2Hostname,
+      },
     ],
   },
   experimental: {
   },
-  transpilePackages: ["react-day-picker"],
+  transpilePackages: ["react-day-picker", "@nivo/core", "@nivo/bar", "@nivo/pie", "@nivo/line"],
   devIndicators: {
   },
 };

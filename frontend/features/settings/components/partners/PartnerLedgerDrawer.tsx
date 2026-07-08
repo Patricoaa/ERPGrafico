@@ -11,13 +11,12 @@ import {
     LogOut
 } from "lucide-react"
 import { Drawer, DataTable, SkeletonShell, DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts"
 import { toast } from "sonner"
-import {formatPlainDate as formatDate} from "@/lib/utils"
+import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 
-import { ColumnDef } from "@tanstack/react-table"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { type ColumnDef } from "@tanstack/react-table"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 
@@ -154,7 +153,7 @@ export function PartnerLedgerDrawer({
     // We need to calculate balance_after specifically for this partner's chronological list
     const transactionsWithBalance = React.useMemo(() => {
         if (!data?.transactions) return []
-        const sorted = [...data.transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        const sorted = [...data.transactions].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
         let balance = 0
         const withBal = sorted.map(tx => {
             const amount = parseFloat(tx.amount) || 0
@@ -188,27 +187,11 @@ export function PartnerLedgerDrawer({
                         columns={columns}
                         data={transactionsWithBalance}
                         isLoading={loading}
-                        variant="standalone"
-                        searchPlaceholder="Buscar por concepto (ej: aporte, retiro)..."
-                        filterColumn="description"
-                        toolbarAction={
-                            <>
-                                <DropdownMenuItem
-                                    onClick={() => setIsContributionOpen(true)}
-                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-success focus:bg-success/10 focus:text-success cursor-pointer transition-colors"
-                                >
-                                    <Wallet className="h-4 w-4 mr-2" />
-                                    Registrar Aporte
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setIsWithdrawalOpen(true)}
-                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
-                                >
-                                    <LogOut className="h-4 w-4 mr-2" />
-                                    Registrar Retiro
-                                </DropdownMenuItem>
-                            </>
-                        }
+                        variant="embedded"
+                        toolbarActions={[
+                            { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => setIsContributionOpen(true), intent: 'success' },
+                            { key: 'withdrawal', label: 'Registrar Retiro', icon: LogOut, onClick: () => setIsWithdrawalOpen(true), intent: 'destructive' },
+                        ]}
                     />
                 </div>
             )}

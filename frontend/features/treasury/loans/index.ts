@@ -1,4 +1,3 @@
-export { LoansView } from './LoansView'
 export { LoansClientView } from './LoansClientView'
 export { LoanRegisterDrawer } from './LoanRegisterDrawer'
 export { LoanViewDrawer } from './LoanViewDrawer'
@@ -6,7 +5,7 @@ export { LoanDisburseDrawer } from './LoanDisburseDrawer'
 export { LoanDetailModal } from './LoanDetailModal'
 export { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 export { PrepayLoanModal } from './PrepayLoanModal'
-export { useLoans, useLoan, useLoanSchedule, useLoanInstallments, useLoanMutations } from './hooks'
+export { useLoans, useLoan, useLoanSchedule, useLoanInstallments, useLoanMutations } from '../hooks/useLoans'
 export { loansApi } from './api'
 export type {
     BankLoan, BankLoanCreatePayload, BankLoanStatus, BankLoanCurrency,

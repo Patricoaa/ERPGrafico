@@ -3,6 +3,19 @@
 import React from "react"
 import dynamic from "next/dynamic"
 import { SkeletonShell } from "@/components/shared"
+import type { ProductCategory, AppGroup } from "@/types/entities"
+import type { Contact } from "@/features/contacts"
+import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice } from "@/features/treasury"
+import type { UoM } from "@/features/inventory/hooks/useUoMs"
+import type {
+    ProductInitialData,
+    WarehouseInitialData,
+    UserInitialData,
+    PricingRuleInitialData,
+    PaymentInitialData,
+    JournalEntryInitialData,
+} from "@/types/forms"
+import type { Employee, Absence, SalaryAdvance } from "@/types/hr"
 
 /**
  * Standard props every entity drawer receives from the global opener.
@@ -13,9 +26,13 @@ export interface EntityDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     /** Optional pre-fetched data to avoid round-trip when caller already has it */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?: any
+    data?: unknown
     onSuccess?: () => void
+    /**
+     * Optional segmenter (filtro/segmentador) rendered at the bottom of the drawer.
+     * Each entity drawer may optionally render this slot for data-segmentation controls.
+     */
+    segmenter?: React.ReactNode
 }
 
 const skeleton = (label: string) => <SkeletonShell isLoading={true} ariaLabel={`Cargando ${label}`} />
@@ -121,7 +138,7 @@ const BankJournalDrawer = dynamic(
 )
 
 const PaymentDrawer = dynamic(
-    () => import("@/features/finance").then((m) => m.PaymentDrawer),
+    () => import("@/features/treasury").then((m) => m.PaymentDrawer),
     { ssr: false, loading: () => skeleton("pago") }
 )
 
@@ -153,6 +170,11 @@ const CashMovementDrawer = dynamic(
 const TerminalBatchDrawer = dynamic(
     () => import("@/features/treasury/components/TerminalBatchDrawer").then((m) => m.TerminalBatchDrawer),
     { ssr: false, loading: () => skeleton("lote de terminal") }
+)
+
+const CheckDrawer = dynamic(
+    () => import("@/features/treasury").then((m) => m.CheckDrawer),
+    { ssr: false, loading: () => skeleton("cheque") }
 )
 
 const ProfitDistributionDrawer = dynamic(
@@ -200,7 +222,8 @@ const AccountingPeriodDrawer = dynamic(
  * Add a new entry here when you want an entity to open in-context
  * instead of navigating to its detail page.
  *
- * The corresponding entry in ENTITY_REGISTRY must also set `hasDrawer: true`.
+ * The label MUST match an entry in ENTITY_REGISTRY (lib/entity-registry.ts).
+ * Consulte the registry for canonical identity fields (icon, title, URLs).
  *
  * Drawers marked with (*) require full entity data via the `data` prop.
  * EntityBadge always satisfies this automatically (it passes the table row data).
@@ -212,7 +235,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         <ContactDrawer
             open={open}
             onOpenChange={onOpenChange}
-            contact={data ?? { id }}
+            contact={(data as Contact | undefined) ?? ({ id } as Contact)}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -243,7 +266,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as JournalEntryInitialData}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -255,7 +278,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as ProductInitialData}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -264,7 +287,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         <CategoryDrawer
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as ProductCategory}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -274,7 +297,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as WarehouseInitialData}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -284,7 +307,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as Partial<UoM>}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -294,7 +317,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as PricingRuleInitialData}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -305,7 +328,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         <EmployeeDrawer
             open={open}
             onOpenChange={onOpenChange}
-            employee={data ?? null}
+            employee={(data as Employee | null) ?? null}
             onSaved={() => onSuccess?.()}
         />
     ),
@@ -325,7 +348,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as Record<string, unknown>}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -337,7 +360,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as UserInitialData}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -348,7 +371,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
         <PosTerminalDrawer
             open={open}
             onOpenChange={onOpenChange}
-            terminal={data ?? null}
+            terminal={(data as Terminal | null) ?? null}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -357,7 +380,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            provider={data ?? null}
+            provider={(data as PaymentTerminalProvider | null) ?? null}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -378,7 +401,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            absence={data ?? null}
+            absence={(data as Absence | null) ?? null}
             onSaved={() => onSuccess?.()}
         />
     ),
@@ -388,7 +411,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            advance={data ?? null}
+            advance={(data as SalaryAdvance | null) ?? null}
             onSaved={() => onSuccess?.()}
         />
     ),
@@ -400,7 +423,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            device={data ?? null}
+            device={(data as PaymentTerminalDevice | null) ?? null}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -412,7 +435,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as Record<string, unknown>}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -422,7 +445,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as PaymentInitialData}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -434,7 +457,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
-            initialData={data}
+            initialData={data as AppGroup}
             onSuccess={() => onSuccess?.()}
         />
     ),
@@ -456,6 +479,13 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Treasury (read-only detail drawers) ──────────────────────────────────
+    "treasury.check": ({ id, open, onOpenChange }) => (
+        <CheckDrawer
+            id={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
     "treasury.bankstatement": ({ id, open, onOpenChange }) => (
         <BankStatementDrawer
             statementId={id}
@@ -505,7 +535,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     "sales.saledelivery": ({ id, open, onOpenChange, data }) => (
         <SaleDeliveryDrawer
             id={id}
-            saleOrderId={data?.sale_order}
+            saleOrderId={(data as { sale_order?: number })?.sale_order}
             open={open}
             onOpenChange={onOpenChange}
         />

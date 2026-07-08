@@ -1,6 +1,6 @@
 "use client"
 
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { CommentSystem } from '@/components/shared'
 import { useSaleOrderComments } from "../hooks/useSaleOrderComments"
 

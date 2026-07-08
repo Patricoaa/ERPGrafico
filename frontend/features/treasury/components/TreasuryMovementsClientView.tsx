@@ -1,24 +1,25 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
-import {ArrowDown} from "lucide-react"
+import { type ColumnDef } from "@tanstack/react-table"
+import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
 
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
-import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { treasuryMovementsSegDef } from "@/features/treasury/segmentationDef"
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { createEntityCardView } from "@/lib/view-helpers"
 
 // Lazy load heavy components
-import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
+import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
 
 interface TreasuryMovement {
@@ -64,16 +65,27 @@ interface TreasuryMovementsClientViewProps {
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
-    const { filters, isFiltered } = useSmartSearch(treasuryMovementsSearchDef)
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
-        ...(filters as TreasuryMovementFilters),
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
-    })
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryMovementsSearchDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryMovementsSegDef, basePeriod)
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
+
+    const treasuryAccountFromUrl = searchParams.get('treasury_account')
+    const isAccountFiltered = Boolean(treasuryAccountFromUrl)
+    const allFilters = {
+        ...textFilters,
+        ...segFilters,
+        ...(treasuryAccountFromUrl ? { treasury_account: treasuryAccountFromUrl } : {}),
+    }
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
+        ...(allFilters as TreasuryMovementFilters),
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
+    const isFiltered = isTextFiltered || isSegFiltered || isAccountFiltered
 
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -105,6 +117,20 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         params.set('selected', String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [searchParams, pathname, router])
+
+    const handleClearAccountFilter = React.useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('treasury_account')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [searchParams, pathname, router])
+
+    const handleReset = React.useCallback(() => {
+        clearText()
+        clearSeg()
+        handleClearAccountFilter()
+    }, [clearText, clearSeg, handleClearAccountFilter])
+
+    const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
         {
@@ -279,39 +305,26 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 )
             },
         },
-        {
-            accessorKey: "created_by_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />,
-            cell: ({ row }) => {
-                const m = row.original
-                if (!m.created_by) return <DataCell.Secondary>-</DataCell.Secondary>
-                return (
-                    <DataCell.Entity
-                        entityLabel="core.user"
-                        data={{ id: m.created_by, username: m.created_by_name }}
-                        size="sm"
-                    />
-                )
-            },
-        },
-        createActionsColumn<TreasuryMovement>({
-            renderActions: (item) => (
-                <DataCell.Action action="detail" onClick={() => handleViewDetails(item.id)} />
-            ),
-        })
+        treasuryMovementActions.column(actionsCtx)
     ], [openEntity, handleViewDetails])
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
-            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de movimiento de tesorería">
-                <Suspense fallback={<div />}>
-                    <CashMovementModal
-                        open={openModal}
-                        onOpenChange={(open: boolean) => setOpenModal(open)}
-                        onSuccess={refetch}
-                    />
-                </Suspense>
-            </SkeletonShell>
+        <div className="flex-1 min-h-0 flex flex-col">
+            <Suspense fallback={<div />}>
+                <CashMovementModal
+                    open={openModal}
+                    onOpenChange={(open: boolean) => {
+                        setOpenModal(open)
+                        if (!open) {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.delete('modal')
+                            const query = params.toString()
+                            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+                        }
+                    }}
+                    onSuccess={refetch}
+                />
+            </Suspense>
 
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -325,7 +338,28 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    smartSearch={
+                        <SmartSearchBar
+                            searchDef={treasuryMovementsSearchDef}
+                            placeholder="Buscar movimiento..."
+                            className="w-full"
+                            prefix={isAccountFiltered ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
+                                    Cta. #{treasuryAccountFromUrl}
+                                    <Button
+                                         variant="ghost"
+                                         onClick={handleClearAccountFilter}
+                                         className="ml-0.5 hover:text-info/80 h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none text-current"
+                                     >
+                                         ×
+                                     </Button>
+                                </span>
+                            ) : undefined}
+                        />
+                    }
+                    segmentation={<SegmentationBar def={treasuryMovementsSegDef} basePeriod={basePeriod} />}
+                    showReset={isFiltered}
+                    onReset={handleReset}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{
@@ -333,90 +367,80 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         title: "Aún no hay movimientos de caja",
                         description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
                     }}
-                    renderCustomView={createEntityCardView('treasury.treasurymovement', {
-                        isFiltered,
-                        emptyState: {
-                            context: "treasury",
-                            title: "Aún no hay movimientos de caja",
-                            description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
-                            action: createAction,
-                        },
-                        renderCard: (m) => {
-                            const type = m.movement_type
-                            const isWriteOff = m.payment_method === 'WRITE_OFF'
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'amount', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
+                    renderCard={(m) => {
+                        const type = m.movement_type
+                        const isWriteOff = m.payment_method === 'WRITE_OFF'
+                        const isTransferOrAdj = type === 'TRANSFER' || type === 'ADJUSTMENT'
 
-                            let status = "info" as any
-                            let label = m.movement_type_display
+                        const Icon = isWriteOff
+                            ? Ban
+                            : type === 'INBOUND'
+                                ? ArrowDownToLine
+                                : type === 'OUTBOUND'
+                                    ? ArrowUpFromLine
+                                    : type === 'TRANSFER'
+                                        ? ArrowLeftRight
+                                        : Scale
 
-                            if (isWriteOff) {
-                                status = "voided"
-                                label = "Castigo"
-                            } else if (type === 'INBOUND') {
-                                status = "received"
-                                label = "Depósito"
-                            } else if (type === 'OUTBOUND') {
-                                status = "sent"
-                                label = "Retiro"
-                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                                status = "in_progress"
-                                label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
-                            }
+                        const iconStyle = isWriteOff
+                            ? "text-muted-foreground/50 bg-muted/50"
+                            : type === 'INBOUND'
+                                ? "text-success bg-success/10"
+                                : type === 'OUTBOUND'
+                                    ? "text-destructive bg-destructive/10"
+                                    : "text-warning bg-warning/10"
 
-                            let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
-                            let destLabel = m.to_account_name || m.partner_name || 'Destino'
+                        let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
+                        let destLabel = m.to_account_name || m.partner_name || 'Destino'
 
-                            if (type === 'INBOUND') {
-                                sourceLabel = m.partner_name || 'Particular'
-                                destLabel = m.to_account_name || 'Caja'
-                            } else if (type === 'OUTBOUND') {
-                                sourceLabel = m.from_account_name || 'Caja'
-                                destLabel = m.partner_name || 'Particular'
-                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                                sourceLabel = m.from_account_name || 'Origen'
-                                destLabel = m.to_account_name || 'Destino'
-                            }
-
-                            const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
-                            const signedAmount = type === 'OUTBOUND' ? -amount : amount
-
-                            return (
-                                <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
-                                    <EntityCard.Header
-                                        title={`Movimiento ${m.display_id}`}
-                                        subtitle={m.date}
-                                        trailing={
-                                            <div className="flex flex-col items-end gap-2">
-                                                <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
-                                                <DataCell.Currency value={signedAmount} />
-                                            </div>
-                                        }
-                                    />
-                                    <EntityCard.Body>
-                                        <EntityCard.Field label="Origen" value={sourceLabel} />
-                                        <EntityCard.Field label="Destino" value={destLabel} />
-                                        <EntityCard.Field label="Método" value={m.payment_method_display} />
-                                        <EntityCard.Field label="Usuario" value={m.created_by_name} />
-                                    </EntityCard.Body>
-                                </EntityCard>
-                            )
+                        if (type === 'INBOUND') {
+                            sourceLabel = m.partner_name || 'Particular'
+                            destLabel = m.to_account_name || 'Caja'
+                        } else if (type === 'OUTBOUND') {
+                            sourceLabel = m.from_account_name || 'Caja'
+                            destLabel = m.partner_name || 'Particular'
+                        } else if (isTransferOrAdj) {
+                            sourceLabel = m.from_account_name || 'Origen'
+                            destLabel = m.to_account_name || 'Destino'
                         }
-                    })}
+
+                        const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
+                        const signedAmount = type === 'OUTBOUND' ? -amount : amount
+
+                        return (
+                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+                                <EntityCard.Header
+                                    icon={Icon}
+                                    iconClassName={iconStyle}
+                                    title={m.display_id}
+                                    subtitle={m.payment_method_display}
+                                    center={
+                                        <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
+                                            <span>{sourceLabel}</span>
+                                            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                                            <span>{destLabel}</span>
+                                        </div>
+                                    }
+                                    trailing={<DataCell.Currency value={signedAmount} />}
+                                />
+                            </EntityCard>
+                        )
+                    }}
+                    cardSkeleton={{ showBody: false }}
                 />
             </div>
 
-            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
-                {selectedMovementId && (
-                    <PaymentDrawer
-                        paymentId={selectedMovementId}
-                        mode="view"
-                        open={detailsOpen}
-                        onOpenChange={(open) => {
-                            setDetailsOpen(open)
-                            if (!open) clearSelection()
-                        }}
-                    />
-                )}
-            </SkeletonShell>
+            {selectedMovementId && (
+                <CashMovementDrawer
+                    id={selectedMovementId}
+                    open={detailsOpen}
+                    onOpenChange={(open) => {
+                        setDetailsOpen(open)
+                        if (!open) clearSelection()
+                    }}
+                />
+            )}
         </div>
     )
 }

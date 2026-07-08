@@ -1,10 +1,22 @@
 ---
+layer: 30-playbooks
+doc: add-searchable-entity
+task: "Add entity to global search index"
+triggers: ["searchable entity", "global search", "search index", "rebuild search"]
 status: active
 owner: backend-team
 last_review: 2026-05-10
+preconditions:
+  - Model must exist with unique identifier
+  - Detail route must exist in frontend
+validation:
+  - pytest apps/[app]/tests
+  - python manage.py search_index --rebuild
+forbidden:
+  - adding search without backend search view
 ---
 
-# Playbook: Agregar Entidad a la Búsqueda Global
+# Playbook — Agregar entidad a la búsqueda global
 
 Este instructivo detalla cómo hacer que un nuevo modelo de Django sea buscable desde la barra de búsqueda global del ERP.
 

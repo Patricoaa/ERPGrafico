@@ -8,30 +8,36 @@ Schema changes (all in purchasing_purchaseorder table):
 
 No column is added or dropped — all fields already existed.
 """
+
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('purchasing', '0001_initial'),
-        ('accounting', '0009_accountingsettings_auto_post_reconciliation_adjustments'),
+        ("purchasing", "0001_initial"),
+        ("accounting", "0009_accountingsettings_auto_post_reconciliation_adjustments"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='purchaseorder',
-            name='total_net',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Neto'),
+            model_name="purchaseorder",
+            name="total_net",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Neto"
+            ),
         ),
         migrations.AlterField(
-            model_name='purchaseorder',
-            name='total_tax',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Impuesto'),
+            model_name="purchaseorder",
+            name="total_tax",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Impuesto"
+            ),
         ),
         migrations.AlterField(
-            model_name='purchaseorder',
-            name='total',
-            field=models.DecimalField(decimal_places=0, default=0, max_digits=14, verbose_name='Total'),
+            model_name="purchaseorder",
+            name="total",
+            field=models.DecimalField(
+                decimal_places=0, default=0, max_digits=14, verbose_name="Total"
+            ),
         ),
     ]

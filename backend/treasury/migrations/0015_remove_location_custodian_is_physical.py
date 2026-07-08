@@ -4,34 +4,33 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0014_backfill_settlement_account'),
+        ("treasury", "0014_backfill_settlement_account"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='historicaltreasuryaccount',
-            name='custodian',
+            model_name="historicaltreasuryaccount",
+            name="custodian",
         ),
         migrations.RemoveField(
-            model_name='historicaltreasuryaccount',
-            name='is_physical',
+            model_name="historicaltreasuryaccount",
+            name="is_physical",
         ),
         migrations.RemoveField(
-            model_name='historicaltreasuryaccount',
-            name='location',
+            model_name="historicaltreasuryaccount",
+            name="location",
         ),
         migrations.RemoveField(
-            model_name='treasuryaccount',
-            name='custodian',
+            model_name="treasuryaccount",
+            name="custodian",
         ),
         migrations.RemoveField(
-            model_name='treasuryaccount',
-            name='is_physical',
+            model_name="treasuryaccount",
+            name="is_physical",
         ),
         migrations.RemoveField(
-            model_name='treasuryaccount',
-            name='location',
+            model_name="treasuryaccount",
+            name="location",
         ),
     ]

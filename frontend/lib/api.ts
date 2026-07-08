@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { setClientToken, removeClientTokens } from './client-token';
+export { resolveMediaUrl } from './media-url';
 
 const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || '';
 const baseURL = rawBaseURL.endsWith('/') ? rawBaseURL : `${rawBaseURL}/`;
@@ -11,24 +13,21 @@ const api = axios.create({
     timeout: 15000,
 });
 
-/**
- * Resolves a media URL from the backend.
- * If the path is relative (starts with /media/), it prepends the backend host.
- * If the path is already absolute, it returns it as-is.
- */
-export function resolveMediaUrl(path: string | null | undefined): string | null {
-    if (!path) return null;
-    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
-        return path;
-    }
+/** Evento que cruza la barrera Axios (no-React) → AuthContext (React). */
+export const AUTH_UNAUTHORIZED_EVENT = 'auth:unauthorized' as const;
 
-    // Derive backend host from baseURL (stripping /api/ if present)
-    const backendHost = rawBaseURL.replace(/\/api\/?$/, '');
-    
-    // Ensure the path starts with a slash
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    
-    return `${backendHost}${normalizedPath}`;
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: unknown) => void }> = [];
+
+function processQueue(error: unknown, token: string | null = null) {
+    failedQueue.forEach(({ resolve, reject }) => {
+        if (error) {
+            reject(error);
+        } else {
+            resolve(token as string);
+        }
+    });
+    failedQueue = [];
 }
 
 api.interceptors.request.use(
@@ -59,43 +58,54 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            
-        const isBrowser = typeof window !== 'undefined';
-        let refreshToken = null;
-        if (isBrowser) {
-            try {
-                refreshToken = localStorage.getItem('refresh_token');
-            } catch {}
-        }
-        
-        if (refreshToken) {
-            try {
-                // Use standard baseURL for refresh
-                const response = await axios.post(`${baseURL}token/refresh/`, {
-                    refresh: refreshToken
-                });
-                if (response.status === 200) {
-                    if (isBrowser) {
-                        try {
-                            localStorage.setItem('access_token', response.data.access);
-                        } catch {}
-                    }
-                    api.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access;
+            if (isRefreshing) {
+                return new Promise<string>((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then((token) => {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
                     return api(originalRequest);
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            const isBrowser = typeof window !== 'undefined';
+            let refreshToken: string | null = null;
+            if (isBrowser) {
+                try {
+                    refreshToken = localStorage.getItem('refresh_token');
+                } catch {}
+            }
+
+            try {
+                if (refreshToken) {
+                    const response = await axios.post(`${baseURL}token/refresh/`, {
+                        refresh: refreshToken
+                    });
+                    if (response.status === 200) {
+                        if (isBrowser) {
+                            try {
+                                setClientToken(response.data.access);
+                            } catch {}
+                        }
+                        api.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access;
+                        processQueue(null, response.data.access);
+                        return api(originalRequest);
+                    }
                 }
-            } catch {
-                // Handle refresh token failure — clear credentials and let
-                // AuthGuard manage the redirect via router.push (avoids the
-                // race condition that window.location.href causes with React).
+            } catch (refreshError) {
+                processQueue(refreshError, null);
                 if (isBrowser) {
                     try {
-                        localStorage.removeItem('access_token');
-                        localStorage.removeItem('refresh_token');
+                        removeClientTokens();
+                        window.dispatchEvent(new CustomEvent(AUTH_UNAUTHORIZED_EVENT));
                     } catch {}
                 }
+                return Promise.reject(error);
+            } finally {
+                isRefreshing = false;
             }
-        }
         }
         return Promise.reject(error);
     }

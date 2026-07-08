@@ -1,20 +1,41 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { financeApi } from '../api/financeApi'
+import { financeApi, type Budget } from '../api/financeApi'
 import { toast } from 'sonner'
 import { FINANCE_KEYS } from './queryKeys'
+import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
-export interface Budget {
-    id: number
-    name: string
-    start_date: string
-    end_date: string
-    description?: string
+export type { Budget }
+
+export function useBudgetDetailData(id: number | null) {
+    return useQuery({
+        queryKey: FINANCE_KEYS.budgets.detailData(id ?? 0),
+        queryFn: async () => {
+            const [budget, execution] = await Promise.all([
+                financeApi.getBudgetDetail(id as number),
+                financeApi.getBudgetExecution(id as number)
+            ])
+            return { budget, execution }
+        },
+        enabled: id != null,
+        staleTime: 5 * 60 * 1000,
+    })
+}
+
+export function useBudgetVariance(id: number | null, params?: Record<string, unknown>) {
+    return useQuery({
+        queryKey: FINANCE_KEYS.budgets.variance(id ?? 0),
+        queryFn: () => financeApi.getBudgetVariance(id as number, params),
+        enabled: id != null,
+        staleTime: 2 * 60 * 1000,
+    })
 }
 
 export function useBudgets() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    const { data: budgets, isLoading, refetch } = useQuery({
+    const { data, isLoading, refetch } = useQuery({
         queryKey: FINANCE_KEYS.budgets.lists(),
         queryFn: financeApi.getBudgets,
         staleTime: 5 * 60 * 1000,
@@ -23,7 +44,8 @@ export function useBudgets() {
     const createMutation = useMutation({
         mutationFn: (payload: Partial<Budget>) => financeApi.createBudget(payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.budgets.lists() })
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [FINANCE_KEYS.budgets.lists()])
             toast.success('Presupuesto creado exitosamente')
         },
         onError: (error) => {
@@ -36,7 +58,8 @@ export function useBudgets() {
         mutationFn: ({ id, payload }: { id: number, payload: Partial<Budget> }) =>
             financeApi.updateBudget(id, payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.budgets.lists() })
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [FINANCE_KEYS.budgets.lists()])
             toast.success('Presupuesto actualizado exitosamente')
         },
         onError: (error) => {
@@ -46,7 +69,8 @@ export function useBudgets() {
     })
 
     return {
-        budgets: budgets ?? [],
+        page: data,
+        budgets: data?.results ?? [],
         isLoading,
         refetch,
         createBudget: createMutation.mutateAsync,

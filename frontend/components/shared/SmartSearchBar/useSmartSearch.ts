@@ -2,43 +2,41 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import { useQueryState, useQueryStates, parseAsString } from 'nuqs'
-import type { SearchDefinition, ActiveChip, FieldDef } from '@/types/search'
+import type { SearchDefinition, ActiveChip, TextFieldDef } from '@/types/search'
 import type { FilterState } from './types'
 
-// Params that must never be cleared by SmartSearchBar — owned by other hooks
 const PRESERVED_PARAMS = new Set(['selected'])
 
-function getServerParams(field: FieldDef): string[] {
-  if (field.type === 'daterange') return [field.serverParamStart, field.serverParamEnd]
-  return [field.serverParam]
+function hasServerParam(field: TextFieldDef): field is Extract<TextFieldDef, { serverParam: string }> {
+  return 'serverParam' in field
+}
+
+function getServerParams(field: TextFieldDef): string[] {
+  if (hasServerParam(field)) return [field.serverParam]
+  return []
 }
 
 function getFieldLabelForParam(def: SearchDefinition, param: string): string {
   for (const field of def.fields) {
-    if (field.type === 'daterange') {
-      if (param === field.serverParamStart) return `${field.label} desde`
-      if (param === field.serverParamEnd) return `${field.label} hasta`
-    } else {
-      if (field.serverParam === param) return field.label
-    }
+    if (hasServerParam(field) && field.serverParam === param) return field.label
   }
   if (param === 'search') return 'Búsqueda'
   return param
 }
 
-function getValueLabel(def: SearchDefinition, param: string, value: string): string {
-  for (const field of def.fields) {
-    if (field.type === 'enum' && field.serverParam === param) {
-      return field.options.find((o) => o.value === value)?.label ?? value
-    }
-  }
+function getValueLabel(_def: SearchDefinition, _param: string, value: string): string {
   return value
 }
 
 export function useSmartSearch(def: SearchDefinition) {
   const [inputValue, setInputValue] = useState('')
+  const [dismissedDefaults, setDismissedDefaults] = useState<Set<string>>(new Set())
 
-  // Build the parsers map from SearchDefinition (stable — def is a module-level constant)
+  const defaults = useMemo(() => {
+    const map: Record<string, string> = {}
+    return map
+  }, [def])
+
   const parsers = useMemo(() => {
     const map: Record<string, typeof parseAsString> = {}
     for (const field of def.fields) {
@@ -46,7 +44,6 @@ export function useSmartSearch(def: SearchDefinition) {
         map[param] = parseAsString
       }
     }
-    // Always include 'search' as a recognized parameter for global search
     map['search'] = parseAsString
     return map
   }, [def])
@@ -55,26 +52,36 @@ export function useSmartSearch(def: SearchDefinition) {
   const [, setCursor] = useQueryState('cursor', parseAsString)
 
   const filters: FilterState = useMemo(
-    () => Object.fromEntries(Object.entries(paramValues).filter(([, v]) => v !== null)) as FilterState,
-    [paramValues],
+    () => Object.fromEntries(
+      Object.entries(paramValues)
+        .filter(([, v]) => v !== null)
+        .filter(([param]) => !dismissedDefaults.has(param))
+    ) as FilterState,
+    [paramValues, dismissedDefaults],
   )
 
   const chips: ActiveChip[] = useMemo(
     () =>
       Object.entries(paramValues)
         .filter(([, v]) => v !== null)
+        .filter(([param]) => !dismissedDefaults.has(param))
         .map(([param, value]) => ({
           key: param,
           label: getFieldLabelForParam(def, param),
-          valueLabel: getValueLabel(def, param, value!),
+          valueLabel: getValueLabel(def, param, value as string),
           isGlobalSearch: param === 'search',
         })),
-    [paramValues, def],
+    [paramValues, def, dismissedDefaults],
   )
 
   const applyFilter = useCallback(
     async (param: string, value: string) => {
       await setCursor(null)
+      setDismissedDefaults(prev => {
+        const next = new Set(prev)
+        next.delete(param)
+        return next
+      })
       await setParamValues({ [param]: value })
     },
     [setCursor, setParamValues],
@@ -84,24 +91,31 @@ export function useSmartSearch(def: SearchDefinition) {
     async (param: string) => {
       if (PRESERVED_PARAMS.has(param)) return
       await setCursor(null)
-      await setParamValues({ [param]: null })
+      if (param in defaults) {
+        setDismissedDefaults(prev => new Set(prev).add(param))
+        await setParamValues({ [param]: defaults[param] })
+      } else {
+        await setParamValues({ [param]: null })
+      }
     },
-    [setCursor, setParamValues],
+    [setCursor, setParamValues, defaults],
   )
 
   const clearAll = useCallback(async () => {
     await setCursor(null)
+    const newDismissed = Object.keys(paramValues)
+      .filter(k => !PRESERVED_PARAMS.has(k) && k in defaults)
+    if (newDismissed.length > 0) {
+      setDismissedDefaults(prev => new Set([...prev, ...newDismissed]))
+    }
     const nulled = Object.fromEntries(
       Object.keys(paramValues)
         .filter((k) => !PRESERVED_PARAMS.has(k))
-        .map((k) => [k, null]),
+        .map((k) => [k, k in defaults ? defaults[k] : null]),
     )
     await setParamValues(nulled)
-  }, [paramValues, setCursor, setParamValues])
+  }, [paramValues, setCursor, setParamValues, defaults])
 
-  // Single source of truth for "the toolbar search/filter is active".
-  // Consumers pass this to DataTable to distinguish "no records at all"
-  // from "no results for the current search/filter".
   const isFiltered = chips.length > 0
 
   return {

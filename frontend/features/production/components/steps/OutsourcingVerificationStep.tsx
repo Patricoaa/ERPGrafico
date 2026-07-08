@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared'
-import { ApprovalTaskList } from './ApprovalTaskList'
+import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../../types'
 
@@ -25,7 +25,7 @@ export function OutsourcingVerificationStep({
 
   return (
     <div className="space-y-6">
-      <ApprovalTaskList
+      <ApprovalTaskListPanel
         tasks={order.workflow_tasks ?? []}
         taskType="OT_OUTSOURCING_VERIFICATION"
         canComplete={canComplete}

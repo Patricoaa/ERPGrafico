@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0032_make_reconciliationmatch_createdby_nullable'),
+        ("treasury", "0032_make_reconciliationmatch_createdby_nullable"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='bankstatement',
-            name='reconciled_lines',
+            model_name="bankstatement",
+            name="reconciled_lines",
         ),
         migrations.RemoveField(
-            model_name='historicalbankstatement',
-            name='reconciled_lines',
+            model_name="historicalbankstatement",
+            name="reconciled_lines",
         ),
     ]

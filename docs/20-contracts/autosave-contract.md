@@ -228,7 +228,7 @@ Los tests del hook están en [`frontend/hooks/useAutoSaveForm.test.ts`](../../fr
 - `retry()` y `flush()` ejecutan correctamente.
 - `enabled: false` no programa saves.
 
-> En tests, registrar los campos manualmente con `form.register('field')` antes de hacer `form.setValue(...)`. RHF v7 sólo emite `info.name` en watch para campos registrados.
+> En tests, registrar los campos manualmente con `form.register('field')` antes de hacer `form.setValue(...)`. RHF v7 solo emite `info.name` en watch para campos registrados.
 
 ## Excepciones Ad-hoc Autorizadas
 

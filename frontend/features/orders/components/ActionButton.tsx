@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { Chip } from "@/components/shared"
-import { Action } from "@/types/actions"
+import { type Action } from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
 import { cn } from "@/lib/utils"
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Order } from "../types"
+import { type Order } from "../types"
 
 interface ActionButtonProps {
     action: Action
@@ -42,7 +42,7 @@ export function ActionButton({
             className={cn(
                 "w-full justify-start text-left font-medium transition-all duration-200 group h-auto rounded",
                 compact ? "py-1 px-1.5" : "py-2 px-3",
-                ghost ? "hover:bg-accent border-none shadow-none active:scale-[0.98] transition-all duration-200" : (action.variant === 'destructive' ? 'hover:bg-destructive/10' : 'hover:border-primary/50 hover:bg-primary/5 shadow-sm'),
+                ghost ? "hover:bg-accent border-none shadow-none active:scale-[0.98] transition-all duration-200" : (action.variant === 'destructive' ? 'hover:bg-destructive/10' : 'hover:border-primary/50 hover:bg-primary/5 shadow-card'),
                 isDisabled && "opacity-50 cursor-not-allowed",
                 className
             )}
@@ -60,7 +60,7 @@ export function ActionButton({
                     <span className={cn(
                         "leading-tight block",
                         compact ? "text-[9px]" : "text-xs",
-                        ghost ? "font-heading font-extrabold uppercase tracking-widest text-[9px]" : "font-semibold"
+                        ghost ? " font-extrabold uppercase tracking-widest text-[9px]" : "font-semibold"
                     )} style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                         {action.label}
                     </span>

@@ -7,17 +7,19 @@
 // Requires a parent container with explicit height (e.g. `flex-1 min-h-0`) 
 // to work correctly with VirtuosoGrid.
 
+import { Button } from "@/components/ui/button"
 import { Card } from '@/components/ui/card'
 
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import type { BaseProduct, ProductCategory } from '@/features/inventory/types'
+import type { BaseProduct, ProductCategory } from '@/features/inventory'
 import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
 import { DynamicIcon, EmptyState } from '@/components/shared'
-import { resolveMediaUrl } from '@/lib/api'
+import { resolveMediaUrl } from '@/lib/media-url'
 import { VirtuosoGrid } from 'react-virtuoso'
 
 // Define StockLimits locally here since they are passed from POS but might not be present in other contexts
@@ -35,6 +37,8 @@ export interface ProductGridProps {
     onToggleFavorite?: (productId: number) => void
     /** Optional custom renderer for the price section. If not provided, defaults to displaying sale_price */
     priceRenderer?: (product: BaseProduct) => React.ReactNode
+    /** IDs of selected products (in cart, calculator, etc). Shows CMY ribbon on each. */
+    selectedProductIds?: Set<number>
 }
 
 function ProductGridComponent({
@@ -44,7 +48,8 @@ function ProductGridComponent({
     isProductDisabled = () => false,
     onProductClick,
     onToggleFavorite,
-    priceRenderer
+    priceRenderer,
+    selectedProductIds
 }: ProductGridProps) {
     const { isTouchPOS, isSmallScreen } = useDeviceContext()
 
@@ -71,8 +76,8 @@ function ProductGridComponent({
     return (
         <VirtuosoGrid
             totalCount={products.length}
-            listClassName={cn("grid gap-4", gridCols)}
-            style={{ height: '105%' }}
+            listClassName={cn("grid gap-4 pb-2", gridCols)}
+            style={{ height: '100%' }}
             overscan={400}
             itemContent={(index) => {
                 const product = products[index]
@@ -97,18 +102,19 @@ function ProductGridComponent({
                 return (
                     <Card
                         className={cn(
-                            "group cursor-pointer hover:shadow-md transition-all border overflow-hidden flex flex-col h-full rounded-xl p-2 bg-card",
+                            "group cursor-pointer hover:shadow-elevated transition-all border border-border/50 overflow-hidden flex flex-col h-full rounded-md p-2 bg-card shadow-card shadow-black/5",
+                            selectedProductIds?.has(product.id) && "ribbon-cmyk",
                             isTouchPOS && "active:scale-95",
                             isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}
                         onClick={() => !isDisabled && onProductClick(product)}
                     >
                         <div className={cn(
-                            "aspect-square bg-muted/20 rounded-lg flex items-center justify-center relative overflow-hidden border shadow-sm",
+                            "aspect-square bg-muted/20 rounded-sm flex items-center justify-center relative overflow-hidden border shadow-card",
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (
-                                <img src={resolveMediaUrl(product.image)!} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                <Image src={resolveMediaUrl(product.image) ?? ''} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform" />
                             ) : (
                                 <DynamicIcon
                                     name={categoryIcon || "Package"}
@@ -119,7 +125,7 @@ function ProductGridComponent({
                             {/* Hover Indicator (Centered Large Icon) */}
                             {!isDisabled && (
                                 <div className="absolute inset-0 bg-background/10 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
-                                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-300 ease-out">
+                                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-floating flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-300 ease-out">
                                         <Plus className="h-6 w-6" />
                                     </div>
                                 </div>
@@ -127,9 +133,10 @@ function ProductGridComponent({
 
                             {/* Left side Favorite Badge */}
                             {onToggleFavorite && (
-                                <button
+                                <Button
+                                    variant="ghost"
                                     className={cn(
-                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-sm hover:scale-110 active:scale-95 transition-all",
+                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
                                         product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
                                     )}
                                     onClick={(e) => {
@@ -144,7 +151,7 @@ function ProductGridComponent({
                                             product.is_favorite ? "fill-current" : ""
                                         )}
                                     />
-                                </button>
+                                </Button>
                             )}
 
                             {/* Right side badges (Availability) */}
@@ -152,7 +159,7 @@ function ProductGridComponent({
 
                                 {/* Stock/Availability Badge */}
                                 {product.product_type === 'STORABLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
@@ -160,14 +167,14 @@ function ProductGridComponent({
 
                                 {/* MANUFACTURABLE badges */}
                                 {isManufacturable && mfgSubType === 'SIMPLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
                                 )}
 
                                 {isManufacturable && mfgSubType === 'EXPRESS' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         {!product.has_bom ? (
                                             <>
                                                 <div className="h-2 w-2 rounded-full bg-muted-foreground" />
@@ -183,7 +190,7 @@ function ProductGridComponent({
                                 )}
 
                                 {isManufacturable && mfgSubType === 'ADVANCED' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         {product.has_bom ? (
                                             <>
                                                 <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-warning'}`} />
@@ -201,7 +208,7 @@ function ProductGridComponent({
                                 {(product.product_type === 'SERVICE' ||
                                     product.product_type === 'SUBSCRIPTION' ||
                                     product.product_type === 'CONSUMABLE') && (
-                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border text-[10px] font-bold text-muted-foreground">
+                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                             <div className="h-2 w-2 rounded-full bg-success" />
                                             Disponible
                                         </div>
@@ -252,6 +259,7 @@ export const ProductGrid = memo(ProductGridComponent, (prevProps, nextProps) => 
         prevProps.onProductClick === nextProps.onProductClick &&
         prevProps.onToggleFavorite === nextProps.onToggleFavorite &&
         prevProps.isProductDisabled === nextProps.isProductDisabled &&
-        prevProps.priceRenderer === nextProps.priceRenderer
+        prevProps.priceRenderer === nextProps.priceRenderer &&
+        prevProps.selectedProductIds === nextProps.selectedProductIds
     )
 })

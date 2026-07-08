@@ -2,13 +2,13 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
-import { accountingApi } from "@/features/accounting/api/accountingApi"
-import { FiscalYear } from "@/features/accounting/types"
+import { partnersApi } from "@/features/contacts"
+import { type ProfitDistribution, type ProfitDistributionLine } from "@/features/contacts"
+import { accountingApi } from "@/features/accounting"
+import { type FiscalYear } from "@/features/accounting"
 import { toast } from "sonner"
 
 import {
@@ -16,7 +16,6 @@ import {
     Calculator,
     CheckCircle2,
     Wallet,
-    CalendarCheck2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -307,9 +306,8 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                         />
                     </div>
 
-                    <Alert className="bg-primary/5 border-primary/20">
-                        <CalendarCheck2 className="h-5 w-5 text-primary" />
-                        <AlertTitle className="text-primary font-bold uppercase text-[10px]">Automatización Activa</AlertTitle>
+                    <Alert variant="primary">
+                        <AlertTitle className="font-bold uppercase text-[10px]">Automatización Activa</AlertTitle>
                         <AlertDescription className="text-foreground/80 font-medium text-[10px] leading-relaxed">
                             El sistema calculará la participación exacta a la fecha de resolución y descontará automáticamente los <strong>retiros provisorios</strong> detectados en la contabilidad del ejercicio.
                         </AlertDescription>
@@ -331,13 +329,13 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             component: (
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
                             <DataCell.Currency value={draftResolution?.net_result || 0} className="justify-start text-xl font-bold text-primary" />
                         </Card>
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
-                            <p className="text-xl font-heading font-black">{draftResolution?.fiscal_year}</p>
+                            <p className="text-xl  font-black">{draftResolution?.fiscal_year}</p>
                         </Card>
                     </div>
 
@@ -471,7 +469,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     <div className="flex flex-col items-center justify-center text-center space-y-4">
                         <Wallet className="h-8 w-8" />
                         <div>
-                            <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Confirmación de Ejecución</h3>
+                            <h3 className="text-xl  font-black uppercase tracking-tighter">Confirmación de Ejecución</h3>
                             <p className="text-sm text-muted-foreground max-w-md mt-2">
                                 Al ejecutar, el sistema impactará el patrimonio de la empresa automáticamente.
                             </p>

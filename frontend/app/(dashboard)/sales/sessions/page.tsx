@@ -1,5 +1,6 @@
-import { Metadata } from "next"
-import { POSSessionsView } from "@/features/sales"
+import { type Metadata } from "next"
+import { PageSectionHeader } from "@/components/shared"
+import { POSSessionsClientView } from "@/features/sales"
 
 export const metadata: Metadata = {
     title: "Historial de Sesiones | ERPGrafico",
@@ -8,8 +9,9 @@ export const metadata: Metadata = {
 
 export default function POSSessionsPage() {
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <POSSessionsView hideHeader />
+        <div className="h-full flex flex-col">
+            <PageSectionHeader title="Sesiones POS" description="Registro de aperturas y cierres de cajas" />
+            <POSSessionsClientView hideHeader />
         </div>
     )
 }

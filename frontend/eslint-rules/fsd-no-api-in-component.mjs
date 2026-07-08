@@ -17,7 +17,7 @@
  * migration; bump to `error` when the global count reaches 0). See
  * docs/50-audit/fsddata/fsd-data-layer-refactor-plan.md.
  */
-export default {
+const rule = {
     meta: {
         type: 'problem',
         docs: {
@@ -40,3 +40,5 @@ export default {
         };
     },
 };
+
+export default rule;

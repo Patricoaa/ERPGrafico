@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch";
+import Image from "next/image";
+import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
 import { FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, parseDateOnly } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
-import type { SaleOrderLine } from "@/features/sales/types";
+import type { SaleOrderLine } from "@/features/sales";
+import { resolveMediaUrl } from "@/lib/media-url";
 
 type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
 
@@ -34,7 +36,7 @@ export function SaleOrderProductStep({
   onChooseProduct,
   initialOtType
 }: SaleOrderProductStepProps) {
-  const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(
+  const [otType] = useState<"LINKED" | "NONE" | null>(
     initialOtType ?? null
   );
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -148,7 +150,7 @@ export function SaleOrderProductStep({
               <div className="grid gap-4">
                 {orders.map((order) => {
                   // Check if this order has any manufacturable lines without work orders
-                  const hasAvailableLines = order.lines?.some((line: any) =>
+                  const hasAvailableLines = order.lines?.some((line: { product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }) =>
                     line.product_type === 'MANUFACTURABLE' &&
                     line.requires_advanced_manufacturing &&
                     !line.work_order_summary
@@ -162,7 +164,7 @@ export function SaleOrderProductStep({
                       type="button"
                       variant="outline"
                       className={cn(
-                        "group flex h-[120px] w-full rounded-xl border border-border/30",
+                        "group flex h-[120px] w-full rounded-md border border-border/30",
                         selectedOrderId === String(order.id) &&
                         "border-primary/50 bg-primary/[0.03]",
                         "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
@@ -180,7 +182,7 @@ export function SaleOrderProductStep({
                               NV #{order.number}
                             </h3>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(order.date || 0).toLocaleDateString()}
+                              {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
                             </span>
                           </div>
 
@@ -190,13 +192,13 @@ export function SaleOrderProductStep({
 
                           <div className="flex items-center gap-3 text-sm">
                             <span className="font-medium text-foreground">
-                              {order.lines?.reduce((sum: number, line: any) =>
+                              {order.lines?.reduce((sum: number, line: { quantity?: number }) =>
                                 sum + (line.quantity || 0), 0) || 0} productos
                             </span>
                             <span className="text-muted-foreground">•</span>
                             <span className="text-muted-foreground">
                               {formatCurrency(
-                                order.lines?.reduce((sum: number, line: any) =>
+                                order.lines?.reduce((sum: number, line: { quantity?: number; unit_price?: number }) =>
                                   sum + ((line.quantity || 0) * (line.unit_price || 0)), 0) || 0
                               )}
                             </span>
@@ -256,7 +258,7 @@ export function SaleOrderProductStep({
                           type="button"
                           variant={isSelected ? "default" : "outline"}
                           className={cn(
-                            "flex h-[100px] w-full rounded-lg border border-border/30",
+                            "flex h-[100px] w-full rounded-sm border border-border/30",
                             isSelected && "border-primary bg-primary/[0.10]",
                             "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
                           )}
@@ -266,10 +268,12 @@ export function SaleOrderProductStep({
                           <div className="flex h-full w-full p-4 space-x-3">
                             <div className="flex-shrink-0">
                               {prod?.image_thumbnail ? (
-                                <img
-                                  src={prod.image_thumbnail}
+                                <Image
+                                  src={resolveMediaUrl(prod.image_thumbnail) ?? ""}
                                   alt={prod?.name || ""}
-                                  className="h-10 w-10 rounded object-cover"
+                                  width={40}
+                                  height={40}
+                                  className="rounded object-cover"
                                 />
                               ) : (
                                 <div className="h-10 w-10 flex items-center justify-center rounded bg-muted/20">

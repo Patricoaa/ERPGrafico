@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { financeApi } from "../api/financeApi";
+import React, { useState, useMemo } from 'react';
+import { useServerDate } from '@/hooks/useServerDate';
 import {
     CalendarDays,
     FileDown,
@@ -15,79 +15,47 @@ import {
     SelectTrigger, 
     SelectValue 
 } from "@/components/ui/select";
-import { BudgetVarianceTable, BudgetVarianceNode } from "./BudgetVarianceTable";
+import { BudgetVarianceTable, type BudgetVarianceNode } from "./BudgetVarianceTable";
 import { EmptyState, MoneyDisplay, PageHeader, StatCard } from '@/components/shared';
-import { toast } from "sonner";
-;
-;
+import { useBudgets, useBudgetVariance } from "../hooks/useBudgets";
 const MONTH_NAMES = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
 export function BudgetVarianceView() {
-    const [budgets, setBudgets] = useState<Array<{ id: number; name: string }>>([]);
+    const { serverDate } = useServerDate();
     const [selectedBudget, setSelectedBudget] = useState<string>("");
-    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
-    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-    const [data, setData] = useState<BudgetVarianceNode[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState<number>((serverDate ?? new Date()).getMonth() + 1);
+    const [selectedYear, setSelectedYear] = useState<number>((serverDate ?? new Date()).getFullYear());
 
-    const loadBudgets = async () => {
-        try {
-            const budgetsData = await financeApi.getBudgets();
-            const fetched = (budgetsData as any).results || budgetsData;
-            setBudgets(fetched);
-            if (fetched.length > 0 && !selectedBudget) {
-                setSelectedBudget(fetched[0].id.toString());
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error("Error al cargar presupuestos");
-        }
-    };
+    const varianceParams = selectedBudget ? {
+        month: selectedMonth,
+        year: selectedYear,
+    } : undefined
 
-    const loadVariance = async () => {
-        setLoading(true);
-        try {
-            const varianceData = await financeApi.getBudgetVariance(Number(selectedBudget), {
-                month: selectedMonth,
-                year: selectedYear
-            });
-            setData(varianceData);
-        } catch (err) {
-            console.error(err);
-            toast.error("Error al cargar reporte de variaciones");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { budgets } = useBudgets()
+    const { data, isLoading } = useBudgetVariance(
+        selectedBudget ? Number(selectedBudget) : null,
+        varianceParams as Record<string, unknown> | undefined
+    )
 
-    // Load available budgets
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            loadBudgets();
-        })
-    }, []);
+    const varianceData: BudgetVarianceNode[] = Array.isArray(data) ? data : []
 
-    // Load variance data when selection changes
-    useEffect(() => {
-        if (selectedBudget) {
-            requestAnimationFrame(() => {
-                loadVariance();
-            })
-        }
-    }, [selectedBudget, selectedMonth, selectedYear]);
+    // Auto-select first budget on load
+    if (!selectedBudget && budgets.length > 0) {
+        setSelectedBudget(budgets[0].id.toString())
+    }
 
     // Calculate top-level summary sums from the tree
     const summary = useMemo(() => {
-        if (!data.length) return null;
+        if (!varianceData.length) return null;
         
         let ma = 0, mb = 0, ya = 0, yb = 0;
         // The tree has top-level accounts (groups like 4, 5, 6 - Income, Expenses, etc.)
         // We sum them up based on their type to get a "Result" summary or just total activity.
         // Usually we want: Net Margin/Result = Income - Expenses
-        data.forEach(node => {
+        varianceData.forEach(node => {
             // This is a naive sum, but works for identifying top-level movement
             // For a proper financial summary, we'd filter by income/expense type
             if (node.type === 'INCOME') {
@@ -113,7 +81,7 @@ export function BudgetVarianceView() {
             ytd_variance: ya - yb,
             ytd_perc: yb !== 0 ? (ya / yb * 100) : 0
         };
-    }, [data]);
+    }, [varianceData]);
 
     return (
         <div className="space-y-6">
@@ -128,7 +96,7 @@ export function BudgetVarianceView() {
                                 <SelectValue placeholder="Seleccionar Presupuesto" />
                             </SelectTrigger>
                             <SelectContent>
-                                {budgets.map(b => (
+                                {budgets.map((b: { id: number; name: string }) => (
                                     <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -182,16 +150,15 @@ export function BudgetVarianceView() {
                          subtext="Projection objetivos periodo"
                          accent="muted"
                      />
-                     <StatCard
-                         label="Margen YTD (Acum.)"
-                         value={<MoneyDisplay amount={summary.ytd_actual} />}
-                         trend={{
-                             direction: summary.ytd_variance >= 0 ? "up" : "down",
-                             value: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`,
-                         }}
-                         accent="primary"
-                         className="bg-primary/5"
-                     />
+                      <StatCard
+                          label="Margen YTD (Acum.)"
+                          value={<MoneyDisplay amount={summary.ytd_actual} />}
+                          trend={{
+                              direction: summary.ytd_variance >= 0 ? "up" : "down",
+                              value: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`,
+                          }}
+                          accent="primary"
+                      />
                      <StatCard
                          label="Desviación Neta YTD"
                          value={<MoneyDisplay amount={summary.ytd_variance} />}
@@ -201,14 +168,14 @@ export function BudgetVarianceView() {
                  </div>
              )}
 
-             {!loading && data.length === 0 ? (
+             {!isLoading && varianceData.length === 0 ? (
                  <EmptyState 
                      context="finance" 
                      title="Sin datos presupuestarios" 
                      description="No se encontraron datos para el periodo seleccionado." 
                  />
              ) : (
-                 <BudgetVarianceTable data={data} loading={loading} />
+                 <BudgetVarianceTable data={varianceData} loading={isLoading} />
              )}
         </div>
     );

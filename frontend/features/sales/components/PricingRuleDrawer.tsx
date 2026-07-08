@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
-import { PricingRuleInitialData } from "@/types/forms"
+import { type PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
@@ -10,19 +10,22 @@ import {
     FormField
 } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
-import { useUoMs } from "@/features/inventory/hooks/useUoMs"
+import { useUoMs } from "@/features/inventory"
+import type { Product } from "@/types/entities"
 import { usePricingRuleMutations } from "@/features/inventory"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { useSingleProduct } from "@/features/inventory"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -64,11 +67,13 @@ interface PricingRuleDrawerProps {
     mode?: DrawerMode
 }
 
-export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName, mode: modeProp }: PricingRuleDrawerProps) {
+export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, mode: modeProp }: PricingRuleDrawerProps) {
     const { uoms, isUoMsLoading } = useUoMs()
     const { savePricingRule } = usePricingRuleMutations()
     const isFetchingInitialData = open && isUoMsLoading
-    const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
+    const [selectedProductObj, setSelectedProductObj] = useState<Product | null>(null)
+    const { product: loadedProduct } = useSingleProduct(productId ?? null)
+    const effectiveProduct = selectedProductObj || loadedProduct || null
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
@@ -163,9 +168,9 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     async function onSubmit(values: FormValues) {
         try {
             const payload = { ...values }
-            if (payload.product === null) delete (payload as any).product
-            if (payload.uom === null) delete (payload as any).uom
-            if (payload.operator !== "BT") delete (payload as any).max_quantity
+            if (payload.product === null) delete (payload as unknown as Record<string, unknown>).product
+            if (payload.uom === null) delete (payload as unknown as Record<string, unknown>).uom
+            if (payload.operator !== "BT") delete (payload as unknown as Record<string, unknown>).max_quantity
 
             // savePricingRule invalida PRICING_RULES + PRODUCTS_KEYS (los precios
             // computados en la lista de productos cambian) automáticamente.
@@ -174,8 +179,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
             onSuccess?.()
             onOpenChange?.(false)
         } catch (error) {
-            console.error(error)
-            toast.error("Error al guardar la regla")
+            showApiError(error, "Error al guardar la regla de precio")
         }
     }
 
@@ -187,14 +191,14 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     control={form.control}
                     name="name"
                     render={({ field }) => (
-                        <LabeledInput label="Nombre de la Regla" placeholder="Ej: Descuento Mayorista" {...field} />
+                        <LabeledInput label="Nombre de la Regla" required placeholder="Ej: Descuento Mayorista" {...field} />
                     )}
                 />
                 <FormField
                     control={form.control}
                     name="priority"
                     render={({ field }) => (
-                        <LabeledInput label="Prioridad" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                        <LabeledInput label="Prioridad" required type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
                     )}
                 />
             </div>
@@ -205,7 +209,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     name="product"
                     render={({ field }) => (
                         <ProductSelector
-                            label="Producto Específico (Opcional)"
+                            label="Producto Específico (opcional)"
                             value={field.value?.toString() || null}
                             onChange={(val) => {
                                 field.onChange(val ? parseInt(val) : null)
@@ -215,7 +219,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                             disabled={!!productId}
                             placeholder="Si no se selecciona, aplica a todos"
                             shouldResolveVariants={false}
-                            customFilter={(p: any) => !p.parent_template}
+                            customFilter={(p: Product) => !p.parent_template}
                         />
                     )}
                 />
@@ -226,8 +230,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                         <UoMSelector
                             label="Unidad (Filtro)"
                             variant="standalone"
-                            product={selectedProductObj}
-                            context="sale"
+                            product={effectiveProduct as unknown as React.ComponentProps<typeof UoMSelector>['product']}
+                            context="purchase"
                             uoms={uoms as unknown as UoM[]}
                             value={field.value?.toString() || ""}
                             onChange={(val) => field.onChange(val ? parseInt(val) : null)}
@@ -248,6 +252,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     render={({ field }) => (
                         <LabeledSelect
                             label="Cuando la Cantidad es..."
+                            required
                             onChange={field.onChange}
                             value={field.value}
                             options={[
@@ -265,7 +270,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     control={form.control}
                     name="min_quantity"
                     render={({ field }) => (
-                        <LabeledInput label={operator === "BT" ? "Desde" : "Cantidad"} type="number" {...field} />
+                        <LabeledInput label={operator === "BT" ? "Desde" : "Cantidad"} required type="number" {...field} />
                     )}
                 />
                 {operator === "BT" && (
@@ -291,6 +296,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     render={({ field }) => (
                         <LabeledSelect
                             label="Tipo de Ajuste"
+                            required
                             onChange={field.onChange}
                             value={field.value}
                             options={[
@@ -319,6 +325,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                                 <LabeledInput
                                     label="Precio (Neto)"
                                     type="number"
+                                    step="1"
                                     {...field}
                                     value={field.value || ""}
                                     onChange={(e) => {
@@ -375,7 +382,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                         checked={field.value}
                         onCheckedChange={field.onChange}
                         icon={<Zap className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
-                        className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
+                        className={cn(field.value ? "bg-success/5 border-success/20 shadow-card" : "border-dashed")}
                     />
                 )}
             />
@@ -393,9 +400,9 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                                 }
                                 field.onChange(date.toISOString().split('T')[0])
                             }}
-                            label="Válida Desde"
+                            label="Válida Desde (opcional)"
                             validationType="tax"
-                            required
+                            required={false}
                         />
                     )}
                 />
@@ -414,6 +421,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                             }}
                             label="Válida Hasta (Opcional)"
                             validationType="tax"
+                            required={false}
                         />
                     )}
                 />
@@ -421,11 +429,19 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
         </div>
     )
 
-    const drawerTitle = isView
-        ? `Ficha de Regla de Precio${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Regla de Precio"
-            : "Editar Regla de Precio"
+    const identity = useDrawerIdentity('inventory.pricingrule', mode, initialData, {
+        overrideSubtitle: (
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                {initialData?.rule_type && (
+                    <>
+                        <span>{initialData.rule_type === "FIXED" ? "Monto Fijo" : initialData.rule_type === "PACKAGE_FIXED" ? "Paquete Fijo" : "Descuento"}</span>
+                        <span className="opacity-30">|</span>
+                    </>
+                )}
+                <span>{form.watch("name") || "Configuración de regla activa"}</span>
+            </div>
+        ),
+    })
 
     return (
         <>
@@ -453,18 +469,10 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!initialData)}
                 mode={mode}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {initialData?.rule_type && (
-                            <>
-                                <span>{initialData.rule_type === "FIXED" ? "Monto Fijo" : initialData.rule_type === "PACKAGE_FIXED" ? "Paquete Fijo" : "Descuento"}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("name") || "Configuración de regla activa"}</span>
-                    </div>
-                }
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
+                icon={identity.icon}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

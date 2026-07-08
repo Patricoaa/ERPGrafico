@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import { PAYMENTS_KEYS } from './queryKeys'
@@ -15,7 +16,7 @@ export function usePaymentReference() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('N° de operación registrado correctamente')
-            queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.all })
+            invalidateCrossFeature(queryClient, [PAYMENTS_KEYS.all])
         },
         onError: () => {
             toast.error('Error al registrar el número de operación')

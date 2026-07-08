@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { WAREHOUSES_KEYS } from './useWarehouses'
 import { useRealtime } from '@/features/realtime'
 import type { Warehouse, WarehousePayload } from './useWarehouses'
@@ -12,7 +13,7 @@ export function useWarehouseMutations() {
     const { markLocalMutation } = useRealtime()
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: WAREHOUSES_KEYS.all })
+        invalidateCrossFeature(queryClient, [WAREHOUSES_KEYS.all])
     }
 
     const saveWarehouse = useMutation({

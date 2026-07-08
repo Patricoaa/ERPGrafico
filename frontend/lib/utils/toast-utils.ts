@@ -1,5 +1,5 @@
 import { toast } from "sonner"
-import { CSSProperties } from "react"
+import { type CSSProperties } from "react"
 
 export const showWarningToast = (message: string) => {
     toast.warning(message, {

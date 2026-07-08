@@ -1,7 +1,8 @@
 "use client"
 import React from "react"
-import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark, ShoppingCart, Truck } from "lucide-react"
+import { type LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getEntityIcon } from "@/lib/entity-registry"
 
 export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' | 'pos' | 'bom' | 'treasury' | 'sale' | 'purchase'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
@@ -27,6 +28,16 @@ interface EmptyStateProps {
     className?: string
 }
 
+const CONTEXT_TO_ENTITY_LABEL: Partial<Record<EmptyStateContext, string>> = {
+    inventory: 'inventory.product',
+    finance: 'finance.bankjournal',
+    production: 'production.workorder',
+    bom: 'production.bom',
+    treasury: 'treasury.treasurymovement',
+    sale: 'sales.saleorder',
+    purchase: 'purchasing.purchaseorder',
+}
+
 const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: string }> = {
     generic: { icon: Inbox, title: "Sin datos disponibles" },
     search: { icon: SearchX, title: "Sin resultados" },
@@ -38,15 +49,15 @@ const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: strin
     pos: { icon: Monitor, title: "Sin sesiones o transacciones" },
     bom: { icon: Layers, title: "Sin componentes de fabricación" },
     treasury: { icon: Landmark, title: "Sin movimientos de caja" },
-    sale: { icon: ShoppingCart, title: "Sin órdenes de venta" },
-    purchase: { icon: Truck, title: "Sin órdenes de compra" },
+    sale: { icon: Package, title: "Sin órdenes de venta" },
+    purchase: { icon: Package, title: "Sin órdenes de compra" },
 }
 
 /**
  * Standardized Industrial Empty State
  * 
  * Follows the design aesthetic:
- * - Typography: font-heading (Syne) + uppercase + extrabold
+ * - Typography:  (Syne) + uppercase + extrabold
  * - Palette: muted-foreground / subtle borders
  * - Layouts: full, compact, minimal
  */
@@ -62,14 +73,16 @@ export function EmptyState({
     className,
 }: EmptyStateProps) {
     const config = CONTEXT_CONFIG[context] || CONTEXT_CONFIG.generic
-    const Icon = icon || config.icon
+    const entityLabel = CONTEXT_TO_ENTITY_LABEL[context]
+    const resolvedIcon = entityLabel ? getEntityIcon(entityLabel) : null
+    const iconCmp = icon || resolvedIcon || config.icon
     const displayTitle = title || (entityName ? `No hay ${config.title.toLowerCase()} para ${entityName}` : config.title)
 
     if (variant === 'minimal') {
         return (
             <div className={cn("flex items-center gap-3 py-4 px-2 text-muted-foreground", className)}>
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="text-[10px] font-heading font-black uppercase tracking-wider">{displayTitle}</span>
+                {React.createElement(iconCmp, { className: "h-4 w-4 shrink-0" })}
+                <span className="text-[10px]  font-black uppercase tracking-tighter">{displayTitle}</span>
                 {action && <div className="ml-auto">{action}</div>}
             </div>
         )
@@ -85,19 +98,19 @@ export function EmptyState({
         >
             {/* Precision Icon Container */}
             <div className={cn(
-                "relative flex items-center justify-center rounded-lg border border-border bg-muted shadow-sm mb-6",
+                "relative flex items-center justify-center rounded-md border border-border bg-muted shadow-card mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
-                <Icon className={cn(
+                {React.createElement(iconCmp, { className: cn(
                     "text-muted-foreground/40",
                     variant === 'full' ? "h-10 w-10" : "h-6 w-6"
-                )} />
+                ) })}
             </div>
 
             {/* Content Section */}
-            <div className="flex max-w-md flex-col items-center space-y-2 text-center">
+            <div className="flex max-w-md flex-col items-center space-y-2 text-center whitespace-normal">
                 <h3 className={cn(
-                    "w-full text-center font-heading font-black uppercase tracking-tighter text-foreground/90",
+                    "w-full text-center  font-black uppercase tracking-tighter text-foreground/90",
                     variant === 'full' ? "text-lg" : "text-sm"
                 )}>
                     {displayTitle}
@@ -105,7 +118,7 @@ export function EmptyState({
 
                 {description && (
                     <p className={cn(
-                        "w-full text-center text-muted-foreground leading-relaxed",
+                        "w-full text-center text-muted-foreground leading-relaxed break-words",
                         variant === 'full' ? "text-sm" : "text-[11px]"
                     )}>
                         {description}

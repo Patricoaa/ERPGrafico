@@ -19,7 +19,7 @@ interface FormSectionProps {
 export function FormSection({ title, icon: Icon, className }: FormSectionProps) {
     return (
         <div className={cn("flex items-center gap-4 pt-4 pb-1 select-none", className)}>
-            <div className="flex-1 h-px bg-border/40" />
+            <div className="flex-1 h-px bg-border" />
             <div className="flex items-center gap-2.5">
                 {Icon && (
                     <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
@@ -28,7 +28,7 @@ export function FormSection({ title, icon: Icon, className }: FormSectionProps) 
                     {title}
                 </span>
             </div>
-            <div className="flex-1 h-px bg-border/40" />
+            <div className="flex-1 h-px bg-border" />
         </div>
     )
 }

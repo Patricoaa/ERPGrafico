@@ -12,16 +12,16 @@ interface ServerDateResponse {
 }
 
 export function useServerDate() {
-    const { data, isLoading, error } = useQuery({
+    const { data, isLoading, isError } = useQuery({
         queryKey: ['server-time'],
         queryFn: async () => {
             try {
                 const response = await api.get<ServerDateResponse>('/core/server-time/')
                 return response.data
-            } catch (err: any) {
-                // If the server fails or rate limits, fallback to the local machine date.
+            } catch (err: unknown) {
+                // If the server fails or rate limits, fallback to the local machine time.
                 // This prevents the application from breaking over a minor utility endpoint.
-                console.warn('Could not fetch server time, falling back to local time', err?.message)
+                console.warn('Could not fetch server time, falling back to local time', err instanceof Error ? err.message : err)
                 const now = new Date()
                 return {
                     datetime: now.toISOString(),
@@ -33,7 +33,7 @@ export function useServerDate() {
                 } as ServerDateResponse
             }
         },
-        staleTime: 5 * 60 * 1000, 
+        staleTime: 30 * 1000, 
         refetchOnWindowFocus: false,
     })
 
@@ -45,7 +45,7 @@ export function useServerDate() {
     return {
         serverDate,
         isLoading,
-        error: error ? (error as Error) : null,
+        isError,
         dateString: data?.date || '',
         year: data?.year || null,
         month: data?.month || null

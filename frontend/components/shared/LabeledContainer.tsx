@@ -1,7 +1,14 @@
 "use client"
 
-import { ReactNode } from "react"
+import { type ReactNode } from "react"
 import { cn } from "@/lib/utils"
+import { Info } from "lucide-react"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface LabeledContainerProps {
     /** Label text rendered inside the fieldset legend (notched border). */
@@ -24,6 +31,8 @@ interface LabeledContainerProps {
     labelClassName?: string
     /** Whether the container is disabled. */
     disabled?: boolean
+    /** Tooltip text shown on hover of a small ℹ icon inline in the legend. */
+    tooltip?: string
     /** The actual interactive content (e.g. DatePicker, Dropzone, etc). */
     children: ReactNode
 }
@@ -45,6 +54,7 @@ export function LabeledContainer({
     suffix,
     labelClassName,
     disabled,
+    tooltip,
     children
 }: LabeledContainerProps) {
     const hasError = !!error
@@ -63,12 +73,24 @@ export function LabeledContainer({
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                        "px-1.5 text-[10px] font-black uppercase tracking-widest transition-colors duration-200 flex items-center gap-1",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
                         labelClassName
                     )}>
                         {label}
                         {required && <span className="text-destructive ml-0.5">*</span>}
+                        {tooltip && (
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Info className="h-2.5 w-2.5 opacity-50 hover:opacity-100 cursor-default transition-opacity" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-[220px] text-xs">
+                                        {tooltip}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
                     </legend>
                 )}
 

@@ -2,26 +2,27 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import * as z from "zod"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getErrorMessage } from "@/lib/errors"
+import type { ColumnDef } from "@tanstack/react-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
+import { DataCell, DataTable, LabeledSelect, GenericWizard, type WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import {FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
+import {FileUp, Columns, Table as TableIcon, CheckCircle2, FileSearch, Landmark, SlidersHorizontal} from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { financeApi } from "../../api/financeApi"
 import { cn } from "@/lib/utils"
 import { Chip } from "@/components/shared"
-import ImportPreviewStep, { DryRunResult } from "./ImportPreviewStep"
+import ImportPreviewStep, { type DryRunResult } from "./ImportPreviewStep"
 
 const importSchema = z.object({
     treasury_account_id: z.string().min(1, "Debes seleccionar una cuenta"),
     bank_format: z.string().min(1, "Debes seleccionar un formato"),
-    file: z.any().optional(), // Use any to avoid instanceof issues in Turbopack
-    mapping: z.record(z.string(), z.any()).optional()
+    file: z.unknown().optional(),
+    mapping: z.record(z.string(), z.unknown()).optional()
 })
 
 type ImportFormValues = z.infer<typeof importSchema>
@@ -62,7 +63,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const [error, setError] = useState<string | null>(null)
 
     const form = useForm<ImportFormValues>({
-        resolver: zodResolver(importSchema) as any,
+        resolver: zodResolver(importSchema) as unknown as Resolver<ImportFormValues>,
         defaultValues: {
             treasury_account_id: "",
             bank_format: "GENERIC_CSV",
@@ -112,7 +113,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
     const fetchBankFormats = useCallback(async () => {
         try {
             const formatsData = await financeApi.getStatementFormats()
-            setBankFormats((formatsData as any).formats)
+            setBankFormats(((formatsData as Record<string, unknown>).formats as BankFormat))
         } catch (error) {
             console.error('Error fetching bank formats:', error)
             setBankFormats({
@@ -134,7 +135,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             form.setValue("file", selectedFile)
             setError(null)
         } else {
-            form.setValue("file", undefined as any)
+            form.setValue("file", undefined)
         }
     }
 
@@ -144,17 +145,17 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
         setError(null)
         try {
             const fData = new FormData()
-            fData.append('file', file)
+            fData.append('file', file as Blob)
 
-            const previewResult = await financeApi.previewStatement(fData)
+            const previewResult = await financeApi.previewStatement(fData) as ImportPreviewData
             setPreviewData(previewResult)
 
             // Update bank format if it's generic and file type matches excel
-            if ((previewResult as any).file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
+            if (previewResult.file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
                 form.setValue('bank_format', 'GENERIC_EXCEL')
             }
 
-            const cols = (previewResult as any).columns
+            const cols = previewResult.columns
             const newMapping = { ...mapping }
             cols.forEach((col: string | number) => {
                 const colStr = String(col).toLowerCase()
@@ -199,11 +200,15 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             return false
         }
         
+        if (!file) {
+            setError("No hay archivo seleccionado")
+            return false
+        }
         setLoading(true)
         setError(null)
         try {
             const dryRunData = new FormData()
-            dryRunData.append('file', file!)
+            dryRunData.append('file', file as Blob)
             dryRunData.append('treasury_account_id', treasuryAccountId)
             dryRunData.append('bank_format', bankFormat)
             
@@ -212,7 +217,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                 dryRunData.append('custom_config', JSON.stringify(config))
             }
             
-            const dryRunResultData = await financeApi.dryRunStatement(dryRunData)
+            const dryRunResultData = await financeApi.dryRunStatement(dryRunData) as DryRunResult
             setDryRunResult(dryRunResultData)
             return true
         } catch (error: unknown) {
@@ -238,11 +243,16 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
             return false
         }
 
+        if (!file) {
+            setError("No hay archivo seleccionado")
+            return false
+        }
+
         try {
             setLoading(true)
 
             const importData = new FormData()
-            importData.append('file', file!)
+            importData.append('file', file as Blob)
             importData.append('treasury_account_id', treasuryAccountId)
             importData.append('bank_format', bankFormat)
 
@@ -313,7 +323,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                     <FormSection title="Archivo de Cartola" icon={FileUp} />
                     <div className="space-y-6">
                         <DocumentAttachmentDropzone
-                            file={file}
+                            file={file as File | null}
                             onFileChange={handleFileChange}
                             accept=".csv,.xls,.xlsx"
                             label="Documento de Cartola"
@@ -321,9 +331,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                         {error && (
                             <div className="animate-in fade-in slide-in-from-top-2">
-                                <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
-                                    <AlertCircle className="h-4 w-4 text-destructive" />
-                                    <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
+                                <Alert variant="destructive" className="rounded-md">
+                                    <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                         {error}
                                     </AlertDescription>
                                 </Alert>
@@ -350,7 +359,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                     {/* S3.7: Parse options */}
                     {bankFormat === 'GENERIC_CSV' && (
-                        <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                        <div className="rounded-md border border-border/40 bg-muted/20 p-4">
                             <div className="flex items-center gap-2 mb-3">
                                 <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
                                 <span className="text-xs font-black uppercase text-muted-foreground">Opciones de Parseo</span>
@@ -394,75 +403,56 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                         </div>
                     )}
 
-                    <div className="rounded-lg border border-border/40 overflow-hidden bg-background">
-                        <div className="max-h-[50vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
-                            {previewData && (
-                                <Table className="w-max min-w-full border-separate border-spacing-0">
-                                    <TableHeader className="sticky top-0 z-20">
-                                        <TableRow className="bg-muted/80 backdrop-blur-md hover:bg-muted/80 border-none">
-                                            {previewData.columns.map((col, idx) => (
-                                                <TableHead key={idx} className="w-[280px] p-0 border-b border-border/40">
-                                                    <div className="flex flex-col gap-3 p-4">
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-xs font-black text-muted-foreground/50 bg-muted/30 px-2 py-0.5 rounded border border-border/40">
-                                                                COLUMNA {idx + 1}
-                                                            </span>
-                                                        </div>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <span className="text-xs font-black text-foreground/70 uppercase break-all line-clamp-1 min-h-4">
-                                                                    {String(col)}
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top">{String(col)}</TooltipContent>
-                                                        </Tooltip>
-                                                        <Select
-                                                            value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
-                                                            onValueChange={(val) => {
-                                                                const newMapping = { ...mapping }
-                                                                if (val !== 'ignore') {
-                                                                    newMapping[val] = col
-                                                                } else {
-                                                                    const entry = Object.entries(mapping).find((e) => e[1] === col)
-                                                                    if (entry) newMapping[entry[0]] = null
-                                                                }
-                                                                form.setValue("mapping", newMapping)
-                                                            }}
-                                                        >
-                                                            <SelectTrigger className="h-9 text-xs font-bold uppercase bg-background">
-                                                                <SelectValue placeholder="Ignorar Columna" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
-                                                                <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
-                                                                <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
-                                                                <SelectItem value="debit" className="text-xs font-bold uppercase text-expense">Cargos (Egresos)</SelectItem>
-                                                                <SelectItem value="credit" className="text-xs font-bold uppercase text-income">Abonos (Ingresos)</SelectItem>
-                                                                <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
-                                                                <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
-                                                                <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {previewData.rows.slice(0, 8).map((row, rIdx) => (
-                                            <TableRow key={rIdx} className="hover:bg-muted/30 transition-colors">
-                                                {row.map((cell, cIdx) => (
-                                                    <TableCell key={cIdx} className="text-xs py-3 px-4 border-r border-border/30 last:border-r-0 font-medium">
-                                                        {String(cell)}
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            )}
+                    {previewData && (
+                        <div className="rounded-md border border-border/40 overflow-hidden bg-background">
+                            <DataTable
+                                columns={previewData.columns.map<ColumnDef<unknown[]>>((col, idx) => ({
+                                    id: `col-${idx}`,
+                                    accessorFn: (row) => row?.[idx] ?? null,
+                                    header: () => (
+                                        <div className="p-2 min-w-[240px]">
+                                            <Select
+                                                value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
+                                                onValueChange={(val) => {
+                                                    const newMapping = { ...mapping }
+                                                    if (val !== 'ignore') {
+                                                        newMapping[val] = col
+                                                    } else {
+                                                        const entry = Object.entries(mapping).find((e) => e[1] === col)
+                                                        if (entry) newMapping[entry[0]] = null
+                                                    }
+                                                    form.setValue("mapping", newMapping)
+                                                }}
+                                            >
+                                                <SelectTrigger className="h-9 text-xs font-bold uppercase bg-background">
+                                                    <SelectValue placeholder="Ignorar Columna" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
+                                                    <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
+                                                    <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
+                                                    <SelectItem value="debit" className="text-xs font-bold uppercase text-expense">Cargos (Egresos)</SelectItem>
+                                                    <SelectItem value="credit" className="text-xs font-bold uppercase text-income">Abonos (Ingresos)</SelectItem>
+                                                    <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
+                                                    <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
+                                                    <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    ),
+                                    cell: ({ row }) => (
+                                        <DataCell.Text className="text-left whitespace-nowrap min-w-[240px] justify-start pl-2">
+                                            {String((row.original as Record<number, unknown>)[idx] ?? "")}
+                                        </DataCell.Text>
+                                    )
+                                }))}
+                                data={previewData.rows.slice(0, 8) as unknown[][]}
+                                variant="minimal"
+                                hidePagination
+                                noBorder
+                            />
                         </div>
-                    </div>
+                    )}
 
                     <FormSection title="Estado de Mapeo" icon={TableIcon} />
 
@@ -483,7 +473,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                                     className={cn(
                                         "h-6 px-3 transition-all",
                                         mapping[f] !== null
-                                            ? "shadow-sm shadow-success/5"
+                                                    ? "shadow-card shadow-success/5"
                                             : "bg-muted/50 border-border text-muted-foreground/40 line-through"
                                     )}
                                 >
@@ -495,9 +485,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
 
                     {error && (
                         <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-top-2">
-                            <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
-                                <AlertCircle className="h-4 w-4 text-destructive" />
-                                <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
+                            <Alert variant="destructive" className="rounded-md">
+                                <AlertDescription className="text-xs font-bold uppercase leading-relaxed">
                                     {error}
                                 </AlertDescription>
                             </Alert>

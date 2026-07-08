@@ -5,31 +5,37 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0057_bank_provisioned_db_default'),
+        ("treasury", "0057_bank_provisioned_db_default"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='historicalpaymentmethod',
-            name='bank_provisioned',
+            model_name="historicalpaymentmethod",
+            name="bank_provisioned",
         ),
         migrations.RemoveField(
-            model_name='historicaltreasuryaccount',
-            name='bank_provisioned',
+            model_name="historicaltreasuryaccount",
+            name="bank_provisioned",
         ),
         migrations.RemoveField(
-            model_name='paymentmethod',
-            name='bank_provisioned',
+            model_name="paymentmethod",
+            name="bank_provisioned",
         ),
         migrations.RemoveField(
-            model_name='treasuryaccount',
-            name='bank_provisioned',
+            model_name="treasuryaccount",
+            name="bank_provisioned",
         ),
         migrations.AlterField(
-            model_name='paymentterminalprovider',
-            name='bank_treasury_account',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='terminal_providers', to='treasury.treasuryaccount', verbose_name='Cuenta Destino Liquidación'),
+            model_name="paymentterminalprovider",
+            name="bank_treasury_account",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="terminal_providers",
+                to="treasury.treasuryaccount",
+                verbose_name="Cuenta Destino Liquidación",
+            ),
         ),
     ]

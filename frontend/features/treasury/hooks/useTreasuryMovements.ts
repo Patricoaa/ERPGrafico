@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { treasuryApi } from '../api/treasuryApi'
@@ -11,9 +13,11 @@ export type { TreasuryMovement, TreasuryMovementFilters }
 
 export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
     const { page_size = 50, page = 1, ...rest } = filters
 
     const params: Record<string, string | number | boolean> = { page, page_size }
+    if (rest.bank)             params.bank             = rest.bank
     if (rest.treasury_account) params.treasury_account = rest.treasury_account
     if (rest.movement_type)    params.movement_type    = rest.movement_type
     if (rest.date)             params.date             = rest.date
@@ -23,7 +27,11 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     if (rest.amount_max !== undefined) params.amount_max = rest.amount_max
     if (rest.direction)        params.direction        = rest.direction
     if (rest.is_reconciled !== undefined) params.is_reconciled = rest.is_reconciled
+    if (rest.payment_method) params.payment_method = rest.payment_method
     if (rest.payment_method_new) params.payment_method_new = rest.payment_method_new
+    if (rest.search)              params.search              = rest.search
+    if (rest.display_id)          params.display_id          = rest.display_id
+    if (rest.partner_name)        params.partner_name        = rest.partner_name
 
     const { data: page_, isLoading, isFetching, refetch } = useQuery({
         queryKey: [...MOVEMENTS_KEYS.lists(), { page, page_size, ...rest }],
@@ -34,7 +42,8 @@ export function useTreasuryMovements(filters: TreasuryMovementFilters = {}) {
     const createMovement = useMutation({
         mutationFn: (payload: MovementCreatePayload) => treasuryApi.createMovement(payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: MOVEMENTS_KEYS.all })
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [MOVEMENTS_KEYS.all])
             toast.success('Movimiento registrado correctamente')
         },
         onError: (err) => {

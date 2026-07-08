@@ -1,2 +1,2 @@
-export { CreditPortfolioView } from "./components/CreditPortfolioView"
-export { BlacklistView } from "./components/BlacklistView"
+export { CreditPortfolioClientView } from "./components/CreditPortfolioClientView"
+export { BlacklistClientView } from "./components/BlacklistClientView"

@@ -1,4 +1,4 @@
-import {Contact, Warehouse} from "@/types/entities"
+import {type Contact, type Warehouse} from "@/types/entities"
 
 export interface PurchaseOrderLineAPI {
     id: number
@@ -10,6 +10,28 @@ export interface PurchaseOrderLineAPI {
     uom_name: string
     tax_rate: string | number
     product_type?: string
+    quantity_received?: number
+    quantity_pending?: number
+    subtotal?: number
+    track_inventory?: boolean
+}
+
+export interface InvoiceDetail {
+    id: number
+    dte_type: string
+    number: string
+    document_attachment: string | null
+}
+
+export interface SerializedPayment {
+    id: number
+    payment_method: string
+    payment_method_display: string
+    payment_method_new_name: string | null
+    payment_method_new_method_type: string | null
+    amount: string
+    movement_type: string
+    date: string
 }
 
 export interface PurchaseOrderAPI {
@@ -17,12 +39,42 @@ export interface PurchaseOrderAPI {
     number: string
     display_id: string
     supplier: number | Contact
+    supplier_name: string
     warehouse: number | Warehouse | null
+    warehouse_name: string | null
     status: string
     status_display: string
+    receiving_status: "PENDING" | "PARTIAL" | "RECEIVED"
     total: string
+    total_net: string
+    total_tax: string
+    total_paid: number
+    pending_amount: number
+    is_invoiced: boolean
+    invoice_details: InvoiceDetail | null
+    date: string
+    receipt_date: string | null
+    actual_receipt_date: string | null
+    created_at: string
+    updated_at: string
     notes: string
+    supplier_reference?: string
+    payment_method?: string
+    payment_method_ref_name?: string | null
+    payment_method_ref_method_type?: string | null
+    serialized_payments?: SerializedPayment[]
     lines: PurchaseOrderLineAPI[]
+    work_order?: number | null
+    work_order_number?: string | null
+}
+
+export interface PartialReceiptLine {
+    lineId?: number | string
+    productId?: number | string
+    productName?: string
+    orderedQty?: number
+    receivedQty: number
+    uom: number | string
 }
 
 export interface PartialReceiptLine {
@@ -73,9 +125,9 @@ export interface DTEData {
 export interface PaymentData {
     method: string
     amount: number
-    transactionNumber: string
     treasuryAccountId: number | null
     isPending: boolean
+    checkNumber?: string
 }
 
 export interface ReceiptData {

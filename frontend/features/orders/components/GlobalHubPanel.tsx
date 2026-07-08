@@ -1,14 +1,14 @@
 "use client"
 
-import React, { useRef } from "react"
+import React from "react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { OrderHubPanel } from "@/features/orders/components/OrderHubPanel"
 import { ActionCategory } from "@/features/orders/components/ActionCategory"
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
 import { useOrderHubData } from "@/hooks/useOrderHubData"
-import { LucideIcon, LayoutGrid } from "lucide-react"
+import { type LucideIcon, LayoutGrid } from "lucide-react"
 import { CollapsibleSheet } from "@/components/shared"
 
 export function GlobalHubPanel() {
@@ -22,22 +22,10 @@ export function GlobalHubPanel() {
         enabled: isHubOpen 
     })
 
-    // Tracking Inbox state to push Hub left if they sit side-by-side
-    const [isInboxOpen, setIsInboxOpen] = React.useState(false)
-    React.useEffect(() => {
-        requestAnimationFrame(() => {
-            setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
-        })
-        const observer = new MutationObserver(() => {
-            setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
-        })
-        observer.observe(document.body, { attributes: true, attributeFilter: ['data-inbox-open'] })
-        return () => observer.disconnect()
-    }, [])
+
 
     // Derived: check modal as well to hide UI (but keep engine alive)
     const showPanel = isHubEffectivelyOpen && !isSubModalActive
-    const panelRef = useRef<HTMLDivElement>(null)
 
     return (
         <>

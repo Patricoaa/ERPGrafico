@@ -1,9 +1,10 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
-import {UoM, Product} from "@/types/entities"
+import {type UoM, type Product} from "@/types/entities"
 
-import { useState, useEffect, useMemo, useRef } from "react"
-import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
+import { useState, useEffect, useMemo } from "react"
+import { useForm, type FieldErrors, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { resolveMediaUrl } from "../api/inventoryApi"
@@ -11,23 +12,22 @@ import { useProducts } from "../hooks/useProducts"
 import { useUoMs } from "../hooks/useUoMs"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useProductPricingRules } from "../hooks/usePricingRules"
-import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign, Printer} from "lucide-react"
+import { type ProductInitialData, type PricingRuleInitialData } from "@/types/forms"
+import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign} from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import {ActionConfirmModal, Drawer, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, SkeletonShell, type FormTabItem} from '@/components/shared'
-import { ActivitySidebar } from "@/features/audit/components"
+import {ActionConfirmModal, Drawer, FormSplitLayout, TabBar, TabBarContent, SkeletonShell, type TabItem} from '@/components/shared'
+import { ActivitySidebar } from "@/features/audit"
 // Removed Badge import for governance compliance
 
 // Import dialogs
-import { Button } from "@/components/ui/button"
-import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
+import { PricingRuleDrawer } from "@/features/sales"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerMode, useDrawerIdentity, usePrintableDrawer, drawerFooter, type DrawerMode } from "@/features/_shared"
 
 // Product subcomponents and schema
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
@@ -43,7 +43,7 @@ interface ProductDrawerProps {
     sidebar?: React.ReactNode
     open: boolean
     onOpenChange: (open: boolean) => void
-    initialData?: any // Bridging discrepancies between local/global Product and ProductInitialData
+    initialData?: ProductInitialData
     onSuccess: () => void
     lockedType?: string
     variantMode?: boolean
@@ -52,22 +52,20 @@ interface ProductDrawerProps {
     mode?: DrawerMode
 }
 
-export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
+export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
     const { saveProduct, products, isLoading: isLoadingProducts } = useProducts()
     const { uoms, isUoMsLoading: isLoadingUoMs } = useUoMs()
     const { warehouses, isLoading: isLoadingWarehouses } = useWarehouses()
     const { rules: pricingRules, isLoading: isLoadingPricingRules, refetch: refetchPricingRules } = useProductPricingRules(initialData?.id ?? null)
 
-    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
-    const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [loading, setLoading] = useState(false)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
-    const [selectedPricingRule, setSelectedPricingRule] = useState<any | null>(null)
+    const [selectedPricingRule, setSelectedPricingRule] = useState<PricingRuleInitialData | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
-    const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
+    const [variantsRefreshKey] = useState(0)
     const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
     // Compuesto desde los hooks de reads — el padre lo expone como prop para
@@ -78,51 +76,52 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
 
     const width = formDrawerWidth("master", !!initialData?.id)
 
-    const form: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema) as any,
-        defaultValues: initialData ? {
-            code: initialData.code || "",
-            name: initialData.name || "————————————",
-            product_type: initialData.product_type || "STORABLE",
-            can_be_sold: initialData.can_be_sold ?? true,
-            has_bom: initialData.has_bom ?? false,
-            has_variants: initialData.has_variants ?? false,
-            // ... partial fill to avoid undefined during skeleton phase
-        } : {
-            code: "",
-            internal_code: "",
-            name: "",
-            category: "",
-            product_type: lockedType || "STORABLE",
-            sale_price: 0,
-            sale_price_gross: 0,
-            is_dynamic_pricing: false,
-            uom: "",
-            sale_uom: "",
-            purchase_uom: "",
-            allowed_sale_uoms: [],
-            receiving_warehouse: "",
-            track_inventory: true,
-            image: undefined,
-            has_bom: false,
-            requires_advanced_manufacturing: false,
-            mfg_enable_prepress: false,
-            mfg_enable_press: false,
-            mfg_enable_postpress: false,
-            mfg_prepress_design: false,
-            mfg_prepress_specs: false,
-            mfg_prepress_folio: false,
-            mfg_press_offset: false,
-            mfg_press_digital: false,
-            mfg_postpress_finishing: false,
-            mfg_postpress_binding: false,
-            mfg_auto_finalize: false,
-            boms: [],
-            has_variants: false,
-            parent_template: null,
-            attribute_values: [],
-            variant_display_name: "",
-        },
+    const productDefaultValues = useMemo(() => initialData ? {
+        code: initialData.code || "",
+        name: initialData.name || "————————————",
+        product_type: initialData.product_type || "STORABLE",
+        can_be_sold: initialData.can_be_sold ?? true,
+        has_bom: initialData.has_bom ?? false,
+        has_variants: initialData.has_variants ?? false,
+    } : {
+        code: "",
+        internal_code: "",
+        name: "",
+        category: "",
+        product_type: lockedType || "STORABLE",
+        sale_price: 0,
+        sale_price_gross: 0,
+        is_dynamic_pricing: false,
+        uom: "",
+        sale_uom: "",
+        purchase_uom: "",
+        allowed_sale_uoms: [],
+        receiving_warehouse: "",
+        track_inventory: true,
+        image: undefined,
+        has_bom: false,
+        requires_advanced_manufacturing: false,
+        mfg_enable_prepress: false,
+        mfg_enable_press: false,
+        mfg_enable_postpress: false,
+        mfg_prepress_design: false,
+        mfg_prepress_specs: false,
+        mfg_prepress_folio: false,
+        mfg_press_offset: false,
+        mfg_press_digital: false,
+        mfg_postpress_finishing: false,
+        mfg_postpress_binding: false,
+        mfg_auto_finalize: false,
+        boms: [],
+        has_variants: false,
+        parent_template: null,
+        attribute_values: [],
+        variant_display_name: "",
+    }, [initialData, lockedType])
+
+    const form = useForm<ProductFormValues>({
+        resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormValues>,
+        defaultValues: productDefaultValues,
     })
 
     // Helper function to map field errors to tabs
@@ -166,7 +165,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         const subFields = [
             'subscription_supplier', 'subscription_amount', 'recurrence_period',
             'subscription_start_date', 'payment_day_type', 'payment_day',
-            'payment_interval_days', 'default_invoice_type', 'income_account'
+            'payment_interval_days', 'default_invoice_type'
         ]
         subFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
@@ -282,18 +281,18 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     code: initialData.code || "",
                     internal_code: initialData.internal_code || "",
                     name: initialData.name || "",
-                    category: typeof initialData.category === 'object' ? String((initialData.category as any)?.id) : String(initialData.category || ""),
+                    category: getId(initialData.category),
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
                     sale_price_gross: Number(initialData.sale_price_gross) || 0,
                     is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
-                    uom: typeof initialData.uom === 'object' ? String((initialData.uom as any)?.id) : String(initialData.uom || ""),
-                    sale_uom: typeof initialData.sale_uom === 'object' ? String((initialData.sale_uom as any)?.id) : String(initialData.sale_uom || initialData.uom || ""),
-                    purchase_uom: typeof initialData.purchase_uom === 'object' ? String((initialData.purchase_uom as any)?.id) : String(initialData.purchase_uom || initialData.uom || ""),
+                    uom: getId(initialData.uom),
+                    sale_uom: getId(initialData.sale_uom) || getId(initialData.uom),
+                    purchase_uom: getId(initialData.purchase_uom) || getId(initialData.uom),
                     allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
-                        ? initialData.allowed_sale_uoms.map((u: any) => typeof u === 'object' ? String(u.id) : String(u))
+                        ? initialData.allowed_sale_uoms.map(u => getId(u))
                         : (initialData.uom ? [getId(initialData.uom)] : []),
-                    receiving_warehouse: typeof initialData.receiving_warehouse === 'object' ? String((initialData.receiving_warehouse as any)?.id) : String(initialData.receiving_warehouse || ""),
+                    receiving_warehouse: getId(initialData.receiving_warehouse),
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
                     can_be_purchased: initialData.can_be_purchased ?? true,
@@ -314,19 +313,19 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     parent_template: initialData.parent_template?.toString() || null,
                     attribute_values: initialData.attribute_values?.map((v: unknown) => String(v)) || [],
                     variant_display_name: initialData.variant_display_name || "",
-                    boms: initialData.boms?.map((b: any) => ({
+                    boms: initialData.boms?.map(b => ({
                         id: b.id,
                         name: b.name || "",
                         active: b.active || false,
-                        lines: b.lines.map((l: any) => ({
+                        lines: b.lines.map(l => ({
                             id: l.id,
                             component: l.component?.toString() || "",
-                            quantity: parseFloat(l.quantity) || 0,
+                            quantity: parseFloat(String(l.quantity)) || 0,
                             uom: l.uom?.toString() || undefined,
                             notes: l.notes || ""
                         }))
                     })) || [],
-                    uom_prices: initialData.uom_prices?.map((p: any) => ({
+                    uom_prices: initialData.uom_prices?.map(p => ({
                         id: p.id,
                         uom: typeof p.uom === 'object' ? p.uom.id : Number(p.uom),
                         price_net: Number(p.price_net) || 0,
@@ -339,16 +338,14 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     payment_day: initialData.payment_day || undefined,
                     payment_interval_days: initialData.payment_interval_days || undefined,
                     default_invoice_type: initialData.default_invoice_type || undefined,
-                    subscription_supplier: typeof initialData.subscription_supplier === 'object' ? String((initialData.subscription_supplier as any)?.id) : String(initialData.subscription_supplier || ""),
+                    subscription_supplier: getId(initialData.subscription_supplier),
                     subscription_amount: initialData.subscription_amount || undefined,
                     subscription_start_date: initialData.subscription_start_date || "",
                     auto_activate_subscription: initialData.auto_activate_subscription ?? true,
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
-                    income_account: typeof initialData.income_account === 'object' ? String((initialData.income_account as any)?.id) : String(initialData.income_account || ""),
-                    expense_account: typeof initialData.expense_account === 'object' ? String((initialData.expense_account as any)?.id) : String(initialData.expense_account || ""),
-                    preferred_supplier: typeof initialData.preferred_supplier === 'object' ? String((initialData.preferred_supplier as any)?.id) : String(initialData.preferred_supplier || ""),
-                })
+                    preferred_supplier: getId(initialData.preferred_supplier),
+                } as Partial<ProductFormValues>)
                 setImagePreview(resolveMediaUrl(initialData.image) || null)
             } else {
                 form.reset({
@@ -386,8 +383,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     parent_template: null,
                     attribute_values: [],
                     variant_display_name: "",
-                    income_account: "",
-                    expense_account: "",
                     preferred_supplier: "",
                 })
                 setImagePreview(null)
@@ -395,7 +390,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 // producto nuevo (sin initialData.id) el hook ya devuelve [].
             }
         }
-    }, [open, initialData])
+    }, [open, initialData, form, lockedType])
 
     const FIELD_LABELS: Record<string, string> = {
         name: "Nombre Comercial",
@@ -407,8 +402,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         sale_uom: "Unidad de Medida Venta",
         purchase_uom: "Unidad de Medida Compra",
         receiving_warehouse: "Bodega de Recepción",
-        income_account: "Cuenta de Ingresos",
-        expense_account: "Cuenta de Gastos",
         subscription_supplier: "Proveedor de Suscripción",
         recurrence_period: "Período de Facturación",
         subscription_amount: "Monto de Suscripción",
@@ -458,9 +451,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
             formData.append('sale_price_gross', (data.sale_price_gross || 0).toString())
             formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
 
-            const appendValid = (key: string, val: any) => {
+            const appendValid = (key: string, val: unknown) => {
                 if (val !== undefined && val !== null && val !== 'undefined' && val !== '') {
-                    formData.append(key, val)
+                    formData.append(key, val as string | Blob)
                 }
             }
 
@@ -470,8 +463,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
             appendValid('sale_uom', data.sale_uom)
             appendValid('purchase_uom', data.purchase_uom)
             appendValid('receiving_warehouse', data.receiving_warehouse)
-            appendValid('income_account', data.income_account)
-            appendValid('expense_account', data.expense_account)
 
             if (data.preferred_supplier && data.preferred_supplier !== 'undefined') {
                 formData.append('preferred_supplier', data.preferred_supplier)
@@ -563,7 +554,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         }
     }
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "general",
             label: "General",
@@ -607,11 +598,11 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         },
     ]
 
-    const drawerTitle = isView
-        ? `Ficha de Producto${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Producto"
-            : "Editar Producto"
+    const drawerIdentity = useDrawerIdentity('inventory.product', mode, initialData, {
+        overrideSubtitle: initialData ? form.watch("name") : "Maestro de Producto",
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
+    })
 
     const tabHeader = (
         <div className="flex flex-col p-6 pb-2">
@@ -619,7 +610,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 <Package className="h-6 w-6 text-primary" />
                 <div className="flex flex-col">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-0.5">
-                        {drawerTitle}
+                        {drawerIdentity.title}
                     </span>
                     <span className="truncate max-w-[300px]">
                         {initialData ? form.watch("name") : "Maestro de Producto"}
@@ -629,18 +620,12 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         </div>
     )
 
-    const footerSlot = isView ? undefined : (
-        <FormFooter
-            actions={
-                <>
-                    <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
-                    <ActionSlideButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
-                        {mode === 'create' ? "Crear Producto" : "Guardar Cambios"}
-                    </ActionSlideButton>
-                </>
-            }
-        />
-    )
+    const footerSlot = drawerFooter(isView, <>
+        <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+        <ActionSlideButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
+            {mode === 'create' ? "Crear Producto" : "Guardar Cambios"}
+        </ActionSlideButton>
+    </>)
 
     const formContent = (
         <>
@@ -657,7 +642,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                             }
                             className="min-w-0 h-full overflow-hidden p-0"
                         >
-                            <FormTabs
+                            <TabBar
                                 items={tabItems}
                                 value={activeTab}
                                 onValueChange={setActiveTab}
@@ -668,7 +653,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                 contentClassName="bg-transparent"
                             >
                                 <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                    <FormTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <TabBarContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <div className="space-y-8 pr-2">
                                             <ProductBasicInfo
                                                 form={form}
@@ -678,9 +663,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                                 lockedType={lockedType}
                                             />
                                         </div>
-                                    </FormTabsContent>
+                                    </TabBarContent>
 
-                                    <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <TabBarContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <ProductManufacturingTab
                                             form={form}
                                             initialData={initialData}
@@ -688,9 +673,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                             uoms={uoms as unknown as UoM[]}
                                             variantMode={variantMode}
                                         />
-                                    </FormTabsContent>
+                                    </TabBarContent>
 
-                                    <FormTabsContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
+                                    <TabBarContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
                                         <ProductVariantsTab
                                             key={variantsRefreshKey}
                                             form={form}
@@ -700,9 +685,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                                 window.open(`/inventory/products?selected=${v.id}`, '_blank');
                                             }}
                                         />
-                                    </FormTabsContent>
+                                    </TabBarContent>
 
-                                    <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <TabBarContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <ProductInventoryTab
                                             form={form}
                                             initialData={initialData}
@@ -710,13 +695,13 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                             uoms={uoms as unknown as UoM[]}
                                             isEditing={!!initialData}
                                         />
-                                    </FormTabsContent>
+                                    </TabBarContent>
 
-                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <TabBarContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                    </FormTabsContent>
+                                    </TabBarContent>
 
-                                    <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <TabBarContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <div className="space-y-8 pr-2">
                                             <ProductPricingSection
                                                 form={form}
@@ -728,17 +713,17 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                                 initialData={initialData}
                                                 pricingRules={pricingRules}
                                                 fetchPricingRules={refetchPricingRules}
-                                                onOpenRuleDialog={(rule) => {
-                                                    setSelectedPricingRule(rule || null)
+                                                    onOpenRuleDialog={(rule) => {
+                                                    setSelectedPricingRule(rule as unknown as PricingRuleInitialData | null)
                                                     setPricingRuleDialogOpen(true)
                                                 }}
                                                 isDynamicPricing={form.watch('is_dynamic_pricing')}
                                                 isVariant={!!initialData?.parent_template}
                                             />
                                         </div>
-                                    </FormTabsContent>
+                                    </TabBarContent>
                                 </fieldset>
-                            </FormTabs>
+                            </TabBar>
                         </FormSplitLayout>
                     </SkeletonShell>
                 </fieldset>
@@ -752,7 +737,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     setPricingRuleDialogOpen(open)
                     if (!open) setSelectedPricingRule(null)
                 }}
-                initialData={selectedPricingRule}
+                initialData={selectedPricingRule ?? undefined}
                 onSuccess={refetchPricingRules}
                 productId={initialData?.id}
                 productName={initialData?.name}
@@ -811,9 +796,10 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 }}
                 defaultSize={width}
                 className="h-[90vh]"
-                icon={Package}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={initialData ? form.watch("name") : "Maestro de Producto"}
+                icon={drawerIdentity.icon}
+                title={drawerIdentity.title}
+                headerActions={drawerIdentity.headerActions}
+                subtitle={drawerIdentity.subtitle}
                 mode={mode}
                 footer={footerSlot}
                 side="left"

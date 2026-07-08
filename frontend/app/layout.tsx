@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { Syne, Onest } from "next/font/google";
-import { GlobalHubPanel } from "@/features/orders/components/GlobalHubPanel";
+import { Onest } from "next/font/google";
+import { GlobalHubPanel } from "@/features/orders";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
@@ -8,12 +8,6 @@ import { HubPanelProvider } from "@/components/providers/HubPanelProvider"
 import { HeaderProvider } from "@/components/providers/HeaderProvider"
 import { RealtimeProvider } from "@/features/realtime"
 import Providers from "./providers"
-
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
 
 const onest = Onest({
   variable: "--font-onest",
@@ -33,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${syne.variable} ${onest.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${onest.variable} font-sans antialiased bg-background text-foreground`}
       >
         <a href="#main-content" className="skip-to-content">
           Ir al contenido principal
@@ -47,7 +41,7 @@ export default function RootLayout({
                     {children}
                     <GlobalHubPanel />
                     {/* Target portal container for module sheets to avoid containing blocks inside the transitioning container */}
-                    <div id="module-sheets-portal-container" />
+                    <div id="module-sheets-portal-container" className="relative" />
                   </GlobalModalProvider>
                 </HubPanelProvider>
               </HeaderProvider>

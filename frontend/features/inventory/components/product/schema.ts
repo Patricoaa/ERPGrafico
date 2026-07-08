@@ -15,7 +15,16 @@ export const productSchema = z.object({
     allowed_sale_uoms: z.array(z.string()).default([]),
     receiving_warehouse: z.string().optional().or(z.literal("")),
     preferred_supplier: z.string().optional().or(z.literal("")).nullable(),
-    image: z.any().optional(),
+    image: z.union([
+        z.instanceof(File).refine((f) => {
+            const ext = "." + f.name.split(".").pop()?.toLowerCase()
+            return [".jpg", ".jpeg", ".png", ".webp"].includes(ext)
+        }, "Formato no permitido. Usa JPG, PNG o WEBP.").refine((f) => {
+            return f.size <= 10 * 1024 * 1024
+        }, "La imagen supera los 10MB."),
+        z.null(),
+        z.undefined(),
+    ]).optional(),
     track_inventory: z.boolean(),
     can_be_sold: z.boolean().default(true),
     can_be_purchased: z.boolean().default(true),
@@ -26,8 +35,8 @@ export const productSchema = z.object({
     parent_template: z.string().optional().or(z.literal("")).nullable(),
     attribute_values: z.array(z.string()).default([]),
     variant_display_name: z.string().optional().or(z.literal("")),
-    variant_updates: z.array(z.any()).default([]), // Tracks pending local updates to variants
-    variant_generation_selection: z.array(z.any()).optional(), // Temporary state for generating variants during creation
+    variant_updates: z.array(z.unknown()).default([]), // Tracks pending local updates to variants
+    variant_generation_selection: z.array(z.object({ attribute: z.number(), values: z.array(z.string()) })).optional(), // Temporary state for generating variants during creation
     mfg_auto_finalize: z.boolean().default(false),
     // Print Shop Workflow
     mfg_enable_prepress: z.boolean().default(false),
@@ -59,9 +68,6 @@ export const productSchema = z.object({
     // Contract Duration
     is_indefinite: z.boolean().default(true),
     contract_end_date: z.string().optional().or(z.literal("")).nullable(),
-    // Accounting
-    income_account: z.string().optional().or(z.literal("")).nullable(),
-    expense_account: z.string().optional().or(z.literal("")).nullable(),
     boms: z.array(z.object({
         id: z.number().optional(),
         name: z.string().min(1, "Nombre requerido"),
@@ -229,16 +235,6 @@ export const productSchema = z.object({
 }, {
     message: "Debe seleccionar un tipo de documento por defecto",
     path: ["default_invoice_type"]
-}).refine((data) => {
-    // SUBSCRIPTION: Accounting mapping
-    if (data.product_type === 'SUBSCRIPTION') {
-        if (!data.income_account || data.income_account === "") return false;
-        if (!data.expense_account || data.expense_account === "") return false;
-    }
-    return true;
-}, {
-    message: "El mapeo contable es obligatorio para suscripciones",
-    path: ["income_account"]
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
@@ -17,7 +18,7 @@ export interface UoM {
     uom_type: 'REFERENCE' | 'BIGGER' | 'SMALLER'
     ratio: string
     rounding: string
-    active: boolean
+    is_active: boolean
 }
 
 export type UoMCategoryPayload = Omit<UoMCategory, 'id'>
@@ -55,6 +56,7 @@ export function useAllowedUoMs(productId: number | string | null | undefined, co
             const res = await api.get<{ id: number, name: string }[]>(
                 `/inventory/uoms/allowed/?product_id=${productId}&context=${context}`,
             )
+            // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
             return res.data
         },
         enabled: !!productId,
@@ -79,7 +81,8 @@ export function useUoMs(filters?: FilterState) {
             if (categoryFilter !== undefined && categoryFilter !== null && categoryFilter !== '') {
                 params.append('category', String(categoryFilter))
             }
-            const response = await api.get('/inventory/uoms/', { params })
+            const response = await api.get<UoM[]>('/inventory/uoms/', { params })
+            // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
         staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
@@ -89,6 +92,7 @@ export function useUoMs(filters?: FilterState) {
         queryKey: UOM_CATEGORIES_KEYS.all,
         queryFn: async (): Promise<UoMCategory[]> => {
             const response = await api.get<UoMCategory[]>('/inventory/uom-categories/')
+            // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
         staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
@@ -98,7 +102,7 @@ export function useUoMs(filters?: FilterState) {
         mutationFn: async (id: number) => api.delete(`/inventory/uoms/${id}/`),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
         },
     })
 
@@ -111,7 +115,7 @@ export function useUoMs(filters?: FilterState) {
         },
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOMS_KEYS.all])
         },
     })
 
@@ -127,8 +131,7 @@ export function useUoMs(filters?: FilterState) {
             toast.success(vars.id === null ? 'Categoría creada' : 'Categoría actualizada')
             // Cambia el conjunto de categorías Y puede afectar `category_name`
             // en cada UoM derivada → invalidar ambos.
-            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOM_CATEGORIES_KEYS.all, UOMS_KEYS.all])
         },
     })
 
@@ -137,8 +140,7 @@ export function useUoMs(filters?: FilterState) {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Categoría eliminada')
-            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+            invalidateCrossFeature(queryClient, [UOM_CATEGORIES_KEYS.all, UOMS_KEYS.all])
         },
         onError: (e: Error) => {
             toast.error(`Error al eliminar la categoría: ${e.message}`)

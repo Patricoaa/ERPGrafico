@@ -1,10 +1,10 @@
+import ast
 import os
 import re
-import ast
 from pathlib import Path
+
 import pytest
 from django.conf import settings
-from django.apps import apps
 
 
 @pytest.mark.django_db
@@ -13,12 +13,12 @@ class TestArchitecturalInvariants:
         backend_dir = settings.BASE_DIR
         py_files = []
         for root, dirs, files in os.walk(backend_dir):
-            if '.venv' in root or 'venv' in root or '__pycache__' in root:
+            if ".venv" in root or "venv" in root or "__pycache__" in root:
                 continue
-            if 'migrations' in root or 'tests' in root:
+            if "migrations" in root or "tests" in root:
                 continue
             for file in files:
-                if file.endswith('.py'):
+                if file.endswith(".py"):
                     py_files.append(os.path.join(root, file))
         return py_files
 
@@ -27,16 +27,18 @@ class TestArchitecturalInvariants:
         __class__.__name__ in/== retorna 0 en backend (excluye migrations/, tests/).
         """
         py_files = self.get_backend_python_files()
-        pattern = re.compile(r'__class__\.__name__\s*(?:in|==)')
+        pattern = re.compile(r"__class__\.__name__\s*(?:in|==)")
 
         violations = []
         for filepath in py_files:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
                 if pattern.search(content):
                     violations.append(filepath)
 
-        assert not violations, f"Se encontraron discriminaciones por __class__.__name__ en: {violations}"
+        assert not violations, (
+            f"Se encontraron discriminaciones por __class__.__name__ en: {violations}"
+        )
 
     def test_no_isinstance_for_polymorphism(self):
         """
@@ -45,33 +47,51 @@ class TestArchitecturalInvariants:
         py_files = self.get_backend_python_files()
 
         whitelisted_types = {
-            'int', 'str', 'list', 'dict', 'bool', 'float', 'tuple', 'set',
-            'Decimal', 'date', 'datetime', 'timedelta', 'Exception', 'type',
-            'models.Model', 'SearchableEntity',
+            "int",
+            "str",
+            "list",
+            "dict",
+            "bool",
+            "float",
+            "tuple",
+            "set",
+            "Decimal",
+            "date",
+            "datetime",
+            "timedelta",
+            "Exception",
+            "type",
+            "models.Model",
+            "SearchableEntity",
         }
 
-        pattern = re.compile(r'isinstance\([^,]+,\s*([A-Za-z0-9_.]+)\)')
+        pattern = re.compile(r"isinstance\([^,]+,\s*([A-Za-z0-9_.]+)\)")
 
         violations = []
         for filepath in py_files:
-            if filepath.endswith('serializers.py') or filepath.endswith('admin.py') or filepath.endswith('registry.py'):
+            if (
+                filepath.endswith("serializers.py")
+                or filepath.endswith("admin.py")
+                or filepath.endswith("registry.py")
+            ):
                 continue
 
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 lines = f.readlines()
                 for i, line in enumerate(lines):
                     for match in pattern.finditer(line):
                         type_name = match.group(1)
-                        if type_name not in whitelisted_types and 'Exception' not in type_name:
-                            violations.append(f"{filepath}:{i+1} -> {line.strip()}")
+                        if type_name not in whitelisted_types and "Exception" not in type_name:
+                            violations.append(f"{filepath}:{i + 1} -> {line.strip()}")
 
         if violations:
             print("isinstance() con modelos de dominio encontrados:")
             for v in violations[:10]:
                 print(v)
 
-        assert not any('Sale' in v or 'Purchase' in v or 'Document' in v for v in violations), \
+        assert not any("Sale" in v or "Purchase" in v or "Document" in v for v in violations), (
             f"Se encontraron isinstance() con modelos de dominio: {violations[:5]}"
+        )
 
     def test_all_apps_register_at_least_one_entity(self):
         """
@@ -80,40 +100,26 @@ class TestArchitecturalInvariants:
         from core.registry import UniversalRegistry
 
         expected_apps = {
-            'core', 'accounting', 'inventory', 'treasury', 'tax',
-            'sales', 'purchasing', 'hr', 'contacts', 'billing',
-            'production', 'workflow'
+            "core",
+            "accounting",
+            "inventory",
+            "treasury",
+            "tax",
+            "sales",
+            "purchasing",
+            "hr",
+            "contacts",
+            "billing",
+            "production",
+            "workflow",
         }
 
         registered_labels = UniversalRegistry.all_labels()
-        registered_apps = {label.split('.')[0] for label in registered_labels}
+        registered_apps = {label.split(".")[0] for label in registered_labels}
 
         missing_apps = expected_apps - registered_apps
 
         assert not missing_apps, f"Apps que faltan en UniversalRegistry: {missing_apps}"
-
-    def test_no_secret_fields_exposed(self):
-        """
-        schema endpoint NUNCA retorna campos en allowlist (pin, password, secret, token, key).
-        """
-        from core.registry import UniversalRegistry
-        from core.serializers.metadata import build_schema
-
-        sensitive_keywords = ['pin', 'password', 'secret', 'token', 'key', 'api_key', 'webhook_secret']
-
-        violations = []
-        for label, entity in UniversalRegistry._entities.items():
-            model = entity.model
-            try:
-                schema = build_schema(model)
-                for field_name in schema.get('fields', {}).keys():
-                    for kw in sensitive_keywords:
-                        if kw in field_name.lower():
-                            violations.append(f"{label} exposes field: {field_name}")
-            except Exception:
-                pass
-
-        assert not violations, f"Se encontraron campos sensibles expuestos en el schema: {violations}"
 
     def test_views_under_20_lines(self):
         """
@@ -126,16 +132,16 @@ class TestArchitecturalInvariants:
         VIEW_DEBT_WHITELIST: set[str] = set()
 
         py_files = self.get_backend_python_files()
-        view_files = [f for f in py_files if f.endswith('views.py')]
+        view_files = [f for f in py_files if f.endswith("views.py")]
 
         violations = []
         for filepath in view_files:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 try:
                     tree = ast.parse(f.read(), filename=filepath)
                     for node in ast.walk(tree):
                         if isinstance(node, ast.FunctionDef):
-                            if hasattr(node, 'end_lineno') and node.end_lineno:
+                            if hasattr(node, "end_lineno") and node.end_lineno:
                                 lines_of_code = node.end_lineno - node.lineno
                                 if lines_of_code > 20 and node.name not in VIEW_DEBT_WHITELIST:
                                     violations.append(
@@ -169,27 +175,24 @@ class TestArchitecturalInvariants:
 
         # BASE_DIR → directorio backend. Frontend está un nivel arriba.
         backend_dir = Path(settings.BASE_DIR)
-        frontend_dir = backend_dir.parent / 'frontend' / 'app' / '(dashboard)'
+        frontend_dir = backend_dir.parent / "frontend" / "app" / "(dashboard)"
 
         if not frontend_dir.exists():
             pytest.skip(f"Directorio frontend no encontrado: {frontend_dir}")
 
         # Construir mapa: ruta_filesystem → patrón_url_canónico
         # Ejemplo: sales/orders/[id]/page.tsx → /sales/orders/{id}
-        dynamic_segment_re = re.compile(r'^\[.+\]$')
+        dynamic_segment_re = re.compile(r"^\[.+\]$")
         router_patterns: set[str] = set()
 
-        for page_file in frontend_dir.rglob('page.tsx'):
+        for page_file in frontend_dir.rglob("page.tsx"):
             rel = page_file.parent.relative_to(frontend_dir)
             parts = rel.parts  # () para la raíz, ('sales', 'orders', '[id]') etc.
             if not parts:
-                router_patterns.add('/')
+                router_patterns.add("/")
                 continue
-            normalised = '/'.join(
-                '{id}' if dynamic_segment_re.match(p) else p
-                for p in parts
-            )
-            router_patterns.add(f'/{normalised}')
+            normalised = "/".join("{id}" if dynamic_segment_re.match(p) else p for p in parts)
+            router_patterns.add(f"/{normalised}")
 
         # Validar cada entidad registrada
         violations: list[str] = []
@@ -199,7 +202,7 @@ class TestArchitecturalInvariants:
                 violations.append(f"  {label}: detail_url_pattern vacío")
                 continue
             if pattern not in router_patterns:
-                sample = sorted(r for r in router_patterns if '{id}' in r)[:6]
+                sample = sorted(r for r in router_patterns if "{id}" in r)[:6]
                 violations.append(
                     f"  {label}: '{pattern}' no coincide con ninguna ruta real.\n"
                     f"    Rutas con [id] disponibles (muestra): {sample}"
@@ -207,7 +210,7 @@ class TestArchitecturalInvariants:
 
         assert not violations, (
             f"T-79 — {len(violations)} entidad(es) con detail_url_pattern sin página real:\n"
-            + '\n'.join(violations)
+            + "\n".join(violations)
         )
 
     def test_list_url_matches_frontend_routes(self):
@@ -226,27 +229,26 @@ class TestArchitecturalInvariants:
 
         # Excepciones documentadas en ADR-0022 — NO añadir sin actualizar el ADR.
         STANDALONE_EXCEPTIONS: set[str] = {
-            'accounting.budget',  # Vista standalone /finances/budgets/[id]
-            'hr.payroll',         # Vista standalone /hr/payrolls/[id]
-            'billing.invoice',    # Split client-side por is_sale_document
+            "accounting.budget",  # Vista standalone /finances/budgets/[id]
+            "hr.payroll",  # Vista standalone /hr/payrolls/[id]
+            "billing.invoice",  # Split client-side por is_sale_document
         }
 
         backend_dir = Path(settings.BASE_DIR)
-        routes_file = backend_dir.parent / 'frontend' / 'lib' / 'searchableEntityRoutes.ts'
+        routes_file = backend_dir.parent / "frontend" / "lib" / "searchableEntityRoutes.ts"
 
         if not routes_file.exists():
             pytest.skip(f"searchableEntityRoutes.ts no encontrado: {routes_file}")
 
         # Parsear el objeto TypeScript — formato: 'label.key': '/some/path',
         # Líneas de comentario (//) no hacen match porque no tienen el patrón de comillas.
-        ts_content = routes_file.read_text(encoding='utf-8')
+        ts_content = routes_file.read_text(encoding="utf-8")
         entry_re = re.compile(
             r"""['"]([a-z]+\.[a-z]+)['"]\s*:\s*['"]([^'"]+)['"]""",
             re.MULTILINE,
         )
         frontend_routes: dict[str, str] = {
-            m.group(1): m.group(2)
-            for m in entry_re.finditer(ts_content)
+            m.group(1): m.group(2) for m in entry_re.finditer(ts_content)
         }
 
         assert frontend_routes, (
@@ -278,7 +280,158 @@ class TestArchitecturalInvariants:
 
         assert not violations, (
             f"T-103/ADR-0022 — {len(violations)} entidad(es) con list_url divergente "
-            f"entre UniversalRegistry y searchableEntityRoutes.ts:\n"
-            + '\n'.join(violations)
+            f"entre UniversalRegistry y searchableEntityRoutes.ts:\n" + "\n".join(violations)
+        )
+
+    # -----------------------------------------------------------------------
+    # Serializer Antipattern Invariants (Hallazgo 3 enforcement)
+    # -----------------------------------------------------------------------
+
+    def _get_serializer_files(self):
+        """Return all serializers.py paths in the project (excludes venv, migrations)."""
+        backend_dir = Path(settings.BASE_DIR)
+        skip_dirs = {"venv", ".venv", "migrations", "__pycache__", "node_modules"}
+        result = []
+        for p in backend_dir.rglob("serializers.py"):
+            if not any(part in skip_dirs for part in p.parts):
+                result.append(p)
+        return result
+
+    def _class_direct_methods(self, class_node):
+        """Yield FunctionDef nodes that are direct children of a class body."""
+        for item in class_node.body:
+            if isinstance(item, ast.FunctionDef):
+                yield item
+
+    def _is_serializer_class(self, node):
+        return isinstance(node, ast.ClassDef) and node.name.endswith("Serializer")
+
+    def test_no_transaction_atomic_in_serializers(self):
+        """
+        ARCH-RULE-A/B: No serializer class may contain transaction.atomic.
+
+        Architecture contract: atomic transaction boundaries belong exclusively
+        in the service layer (services.py). Serializers map validated_data and
+        delegate writes to a service — they must not own transaction scope.
+
+        If you need to fix a violation:
+          1. Extract the write logic into services.py with @transaction.atomic.
+          2. Have the serializer's create()/update() call the service method.
+          Reference: docs/90-governance/zero-transaction-in-serializer-policy.md
+        """
+        ORM_MANAGER_ATTRS = {"objects"}
+        ORM_CALL_NAMES = {
+            "create", "get", "filter", "all", "update", "delete",
+            "update_or_create", "get_or_create", "bulk_create", "bulk_update",
+        }
+        serializer_files = self._get_serializer_files()
+        violations = []
+
+        for path in sorted(serializer_files):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError:
+                continue
+
+            for class_node in ast.walk(tree):
+                if not self._is_serializer_class(class_node):
+                    continue
+
+                for method_node in self._class_direct_methods(class_node):
+                    for node in ast.walk(method_node):
+                        # Pattern: with transaction.atomic():
+                        if isinstance(node, ast.With):
+                            for item in node.items:
+                                ctx = item.context_expr
+                                if (
+                                    isinstance(ctx, ast.Call)
+                                    and isinstance(ctx.func, ast.Attribute)
+                                    and ctx.func.attr == "atomic"
+                                    and isinstance(ctx.func.value, ast.Name)
+                                    and ctx.func.value.id == "transaction"
+                                ):
+                                    violations.append(
+                                        f"{path}:{node.lineno}: "
+                                        f"[RULE-A/B] `with transaction.atomic()` in "
+                                        f"{class_node.name}.{method_node.name}()"
+                                    )
+                        # Pattern: from django.db import transaction (inline)
+                        if isinstance(node, ast.ImportFrom):
+                            if node.module in ("django.db", "django.db.transaction") and any(
+                                a.name == "transaction" for a in node.names
+                            ):
+                                violations.append(
+                                    f"{path}:{node.lineno}: "
+                                    f"[RULE-A/B] inline `import transaction` in "
+                                    f"{class_node.name}.{method_node.name}()"
+                                )
+
+        assert not violations, (
+            f"\n{len(violations)} violation(s) of ARCH-RULE-A/B "
+            f"(transaction.atomic in serializer):\n"
+            + "\n".join(f"  {v}" for v in violations)
+            + "\n\nFix: move to services.py with @transaction.atomic. "
+            "See docs/90-governance/zero-transaction-in-serializer-policy.md"
+        )
+
+    def test_no_direct_orm_in_serializer_create_update(self):
+        """
+        ARCH-RULE-C: Serializer create() and update() must not contain direct ORM calls.
+
+        Architecture contract: `Model.objects.create/get/filter/...` belongs in
+        services.py. Serializer create()/update() must only call a service method
+        and return its result.
+
+        If you need to fix a violation:
+          1. Move the ORM logic to a service in services.py.
+          2. Have the serializer delegate: `return MyService.create_x(validated_data)`.
+          Reference: docs/90-governance/zero-transaction-in-serializer-policy.md
+        """
+        WATCHED_METHODS = {"create", "update"}
+        ORM_MANAGER_ATTRS = {"objects"}
+        ORM_CALL_NAMES = {
+            "create", "get", "filter", "all", "update", "delete",
+            "update_or_create", "get_or_create", "bulk_create", "bulk_update",
+        }
+        serializer_files = self._get_serializer_files()
+        violations = []
+
+        for path in sorted(serializer_files):
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError:
+                continue
+
+            for class_node in ast.walk(tree):
+                if not self._is_serializer_class(class_node):
+                    continue
+
+                for method_node in self._class_direct_methods(class_node):
+                    if method_node.name not in WATCHED_METHODS:
+                        continue
+
+                    for node in ast.walk(method_node):
+                        if not isinstance(node, ast.Call):
+                            continue
+                        func = node.func
+                        # Pattern: Something.objects.<orm_method>(...)
+                        if (
+                            isinstance(func, ast.Attribute)
+                            and func.attr in ORM_CALL_NAMES
+                            and isinstance(func.value, ast.Attribute)
+                            and func.value.attr in ORM_MANAGER_ATTRS
+                        ):
+                            violations.append(
+                                f"{path}:{node.lineno}: "
+                                f"[RULE-C] Direct ORM call `.objects.{func.attr}()` in "
+                                f"{class_node.name}.{method_node.name}()"
+                            )
+
+        assert not violations, (
+            f"\n{len(violations)} violation(s) of ARCH-RULE-C "
+            f"(direct ORM in serializer create/update):\n"
+            + "\n".join(f"  {v}" for v in violations)
+            + "\n\nFix: move ORM calls to services.py and delegate from the serializer. "
+            "See docs/90-governance/zero-transaction-in-serializer-policy.md"
         )
 

@@ -1,16 +1,10 @@
-"use client"
-
-
-import { useSearchParams } from "next/navigation"
+import { PageSectionHeader } from "@/components/shared"
 import { UsersSettingsView } from "@/features/settings"
 
 export default function UsersSettingsPage() {
-    const searchParams = useSearchParams()
-    const activeTab = searchParams.get("tab") || "users"
-
     return (
-        <UsersSettingsView 
-            activeTab={activeTab} 
-        />
-    )
+        <>
+            <PageSectionHeader title="Usuarios" description="Administración de usuarios del sistema" />
+            <UsersSettingsView activeTab="users" />
+        </>)
 }

@@ -7,13 +7,14 @@ a distributed lock implementation for critical sections.
 Uses Django's cache framework (Redis DB 2) configured in settings.py.
 """
 
-from django.core.cache import cache
-from typing import TypeVar, Type
 import logging
+from typing import Type, TypeVar
+
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def cached_singleton(
@@ -64,17 +65,17 @@ def invalidate_singleton(cache_key: str) -> None:
 # ── Cache Key Constants ──────────────────────────────────────────────────────
 # Centralized key names prevent typos and make grep-ability easy.
 
-CACHE_KEY_ACCOUNTING_SETTINGS = 'settings:accounting'
-CACHE_KEY_SALES_SETTINGS = 'settings:sales'
-CACHE_KEY_WORKFLOW_SETTINGS = 'settings:workflow'
-CACHE_KEY_COMPANY_SETTINGS = 'settings:company'
-CACHE_KEY_HR_SETTINGS = 'settings:hr'
+CACHE_KEY_ACCOUNTING_SETTINGS = "settings:accounting"
+CACHE_KEY_SALES_SETTINGS = "settings:sales"
+CACHE_KEY_WORKFLOW_SETTINGS = "settings:workflow"
+CACHE_KEY_COMPANY_SETTINGS = "settings:company"
+CACHE_KEY_HR_SETTINGS = "settings:hr"
 
 # ── Report Cache Keys ────────────────────────────────────────────────────────
 # Format: report:{module}:{endpoint}:{params_hash}
 # These are invalidated by module when underlying data changes.
 
-REPORT_PREFIX = 'report'
+REPORT_PREFIX = "report"
 
 
 def _build_report_key(module: str, endpoint: str, params: dict | None = None) -> str:
@@ -95,6 +96,7 @@ def _build_report_key(module: str, endpoint: str, params: dict | None = None) ->
         # Create a stable hash from sorted params
         import hashlib
         import json
+
         filtered = {k: v for k, v in sorted(params.items()) if v is not None}
         if filtered:
             params_str = json.dumps(filtered, sort_keys=True, default=str)
@@ -167,10 +169,10 @@ def invalidate_report_cache(module: str, endpoint: str | None = None) -> None:
 
 # Registry of known report endpoints per module (for module-wide invalidation)
 _MODULE_REPORTS = {
-    'inventory': ['stock_report', 'insights'],
-    'contacts': ['credit_portfolio', 'insights'],
-    'treasury': ['recon_dashboard', 'recon_pending', 'recon_history'],
-    'finances': ['balance_sheet', 'income_statement', 'cash_flow', 'analysis', 'bi_analytics'],
+    "inventory": ["stock_report", "insights"],
+    "contacts": ["credit_portfolio", "insights"],
+    "treasury": ["recon_dashboard", "recon_pending", "recon_history", "pos_summary"],
+    "finances": ["balance_sheet", "income_statement", "cash_flow", "analysis", "bi_analytics"],
 }
 
 
@@ -179,6 +181,7 @@ class DistributedLock:
     A simple Redis-based distributed lock for Django using the cache backend.
     Relies on `cache.add` which sets the value only if it does not exist.
     """
+
     @staticmethod
     def acquire(resource: str, ttl: int = 30) -> bool:
         """Attempt to acquire a lock for a given resource. Returns True if successful."""
@@ -191,7 +194,9 @@ class DistributedLock:
 
 
 from contextlib import contextmanager
+
 from django.core.exceptions import ValidationError
+
 
 @contextmanager
 def acquire_locks(resources, timeout=30):
@@ -202,6 +207,7 @@ def acquire_locks(resources, timeout=30):
     releases anything acquired so far.
     """
     from core.cache import DistributedLock
+
     acquired = []
     try:
         # Sort resources to prevent deadlocks when concurrently trying

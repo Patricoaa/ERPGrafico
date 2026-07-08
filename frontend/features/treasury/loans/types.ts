@@ -56,6 +56,9 @@ export interface BankLoan {
     status_display: string
     notes: string
     collateral_notes: string
+    credit_line: number | null
+    credit_line_id: number | null
+    credit_line_display: string | null
     outstanding_balance: string
     total_disbursed: string
     next_due_date: string | null
@@ -86,6 +89,7 @@ export interface BankLoanCreatePayload {
     penalty_rate?: string
     disbursement_account: number
     liability_account: number
+    credit_line?: number | null
     notes?: string
     collateral_notes?: string
 }

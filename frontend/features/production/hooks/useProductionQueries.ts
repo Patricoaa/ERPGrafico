@@ -16,6 +16,7 @@ export function useProductionMetrics() {
     return useQuery<ProductionMetrics>({
         queryKey: PRODUCTION_METRICS_KEY,
         queryFn: productionApi.getProductionMetrics,
+        staleTime: 60 * 1000,
         refetchInterval: 60000,
     })
 }

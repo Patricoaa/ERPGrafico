@@ -1,7 +1,7 @@
 ---
 description: Contrato de interfaz para formularios generados desde backend (Schema-Driven).
 status: superseded
-superseded_by: "[ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)"
+superseded_by: “[ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)”
 superseded_date: 2026-05-09
 precondition: [form-layout-architecture.md, component-form-patterns.md, component-selectors.md, component-visual-hierarchy.md]
 ---
@@ -50,7 +50,7 @@ El backend expone un JSON `FormMeta` con los siguientes nodos admitidos:
 
 ## 4. Decision Tree (Cuándo SÍ / Cuándo NO usar Schema-Driven)
 
-**Regla de Oro:** "Si el formulario requiere un widget que no existe en el registro, usa React puro. NUNCA fuerces el schema a hacer algo para lo que no está diseñado".
+**Regla de Oro:** “Si el formulario requiere un widget que no existe en el registro, usa React puro. NUNCA fuerces el schema a hacer algo para lo que no está diseñado”.
 
 **NO uses EntityForm si:**
 - Es `Account`, `JournalEntry`, `Contact`, `Product` (manufacturable), `WorkOrder`.

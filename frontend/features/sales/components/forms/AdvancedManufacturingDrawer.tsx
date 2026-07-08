@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button"
 import { User, Paintbrush, X } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { toast } from "sonner"
-import { motion } from "framer-motion"
-import { ManufacturingSpecsEditor,
-    emptyManufacturingData,
-    type ManufacturingData, } from '@/components/shared'
+import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
+import { type Contact } from "@/types/entities"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface AdvancedManufacturingDrawerProps {
     open: boolean
@@ -19,6 +18,23 @@ interface AdvancedManufacturingDrawerProps {
 }
 
 type ContactData = { id: number; name: string; tax_id: string | null; rut?: string | null } | null
+
+interface MfgDataShape {
+    contact?: ContactData
+    phases?: { prepress?: boolean; press?: boolean; postpress?: boolean }
+    specifications?: { prepress?: string; press?: string; postpress?: string }
+    design_needed?: boolean
+    design_files?: File[]
+    folio_enabled?: boolean
+    folio_start?: string
+    print_type?: string | null
+    description?: string
+    product_description?: string
+}
+
+function asMfgData(val: unknown): MfgDataShape {
+    return val as MfgDataShape
+}
 
 export function AdvancedManufacturingDrawer({
     open, onOpenChange, product, onConfirm
@@ -30,12 +46,12 @@ export function AdvancedManufacturingDrawer({
     useEffect(() => {
         if (!open || !product) return
 
-        const prod = product as any
-        const mfgData = prod?.manufacturing_data as any
+        const prod = product as unknown as Record<string, unknown>
+        const mfgData = asMfgData(prod?.manufacturing_data)
 
         if (mfgData) {
             requestAnimationFrame(() => {
-                setContact(mfgData.contact || null)
+                setContact(mfgData.contact ?? null)
                 setData({
                     phases: {
                         prepress: mfgData.phases?.prepress ?? !!prod.mfg_enable_prepress,
@@ -52,7 +68,7 @@ export function AdvancedManufacturingDrawer({
                     existing_design_files: [],
                     folio_enabled: mfgData.folio_enabled || false,
                     folio_start: mfgData.folio_start || '',
-                    print_type: mfgData.print_type || null,
+                    print_type: (mfgData.print_type as "offset" | "digital" | "especial") || null,
                     internal_notes: mfgData.description || '',
                     product_description: mfgData.product_description || '',
                 })
@@ -61,14 +77,14 @@ export function AdvancedManufacturingDrawer({
             requestAnimationFrame(() => {
                 setContact(null)
                 setData(emptyManufacturingData({
-                mfg_enable_prepress: prod?.mfg_enable_prepress,
-                mfg_enable_press: prod?.mfg_enable_press,
-                mfg_enable_postpress: prod?.mfg_enable_postpress,
-                mfg_prepress_design: prod?.mfg_prepress_design,
-                mfg_prepress_folio: prod?.mfg_prepress_folio,
-                mfg_press_offset: prod?.mfg_press_offset,
-                mfg_press_digital: prod?.mfg_press_digital,
-                mfg_press_special: prod?.mfg_press_special,
+                mfg_enable_prepress: prod?.mfg_enable_prepress as boolean | undefined,
+                mfg_enable_press: prod?.mfg_enable_press as boolean | undefined,
+                mfg_enable_postpress: prod?.mfg_enable_postpress as boolean | undefined,
+                mfg_prepress_design: prod?.mfg_prepress_design as boolean | undefined,
+                mfg_prepress_folio: prod?.mfg_prepress_folio as boolean | undefined,
+                mfg_press_offset: prod?.mfg_press_offset as boolean | undefined,
+                mfg_press_digital: prod?.mfg_press_digital as boolean | undefined,
+                mfg_press_special: prod?.mfg_press_special as boolean | undefined,
             }))
             })
         }
@@ -76,7 +92,8 @@ export function AdvancedManufacturingDrawer({
 
     if (!product) return null
 
-    const showProductDescription = (product as any).product_type === 'MANUFACTURABLE' && !(product as any).has_bom
+    const p = product as unknown as Record<string, unknown>
+    const showProductDescription = p.product_type === 'MANUFACTURABLE' && !p.has_bom
     const anyPhaseEnabled = data.phases.prepress || data.phases.press || data.phases.postpress
 
     const handleConfirm = () => {
@@ -108,21 +125,17 @@ export function AdvancedManufacturingDrawer({
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="75%"
+            defaultSize={formDrawerWidth("master", false)}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-6 p-4">
-                    <motion.div
-                        initial={{ rotate: -15, scale: 0.8 }}
-                        animate={{ rotate: 0, scale: 1 }}
-                        className="p-4 rounded-md bg-primary text-primary-foreground shadow-xl"
-                    >
+                    <div className="p-4 rounded-md bg-primary text-primary-foreground shadow-elevated animate-in spin-in-12 duration-300 fill-mode-both ease-premium">
                         <Paintbrush className="h-8 w-8" />
-                    </motion.div>
+                    </div>
                     <div className="space-y-1">
-                        <div className="text-3xl font-black tracking-tighter uppercase font-heading text-foreground">Fabricación</div>
+                        <div className="text-3xl font-black tracking-tighter uppercase  text-foreground">Fabricación</div>
                         <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">
-                            {(product as any).name} {"// REF:"} {(product as any).code}
+                            {p.name as string} {"// REF:"} {p.code as string}
                         </p>
                     </div>
                 </div>
@@ -157,7 +170,7 @@ export function AdvancedManufacturingDrawer({
                             </div>
                         ) : (
                             <AdvancedContactSelector
-                                onSelectContact={setContact as any}
+                                onSelectContact={setContact as unknown as (contact: Contact) => void}
                                 onChange={() => { }}
                                 placeholder="IDENTIFICAR CLIENTE O RESPONSABLE..."
                                 className="border-none shadow-none focus-visible:ring-0 h-9"

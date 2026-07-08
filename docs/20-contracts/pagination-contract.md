@@ -27,7 +27,7 @@ Este documento cierra el contrato cruzando las tres capas. **Si una de las tres 
 
 | Capa | Responsable | Contrato |
 |---|---|---|
-| **HTTP** | Backend Django/DRF | Toda lista MUST devolver `{ count, next, previous, results }`. Sin excepciones. |
+| **HTTP** | Backend Django/DRF | Toda lista MUST devolver `{ count, next, previous, results }`. Única excepción: master data acotada (§1.5). |
 | **Hook** | `features/<x>/hooks/use<Entity>.ts` | Hooks de listado MUST devolver `Page<T>` (no `T[]`). Prohibido `data.results \|\| data`. |
 | **Componente** | Cualquier `<DataTable>` que reciba un `Page<T>` | MUST cablear `manualPagination`, `pageCount`, `pagination`, `onPaginationChange`, `rowCount={page.count}`. |
 
@@ -74,9 +74,7 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 200          # ver §1.4
 ```
 
-Hoy los viewsets de `inventory` y `treasury` la usan vía `pagination_class = StandardResultsSetPagination`. **`DEFAULT_PAGINATION_CLASS` global en `settings.py` NO está activado todavía** — su activación es el último paso del rollout y está bloqueado por la migración pendiente de los hooks listados en §5 (los 5 archivos del refactor en curso del usuario). Activarla antes truncaría silenciosamente esos endpoints.
-
-Patrón objetivo (a aplicar cuando todos los consumidores estén migrados — vía ADR):
+Hoy los viewsets de `inventory` y `treasury` la usan vía `pagination_class = StandardResultsSetPagination`. **`DEFAULT_PAGINATION_CLASS` global en `settings.py` SÍ está activado** desde la auditoría 2026-06-25:
 
 ```python
 # backend/config/settings.py
@@ -86,7 +84,13 @@ REST_FRAMEWORK = {
 }
 ```
 
-Mientras tanto: todo viewset nuevo MUST opt-in explícitamente con `pagination_class = StandardResultsSetPagination`, y todo endpoint listable nuevo MUST cumplir el contrato desde el principio.
+Consecuencias de tener el default activo:
+
+- **Transactional endpoints** (pedidos, facturas, movimientos, etc.): heredan el default automáticamente. Los que ya tenían `pagination_class = StandardResultsSetPagination` explícito no cambian.
+- **Master data endpoints** (categorías, cuentas, almacenes, etc.): **deben** declarar `pagination_class = None` explícitamente para devolver `T[]` plano (§1.5). Ver lista completa en §8.
+- **Nuevos viewsets**: paganizan por defecto — no es posible olvidar la paginación. Si un nuevo endpoint es master data, debe opt-out explícito.
+
+Regla para implementación: todo viewset nuevo que NO sea master data ya cumple automáticamente. Todo viewset de master data debe agregar `pagination_class = None`.
 
 ### 1.4 `max_page_size` (MUST)
 
@@ -96,11 +100,12 @@ Mientras tanto: todo viewset nuevo MUST opt-in explícitamente con `pagination_c
 
 Pueden devolver `T[]` plano sin envoltorio:
 
+- **Master data / reference data**: catálogos acotados (< 200 filas) consumidos para dropdowns, árboles, y autocomplete. NO son browsable lists — representan el dominio de valores posibles, no una colección de entidades transaccionales. Ejemplos: cuentas contables, categorías, almacenes, unidades de medida, bancos, métodos de pago, AFPs, conceptos de nómina, grupos, reglas de asignación. Ver lista completa en §8.
 - Sub-recursos de detalle: `GET /api/sales/orders/{id}/lines/` (lines pertenecen al order, son acotadas por construcción).
 - Endpoints de selector / typeahead: `GET /api/contacts/customers/search/?q=acm&limit=10` (top-N, no paginables).
 - Singletons: `GET /api/settings/company/`.
 
-Cualquier endpoint nuevo que **no** caiga en uno de esos tres casos MUST paginar.
+**Cualquier endpoint nuevo que no caiga en uno de estos casos MUST paginar.** Si hay duda, paginar. La regla es "paginar por defecto".
 
 ---
 
@@ -274,7 +279,7 @@ Cambios concretos requeridos (rastrear en el PR que cierre este contrato):
 
 Solo si el hook devuelve `T[]` por una de estas razones legítimas:
 
-- El endpoint es de los exentos en §1.5 (sub-recurso, selector, singleton).
+- El endpoint es de los exentos en §1.5 (master data, sub-recurso, selector, singleton).
 - La lista vive enteramente en cliente (datos derivados, no fetcheados de un endpoint paginado).
 
 En esos casos, `<DataTable>` opera en modo cliente (default). **No mezclar**: si el hook expone `Page<T>` parcial y vos lo renderizás sin `manualPagination`, estás truncando datos silenciosamente.
@@ -304,12 +309,14 @@ const { movements } = useTreasuryMovements()   // solo 50 filas
 ```
 ¿El endpoint puede devolver más de ~50 filas en algún escenario realista?
 ├── SÍ  → MUST paginar (§1) + hook devuelve Page<T> (§2) + DataTable manual (§3)
-└── NO  → ¿es uno de los exentos (sub-recurso / selector / singleton)?
+└── NO  → ¿es master data / reference data? (§1.5, §8)
          ├── SÍ → puede devolver T[] plano, hook devuelve T[], DataTable cliente
-         └── NO → MUST paginar igual. La regla es "paginar por defecto".
+         └── NO → ¿es sub-recurso / selector / singleton? (§1.5)
+                  ├── SÍ → puede devolver T[] plano
+                  └── NO → MUST paginar igual. La regla es "paginar por defecto".
 ```
 
-Caso ambiguo (ej. "warehouses, máximo 20"): pagina igual. El costo de paginar 20 filas es cero; el costo de no paginar el día que sean 200 es el bug actual.
+Caso ambiguo (ej. "warehouses, máximo 20"): si está en la lista de master data (§8), exento. Si no, pagina igual. El costo de paginar 20 filas es cero; el costo de no paginar el día que sean 200 es el bug actual.
 
 ---
 
@@ -375,6 +382,57 @@ Cualquier resultado distinto del baseline anterior = desviación, clasificar con
 - **Hooks `@deprecated`** ([useStockMovesList](../../frontend/features/inventory/hooks/useStockMoves.ts#L82), [useTreasuryMovementsList](../../frontend/features/treasury/hooks/useTreasuryMovements.ts#L66)) aún consumidos por componentes; eliminar requiere migrar el consumidor primero.
 
 > **Cerrado desde la auditoría 2026-05-23:** `lib/pagination.ts`, prop `rowCount` + `getRowCount()`, consolidación de `StandardResultsSetPagination` en `core/api/pagination.py`, `max_page_size=200`, reconciliación de `api-contracts.md` y las ESLint rules `pagination/*` (§6).
+
+---
+
+## 8. Apéndice — Mapa de clasificación master data vs transactional
+
+Lista completa de viewsets clasificados durante la auditoría 2026-06-25. Los master data endpoints devuelven `T[]` sin envoltorio (§1.5). Los transactional endpoints mantienen paginación con `StandardResultsSetPagination`.
+
+### Master data (22 viewsets — sin paginación)
+
+| App | ViewSet | Endpoint |
+|-----|---------|----------|
+| accounting | `AccountViewSet` | `GET /api/accounting/accounts/` |
+| accounting | `FiscalYearViewSet` | `GET /api/accounting/fiscal-years/` |
+| inventory | `CategoryViewSet` | `GET /api/inventory/categories/` |
+| inventory | `WarehouseViewSet` | `GET /api/inventory/warehouses/` |
+| inventory | `UoMViewSet` | `GET /api/inventory/uoms/` |
+| inventory | `UoMCategoryViewSet` | `GET /api/inventory/uom-categories/` |
+| inventory | `ProductAttributeViewSet` | `GET /api/inventory/product-attributes/` |
+| inventory | `ProductAttributeValueViewSet` | `GET /api/inventory/product-attribute-values/` |
+| inventory | `PricingRuleViewSet` | `GET /api/inventory/pricing-rules/` |
+| hr | `AFPViewSet` | `GET /api/hr/afps/` |
+| hr | `PayrollConceptViewSet` | `GET /api/hr/concepts/` |
+| hr | `EmployeeViewSet` | `GET /api/hr/employees/` |
+| tax | `AccountingPeriodViewSet` | `GET /api/tax/periods/` |
+| treasury | `BankViewSet` | `GET /api/treasury/banks/` |
+| treasury | `PaymentMethodViewSet` | `GET /api/treasury/payment-methods/` |
+| treasury | `TreasuryAccountViewSet` | `GET /api/treasury/accounts/` |
+| treasury | `POSTerminalViewSet` | `GET /api/treasury/pos-terminals/` |
+| treasury | `TerminalProviderViewSet` | `GET /api/treasury/terminal-providers/` |
+| treasury | `TerminalDeviceViewSet` | `GET /api/treasury/terminal-devices/` |
+| core | `GroupViewSet` | `GET /api/groups/` |
+| workflow | `NotificationRuleViewSet` | `GET /api/workflow/notification-rules/` |
+| workflow | `TaskAssignmentRuleViewSet` | `GET /api/workflow/assignment-rules/` |
+
+### Transactional (mantienen paginación)
+
+| App | ViewSets representativos |
+|-----|--------------------------|
+| sales | `OrderViewSet`, `QuotationViewSet`, `InvoiceViewSet`, `CreditNoteViewSet`, `DebitNoteViewSet`, `DeliveryNoteViewSet`, `ReceiptViewSet` |
+| purchasing | `PurchaseOrderViewSet`, `PurchaseInvoiceViewSet`, `PurchaseReceiptViewSet` |
+| inventory | `StockMoveViewSet`, `TransferViewSet`, `ProductViewSet`, `KitViewSet`, `SerialNumberViewSet`, `StockAdjustmentViewSet`, `SubscriptionViewSet`, `ProductUoMPriceViewSet` |
+| accounting | `JournalEntryViewSet`, `JournalEntryItemViewSet` |
+| billing | `InvoiceViewSet`, `CreditNoteViewSet`, `DebitNoteViewSet` |
+| treasury | `MovementViewSet`, `CheckViewSet`, `LoanViewSet`, `LoanInstallmentViewSet`, `CreditLineViewSet`, `CardStatementViewSet` |
+| contacts | `CustomerViewSet`, `SupplierViewSet` |
+| hr | `PayrollViewSet`, `PayrollItemViewSet`, `AbsenceViewSet`, `SalaryAdvanceViewSet` |
+| production | `WorkOrderViewSet`, `BOMViewSet`, `ProductionOrderViewSet` |
+| pos | `SessionViewSet`, `DraftViewSet` |
+| finance | `BankStatementViewSet`, `ReconciliationViewSet` |
+| workflow | `WorkflowSettingsViewSet` |
+| users | `UserViewSet` |
 
 ---
 

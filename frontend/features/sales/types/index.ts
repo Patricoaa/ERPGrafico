@@ -1,4 +1,5 @@
-import { Invoice } from "@/features/billing/types"
+import { type Invoice } from "@/features/billing"
+import type { PageParams } from "@/lib/pagination"
 
 export type SaleOrderStatus = 'DRAFT' | 'OPEN' | 'CANCELLED' | 'COMPLETED' | 'PAID' | 'PARTIAL'
 export type DeliveryStatus = 'PENDING' | 'PARTIAL' | 'DELIVERED'
@@ -62,6 +63,7 @@ export type SaleNote = Invoice
 
 export interface SaleOrder {
     id: number
+    display_id?: string
     number: string
     customer_name: string
     date: string
@@ -95,11 +97,20 @@ export interface SaleOrder {
     pos_session?: number
 }
 
-export interface SaleOrderFilters {
-    status?: string
+export interface SaleOrderFilters extends PageParams {
     customer_name?: string
     date_after?: string
     date_before?: string
+    total_min?: string
+    total_max?: string
+    number?: string
+    product_name?: string
+    search?: string
+    delivery_status?: string
+    origin_status?: string
+    billing_status?: string
+    payment_status?: string
+    production_status?: string
     pos_session?: number
 }
 
@@ -128,13 +139,15 @@ export interface CheckoutDTEData {
     isPending: boolean
 }
 
+import type { PaymentAllocation } from "@/features/treasury"
+
 export interface CheckoutPaymentData {
     method: string | null
     amount: number
-    transactionNumber: string
     treasuryAccountId: number | null
     isPending: boolean
     paymentMethodId?: number
+    checkNumber?: string
     /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
     isTerminalIntegration?: boolean
     /** Número de cuotas para pagos con tarjeta de crédito */
@@ -143,6 +156,8 @@ export interface CheckoutPaymentData {
     checkBankId?: number | null
     /** CHECK: fecha de vencimiento del cheque (ISO date string) */
     checkDueDate?: string
+    /** Multi-pago: lista de pagos asignados */
+    payments?: PaymentAllocation[]
 }
 
 export interface CheckoutDeliveryData {

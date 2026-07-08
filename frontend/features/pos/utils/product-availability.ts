@@ -1,4 +1,4 @@
-import type { Product } from '@/types/pos'
+import type { Product } from '../types'
 
 /** 
  * Determina si un producto está deshabilitado para su venta directa en el POS 

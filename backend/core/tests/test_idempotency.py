@@ -3,8 +3,9 @@ Tests del decorador @idempotent_endpoint y del modelo IdempotencyRecord.
 
 Contrato: docs/20-contracts/idempotency.md.
 """
+
+import json
 from datetime import timedelta
-from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
@@ -17,7 +18,6 @@ from core.idempotency import idempotent_endpoint
 from core.models import IdempotencyRecord, User
 from core.tasks import purge_idempotency_records
 
-
 # --- Fixture: a minimal view that wraps the decorator ---------------------------
 
 SCOPE = "test.dummy.create"
@@ -28,7 +28,9 @@ class _DummyView(APIView):
     @idempotent_endpoint(scope=SCOPE)
     def post(self, request, *args, **kwargs):
         CALL_COUNT["n"] += 1
-        return Response({"created": True, "n": CALL_COUNT["n"]}, status=http_status.HTTP_201_CREATED)
+        return Response(
+            {"created": True, "n": CALL_COUNT["n"]}, status=http_status.HTTP_201_CREATED
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -46,6 +48,12 @@ def factory():
     return APIRequestFactory()
 
 
+def _json_hash(body: dict) -> str:
+    """Return the SHA-256 hash of body as Django/DRF would encode it (compact JSON)."""
+    from hashlib import sha256
+    return sha256(json.dumps(body, separators=(",", ":")).encode()).hexdigest()
+
+
 def _post(factory, user, *, key=None, body=None):
     body = body or {"foo": "bar"}
     headers = {}
@@ -59,9 +67,9 @@ def _post(factory, user, *, key=None, body=None):
 
 # --- HTTP contract --------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestIdempotentEndpointDecorator:
-
     def test_missing_header_returns_400(self, factory, user):
         resp = _post(factory, user, key=None)
         assert resp.status_code == http_status.HTTP_400_BAD_REQUEST
@@ -119,8 +127,8 @@ class TestIdempotentEndpointDecorator:
 
         request = factory.post("/x/", {"a": 1}, format="json", HTTP_IDEMPOTENCY_KEY="err-key")
         force_authenticate(request, user=user)
-        with pytest.raises(RuntimeError):
-            _ExplodingView.as_view()(request)
+        resp = _ExplodingView.as_view()(request)
+        assert resp.status_code == http_status.HTTP_500_INTERNAL_SERVER_ERROR
 
         record = IdempotencyRecord.objects.get(key="err-key", scope=SCOPE)
         assert record.status == IdempotencyRecord.Status.ERROR
@@ -128,25 +136,20 @@ class TestIdempotentEndpointDecorator:
 
 # --- Concurrent pending ---------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestPendingHandling:
-
     def test_pending_record_recent_returns_425(self, factory, user):
         # Simular request en vuelo: registro PENDING reciente
+        body = {"foo": "bar"}
+        expected_hash = _json_hash(body)
         IdempotencyRecord.objects.create(
             key="pending-key",
             scope=SCOPE,
-            body_hash="dummy",  # se sobreescribirá comparado más abajo
+            body_hash=expected_hash,
             user=user,
             status=IdempotencyRecord.Status.PENDING,
         )
-        # Pero el body_hash de la request real será distinto → tropieza primero con 409
-        # Por eso forzamos el mismo hash:
-        from hashlib import sha256
-        body = {"foo": "bar"}
-        import json
-        expected_hash = sha256(json.dumps(body).encode()).hexdigest()
-        IdempotencyRecord.objects.filter(key="pending-key").update(body_hash=expected_hash)
 
         request = factory.post("/dummy/", body, format="json", HTTP_IDEMPOTENCY_KEY="pending-key")
         force_authenticate(request, user=user)
@@ -157,10 +160,8 @@ class TestPendingHandling:
 
     def test_pending_record_stale_allows_retry(self, factory, user):
         # PENDING record creado hace >60s → permite re-ejecutar (asume crash del worker original)
-        from hashlib import sha256
-        import json
         body = {"foo": "bar"}
-        expected_hash = sha256(json.dumps(body).encode()).hexdigest()
+        expected_hash = _json_hash(body)
 
         rec = IdempotencyRecord.objects.create(
             key="stale-key",
@@ -186,16 +187,22 @@ class TestPendingHandling:
 
 # --- Cleanup task ---------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestPurgeIdempotencyRecords:
-
     def test_purges_records_older_than_retention(self, user):
         old = IdempotencyRecord.objects.create(
-            key="old", scope=SCOPE, body_hash="x", user=user,
+            key="old",
+            scope=SCOPE,
+            body_hash="x",
+            user=user,
             status=IdempotencyRecord.Status.DONE,
         )
         recent = IdempotencyRecord.objects.create(
-            key="recent", scope=SCOPE, body_hash="y", user=user,
+            key="recent",
+            scope=SCOPE,
+            body_hash="y",
+            user=user,
             status=IdempotencyRecord.Status.DONE,
         )
         # Backdate "old" a 25h atrás
@@ -210,7 +217,10 @@ class TestPurgeIdempotencyRecords:
 
     def test_no_op_when_nothing_old(self, user):
         IdempotencyRecord.objects.create(
-            key="fresh", scope=SCOPE, body_hash="z", user=user,
+            key="fresh",
+            scope=SCOPE,
+            body_hash="z",
+            user=user,
             status=IdempotencyRecord.Status.DONE,
         )
         deleted = purge_idempotency_records(retention_hours=24)
@@ -220,36 +230,52 @@ class TestPurgeIdempotencyRecords:
 
 # --- Model basics ---------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestIdempotencyRecordModel:
-
     def test_unique_constraint_on_key_scope(self, user):
         from django.db import IntegrityError
+
         IdempotencyRecord.objects.create(
-            key="k", scope=SCOPE, body_hash="x", user=user,
+            key="k",
+            scope=SCOPE,
+            body_hash="x",
+            user=user,
             status=IdempotencyRecord.Status.PENDING,
         )
         with pytest.raises(IntegrityError):
             IdempotencyRecord.objects.create(
-                key="k", scope=SCOPE, body_hash="x", user=user,
+                key="k",
+                scope=SCOPE,
+                body_hash="x",
+                user=user,
                 status=IdempotencyRecord.Status.PENDING,
             )
 
     def test_same_key_different_scope_allowed(self, user):
         IdempotencyRecord.objects.create(
-            key="k", scope="a", body_hash="x", user=user,
+            key="k",
+            scope="a",
+            body_hash="x",
+            user=user,
             status=IdempotencyRecord.Status.PENDING,
         )
         # Mismo key, scope distinto → permitido
         IdempotencyRecord.objects.create(
-            key="k", scope="b", body_hash="x", user=user,
+            key="k",
+            scope="b",
+            body_hash="x",
+            user=user,
             status=IdempotencyRecord.Status.PENDING,
         )
         assert IdempotencyRecord.objects.filter(key="k").count() == 2
 
     def test_str_representation(self, user):
         rec = IdempotencyRecord.objects.create(
-            key="foo", scope="billing.invoice.create", body_hash="x", user=user,
+            key="foo",
+            scope="billing.invoice.create",
+            body_hash="x",
+            user=user,
             status=IdempotencyRecord.Status.DONE,
         )
         assert str(rec) == "billing.invoice.create:foo[done]"

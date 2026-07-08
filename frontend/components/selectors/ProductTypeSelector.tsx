@@ -33,7 +33,7 @@ export function ProductTypeSelector({
     error,
     lockedType
 }: ProductTypeSelectorProps) {
-    const [open, setOpen] = useState(false)
+    const [, setOpen] = useState(false)
     const selectedType = PRODUCT_TYPES.find(t => t.id === value)
     const isDisabled = disabled || !!lockedType
 

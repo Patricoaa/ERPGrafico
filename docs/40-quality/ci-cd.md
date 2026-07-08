@@ -38,6 +38,7 @@ Every stage is a hard gate. No merge if any stage red.
 - python manage.py makemigrations --dry-run --check
 - ruff check .
 - mypy apps
+- flake8-function-length  # enforces views ≤20 lines per action (GOVERNANCE.md #35)
 - pytest --cov=apps --cov-fail-under=80
 - pip-audit
 ```
@@ -114,7 +115,7 @@ step "smoke OK"
 ```
 
 **Reglas:**
-- Cualquier endpoint cuyo fallo dejaría al usuario "sin trabajar" debe estar en `smoke.sh`. Agregar uno es 2 líneas.
+- Cualquier endpoint cuyo fallo dejaría al usuario “sin trabajar” debe estar en `smoke.sh`. Agregar uno es 2 líneas.
 - El usuario `smoke` es un User real con rol `read-only`, sembrado por migración o `setup_demo_data`.
 - Si `smoke.sh` falla post-deploy: rollback inmediato (ver §Rollback). No debugging en caliente.
 
@@ -148,7 +149,7 @@ step "smoke OK"
 | staging | master | yes | anonymized prod snapshot |
 | prod | tag `v*` | manual gate | real |
 
-## Definition of "green"
+## Definition of “green”
 
 - All stages pass.
 - Coverage ≥ threshold per [testing.md](testing.md).

@@ -4,40 +4,77 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0006_historicalpaymentterminalprovider_commission_iva_account_and_more'),
+        ("treasury", "0006_historicalpaymentterminalprovider_commission_iva_account_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicalpaymentmethod',
-            name='is_terminal',
-            field=models.BooleanField(default=False, help_text='DEPRECATED: Campo legacy, usar PaymentTerminalDevice.', verbose_name='Es Terminal de Cobro'),
+            model_name="historicalpaymentmethod",
+            name="is_terminal",
+            field=models.BooleanField(
+                default=False,
+                help_text="DEPRECATED: Campo legacy, usar PaymentTerminalDevice.",
+                verbose_name="Es Terminal de Cobro",
+            ),
         ),
         migrations.AlterField(
-            model_name='historicalpaymentmethod',
-            name='method_type',
-            field=models.CharField(choices=[('CASH', 'Efectivo'), ('CARD', 'Tarjeta'), ('DEBIT_CARD', 'Tarjeta de Débito'), ('CREDIT_CARD', 'Tarjeta de Crédito'), ('TRANSFER', 'Transferencia'), ('CHECK', 'Cheque')], max_length=20, verbose_name='Tipo de Método'),
+            model_name="historicalpaymentmethod",
+            name="method_type",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "Efectivo"),
+                    ("CARD", "Tarjeta"),
+                    ("DEBIT_CARD", "Tarjeta de Débito"),
+                    ("CREDIT_CARD", "Tarjeta de Crédito"),
+                    ("TRANSFER", "Transferencia"),
+                    ("CHECK", "Cheque"),
+                ],
+                max_length=20,
+                verbose_name="Tipo de Método",
+            ),
         ),
         migrations.AlterField(
-            model_name='historicalpaymentmethod',
-            name='process_via_terminal',
-            field=models.BooleanField(default=False, help_text='DEPRECATED: Se infiere del hardware vinculado a la caja POS.', verbose_name='Procesa Vía Terminal'),
+            model_name="historicalpaymentmethod",
+            name="process_via_terminal",
+            field=models.BooleanField(
+                default=False,
+                help_text="DEPRECATED: Se infiere del hardware vinculado a la caja POS.",
+                verbose_name="Procesa Vía Terminal",
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentmethod',
-            name='is_terminal',
-            field=models.BooleanField(default=False, help_text='DEPRECATED: Campo legacy, usar PaymentTerminalDevice.', verbose_name='Es Terminal de Cobro'),
+            model_name="paymentmethod",
+            name="is_terminal",
+            field=models.BooleanField(
+                default=False,
+                help_text="DEPRECATED: Campo legacy, usar PaymentTerminalDevice.",
+                verbose_name="Es Terminal de Cobro",
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentmethod',
-            name='method_type',
-            field=models.CharField(choices=[('CASH', 'Efectivo'), ('CARD', 'Tarjeta'), ('DEBIT_CARD', 'Tarjeta de Débito'), ('CREDIT_CARD', 'Tarjeta de Crédito'), ('TRANSFER', 'Transferencia'), ('CHECK', 'Cheque')], max_length=20, verbose_name='Tipo de Método'),
+            model_name="paymentmethod",
+            name="method_type",
+            field=models.CharField(
+                choices=[
+                    ("CASH", "Efectivo"),
+                    ("CARD", "Tarjeta"),
+                    ("DEBIT_CARD", "Tarjeta de Débito"),
+                    ("CREDIT_CARD", "Tarjeta de Crédito"),
+                    ("TRANSFER", "Transferencia"),
+                    ("CHECK", "Cheque"),
+                ],
+                max_length=20,
+                verbose_name="Tipo de Método",
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentmethod',
-            name='process_via_terminal',
-            field=models.BooleanField(default=False, help_text='DEPRECATED: Se infiere del hardware vinculado a la caja POS.', verbose_name='Procesa Vía Terminal'),
+            model_name="paymentmethod",
+            name="process_via_terminal",
+            field=models.BooleanField(
+                default=False,
+                help_text="DEPRECATED: Se infiere del hardware vinculado a la caja POS.",
+                verbose_name="Procesa Vía Terminal",
+            ),
         ),
     ]

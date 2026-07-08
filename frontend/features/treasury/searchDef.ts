@@ -8,43 +8,24 @@ export const treasuryAccountSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'name',
     },
-    {
-      key: 'account_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'account_type',
-      options: [
-        { label: 'Caja Física (Efectivo)', value: 'CASH' },
-        { label: 'Cuenta Bancaria', value: 'CHECKING' },
-        { label: 'T. Crédito Empresa', value: 'CREDIT_CARD' },
-        { label: 'Préstamo Bancario', value: 'LOAN' },
-        { label: 'Puente', value: 'BRIDGE' },
-        { label: 'Cheques en Cartera', value: 'CHECK_PORTFOLIO' },
-      ],
-    },
   ],
 }
 
 export const terminalBatchSearchDef: SearchDefinition = {
   fields: [
     {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Pendiente', value: 'PENDING' },
-        { label: 'Liquidado', value: 'SETTLED' },
-        { label: 'Conciliado', value: 'RECONCILED' },
-        { label: 'Facturado', value: 'INVOICED' },
-      ],
+      key: 'batch_number',
+      label: 'N° Liquidación',
+      type: 'text',
+      serverParam: 'batch_number',
+      clientKey: ['batch_number'],
     },
     {
-      key: 'date',
-      label: 'Fecha',
-      type: 'daterange',
-      serverParamStart: 'date_from',
-      serverParamEnd: 'date_to',
+      key: 'provider_name',
+      label: 'Proveedor',
+      type: 'text',
+      serverParam: 'provider_name',
+      clientKey: ['provider_name'],
     },
   ],
 }
@@ -56,17 +37,6 @@ export const deviceSearchDef: SearchDefinition = {
       label: 'Nombre',
       type: 'text',
       serverParam: 'search',
-    },
-    {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Activo', value: 'ACTIVE' },
-        { label: 'Inactivo', value: 'INACTIVE' },
-        { label: 'Mantenimiento', value: 'MAINTENANCE' },
-      ],
     },
   ],
 }
@@ -91,20 +61,6 @@ export const paymentMethodSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'name',
     },
-    {
-      key: 'method_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'method_type',
-      options: [
-        { label: 'Efectivo Directo', value: 'CASH' },
-        { label: 'Tarjeta (Dispositivo)', value: 'CARD_TERMINAL' },
-        { label: 'Transferencia', value: 'TRANSFER' },
-        { label: 'Tarjeta Débito', value: 'DEBIT_CARD' },
-        { label: 'Tarjeta Crédito', value: 'CREDIT_CARD' },
-        { label: 'Cheque', value: 'CHECK' },
-      ],
-    },
   ],
 }
 
@@ -122,33 +78,16 @@ export const providerSearchDef: SearchDefinition = {
 export const treasuryMovementsSearchDef: SearchDefinition = {
   fields: [
     {
-      key: 'movement_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'movement_type',
-      options: [
-        { label: 'Depósito', value: 'INBOUND' },
-        { label: 'Retiro', value: 'OUTBOUND' },
-        { label: 'Traspaso', value: 'TRANSFER' },
-        { label: 'Ajuste', value: 'ADJUSTMENT' },
-      ],
+      key: 'search',
+      label: 'Contacto / Referencia',
+      type: 'text',
+      serverParam: 'search',
     },
     {
-      key: 'is_reconciled',
-      label: 'Conciliado',
-      type: 'enum',
-      serverParam: 'is_reconciled',
-      options: [
-        { label: 'Sí', value: 'true' },
-        { label: 'No', value: 'false' },
-      ],
-    },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'daterange',
-      serverParamStart: 'date_from',
-      serverParamEnd: 'date_to',
+      key: 'display_id',
+      label: 'Folio',
+      type: 'text',
+      serverParam: 'display_id',
     },
   ],
 }

@@ -3,8 +3,8 @@
 import { FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledContainer, FormSection, LabeledSwitch, NotchedButton } from "@/components/shared"
 import { ShoppingCart, Truck, Barcode, Fingerprint, Layers } from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import { cn } from "@/lib/utils"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 
@@ -33,7 +33,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                 <div className="grid grid-cols-4 gap-4 items-stretch">
                     {/* Fila 1: Nombre (3) / Imagen (1) */}
                     <div className="col-span-3">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="name"
                             render={({ field, fieldState }) => (
@@ -76,7 +76,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                     </div>
 
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="can_be_sold"
                             render={({ field }) => (
@@ -93,7 +93,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                     className={cn(
                                         "h-full transition-all duration-300",
                                         field.value
-                                            ? "bg-success/10 border-success/30 shadow-sm ring-1 ring-success/10"
+                                            ? "bg-success/10 border-success/30 shadow-card ring-1 ring-success/10"
                                             : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
@@ -102,7 +102,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                     </div>
 
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="can_be_purchased"
                             render={({ field }) => (
@@ -119,7 +119,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                     className={cn(
                                         "h-full transition-all duration-300",
                                         field.value
-                                            ? "bg-warning/10 border-warning/30 shadow-sm ring-1 ring-warning/10"
+                                            ? "bg-warning/10 border-warning/30 shadow-card ring-1 ring-warning/10"
                                             : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
@@ -129,7 +129,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
 
                     {/* Fila 3: Tipo (1) / Categoría (2) / Variantes (1) */}
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="product_type"
                             render={({ field, fieldState }) => (
@@ -161,7 +161,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                         />
                     </div>
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="category"
                             render={({ field, fieldState }) => (
@@ -177,7 +177,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                         />
                     </div>
                     <div className="col-span-1">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="has_variants"
                             render={({ field }) => (
@@ -194,7 +194,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                     className={cn(
                                         "h-full transition-all duration-300",
                                         field.value
-                                            ? "bg-primary/10 border-primary/30 shadow-sm ring-1 ring-primary/10"
+                                            ? "bg-primary/10 border-primary/30 shadow-card ring-1 ring-primary/10"
                                             : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
@@ -204,7 +204,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
 
                     {/* Fila 4: SKU (Propietary Row) */}
                     <div className="col-span-4">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="code"
                             render={({ field, fieldState }) => (

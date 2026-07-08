@@ -4,24 +4,23 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0034_historicalreconciliationsettings_and_more'),
+        ("treasury", "0034_historicalreconciliationsettings_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='reconciliationrule',
-            name='created_by',
+            model_name="reconciliationrule",
+            name="created_by",
         ),
         migrations.RemoveField(
-            model_name='reconciliationrule',
-            name='treasury_account',
+            model_name="reconciliationrule",
+            name="treasury_account",
         ),
         migrations.DeleteModel(
-            name='HistoricalReconciliationRule',
+            name="HistoricalReconciliationRule",
         ),
         migrations.DeleteModel(
-            name='ReconciliationRule',
+            name="ReconciliationRule",
         ),
     ]

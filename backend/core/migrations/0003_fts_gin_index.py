@@ -1,15 +1,15 @@
-from django.db import migrations, models
+from django.db import migrations
 
 
 class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
-        ('core', '0002_remove_companysettings_primary_color_and_more'),
+        ("core", "0002_remove_companysettings_primary_color_and_more"),
     ]
 
     def create_gin_index(apps, schema_editor):
-        if schema_editor.connection.vendor == 'postgresql':
+        if schema_editor.connection.vendor == "postgresql":
             schema_editor.execute("""
                 CREATE INDEX CONCURRENTLY IF NOT EXISTS core_user_fts_gin
                 ON core_user
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             """)
 
     def drop_gin_index(apps, schema_editor):
-        if schema_editor.connection.vendor == 'postgresql':
+        if schema_editor.connection.vendor == "postgresql":
             schema_editor.execute("DROP INDEX IF EXISTS core_user_fts_gin;")
 
     operations = [

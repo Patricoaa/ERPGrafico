@@ -1,8 +1,9 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export const FINANCES_TABS = [
     {
@@ -11,9 +12,9 @@ export const FINANCES_TABS = [
         iconName: "clipboard-list",
         href: "/finances/statements",
         subTabs: [
-            { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements?tab=bs" },
-            { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements?tab=pl" },
-            { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements?tab=cf" },
+            { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements/bs" },
+            { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements/pl" },
+            { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements/cf" },
         ]
     },
     {
@@ -22,8 +23,8 @@ export const FINANCES_TABS = [
         iconName: "line-chart",
         href: "/finances/analysis",
         subTabs: [
-            { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis?tab=ratios" },
-            { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis?tab=bi" },
+            { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis/ratios" },
+            { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis/bi" },
         ]
     },
     {
@@ -32,8 +33,8 @@ export const FINANCES_TABS = [
         iconName: "target",
         href: "/finances/budgets",
         subTabs: [
-            { value: "list", label: "Gestión", iconName: "list", href: "/finances/budgets?tab=list" },
-            { value: "versus", label: "Versus", iconName: "chart-bar", href: "/finances/budgets?tab=versus" },
+            { value: "list", label: "Gestión", iconName: "list", href: "/finances/budgets/list" },
+            { value: "versus", label: "Versus", iconName: "chart-bar", href: "/finances/budgets/versus" },
         ]
     },
     {
@@ -42,41 +43,44 @@ export const FINANCES_TABS = [
         iconName: "users",
         href: "/finances/partners",
         subTabs: [
-            { value: "composition", label: "Composición", iconName: "users", href: "/finances/partners?tab=composition" },
-            { value: "distributions", label: "Utilidades", iconName: "pie-chart", href: "/finances/partners?tab=distributions" },
-            { value: "config", label: "Arquitectura", iconName: "settings", href: "/finances/partners?tab=config" },
+            { value: "composition", label: "Composición", iconName: "users", href: "/finances/partners/composition" },
+            { value: "distributions", label: "Utilidades", iconName: getEntityIconName('contacts.profitdistributionresolution'), href: "/finances/partners/distributions" },
         ]
-    },
-    {
-        value: "settings",
-        label: "Configuración",
-        iconName: "settings",
-        href: "/finances/settings"
     },
 ]
 
 export function FinancesHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
+    const { getViewModeUrl } = useViewModePreference()
+
+    const tabs = FINANCES_TABS.map(t => {
+        if (t.value === 'budgets') {
+            return {
+                ...t,
+                subTabs: t.subTabs.map(st => st.value === 'list'
+                    ? { ...st, href: getViewModeUrl('accounting.budget', st.href) }
+                    : st
+                ),
+            }
+        }
+        return t
+    })
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'statements'
 
     const activeValue = currentSegment
-    const subActiveValue = searchParams.get('tab') ?? undefined
+    const subActiveValue = segments[2] ?? undefined
 
     const navigation = {
         moduleName: "Finanzas",
         moduleHref: "/finances",
-        tabs: FINANCES_TABS,
+        tabs,
         activeValue,
         subActiveValue,
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'settings') {
-            return { title: "Configuración de Finanzas", description: "Períodos fiscales, centros de costo y reglas de consolidación.", iconName: "settings" as const }
-        }
         if (activeValue === 'statements') {
             if (subActiveValue === 'bs') return { title: "Balance General", description: "Estado de situación financiera resumido.", iconName: "file-text" as const }
             if (subActiveValue === 'pl') return { title: "Estado de Resultados", description: "Pérdidas y ganancias en un periodo determinado.", iconName: "bar-chart-2" as const }
@@ -93,11 +97,10 @@ export function FinancesHeader() {
             return { title: "Control Presupuestario", description: "Gestión de metas presupuestarias y ejecución.", iconName: "target" as const }
         }
         if (activeValue === 'partners') {
-            if (subActiveValue === 'config') return { title: "Arquitectura Contable de Socios", description: "Configure las cuentas maestras para el Modelo Híbrido de Capital.", iconName: "settings" as const }
-            if (subActiveValue === 'distributions') return { title: "Distribución de Utilidades", description: "Gestión de actas, resolución de dividendos y reinversiones.", iconName: "pie-chart" as const }
+            if (subActiveValue === 'distributions') return { title: "Distribución de Utilidades", description: "Gestión de actas, resolución de dividendos y reinversiones.", iconName: getEntityIconName('contacts.profitdistributionresolution') }
             return { title: "Composición Societaria", description: "Gestión de capital suscrito y pagado por los socios.", iconName: "users" as const }
         }
-        return { title: "Finanzas", description: "", iconName: getModuleIconName('finances') ?? "pie-chart" }
+        return { title: "Finanzas", description: "", iconName: getEntityIconName('finance.bankjournal') ?? "pie-chart" }
     }
 
     const config = getHeaderConfig()

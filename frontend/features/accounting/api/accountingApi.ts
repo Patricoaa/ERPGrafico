@@ -1,5 +1,6 @@
 import api from '@/lib/api'
-import type { Account, AccountFilters, AccountPayload, FiscalYear, LedgerData } from '../types'
+import type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear, LedgerData } from '../types'
+import { toPage, type Page } from '@/lib/pagination'
 
 export const accountingApi = {
     getAccounts: async (filters?: AccountFilters): Promise<Account[]> => {
@@ -21,25 +22,31 @@ export const accountingApi = {
         return data
     },
 
-    getEntries: async (params?: Record<string, unknown>) => {
-        const { data } = await api.get('/accounting/entries/', { params })
-        return data
+    getEntries: async (params?: Record<string, unknown>): Promise<Page<unknown>> => {
+        const { data } = await api.get<unknown>('/accounting/entries/', { params })
+        return toPage(data, (params?.page as number) ?? 1, (params?.page_size as number) ?? 50)
     },
     getEntry: async (id: number | string) => {
-        const { data } = await api.get(`/accounting/entries/${id}/`)
+        const { data } = await api.get<unknown>(`/accounting/entries/${id}/`)
         return data
     },
 
     createEntry: async (payload: Record<string, unknown>): Promise<unknown> => {
-        const { data } = await api.post('/accounting/entries/', payload)
+        const { data } = await api.post<unknown>('/accounting/entries/', payload)
         return data
     },
 
     updateEntry: async (id: number, payload: Record<string, unknown>): Promise<unknown> => {
-        const { data } = await api.patch(`/accounting/entries/${id}/`, payload)
+        const { data } = await api.patch<unknown>(`/accounting/entries/${id}/`, payload)
         return data
     },
 
+    postEntry: async (id: number): Promise<void> => {
+        await api.post(`/accounting/entries/${id}/post_entry/`)
+    },
+    reverseEntry: async (id: number): Promise<void> => {
+        await api.post(`/accounting/entries/${id}/reverse_entry/`)
+    },
     deleteEntry: async (id: number): Promise<void> => {
         await api.delete(`/accounting/entries/${id}/`)
     },
@@ -64,13 +71,18 @@ export const accountingApi = {
     },
 
     getSettings: async () => {
-        const response = await api.get('/accounting/settings/current/')
+        const response = await api.get<Record<string, unknown>>('/accounting/settings/current/')
         return response.data
     },
 
     updateSettings: async (data: Record<string, unknown>) => {
-        const response = await api.patch('/accounting/settings/current/', data)
+        const response = await api.patch<Record<string, unknown>>('/accounting/settings/current/', data)
         return response.data
+    },
+
+    getAccountingPeriods: async (params?: Record<string, unknown>): Promise<AccountingPeriod[]> => {
+        const { data } = await api.get<AccountingPeriod[]>('/tax/accounting-periods/', { params })
+        return data
     },
 
     getFiscalYears: async (params?: Record<string, unknown>): Promise<FiscalYear[]> => {
@@ -84,5 +96,15 @@ export const accountingApi = {
                 api.patch(`/accounting/accounts/${id}/`, { [field]: value })
             )
         )
-    }
+    },
+
+    getAccountingPeriodStatus: async (periodId: number): Promise<Record<string, unknown>> => {
+        const { data } = await api.get<Record<string, unknown>>(`/tax/accounting-periods/${periodId}/status_check/`)
+        return data
+    },
+
+    checkPeriodClosed: async (date: string): Promise<{ is_closed: boolean; date: string; period_name?: string }> => {
+        const { data } = await api.get<{ is_closed: boolean; date: string; period_name?: string }>(`tax/accounting-periods/check_closed/?date=${date}`)
+        return data
+    },
 }

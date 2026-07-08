@@ -4,19 +4,19 @@ import type { StatementParams } from '../api/financeApi'
 import { FINANCE_KEYS } from './queryKeys'
 
 export function useStatements(params: StatementParams) {
-    const { data: balanceSheet, isLoading: isLoadingBS, refetch: refetchBS } = useQuery({
+    const { data: balanceSheet, isLoading: isLoadingBS, isError: isErrorBS, refetch: refetchBS } = useQuery({
         queryKey: FINANCE_KEYS.statements.balanceSheet(params),
         queryFn: () => financeApi.getBalanceSheet(params),
         staleTime: 5 * 60 * 1000,
     })
 
-    const { data: incomeStatement, isLoading: isLoadingPL, refetch: refetchPL } = useQuery({
+    const { data: incomeStatement, isLoading: isLoadingPL, isError: isErrorPL, refetch: refetchPL } = useQuery({
         queryKey: FINANCE_KEYS.statements.incomeStatement(params),
         queryFn: () => financeApi.getIncomeStatement(params),
         staleTime: 5 * 60 * 1000,
     })
 
-    const { data: cashFlow, isLoading: isLoadingCF, refetch: refetchCF } = useQuery({
+    const { data: cashFlow, isLoading: isLoadingCF, isError: isErrorCF, refetch: refetchCF } = useQuery({
         queryKey: FINANCE_KEYS.statements.cashFlow(params),
         queryFn: () => financeApi.getCashFlow(params),
         staleTime: 5 * 60 * 1000,
@@ -31,6 +31,7 @@ export function useStatements(params: StatementParams) {
         incomeStatement,
         cashFlow,
         refetch,
-        isLoading: isLoadingBS || isLoadingPL || isLoadingCF
+        isLoading: isLoadingBS || isLoadingPL || isLoadingCF,
+        isError: isErrorBS || isErrorPL || isErrorCF,
     }
 }

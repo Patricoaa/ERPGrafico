@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax */
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -9,16 +10,17 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { Ruler, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { showApiError } from "@/lib/errors"
 import { useUoMMutations } from "../hooks/useUoMMutations"
 import { FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 export interface UoMCategory {
     id: number
@@ -134,11 +136,10 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
         </Form>
     )
 
-    const drawerTitle = isView
-        ? `Ficha de Categoría de Medida${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Categoría de Medida"
-            : "Editar Categoría de Medida"
+    const identity = useDrawerIdentity('inventory.uomcategory', mode, initialData, {
+        feminine: true,
+        overrideSubtitle: initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo.",
+    })
 
     return (
         <>
@@ -162,9 +163,10 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={Ruler}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

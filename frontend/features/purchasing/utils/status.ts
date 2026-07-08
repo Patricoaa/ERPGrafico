@@ -1,23 +1,21 @@
-export const getPurchaseHubStatuses = (order: any) => {
-    // 1. Origin Document
+export const getPurchaseHubStatuses = (order: Record<string, unknown>) => {
     let originStatus = 'neutral'
     if (order.status === 'CANCELLED') originStatus = 'destructive'
     else if (order.status !== 'DRAFT') originStatus = 'success'
 
-    // 2. Reception (replaces Logistics for purchases)
-    // Check if products have been received
-    const lines = order.lines || order.items || []
-    const receipts = order.related_documents?.receipts || []
+    const lines = (order.lines || order.items || []) as Array<Record<string, unknown>>
+    const relatedDocs = order.related_documents as Record<string, unknown> | undefined
+
 
     let receptionStatus = 'neutral'
     if (lines.length > 0) {
-        const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+        const totalOrdered = lines.reduce((acc: number, line: Record<string, unknown>) => acc + (Number(line.quantity) || 0), 0)
         let receptionProgress = 0
 
         if (totalOrdered > 0) {
-            const totalReceived = lines.reduce((acc: number, line: any) => {
+            const totalReceived = lines.reduce((acc: number, line: Record<string, unknown>) => {
                 const received = (line.quantity_received || 0)
-                return acc + (parseFloat(received) || 0)
+                return acc + (Number(received) || 0)
             }, 0)
             receptionProgress = Math.min(100, Math.round((totalReceived / totalOrdered) * 100))
         } else if (lines.length > 0) {
@@ -28,29 +26,26 @@ export const getPurchaseHubStatuses = (order: any) => {
         else if (receptionProgress > 0) receptionStatus = 'active'
     }
 
-    // 3. Billing (supplier invoices registered)
-    const invoices = order.related_documents?.invoices || []
-    const billingIsComplete = invoices.length > 0 && !invoices.some((inv: any) =>
+    const invoices = (relatedDocs?.invoices as Array<Record<string, unknown>> | undefined) || []
+    const billingIsComplete = invoices.length > 0 && !invoices.some((inv: Record<string, unknown>) =>
         inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number
     )
     const billingStatus = billingIsComplete ? 'success' : 'neutral'
 
-    // 4. Treasury (payments to supplier)
-    const payments = order.serialized_payments || order.payments_detail || order.related_documents?.payments || []
-    const hasPendingTransactions = payments.some((pay: any) => {
+    const payments = (order.serialized_payments || order.payments_detail || relatedDocs?.payments || []) as Array<Record<string, unknown>>
+    const hasPendingTransactions = payments.some((pay: Record<string, unknown>) => {
         const requiresTR = (
             (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'TRANSFER' || pay.payment_method === 'CARD')) ||
             (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
         )
-        return (requiresTR && !pay.transaction_number) || pay.is_pending_registration
+        return (requiresTR && !Boolean(pay.transaction_number)) || Boolean(pay.is_pending_registration)
     })
 
-    // Check if fully paid
-    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (parseFloat(order.pending_amount) <= 0)) && !hasPendingTransactions
+    const isPaid = (order.status === 'PAID' || order.payment_status === 'PAID' || (Number(order.pending_amount) <= 0)) && !hasPendingTransactions
 
     let treasuryStatus = 'neutral'
     if (isPaid) treasuryStatus = 'success'
-    else if (parseFloat(order.pending_amount) < parseFloat(order.total) || hasPendingTransactions) treasuryStatus = 'active'
+    else if (Number(order.pending_amount) < Number(order.total) || hasPendingTransactions) treasuryStatus = 'active'
 
     return {
         origin: originStatus,

@@ -1,8 +1,8 @@
-import { Metadata } from "next"
-import { redirect } from "next/navigation"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ProductClientView, CategoryClientView, PricingRuleClientView, SubscriptionsView } from "@/features/inventory"
-import { ToolbarCreateButton, FadeIn } from "@/components/shared"
+import type { Metadata } from "next"
+import { ProductClientView } from "@/features/inventory"
+import { PageSectionHeader, ToolbarCreateButton } from "@/components/shared"
+import { serverFetch } from "@/lib/server-fetch"
+import type { Product } from "@/features/inventory"
 
 export const metadata: Metadata = {
     title: "Productos | ERPGrafico",
@@ -10,72 +10,42 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ tab?: string; modal?: string }>
+    searchParams: Promise<{ modal?: string; search?: string; product_type?: string; category?: string; has_variants?: string; availability?: string }>
 }
 
-export default async function UnifiedProductsPage({ searchParams }: PageProps) {
-    const resolvedParams = await searchParams
-    let activeTab = resolvedParams.tab || "products"
+const FILTER_PARAMS = new Set(['search', 'product_type', 'category', 'has_variants', 'availability', 'is_active'])
 
-    // Fallback for legacy notification links
-    if (activeTab === "general") {
-        activeTab = "products"
-    }
+export default async function ProductsPage({ searchParams }: PageProps) {
+    const params = await searchParams
+    const { modal } = params
 
-    if (!resolvedParams.tab) {
-        redirect('/inventory/products?tab=products')
-    }
-
-    const getCreateAction = (tab: string) => {
-        const actionMap: Record<string, { label: string; href: string }> = {
-            products: { label: "Nuevo Producto", href: "/inventory/products?tab=products&modal=new" },
-            categories: { label: "Nueva Categoría", href: "/inventory/products?tab=categories&modal=new" },
-            "pricing-rules": { label: "Nueva Regla", href: "/inventory/products?tab=pricing-rules&modal=new" },
-            subscriptions: { label: "Nueva Suscripción", href: "/inventory/products?tab=subscriptions&modal=new" },
+    // Only pre-fetch when there are no active search/filter params; otherwise
+    // the unfiltered server data would be immediately discarded by the client.
+    const hasActiveFilters = Object.keys(params).some(k => FILTER_PARAMS.has(k))
+    let initialProducts: Product[] | undefined
+    if (!hasActiveFilters) {
+        try {
+            const data = await serverFetch<{ results: Product[] }>('inventory/products/', {
+                params: {
+                    page_size: '200',
+                },
+                revalidate: 10,
+            })
+            initialProducts = data.results
+        } catch {
+            // Client-side fetch handles fallback
         }
-        const action = actionMap[tab]
-        return action ? <ToolbarCreateButton label={action.label} href={action.href} /> : null
     }
 
-    const createAction = getCreateAction(activeTab)
+    const createAction = <ToolbarCreateButton label="Nuevo Producto" href="/inventory/products?modal=new" />
 
     return (
-        <Tabs value={activeTab} className="space-y-4 pt-2 flex flex-col flex-1 min-h-0">
-            <div className="flex-1 min-h-0">
-                <TabsContent value="products" className="h-full mt-0 outline-none">
-                    <FadeIn className="h-full">
-                        <ProductClientView
-                            externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'products' ? createAction : null}
-                        />
-                    </FadeIn>
-                </TabsContent>
-                <TabsContent value="categories" className="h-full mt-0 outline-none">
-                    <FadeIn className="h-full">
-                        <CategoryClientView
-                            externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'categories' ? createAction : null}
-                        />
-                    </FadeIn>
-                </TabsContent>
-                <TabsContent value="pricing-rules" className="h-full mt-0 outline-none">
-                    <FadeIn className="h-full">
-                        <PricingRuleClientView
-                            externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'pricing-rules' ? createAction : null}
-                        />
-                    </FadeIn>
-                </TabsContent>
-                <TabsContent value="subscriptions" className="h-full mt-0 outline-none">
-                    <FadeIn className="h-full">
-                        <SubscriptionsView
-                            hideHeader
-                            externalOpen={activeTab === 'subscriptions' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'subscriptions' ? createAction : null}
-                        />
-                    </FadeIn>
-                </TabsContent>
-            </div>
-        </Tabs>
-    )
+        <>
+            <PageSectionHeader title="Productos" description="Gestión de catálogo, categorías y reglas de precios" />
+            <ProductClientView
+                initialProducts={initialProducts}
+                externalOpen={modal === 'new'}
+                createAction={createAction}
+            />
+        </>)
 }

@@ -5,25 +5,48 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0022_accountingsettings_issued_checks_account'),
+        ("accounting", "0022_accountingsettings_issued_checks_account"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accountingsettings',
-            name='loan_commission_expense_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta de gasto para la comisión de apertura cobrada al desembolso de un préstamo.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_loan_commission_expense', to='accounting.account', verbose_name='Cuenta de Gasto por Comisiones de Préstamo'),
+            model_name="accountingsettings",
+            name="loan_commission_expense_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta de gasto para la comisión de apertura cobrada al desembolso de un préstamo.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_loan_commission_expense",
+                to="accounting.account",
+                verbose_name="Cuenta de Gasto por Comisiones de Préstamo",
+            ),
         ),
         migrations.AddField(
-            model_name='accountingsettings',
-            name='loan_penalty_expense_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta de gasto para el interés penal (mora) de cuotas vencidas de préstamos.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_loan_penalty_expense', to='accounting.account', verbose_name='Cuenta de Gasto por Mora'),
+            model_name="accountingsettings",
+            name="loan_penalty_expense_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta de gasto para el interés penal (mora) de cuotas vencidas de préstamos.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_loan_penalty_expense",
+                to="accounting.account",
+                verbose_name="Cuenta de Gasto por Mora",
+            ),
         ),
         migrations.AddField(
-            model_name='accountingsettings',
-            name='loan_stamp_tax_expense_account',
-            field=models.ForeignKey(blank=True, help_text='Cuenta de gasto para el impuesto de timbres y estampillas (ITE) cobrado al desembolso.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='settings_loan_stamp_tax_expense', to='accounting.account', verbose_name='Cuenta de Gasto por Impuesto de Timbres'),
+            model_name="accountingsettings",
+            name="loan_stamp_tax_expense_account",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Cuenta de gasto para el impuesto de timbres y estampillas (ITE) cobrado al desembolso.",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="settings_loan_stamp_tax_expense",
+                to="accounting.account",
+                verbose_name="Cuenta de Gasto por Impuesto de Timbres",
+            ),
         ),
     ]

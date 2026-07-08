@@ -1,16 +1,15 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer, Receipt } from 'lucide-react'
-import { useReactToPrint } from 'react-to-print'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
 import { useInvoice } from '@/features/billing/hooks/useInvoices'
-import { ActivitySidebar } from '@/features/audit/components'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import { ActivitySidebar } from '@/features/audit'
+import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface InvoiceDrawerProps extends TransactionDrawerProps {
     invoiceId?: number
@@ -19,12 +18,16 @@ interface InvoiceDrawerProps extends TransactionDrawerProps {
 export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId }: InvoiceDrawerProps) {
     const entityId = id ?? invoiceId ?? null
     const { data: invoice, isLoading } = useInvoice(entityId)
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const displayId = invoice?.display_id ?? invoice?.number ?? `#${entityId}`
     const dteLabel = invoice?.dte_type_display ?? invoice?.dte_type ?? ''
     const partnerName = invoice?.partner_name ?? invoice?.customer_name ?? invoice?.supplier_name ?? ''
+
+    const identity = useDrawerIdentity('billing.invoice', 'view', invoice, {
+        overrideTitle: displayId,
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -37,18 +40,18 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                 <div className="text-[9px] space-y-1 mb-2">
                     <div className="flex justify-between">
                         <span>Folio:</span>
-                        <span>{(invoice as any)?.folio_number ?? (invoice as any)?.folio ?? 'S/N'}</span>
+                        <span>{(invoice as unknown as Record<string, unknown>)?.folio_number as string ?? (invoice as unknown as Record<string, unknown>)?.folio as string ?? 'S/N'}</span>
                     </div>
                     <div className="flex justify-between">
                         <span>Vencimiento:</span>
-                        <span>{formatPlainDate((invoice as any)?.due_date)}</span>
+                        <span>{formatPlainDate((invoice as unknown as Record<string, unknown>)?.due_date as string ?? '')}</span>
                     </div>
                 </div>
                 {invoice?.lines?.map((line, idx) => (
                     <div key={idx} className="flex justify-between text-[10px]">
-                        <span className="flex-1">{'product_name' in line ? (line as any).product_name : line.description ?? '-'}</span>
-                        <span className="w-12 text-right">{Math.round(Number((line as any).quantity ?? 0))}</span>
-                        <span className="w-16 text-right">{formatCurrency(Number((line as any).unit_price ?? 0))}</span>
+                        <span className="flex-1">{line.product_name ?? line.description ?? '-'}</span>
+                        <span className="w-12 text-right">{Math.round(Number(line.quantity ?? 0))}</span>
+                        <span className="w-16 text-right">{formatCurrency(Number((line as Record<string, unknown>).unit_price ?? 0))}</span>
                     </div>
                 ))}
                 {invoice?.total && (
@@ -60,14 +63,15 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
             </PrintableLayout>
 
             <Drawer
+                mode="view"
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
-                defaultSize="50%"
-                icon={Receipt}
-                title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
-                subtitle={partnerName}
-                description={`${dteLabel} · ${formatPlainDate(invoice?.date)}`}
+                defaultSize={formDrawerWidth("master", !!entityId)}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
             >
                 <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="invoice" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando factura">
@@ -94,16 +98,16 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                                 <div>
                                     <h4 className="text-sm font-bold mb-2">Líneas</h4>
                                     <div className="space-y-2">
-                                        {invoice.lines.map((line: any, idx: number) => (
-                                            <div key={line.id ?? idx} className="flex justify-between text-sm border-b pb-1">
+                                        {invoice.lines.map((line: Record<string, unknown>, idx: number) => (
+                                            <div key={(line.id as number) ?? idx} className="flex justify-between text-sm border-b pb-1">
                                                 <div>
-                                                    <span className="font-medium">{line.product_name || line.description || '-'}</span>
+                                                    <span className="font-medium">{(line.product_name as string) || (line.description as string) || '-'}</span>
                                                     <span className="text-xs text-muted-foreground ml-2">
-                                                        {(line as any).uom_name || ''}
+                                                        {(line.uom_name as string) || ''}
                                                     </span>
                                                 </div>
                                                 <span className="font-mono">
-                                                    {Math.round(Number((line as any).quantity ?? 0))} × {formatCurrency(Number((line as any).unit_price ?? 0))}
+                                                    {Math.round(Number((line.quantity as number) ?? 0))} × {formatCurrency(Number((line.unit_price as number) ?? 0))}
                                                 </span>
                                             </div>
                                         ))}

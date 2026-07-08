@@ -1,467 +1,315 @@
-from rest_framework import viewsets, status, filters as drf_filters
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-import django_filters
-from django.contrib.contenttypes.models import ContentType
-from .models import SaleOrder, SalesSettings, SaleDelivery, SaleReturn
-from .serializers import (
-    SaleOrderSerializer, 
-    CreateSaleOrderSerializer, 
-    SalesSettingsSerializer,
-    SaleDeliverySerializer,
-    SaleReturnSerializer
-)
-from .services import SalesService
-from inventory.models import Warehouse
-from django.core.exceptions import ValidationError
+from core.api.pagination import StandardResultsSetPagination
 from decimal import Decimal
 
-from core.mixins import BulkImportMixin
-from core.mixins import AuditHistoryMixin
-
+import django_filters
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from core.api.search import DistinctSearchFilter
+from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
+
+from .filters import SaleDeliveryFilter
+from .models import SaleDelivery, SaleOrder, SaleReturn, SalesSettings
+from .selectors import SaleDeliverySelector, SaleOrderSelector
+from .serializers import (
+    CreateSaleOrderSerializer,
+    SaleDeliverySerializer,
+    SaleOrderSerializer,
+    SaleReturnSerializer,
+    SalesSettingsSerializer,
+)
+from .services import SalesService
+
 
 class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SalesSettings.objects.all()
     serializer_class = SalesSettingsSerializer
 
     def get_permissions(self):
-        if self.action == 'current' and self.request.method == 'GET':
+        if self.action == "current" and self.request.method == "GET":
             return [IsAuthenticated()]
         return super().get_permissions()
 
-    # Fields that belong to AccountingSettings but are surfaced through this endpoint
-    ACCOUNTING_SETTINGS_FIELDS = [
-        'default_revenue_account',
-        'default_service_revenue_account',
-        'default_subscription_revenue_account',
-        'pos_cash_difference_gain_account',
-        'pos_cash_difference_loss_account',
-        'pos_counting_error_account',
-        'pos_theft_account',
-        'pos_rounding_adjustment_account',
-        'pos_tip_account',
-        'pos_cashback_error_account',
-        'pos_system_error_account',
-        'pos_partner_withdrawal_account',
-        'pos_other_inflow_account',
-        'pos_other_outflow_account',
-        'pos_default_credit_percentage',
-        'terminal_commission_bridge_account',
-        'terminal_iva_bridge_account',
-        'credit_auto_block_days',
-        'default_uncollectible_expense_account',
-    ]
-
-    def _get_accounting_settings_data(self):
-        """Read account fields from AccountingSettings and return them as a plain dict."""
-        from accounting.models import AccountingSettings
-        acc_settings = AccountingSettings.get_solo()
-        if not acc_settings:
-            return {field: None for field in self.ACCOUNTING_SETTINGS_FIELDS}
-
-        result = {}
-        for field in self.ACCOUNTING_SETTINGS_FIELDS:
-            value = getattr(acc_settings, field, None)
-            # FK fields hold Account instances; return their PK so the frontend
-            # receives the same format as when reading AccountingSettings directly.
-            if hasattr(value, 'pk'):
-                result[field] = value.pk
-            else:
-                result[field] = value
-        return result
-
-    def _update_accounting_settings(self, data):
-        """Write accounting account fields back to AccountingSettings."""
-        from accounting.models import AccountingSettings, Account
-        acc_settings, _ = AccountingSettings.objects.get_or_create()
-
-        changed = False
-        for field in self.ACCOUNTING_SETTINGS_FIELDS:
-            if field not in data:
-                continue
-            raw = data[field]
-
-            # Detect if this is a FK field using Django's meta API
-            try:
-                model_field = AccountingSettings._meta.get_field(field)
-                is_fk = model_field.is_relation
-            except Exception:
-                # Fallback heuristic: account fields are FKs
-                is_fk = field.endswith('_account')
-
-            if is_fk:
-                if raw is None or raw == '':
-                    setattr(acc_settings, field, None)
-                else:
-                    try:
-                        account = Account.objects.get(pk=int(raw))
-                        setattr(acc_settings, field, account)
-                    except (Account.DoesNotExist, ValueError, TypeError):
-                        continue
-            else:
-                setattr(acc_settings, field, raw)
-            changed = True
-
-        if changed:
-            acc_settings.save()
-
-    @action(detail=False, methods=['get', 'put', 'patch'])
+    @action(detail=False, methods=["get", "put", "patch"])
     def current(self, request):
-        obj = SalesSettings.get_solo()
-        if not obj:
-            obj = SalesSettings.objects.create()
+        obj, _ = SalesSettings.objects.get_or_create(pk=1)
+        from .services import SalesSettingsService
 
-        if request.method == 'GET':
-            serializer = self.get_serializer(obj)
-            data = serializer.data
-            # Merge accounting settings fields so the frontend gets everything in one call
-            data.update(self._get_accounting_settings_data())
-            return Response(data)
-
-        # For PUT / PATCH: split the payload between both models
-        sales_fields = {k: v for k, v in request.data.items() if k not in self.ACCOUNTING_SETTINGS_FIELDS}
-        accounting_fields = {k: v for k, v in request.data.items() if k in self.ACCOUNTING_SETTINGS_FIELDS}
-
-        # Update SalesSettings (native fields)
-        if sales_fields:
-            serializer = self.get_serializer(obj, data=sales_fields, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-        
-        # Update AccountingSettings (account fields)
-        if accounting_fields:
-            self._update_accounting_settings(accounting_fields)
-
-        # Return merged response
-        serializer = self.get_serializer(obj)
-        data = serializer.data
-        data.update(self._get_accounting_settings_data())
+        data = SalesSettingsService.get_or_update_current_settings(
+            obj, request.data, request.method, self.get_serializer
+        )
         return Response(data)
 
-from core.api.permissions import StandardizedModelPermissions
 
+from core.api.permissions import StandardizedModelPermissions
+from core.idempotency import idempotent_endpoint
 
 class SaleOrderFilterSet(django_filters.FilterSet):
-    customer_name = django_filters.CharFilter(field_name='customer__name', lookup_expr='icontains')
-    date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
-    date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+    customer_name = django_filters.CharFilter(field_name="customer__name", lookup_expr="icontains")
+    date_after = django_filters.DateFilter(field_name="date", lookup_expr="gte")
+    date_before = django_filters.DateFilter(field_name="date", lookup_expr="lte")
+    total_min = django_filters.NumberFilter(field_name="total", lookup_expr="gte")
+    total_max = django_filters.NumberFilter(field_name="total", lookup_expr="lte")
+    number = django_filters.CharFilter(field_name="number", lookup_expr="icontains")
+    product_name = django_filters.CharFilter(method="filter_product_name")
+    delivery_status = django_filters.CharFilter(field_name="delivery_status")
+    origin_status = django_filters.CharFilter(method="filter_origin_status")
+    billing_status = django_filters.CharFilter(method="filter_billing_status")
+    payment_status = django_filters.CharFilter(method="filter_payment_status")
+    production_status = django_filters.CharFilter(method="filter_production_status")
 
     class Meta:
         model = SaleOrder
-        fields = ['status']
+        fields = [
+            "customer_name",
+            "date_after",
+            "date_before",
+            "total_min",
+            "total_max",
+            "number",
+            "product_name",
+            "delivery_status",
+            "origin_status",
+            "billing_status",
+            "payment_status",
+            "production_status",
+        ]
+
+    def filter_product_name(self, queryset, name, value):
+        return queryset.filter(lines__product__name__icontains=value).distinct()
+
+    def filter_origin_status(self, queryset, name, value):
+        if value == "success":
+            return queryset.exclude(status__in=["DRAFT", "CANCELLED"])
+        elif value == "neutral":
+            return queryset.filter(status="DRAFT")
+        elif value == "destructive":
+            return queryset.filter(status="CANCELLED")
+        return queryset
+
+    def filter_billing_status(self, queryset, name, value):
+        if value == "success":
+            return (
+                queryset.filter(invoices__status__in=["POSTED", "PAID"])
+                .exclude(invoices__number="")
+                .distinct()
+            )
+        elif value == "neutral":
+            return queryset.exclude(
+                id__in=queryset.filter(
+                    invoices__status__in=["POSTED", "PAID"],
+                )
+                .exclude(invoices__number="")
+                .values("id")
+            ).distinct()
+        return queryset
+
+    def filter_payment_status(self, queryset, name, value):
+        if value == "success":
+            return queryset.filter(status="PAID")
+        elif value == "active":
+            return queryset.filter(payments__isnull=False).exclude(status="PAID").distinct()
+        elif value == "neutral":
+            return queryset.filter(
+                payments__isnull=True, status__in=["DRAFT", "CONFIRMED", "INVOICED"]
+            )
+        return queryset
+
+    def filter_production_status(self, queryset, name, value):
+        if value == "none":
+            return queryset.filter(work_orders__isnull=True)
+        elif value == "in_progress":
+            return queryset.filter(work_orders__status__in=["DRAFT", "IN_PROGRESS"]).distinct()
+        elif value == "finished":
+            return (
+                queryset.exclude(work_orders__isnull=True)
+                .exclude(work_orders__status__in=["DRAFT", "IN_PROGRESS"])
+                .distinct()
+            )
+        return queryset
 
 
-class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = SaleOrder.objects.all().order_by('-date', '-id')
+class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        return SaleOrderSelector.get_base_queryset()
     permission_classes = [StandardizedModelPermissions]
-    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, DistinctSearchFilter]
     filterset_class = SaleOrderFilterSet
-    search_fields = ['customer__name', 'customer__tax_id', 'number']
-    
+    search_fields = ["customer__name", "customer__tax_id", "number", "lines__product__name"]
+
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action == "create":
             return CreateSaleOrderSerializer
-        if self.action in ['update', 'partial_update']:
+        if self.action in ["update", "partial_update"]:
             return CreateSaleOrderSerializer
         return SaleOrderSerializer
 
+    @idempotent_endpoint(scope="sales.order.create")
     def create(self, request, *args, **kwargs):
-        # Validate POS Session requirement
-        # Logic: 
-        # 1. If pos_session_id provided -> Check if it exists and is OPEN (allows shared sessions)
-        # 2. If NOT provided -> Check if user has their OWN open session
-        
-        pos_session_id = request.data.get('pos_session_id')
-        from treasury.models import POSSession
-        
-        session = None
-        if pos_session_id:
-            # Shared session scenario
-            session = POSSession.objects.filter(id=pos_session_id, status='OPEN').first()
-            if not session:
-                 return Response(
-                    {'error': 'La sesión de caja especificada no es válida o está cerrada.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        else:
-            # Personal session scenario
-            session = POSSession.objects.filter(user=request.user, status='OPEN').last()
-            if not session:
-                 return Response(
-                    {'error': 'Debe tener una sesión de caja activa para crear ventas (o seleccionar una compartida).'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # PIN Validation & Context Logic
-        pos_pin = request.data.get('pos_pin')
-        from core.services import PINService
-        
-        salesperson = request.user
-        
-        if pos_pin:
-            # If PIN is provided, the salesperson is the owner of that PIN (Action Signing)
-            pin_user = PINService.validate_pin(pos_pin)
-            if not pin_user:
-                 return Response(
-                    {'error': 'PIN de seguridad incorrecto.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            salesperson = pin_user
-        else:
-            # If no PIN provided, check if current user is the Host of the session
-            # Rule: Host sessions are considered "Shared Terminals" and require PIN signatures.
-            if request.user == session.user:
-                 return Response(
-                    {'error': 'Se requiere PIN de autorización para confirmar la venta en este terminal.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            # Satellite PC logic: User is already identified via JWT and is NOT the host.
-            salesperson = request.user
-
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        order = serializer.save(pos_session=session, salesperson=salesperson)
-        
-        # Parse files for lines if any
-        line_files = {}
-        if request.FILES:
-            for key, file_obj in request.FILES.items():
-                parts = key.split('_')
-                if len(parts) >= 3 and parts[0] == 'line':
-                    try:
-                        line_idx = int(parts[1])
-                        file_type = parts[2]
-                        if line_idx not in line_files:
-                            line_files[line_idx] = {'design': [], 'approval': None}
-                        if file_type == 'design':
-                            line_files[line_idx]['design'].append(file_obj)
-                        elif file_type == 'approval':
-                            line_files[line_idx]['approval'] = file_obj
-                    except ValueError:
-                        continue
-        
-        # Explicitly confirm sale (this creates OTs and attaches files)
-        SalesService.confirm_sale(order, line_files=line_files)
-        
-        return Response(SaleOrderSerializer(order).data, status=status.HTTP_201_CREATED)
+        from django.core.exceptions import ValidationError
+        try:
+            order = SalesService.create_sale_order_from_pos(
+                user=request.user,
+                data=request.data,
+                files=request.FILES,
+                serializer=serializer
+            )
+            return Response(SaleOrderSerializer(order).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            msg = e.messages[0] if hasattr(e, "messages") and e.messages else str(e)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != 'DRAFT':
-            return Response(
-                {'error': 'Solo se pueden editar notas de venta en estado Borrador.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            SalesService.validate_editable(instance)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if instance.status != 'DRAFT':
-            return Response(
-                {'error': 'Solo se pueden editar notas de venta en estado Borrador.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            SalesService.validate_editable(instance)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        SalesService.delete_sale_order(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if not request.user.is_staff:
+            return Response(
+                {"error": "Solo administradores pueden purgar documentos cancelados."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            SalesService.validate_purge(instance)
+        except ValidationError as e:
+            msg = e.messages[0] if getattr(e, "messages", None) else str(e)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
+        return super().destroy(request, *args, **kwargs)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["get"])
+    def cancel_impact(self, request, pk=None):
+        """Preview what will happen when cancelling this order."""
+        from .selectors import SaleOrderSelector
+
+        order = self.get_object()
+        impact = SaleOrderSelector.get_cancel_impact(order)
+        return Response(impact)
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        """Cancel a sale order (soft if DRAFT, full annul if CONFIRMED)."""
+        order = self.get_object()
+        reason = request.data.get("reason", "")
+        try:
+            order = SalesService.cancel_sale_order(order, user=request.user, reason=reason)
+            return Response(SaleOrderSerializer(order).data)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @idempotent_endpoint(scope="sales.order.confirm")
+    @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
         order = self.get_object()
         try:
             SalesService.confirm_sale(order)
             return Response(SaleOrderSerializer(order).data)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    @action(detail=True, methods=['post'], url_path='dispatch')
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @idempotent_endpoint(scope="sales.order.dispatch")
+    @action(detail=True, methods=["post"], url_path="dispatch")
     def dispatch_order(self, request, pk=None):
-        """Dispatch complete order"""
         order = self.get_object()
         try:
-            warehouse_id = request.data.get('warehouse_id')
-            delivery_date = request.data.get('delivery_date')
-            
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
-            
-            delivery = SalesService.dispatch_order(
+            delivery = SalesService.dispatch_order_by_id(
                 order=order,
-                warehouse=warehouse,
-                delivery_date=delivery_date
+                warehouse_id=request.data.get("warehouse_id"),
+                delivery_date=request.data.get("delivery_date"),
             )
-            
-            return Response(
-                SaleDeliverySerializer(delivery).data,
-                status=status.HTTP_201_CREATED
-            )
+            return Response(SaleDeliverySerializer(delivery).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    @action(detail=True, methods=['post'])
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["post"])
     def partial_dispatch(self, request, pk=None):
-        """Dispatch specific quantities of products"""
-
-
         order = self.get_object()
         try:
-            warehouse_id = request.data.get('warehouse_id')
-            delivery_date = request.data.get('delivery_date')
-            # Support both old and new format for safer transition
-            line_quantities = request.data.get('line_quantities')
-            if line_quantities and isinstance(line_quantities, dict):
-                line_data = [{'line_id': int(k), 'quantity': v} for k, v in line_quantities.items()]
-            else:
-                line_data = request.data.get('line_data', [])
-            
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
-            
-            delivery = SalesService.partial_dispatch(
-                order=order,
-                warehouse=warehouse,
-                line_data=line_data,
-                delivery_date=delivery_date
-            )
-            
-            return Response(
-                SaleDeliverySerializer(delivery).data,
-                status=status.HTTP_201_CREATED
-            )
+            delivery = SalesService.partial_dispatch_from_request(order, request.data)
+            return Response(SaleDeliverySerializer(delivery).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    @action(detail=True, methods=['get'])
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=["get"])
     def deliveries(self, request, pk=None):
         """List all deliveries for this order"""
         order = self.get_object()
         deliveries = order.deliveries.all()
         return Response(SaleDeliverySerializer(deliveries, many=True).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def register_note(self, request, pk=None):
-        print(f"DEBUG: register_note reached for order {pk}")
         order = self.get_object()
-        
-        # Manually handle multipart/form-data requiring json parsing for complex fields
-        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
-        
-        # If accessing via multipart, lists might be strings
-        if 'return_items' in data and isinstance(data['return_items'], str):
-            import json
-            try:
-                data['return_items'] = json.loads(data['return_items'])
-            except Exception as e:
-                print(f"DEBUG: Error parsing return_items: {e}")
-                pass
-        
-        print(f"DEBUG: data['return_items'] type: {type(data.get('return_items'))}")
-        print(f"DEBUG: data['return_items'] value: {data.get('return_items')}")
-                
-        from purchasing.serializers import NoteCreationSerializer
-        serializer = NoteCreationSerializer(data=data)
-        
-        if serializer.is_valid():
-            try:
-                val = serializer.validated_data
-                invoice = SalesService.create_note(
-                    order=order,
-                    note_type=val['note_type'],
-                    amount_net=val['amount_net'],
-                    amount_tax=val['amount_tax'],
-                    document_number=val['document_number'],
-                    document_attachment=request.FILES.get('document_attachment'),
-                    return_items=val.get('return_items'),
-                    original_invoice_id=val.get('original_invoice_id'),
-                    date=val.get('document_date')
-                )
-                
-                from billing.serializers import InvoiceSerializer
-                return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
-            except ValidationError as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['post'])
-    def register_merchandise_return(self, request, pk=None):
-        """
-        Register merchandise return for a sale order.
-        Only available for DRAFT invoices.
-        """
-        order = self.get_object()
-        
-        return_items = request.data.get('return_items', [])
-        warehouse_id = request.data.get('warehouse_id')
-        notes = request.data.get('notes', '')
-        
-        if not warehouse_id:
-            return Response(
-                {'error': 'Se requiere especificar la bodega.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if not return_items:
-            return Response(
-                {'error': 'Debe especificar al menos un producto a devolver.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
         try:
-            from sales.return_services import SalesReturnService
-            warehouse = Warehouse.objects.get(id=warehouse_id)
-            
-            return_delivery = SalesReturnService.register_merchandise_return(
-                order, return_items, warehouse, notes
-            )
-            
-            return Response({
-                'message': 'Devolución registrada exitosamente',
-                'return_delivery_id': return_delivery.id,
-                'return_delivery': SaleDeliverySerializer(return_delivery).data
-            }, status=status.HTTP_201_CREATED)
+            invoice = SalesService.register_note_from_request(request, order)
+            from billing.serializers import InvoiceSerializer
+            return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
             traceback.print_exc()
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=False, methods=['get'], url_path='filter-suggestions')
+    @action(detail=True, methods=["post"])
+    def register_merchandise_return(self, request, pk=None):
+        order = self.get_object()
+        try:
+            from sales.return_services import SalesReturnService
+
+            return_delivery = SalesReturnService.register_merchandise_return_from_request(request, order)
+            return Response(
+                {
+                    "message": "Devolución registrada exitosamente",
+                    "return_delivery_id": return_delivery.id,
+                    "return_delivery": SaleDeliverySerializer(return_delivery).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=["get"], url_path="filter-suggestions")
     def filter_suggestions(self, request):
-        q = request.query_params.get('q', '').strip()
+        q = request.query_params.get("q", "").strip()
         if len(q) < 2:
             return Response([])
-        names = (
-            SaleOrder.objects.filter(customer__name__icontains=q)
-            .values_list('customer__name', flat=True)
-            .distinct()
-            .order_by('customer__name')[:10]
-        )
-        return Response(list(names))
+        return Response(SaleOrderSelector.get_customer_name_suggestions(q))
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def credit_history(self, request):
-        """
-        Global history of credit assignments across all customers.
-        """
-        history = SaleOrder.objects.filter(
-            credit_assignment_origin__isnull=False
-        ).order_by('-date', '-created_at')
-        
+        history = SaleOrderSelector.get_credit_history_queryset()
         page = self.paginate_queryset(history)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -470,162 +318,106 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer = self.get_serializer(history[:100], many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
         order = self.get_object()
-        force = request.data.get('force', False)
+        force = request.data.get("force", False)
+        reason = request.data.get("reason", "")
         try:
-            SalesService.annul_sale_order(order, force=force)
+            from core.services.document import DocumentRegistry
+
+            DocumentRegistry.for_instance(order).cancel(
+                order,
+                user=request.user,
+                reason=reason,
+                force=force,
+            )
             return Response(SaleOrderSerializer(order).data)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def write_off(self, request, pk=None):
         """Castigate the debt of this specific Sale Order."""
-        from accounting.models import AccountingSettings, JournalEntry, JournalItem
-        from treasury.models import TreasuryMovement
-        from django.db import transaction
-        
         order = self.get_object()
-        
-        # Calculate current balance
-        payments = order.payments.filter(is_pending_registration=False)
-        paid_in = sum((p.amount for p in payments if p.movement_type in ['INBOUND', 'ADJUSTMENT']), Decimal('0'))
-        paid_out = sum((p.amount for p in payments if p.movement_type == 'OUTBOUND'), Decimal('0'))
-        balance = order.effective_total - (paid_in - paid_out)
-
-        if balance <= 0:
-            return Response({"error": "Esta orden no tiene saldo pendiente para castigar."}, status=400)
-
-        settings = AccountingSettings.get_solo()
-        if not settings or not settings.default_uncollectible_expense_account:
-            return Response({"error": "No hay una cuenta de gasto por incobrabilidad configurada."}, status=400)
-
-        contact = order.customer
-        receivable_account = contact.account_receivable or settings.default_receivable_account
-        if not receivable_account:
-             return Response({"error": "No se encontró una cuenta por cobrar configurada."}, status=400)
-
+        from django.core.exceptions import ValidationError
         try:
-            with transaction.atomic():
-                entry = JournalEntry.objects.create(
-                    description=f"Castigo de documento {order.number}: {contact.name}",
-                    reference=f"CASTIGO-{order.number}",
-                    status='POSTED',
-                    source_content_type=ContentType.objects.get_for_model(SaleOrder),
-                    source_object_id=order.id,
-                )
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=settings.default_uncollectible_expense_account,
-                    label=f"Pérdida por incobrabilidad {order.number}",
-                    debit=balance,
-                    credit=0
-                )
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=receivable_account,
-                    partner=contact,
-                    partner_name=contact.name,
-                    label=f"Cierre de deuda {order.number}",
-                    debit=0,
-                    credit=balance
-                )
-                TreasuryMovement.objects.create(
-                    movement_type='ADJUSTMENT',
-                    payment_method='WRITE_OFF',
-                    amount=balance,
-                    contact=contact,
-                    sale_order=order,
-                    journal_entry=entry,
-                    reference="CASTIGO-DOC",
-                    notes=f"Castigo individual de documento (Asiento {entry.display_id})",
-                    is_pending_registration=False,
-                )
-                
-                # Block the customer's credit if not default
-                if not contact.is_default_customer:
-                    contact.credit_blocked = True
-                    contact.credit_auto_blocked = False
-                    contact.credit_risk_level = 'CRITICAL'
-                    contact.save()
-            return Response({
-                "message": f"Documento {order.number} castigado.",
-                "journal_entry": entry.display_id,
-                "amount": str(balance)
-            })
+            entry, balance = SalesService.write_off(order)
+            return Response(
+                {
+                    "message": f"Documento {order.number} castigado.",
+                    "journal_entry": entry.display_id,
+                    "amount": str(balance),
+                }
+            )
+        except ValidationError as e:
+            msg = e.messages[0] if hasattr(e, "messages") and e.messages else str(e)
+            return Response({"error": msg}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": f"Error interno: {str(e)}"}, status=500)
+            return Response({"error": f"Error interno: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['get', 'post'], url_path='comments')
+    @action(detail=True, methods=["get", "post"], url_path="comments")
     def comments(self, request, pk=None):
-        """TASK-307: Unified comment feed for an NV (includes linked OT comments)."""
-        from django.contrib.contenttypes.models import ContentType
-        from workflow.models import Comment
         from workflow.serializers import CommentSerializer
-        from production.models import WorkOrder
-
         order = self.get_object()
-        so_ct = ContentType.objects.get_for_model(SaleOrder)
+        if request.method == "GET":
+            qs = SalesService.get_comments_queryset(order)
+            return Response(CommentSerializer(qs, many=True).data)
+        try:
+            comment = SalesService.add_comment_from_request(order, request)
+            return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        if request.method == 'GET':
-            qs = Comment.objects.filter(content_type=so_ct, object_id=order.pk)
-            
-            # Fetch comments from all related WorkOrders
-            production_orders = order.production_orders.all()
-            if production_orders.exists():
-                wo_ct = ContentType.objects.get_for_model(WorkOrder)
-                wo_qs = Comment.objects.filter(content_type=wo_ct, object_id__in=production_orders.values_list('pk', flat=True))
-                qs = (qs | wo_qs).order_by('created_at')
-            else:
-                qs = qs.order_by('created_at')
-                
-            serializer = CommentSerializer(qs, many=True)
-            return Response(serializer.data)
-
-        text = (request.data.get('text') or '').strip()
-        if not text:
-            return Response({'error': 'text es requerido'}, status=status.HTTP_400_BAD_REQUEST)
-        comment = Comment.objects.create(
-            content_type=so_ct,
-            object_id=order.pk,
-            user=request.user,
-            text=text,
-        )
-        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = SaleDelivery.objects.all()
+    pagination_class = StandardResultsSetPagination
     serializer_class = SaleDeliverySerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = SaleDeliveryFilter
+    search_fields = [
+        "number",
+        "sale_order__customer__name",
+        "sale_order__number",
+    ]
 
-    @action(detail=True, methods=['post'])
+    def get_queryset(self):
+        return SaleDeliverySelector.get_base_queryset()
+
+    @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
         delivery = self.get_object()
+        reason = request.data.get("reason", "")
         try:
-            SalesService.annul_delivery(delivery)
+            delivery = SalesService.annul_delivery(delivery, user=request.user, reason=reason)
             return Response(SaleDeliverySerializer(delivery).data)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    pagination_class = StandardResultsSetPagination
     queryset = SaleReturn.objects.all()
     serializer_class = SaleReturnSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):
         doc = self.get_object()
         try:
             from sales.return_services import ReturnService
+
             ReturnService.annul_return(doc.id)
             return Response(SaleReturnSerializer(doc).data)
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             import traceback
+
             traceback.print_exc()
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

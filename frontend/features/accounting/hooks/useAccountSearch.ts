@@ -15,8 +15,8 @@ export function useAccountSearch(search: string = "", isLeaf: boolean = false, e
             if (isLeaf) params.append("is_leaf", "true")
             if (search) params.append("limit", "50")
 
-            const res = await api.get<Account[]>(`/accounting/accounts/?${params.toString()}`, { signal })
-            return res.data
+            const res = await api.get<Account[] | { results: Account[] }>(`/accounting/accounts/?${params.toString()}`, { signal })
+            return Array.isArray(res.data) ? res.data : res.data.results
         },
         enabled,
         staleTime: 5 * 60 * 1000, // 5 min
@@ -31,7 +31,7 @@ export function useAccountSearch(search: string = "", isLeaf: boolean = false, e
 
 export function useSingleAccount(id: string | number | null) {
     const query = useQuery({
-        queryKey: ACCOUNT_KEYS.detail(id!),
+        queryKey: id ? ACCOUNT_KEYS.detail(id) : ['accounts', 'detail', 'noop'],
         queryFn: async ({ signal }) => {
             const res = await api.get(`/accounting/accounts/${id}/`, { signal })
             return res.data as Account

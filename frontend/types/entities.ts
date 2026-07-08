@@ -58,8 +58,6 @@ export interface Product {
     can_be_purchased?: boolean
     track_inventory?: boolean
     receiving_warehouse?: number | { id: number; name: string }
-    income_account?: number | { id: number; name: string }
-    expense_account?: number | { id: number; name: string }
     preferred_supplier?: number | { id: number; name: string }
 
     // Manufacturing fields
@@ -171,6 +169,9 @@ export interface Contact {
     is_default_vendor?: boolean
     credit_blocked?: boolean
     credit_available?: string | number | null
+    credit_balance_used?: string | number | null
+    credit_balance?: string | number | null
+    last_sale_date?: string | null
 }
 
 // ─── Treasury Account ────────────────────────────────────
@@ -191,6 +192,7 @@ export interface TreasuryAccount {
 
 export interface SaleOrder {
     id: number
+    display_id?: string
     number: string
     customer_name: string
     created_at: string
@@ -266,7 +268,7 @@ export interface ProductMinimal {
     uom_category?: number
     cost_price?: number | string
     last_purchase_price?: string | number
-    purchase_uom?: number | string
+    purchase_uom?: number | string | { id: number; name: string }
     has_variants?: boolean
     track_inventory?: boolean
     requires_bom_validation?: boolean

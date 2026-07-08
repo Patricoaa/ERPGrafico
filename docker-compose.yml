@@ -31,7 +31,7 @@ services:
     networks:
       - backend_net
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
       interval: 5s
@@ -50,11 +50,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:
       DB_HOST: db
-      DJANGO_DEBUG: "True"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
     volumes:
@@ -81,7 +81,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 120mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
@@ -105,11 +105,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:
       DB_HOST: db
-      DJANGO_DEBUG: "True"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
     volumes:
@@ -137,11 +137,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:
       DB_HOST: db
-      DJANGO_DEBUG: "True"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONUNBUFFERED: "1"
     volumes:
@@ -168,6 +168,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: development
+      network: host
     restart: unless-stopped
     env_file: .env.dev
     environment:
@@ -243,6 +244,3 @@ volumes:
 
   # venv del backend — isolado del SO host
   backend_venv:
-
-  # Datos de MinIO (Archivos y Objetos)
-  minio_data:

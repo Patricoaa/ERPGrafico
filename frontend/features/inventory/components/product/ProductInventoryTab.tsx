@@ -2,13 +2,13 @@
 import { useMemo } from "react"
 import { FormField } from "@/components/ui/form"
 import {Package, Warehouse} from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import {FormSection, LabeledSwitch, MultiSelectTagInput} from "@/components/shared"
 import { UoMSelector, WarehouseSelector, AdvancedContactSelector } from "@/components/selectors"
 import { cn } from "@/lib/utils"
-import { Product, UoM } from "@/types/entities"
-import { ProductInitialData } from "@/types/forms"
+import { type Product, type UoM } from "@/types/entities"
+import { type ProductInitialData } from "@/types/forms"
 
 interface ProductInventoryTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -18,15 +18,19 @@ interface ProductInventoryTabProps {
     isEditing?: boolean
 }
 
-export function ProductInventoryTab({ form, initialData, warehouses = [], uoms = [], isEditing }: ProductInventoryTabProps) {
+export function ProductInventoryTab({ form, initialData, uoms = [], isEditing }: ProductInventoryTabProps) {
     const productType = form.watch("product_type")
-    const trackInventory = form.watch("track_inventory")
     const canBeSold = form.watch("can_be_sold")
     const stockUomId = form.watch("uom")
     const mfgAutoFinalize = form.watch("mfg_auto_finalize")
     const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
 
-    const purchaseUomProduct = useMemo(() => ({ uom: stockUomId } as any), [stockUomId])
+    const purchaseUomProduct = useMemo(() => ({
+        id: 0,
+        name: "",
+        uom: stockUomId ? Number(stockUomId) : undefined,
+        allowed_sale_uoms: []
+    }), [stockUomId])
 
     const isSimpleMfg = productType === 'MANUFACTURABLE' && !mfgAutoFinalize && !requiresAdvancedmfg
     const isAdvancedMfg = productType === 'MANUFACTURABLE' && requiresAdvancedmfg
@@ -42,7 +46,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                     <FormSection title="Unidades y Conversión" icon={Package} />
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
-                            <FormField<ProductFormValues>
+                            <FormField
                                 control={form.control}
                                 name="uom"
                                 render={({ field, fieldState }) => (
@@ -61,7 +65,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                         </div>
 
                         <div className="col-span-2">
-                            <FormField<ProductFormValues>
+                            <FormField
                                 control={form.control}
                                 name="purchase_uom"
                                 render={({ field, fieldState }) => (
@@ -82,7 +86,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
 
                         <div className="col-span-2">
                             {canBeSold && (
-                                <FormField<ProductFormValues>
+                                <FormField
                                     control={form.control}
                                     name="allowed_sale_uoms"
                                     render={({ field, fieldState }) => {
@@ -119,7 +123,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                 {/* Logistics Section */}
                 <div className="col-span-2 space-y-4">
                     <FormSection title="Control y Abastecimiento" icon={Warehouse} />
-                    <FormField<ProductFormValues>
+                    <FormField
                         control={form.control}
                         name="track_inventory"
                         render={({ field }) => (
@@ -135,12 +139,12 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     }}
                                     disabled={isSwitchDisabled}
                                     icon={<Warehouse className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                 />
 
                                 {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}
                                 <div className={cn("space-y-4 animate-in fade-in slide-in-from-top-2 duration-400", !field.value && "hidden")}>
-                                    <FormField<ProductFormValues>
+                                    <FormField
                                         control={form.control}
                                         name="receiving_warehouse"
                                         render={({ field: whField, fieldState }) => (
@@ -154,7 +158,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                         )}
                                     />
 
-                                    <FormField<ProductFormValues>
+                                    <FormField
                                         control={form.control}
                                         name="preferred_supplier"
                                         render={({ field: supplierField, fieldState }) => (
@@ -171,15 +175,15 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
 
                                     {initialData && (
                                         <div className="grid grid-cols-3 gap-1 shadow-inner overflow-hidden">
-                                            <div className="flex flex-col items-center bg-background/10 py-3 rounded-xl border border">
+                                            <div className="flex flex-col items-center bg-background/10 py-3 rounded-md border border">
                                                 <span className="text-[9px] font-black uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
                                                 <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-warning/5 py-3 rounded-xl border border-warning/20">
+                                            <div className="flex flex-col items-center bg-warning/5 py-3 rounded-md border border-warning/20">
                                                 <span className="text-[9px] font-black uppercase tracking-tight text-warning/80 mb-1">Reservado</span>
                                                 <span className="text-lg font-mono font-black text-warning">{initialData.qty_reserved || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-success/5 py-3 rounded-xl border border-success/20">
+                                            <div className="flex flex-col items-center bg-success/5 py-3 rounded-md border border-success/20">
                                                 <span className="text-[9px] font-black uppercase tracking-tight text-success mb-1">Disponible</span>
                                                 <span className="text-lg font-mono font-black text-success">{initialData.qty_available || 0}</span>
                                             </div>

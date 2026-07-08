@@ -26,6 +26,7 @@ export interface AccountFilters {
 }
 
 export interface LedgerData {
+    account?: { id: number, code: string, name: string }
     movements: LedgerMovement[]
     opening_balance: number
     closing_balance: number
@@ -126,24 +127,4 @@ export interface FiscalYearPreviewResult {
     is_loss: boolean;
 }
 
-export interface TrialBalanceItem {
-    id: number;
-    code: string;
-    name: string;
-    type: string;
-    initial_balance: number;
-    debit: number;
-    credit: number;
-    closing_balance: number;
-    saldo_deudor: number;
-    saldo_acreedor: number;
-}
-
-export interface TrialBalanceReport {
-    accounts: TrialBalanceItem[];
-    total_debit: number;
-    total_credit: number;
-    total_saldo_deudor: number;
-    total_saldo_acreedor: number;
-    is_balanced: boolean;
-}
+export type { TaxPeriod } from '@/features/tax'

@@ -5,28 +5,38 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PrintableReceipt, BaseModal } from '@/components/shared'
-import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useVatRate } from '@/hooks/useVatRate'
+import { useDeviceContext } from '@/hooks/useDeviceContext'
+import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
+
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuCheckboxItem,
+    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Switch } from '@/components/ui/switch'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 import { posApi } from '../api/posApi'
 import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
-import { Check, Printer } from 'lucide-react'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 
-import { usePOS } from '@/features/pos/contexts/POSContext'
+import { usePOS } from '@/features/pos/contexts/POSProvider'
 import { useAuth } from '@/contexts/AuthContext'
 import {
     useProducts,
@@ -36,28 +46,25 @@ import {
     useDraftSync,
     type SyncDraft
 } from '@/features/pos/hooks'
-import { type CheckoutResponse } from '@/features/sales/types'
-import type { Product } from '@/types/pos'
+import { type CheckoutResponse, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutWizardState, SalesCheckoutWizardView, type SalesCheckoutWizardViewHandle } from '@/features/sales'
+import type { Product, WizardState } from '../types'
 import type { TransactionData } from '@/types/transactions'
-import { type DraftCart } from './DraftCartsList'
-import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
+import { type DraftCart } from './DraftCartsClientView'
 
-import { SearchBar } from './SearchBar'
-import { CategoryFilter } from './CategoryFilter'
-import { ProductGrid } from './ProductGrid'
+import { CategoryDropdown, CategoryFilter, ProductGrid, SearchBar } from '@/components/shared'
 import { Cart } from './Cart'
 import { POSCheckoutHeader } from './POSCheckoutHeader'
 import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
-import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
-import { SessionControl, SessionControlHandle } from '@/features/pos/components/SessionControl'
-import { ScannerFeedback, ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { SessionControl, type SessionControlHandle } from '@/features/pos/components/SessionControl'
+import { ScannerFeedback, type ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
 import { useTouchMode } from '@/hooks/useTouchMode'
+import { useServerDate } from '@/hooks/useServerDate'
 
 // Lazy-loaded components
 const POSVariantSelectorModal = dynamic(
@@ -65,8 +72,8 @@ const POSVariantSelectorModal = dynamic(
     { ssr: false }
 )
 
-const DraftCartsList = dynamic(
-    () => import('@/features/pos/components/DraftCartsList').then(mod => ({ default: mod.DraftCartsList })),
+const DraftCartsClientView = dynamic(
+    () => import('@/features/pos/components/DraftCartsClientView').then(mod => ({ default: mod.DraftCartsClientView })),
     { ssr: false }
 )
 
@@ -100,16 +107,19 @@ export function POSClientView() {
     } = usePOS()
 
     const { isTouchMode, toggleTouchMode } = useTouchMode()
+    const { isDesktop } = useDeviceContext()
+    const { dateString } = useServerDate()
 
     const { user } = useAuth()
 
     // Stable onStateChange for the wizard to break feedback loops
-    const handleWizardStateChange = useCallback((state: any) => {
-        setWizardState(state)
+    const handleWizardStateChange = useCallback((state: CheckoutWizardState) => {
+        setWizardState(state as unknown as WizardState)
     }, [setWizardState])
 
     const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
     const { limits: stockLimits, calculateMaxQty } = useStockValidation()
+    const { rate } = useVatRate()
 
     // ── Real-time Sync ──────────────────────────────────────────
     const handleNewDraft = useCallback((draft: SyncDraft) => {
@@ -119,15 +129,11 @@ export function POSClientView() {
         })
     }, [])
 
-    const handleDraftDeleted = useCallback((_draftId: number) => {
-        // Silently refresh — the list will update via sync
-    }, [])
-
     const { syncDrafts, acquireLock, releaseLock, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
         posSessionId: (currentSession?.id ?? null) as number | null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
-        onDraftUpdated: (draft) => { /* Optional: handle quiet updates */ },
+        onDraftUpdated: () => { /* Optional: handle quiet updates */ },
         onSessionStateChange: (status, closedBy) => {
             if (status === 'CLOSED') {
                 toast.error("Sesión Cerrada", {
@@ -140,7 +146,7 @@ export function POSClientView() {
         }
     })
 
-    const { saveDraft, loadDraft, drafts, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
+    const { saveDraft, loadDraft, isSaving, lastSaved, fetchDrafts, releaseCurrentLock } = useDrafts({
         browserSessionKey,
         acquireLock,
         releaseLock,
@@ -150,7 +156,7 @@ export function POSClientView() {
     const [isWithdrawing, setIsWithdrawing] = useState(false)
     const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null)
-    const [selectedPartnerName, setSelectedPartnerName] = useState<string>("")
+    const [, setSelectedPartnerName] = useState<string>("")
 
     const posContentRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({
@@ -175,11 +181,28 @@ export function POSClientView() {
     const [numpadConfig, setNumpadConfig] = useState<{ itemId: string, field: 'qty' | 'price' | 'discount', initialValue: number } | null>(null)
     const [numpadValue, setNumpadValue] = useState("0")
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
-    const [isSharedSession, setIsSharedSession] = useState(false)
+    const [, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
+    const checkoutWizardRef = useRef<SalesCheckoutWizardViewHandle>(null)
+
+    const checkoutTotalSteps = 4 + (Validation.requiresManufacturingStep(items) ? 1 : 0)
+    const isCheckoutLastStep = posMode === 'CHECKOUT' && (wizardState?.step ?? 0) >= checkoutTotalSteps
+
+    const handleCheckoutNext = useCallback(() => {
+        checkoutWizardRef.current?.goNext()
+    }, [])
+
+    const handleCheckoutBack = useCallback(() => {
+        checkoutWizardRef.current?.goBack()
+    }, [])
+
+    const handleCheckoutFinish = useCallback(() => {
+        checkoutWizardRef.current?.finishCheckout()
+    }, [])
 
     const currentOrderLines = useMemo(() => items.map(item => ({
         product: item.id,
+        id: item.id,
         product_name: item.name,
         description: item.name,
         quantity: item.qty,
@@ -188,12 +211,19 @@ export function POSClientView() {
         unit_price: item.unit_price_gross,
         unit_price_net: item.unit_price_net,
         unit_price_gross: item.unit_price_gross,
-        tax_rate: (item as any).tax_rate || 19,
+        tax_rate: (item as unknown as Record<string, unknown>).tax_rate as number ?? rate,
         discount_amount: item.discount_amount,
         discount_percentage: item.discount_percentage,
         product_type: item.product_type,
         requires_advanced_manufacturing: item.requires_advanced_manufacturing,
         manufacturing_data: item.manufacturing_data,
+        has_bom: item.has_bom,
+        mfg_auto_finalize: item.mfg_auto_finalize,
+        mfg_enable_prepress: item.mfg_enable_prepress,
+        mfg_enable_press: item.mfg_enable_press,
+        mfg_enable_postpress: item.mfg_enable_postpress,
+        qty_available: item.qty_available,
+        manufacturable_quantity: item.manufacturable_quantity,
         code: item.code,
         internal_code: item.internal_code,
     })), [items])
@@ -319,7 +349,7 @@ export function POSClientView() {
                 pos_session_id: currentSession?.id,
                 partner_id: selectedPartnerId,
             })
-            toast.success((data as any).message || "Retiro procesado exitosamente")
+            toast.success((data as Record<string, unknown>).message as string || "Retiro procesado exitosamente")
             setWithdrawDialogOpen(false)
             setSelectedPartnerId(null)
             setSelectedPartnerName("")
@@ -351,7 +381,7 @@ export function POSClientView() {
         setCompletedSaleData(transactionData)
         await releaseCurrentLock()
         setCurrentDraftId(null); setWizardState(null); clearCart()
-        await fetchDrafts(); queryClient.invalidateQueries({ queryKey: ['sales'] })
+        await fetchDrafts(); invalidateCrossFeature(queryClient, [['sales']])
         forceSync()
         setPosMode('SHOPPING'); toast.success("Venta completada exitosamente")
     }
@@ -381,9 +411,9 @@ export function POSClientView() {
         }
 
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
-        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
+        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE')
         const lastStep = 4 + (hasMfg ? 1 : 0)
-        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as any)
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: dateString || new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as unknown as WizardState)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
 
@@ -399,16 +429,7 @@ export function POSClientView() {
                     <h2 className="text-lg font-bold tracking-tight">
                         {currentSession?.terminal_name || "Punto de Venta"}
                     </h2>
-                    {currentSession?.status === 'OPEN' && (
-                        <div className="hidden sm:flex items-center gap-1.5">
-                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-1.5 py-0.5 h-5 flex items-center text-[9px] font-bold uppercase transition-colors rounded-sm">
-                                #{currentSession.id}
-                            </span>
-                            <span className="border border-success/30 bg-success/5 text-success px-1.5 py-0.5 h-5 flex items-center text-[9px] font-medium uppercase rounded-sm">
-                                {user?.first_name} {user?.last_name}
-                            </span>
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Middle: Steps Header */}
@@ -421,10 +442,6 @@ export function POSClientView() {
                 {/* Right: Actions & Menu */}
                 <div className="flex items-center gap-2 flex-1 justify-end">
                     {(() => {
-                        const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
-                        const totalSteps = 3 + (hasMfg ? 1 : 0)
-                        const isPaymentStep = wizardState?.step === totalSteps
-
                         // Prioritize current draft in quick view
                         const quickDrafts = [...syncDrafts].slice(0, 5)
                         if (currentDraftId && !quickDrafts.find(d => d.id === currentDraftId)) {
@@ -447,11 +464,11 @@ export function POSClientView() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-7 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
-                                                currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
+                                                "h-10 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
+                                                currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-card border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
-                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-sm border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500"
+                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-card border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500"
                                             )}
                                             onClick={() => handleLoadDraft(d)}
                                             title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
@@ -470,118 +487,146 @@ export function POSClientView() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-7 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
                                         Nuevo...
                                     </span>
                                 )}
                             </div>
                         )
                     })()}
+                    <TooltipProvider delayDuration={0}>
                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2 h-7 px-3 text-xs">
-                                <LayoutGrid className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Menú</span>
-                                <ChevronDown className="h-3 w-3 opacity-50" />
-                            </Button>
-                        </DropdownMenuTrigger>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
+                                    >
+                                        <Avatar className="h-full w-full rounded-md bg-transparent">
+                                            <AvatarFallback className="bg-transparent text-current  font-black text-[10px] rounded-md">
+                                                {user?.username?.substring(0, 2).toUpperCase() || 'US'}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                                Menú
+                            </TooltipContent>
+                        </Tooltip>
                         <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuCheckboxItem checked={isTouchMode} onCheckedChange={toggleTouchMode}>
-                                Modo Táctil (Numpad)
-                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuLabel className="font-normal py-3">
+                                <div className="flex flex-col">
+                                    <p className="text-sm font-bold text-foreground">{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.username || 'Usuario')}</p>
+                                    <p className="text-[10px] uppercase text-muted-foreground">{user?.groups?.[0] || ''}</p>
+                                    {currentSession?.id && (
+                                        <p className="text-[10px] font-mono font-bold text-primary mt-1">Sesión #{currentSession.id}</p>
+                                    )}
+                                </div>
+                            </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte Parcial</DropdownMenuItem>
+                            <div className="flex items-center justify-between px-2 py-1.5">
+                                <span className="text-xs font-medium">Modo Táctil</span>
+                                <Switch checked={isTouchMode} onCheckedChange={toggleTouchMode} />
+                            </div>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>
-
-                            {/* Partner Withdrawal Option */}
-                            {items.length > 0 && (
-                                <DropdownMenuItem
-                                    onClick={() => setWithdrawDialogOpen(true)}
-                                    disabled={items.some(i => !i.track_inventory)}
-                                    className="font-bold text-warning focus:text-warning"
-                                >
-                                    <ShoppingCart className="mr-2 h-4 w-4" />
-                                    Retiro de Socio
-                                </DropdownMenuItem>
-                            )}
-
-                            {currentSession?.status === 'OPEN' && (
-                                <>
-                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
-                                        <Lock className="mr-2 h-4 w-4" />
-                                        Cerrar Caja
-                                    </DropdownMenuItem>
-                                </>
-                            )}
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte de la Sesión</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => window.location.href = '/'} className="text-primary font-bold">
-                                <LogOut className="mr-2 h-4 w-4 rotate-180" />
-                                Volver al ERP
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
+                                <Lock className="mr-2 h-4 w-4" />
+                                Cerrar Caja
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    </TooltipProvider>
                     <SessionControl ref={sessionControlRef} onSessionChange={setCurrentSession} session={currentSession ?? undefined} hideSessionInfo />
                 </div>
             </div>
 
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
                 {currentSession !== undefined && currentSession === null && (
-                    <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-                        <Card className="w-full max-w-md shadow-sm border-primary/20 p-8 text-center space-y-4 rounded-md">
+                    <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
+                        <Card className="w-full max-w-md shadow-card border-primary/20 p-8 text-center space-y-4 rounded-md">
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
                             <h3 className="text-2xl font-bold">Caja Cerrada</h3>
                             <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
-                            <SessionControl onSessionChange={setCurrentSession} session={currentSession ?? undefined} />
+                            <Button
+                                variant="default"
+                                size="lg"
+                                className="gap-2"
+                                onClick={() => sessionControlRef.current?.openSessionDialog()}
+                            >
+                                <Unlock className="h-4 w-4" />
+                                Abrir Caja
+                            </Button>
                         </Card>
                     </div>
                 )}
 
                 <div className="md:col-span-12 lg:col-span-7 flex flex-col min-h-0">
-                    <AnimatePresence mode="wait">
-                        {posMode === 'SHOPPING' ? (
-                            <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
-                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
-                                    <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
-                                        <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
-                                        <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
-                                    </div>
-                                    <div className="flex-1 px-1.5 pt-1.5 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
-                                </Card>
-                            </motion.div>
-                        ) : (
-                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-md shadow-sm overflow-hidden relative border-primary/20">
-                                <SalesCheckoutWizardContent
-                                    key={currentDraftId || 'checkout-new'}
-                                    order={null}
-                                    orderLines={currentOrderLines as any}
-                                    total={totals.total_gross}
-                                    totalDiscountAmount={totalDiscountAmount}
-                                    onComplete={(data) => handleCheckoutComplete(data as any)}
-                                    onCancel={() => setPosMode('SHOPPING')}
-                                    onSuspend={(state) => handleSuspendDraft(state as any)}
-                                    initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
-                                    posSessionId={currentSession?.id}
-                                    terminalId={currentSession?.terminal}
-                                    terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
-                                    quickSale={wizardState?.isQuickSale}
-                                    initialStep={wizardState?.step}
-                                    initialDteData={wizardState?.dteData as any}
-                                    initialPaymentData={wizardState?.paymentData as any}
-                                    initialDeliveryData={wizardState?.deliveryData as any}
-                                    initialApprovalTaskId={wizardState?.approvalTaskId}
-                                    initialIsWaitingApproval={wizardState?.isWaitingApproval}
-                                    initialIsApproved={wizardState?.isApproved}
-                                    initialDraftId={currentDraftId}
-                                    onStateChange={handleWizardStateChange}
-                                    isInline
-                                    isSessionHost={user?.id === currentSession?.user}
-                                    touchMode={isTouchMode}
-                                />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    {posMode === 'SHOPPING' ? (
+                        <div key="shop" className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-left-2 ease-premium duration-300 fill-mode-both">
+                            <Card className="flex-1 flex flex-col overflow-hidden bg-card dot-grid-surface border border-border/60 shadow-lg shadow-black/10 rounded-lg p-2">
+                                <div className={cn("px-2 border-b border-border/40 space-y-2", isTouchMode ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
+                                    <SearchBar
+                                        className="bg-muted/50 hover:bg-muted/70 focus-within:bg-muted/70"
+                                        value={searchTerm}
+                                        onChange={setSearchTerm}
+                                        onEnter={handleSearchEnter}
+                                        rightAction={isDesktop ? (
+                                            <CategoryDropdown
+                                                categories={categories}
+                                                selectedCategoryId={selectedCategoryId}
+                                                onSelectCategory={setSelectedCategoryId}
+                                            />
+                                        ) : undefined}
+                                    />
+                                    {!isDesktop && (
+                                        <CategoryFilter
+                                            categories={categories}
+                                            selectedCategoryId={selectedCategoryId}
+                                            onSelectCategory={setSelectedCategoryId}
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex-1 px-1.5 pb-1"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
+                            </Card>
+                        </div>
+                    ) : (
+                        <div key={currentDraftId || 'checkout-new'} className="flex-1 flex flex-col min-h-0 bg-card dot-grid-surface border border-border/50 rounded-md shadow-card shadow-black/5 overflow-hidden relative animate-in fade-in slide-in-from-right-2 ease-premium duration-300 fill-mode-both">
+                            <SalesCheckoutWizardView
+                                ref={checkoutWizardRef}
+                                key={currentDraftId || 'checkout-new'}
+                                order={null}
+                                orderLines={currentOrderLines as unknown as SaleOrderLine[]}
+                                total={totals.total_gross}
+                                totalDiscountAmount={totalDiscountAmount}
+                                onComplete={(data) => handleCheckoutComplete(data as unknown as TransactionData | CheckoutResponse)}
+                                onCancel={() => setPosMode('SHOPPING')}
+                                onSuspend={(state) => handleSuspendDraft(state)}
+                                initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
+                                posSessionId={currentSession?.id}
+                                terminalId={currentSession?.terminal}
+                                terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
+                                quickSale={wizardState?.isQuickSale}
+                                initialStep={wizardState?.step}
+                                initialDteData={wizardState?.dteData as unknown as CheckoutDTEData}
+                                initialPaymentData={wizardState?.paymentData as unknown as CheckoutPaymentData}
+                                initialDeliveryData={wizardState?.deliveryData as unknown as CheckoutDeliveryData}
+                                initialApprovalTaskId={wizardState?.approvalTaskId}
+                                initialIsWaitingApproval={wizardState?.isWaitingApproval}
+                                initialIsApproved={wizardState?.isApproved}
+                                initialDraftId={currentDraftId}
+                                onStateChange={handleWizardStateChange}
+                                isInline
+                                isSessionHost={user?.id === currentSession?.user}
+                                touchMode={isTouchMode}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <div className="md:col-span-12 lg:col-span-5 flex flex-col min-h-0">
@@ -603,17 +648,29 @@ export function POSClientView() {
                         onItemRemove={removeFromCart}
                         onOpenNumpad={handleOpenNumpad}
                         onQuickSale={handleQuickSale}
+                        onWithdrawClick={() => setWithdrawDialogOpen(true)}
                         onConfirmSale={handleConfirmSale}
                         totalDiscountAmount={totalDiscountAmount}
                         onTotalDiscountChange={setTotalDiscountAmount}
                         posMode={posMode}
-                        wizardState={wizardState}
+                        onCheckoutBack={handleCheckoutBack}
+                        onCheckoutNext={handleCheckoutNext}
+                        onCheckoutFinish={handleCheckoutFinish}
+                        onCancel={() => setPosMode('SHOPPING')}
+                        onSuspend={() => {
+                            /* suspend for another terminal — wizard exposes last state via onStateChange */
+                        }}
+                        isLastStep={isCheckoutLastStep}
+                        checkoutLoading={false}
+                        paymentMethod={wizardState?.paymentData?.method}
+                        paymentAmount={wizardState?.paymentData?.amount}
+                        payments={wizardState?.paymentData?.payments?.map((p: { method: string; amount: number }) => ({ method: p.method, amount: p.amount }))}
                     />
                 </div>
             </div>
 
-            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as any)} items={items} bomCache={bomCache as any} componentCache={componentCache as any} calculateMaxQty={calculateMaxQty} />
-            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
+            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Product)} items={items} bomCache={bomCache as unknown as Record<number, Record<string, unknown>>} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
+            <DraftCartsClientView open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} currentDraftId={currentDraftId} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
@@ -624,7 +681,7 @@ export function POSClientView() {
                 size="sm"
                 title={
                     <div className="flex flex-col items-center w-full">
-                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-sm">
+                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-card">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
                         <span className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</span>
@@ -634,7 +691,7 @@ export function POSClientView() {
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
-                            className="flex-1 h-14 rounded-sm text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
+                            className="flex-1 h-14 rounded-sm text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-card group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -663,7 +720,7 @@ export function POSClientView() {
                         }}
                         currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
                         mainTitle="Ticket de Venta"
-                        subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
+                        subTitle={(completedSaleData as unknown as Record<string, unknown>)?.client_name as string || "Cliente Contado"}
                     />
                 )}
             </BaseModal>
@@ -691,7 +748,7 @@ export function POSClientView() {
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
                         <Button
-                            className="flex-1 h-12 rounded-sm text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
+                            className="flex-1 h-12 rounded-sm text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-card disabled:opacity-50"
                             onClick={handleWithdraw}
                             disabled={isWithdrawing || !selectedPartnerId}
                         >

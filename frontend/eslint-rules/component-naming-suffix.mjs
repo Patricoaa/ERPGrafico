@@ -28,9 +28,14 @@ const ALLOWED_SUFFIXES = [
   'Shell', 'Columns', 'Info', 'Preview', 'Breadcrumbs',
   'Hub', 'Dashboard', 'Tabs', 'Dialog', 'Flow', 'Report',
   'Settings', 'Actions', 'Cart', 'Bell', 'Inbox',
+  // Common UI surface suffixes (naming-conventions.md §1.1 audit 2026-07)
+  'Tab', 'Section', 'Header', 'Bar', 'Table', 'Upload', 'Layout',
+  'Timeline', 'Kanban', 'Banner', 'Footer', 'Notice',
+  'Item', 'Category', 'Control', 'Toggle', 'Summary', 'Button', 'Feedback',
+  'Skeleton', 'Results', 'Detail', 'Activity',
 ];
 
-export default {
+const rule = {
   meta: {
     type: 'suggestion',
     docs: {
@@ -109,3 +114,5 @@ export default {
     };
   },
 };
+
+export default rule;

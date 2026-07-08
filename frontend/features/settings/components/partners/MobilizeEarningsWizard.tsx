@@ -2,13 +2,13 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
+import { LabeledInput, PeriodValidationDateInput, GenericWizard, type WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { partnersApi } from "@/features/contacts"
 import { toast } from "sonner"
 
 import { ArrowRightLeft } from "lucide-react"
-import { Partner } from "@/features/contacts/types/partner"
+import { type Partner } from "@/features/contacts"
 
 interface MobilizeEarningsWizardProps {
     open: boolean
@@ -23,6 +23,17 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
     const [mobilizations, setMobilizations] = useState<Record<number, { dividend: number, reinvest: number }>>({})
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
     const [description, setDescription] = useState("Movilización de utilidades retenidas")
+
+    const prevOpen = React.useRef(open)
+    useEffect(() => {
+        if (open && !prevOpen.current) {
+            requestAnimationFrame(() => {
+                setDate(new Date().toISOString().split('T')[0])
+                setDescription("Movilización de utilidades retenidas")
+            })
+        }
+        prevOpen.current = open
+    }, [open])
 
     useEffect(() => {
         if (open) {
@@ -109,7 +120,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                 No hay socios con utilidades retenidas disponibles.
                             </div>
                         ) : (
-                            <div className="border border-border/50 rounded-lg overflow-hidden">
+                            <div className="border border-border/50 rounded-md overflow-hidden">
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted/50 text-muted-foreground">
                                         <tr>
@@ -186,10 +197,10 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 isValid: true,
                 component: (
                     <div className="space-y-6">
-                        <div className="bg-muted/30 p-4 rounded-lg flex items-start gap-3 border border-border/50">
+                        <div className="bg-muted/30 p-4 rounded-md flex items-start gap-3 border border-border/50">
                             <ArrowRightLeft className="w-5 h-5 text-primary mt-0.5" />
                             <div className="space-y-1">
-                                <h4 className="font-heading font-semibold text-sm">Resumen de Movilización</h4>
+                                <h4 className=" font-semibold text-sm">Resumen de Movilización</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
                                     Se procederá a movilizar utilidades retenidas pasadas.
                                     Este proceso generará automáticamente los asientos contables correspondientes
@@ -199,11 +210,11 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1 border p-3 rounded-lg bg-card">
+                            <div className="space-y-1 border p-3 rounded-md bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Dividendos Pagar</p>
                                 <DataCell.Currency value={totalDividend} className="justify-start text-xl font-semibold text-foreground" />
                             </div>
-                            <div className="space-y-1 border p-3 rounded-lg bg-card">
+                            <div className="space-y-1 border p-3 rounded-md bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Re-Inversión</p>
                                 <DataCell.Currency value={totalReinvest} className="justify-start text-xl font-semibold text-muted-foreground" />
                             </div>

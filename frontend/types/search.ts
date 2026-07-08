@@ -8,23 +8,7 @@ export type TextFieldDef = {
   clientKey?: string | string[]
 }
 
-export type EnumFieldDef = {
-  key: string
-  label: string
-  type: 'enum'
-  serverParam: string
-  options: { label: string; value: string }[]
-}
-
-export type DateRangeFieldDef = {
-  key: string
-  label: string
-  type: 'daterange'
-  serverParamStart: string
-  serverParamEnd: string
-}
-
-export type FieldDef = TextFieldDef | EnumFieldDef | DateRangeFieldDef
+export type FieldDef = TextFieldDef
 
 export type SearchDefinition = {
   fields: FieldDef[]

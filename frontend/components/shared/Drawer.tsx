@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef, useEffect, useCallback, useId } from "react"
+import React, { useState, useRef, useEffect, useCallback, useId, useSyncExternalStore } from "react"
 import {
     Sheet,
     SheetContent,
@@ -56,7 +56,6 @@ export function Drawer({
     onOpenChange,
     title,
     subtitle,
-    description,
     icon,
     headerActions,
     children,
@@ -74,7 +73,6 @@ export function Drawer({
     headerClassName,
     footerClassName,
     titleClassName,
-    descriptionClassName,
     modal
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
@@ -99,23 +97,21 @@ export function Drawer({
         }
     }, [defaultSize])
 
-    const [containerElement, setContainerElement] = useState<HTMLElement | null>(null)
     const uniqueId = useId()
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
 
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            if (boundary === "screen") {
-                setContainerElement(document.body)
-            } else {
-                setContainerElement(
-                    document.getElementById("main-content") ||
-                    document.getElementById("module-sheets-portal-container") ||
-                    document.body
-                )
-            }
-        })
-    }, [boundary, open])
+    const containerElement = useSyncExternalStore(
+        () => () => {},
+        () => {
+            if (typeof document === "undefined") return null
+            if (boundary === "screen") return document.body
+            return (
+                document.getElementById("main-content") ??
+                document.getElementById("module-sheets-portal-container") ??
+                document.body
+            )
+        }
+    )
 
     // Resizing logic
     const isResizing = useRef(false)
@@ -176,18 +172,18 @@ export function Drawer({
 
     // Render classes for side specific logic
     const sideStyles = {
-        bottom: "rounded-t-xl border-t-0 !bottom-0 !top-auto !w-full !left-0 !right-0",
-        top: "rounded-b-xl border-b-0 !top-0 !bottom-auto !w-full !left-0 !right-0",
-        right: "rounded-l-xl border-l-0 !h-full !right-0 !left-auto !top-0 !bottom-0 sm:max-w-none",
-        left: "rounded-r-xl border-r-0 !h-full !left-0 !right-auto !top-0 !bottom-0 sm:max-w-none",
+        bottom: "rounded-t-xl! border-t-0! bottom-0! top-auto! w-full! left-0! right-0!",
+        top: "rounded-b-xl! border-b-0! top-0! bottom-auto! w-full! left-0! right-0!",
+        right: "rounded-l-xl! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none!",
+        left: "rounded-r-xl! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none!",
     }
 
     const iconElement: React.ReactNode = icon
-        ? (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any)))
+        ? (typeof icon === "function" || (typeof icon === "object" && "render" in icon))
             ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
                 className: "h-8 w-8 text-primary flex-shrink-0"
             })
-            : icon as React.ReactNode
+            : icon
         : null
 
     return (
@@ -197,7 +193,7 @@ export function Drawer({
                 side={side}
                 hideOverlay={!finalShowOverlay}
                 isPlainOverlay={!finalModal}
-                overlayClassName={boundary === "embedded" ? "!absolute !inset-0" : "!fixed !inset-0"}
+                overlayClassName={boundary === "embedded" ? "absolute! inset-0!" : "fixed! inset-0!"}
                 hideCloseButton={true}
                 container={containerElement || undefined}
                 style={{
@@ -212,8 +208,8 @@ export function Drawer({
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 flex flex-col",
-                    boundary === "embedded" ? "!absolute" : "!fixed",
+                    "p-0 flex flex-col overflow-hidden panel-surface",
+                    boundary === "embedded" ? "absolute!" : "fixed!",
                     sideStyles[side],
                     className
                 )}
@@ -246,7 +242,7 @@ export function Drawer({
                     )} />
                 )}
 
-                {(title || subtitle || description || headerActions || icon) && (
+                {(title || subtitle || headerActions || icon) && (
                     <SheetHeader className={cn("px-6 py-3 border-b shrink-0", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
@@ -256,11 +252,6 @@ export function Drawer({
                                 </SheetTitle>
                             }
                             subtitle={subtitle}
-                            description={description ? (
-                                <span className={cn("text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-0.5 opacity-60 truncate", descriptionClassName)}>
-                                    {description}
-                                </span>
-                            ) : undefined}
                             headerActions={
                                 <>
                                     {mode === "view" && (

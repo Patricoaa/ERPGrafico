@@ -9,7 +9,7 @@ stability: contract-changes-require-ADR
 
 # Idempotency — Convención multi-capa
 
-Idempotencia en ERPGrafico es **opt-in con lista cerrada**: solo los endpoints/tareas explícitamente en la "lista cerrada" la implementan. El resto puede ser no-idempotente. Esto es deliberado: idempotencia universal es costo operativo que la mayoría de operaciones no necesita.
+Idempotencia en ERPGrafico es **opt-in con lista cerrada**: solo los endpoints/tareas explícitamente en la “lista cerrada” la implementan. El resto puede ser no-idempotente. Esto es deliberado: idempotencia universal es costo operativo que la mayoría de operaciones no necesita.
 
 ## Por qué importa
 
@@ -38,12 +38,16 @@ Estos endpoints **DEBEN** validar `Idempotency-Key`. Agregar uno requiere ADR.
 | Método | Endpoint | Por qué |
 |--------|----------|---------|
 | `POST` | `/api/billing/invoices/` | Emitir factura asigna folio fiscal — no reversible |
+| `POST` | `/api/billing/invoices/pos_checkout/` | Checkout POS — crea orden + factura + pago en una transacción |
 | `POST` | `/api/billing/invoices/{id}/issue/` | Envío a SII — el provider no acepta retries naive |
 | `POST` | `/api/billing/credit-notes/` | Idem invoice |
 | `POST` | `/api/accounting/entries/` | Asiento manual — descuadra libros si duplica |
 | `POST` | `/api/treasury/payment-requests/` | Cobro al provider (idempotency_key reenviado al provider) |
 | `POST` | `/api/treasury/movements/` | Movimiento bancario manual |
+| `POST` | `/api/treasury/payments/register_movement/` | Registro rápido de pago/cobro desde formularios de órdenes y tesorería |
 | `POST` | `/api/treasury/reconciliations/{id}/run/` | Ejecución de matching automático — costosa, evita reruns |
+| `POST` | `/api/purchasing/orders/purchase_checkout/` | Checkout de compra — crea/confirma orden + factura + pago + recepción en una transacción |
+| `POST` | `/api/tax/declarations/{id}/register/` | Registrar declaración F29 — crea registro oficial ante SII, no reversible |
 | `POST` | `/api/{module}/import/commit/` | Importación bulk — ver [import-csv-xlsx.md](import-csv-xlsx.md) |
 
 **Convención del header:** el cliente genera **UUIDv4** al crear la intención de acción (click del botón). Reenvío del header con el mismo valor en retries. Una nueva acción del usuario genera nuevo UUID.
@@ -221,7 +225,7 @@ def generate_invoice_pdf_and_send(self, invoice_id: int, idempotency_key: str):
 - `POST` que solo crea drafts/borradores (POSDraft, autosave): si se crean dos por error, el cleanup TTL los purga.
 - Mutaciones de UI sin efecto fiscal: `archive`, `restore`, `lock`, `unlock`, `like`, `tag`.
 
-Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta "¿una doble ejecución produce un costo monetario, fiscal, legal o externo no reversible?" Si sí → idempotente. Si no → no.
+Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una doble ejecución produce un costo monetario, fiscal, legal o externo no reversible?” Si sí → idempotente. Si no → no.
 
 ---
 
@@ -237,12 +241,31 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta "¿una dobl
 
 ## Checklist para agregar un endpoint/tarea idempotente
 
-- [ ] Agregar entrada a la "lista cerrada" arriba (vía PR + ADR si es polémico).
+- [ ] Agregar entrada a la “lista cerrada” arriba (vía PR + ADR si es polémico).
 - [ ] Frontend: generar UUIDv4 en el handler origen + reenviar en retries.
 - [ ] Backend: decorar con `@idempotent_endpoint(scope=...)`.
 - [ ] Si dispara Celery: pasar el key como argumento de la tarea.
 - [ ] Tests de las 4 condiciones HTTP + (si aplica) re-encolado Celery.
 - [ ] Documentar el `scope` único en este doc.
+
+## Scopes registrados
+
+| Scope | Endpoint |
+|-------|----------|
+| `billing.invoice.create` | `POST /api/billing/invoices/` |
+| `billing.invoice.pos_checkout` | `POST /api/billing/invoices/pos_checkout/` |
+| `billing.invoice.issue` | `POST /api/billing/invoices/{id}/issue/` |
+| `billing.creditnote.create` | `POST /api/billing/credit-notes/` |
+| `accounting.entry.create` | `POST /api/accounting/entries/` |
+| `treasury.paymentrequest.create` | `POST /api/treasury/payment-requests/` |
+| `treasury.movement.create` | `POST /api/treasury/movements/` |
+| `treasury.payment.register_movement` | `POST /api/treasury/payments/register_movement/` |
+| `treasury.reconciliation.run` | `POST /api/treasury/reconciliations/{id}/run/` |
+| `purchasing.order.checkout` | `POST /api/purchasing/orders/purchase_checkout/` |
+| `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` |
+| `tax.period.close` | `POST /api/tax/periods/{id}/close/` |
+| `tax.period.close` | `POST /api/tax/accounting-periods/{id}/close/` |
+| `{module}.import.commit` | `POST /api/{module}/import/commit/` |
 
 ## Referencias
 

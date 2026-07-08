@@ -1,14 +1,16 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
-import { getErrorMessage } from "@/lib/errors"
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Control, type FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { JournalEntryInitialData } from "@/types/forms"
+import { type JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
-import { Plus, Pencil, BookOpen, Printer, ExternalLink } from "lucide-react"
-import Link from "next/link"
+import { Plus, Pencil, Printer, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
+import Link from "next/link"
+import { toDate } from "@/lib/utils"
 import {
     Form,
     FormField,
@@ -23,13 +25,13 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { PrintableLayout } from "@/features/_shared"
 import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge, SourceDocumentLink } from "@/components/shared";
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
-import { ActivitySidebar } from "@/features/audit/components";
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { ActivitySidebar } from "@/features/audit";
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -72,7 +74,7 @@ interface JournalEntryDrawerProps {
 }
 
 export function JournalEntryDrawer({
-    accounts: accountsProp,
+
     onSuccess,
     initialData,
     triggerText = "Nuevo Asiento",
@@ -91,7 +93,18 @@ export function JournalEntryDrawer({
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isViewMode = mode === 'view'
     const entityId = journalEntryId ?? initialData?.id
-    const { data: viewEntry, isLoading: isViewLoading } = useJournalEntry(isViewMode ? entityId : undefined)
+    const { data: viewEntryData, isLoading: isViewLoading } = useJournalEntry(isViewMode ? entityId : undefined)
+    const viewEntry = viewEntryData as {
+        id?: number;
+        date?: string;
+        description?: string;
+        label?: string;
+        items?: Array<Record<string, unknown>>;
+        source_documents?: Array<{ id: number; display_name?: string; type?: string; display?: string; name?: string; url?: string }>;
+        is_manual?: boolean;
+        reversal_of?: { id?: number; display_id?: string } | null;
+        status?: string;
+    } | undefined;
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
@@ -115,8 +128,7 @@ export function JournalEntryDrawer({
         return () => { isMounted.current = false }
     }, [])
 
-    const { accounts: fetchedAccounts, isLoading: isAccountsLoading } = useAccounts({ filters: { is_leaf: true } })
-    const accounts = (accountsProp?.length ? accountsProp : fetchedAccounts) as Record<string, unknown>[]
+    const { isLoading: isAccountsLoading } = useAccounts({ filters: { is_leaf: true } })
 
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
 
@@ -127,12 +139,12 @@ export function JournalEntryDrawer({
         if (initialData) {
             return {
                 ...initialData,
-                date: new Date(initialData.date),
-                items: initialData.items.map((item: any) => ({
+                date: toDate(initialData.date),
+                items: initialData.items.map((item) => ({
                     ...item,
                     account: item.account.toString(),
-                    debit: parseFloat(item.debit),
-                    credit: parseFloat(item.credit),
+                    debit: parseFloat(item.debit as unknown as string),
+                    credit: parseFloat(item.credit as unknown as string),
                 }))
             }
         } else {
@@ -156,7 +168,7 @@ export function JournalEntryDrawer({
 
     const width = formDrawerWidth("master", !!initialData?.id)
 
-    const selectedDate = form.watch("date")
+
 
     const lastResetKey = useRef<string | null>(null)
 
@@ -182,7 +194,7 @@ export function JournalEntryDrawer({
             setSourceDocument(null)
         } else {
             form.reset({
-                date: new Date(initialData.date),
+                date: toDate(initialData.date),
                 description: initialData.description,
                 items: initialData.items.map((item) => ({
                     account: item.account?.toString() ?? '',
@@ -193,7 +205,7 @@ export function JournalEntryDrawer({
                 })),
             })
         }
-    }, [open, initialData, serverDate])
+    }, [open, initialData, serverDate, form])
 
     // Sync sourceDocument from initialData (outside lastResetKey guard)
     useEffect(() => {
@@ -201,35 +213,35 @@ export function JournalEntryDrawer({
             setSourceDocument(null)
             return
         }
-        const sourceDoc = (initialData as any).source_documents?.[0]
+        const sourceDoc = (initialData as unknown as { source_documents?: Array<Record<string, unknown>> }).source_documents?.[0]
         if (sourceDoc) {
+            const sDoc = sourceDoc
             setSourceDocument({
-                content_type_id: sourceDoc.content_type_id,
-                object_id: sourceDoc.object_id ?? sourceDoc.id,
-                display: sourceDoc.display ?? sourceDoc.name ?? `Documento #${sourceDoc.object_id ?? sourceDoc.id}`,
-                label: sourceDoc.type ?? '',
+                content_type_id: sDoc.content_type_id as number,
+                object_id: (sDoc.object_id ?? sDoc.id) as number,
+                display: (sDoc.display ?? sDoc.name ?? `Documento #${(sDoc.object_id ?? sDoc.id) as number}`) as string,
+                label: (sDoc.type as string) ?? '',
                 icon: '',
             })
         }
     }, [initialData, open])
 
-    // Sync view entry data into form for unified body rendering
-    const viewEntryAccountId = (item: any): string => {
+    const viewEntryAccountId = (item: Record<string, unknown>): string => {
         const acct = item.account
-        if (acct == null) return item.account_code ?? ''
-        if (typeof acct === 'object') return String(acct.id ?? item.account_code ?? '')
+        if (acct == null) return (item.account_code as string) ?? ''
+        if (typeof acct === 'object') return String((acct as Record<string, unknown>).id ?? (item.account_code as string) ?? '')
         return String(acct)
     }
 
     useEffect(() => {
         if (isViewMode && viewEntry) {
             form.reset({
-                date: new Date(viewEntry.date),
+                date: toDate(viewEntry.date || ''),
                 description: viewEntry.description ?? viewEntry.label ?? '',
-                items: (viewEntry.items ?? []).map((item: any) => ({
+                items: (viewEntry.items ?? []).map((item: Record<string, unknown>) => ({
                     account: viewEntryAccountId(item),
-                    partner: item.partner ?? '',
-                    label: item.label ?? '',
+                    partner: (item.partner as string) ?? '',
+                    label: (item.label as string) ?? '',
                     debit: Number(item.debit ?? 0),
                     credit: Number(item.credit ?? 0),
                 })),
@@ -273,14 +285,7 @@ export function JournalEntryDrawer({
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error: unknown) {
-            console.error("Error saving entry:", error)
-            const detail = getErrorMessage(error) || "Error al guardar el asiento"
-            // Check if validation array error
-            if (typeof detail === 'object') {
-                toast.error("Error de validación: Revise los campos")
-            } else {
-                toast.error(detail)
-            }
+            showApiError(error, "Error al guardar el asiento")
         } finally {
             setLoading(false)
         }
@@ -288,7 +293,7 @@ export function JournalEntryDrawer({
 
     const getStatus = (): string | undefined => {
         if (isViewMode) return viewEntry?.status
-        if (initialData) return (initialData as any).status
+        if (initialData) return (initialData as unknown as { status?: string }).status
         return 'DRAFT'
     }
     const entryStatus = getStatus() || 'DRAFT'
@@ -363,6 +368,7 @@ export function JournalEntryDrawer({
                                 render={({ field, fieldState }) => (
                                     <LabeledInput
                                         label="Descripción"
+                                        required
                                         placeholder="Venta de mercadería..."
                                         error={fieldState.error?.message}
                                         {...field}
@@ -375,8 +381,8 @@ export function JournalEntryDrawer({
                                 <fieldset className="notched-field h-full" aria-disabled="true">
                                     <legend>Documento Origen</legend>
                                     <div className="flex items-center gap-2">
-                                        {viewEntry.source_documents.map((doc: { type: string; id: number; display?: string; name?: string; url?: string }) => (
-                                            <SourceDocumentLink key={doc.id} doc={doc as any} />
+                                        {viewEntry.source_documents.map((doc) => (
+                                            <SourceDocumentLink key={doc.id} doc={doc as unknown as { type: string; id: number; display?: string; name?: string; url?: string }} />
                                         ))}
                                     </div>
                                 </fieldset>
@@ -412,7 +418,7 @@ export function JournalEntryDrawer({
 
                     <FormSection title="Líneas del Asiento" className="space-y-2" />
 
-                    <AccountingLinesTable control={form.control as any} name="items" disabled={isViewMode} />
+                    <AccountingLinesTable control={form.control as unknown as Control<FieldValues>} name="items" disabled={isViewMode} />
 
                     {isViewMode && viewEntry?.reversal_of && (
                         <div className="flex justify-end items-center gap-1.5 text-xs text-muted-foreground pt-2">
@@ -451,23 +457,24 @@ export function JournalEntryDrawer({
         </SkeletonShell>
     )
 
-    if (inline) {
-        return <>{formContent}</>
-    }
-
-    const drawerTitle = isViewMode
-        ? `Asiento #${entityId}`
-        : mode === 'create'
-            ? "Nuevo Asiento Contable"
-            : "Editar Asiento"
-
-    const drawerSubtitle = isViewMode
-        ? form.watch("description") || 'Vista de detalle'
-        : form.watch("description") || "Registro manual de movimiento"
+    const identity = useDrawerIdentity('accounting.journalentry', mode, (viewEntry ?? initialData) as Record<string, unknown> | undefined, {
+        overrideTitle: isViewMode
+            ? `Asiento #${entityId}`
+            : mode === 'edit'
+                ? "Editar Asiento"
+                : undefined,
+        overrideSubtitle: isViewMode
+            ? form.watch("description") || 'Vista de detalle'
+            : form.watch("description") || "Registro manual de movimiento",
+    })
 
     const showPrintable = entityId && (mode === 'view' || mode === 'edit')
 
     const formValues = form.watch()
+
+    if (inline) {
+        return <>{formContent}</>
+    }
 
     return (
         <>
@@ -503,7 +510,7 @@ export function JournalEntryDrawer({
                             <span className="text-right">Debe</span>
                             <span className="text-right">Haber</span>
                         </div>
-                        {(formValues.items ?? []).map((item: any, idx: number) => (
+                        {(formValues.items ?? []).map((item, idx: number) => (
                             <div key={idx} className="grid grid-cols-[1fr,50px,50px] gap-1 border-b border-dashed py-0.5">
                                 <span>{item.account ? item.account.toString() : '-'}</span>
                                 <span className="text-right">{Number(item.debit) > 0 ? formatCurrency(Number(item.debit)) : '-'}</span>
@@ -520,9 +527,13 @@ export function JournalEntryDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={BookOpen}
-                title={<><span>{drawerTitle}</span>{showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={drawerSubtitle}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={showPrintable && (
+                    // eslint-disable-next-line no-restricted-syntax -- header action, not a row/card action
+                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>
+                )}
+                subtitle={identity.subtitle}
                 footer={isViewMode ? undefined : (
                     <FormFooter
                         actions={

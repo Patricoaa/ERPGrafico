@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 
-import { BaseModal, FormSection, GenericWizard, LabeledInput, MoneyDisplay, WizardStep } from '@/components/shared'
+import { BaseModal, Drawer, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep } from '@/components/shared'
 import {
     Calculator,
     CheckCircle2,
@@ -11,14 +11,16 @@ import {
     ArrowDownLeft,
     HandCoins,
     History,
-    AlertCircle,
 } from "lucide-react"
+import { showApiError } from "@/lib/errors"
+import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
-import { cn } from "@/lib/utils"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { TaxPeriod, TaxCalculationData } from "../types"
+import { type TaxPeriod, type TaxCalculationData } from "../types"
+import { taxApi } from "../api/taxApi"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
@@ -26,23 +28,29 @@ interface DeclarationWizardProps {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
     periodId?: number
+    year?: number
+    month?: number
     onSuccess: () => void
     existingPeriods?: TaxPeriod[]
 }
 
-export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, existingPeriods = [] }: DeclarationWizardProps) {
+export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYear, month: propMonth, onSuccess, existingPeriods: existingPeriodsProp }: DeclarationWizardProps) {
     const { year: currentYear, month: currentMonth, dateString, serverDate } = useServerDate()
     const { openHub } = useHubPanel()
+    const { rate } = useVatRate()
     const [isLoading, setIsLoading] = useState(false)
     const [calcData, setCalcData] = useState<TaxCalculationData | null>(null)
     const [taxPeriodId, setTaxPeriodId] = useState<number | null>(periodId || null)
     const [isClosed, setIsClosed] = useState(false)
+    const [hadPaymentDue, setHadPaymentDue] = useState(false)
+    const idempotencyKeyRef = useRef<string | null>(null)
     const [period, setPeriod] = useState({
         year: currentYear || new Date().getFullYear(),
         month: currentMonth || new Date().getMonth() + 1
     })
-    const [isPreLoading, setIsPreLoading] = useState(false)
     const [wizardInitialStep, setWizardInitialStep] = useState(0)
+    const existingPeriods = useMemo(() => existingPeriodsProp ?? [], [existingPeriodsProp]);
+    const isPreLoading = periodId != null && isOpen && calcData === null
     const [manualFields, setManualFields] = useState({
         ppm_amount: 0,
         withholding_tax: 0,
@@ -52,19 +60,19 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         loan_retention: 0,
         ila_tax: 0,
         vat_withholding: 0,
-        tax_rate: 19,
+        tax_rate: rate,
         notes: ""
     })
-    const calcMutation = useTaxCalculation()
-    const createDeclarationMutation = useCreateDeclaration()
-    const registerDeclarationMutation = useRegisterDeclaration()
-    const closePeriodMutation = useClosePeriod()
+    const { calculateTax } = useTaxCalculation()
+    const { createDeclaration } = useCreateDeclaration()
+    const { registerDeclaration } = useRegisterDeclaration()
+    const { closePeriod } = useClosePeriod()
 
     // Helper for direct calculation that uses params instead of state (since state might not have updated yet)
     const calculateDataForPeriod = async (y: number, m: number) => {
         setIsLoading(true)
         try {
-            const data = await calcMutation.mutateAsync({ year: y, month: m })
+            const data = await calculateTax({ year: y, month: m })
             setCalcData(data)
             if (data.tax_period_id) setTaxPeriodId(data.tax_period_id)
             if (data.tax_rate) {
@@ -87,61 +95,53 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         const initializeWizard = async () => {
             if (isOpen) {
                 setIsClosed(false)
-                
-                // If we have a periodId, try to find it and skip step 1
-                if (periodId && existingPeriods.length > 0) {
-                    const targetPeriod = existingPeriods.find(p => p.id === periodId)
-                    if (targetPeriod) {
-                        // 1. Sync local period state
-                        setPeriod({ year: targetPeriod.year, month: targetPeriod.month })
-                        
-                        // 2. Pre-load data
-                        setIsPreLoading(true)
-                        const success = await calculateDataForPeriod(targetPeriod.year, targetPeriod.month)
-                        
-                        if (success) {
-                            setWizardInitialStep(1)
-                        } else {
-                            setWizardInitialStep(0)
+                setHadPaymentDue(false)
+                let targetPeriod: TaxPeriod | undefined
+                let year: number | undefined = propYear
+                let month: number | undefined = propMonth
+
+                // If we have a periodId, resolve period and skip step 1
+                if (periodId) {
+                    // Try existingPeriods first (fast path), otherwise fetch from API
+                    targetPeriod = existingPeriods.find(p => p.id === periodId)
+                    if (!targetPeriod) {
+                        try {
+                            targetPeriod = await taxApi.getPeriod(periodId)
+                        } catch {
+                            // fall through to default below
                         }
-                        setIsPreLoading(false)
-                        return
+                    }
+                    if (targetPeriod) {
+                        year = targetPeriod.year
+                        month = targetPeriod.month
                     }
                 }
 
-                // Default fallback: Start at step 0 with current date
-                setWizardInitialStep(0)
-                if (serverDate && currentYear !== null && currentMonth !== null) {
-                    setPeriod({ year: currentYear, month: currentMonth })
+                if (year && month) {
+                    setPeriod({ year, month })
+                    setCalcData(null)
+                    await calculateDataForPeriod(year, month)
+                    setWizardInitialStep(0)
                 }
             }
         }
 
         initializeWizard()
-    }, [isOpen, periodId, existingPeriods, serverDate, currentYear, currentMonth])
-
-    const isPeriodDisabled = (y: number, m: number) => {
-        const targetDate = new Date(y, m - 1)
-        const currentDate = serverDate || new Date()
-        if (targetDate > currentDate) return true
-        const closedPeriods = existingPeriods.filter(p => p.status === 'CLOSED')
-        if (closedPeriods.length > 0) {
-            closedPeriods.sort((a, b) => (a.year !== b.year ? b.year - a.year : b.month - a.month))
-            const lastClosed = closedPeriods[0]
-            const lastClosedDate = new Date(lastClosed.year, lastClosed.month - 1)
-            if (targetDate <= lastClosedDate) return true
-        }
-        return false
-    }
-
-    const calculateData = async () => {
-        return calculateDataForPeriod(period.year, period.month)
-    }
+    }, [isOpen, periodId, propYear, propMonth, existingPeriods, serverDate, currentYear, currentMonth])
 
     const handleSaveAndClose = async () => {
         setIsLoading(true)
+        if (!idempotencyKeyRef.current) {
+            idempotencyKeyRef.current = typeof crypto !== 'undefined' && crypto.randomUUID
+                ? crypto.randomUUID()
+                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                    const r = (Math.random() * 16) | 0
+                    const v = c === 'x' ? r : (r & 0x3) | 0x8
+                    return v.toString(16)
+                })
+        }
         try {
-            const declarationData = await createDeclarationMutation.mutateAsync({
+            const declarationData = await createDeclaration({
                 tax_period_year: period.year,
                 tax_period_month: period.month,
                 ...manualFields
@@ -149,9 +149,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             const declarationId = declarationData.id
             const currentTaxPeriodId = declarationData.tax_period || taxPeriodId
             try {
-                await registerDeclarationMutation.mutateAsync({
+                await registerDeclaration({
                     id: declarationId,
-                    data: { declaration_date: dateString || "" }
+                    data: { declaration_date: dateString || "" },
+                    idempotencyKey: idempotencyKeyRef.current
                 })
             } catch (regError: unknown) {
                 const isAlreadyRegistered =
@@ -159,15 +160,30 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya ha sido registrada")
                 if (!isAlreadyRegistered) throw regError
             }
-            if (currentTaxPeriodId) await closePeriodMutation.mutateAsync(currentTaxPeriodId)
-            toast.success("Ciclo tributario finalizado exitosamente")
+            // Determine if payment is needed before closing
+            const vatDebit = calcData?.vat_debit || 0
+            const vatCredit = calcData?.vat_credit || 0
+            const totalVATCredits = vatCredit + (manualFields.vat_credit_carryforward || 0) + (manualFields.vat_correction_amount || 0)
+            const computedVatToPay = Math.max(0, vatDebit - totalVATCredits)
+            const otherTaxes = (manualFields.withholding_tax || 0) + (manualFields.second_category_tax || 0) + (manualFields.ppm_amount || 0)
+            const finalToPay = computedVatToPay + otherTaxes
+            const needsPayment = finalToPay > 0
+
+            if (currentTaxPeriodId && !needsPayment) {
+                await closePeriod({
+                    id: currentTaxPeriodId,
+                    idempotencyKey: idempotencyKeyRef.current,
+                })
+                toast.success("Ciclo tributario finalizado exitosamente")
+            } else {
+                toast.success("Declaración F29 registrada correctamente. Debe realizar el pago antes de cerrar el período.")
+            }
+            setHadPaymentDue(needsPayment)
             setIsClosed(true)
             onSuccess();
             return true
         } catch (error: unknown) {
-            console.error("Error in final process:", error)
-            const apiError = error as { response?: { data?: { error?: string } } }
-            toast.error(apiError.response?.data?.error || "Error al finalizar el ciclo tributario")
+            showApiError(error, "Error al finalizar el ciclo tributario")
             return false
         } finally {
             setIsLoading(false)
@@ -185,113 +201,85 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
     const steps: WizardStep[] = useMemo(() => [
         {
-            id: 1,
-            title: "Selección de Período",
-            isValid: !!period.year && !!period.month,
-            onNext: calculateData,
-            component: (
-                <div className="space-y-12 max-w-4xl mx-auto py-4">
-                    <div className="text-center space-y-3">
-                        <h3 className="text-2xl font-black tracking-tight uppercase text-foreground/80">Período de Declaración</h3>
-                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                            Seleccione el mes y año tributario para generar el F29.
-                        </p>
-                    </div>
-                    <div className="space-y-8">
-                        <div className="space-y-4">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Año Tributario</p>
-                            <div className="grid grid-cols-4 gap-3">
-                                {[2024, 2025, 2026].map(y => (
-                                    <div
-                                        key={y}
-                                        className={cn(
-                                            "cursor-pointer rounded-md border border-transparent px-4 py-5 text-center transition-all duration-200",
-                                            period.year === y ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-sm shadow-primary/5" : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
-                                        )}
-                                        onClick={() => setPeriod(p => ({ ...p, year: y }))}
-                                    >
-                                        <div className={cn("text-sm font-bold tracking-wider", period.year === y ? "text-primary" : "")}>{y}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Mes de Declaración</p>
-                            <div className="grid grid-cols-4 gap-3">
-                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
-                                    const disabled = isPeriodDisabled(period.year, m)
-                                    const isSelected = !disabled && period.month === m
-                                    return (
-                                        <div
-                                            key={m}
-                                            className={cn(
-                                                "rounded-md border border-transparent px-2 py-4 text-center transition-all duration-200",
-                                                disabled ? "opacity-20 cursor-not-allowed grayscale" : "cursor-pointer",
-                                                isSelected ? "bg-primary/10 border-primary/20 scale-[1.05] shadow-md shadow-primary/5 z-10" : (!disabled ? "bg-muted/5 hover:bg-muted/10" : "")
-                                            )}
-                                            onClick={() => !disabled && setPeriod(p => ({ ...p, month: m }))}
-                                        >
-                                            <div className={cn("text-[11px] font-black tracking-widest uppercase", isSelected ? "text-primary" : "text-muted-foreground/70")}>
-                                                {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'short' })}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )
-        },
-        {
             id: 2,
             title: "Auditoría de Documentos (IVA)",
             isValid: true,
             component: (
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
-                    <div className="grid grid-cols-2 gap-12">
+                    <div className="flex flex-col gap-12">
                         <section className="space-y-8">
                             <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
                             <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
-                                    <span>Ventas Afectas</span>
-                                    <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-bold" />
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Ventas Afectas</span>
+                                        <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.sales_taxed_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
-                                    <span>Ventas Exentas</span>
-                                    <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold" />
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Ventas Exentas</span>
+                                        <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.sales_exempt_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
                                 <div className="pt-4 space-y-2 border-t border-border/30">
-                                    <div className="flex justify-between items-end p-4 rounded-md bg-primary/5 border border-primary/10">
-                                        <span className="text-xs font-black uppercase text-primary/80">IVA Débito ({manualFields.tax_rate}%)</span>
-                                        <MoneyDisplay amount={calcData?.vat_debit} className="text-2xl font-black text-primary" />
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-xs font-black uppercase text-foreground">IVA Débito ({manualFields.tax_rate}%)</span>
+                                        <MoneyDisplay amount={calcData?.vat_debit} className="text-2xl font-black text-expense" />
                                     </div>
                                 </div>
                             </div>
                         </section>
                         <section className="space-y-8">
                             <FormSection title="Crédito Fiscal" icon={ArrowDownLeft} />
-                            <div className="space-y-4 bg-primary/5 p-6 rounded-md border border-primary/10">
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-primary/50">
-                                    <span>Compras Afectas</span>
-                                    <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-bold" />
+                            <div className="space-y-4 bg-transparent p-6 rounded-md border border-border/50">
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Compras Afectas</span>
+                                        <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.purchases_taxed_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="flex justify-between items-center text-xs uppercase font-bold text-primary/50">
-                                    <span>Compras Exentas</span>
-                                    <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold" />
+                                <div>
+                                    <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
+                                        <span>Compras Exentas</span>
+                                        <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold" />
+                                    </div>
+                                    {calcData?.purchases_exempt_by_dte?.map(item => (
+                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                            <span>{item.dte_type_display} ({item.count})</span>
+                                            <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="pt-4 space-y-2 border-t border-primary/10">
-                                    <div className="flex justify-between items-end p-4 rounded-md bg-primary/10 border border-primary/20 text-primary">
-                                        <span className="text-xs font-black uppercase">IVA Crédito ({manualFields.tax_rate}%)</span>
-                                        <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black" />
+                                <div className="pt-4 space-y-2 border-t border-border/30">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-xs font-black uppercase text-foreground">IVA Crédito ({manualFields.tax_rate}%)</span>
+                                        <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black text-income" />
                                     </div>
                                 </div>
                             </div>
                         </section>
                     </div>
                     {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
-                        <Alert variant="default" className="border-warning/30 bg-warning/5 rounded-md p-6">
-                            <AlertCircle className="h-5 w-5 text-warning" />
+                        <Alert variant="warning">
                             <div className="space-y-4 w-full">
                                 <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">Documentos en Borrador</AlertTitle>
                                 <AlertDescription className="text-xs text-warning/70 font-medium">Hay pendientes que no se incluyeron. Se recomienda procesarlos.</AlertDescription>
@@ -381,49 +369,61 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             isValid: true,
             component: (
                 <div className="max-w-4xl mx-auto pb-6 space-y-8">
-                    <div className="bg-card border border-border/50 rounded-md p-8 space-y-6">
-                        <div className="flex justify-between items-center text-sm font-medium">
-                            <span className="text-muted-foreground">IVA Determinado</span>
+                    <FormSection title="Resumen de Impuestos" icon={Calculator} />
+                    <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs uppercase font-bold text-muted-foreground/70">IVA Determinado</span>
                             <MoneyDisplay amount={vatToPay} showColor={false} className="font-bold" />
                         </div>
-                        <div className="flex justify-between items-center text-sm font-medium">
-                            <span className="text-muted-foreground">PPM + Retenciones</span>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs uppercase font-bold text-muted-foreground/70">PPM + Retenciones</span>
                             <MoneyDisplay amount={otherTaxes} showColor={false} className="font-bold" />
                         </div>
                         {vatRemanent > 0 && (
-                            <div className="flex justify-between items-center p-3 rounded-md bg-success/5 border border-success/10">
-                                <span className="text-success text-xs font-black uppercase">Nuevo Remanente a Favor</span>
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-black uppercase text-success">Nuevo Remanente a Favor</span>
                                 <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
                             </div>
                         )}
-                        <div className="flex flex-col items-center justify-center p-8 rounded-md bg-primary/5 border-2 border-primary/20">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-2">Total a Pagar SII</span>
-                            <MoneyDisplay amount={finalToPay} className="text-4xl font-black text-primary" />
+                        <div className="pt-4 space-y-2 border-t border-border/30">
+                            <div className="flex justify-between items-end">
+                                <span className="text-xs font-black uppercase text-foreground">Total a Pagar SII</span>
+                                <MoneyDisplay amount={finalToPay} className="text-2xl font-black text-primary" />
+                            </div>
                         </div>
                     </div>
                 </div>
             )
         }
-    ], [period, calcData, manualFields, taxPeriodId, vatToPay, otherTaxes, vatRemanent, finalToPay])
+    ], [calcData, manualFields, taxPeriodId, vatToPay, otherTaxes, vatRemanent, finalToPay])
 
     if (isClosed) {
         return (
-            <BaseModal 
+            <Drawer
                 open={isOpen} 
                 onOpenChange={onOpenChange} 
-                size="xl" 
-                showCloseButton={false}
-                title="Ciclo Finalizado"
+                defaultSize={formDrawerWidth("complex", false)}
+                side="left"
+                boundary="embedded"
+                title={hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}
+                contentClassName="p-6"
             >
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-8 animate-in zoom-in-95 duration-500">
                     <CheckCircle2 className="h-12 w-12" />
                     <div className="space-y-3">
-                        <h3 className="text-3xl font-black uppercase tracking-tight">Ciclo Finalizado</h3>
-                        <p className="text-muted-foreground text-sm max-w-md px-10">La declaración F29 del periodo ha sido registrada y el ciclo bloqueado para futuros cambios.</p>
+                        <h3 className="text-3xl font-black uppercase tracking-tight">
+                            {hadPaymentDue ? "Declaración Registrada" : "Ciclo Finalizado"}
+                        </h3>
+                        <p className="text-muted-foreground text-sm max-w-md px-10">
+                            {hadPaymentDue
+                                ? "La declaración F29 ha sido registrada. Para completar el cierre del período, debe realizar el pago desde la vista de Cierres."
+                                : "La declaración F29 del periodo ha sido registrada y el ciclo bloqueado para futuros cambios."
+                            }
+                        </p>
                     </div>
                     <Button onClick={() => onOpenChange(false)} className="px-10 h-11 font-black uppercase tracking-widest text-[11px]">Finalizar Proceso</Button>
                 </div>
-            </BaseModal>
+            </Drawer>
         )
     }
 
@@ -446,7 +446,10 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             isCompleting={isLoading}
             completeButtonLabel="Registrar y Finalizar"
             completeButtonIcon={<CheckCircle2 className="h-4 w-4 mr-2" />}
-            size="xl"
+            size="md"
+            surface="drawer"
+            drawerSide="left"
+            drawerBoundary="embedded"
         />
     )
 }

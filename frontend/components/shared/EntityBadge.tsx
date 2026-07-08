@@ -15,6 +15,7 @@
  * <EntityBadge label="order" data={order} />
  */
 
+import { Button } from "@/components/ui/button"
 import React from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/shared'
@@ -27,8 +28,7 @@ export interface EntityBadgeProps {
     /** The entity registry key (e.g. "order", "invoice", "payment") */
     label: string
     /** The entity data object (must contain at least 'id' for link generation) */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any
+    data: object
     /** Whether to show the entity's icon. Default: true */
     showIcon?: boolean
     /** Whether to wrap the badge in a Link to the entity's detail view. Default: true */
@@ -39,6 +39,12 @@ export interface EntityBadgeProps {
     rounded?: boolean
     /** Layout/position classes only */
     className?: string
+    /**
+     * Optional segmenter (filtro/segmentador) rendered at the bottom of the entity drawer.
+     * Useful for adding data-segmentation controls (date range, category filter, etc.)
+     * to visualization panels inside the drawer. Totally optional per entity.
+     */
+    segmenter?: React.ReactNode
 }
 
 export const EntityBadge: React.FC<EntityBadgeProps> = ({
@@ -49,12 +55,13 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     size = 'md',
     rounded = true,
     className,
+    segmenter,
 }) => {
     const { openEntity } = useGlobalModals()
 
     if (!data) return null
 
-    const { displayCode, icon: ResolvedIcon, href } = resolveEntity(label, data)
+    const { displayCode, icon: ResolvedIcon, href } = resolveEntity(label, data as Record<string, unknown>)
     const Icon = showIcon ? (ResolvedIcon ?? Package) : undefined
 
     const customStyle = "bg-secondary/30 text-secondary-foreground border-secondary/50 hover:bg-secondary/50 hover:border-secondary"
@@ -75,16 +82,17 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     if (!link) return badgeEl
 
     // Prefer in-context drawer when registered. Fallback to navigation.
-    const entityId = data?.id
+    const entityId = (data as Record<string, unknown>).id as number | undefined
     if (hasEntityDrawer(label) && entityId !== undefined && entityId !== null) {
         return (
-            <button
+            <Button
+                variant="ghost"
                 type="button"
-                onClick={(e) => { e.stopPropagation(); openEntity(label, Number(entityId), data) }}
-                className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
+                onClick={(e) => { e.stopPropagation(); openEntity(label, Number(entityId), data, segmenter) }}
+                className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
             >
                 {badgeEl}
-            </button>
+            </Button>
         )
     }
 

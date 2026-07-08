@@ -25,6 +25,9 @@ export interface Product {
     image?: string | null
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean
+    mfg_enable_prepress?: boolean
+    mfg_enable_press?: boolean
+    mfg_enable_postpress?: boolean
     is_dynamic_pricing?: boolean
     is_favorite?: boolean
     has_bom?: boolean
@@ -37,6 +40,7 @@ export interface Product {
     sale_uom?: number
     uom_name?: string
     allowed_sale_uoms?: number[]
+    available_uoms?: Array<{ id: number; name: string; category: number; ratio: string | number; uom_type?: string; category_name?: string }>
     // Variant fields
     variant_display_name?: string
     attribute_values_data?: {
@@ -101,7 +105,7 @@ export interface WizardState {
     selectedCustomerName?: string
     selectedCustomerId?: string | number | null
     isWaitingPayment?: boolean
-    [key: string]: any // Required for Record<string, unknown> compatibility
+    [key: string]: unknown
 }
 
 export interface CartItem extends Product {
@@ -175,6 +179,7 @@ export interface POSSession {
     total_card_sales: number
     total_transfer_sales: number
     total_credit_sales: number
+    total_check_sales: number
     expected_cash: number
     total_other_cash_inflow: number
     total_other_cash_outflow: number
@@ -225,6 +230,7 @@ export interface BOMCache {
 
 export interface DraftCart {
     id: number
+    session_local_id?: number
     name: string
     items: CartItem[]
     customer_id?: number

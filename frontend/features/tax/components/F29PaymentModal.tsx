@@ -13,11 +13,11 @@ import {
     CreditCard,
     AlertCircle
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PaymentModal } from "@/features/treasury"
-import { TaxDeclaration, TaxPaymentData } from "../types"
+import { type TaxDeclaration, type TaxPaymentData } from "../types"
 
 interface F29PaymentModalProps {
     isOpen: boolean
@@ -49,6 +49,19 @@ export function F29PaymentModal({
                     </div>
                 }
                 size="lg"
+                footer={
+                    !isFullyPaid ? (
+                        <div className="flex justify-end w-full">
+                            <Button
+                                onClick={() => setIsRegisteringPayment(true)}
+                                className="bg-success hover:bg-success/90"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Registrar Abono
+                            </Button>
+                        </div>
+                    ) : undefined
+                }
             >
                 <div className="space-y-6">
                     {/* Summary Cards */}
@@ -67,7 +80,7 @@ export function F29PaymentModal({
                                 ? "bg-success/10 border-success/20"
                                 : "bg-primary/5 border-primary/10"
                         )}>
-                            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Salgo Pendiente</div>
+                            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Saldo Pendiente</div>
                             <div className={cn(
                                 "text-xl font-bold font-mono",
                                 isFullyPaid ? "text-success" : "text-primary"
@@ -84,18 +97,9 @@ export function F29PaymentModal({
                             <p className="text-sm font-medium">Esta declaración ha sido pagada en su totalidad.</p>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between p-4 rounded-md bg-primary/5 border border-primary/10">
-                            <div className="flex items-center gap-3">
-                                <AlertCircle className="h-5 w-5 text-primary" />
-                                <p className="text-sm font-medium">Hay un saldo pendiente por pagar.</p>
-                            </div>
-                            <Button
-                                onClick={() => setIsRegisteringPayment(true)}
-                                className="bg-success hover:bg-success/90"
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Registrar Abono
-                            </Button>
+                        <div className="flex items-center gap-3 p-4 rounded-md bg-primary/5 border border-primary/10">
+                            <AlertCircle className="h-5 w-5 text-primary" />
+                            <p className="text-sm font-medium">Hay un saldo pendiente por pagar.</p>
                         </div>
                     )}
 
@@ -119,7 +123,7 @@ export function F29PaymentModal({
                                                     <div className="font-bold">{formatCurrency(payment.amount)}</div>
                                                     <div className="text-xs text-muted-foreground flex items-center gap-2">
                                                         <Calendar className="h-3 w-3" />
-                                                        {format(new Date(payment.payment_date), "dd MMM yyyy", { locale: es })}
+                                                        {format(parseDateOnly(payment.payment_date), "dd MMM yyyy", { locale: es })}
                                                     </div>
                                                 </div>
                                             </div>

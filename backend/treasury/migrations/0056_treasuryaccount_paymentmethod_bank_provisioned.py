@@ -10,28 +10,28 @@ class Migration(migrations.Migration):
     """
 
     dependencies = [
-        ('treasury', '0055_treasury_account_account_nullable'),
+        ("treasury", "0055_treasury_account_account_nullable"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='treasuryaccount',
-            name='bank_provisioned',
-            field=models.BooleanField(default=False, verbose_name='Provisionada por banco'),
+            model_name="treasuryaccount",
+            name="bank_provisioned",
+            field=models.BooleanField(default=False, verbose_name="Provisionada por banco"),
         ),
         migrations.AddField(
-            model_name='historicaltreasuryaccount',
-            name='bank_provisioned',
-            field=models.BooleanField(default=False, verbose_name='Provisionada por banco'),
+            model_name="historicaltreasuryaccount",
+            name="bank_provisioned",
+            field=models.BooleanField(default=False, verbose_name="Provisionada por banco"),
         ),
         migrations.AddField(
-            model_name='paymentmethod',
-            name='bank_provisioned',
-            field=models.BooleanField(default=False, verbose_name='Provisionado por banco'),
+            model_name="paymentmethod",
+            name="bank_provisioned",
+            field=models.BooleanField(default=False, verbose_name="Provisionado por banco"),
         ),
         migrations.AddField(
-            model_name='historicalpaymentmethod',
-            name='bank_provisioned',
-            field=models.BooleanField(default=False, verbose_name='Provisionado por banco'),
+            model_name="historicalpaymentmethod",
+            name="bank_provisioned",
+            field=models.BooleanField(default=False, verbose_name="Provisionado por banco"),
         ),
     ]

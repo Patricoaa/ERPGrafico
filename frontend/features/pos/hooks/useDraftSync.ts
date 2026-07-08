@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/features/realtime'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { POS_KEYS } from './queryKeys'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -89,8 +90,11 @@ export function useDraftSync({
         callbacksRef.current = { onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange }
     }, [onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange])
 
-    const handleSocketEvent = useCallback((data: any) => {
-        const { event, draft, draft_id, error } = data
+    const handleSocketEvent = useCallback((data: Record<string, unknown>) => {
+        const event = data.event as string
+        const draft = data.draft as SyncDraft
+        const draft_id = data.draft_id as number
+        const error = data.error as string | undefined
         const currentUserId = user?.id
 
         if (event === 'LOCK_LOST') {
@@ -149,7 +153,7 @@ export function useDraftSync({
         onSuccess: (data) => {
             setSyncDrafts(data.drafts)
             prevDraftsRef.current = data.drafts
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            invalidateCrossFeature(queryClient, [POS_KEYS.drafts.lists()])
             markLocalMutation()
         },
         onError: (error: Error) => {
@@ -162,7 +166,7 @@ export function useDraftSync({
             posApi.lockDraft(draftId, { pos_session_id: posSessionId, session_key: sessionKey }),
         onSuccess: (data, variables) => {
             setActiveLockDraftId(variables.draftId)
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
+            invalidateCrossFeature(queryClient, [POS_KEYS.drafts.detailById(variables.draftId)])
             markLocalMutation()
         },
         onError: () => {}
@@ -172,7 +176,7 @@ export function useDraftSync({
         mutationFn: (draftId: number) => posApi.unlockDraft(draftId, { pos_session_id: posSessionId, session_key: browserSessionKey }),
         onSuccess: (_data, unlockDraftId) => {
             setActiveLockDraftId(null)
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(unlockDraftId) })
+            invalidateCrossFeature(queryClient, [POS_KEYS.drafts.detailById(unlockDraftId)])
             markLocalMutation()
         },
         onError: () => {}
@@ -305,11 +309,12 @@ export function useDraftSync({
             await lockDraftMutation.mutateAsync({ draftId, sessionKey: browserSessionKey })
             setActiveLockDraftId(draftId)
             return { acquired: true }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const lockError = error as { response?: { data?: { error?: string; locked_by_name?: string } } }
             return {
                 acquired: false,
-                error: error.response?.data?.error || 'Error al bloquear',
-                locked_by_name: error.response?.data?.locked_by_name
+                error: lockError.response?.data?.error || 'Error al bloquear',
+                locked_by_name: lockError.response?.data?.locked_by_name
             }
         }
     }, [posSessionId, browserSessionKey, lockDraftMutation])

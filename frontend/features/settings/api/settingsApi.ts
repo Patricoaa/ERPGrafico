@@ -16,27 +16,6 @@ import type {
 import type { TreasuryAccount, PosTerminal, Warehouse, UoM, Group, ProductMinimal } from './types'
 
 /**
- * Resolves a media URL from the backend.
- * If the path is relative (starts with /media/), it prepends the backend host.
- * If the path is already absolute, it returns it as-is.
- */
-export function resolveMediaUrl(path: string | null | undefined): string | null {
-  if (!path) return null
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
-    return path
-  }
-
-  // Derive backend host from baseURL (stripping /api/ if present)
-  const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || ''
-  const backendHost = rawBaseURL.replace(/\/api\/?$/, '')
-
-  // Ensure the path starts with a slash
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-
-  return `${backendHost}${normalizedPath}`
-}
-
-/**
  * Centralized API service for accounting settings operations
  * Handles all HTTP requests related to sales, billing, and inventory settings
  */
@@ -141,7 +120,6 @@ export const settingsApi = {
             'stock_output_account',
             'adjustment_income_account',
             'adjustment_expense_account',
-            'initial_inventory_account',
             'revaluation_account',
             'merchandise_cogs_account',
             'manufactured_cogs_account',
@@ -303,5 +281,19 @@ export const settingsApi = {
      populateIfrsChart: async (): Promise<{ message: string }> => {
          const { data } = await api.post<{ message: string }>('/accounting/accounts/populate_ifrs/')
          return data
+     },
+
+     // ========== Audit Logs ==========
+
+     getAuditLogs: async (): Promise<Record<string, unknown>[]> => {
+         const { data } = await api.get('/core/audit/global/')
+         return data
+     },
+
+     // ========== Background Jobs ==========
+
+     getBackgroundJobs: async (): Promise<Record<string, unknown>[]> => {
+         const { data } = await api.get('/core/jobs/')
+         return Array.isArray(data) ? data : (data?.results ?? [])
      },
  }

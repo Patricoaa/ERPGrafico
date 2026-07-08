@@ -7,6 +7,13 @@ preconditions:
   - 10-architecture/adr/README.md
   - 20-contracts/api-contracts.md
   - 20-contracts/component-contracts.md
+validation:
+  - npm run type-check
+  - npm run lint
+forbidden:
+  - removing without deprecation period
+  - removing without ADR
+  - breaking backward compat without notice
 status: active
 owner: core-team
 last_review: 2026-04-21

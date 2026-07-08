@@ -6,10 +6,10 @@ import React, { useEffect, useState } from "react"
 
 import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { partnersApi } from "@/features/contacts"
 import { settingsApi } from "../../hooks"
-import { Partner } from "@/features/contacts/types/partner"
-import { TreasuryAccount } from "@/features/treasury/types"
+import { type Partner } from "@/features/contacts"
+import { type TreasuryAccount } from "@/features/treasury"
 import { toast } from "sonner"
 
 import {
@@ -143,7 +143,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
                     {/* Show selected partner's current capital */}
                     {selectedPartner && (
-                        <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5">
+                        <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-muted-foreground font-medium">Capital Suscrito Actual</span>
                                 <span className="font-mono font-bold text-primary">{formatCurrency(subscribedCapital)}</span>
@@ -426,7 +426,7 @@ function useTreasuryAccounts() {
 
     useEffect(() => {
         // Fetch treasury accounts for the dropdowns
-        settingsApi.getTreasuryAccounts().then((accs) => setAccounts(accs as any)).catch((error) => {
+        settingsApi.getTreasuryAccounts().then((accs) => setAccounts(accs as unknown as TreasuryAccount[])).catch((error) => {
             console.error("Error fetching treasury accounts:", error)
         })
     }, [])
@@ -817,8 +817,7 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
                         placeholder="0"
                     />
                     {isOverflow && (
-                        <Alert className="py-2 px-3 mt-1 bg-warning/10 border-warning/20">
-                            <AlertTriangle className="h-4 w-4 text-warning" />
+                        <Alert variant="warning">
                             <AlertDescription className="text-[9px] text-warning leading-tight">
                                 El monto excede el saldo de dividendos. El excedente de <strong>{formatCurrency(amountNum - dividendBalance)}</strong> se registrará como un <strong>Retiro Provisorio</strong>.
                             </AlertDescription>

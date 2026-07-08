@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
     ArrowDownLeft,
     ArrowUpRight,
@@ -13,17 +13,14 @@ import {
 import { TableRow, TableCell } from "@/components/ui/table"
 
 import { DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type Partner, type PartnerTransaction } from "@/features/contacts"
 import { toast } from "sonner"
-import {formatPlainDate as formatDate} from "@/lib/utils"
-import {
-    DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
+import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
-import { DataTable } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { DataTable, SegmentationBar, useSegmentation } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 
 const TRANSACTION_TYPE_OPTIONS = [
     { value: "SUBSCRIPTION", label: "Suscripción de Capital" },
@@ -106,11 +103,34 @@ export function PartnerLedgerTab() {
         return 'neutral'
     }
 
+    const partnerSegDef = useMemo(() => ({
+        segments: [
+            {
+                key: 'partner',
+                label: 'Socio',
+                type: 'tabs' as const,
+                variant: 'dropdown' as const,
+                serverParam: 'partner',
+                options: partners.map(p => ({ label: p.name, value: p.name })),
+            },
+            {
+                key: 'transaction_type',
+                label: 'Tipo',
+                type: 'tabs' as const,
+                variant: 'dropdown' as const,
+                serverParam: 'transaction_type',
+                options: TRANSACTION_TYPE_OPTIONS.map(o => ({ label: o.label, value: o.value })),
+            },
+        ],
+    }), [partners])
+
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(partnerSegDef)
+
     type TransactionWithBalance = PartnerTransaction & { balance_after: number }
 
     // Calculate Running Balance
     const txsWithBalance = React.useMemo(() => {
-        const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        const sorted = [...transactions].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
         const { result } = sorted.reduce<{ result: Array<PartnerTransaction & { balance_after: number }>, balance: number }>(
             (acc, tx) => {
                 const amount = parseFloat(tx.amount) || 0
@@ -123,6 +143,19 @@ export function PartnerLedgerTab() {
         )
         return result.reverse() // Display newest first
     }, [transactions])
+
+    const filteredTxsWithBalance = useMemo(() => {
+        let result = txsWithBalance
+        if (segFilters.partner) {
+            result = result.filter(tx =>
+                tx.partner_name === segFilters.partner || tx.partner?.toString() === segFilters.partner
+            )
+        }
+        if (segFilters.transaction_type) {
+            result = result.filter(tx => tx.transaction_type === segFilters.transaction_type)
+        }
+        return result
+    }, [txsWithBalance, segFilters])
 
     const columns: ColumnDef<TransactionWithBalance>[] = [
         {
@@ -199,47 +232,21 @@ export function PartnerLedgerTab() {
     ]
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
                 columns={columns}
-                data={txsWithBalance}
+                data={filteredTxsWithBalance}
                 isLoading={loading}
                 variant="embedded"
-                useAdvancedFilter={true}
-                searchPlaceholder="Buscar por descripción..."
-                filterColumn="description"
                 hiddenColumns={["transaction_type"]}
-                facetedFilters={[
-                    {
-                        column: "partner_name",
-                        title: "Socio",
-                        options: partners.map(p => ({ label: p.name, value: p.name }))
-                    },
-                    {
-                        column: "transaction_type",
-                        title: "Tipo",
-                        options: TRANSACTION_TYPE_OPTIONS
-                    }
+                segmentation={<SegmentationBar def={partnerSegDef} />}
+                showReset={isSegFiltered}
+                onReset={clearSeg}
+                toolbarActions={[
+                    { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => setIsContributionOpen(true), intent: 'success' },
+                    { key: 'withdrawal', label: 'Registrar Retiro', icon: LogOut, onClick: () => setIsWithdrawalOpen(true), intent: 'destructive' },
                 ]}
-                toolbarAction={
-                    <>
-                        <DropdownMenuItem
-                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-success focus:bg-success/10 focus:text-success cursor-pointer transition-colors"
-                            onClick={() => setIsContributionOpen(true)}
-                        >
-                            <Wallet className="h-4 w-4 mr-2" />
-                            Registrar Aporte
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
-                            onClick={() => setIsWithdrawalOpen(true)}
-                        >
-                            <LogOut className="h-4 w-4 mr-2" />
-                            Registrar Retiro
-                        </DropdownMenuItem>
-                    </>
-                }
                 renderFooter={(table) => {
                     const rows = table.getFilteredRowModel().rows
                     const totals = rows.reduce((acc, row) => {
@@ -280,7 +287,7 @@ export function PartnerLedgerTab() {
                             <TableCell className="text-right py-4">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mb-1.5 opacity-60">Running Balance</span>
-                                    <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-black tracking-tighter shadow-lg shadow-primary/10">
+                                    <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-black tracking-tighter shadow-floating shadow-primary/10">
                                         {rows.length > 0 ? formatCurrency(rows[0].original.balance_after) : '$0'}
                                     </div>
                                 </div>

@@ -7,23 +7,30 @@ Handles:
 3. Reopen (reverse closing entry)
 4. Generate opening entry for next year (optional)
 """
-from django.db import transaction
-from django.db.models import Sum, Q
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from decimal import Decimal
+
 from datetime import date
+from decimal import Decimal
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Sum
+from django.utils import timezone
+
+from finances.services import FinanceService
 
 from .models import (
-    FiscalYear, JournalEntry, JournalItem, Account,
-    AccountType, AccountingSettings
+    Account,
+    AccountingSettings,
+    AccountType,
+    FiscalYear,
+    FiscalYearAccountMapping,
+    JournalEntry,
+    JournalItem,
 )
 from .services import JournalEntryService
-from finances.services import FinanceService
 
 
 class FiscalYearClosingService:
-
     # ---------------------------------------------------------------
     # 1. PREVIEW — Pre-closing dry-run
     # ---------------------------------------------------------------
@@ -50,9 +57,12 @@ class FiscalYearClosingService:
             AccountType.EXPENSE, start_date, end_date
         )
 
-        total_income = sum(a['balance'] for a in income_accounts)
-        total_expenses = sum(a['balance'] for a in expense_accounts)
+        total_income = sum(a["balance"] for a in income_accounts)
+        total_expenses = sum(a["balance"] for a in expense_accounts)
         net_result = total_income - total_expenses
+
+        # Auto-create checklist instances for this year
+        FiscalYearClosingService._auto_create_checklist_instances(year)
 
         # Run pre-closing validations
         validations = FiscalYearClosingService._run_preclosing_validations(year)
@@ -62,20 +72,20 @@ class FiscalYearClosingService:
         result_account = settings.partner_current_year_earnings_account if settings else None
 
         return {
-            'year': year,
-            'income_accounts': income_accounts,
-            'expense_accounts': expense_accounts,
-            'income_total': float(total_income),
-            'expense_total': float(total_expenses),
-            'net_result': float(net_result),
-            'is_profit': net_result > 0,
-            'is_loss': net_result < 0,
-            'validations': validations,
-            'can_close': all(v['passed'] for v in validations.values()),
-            'result_account_id': result_account.id if result_account else None,
-            'result_account_code': result_account.code if result_account else None,
-            'result_account_name': result_account.name if result_account else None,
-            'is_balanced': FinanceService.get_trial_balance(start_date, end_date)['is_balanced']
+            "year": year,
+            "income_accounts": income_accounts,
+            "expense_accounts": expense_accounts,
+            "income_total": float(total_income),
+            "expense_total": float(total_expenses),
+            "net_result": float(net_result),
+            "is_profit": net_result > 0,
+            "is_loss": net_result < 0,
+            "validations": validations,
+            "can_close": all(v["passed"] for v in validations.values()),
+            "result_account_id": result_account.id if result_account else None,
+            "result_account_code": result_account.code if result_account else None,
+            "result_account_name": result_account.name if result_account else None,
+            "is_balanced": FinanceService.get_trial_balance(start_date, end_date)["is_balanced"],
         }
 
     # ---------------------------------------------------------------
@@ -83,7 +93,7 @@ class FiscalYearClosingService:
     # ---------------------------------------------------------------
     @staticmethod
     @transaction.atomic
-    def close_fiscal_year(year: int, user, notes: str = '') -> FiscalYear:
+    def close_fiscal_year(year: int, user, notes: str = "") -> FiscalYear:
         """
         Executes the annual closing process:
         1. Validates all preconditions
@@ -103,25 +113,24 @@ class FiscalYearClosingService:
         fiscal_year, _ = FiscalYear.objects.get_or_create(
             year=year,
             defaults={
-                'start_date': date(year, 1, 1),
-                'end_date': date(year, 12, 31),
-            }
+                "start_date": date(year, 1, 1),
+                "end_date": date(year, 12, 31),
+            },
         )
 
         if fiscal_year.status == FiscalYear.Status.CLOSED:
             raise ValidationError(
-                "Este ejercicio fiscal ya está cerrado. "
-                "Debe reabrirlo antes de volver a cerrarlo."
+                "Este ejercicio fiscal ya está cerrado. Debe reabrirlo antes de volver a cerrarlo."
             )
 
         # Run validations
         validations = FiscalYearClosingService._run_preclosing_validations(year)
-        failed = [k for k, v in validations.items() if not v['passed']]
+        failed = [k for k, v in validations.items() if not v["passed"]]
         if failed:
-            messages = [validations[k]['message'] for k in failed]
+            messages = [validations[k]["message"] for k in failed]
             raise ValidationError(
-                "No se puede cerrar el ejercicio. Errores:\n" +
-                "\n".join(f"• {m}" for m in messages)
+                "No se puede cerrar el ejercicio. Errores:\n"
+                + "\n".join(f"• {m}" for m in messages)
             )
 
         # Get settings
@@ -136,10 +145,12 @@ class FiscalYearClosingService:
 
         start_date = date(year, 1, 1)
         end_date = date(year, 12, 31)
-        
+
         import calendar
+
         from tax.models import AccountingPeriod
-        last_period = AccountingPeriod.objects.filter(year=year).order_by('-month').first()
+
+        last_period = AccountingPeriod.objects.filter(year=year).order_by("-month").first()
         entry_month = last_period.month if last_period else 12
         entry_day = calendar.monthrange(year, entry_month)[1]
         entry_date = date(year, entry_month, entry_day)
@@ -152,8 +163,8 @@ class FiscalYearClosingService:
             AccountType.EXPENSE, start_date, end_date
         )
 
-        total_income = sum(Decimal(str(a['balance'])) for a in income_accounts)
-        total_expenses = sum(Decimal(str(a['balance'])) for a in expense_accounts)
+        total_income = sum(Decimal(str(a["balance"])) for a in income_accounts)
+        total_expenses = sum(Decimal(str(a["balance"])) for a in expense_accounts)
         net_result = total_income - total_expenses
 
         # ------- Generate Closing Entry -------
@@ -164,62 +175,87 @@ class FiscalYearClosingService:
             status=JournalEntry.Status.DRAFT,
         )
         closing_entry._is_system_closing_entry = True
+        closing_entry.is_manual = False
         closing_entry.save()
 
         items = []
 
         # 1. Close INCOME accounts (they have credit-normal balance → debit to close)
         for acc_data in income_accounts:
-            if acc_data['balance'] == 0:
+            if acc_data["balance"] == 0:
                 continue
-            balance = Decimal(str(acc_data['balance']))
-            items.append(JournalItem(
-                entry=closing_entry,
-                account_id=acc_data['id'],
-                label=f"Cierre {acc_data['code']} {acc_data['name']}",
-                debit=balance if balance > 0 else Decimal('0'),
-                credit=abs(balance) if balance < 0 else Decimal('0'),
-            ))
+            balance = Decimal(str(acc_data["balance"]))
+            items.append(
+                JournalItem(
+                    entry=closing_entry,
+                    account_id=acc_data["id"],
+                    label=f"Cierre {acc_data['code']} {acc_data['name']}",
+                    debit=balance if balance > 0 else Decimal("0"),
+                    credit=abs(balance) if balance < 0 else Decimal("0"),
+                )
+            )
 
         # 2. Close EXPENSE accounts (they have debit-normal balance → credit to close)
         for acc_data in expense_accounts:
-            if acc_data['balance'] == 0:
+            if acc_data["balance"] == 0:
                 continue
-            balance = Decimal(str(acc_data['balance']))
-            items.append(JournalItem(
-                entry=closing_entry,
-                account_id=acc_data['id'],
-                label=f"Cierre {acc_data['code']} {acc_data['name']}",
-                debit=Decimal('0') if balance > 0 else abs(balance),
-                credit=balance if balance > 0 else Decimal('0'),
-            ))
+            balance = Decimal(str(acc_data["balance"]))
+            items.append(
+                JournalItem(
+                    entry=closing_entry,
+                    account_id=acc_data["id"],
+                    label=f"Cierre {acc_data['code']} {acc_data['name']}",
+                    debit=Decimal("0") if balance > 0 else abs(balance),
+                    credit=balance if balance > 0 else Decimal("0"),
+                )
+            )
 
         # 3. Result → Equity
         if net_result > 0:
             # Profit: Credit the result account (increase equity)
-            items.append(JournalItem(
-                entry=closing_entry,
-                account=result_account,
-                label=f"Utilidad del Ejercicio {year}",
-                debit=Decimal('0'),
-                credit=net_result,
-            ))
+            items.append(
+                JournalItem(
+                    entry=closing_entry,
+                    account=result_account,
+                    label=f"Utilidad del Ejercicio {year}",
+                    debit=Decimal("0"),
+                    credit=net_result,
+                )
+            )
         elif net_result < 0:
             # Loss: Debit the result account (decrease equity)
-            items.append(JournalItem(
-                entry=closing_entry,
-                account=result_account,
-                label=f"Pérdida del Ejercicio {year}",
-                debit=abs(net_result),
-                credit=Decimal('0'),
-            ))
+            items.append(
+                JournalItem(
+                    entry=closing_entry,
+                    account=result_account,
+                    label=f"Pérdida del Ejercicio {year}",
+                    debit=abs(net_result),
+                    credit=Decimal("0"),
+                )
+            )
         # If net_result == 0, no equity line needed (income == expenses)
 
-        # Bulk create items
-        JournalItem.objects.bulk_create(items)
+        if items:
+            JournalItem.objects.bulk_create(items)
+            JournalEntryService.post_entry(closing_entry)
+        else:
+            # No P&L movements to close — delete the empty draft and proceed without a closing entry
+            closing_entry.delete()
+            closing_entry = None
 
-        # Post the entry
-        JournalEntryService.post_entry(closing_entry)
+        # Snapshot account→report category mappings for historical reports
+        leaf_accounts = Account.objects.filter(children__isnull=True)
+        mapping_records = [
+            FiscalYearAccountMapping(
+                fiscal_year=fiscal_year,
+                account=account,
+                is_category=account.effective_is_category,
+                bs_category=account.effective_bs_category,
+                cf_category=account.effective_cf_category,
+            )
+            for account in leaf_accounts
+        ]
+        FiscalYearAccountMapping.objects.bulk_create(mapping_records, ignore_conflicts=True)
 
         # Update FiscalYear
         fiscal_year.status = FiscalYear.Status.CLOSED
@@ -229,6 +265,10 @@ class FiscalYearClosingService:
         fiscal_year.closed_by = user
         fiscal_year.notes = notes
         fiscal_year.save()
+
+        # Automáticamente generar el asiento de apertura para el siguiente ejercicio
+        # que re-clasificará las utilidades del ejercicio cerrado a resultados acumulados.
+        FiscalYearClosingService.generate_opening_entry(year, user)
 
         return fiscal_year
 
@@ -256,6 +296,7 @@ class FiscalYearClosingService:
         # Check if there is an executed profit distribution resolution
         # We use a late import to avoid circular dependencies
         from contacts.partner_models import ProfitDistributionResolution
+
         try:
             distribution = fiscal_year.profit_distribution
             if distribution.status == ProfitDistributionResolution.Status.EXECUTED:
@@ -274,18 +315,19 @@ class FiscalYearClosingService:
 
         # Unlock the specific accounting periods related to the entries (not necessarily Dec/Jan)
         from tax.models import AccountingPeriod
+
         if fiscal_year.closing_entry:
             AccountingPeriod.objects.filter(
-                year=fiscal_year.closing_entry.date.year, 
+                year=fiscal_year.closing_entry.date.year,
                 month=fiscal_year.closing_entry.date.month,
-                status=AccountingPeriod.Status.CLOSED
+                status=AccountingPeriod.Status.CLOSED,
             ).update(status=AccountingPeriod.Status.OPEN)
 
         if fiscal_year.opening_entry:
             AccountingPeriod.objects.filter(
-                year=fiscal_year.opening_entry.date.year, 
+                year=fiscal_year.opening_entry.date.year,
                 month=fiscal_year.opening_entry.date.month,
-                status=AccountingPeriod.Status.CLOSED
+                status=AccountingPeriod.Status.CLOSED,
             ).update(status=AccountingPeriod.Status.OPEN)
 
         # --- 3. Entry Reversals ---
@@ -294,7 +336,8 @@ class FiscalYearClosingService:
             if fiscal_year.opening_entry.status == JournalEntry.Status.POSTED:
                 JournalEntryService.reverse_entry(
                     fiscal_year.opening_entry,
-                    description=f"Reverso Apertura {year + 1} (por reapertura Ej. {year})"
+                    description=f"Reverso Apertura {year + 1} (por reapertura Ej. {year})",
+                    allow_automatic=True
                 )
             fiscal_year.opening_entry = None
 
@@ -302,10 +345,14 @@ class FiscalYearClosingService:
         if fiscal_year.closing_entry:
             if fiscal_year.closing_entry.status == JournalEntry.Status.POSTED:
                 JournalEntryService.reverse_entry(
-                    fiscal_year.closing_entry,
-                    description=f"Reverso Cierre Ejercicio {year}"
+                    fiscal_year.closing_entry, 
+                    description=f"Reverso Cierre Ejercicio {year}",
+                    allow_automatic=True
                 )
             fiscal_year.closing_entry = None
+
+        # Remove historical mapping snapshot
+        fiscal_year.account_mappings.all().delete()
 
         # Clean up metadata
         fiscal_year.net_result = None
@@ -350,9 +397,10 @@ class FiscalYearClosingService:
             )
 
         end_date = date(year, 12, 31)
-        
+
         from tax.models import AccountingPeriod
-        first_period = AccountingPeriod.objects.filter(year=year + 1).order_by('month').first()
+
+        first_period = AccountingPeriod.objects.filter(year=year + 1).order_by("month").first()
         entry_month = first_period.month if first_period else 1
         opening_date = date(year + 1, entry_month, 1)
 
@@ -360,7 +408,7 @@ class FiscalYearClosingService:
         balance_types = [AccountType.ASSET, AccountType.LIABILITY, AccountType.EQUITY]
         leaf_accounts = Account.objects.filter(
             account_type__in=balance_types,
-            children__isnull=True  # Only leaf accounts
+            children__isnull=True,  # Only leaf accounts
         )
 
         opening_entry = JournalEntry(
@@ -370,7 +418,12 @@ class FiscalYearClosingService:
             status=JournalEntry.Status.DRAFT,
         )
         opening_entry._is_system_closing_entry = True
+        opening_entry.is_manual = False
         opening_entry.save()
+
+        settings = AccountingSettings.get_solo()
+        current_earnings_acc = settings.partner_current_year_earnings_account
+        retained_earnings_acc = settings.partner_retained_earnings_account
 
         items = []
 
@@ -378,18 +431,24 @@ class FiscalYearClosingService:
             # Calculate accumulated balance up to end_date
             result = JournalItem.objects.filter(
                 account=account,
-                entry__status=JournalEntry.Status.POSTED,
+                entry__status__in=JournalEntry.balance_affecting_statuses(),
                 entry__date__lte=end_date,
             ).aggregate(
-                total_debit=Sum('debit'),
-                total_credit=Sum('credit'),
+                total_debit=Sum("debit"),
+                total_credit=Sum("credit"),
             )
 
-            total_debit = result['total_debit'] or Decimal('0')
-            total_credit = result['total_credit'] or Decimal('0')
+            total_debit = result["total_debit"] or Decimal("0")
+            total_credit = result["total_credit"] or Decimal("0")
 
             if total_debit == 0 and total_credit == 0:
                 continue
+
+            target_account = retained_earnings_acc if account == current_earnings_acc and retained_earnings_acc else account
+            
+            label = f"Apertura {target_account.code} {target_account.name}"
+            if account == current_earnings_acc and retained_earnings_acc:
+                label = f"Traslado de Utilidad Ej. {year}"
 
             # For balance sheet accounts, the opening entry carries the
             # accumulated balance forward
@@ -397,46 +456,53 @@ class FiscalYearClosingService:
                 # Assets: debit-normal → opening debit = balance
                 net = total_debit - total_credit
                 if net > 0:
-                    items.append(JournalItem(
-                        entry=opening_entry,
-                        account=account,
-                        label=f"Apertura {account.code} {account.name}",
-                        debit=net,
-                        credit=Decimal('0'),
-                    ))
+                    items.append(
+                        JournalItem(
+                            entry=opening_entry,
+                            account=target_account,
+                            label=label,
+                            debit=net,
+                            credit=Decimal("0"),
+                        )
+                    )
                 elif net < 0:
-                    items.append(JournalItem(
-                        entry=opening_entry,
-                        account=account,
-                        label=f"Apertura {account.code} {account.name}",
-                        debit=Decimal('0'),
-                        credit=abs(net),
-                    ))
+                    items.append(
+                        JournalItem(
+                            entry=opening_entry,
+                            account=target_account,
+                            label=label,
+                            debit=Decimal("0"),
+                            credit=abs(net),
+                        )
+                    )
             else:
                 # Liabilities & Equity: credit-normal → opening credit = balance
                 net = total_credit - total_debit
                 if net > 0:
-                    items.append(JournalItem(
-                        entry=opening_entry,
-                        account=account,
-                        label=f"Apertura {account.code} {account.name}",
-                        debit=Decimal('0'),
-                        credit=net,
-                    ))
+                    items.append(
+                        JournalItem(
+                            entry=opening_entry,
+                            account=target_account,
+                            label=label,
+                            debit=Decimal("0"),
+                            credit=net,
+                        )
+                    )
                 elif net < 0:
-                    items.append(JournalItem(
-                        entry=opening_entry,
-                        account=account,
-                        label=f"Apertura {account.code} {account.name}",
-                        debit=abs(net),
-                        credit=Decimal('0'),
-                    ))
+                    items.append(
+                        JournalItem(
+                            entry=opening_entry,
+                            account=target_account,
+                            label=label,
+                            debit=abs(net),
+                            credit=Decimal("0"),
+                        )
+                    )
 
         if not items:
             opening_entry.delete()
             raise ValidationError(
-                "No hay saldos de cuentas de balance para generar "
-                "asiento de apertura."
+                "No hay saldos de cuentas de balance para generar asiento de apertura."
             )
 
         JournalItem.objects.bulk_create(items)
@@ -446,7 +512,7 @@ class FiscalYearClosingService:
 
         # Link to fiscal year
         fiscal_year.opening_entry = opening_entry
-        fiscal_year.save(update_fields=['opening_entry', 'updated_at'])
+        fiscal_year.save(update_fields=["opening_entry", "updated_at"])
 
         return fiscal_year
 
@@ -454,9 +520,7 @@ class FiscalYearClosingService:
     # PRIVATE HELPERS
     # ---------------------------------------------------------------
     @staticmethod
-    def _get_pl_account_balances(
-        account_type: str, start_date: date, end_date: date
-    ) -> list:
+    def _get_pl_account_balances(account_type: str, start_date: date, end_date: date) -> list:
         """
         Returns list of leaf P&L accounts with their balances for a period.
         Only includes accounts with non-zero balances.
@@ -466,22 +530,22 @@ class FiscalYearClosingService:
         leaf_accounts = Account.objects.filter(
             account_type=account_type,
             children__isnull=True,
-        ).order_by('code')
+        ).order_by("code")
 
         results = []
         for account in leaf_accounts:
             agg = JournalItem.objects.filter(
                 account=account,
-                entry__status=JournalEntry.Status.POSTED,
+                entry__status__in=JournalEntry.balance_affecting_statuses(),
                 entry__date__gte=start_date,
                 entry__date__lte=end_date,
             ).aggregate(
-                total_debit=Sum('debit'),
-                total_credit=Sum('credit'),
+                total_debit=Sum("debit"),
+                total_credit=Sum("credit"),
             )
 
-            debit = agg['total_debit'] or Decimal('0')
-            credit = agg['total_credit'] or Decimal('0')
+            debit = agg["total_debit"] or Decimal("0")
+            credit = agg["total_credit"] or Decimal("0")
 
             # Calculate balance based on account nature
             if account_type == AccountType.INCOME:
@@ -490,14 +554,45 @@ class FiscalYearClosingService:
                 balance = debit - credit  # Expense: debit-normal
 
             if balance != 0:
-                results.append({
-                    'id': account.id,
-                    'code': account.code,
-                    'name': account.name,
-                    'balance': float(balance),
-                })
+                results.append(
+                    {
+                        "id": account.id,
+                        "code": account.code,
+                        "name": account.name,
+                        "balance": float(balance),
+                    }
+                )
 
         return results
+
+    @staticmethod
+    @staticmethod
+    def _auto_create_checklist_instances(year: int) -> None:
+        """Create ClosingChecklistInstance for all active templates and this fiscal year.
+
+        If no FiscalYear record exists for the given year, it is auto-created here
+        (same pattern as close_fiscal_year) so that the checklist endpoint
+        GET /fiscal-years/<year>/checklist/ can always find the record.
+        """
+        from accounting.models import (
+            ClosingChecklistInstance,
+            ClosingChecklistTemplate,
+            FiscalYear,
+        )
+
+        fiscal_year, _ = FiscalYear.objects.get_or_create(
+            year=year,
+            defaults={
+                "start_date": date(year, 1, 1),
+                "end_date": date(year, 12, 31),
+            },
+        )
+
+        active_templates = ClosingChecklistTemplate.objects.filter(is_active=True)
+        for template in active_templates:
+            ClosingChecklistInstance.objects.get_or_create(
+                fiscal_year=fiscal_year, template=template
+            )
 
     @staticmethod
     def _run_preclosing_validations(year: int) -> dict:
@@ -505,7 +600,7 @@ class FiscalYearClosingService:
         Runs all pre-closing validations and returns a dict of results.
         Each validation: {key: {passed: bool, message: str}}
         """
-        from tax.models import AccountingPeriod
+        from tax.models import AccountingPeriod, TaxPeriod
 
         start_date = date(year, 1, 1)
         end_date = date(year, 12, 31)
@@ -518,32 +613,56 @@ class FiscalYearClosingService:
         except FiscalYear.DoesNotExist:
             is_closed = False
 
-        validations['fiscal_year_open'] = {
-            'passed': not is_closed,
-            'message': 'El ejercicio fiscal ya está cerrado.' if is_closed
-                       else 'Ejercicio fiscal disponible para cierre.',
+        validations["fiscal_year_open"] = {
+            "passed": not is_closed,
+            "message": "El ejercicio fiscal ya está cerrado."
+            if is_closed
+            else "Ejercicio fiscal disponible para cierre.",
         }
 
         # 2. Check all existing accounting periods are CLOSED
         total_periods = AccountingPeriod.objects.filter(year=year).count()
         closed_periods = AccountingPeriod.objects.filter(
-            year=year,
-            status=AccountingPeriod.Status.CLOSED
+            year=year, status=AccountingPeriod.Status.CLOSED
         ).count()
 
         all_closed = (closed_periods == total_periods) and total_periods > 0
+        partial_year = total_periods < 12
 
-        validations['periods_closed'] = {
-            'passed': all_closed,
-            'is_warning': all_closed and total_periods < 12,
-            'message': (
+        if total_periods == 0:
+            _periods_passed = True
+            _periods_warning = False
+            _periods_msg = "No hay periodos contables registrados para este ejercicio."
+        elif all_closed:
+            _periods_passed = True
+            _periods_warning = partial_year
+            _periods_msg = (
+                f"Todos los {closed_periods} periodos mensuales creados están cerrados."
+                + (" (Advertencia: Ejercicio con menos de 12 meses)" if partial_year else "")
+            )
+        elif partial_year:
+            # Partial year with some open periods: warning only (not a hard block)
+            _periods_passed = True
+            _periods_warning = True
+            _periods_msg = (
                 f"Solo {closed_periods} de {total_periods} periodos creados están cerrados. "
-                "Todos los periodos deben estar cerrados."
-            ) if not all_closed else (
-                f"Todos los {closed_periods} periodos mensuales creados están cerrados." +
-                (" (Advertencia: Ejercicio con menos de 12 meses)" if total_periods < 12 else "")
-            ),
+                "Se recomienda cerrar todos los periodos antes del cierre anual."
+            )
+        else:
+            # Full 12-month year with unclosed periods: hard block
+            _periods_passed = False
+            _periods_warning = False
+            _periods_msg = (
+                f"Solo {closed_periods} de {total_periods} periodos están cerrados. "
+                "Todos los periodos deben estar cerrados antes del cierre anual."
+            )
+
+        validations["periods_closed"] = {
+            "passed": _periods_passed,
+            "is_warning": _periods_warning,
+            "message": _periods_msg,
         }
+
 
         # 3. Check no DRAFT journal entries in the year
         draft_count = JournalEntry.objects.filter(
@@ -552,26 +671,64 @@ class FiscalYearClosingService:
             status=JournalEntry.Status.DRAFT,
         ).count()
 
-        validations['no_drafts'] = {
-            'passed': draft_count == 0,
-            'message': (
+        validations["no_drafts"] = {
+            "passed": draft_count == 0,
+            "message": (
                 f"Hay {draft_count} asientos en borrador en el año {year}. "
                 "Todos deben estar publicados o anulados."
-            ) if draft_count > 0 else 'No hay asientos en borrador.',
+            )
+            if draft_count > 0
+            else "No hay asientos en borrador.",
         }
 
         # 4. Check result account is configured
         settings = AccountingSettings.get_solo()
-        has_result_account = (
-            settings and settings.partner_current_year_earnings_account is not None
-        )
+        has_result_account = settings and settings.partner_current_year_earnings_account is not None
 
-        validations['result_account'] = {
-            'passed': has_result_account,
-            'message': (
-                'Falta configurar la Cuenta de Utilidades del Ejercicio Actual '
-                'en Configuración Contable.'
-            ) if not has_result_account else 'Cuenta de resultado configurada.',
+        validations["result_account"] = {
+            "passed": has_result_account,
+            "message": (
+                "Falta configurar la Cuenta de Utilidades del Ejercicio Actual "
+                "en Configuración Contable."
+            )
+            if not has_result_account
+            else "Cuenta de resultado configurada.",
+        }
+
+        # 5. Check all TaxPeriods for the year are CLOSED (warning only — not a hard block)
+        tax_total = TaxPeriod.objects.filter(year=year).count()
+        tax_closed = TaxPeriod.objects.filter(
+            year=year, status=TaxPeriod.Status.CLOSED
+        ).count()
+        tax_all_closed = tax_total == 0 or (tax_closed == tax_total)
+
+        if tax_total == 0:
+            _tax_msg = "No hay periodos tributarios (F29) registrados para este año."
+            _tax_warning = True
+        elif tax_all_closed:
+            _tax_msg = f"Todos los {tax_closed} periodos tributarios del año están cerrados."
+            _tax_warning = False
+        else:
+            _tax_msg = (
+                f"Solo {tax_closed} de {tax_total} periodos tributarios (F29) "
+                "están cerrados. Se recomienda cerrarlos antes del cierre anual."
+            )
+            _tax_warning = True
+
+        validations["tax_periods_closed"] = {
+            "passed": True,
+            "is_warning": _tax_warning,
+            "message": _tax_msg,
         }
 
         return validations
+
+    @staticmethod
+    def validate_can_close(user, year):
+        if not user.has_perm('accounting.can_close_fiscal_year'):
+            raise ValidationError("Sin permisos para cerrar ejercicio fiscal.")
+
+    @staticmethod
+    def validate_can_reopen(user, year):
+        if not user.has_perm("accounting.can_reopen_fiscal_year"):
+            raise ValidationError("No tiene permisos para reabrir el ejercicio fiscal.")

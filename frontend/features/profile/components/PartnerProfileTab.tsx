@@ -1,41 +1,36 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
 
-import React, {useEffect, useState} from "react"
+import React, {useState} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { toast } from "sonner"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Chip, FadeIn, MoneyDisplay, StatCard } from '@/components/shared'
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
 import {
-    Activity,
     CalendarDays,
-    Wallet,
     User,
     FileText,
-    Building2,
-    Briefcase,
-    Eye
+    Building2
 } from "lucide-react"
-import { ColumnDef } from "@tanstack/react-table"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
+import { type ColumnDef } from "@tanstack/react-table"
+import { type PartnerTransaction } from "@/features/contacts"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 
 import { cn } from "@/lib/utils"
 import {SkeletonShell} from "@/components/shared"
 
-import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
+import { PaymentDrawer } from "@/features/treasury"
+import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
 interface Props {
     contactId: number;
 }
 
 export function PartnerProfileTab({ contactId }: Props) {
-    const [statement, setStatement] = useState<PartnerStatement | null>(null)
-    const [loading, setLoading] = useState(true)
+    const { data: statement, isLoading, isError } = usePartnerStatement(contactId)
 
     // Movement Details state
     const router = useRouter()
@@ -44,23 +39,6 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
-
-    const fetchData = async () => {
-        if (!contactId) return
-        setLoading(true)
-        try {
-            const data = await partnersApi.getStatement(contactId)
-            setStatement(data)
-        } catch {
-            toast.error("Error al cargar estado de cuenta societario")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        requestAnimationFrame(() => fetchData())
-    }, [contactId])
 
     const handleViewDetails = (movementId: number) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -75,6 +53,8 @@ export function PartnerProfileTab({ contactId }: Props) {
         setDetailsOpen(false)
         setSelectedMovementId(null)
     }
+
+    const actionsCtx: PartnerTransactionActionsCtx = { onViewMovement: handleViewDetails }
 
     const columns: ColumnDef<PartnerTransaction>[] = [
         {
@@ -127,27 +107,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                 )
             },
         },
-        createActionsColumn<PartnerTransaction>({
-            renderActions: (tx) => {
-                const movementId = tx.treasury_movement
-                return (
-                    movementId ? (
-                        <DataCell.Action
-                            icon={Eye}
-                            title="Ver Detalle Transaccional"
-                            onClick={() => handleViewDetails(movementId)}
-                        />
-                    ) : (
-                        <span className="text-[10px] text-muted-foreground italic">No vinculado</span>
-                    )
-                )
-            }
-        })
+        partnerTransactionActions.column(actionsCtx)
     ]
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
+    if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
-    if (!statement) return null
+    if (isError || !statement) return null
 
     const { contact, summary } = statement
 
@@ -159,17 +124,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 1: Metrics & Summary */}
                 <AccordionItem value="summary" className="border-none">
                     <FadeIn yOffset={10}>
-                        <Card variant="transparent" className="border-2 overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
-                                <div className="flex items-center gap-3">
-                                    <Wallet className="h-5 w-5" />
-                                    <div className="text-left">
-                                        <h3 className="text-sm font-bold tracking-tight">Resumen Patrimonial</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            Estado de capitalización neta
-                                        </p>
-                                    </div>
-                                </div>
+                        <Card >
+                            <AccordionTrigger className="hover:no-underline py-0">
+                                <CardHeader className="w-full">
+                                    <CardTitle className="text-lg text-primary">Resumen Patrimonial</CardTitle>
+                                    <CardDescription>Estado de capitalización neta</CardDescription>
+                                </CardHeader>
                             </AccordionTrigger>
                             <AccordionContent className="p-0 border-t-0">
                                 <CardContent className="p-6">
@@ -180,7 +140,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                             subtext="Participación sobre el total patrimonial"
                                             variant="minimal"
                                             accent="muted"
-                                            className="bg-muted/30 p-4 rounded-lg border flex flex-col justify-center text-center"
+                                            className="p-4 justify-center text-center"
                                             valueSize="xl"
                                         />
                                         <StatCard
@@ -189,7 +149,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                             subtext="Neto acumulado de aportes y retiros"
                                             variant="minimal"
                                             accent="primary"
-                                            className="md:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20 flex flex-col justify-center items-center text-center"
+                                            className="md:col-span-2 p-4 justify-center items-center text-center"
                                         />
                                     </div>
                                 </CardContent>
@@ -201,17 +161,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 2: Societal Info */}
                 <AccordionItem value="info" className="border-none">
                     <FadeIn delay={0.1} yOffset={10}>
-                        <Card variant="transparent" className="border-2 overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
-                                <div className="flex items-center gap-3">
-                                    <Briefcase className="h-5 w-5" />
-                                    <div className="text-left">
-                                        <h3 className="text-sm font-bold tracking-tight">Información Societaria</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            Identificación y cuentas vinculadas
-                                        </p>
-                                    </div>
-                                </div>
+                        <Card >
+                            <AccordionTrigger className="hover:no-underline py-0">
+                                <CardHeader className="w-full">
+                                    <CardTitle className="text-lg text-primary">Información Societaria</CardTitle>
+                                    <CardDescription>Identificación y cuentas vinculadas</CardDescription>
+                                </CardHeader>
                             </AccordionTrigger>
                             <AccordionContent className="p-0 border-t-0">
                                 <CardContent className="p-6">
@@ -238,17 +193,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 3: History */}
                 <AccordionItem value="history" className="border-none">
                     <FadeIn delay={0.2} yOffset={10}>
-                        <Card variant="transparent" className="border-2 overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
-                                <div className="flex items-center gap-3">
-                                    <Activity className="h-5 w-5" />
-                                    <div className="text-left">
-                                        <h3 className="text-sm font-bold tracking-tight">Historial de Capital</h3>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            Resumen de movimientos históricos
-                                        </p>
-                                    </div>
-                                </div>
+                        <Card >
+                            <AccordionTrigger className="hover:no-underline py-0">
+                                <CardHeader className="w-full">
+                                    <CardTitle className="text-lg text-primary">Historial de Capital</CardTitle>
+                                    <CardDescription>Resumen de movimientos históricos</CardDescription>
+                                </CardHeader>
                             </AccordionTrigger>
                             <AccordionContent className="p-0 border-t-0">
                                 <DataTable
@@ -281,7 +231,7 @@ function InfoField({ icon, label, value }: { icon: React.ReactNode; label: strin
     return (
         <div className="space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
+            <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}
             </div>

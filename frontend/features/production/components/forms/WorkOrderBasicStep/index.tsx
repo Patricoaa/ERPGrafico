@@ -1,5 +1,5 @@
 "use client"
-import { formatPlainDate } from "@/lib/utils"
+import { formatPlainDate, toDate } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm, type Resolver } from "react-hook-form"
@@ -13,10 +13,11 @@ import { toast } from "sonner"
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
 import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
 import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
-import {workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
+import {workOrderSchema, type WorkOrderFormValues } from "@/types/forms"
 import { LabeledInput, SkeletonShell } from "@/components/shared"
-import type { Contact } from "@/features/contacts/types"
+import type { Contact } from "@/features/contacts"
 import type { ProductMinimal } from "../../../types"
+import type { SaleOrder } from "@/features/sales"
 import {
     useUoMs,
     useProductDetail,
@@ -54,7 +55,7 @@ export function WorkOrderBasicStep({
             ? chosenOtType
             : (initialData ? (initialData.sale_order ? "LINKED" : "NONE") : (defaultOtType || null))
     )
-    const [loading, setLoading] = useState(false)
+    const [, setLoading] = useState(false)
     const [mfgData, setMfgData] = useState<ManufacturingData>(emptyManufacturingData())
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [selectedManualProduct, setSelectedManualProduct] = useState<ProductMinimal | null>(null)
@@ -129,7 +130,7 @@ export function WorkOrderBasicStep({
 
     useEffect(() => {
         if (defaultProductData && !selectedManualProduct && !initialData) {
-            handleManualProductSelect(defaultProductData as any)
+            handleManualProductSelect(defaultProductData as unknown as ProductMinimal)
             form.setValue('product_id' as never, String(defaultProductData.id) as never)
         }
     }, [defaultProductData, selectedManualProduct, initialData, form])
@@ -157,17 +158,17 @@ export function WorkOrderBasicStep({
                     quantity: initialData.stage_data?.quantity?.toString() || "",
                     uom_id: initialData.stage_data?.uom_id?.toString() || "",
                 }),
-                start_date: initialData.start_date ? new Date(initialData.start_date) : new Date(),
+                start_date: initialData.start_date ? toDate(initialData.start_date) : new Date(),
                 due_date: initialData.estimated_completion_date
-                    ? new Date(initialData.estimated_completion_date)
-                    : (initialData.sale_order_delivery_date ? new Date(initialData.sale_order_delivery_date) : null),
+                    ? toDate(initialData.estimated_completion_date)
+                    : (initialData.sale_order_delivery_date ? toDate(initialData.sale_order_delivery_date) : null),
                 internal_notes: initialData.stage_data?.internal_notes || "",
             } as WorkOrderFormValues)
 
             setOtType(isLinked ? "LINKED" : "NONE")
 
             if (initialData.product) {
-                setSelectedManualProduct(initialData.product as any)
+                setSelectedManualProduct(initialData.product as unknown as ProductMinimal)
             }
 
             const stageData = initialData.stage_data || {}
@@ -176,7 +177,7 @@ export function WorkOrderBasicStep({
                     id: Number(stageData.contact_id),
                     name: stageData.contact_name || "Contacto",
                     tax_id: stageData.contact_tax_id || ""
-                } as any)
+                } as Contact)
             } else {
                 setSelectedContact(null)
             }
@@ -188,16 +189,16 @@ export function WorkOrderBasicStep({
                     postpress: stageData.phases?.postpress || false,
                 },
                 specifications: {
-                    prepress: stageData.prepress_specs || (stageData as any).specifications?.prepress || '',
-                    press: stageData.press_specs || (stageData as any).specifications?.press || '',
-                    postpress: stageData.postpress_specs || (stageData as any).specifications?.postpress || '',
+                    prepress: stageData.prepress_specs || (stageData as unknown as { specifications?: { prepress?: string; press?: string; postpress?: string } }).specifications?.prepress || '',
+                    press: stageData.press_specs || (stageData as unknown as { specifications?: { prepress?: string; press?: string; postpress?: string } }).specifications?.press || '',
+                    postpress: stageData.postpress_specs || (stageData as unknown as { specifications?: { prepress?: string; press?: string; postpress?: string } }).specifications?.postpress || '',
                 },
                 design_needed: stageData.design_needed || false,
                 design_files: [],
                 existing_design_files: stageData.design_attachments || [],
                 folio_enabled: stageData.folio_enabled || false,
                 folio_start: stageData.folio_start || '',
-                print_type: (stageData.print_type as any) || null,
+                print_type: (stageData.print_type ?? null) as ManufacturingData['print_type'],
                 internal_notes: stageData.internal_notes || '',
                 product_description: stageData.product_description || '',
             })
@@ -341,9 +342,9 @@ export function WorkOrderBasicStep({
                     {otType && (
                         <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-6">
                             <WorkOrderBasicInfo
-                                initialData={initialData as any}
+                                initialData={initialData}
                                 isAutoCreated={isAutoCreated}
-                                linkedSaleOrder={linkedSaleOrder as any}
+                                linkedSaleOrder={linkedSaleOrder as unknown as SaleOrder | number | string}
                                 saleLines={saleLines}
                                 loadingLines={loadingLines}
                                 uoms={uoms}

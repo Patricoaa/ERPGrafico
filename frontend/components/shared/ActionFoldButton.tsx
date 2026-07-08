@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React from "react";
@@ -12,7 +13,7 @@ export interface ActionFoldButtonProps extends React.ButtonHTMLAttributes<HTMLBu
 export const ActionFoldButton = React.forwardRef<HTMLButtonElement, ActionFoldButtonProps>(
     ({ className, icon, text = "NUEVO", ...props }, ref) => {
         return (
-            <button
+            <Button
                 ref={ref}
                 className={cn(
                     "group relative flex items-center justify-start overflow-hidden transition-all duration-300 ease-in-out",
@@ -33,13 +34,13 @@ export const ActionFoldButton = React.forwardRef<HTMLButtonElement, ActionFoldBu
 
                 {/* The text */}
                 <div className={cn(
-                    "absolute right-0 flex items-center h-full text-primary-foreground text-xs font-heading font-bold uppercase tracking-widest",
+                    "absolute right-0 flex items-center h-full text-primary-foreground text-xs  font-bold uppercase tracking-widest",
                     "transition-all duration-300 ease-in-out opacity-0 w-0",
                     "group-hover:opacity-100 group-hover:w-[65%] group-hover:pr-3"
                 )}>
                     <span className="truncate">{text}</span>
                 </div>
-            </button>
+            </Button>
         );
     }
 );

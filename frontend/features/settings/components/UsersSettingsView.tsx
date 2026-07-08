@@ -2,30 +2,41 @@
 
 import {useState, useEffect, useMemo} from "react"
 
-import { DataTable, SmartSearchBar, ToolbarCreateButton } from '@/components/shared'
+import { DataTableView, SmartSearchBar, ToolbarCreateButton, SegmentationBar, EntityCard, useSegmentation, useSmartSearch, type FilterState } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { DataCell } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 import { FadeIn, Chip } from "@/components/shared"
+import { userActions, type UserActionsCtx } from './userActions'
 
-import { Edit, Users } from "lucide-react"
-import { UserDrawer } from "@/features/users/components/UserDrawer"
+import { Users } from "lucide-react"
+import { UserDrawer } from "@/features/users"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { GroupManagement } from "@/features/settings/components/GroupManagement"
+import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
 
 import { type AppUser } from "@/types/entities"
-import { userSearchDef } from "@/features/users/searchDef"
+import { userSearchDef } from "@/features/users"
+import { userSegDef } from "@/features/users"
 
 interface UsersSettingsViewProps {
     activeTab: string
 }
 
-import { useUsers } from "@/features/users/hooks/useUsers"
+import { useUsers } from "@/features/users"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
-    const { users, isLoading, refetch } = useUsers()
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(userSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(userSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...textFilters, ...segFilters }
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const { page, users, isLoading, refetch } = useUsers({
+        ...allFilters,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    } as FilterState & { page?: number; page_size?: number })
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -46,6 +57,14 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             })
         }
     }, [selectedFromUrl])
+
+    const actionsCtx: UserActionsCtx = {
+        onEdit: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+    }
 
     const columns: ColumnDef<AppUser>[] = useMemo(() => [
         {
@@ -69,7 +88,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 const fullName = `${row.original.first_name || ''} ${row.original.last_name || ''}`.trim()
                 const displayName = fullName || row.original.username
 
-                if (!contactId) return <div className="text-muted-foreground text-[13px] font-bold text-center">{displayName}</div>
+                if (!contactId) return <div className="text-muted-foreground text-sm font-bold text-center">{displayName}</div>
 
                 return <DataCell.ContactLink contactId={contactId}>{displayName}</DataCell.ContactLink>
             },
@@ -132,21 +151,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
         },
-        createActionsColumn<AppUser>({
-            renderActions: (user) => {
-                return (
-                    <DataCell.Action
-                        icon={Edit}
-                        title="Editar"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(user.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                )
-            }
-        })
+        userActions.column(actionsCtx)
     ], [refetch])
 
     const usersCreateAction = useMemo(() => (
@@ -164,18 +169,46 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     ), [])
 
     return (
-        <div className="pt-4 h-full flex flex-col">
-            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+        <div className="pt-4 h-full flex flex-col overflow-y-auto">
+            <Tabs value={activeTab} className="h-full flex flex-col">
                 <FadeIn key={activeTab} className="flex-1 min-h-0">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
                         <div className="flex-1 min-h-0">
-                            <DataTable
+                            <DataTableView
+                                entityLabel="core.user"
                                 columns={columns}
                                 data={users}
                                 variant="embedded"
                                 isLoading={isLoading}
-                                leftAction={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
+                                smartSearch={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
+                                segmentation={<SegmentationBar def={userSegDef} />}
+                                showReset={isFiltered}
+                                onReset={() => { clearText(); clearSeg() }}
+                                isFiltered={isFiltered}
                                 createAction={usersCreateAction}
+                                manualPagination
+                                pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                                rowCount={page?.count ?? 0}
+                                pagination={pageState}
+                                onPaginationChange={setPageState as unknown as (updater: ((prev: typeof pageState) => typeof pageState) | typeof pageState) => void}
+                                renderCard={(user: AppUser) => {
+                                    const groups = (user.groups || []).map(g => typeof g === 'string' ? g : g.name)
+                                    const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
+                                    const systemRole = groups.find(g => roles.includes(g))
+                                    return (
+                                        <EntityCard key={user.id}>
+                                            <EntityCard.Header
+                                                title={user.username}
+                                                subtitle={user.email}
+                                                trailing={<DataCell.Status status={user.is_active ? "active" : "inactive"} />}
+                                            />
+                                            <EntityCard.Body>
+                                                <EntityCard.Field label="Nombre" value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || '—'} />
+                                                {systemRole && <EntityCard.Field label="Rol" value={systemRole} />}
+                                            </EntityCard.Body>
+                                        </EntityCard>
+                                    )
+                                }}
                             />
                         </div>
                         {isUserModalOpen && (
@@ -200,7 +233,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                     </TabsContent>
 
                     <TabsContent value="groups" className="mt-0 outline-none flex-1 min-h-0">
-                        <GroupManagement
+                        <GroupsClientView
                             externalOpen={isGroupModalOpen}
                             onExternalOpenChange={setIsGroupModalOpen}
                             createAction={groupsCreateAction}

@@ -23,24 +23,24 @@ logger = logging.getLogger(__name__)
 
 
 def _is_postgres() -> bool:
-    return _db_connection.vendor == 'postgresql'
+    return _db_connection.vendor == "postgresql"
 
 
 @dataclass(frozen=True)
 class SearchableEntity:
     model: type[models.Model]
-    label: str                      # dot-notation app label, e.g. 'sales.saleorder'
-    title_singular: str             # e.g. 'Nota de Venta'
-    title_plural: str               # e.g. 'Notas de Venta'
-    icon: str                       # lucide icon name, e.g. 'receipt-text'
+    label: str  # dot-notation app label, e.g. 'sales.saleorder'
+    title_singular: str  # e.g. 'Nota de Venta'
+    title_plural: str  # e.g. 'Notas de Venta'
+    icon: str  # lucide icon name, e.g. 'receipt-text'
     search_fields: tuple[str, ...]  # ORM field lookups, e.g. ('number', 'customer__name')
-    short_display_template: str     # e.g. 'NV-{number}'
-    display_template: str           # Python str.format_map template, e.g. 'NV-{number} · {customer.name}'
-    list_url: str                   # frontend route, e.g. '/ventas/ordenes'
-    detail_url_pattern: str         # frontend route with {id}, e.g. '/ventas/ordenes/{id}'
-    subtitle_template: str = ""     # e.g. '{customer.email}'
-    extra_info_template: str = ""   # e.g. '{status}'
-    permission: str | None = None   # Django permission codename, e.g. 'sales.view_saleorder'
+    short_display_template: str  # e.g. 'NV-{number}'
+    display_template: str  # Python str.format_map template, e.g. 'NV-{number} · {customer.name}'
+    list_url: str  # frontend route, e.g. '/ventas/ordenes'
+    detail_url_pattern: str  # frontend route with {id}, e.g. '/ventas/ordenes/{id}'
+    subtitle_template: str = ""  # e.g. '{customer.email}'
+    extra_info_template: str = ""  # e.g. '{status}'
+    permission: str | None = None  # Django permission codename, e.g. 'sales.view_saleorder'
     extra_filters: dict[str, Any] = field(default_factory=dict)
 
 
@@ -70,13 +70,39 @@ class UniversalRegistry:
         if entity.label in cls._entities:
             raise ValueError(f"Entity '{entity.label}' already registered in UniversalRegistry.")
         cls._entities[entity.label] = entity
-        
+
         # Connect indexing signals
         cls._connect_signals_for_entity(entity)
 
     @classmethod
     def all_labels(cls) -> list[str]:
         return list(cls._entities.keys())
+
+    @classmethod
+    def all_entities_serializable(cls) -> list[dict[str, str]]:
+        """Returns all registered entities as dicts for the /api/core/entity-config/ endpoint."""
+        from core.prefix_registry import EntityPrefix
+
+        prefix_values = {m.value for m in EntityPrefix}
+        result = []
+        for entity in cls._entities.values():
+            prefix = ""
+            for template_prefix in sorted(prefix_values, key=len, reverse=True):
+                if entity.short_display_template.startswith(template_prefix) or entity.short_display_template.startswith(template_prefix + "-"):
+                    prefix = template_prefix
+                    break
+            result.append({
+                "label": entity.label,
+                "title": entity.title_singular,
+                "prefix": prefix,
+                "shortTemplate": entity.short_display_template,
+                "displayTemplate": entity.display_template,
+                "subtitleTemplate": entity.subtitle_template,
+                "icon": entity.icon,
+                "listUrl": entity.list_url,
+                "detailUrlPattern": entity.detail_url_pattern,
+            })
+        return result
 
     @classmethod
     def get_for_model(cls, model: type[models.Model]) -> SearchableEntity | None:
@@ -101,29 +127,27 @@ class UniversalRegistry:
             return []
 
         logger.debug(f"Search started: query='{query}', user='{user}'")
-        
-        results: list[dict[str, Any]] = []
-        
+
         # 1. Identify if the query has a canonical prefix (e.g., "NV-", "OCS-")
         # We find the best matching prefix and strip it to search for the core identifier.
         targeted_entities = []
         clean_query = query
         best_prefix_len = 0
-        
+
         for label, entity in cls._entities.items():
             # Extract constant prefix (e.g., "NV-{number}" -> "NV-")
             m = re.match(r"^([^{]+)\{", entity.short_display_template)
             if not m:
                 continue
-                
+
             raw_prefix = m.group(1)
             # Clean version for flexible matching (e.g., "NV-" -> "NV")
             clean_prefix = re.sub(r"[^a-zA-Z0-9]+$", "", raw_prefix).upper()
             if not clean_prefix:
                 continue
-                
+
             q_upper = query.upper()
-            
+
             # Match if query starts with the prefix letters (e.g., "NV100" or "NV-100" matches "NV-")
             # We ensure it's a true prefix by checking if it's followed by a non-letter or if it's the whole query.
             if q_upper == clean_prefix or (
@@ -132,7 +156,7 @@ class UniversalRegistry:
                 # We skip the prefix letters and any common separators in the user's query
                 match_len = len(clean_prefix)
                 remaining = query[match_len:].lstrip(" -./_:")
-                
+
                 if len(clean_prefix) > best_prefix_len:
                     best_prefix_len = len(clean_prefix)
                     targeted_entities = [label]
@@ -141,124 +165,141 @@ class UniversalRegistry:
                     targeted_entities.append(label)
 
         # 2. Perform Unified Search using GlobalSearchIndex
-        from core.models import GlobalSearchIndex
-        from django.contrib.postgres.search import SearchRank, SearchQuery
         from django.db.models import F
+
+        from core.models import GlobalSearchIndex
 
         # Filter by allowed entities (Permission check at DB level for performance and correctness)
         allowed_labels = [
-            label for label, entity in cls._entities.items()
+            label
+            for label, entity in cls._entities.items()
             if not entity.permission or user.has_perm(entity.permission)
         ]
-        
+
         if not cls._entities:
             logger.warning("UniversalRegistry search called but NO entities are registered.")
             return []
 
         # If user has no permissions for any searchable entity, return empty
         if not allowed_labels:
-            logger.info(f"User '{user}' has no permissions for any searchable entity. Registered: {list(cls._entities.keys())}")
+            logger.info(
+                f"User '{user}' has no permissions for any searchable entity. Registered: {list(cls._entities.keys())}"
+            )
             return []
 
-        # Prepare Query Term and SearchQuery
+        # Prepare Query Term
         q_term = clean_query if targeted_entities else query
-        
-        logger.debug(f"Search parameters: q_term='{q_term}', targeted={targeted_entities}, allowed={len(allowed_labels)}")
-        
-        # Use websearch for FTS as it handles most user inputs gracefully.
-        # Prefix matching (e.g., "NV-1") is handled by the icontains filter on denormalized fields.
-        if q_term:
-            sq = SearchQuery(q_term, config='spanish', search_type='websearch')
-        else:
-            sq = None
+
+        logger.debug(
+            f"Search parameters: q_term='{q_term}', targeted={targeted_entities}, allowed={len(allowed_labels)}"
+        )
 
         # Base QuerySet
         qs = GlobalSearchIndex.objects.filter(entity_label__in=allowed_labels)
-        
-        # Build Filter
+
+        # Build Filter — use FTS on PostgreSQL, icontains fallback on SQLite
         q_filter = Q()
-        if sq:
-            q_filter |= Q(search_vector=sq)
-            # Fallback to icontains for exact substring matches (e.g. middle of a code)
+        if q_term:
             q_filter |= Q(title__icontains=q_term) | Q(subtitle__icontains=q_term)
 
+            if _is_postgres():
+                from django.contrib.postgres.search import SearchQuery
+
+                sq = SearchQuery(q_term, config="spanish", search_type="websearch")
+                q_filter |= Q(search_vector=sq)
+
         # Enhanced RUT logic for the unified index (Search across denormalized display fields)
-        if q_term.isalnum() and len(q_term) >= 3:
-             # If the query is clean alphanumeric, try to match formatted patterns in display fields
-             regex_pattern = "[.-]?".join(list(q_term))
-             q_filter |= Q(title__iregex=regex_pattern) | Q(subtitle__iregex=regex_pattern)
+        if q_term and q_term.isalnum() and len(q_term) >= 3:
+            regex_pattern = "[.-]?".join(list(q_term))
+            q_filter |= Q(title__iregex=regex_pattern) | Q(subtitle__iregex=regex_pattern)
 
         # Filter by targeted entities if prefix detected
         if targeted_entities:
-            # Intersect allowed with targeted
             final_targets = [t for t in targeted_entities if t in allowed_labels]
             qs = qs.filter(entity_label__in=final_targets)
 
-        # Annotate rank only if we have a search query
-        if sq:
-            qs = qs.annotate(rank=SearchRank(F('search_vector'), sq))
-            qs = qs.filter(q_filter).order_by("-rank", "-last_updated")
+        # Apply filter and order
+        qs = qs.filter(q_filter)
+        if _is_postgres() and q_term:
+            from django.contrib.postgres.search import SearchRank
+
+            sq = SearchQuery(q_term, config="spanish", search_type="websearch")
+            qs = qs.annotate(rank=SearchRank(F("search_vector"), sq)).order_by(
+                "-rank", "-last_updated"
+            )
         else:
             qs = qs.order_by("-last_updated")
 
         # Collect results
         final_results = []
         full_qs = qs[:limit]
-        
+
         logger.debug(f"Search Queryset: {full_qs.query}")
-        
+
         for idx in full_qs:
             entity = cls._entities.get(idx.entity_label)
             if not entity:
                 continue
 
-            final_results.append({
-                "label": idx.entity_label,
-                "title": entity.title_singular,
-                "title_plural": entity.title_plural,
-                "icon": entity.icon,
-                "id": idx.object_id,
-                "content_type_id": idx.content_type_id,
-                "short_display": idx.title, # Title in index is already rendered
-                "display": idx.title,
-                "subtitle": idx.subtitle,
-                "extra_info": idx.extra_info,
-                "list_url": entity.list_url,
-                "detail_url": entity.detail_url_pattern.replace("{id}", str(idx.object_id)),
-            })
+            final_results.append(
+                {
+                    "label": idx.entity_label,
+                    "title": entity.title_singular,
+                    "title_plural": entity.title_plural,
+                    "icon": entity.icon,
+                    "id": idx.object_id,
+                    "content_type_id": idx.content_type_id,
+                    "short_display": idx.title,  # Title in index is already rendered
+                    "display": idx.title,
+                    "subtitle": idx.subtitle,
+                    "extra_info": idx.extra_info,
+                    "list_url": entity.list_url,
+                    "detail_url": entity.detail_url_pattern.replace("{id}", str(idx.object_id)),
+                }
+            )
 
             if len(final_results) >= limit:
                 break
 
-        # Fallback: if no results found and it was a targeted search for just a prefix, 
+        # Fallback: if no results found and it was a targeted search for just a prefix,
         # show recent items from the index for that entity.
-        if not final_results and targeted_entities and not (clean_query if targeted_entities else query):
-             for idx in GlobalSearchIndex.objects.filter(entity_label__in=targeted_entities).order_by("-last_updated")[:limit]:
+        if (
+            not final_results
+            and targeted_entities
+            and not (clean_query if targeted_entities else query)
+        ):
+            for idx in GlobalSearchIndex.objects.filter(
+                entity_label__in=targeted_entities
+            ).order_by("-last_updated")[:limit]:
                 entity = cls._entities.get(idx.entity_label)
                 if entity and (not entity.permission or user.has_perm(entity.permission)):
-                    final_results.append({
-                        "label": idx.entity_label,
-                        "title": entity.title_singular,
-                        "title_plural": entity.title_plural,
-                        "icon": entity.icon,
-                        "id": idx.object_id,
-                        "content_type_id": idx.content_type_id,
-                        "short_display": idx.title,
-                        "display": idx.title,
-                        "subtitle": idx.subtitle,
-                        "extra_info": idx.extra_info,
-                        "list_url": entity.list_url,
-                        "detail_url": entity.detail_url_pattern.replace("{id}", str(idx.object_id)),
-                    })
-                    if len(final_results) >= limit: break
+                    final_results.append(
+                        {
+                            "label": idx.entity_label,
+                            "title": entity.title_singular,
+                            "title_plural": entity.title_plural,
+                            "icon": entity.icon,
+                            "id": idx.object_id,
+                            "content_type_id": idx.content_type_id,
+                            "short_display": idx.title,
+                            "display": idx.title,
+                            "subtitle": idx.subtitle,
+                            "extra_info": idx.extra_info,
+                            "list_url": entity.list_url,
+                            "detail_url": entity.detail_url_pattern.replace(
+                                "{id}", str(idx.object_id)
+                            ),
+                        }
+                    )
+                    if len(final_results) >= limit:
+                        break
 
         return final_results
 
     @classmethod
     def _build_fts_query(cls, entity: SearchableEntity, query: str) -> models.QuerySet[Any]:
         has_tax_field = any(
-            any(t in f.lower() for t in cls._TAX_INDICATORS)
-            for f in entity.search_fields
+            any(t in f.lower() for t in cls._TAX_INDICATORS) for f in entity.search_fields
         )
 
         if has_tax_field or not _is_postgres():
@@ -267,11 +308,11 @@ class UniversalRegistry:
                 return entity.model.objects.none()
             return entity.model.objects.filter(q_filter, **entity.extra_filters)
 
-        from django.contrib.postgres.search import SearchVector, SearchQuery
+        from django.contrib.postgres.search import SearchQuery, SearchVector
 
         # Exclude integer PK and FK traversal fields (SearchVector only accepts direct columns)
-        fts_fields = [f for f in entity.search_fields if f != 'id' and '__' not in f]
-        fk_fields = tuple(f for f in entity.search_fields if '__' in f)
+        fts_fields = [f for f in entity.search_fields if f != "id" and "__" not in f]
+        fk_fields = tuple(f for f in entity.search_fields if "__" in f)
 
         if not fts_fields:
             # All fields are FK traversal → icontains handles them via JOIN
@@ -280,20 +321,16 @@ class UniversalRegistry:
                 return entity.model.objects.none()
             return entity.model.objects.filter(q_filter, **entity.extra_filters)
 
-        sv = SearchVector(*fts_fields, config='spanish')
+        sv = SearchVector(*fts_fields, config="spanish")
         # 'plain' search_type: each word required (AND semantics, matches current multi-word logic)
-        sq = SearchQuery(query, config='spanish', search_type='plain')
+        sq = SearchQuery(query, config="spanish", search_type="plain")
 
         if fk_fields:
             # Combined: FTS on direct fields OR icontains on FK fields (single SQL query)
             q_fk = cls._build_icontains_filter(query, fk_fields)
             fts_q = Q(_fts=sq)
             combined = (fts_q | q_fk) if q_fk else fts_q
-            return (
-                entity.model.objects
-                .annotate(_fts=sv)
-                .filter(combined, **entity.extra_filters)
-            )
+            return entity.model.objects.annotate(_fts=sv).filter(combined, **entity.extra_filters)
 
         return entity.model.objects.annotate(_fts=sv).filter(_fts=sq, **entity.extra_filters)
 
@@ -308,33 +345,36 @@ class UniversalRegistry:
         if not words:
             # Fallback for single characters or empty strings
             words = [query] if query else []
-            if not words: return None
+            if not words:
+                return None
 
         word_clauses = []
         for word in words:
             # For each word, it must match at least ONE of the search fields (OR logic between fields)
             field_clauses = []
-            
+
             # Normalization for RUTs/Codes for this specific word
             clean_word = re.sub(r"[.\-]", "", word)
-            
-            for field in search_fields:
+
+            for search_field in search_fields:
                 # 1. Standard search
-                field_clauses.append(Q(**{f"{field}__icontains": word}))
+                field_clauses.append(Q(**{f"{search_field}__icontains": word}))
 
                 # 2. Enhanced Tax/RUT/Code matching
-                is_tax_field = any(term in field.lower() for term in ["tax_id", "rut", "identification", "code"])
+                is_tax_field = any(
+                    term in search_field.lower() for term in ["tax_id", "rut", "identification", "code"]
+                )
                 if is_tax_field:
                     # Case A: User typed symbols (88.222), search also without them
                     if clean_word != word:
-                        field_clauses.append(Q(**{f"{field}__icontains": clean_word}))
-                    
+                        field_clauses.append(Q(**{f"{search_field}__icontains": clean_word}))
+
                     # Case B: User typed clean (88222), match formatted (88.222.333-k)
                     # We use a regex to allow dots/dashes between characters
                     if word.isalnum() and len(word) >= 3 and _is_postgres():
                         # Pattern: 8[.-]?8[.-]?2...
                         regex_pattern = "[.-]?".join(list(word))
-                        field_clauses.append(Q(**{f"{field}__iregex": regex_pattern}))
+                        field_clauses.append(Q(**{f"{search_field}__iregex": regex_pattern}))
 
             # Combine field clauses with OR for this specific word
             word_clauses.append(reduce(operator.or_, field_clauses))
@@ -351,15 +391,13 @@ class UniversalRegistry:
             return
 
         from django.contrib.contenttypes.models import ContentType
-        from django.contrib.postgres.search import SearchVector
+
         from core.models import GlobalSearchIndex
 
         # 1. Get or create index entry
         ct = ContentType.objects.get_for_model(instance.__class__)
         idx, _ = GlobalSearchIndex.objects.get_or_create(
-            content_type=ct,
-            object_id=str(instance.pk),
-            defaults={"entity_label": entity.label}
+            content_type=ct, object_id=str(instance.pk), defaults={"entity_label": entity.label}
         )
 
         # 2. Update display fields
@@ -372,18 +410,20 @@ class UniversalRegistry:
 
         # 3. Update search vector (calculated from original model fields)
         # We now include ALL search fields, including related ones (__)
+        from django.db import connection as db_conn
+
         fts_fields = entity.search_fields
-        if fts_fields:
-            # We annotate the vector on the original instance to get its value
-            # Django's SearchVector handles foreign key traversals correctly in annotate()
+        if fts_fields and db_conn.vendor == "postgresql":
+            from django.contrib.postgres.search import SearchVector
+
             try:
                 instance_with_vector = instance.__class__.objects.annotate(
-                    computed_vector=SearchVector(*fts_fields, config='spanish')
+                    computed_vector=SearchVector(*fts_fields, config="spanish")
                 ).get(pk=instance.pk)
-                
+
                 idx.search_vector = instance_with_vector.computed_vector
                 idx.save()
-            except Exception as e:
+            except Exception:
                 # Log error but don't fail indexing if vector fails (e.g. non-string fields)
                 # We still have title/subtitle for icontains search
                 pass
@@ -392,6 +432,7 @@ class UniversalRegistry:
     def remove_from_index(cls, instance: models.Model) -> None:
         """Removes the instance from GlobalSearchIndex."""
         from django.contrib.contenttypes.models import ContentType
+
         from core.models import GlobalSearchIndex
 
         ct = ContentType.objects.get_for_model(instance.__class__)
@@ -400,16 +441,20 @@ class UniversalRegistry:
     @classmethod
     def _connect_signals_for_entity(cls, entity: SearchableEntity) -> None:
         """Connects indexing signals to a specific entity model."""
-        from django.db.models.signals import post_save, post_delete
-        
+        from django.db.models.signals import post_delete, post_save
+
         def _on_save(sender, instance, **kwargs):
             cls.update_index(instance)
-            
+
         def _on_delete(sender, instance, **kwargs):
             cls.remove_from_index(instance)
 
-        post_save.connect(_on_save, sender=entity.model, dispatch_uid=f"search_index_save_{entity.label}")
-        post_delete.connect(_on_delete, sender=entity.model, dispatch_uid=f"search_index_delete_{entity.label}")
+        post_save.connect(
+            _on_save, sender=entity.model, dispatch_uid=f"search_index_save_{entity.label}"
+        )
+        post_delete.connect(
+            _on_delete, sender=entity.model, dispatch_uid=f"search_index_delete_{entity.label}"
+        )
 
     @staticmethod
     def _render(template: str, instance: models.Model) -> str:

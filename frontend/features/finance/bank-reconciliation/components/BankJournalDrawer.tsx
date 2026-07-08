@@ -12,12 +12,12 @@ import {
 import { Button } from "@/components/ui/button"
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { WalletCards, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -101,28 +101,31 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Caja/Banco${(initialData as any)?.id ? ` #${(initialData as any).id}` : ""}`
-        : mode === 'create'
-            ? "Crear Caja o Banco"
-            : "Editar Caja/Banco"
+    const identity = useDrawerIdentity('finance.bankjournal', mode, initialData as Record<string, unknown> | undefined, {
+        overrideTitle: isView
+            ? `Ficha de Caja/Banco${initialData?.id ? ` #${initialData.id}` : ""}`
+            : mode === 'create'
+                ? "Crear Caja o Banco"
+                : "Editar Caja/Banco",
+        overrideSubtitle: initialData ? `${(initialData?.code as string) || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco",
+    })
 
     return (
         <>
-            {(mode === 'view' || mode === 'edit') && (initialData as any)?.id && (
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
                 <PrintableLayout
                     ref={printRef}
                     title="BankJournal"
-                    displayId={`#${(initialData as any).id}`}
+                    displayId={`#${initialData.id}`}
                 >
                     <div className="text-[9px] space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
-                            <span>{(initialData as any)?.name ?? '-'}</span>
+                            <span>{(initialData?.name as string) ?? '-'}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Código:</span>
-                            <span>{(initialData as any)?.code ?? '-'}</span>
+                            <span>{(initialData?.code as string) ?? '-'}</span>
                         </div>
                     </div>
                 </PrintableLayout>
@@ -133,9 +136,10 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={WalletCards}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && (initialData as any)?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -160,6 +164,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         render={({ field, fieldState }) => (
                                             <LabeledInput
                                                 label="Nombre"
+                                                required
                                                 placeholder="Banco Estado Cta Cte"
                                                 error={fieldState.error?.message}
                                                 {...field}
@@ -172,6 +177,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         render={({ field, fieldState }) => (
                                             <LabeledInput
                                                 label="Código"
+                                                required
                                                 placeholder="BEST-CTE"
                                                 error={fieldState.error?.message}
                                                 {...field}
@@ -182,12 +188,13 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         control={form.control}
                                         name="currency"
                                         render={({ field, fieldState }) => (
-                                            <LabeledSelect
-                                                label="Moneda"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                error={fieldState.error?.message}
-                                                options={[
+                                                    <LabeledSelect
+                                                        label="Moneda"
+                                                        required
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        error={fieldState.error?.message}
+                                                        options={[
                                                     { value: "CLP", label: "CLP (Peso Chileno)" },
                                                     { value: "USD", label: "USD (Dólar)" },
                                                     { value: "EUR", label: "EUR (Euro)" }
@@ -200,14 +207,13 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                         control={form.control}
                                         name="account"
                                         render={({ field, fieldState }) => (
-                                            <AccountSelector
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="ASSET"
-                                                isReconcilable={true}
-                                                placeholder="Seleccionar cuenta de banco/caja"
-                                                label="Cuenta Contable"
-                                                error={fieldState.error?.message}
+                                                    <AccountSelector
+                                                        label="Cuenta Contable"
+                                                        required
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        accountType="ASSET"
+                                                        error={fieldState.error?.message}
                                             />
                                         )}
                                     />
@@ -216,7 +222,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                         </Form>
                     </div>
 
-                    {(initialData as any)?.id && (
+                    {!!initialData?.id && (
                         <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                             {auditSidebar}
                         </div>

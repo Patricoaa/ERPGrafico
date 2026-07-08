@@ -41,7 +41,7 @@ interface PageTabsProps {
  * Maps navigation links to a standardized tab-like experience.
  * Supports dropdown sub-tabs if a tab has `subTabs` configured.
  */
-export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, variant: _variant, configHref }: PageTabsProps) {
+export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, configHref }: PageTabsProps) {
     return (
         <div className={cn("w-full border-b border-border/40 bg-muted/5", className)}>
             <div className={cn("px-4", maxWidth)}>
@@ -74,7 +74,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
 
                             const tabClass = cn(
                                 "flex items-center justify-center gap-2 px-6 py-3 transition-all duration-300 relative group cursor-pointer",
-                                "text-[10px] sm:text-[11px] font-black uppercase tracking-[0.05em] focus:outline-none",
+                                "text-[10px] sm:text-[11px] font-black uppercase tracking-wider focus:outline-none",
                                 isActive
                                     ? "text-primary bg-primary/5"
                                     : "text-muted-foreground hover:text-foreground hover:bg-muted/10",
@@ -90,9 +90,9 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent 
                                             align="start" 
-                                            className="w-48 rounded-sm border-border/40 shadow-xl shadow-black/5 bg-background/95 backdrop-blur-sm p-1 mt-1"
+                                            className="w-48 rounded-sm border-border/40 shadow-floating shadow-black/5 bg-background/95 backdrop-blur-sm p-1 mt-1"
                                         >
-                                            {tab.subTabs!.map((sub) => {
+                                            {tab.subTabs?.map((sub) => {
                                                 const isSubActive = isActive && sub.value === subActiveValue
                                                 return (
                                                     <DropdownMenuItem 
@@ -115,7 +115,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                                                 <div className="w-3.5 h-3.5" />
                                                             )}
                                                             <span className={cn(
-                                                                "text-[10px] font-heading uppercase tracking-wider font-black",
+                                                                "text-[10px]  uppercase tracking-wider font-black",
                                                                 isSubActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                                                             )}>
                                                                 {sub.label}

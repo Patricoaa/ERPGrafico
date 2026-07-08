@@ -11,7 +11,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useBanks } from "../hooks/useMasterData"
 import { useProvisionAccount, useTreasuryAccounts } from "../hooks/useTreasuryAccounts"
 import { useLoanMutations } from "../loans"
-import { useAccountSearch } from "@/features/accounting/hooks/useAccountSearch"
+import { useAccountSearch } from "@/features/accounting"
 
 // ─── Local types ─────────────────────────────────────────────────────────────
 
@@ -27,6 +27,7 @@ interface NewCheckingAccount {
 interface NewCreditCard {
     name: string
     currency: string
+    creditLimit: string
 }
 
 interface NewLoan {
@@ -49,7 +50,7 @@ function emptyAccount(): NewCheckingAccount {
 }
 
 function emptyCard(): NewCreditCard {
-    return { name: "", currency: "CLP" }
+    return { name: "", currency: "CLP", creditLimit: "" }
 }
 
 function emptyLoan(): NewLoan {
@@ -67,7 +68,7 @@ function emptyLoan(): NewLoan {
 
 function SkipHint({ text }: { text: string }) {
     return (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/20 border border-border/40">
+        <div className="flex items-start gap-2 p-3 rounded-md bg-muted/20 border border-border/40">
             <Info className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground/70">{text}</p>
         </div>
@@ -84,7 +85,7 @@ function ItemCard({
     children: React.ReactNode
 }) {
     return (
-        <div className="rounded-lg border border-border/50 bg-background overflow-hidden">
+        <div className="rounded-md border border-border/50 bg-background overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border/40">
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                     Ítem {index + 1}
@@ -126,7 +127,7 @@ interface BankCreationWizardProps {
 
 export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreationWizardProps) {
     const { createBank, updateBank, isCreating: isBankCreating, isUpdating: isBankUpdating } = useBanks()
-    const { mutateAsync: provision, isPending: isProvisioning } = useProvisionAccount()
+    const { provision, isProvisioning } = useProvisionAccount()
     const { create: createLoan, isCreating: isLoanCreating } = useLoanMutations()
     const { accounts: existingAccounts } = useTreasuryAccounts()
     const { accounts: allAccountingAccounts } = useAccountSearch()
@@ -227,6 +228,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                     bank: createdBankId,
                     currency: card.currency,
                     account: null,
+                    credit_limit: card.creditLimit ? Number(card.creditLimit) : null,
                     tenders: [],
                     usage: "purchases",
                 })
@@ -392,6 +394,13 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                             onChange={(v) => updateCard(i, { currency: v })}
                                             options={CURRENCY_OPTIONS}
                                         />
+                                        <LabeledInput
+                                            label="Cupo Total"
+                                            placeholder="5000000"
+                                            type="number"
+                                            value={card.creditLimit}
+                                            onChange={(e) => updateCard(i, { creditLimit: e.target.value })}
+                                        />
                                     </div>
                                 </ItemCard>
                             ))}
@@ -538,7 +547,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                         <p className="text-sm text-center text-muted-foreground">
                             Revise lo que se creará al confirmar.
                         </p>
-                        <div className="rounded-lg border border-border/50 divide-y divide-border/40 overflow-hidden text-sm">
+                        <div className="rounded-md border border-border/50 divide-y divide-border/40 overflow-hidden text-sm">
                             <SummaryRow icon={Landmark} label="Banco" value={bankName} />
                             {checkingAccounts.filter((a) => a.name).map((a, i) => {
                                 const matchedAccount = a.accountId
@@ -558,7 +567,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                 )
                             })}
                             {creditCards.filter((c) => c.name).map((c, i) => (
-                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} />
+                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} badge={c.creditLimit ? `Cupo: $${Number(c.creditLimit).toLocaleString('es-CL')}` : undefined} />
                             ))}
                             {loans.filter((l) => l.principal).map((l, i) => (
                                 <SummaryRow

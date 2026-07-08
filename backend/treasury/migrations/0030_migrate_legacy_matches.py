@@ -2,37 +2,38 @@
 
 from django.db import migrations
 
+
 def migrate_legacy_matches(apps, schema_editor):
-    BankStatementLine = apps.get_model('treasury', 'BankStatementLine')
-    ReconciliationMatch = apps.get_model('treasury', 'ReconciliationMatch')
-    
+    BankStatementLine = apps.get_model("treasury", "BankStatementLine")
+    ReconciliationMatch = apps.get_model("treasury", "ReconciliationMatch")
+
     # We select lines that HAVE a legacy matched_payment but LACK a M:N reconciliation_match
     lines = BankStatementLine.objects.filter(
-        matched_payment__isnull=False, 
-        reconciliation_match__isnull=True
-    ).select_related('statement', 'matched_payment')
-    
+        matched_payment__isnull=False, reconciliation_match__isnull=True
+    ).select_related("statement", "matched_payment")
+
     for line in lines:
         # Create a new ReconciliationMatch group for this 1:1 legacy match
         match = ReconciliationMatch.objects.create(
             treasury_account_id=line.statement.treasury_account_id,
-            is_confirmed=line.reconciliation_status == 'RECONCILED',
+            is_confirmed=line.reconciliation_status == "RECONCILED",
             created_by_id=line.statement.imported_by_id,
-            notes="Generado por migración automática de legacy matched_payment (S7.3)"
+            notes="Generado por migración automática de legacy matched_payment (S7.3)",
         )
         # Link the movement to the new M:N group
         match.movements.add(line.matched_payment)
         # Link the line to the new M:N group
         line.reconciliation_match = match
-        line.save(update_fields=['reconciliation_match'])
+        line.save(update_fields=["reconciliation_match"])
+
 
 def no_op(apps, schema_editor):
     pass
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
-        ('treasury', '0029_alter_historicalpaymentallocation_options_and_more'),
+        ("treasury", "0029_alter_historicalpaymentallocation_options_and_more"),
     ]
 
     operations = [

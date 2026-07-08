@@ -1,5 +1,5 @@
 import * as React from "react"
-import { FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
+import { TabBar, TabBarContent, type TabItem } from "@/components/shared"
 import { Package, Briefcase } from "lucide-react"
 
 interface MaterialAssignmentTabsProps {
@@ -28,7 +28,7 @@ export function MaterialAssignmentTabs({
         )
     }
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "stock",
             label: "Materiales de Stock",
@@ -45,22 +45,20 @@ export function MaterialAssignmentTabs({
 
     return (
         <div className="w-full">
-            <FormTabs 
+            <TabBar 
                 items={tabItems} 
                 value={activeTab}
                 onValueChange={setActiveTab}
                 orientation="horizontal"
-                variant="underline"
-                headerClassName="px-0"
             >
-                <FormTabsContent value="stock" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
+                <TabBarContent value="stock" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
                     {stockContent}
-                </FormTabsContent>
+                </TabBarContent>
 
-                <FormTabsContent value="outsourced" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
+                <TabBarContent value="outsourced" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
                     {outsourcedContent}
-                </FormTabsContent>
-            </FormTabs>
+                </TabBarContent>
+            </TabBar>
         </div>
     )
 }

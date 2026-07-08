@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import React, { useEffect, useCallback, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -18,6 +19,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { CardSkeleton } from "@/components/shared"
 import type { WorkflowRule, NotificationRule } from "@/types/entities"
 import { useAutoSaveForm, type AutoSaveStatus } from "@/hooks/useAutoSaveForm"
@@ -137,27 +139,29 @@ function AssignmentModeToggle({
     onSwitch: (m: "user" | "group") => void
 }) {
     return (
-        <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm shrink-0 scale-90 sm:scale-100">
-            <button
+        <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-card shrink-0 scale-90 sm:scale-100">
+            <Button
+                variant="ghost"
                 type="button"
                 className={cn(
-                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                    mode === "user" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
+                    mode === "user" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("user")}
             >
                 <User className="h-3 w-3" /> Usuario
-            </button>
-            <button
+            </Button>
+            <Button
+                variant="ghost"
                 type="button"
                 className={cn(
-                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                    mode === "group" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    "px-2 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5 h-auto border-none shadow-none",
+                    mode === "group" ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onSwitch("group")}
             >
                 <Users className="h-3 w-3" /> Grupo
-            </button>
+            </Button>
         </div>
     )
 }
@@ -213,10 +217,10 @@ function RowShell({
     children: React.ReactNode
 }) {
     return (
-        <div className="group relative bg-card border rounded-lg p-3 hover:shadow-md transition-all">
+        <div className="group relative bg-card border rounded-md p-3 hover:shadow-elevated transition-all">
             <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex items-center gap-3 min-w-[200px] flex-1">
-                    <div className="p-2 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
+                    <div className="p-2 bg-primary/5 rounded-md group-hover:bg-primary/10 transition-colors">
                         <Icon className="h-4 w-4 text-primary/70" />
                     </div>
                     <div className="space-y-0.5">
@@ -243,7 +247,6 @@ interface AssignmentRuleRowProps {
 }
 
 const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule }: AssignmentRuleRowProps) {
-    const queryClient = useQueryClient()
     const ruleRef = useRef(rule)
     ruleRef.current = rule
 
@@ -258,8 +261,8 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
         }
     }, [rule, form])
 
-    const updateMutation = useUpdateAssignmentRule()
-    const createMutation = useCreateAssignmentRule()
+    const { updateAssignmentRule } = useUpdateAssignmentRule()
+    const { createAssignmentRule } = useCreateAssignmentRule()
     
     const onSave = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
@@ -269,9 +272,9 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await updateMutation.mutateAsync({ id: current.id, data: payload })
+            await updateAssignmentRule({ id: current.id, data: payload })
         } else {
-            await createMutation.mutateAsync(payload)
+            await createAssignmentRule(payload)
         }
     }, [taskType.id])
 
@@ -333,8 +336,8 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [rule, assignmentForm])
 
-    const updateMutation = useUpdateAssignmentRule()
-    const createMutation = useCreateAssignmentRule()
+    const { updateAssignmentRule } = useUpdateAssignmentRule()
+    const { createAssignmentRule } = useCreateAssignmentRule()
     
     const onSaveAssignment = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
@@ -344,9 +347,9 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await updateMutation.mutateAsync({ id: current.id, data: payload })
+            await updateAssignmentRule({ id: current.id, data: payload })
         } else {
-            await createMutation.mutateAsync(payload)
+            await createAssignmentRule(payload)
         }
     }, [taskType.id])
 
@@ -364,11 +367,11 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [dayValue, dayForm])
 
-    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    const { updateWorkflowSettings } = useUpdateWorkflowSettings()
     
     const onSaveDay = useCallback(async (data: DayValues) => {
-        await updateWorkflowSettingsMutation.mutateAsync({ [taskType.dayField]: data.value })
-        queryClient.invalidateQueries({ queryKey: workflowKeys.recurrentSettings() })
+        await updateWorkflowSettings({ [taskType.dayField]: data.value })
+        invalidateCrossFeature(queryClient, [workflowKeys.recurrentSettings()])
     }, [taskType.dayField])
 
     const { status: dayStatus } = useAutoSaveForm({
@@ -389,7 +392,7 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         <RowShell icon={CalendarClock} name={taskType.name} description={taskType.description} badgeLabel="RECURRENTE" isRecurrent>
             <div className="flex flex-col sm:flex-row items-center gap-3">
                 {/* Day input */}
-                <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-lg border border-border/50">
+                <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-md border border-border/50">
                     <span className="text-[10px] whitespace-nowrap text-muted-foreground font-medium">Día Gen:</span>
                     <Controller
                         control={dayForm.control}
@@ -446,16 +449,16 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
         }
     }, [initialValue, form])
 
-    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    const { updateWorkflowSettings } = useUpdateWorkflowSettings()
     
     const onSave = useCallback(async (data: ThresholdValues) => {
-        await updateWorkflowSettingsMutation.mutateAsync({ low_margin_threshold_percent: data.value })
+        await updateWorkflowSettings({ low_margin_threshold_percent: data.value })
     }, [])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
 
     return (
-        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
+        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-md border border-border/50">
             <div className="space-y-0.5">
                 <p className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Umbral Mínimo (%)</p>
                 <p className="text-[9px] text-muted-foreground leading-none text-right">0 = Apagado</p>
@@ -493,7 +496,6 @@ interface NotificationRuleRowProps {
 }
 
 const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule, recurrentSettings }: NotificationRuleRowProps) {
-    const queryClient = useQueryClient()
     const ruleRef = useRef(rule)
     ruleRef.current = rule
 
@@ -508,8 +510,8 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
         }
     }, [rule, form])
 
-    const updateNotificationRuleMutation = useUpdateNotificationRule()
-    const createNotificationRuleMutation = useCreateNotificationRule()
+    const { updateNotificationRule } = useUpdateNotificationRule()
+    const { createNotificationRule } = useCreateNotificationRule()
     
     const onSave = useCallback(async (data: NotificationValues) => {
         const current = ruleRef.current
@@ -520,9 +522,9 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
             notify_creator: data.notify_creator,
         }
         if (current?.id) {
-            await updateNotificationRuleMutation.mutateAsync({ id: current.id, data: payload })
+            await updateNotificationRule({ id: current.id, data: payload })
         } else {
-            await createNotificationRuleMutation.mutateAsync(payload)
+            await createNotificationRule(payload)
         }
     }, [type.id])
 
@@ -532,7 +534,7 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
     const groupVal = form.watch("assigned_group")
 
     return (
-        <div className="group relative bg-card border rounded-lg p-4 hover:shadow-md transition-all">
+        <div className="group relative bg-card border rounded-md p-4 hover:shadow-elevated transition-all">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
                 <div className="flex items-center gap-4 min-w-[250px] flex-1">
                     <BellRing className="h-5 w-5 text-muted-foreground/70" />
@@ -550,7 +552,7 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
 
                     {/* Notify creator toggle — POS_CREDIT_APPROVAL only */}
                     {type.id === "POS_CREDIT_APPROVAL" && (
-                        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-md border border-border/50">
                             <div className="space-y-0.5">
                                 <Label className="text-[10px] font-bold uppercase tracking-tight">Notificar Creador</Label>
                                 <p className="text-[9px] text-muted-foreground leading-none">Quien inició acción</p>
@@ -607,9 +609,9 @@ interface WorkflowSettingsProps {
 }
 
 export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
-    const { data: rules = [], isLoading: rulesLoading } = useWorkflowRulesQuery()
-    const { data: notifRules = [], isLoading: notifLoading } = useNotificationRulesQuery()
-    const { data: recurrentSettings, isLoading: recurrentLoading } = useWorkflowRecurrentSettingsQuery()
+    const { rules = [], isLoading: rulesLoading } = useWorkflowRulesQuery()
+    const { notificationRules: notifRules = [], isLoading: notifLoading } = useNotificationRulesQuery()
+    const { recurrentSettings, isLoading: recurrentLoading } = useWorkflowRecurrentSettingsQuery()
 
     const isLoading = rulesLoading || notifLoading || recurrentLoading
 

@@ -3,6 +3,7 @@ import api from '@/lib/api'
 import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_KEYS } from './queryKeys'
 import type { FilterState } from '@/components/shared'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface Subscription {
     id: number
@@ -40,16 +41,14 @@ export function useSubscriptions(filters?: FilterState) {
             const params = new URLSearchParams()
             if (filters?.status) params.append('status', filters.status)
             if (filters?.search) params.append('search', filters.search)
-            const response = await api.get<Subscription[]>('/inventory/subscriptions/', { params })
-            return response.data
+            const response = await api.get<{ results: Subscription[] }>('/inventory/subscriptions/', { params })
+            return response.data.results
         },
         staleTime: 2 * 60 * 1000,
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY })
-        // pause/resume cambian el status del producto-suscripción → invalida products.
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
+        invalidateCrossFeature(queryClient, [SUBSCRIPTIONS_QUERY_KEY, PRODUCTS_KEYS.all])
     }
 
     const pauseMutation = useMutation({
@@ -85,6 +84,7 @@ export function useSubscriptionStats<T = SubscriptionStats>() {
         queryKey: [...SUBSCRIPTIONS_QUERY_KEY, 'stats'],
         queryFn: async () => {
             const response = await api.get<T>('/inventory/subscriptions/stats/')
+            // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
             return response.data
         },
         staleTime: 5 * 60 * 1000,
@@ -105,6 +105,7 @@ export function useSubscriptionHistory<T = unknown>(subscriptionId: number | nul
             const response = await api.get<T>(`/inventory/subscriptions/${subscriptionId}/history/`)
             return response.data
         },
+        staleTime: 2 * 60 * 1000,
         enabled: !!subscriptionId,
     })
 }

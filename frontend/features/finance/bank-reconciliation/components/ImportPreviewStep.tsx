@@ -2,7 +2,7 @@
 
 import React from "react"
 import { formatCurrency } from "@/lib/money"
-import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
+import { CheckCircle2, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {DataTable, DataCell, FormSection} from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -31,7 +31,7 @@ interface ImportPreviewStepProps {
 
 function MetricCard({ title, value, icon: Icon, subtitle }: { title: string, value: string | React.ReactNode, icon: React.ElementType, subtitle?: string }) {
     return (
-        <div className="flex items-center p-4 bg-background border border-border/40 rounded-lg shadow-sm">
+        <div className="flex items-center p-4 bg-background border border-border/40 rounded-md shadow-card">
             <div className="p-3 bg-muted/50 rounded-full mr-4">
                 <Icon className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -64,8 +64,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             <FormSection title="Resumen de la Cartola" icon={FileText} />
 
             {data.is_duplicate && (
-                <Alert className="border-warning/50 bg-warning/10 text-warning">
-                    <AlertTriangle className="h-4 w-4" />
+                <Alert variant="warning">
                     <AlertTitle className="text-xs font-black uppercase">Archivo Duplicado</AlertTitle>
                     <AlertDescription className="text-xs font-medium">
                         Este archivo exacto ya ha sido importado anteriormente. Puedes continuar si se trata de una rectificación, pero ten cuidado con duplicar transacciones.
@@ -103,8 +102,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             <FormSection title="Resultados de Validación" icon={CheckCircle2} />
 
             {hasErrors ? (
-                <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
-                    <AlertCircle className="h-4 w-4" />
+                <Alert variant="destructive">
                     <AlertTitle className="text-xs font-black uppercase tracking-wider">Error Bloqueante</AlertTitle>
                     <AlertDescription className="text-xs mt-1">
                         La cartola contiene errores críticos y no puede ser importada en su estado actual.
@@ -114,17 +112,15 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
                     </AlertDescription>
                 </Alert>
             ) : hasWarnings ? (
-                <Alert className="border-warning/50 bg-warning/5 text-warning-foreground">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                    <AlertTitle className="text-xs font-black uppercase tracking-wider text-warning">Advertencias</AlertTitle>
+                <Alert variant="warning">
+                    <AlertTitle className="text-xs font-black uppercase tracking-wider">Advertencias</AlertTitle>
                     <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
                         La cartola puede ser importada, pero se encontraron inconsistencias menores. Verifica la tabla de abajo.
                     </AlertDescription>
                 </Alert>
             ) : (
-                <Alert className="border-success/30 bg-success/5">
-                    <CheckCircle2 className="h-4 w-4 text-success" />
-                    <AlertTitle className="text-xs font-black uppercase tracking-wider text-success">Validación Exitosa</AlertTitle>
+                <Alert variant="success">
+                    <AlertTitle className="text-xs font-black uppercase tracking-wider">Validación Exitosa</AlertTitle>
                     <AlertDescription className="text-xs mt-1 text-muted-foreground font-medium">
                         Todo parece estar en orden. La cartola puede ser importada.
                     </AlertDescription>
@@ -132,7 +128,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             )}
 
             {hasWarnings && (
-                <div className="rounded-lg border border-border/40 overflow-hidden bg-background">
+                <div className="rounded-md border border-border/40 overflow-hidden bg-background">
                     <WarningTable warnings={data.warnings} />
                 </div>
             )}
@@ -164,8 +160,9 @@ function WarningTable({ warnings }: { warnings: DryRunWarning[] }) {
         <DataTable
             columns={columns}
             data={warnings}
-            variant="embedded"
+            variant="minimal"
             hidePagination
+            noBorder
         />
     )
 }

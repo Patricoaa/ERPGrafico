@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Building2, AlertCircle } from "lucide-react"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { StepHeader, ContactCardGrid } from "@/components/shared"
 import { AdvancedWorkOrderSelector } from "@/components/selectors/AdvancedWorkOrderSelector"
 import { purchasingApi } from "../../api/purchasingApi"
 
@@ -46,44 +46,36 @@ export function Step0_Supplier({
     }, [selectedSupplierId, setSelectedSupplierId, setSelectedSupplierName])
 
     return (
-        <div className="space-y-8 flex flex-col items-center justify-center min-h-[400px] max-w-2xl mx-auto">
-            <div className="relative">
-                <div className="absolute -inset-4 bg-primary/10 rounded-full blur-xl animate-pulse" />
-                <div className="relative bg-background p-6 rounded-lg shadow-xl border-2 border-primary/20">
-                    <Building2 className="h-12 w-12 text-primary" />
-                </div>
-            </div>
-
-            <div className="text-center space-y-2">
-                <h3 className="text-2xl font-bold tracking-tight">Seleccionar Proveedor</h3>
-                <p className="text-muted-foreground">
-                    Busque un proveedor por nombre o RUT para asociar a esta compra.
-                </p>
-            </div>
-
-            <div className="w-full space-y-4">
-                <AdvancedContactSelector
-                    label="Proveedor"
-                    value={selectedSupplierId}
-                    onChange={setSelectedSupplierId}
-                    onSelectContact={(contact) => setSelectedSupplierName(contact.name)}
-                    contactType="SUPPLIER"
-                    placeholder="Buscar por Nombre, RUT o Email..."
-                />
-
-                <div className="space-y-1">
+        <div className="space-y-6">
+            <StepHeader 
+                title="Seleccionar Proveedor" 
+                description="Busque un proveedor por nombre o RUT para asociar a esta compra." 
+                icon={Building2} 
+                rightContent={
                     <AdvancedWorkOrderSelector
                         label="Orden de Trabajo (Opcional)"
                         value={selectedWorkOrderId}
                         onChange={setSelectedWorkOrderId}
+                        className="w-[300px]"
+                        hint="Seleccione una OT si desea vincular esta compra manualmente a un trabajo de producción."
                     />
-                    <p className="text-[10px] text-muted-foreground italic px-1">
-                        Seleccione una OT si desea vincular esta compra manualmente a un trabajo de producción.
-                    </p>
-                </div>
+                }
+            />
+
+            <div className="w-full space-y-6">
+                <ContactCardGrid
+                    selectedId={selectedSupplierId}
+                    onSelect={(contact) => {
+                        setSelectedSupplierId(contact.id.toString())
+                        setSelectedSupplierName(contact.name)
+                    }}
+                    contactType="SUPPLIER"
+                    placeholder="Buscar por Nombre, RUT o Email..."
+                />
+
 
                 {!selectedSupplierId && !loading && (
-                    <div className="flex items-center gap-2 text-sm text-warning font-medium py-2 px-3 bg-warning/10 rounded-lg border border-warning/10 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-2 text-sm text-warning font-medium py-2 px-3 bg-warning/10 rounded-md border border-warning/10 animate-in fade-in slide-in-from-top-2">
                         <AlertCircle className="h-4 w-4" />
                         Debe seleccionar un proveedor para proceder.
                     </div>

@@ -1,10 +1,20 @@
 import { useQuery } from "@tanstack/react-query"
 import { settingsApi } from "../api/settingsApi"
+import type { SystemStatus } from "../types"
 
-export const useSystemStatus = () => {
-    return useQuery({
+interface UseSystemStatusReturn {
+    status: SystemStatus | undefined
+    isLoading: boolean
+    refetch: () => Promise<unknown>
+}
+
+export function useSystemStatus(): UseSystemStatusReturn {
+    const { data: status, isLoading, refetch } = useQuery({
         queryKey: ["system-status"],
         queryFn: () => settingsApi.getSystemStatus(),
-        refetchInterval: 30000, // Refresh every 30 seconds
+        staleTime: 30 * 1000,
+        refetchInterval: 30000,
     })
+
+    return { status, isLoading, refetch }
 }

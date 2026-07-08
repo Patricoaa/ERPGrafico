@@ -9,17 +9,5 @@ export const contactSearchDef: SearchDefinition = {
       serverParam: 'search',
       suggestionsUrl: '/contacts/filter-suggestions/',
     },
-    {
-      key: 'type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'type',
-      options: [
-        { label: 'Cliente', value: 'CUSTOMER' },
-        { label: 'Proveedor', value: 'SUPPLIER' },
-        { label: 'Ambos', value: 'BOTH' },
-        { label: 'Ninguno', value: 'NONE' },
-      ],
-    },
   ],
 }

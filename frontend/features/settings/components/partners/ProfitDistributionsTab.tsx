@@ -1,19 +1,18 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState, useMemo, useRef } from "react"
+import React, { useEffect, useState, useMemo, useRef, useCallback } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
-import { ColumnDef } from "@tanstack/react-table"
-import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge, createActionsColumn} from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
+import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge} from '@/components/shared'
+import { profitDistributionActions, type ProfitDistributionActionsCtx } from './profitDistributionActions'
 
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import {ProfitDistribution} from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import {type ProfitDistribution} from "@/features/contacts"
 import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
-    Wallet,
-    Wand2,
-    Play
 } from "lucide-react"
 import { toast } from "sonner"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
@@ -23,12 +22,22 @@ import { ProfitDistributionDrawer } from "@/features/settings/components/ProfitD
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
     initialFlowOpen?: boolean
-    /** Callback to clear the modal query param in the URL when the flow closes */
-    onModalClose?: () => void
     createAction?: React.ReactNode
 }
 
-export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, createAction }: ProfitDistributionsTabProps) {
+export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }: ProfitDistributionsTabProps) {
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const clearModalParam = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (params.has('modal')) {
+            params.delete('modal')
+            const query = params.toString()
+            router.replace(query ? `?${query}` : pathname, { scroll: false })
+        }
+    }, [searchParams, router, pathname])
     // Unified state to prevent fragmented updates
     const [state, setState] = useState({
         distributions: [] as ProfitDistribution[],
@@ -87,12 +96,18 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
             ...prev,
             isFlowOpen: false
         }))
-        // Notify parent to clear the URL modal param
-        onModalClose?.()
+        clearModalParam()
         fetchDistributions()
     }
 
     const handleExecute = (resolution: ProfitDistribution) => setConfirmExecute(resolution)
+
+    const actionsCtx: ProfitDistributionActionsCtx = {
+        onViewDetail: (dist) => setState(prev => ({ ...prev, viewingDist: dist })),
+        onRetake: (dist) => setState(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true })),
+        onExecute: handleExecute,
+        onPayDividends: (dist) => setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true })),
+    }
 
     const onConfirmExecute = async () => {
         if (!confirmExecute) return
@@ -103,7 +118,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
             fetchDistributions()
         } catch (error: unknown) {
             console.error(error)
-            const detail = (error as any).response?.data?.detail || (error as Error).message || "Error al ejecutar la resolución"
+            const errResponse = error as unknown as { response?: { data?: { detail?: string } } }
+            const detail = errResponse.response?.data?.detail || (error instanceof Error ? error.message : "Error al ejecutar la resolución")
             toast.error(detail)
             throw error
         } finally {
@@ -232,47 +248,17 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 )
             }
         },
-        createActionsColumn<ProfitDistribution>({
-            renderActions: (dist) => {
-                if (dist.status === 'CANCELLED') return (
-                    <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
-                )
-
-                return (
-                    <>
-                        <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
-
-                        {dist.status === 'DRAFT' && (
-                            <DataCell.Action icon={Wand2} title="Retomar Proceso" className="text-success" onClick={() => {
-                                setState(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true }))
-                            }} />
-                        )}
-
-                        {dist.status === 'APPROVED' && (
-                            <DataCell.Action icon={Play} title="Ejecutar Contablemente" className="text-primary" onClick={() => handleExecute(dist)} />
-                        )}
-
-                        {dist.status === 'EXECUTED' && (dist.lines?.some((l) => l.destination === 'DIVIDEND')) && (
-                            <DataCell.Action icon={Wallet} title="Pagar Dividendos" className="text-primary" onClick={() => {
-                                setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true }))
-                            }} />
-                        )}
-                    </>
-                )
-            }
-        })
+        profitDistributionActions.column(actionsCtx)
     ], [])
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={state.distributions}
                     isLoading={state.loading}
                     variant="embedded"
-                    searchPlaceholder="Buscar por año o resolución..."
-                    filterColumn="fiscal_year"
                     createAction={createAction}
                 />
             </div>
@@ -291,7 +277,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 <MassPaymentModal
                     open={state.isMassPaymentOpen}
                     onOpenChange={(v) => setState(prev => ({ ...prev, isMassPaymentOpen: v }))}
-                    resolution={state.selectedResolution!}
+                    resolution={state.selectedResolution as ProfitDistribution}
                     onSuccess={fetchDistributions}
                 />
             )}

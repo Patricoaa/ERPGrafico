@@ -8,24 +8,6 @@ export const stockMoveSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'product_name',
     },
-    {
-      key: 'move_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'move_type',
-      options: [
-        { label: 'Entrada', value: 'IN' },
-        { label: 'Salida', value: 'OUT' },
-        { label: 'Ajuste', value: 'ADJ' },
-      ],
-    },
-    {
-      key: 'date',
-      label: 'Fecha',
-      type: 'daterange',
-      serverParamStart: 'date_from',
-      serverParamEnd: 'date_to',
-    },
   ],
 }
 
@@ -37,16 +19,6 @@ export const pricingRuleSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'search',
     },
-    {
-      key: 'active',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'active',
-      options: [
-        { label: 'Activo', value: 'true' },
-        { label: 'Inactivo', value: 'false' },
-      ],
-    },
   ],
 }
 
@@ -57,17 +29,6 @@ export const subscriptionSearchDef: SearchDefinition = {
       label: 'Producto',
       type: 'text',
       serverParam: 'search',
-    },
-    {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Activo', value: 'ACTIVE' },
-        { label: 'Pausado', value: 'PAUSED' },
-        { label: 'Cancelado', value: 'CANCELLED' },
-      ],
     },
   ],
 }
@@ -138,50 +99,6 @@ export const productSearchDef: SearchDefinition = {
       serverParam: 'search',
       suggestionsUrl: 'inventory/products/filter-suggestions/',
     },
-    {
-      key: 'product_type',
-      label: 'Tipo',
-      type: 'enum',
-      serverParam: 'product_type',
-      options: [
-        { label: 'Almacenable', value: 'STORABLE' },
-        { label: 'Consumible', value: 'CONSUMABLE' },
-        { label: 'Servicio', value: 'SERVICE' },
-        { label: 'Fabricable', value: 'MANUFACTURABLE' },
-        { label: 'Suscripción', value: 'SUBSCRIPTION' },
-      ],
-    },
-    {
-      key: 'active',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'active',
-      options: [
-        { label: 'Todos', value: 'all' },
-        { label: 'Activo', value: 'true' },
-        { label: 'Archivado', value: 'false' },
-      ],
-    },
-    {
-      key: 'can_be_sold',
-      label: 'Venta',
-      type: 'enum',
-      serverParam: 'can_be_sold',
-      options: [
-        { label: 'Sí', value: 'true' },
-        { label: 'No', value: 'false' },
-      ],
-    },
-    {
-      key: 'can_be_purchased',
-      label: 'Compra',
-      type: 'enum',
-      serverParam: 'can_be_purchased',
-      options: [
-        { label: 'Sí', value: 'true' },
-        { label: 'No', value: 'false' },
-      ],
-    },
   ],
 }
 
@@ -193,13 +110,6 @@ export const stockReportSearchDef: SearchDefinition = {
       type: 'text',
       serverParam: 'search',
       clientKey: ['name', 'code', 'internal_code'],
-    },
-    {
-      key: 'category_name',
-      label: 'Categoría',
-      type: 'text',
-      serverParam: 'category_name',
-      clientKey: ['category_name'],
     },
   ],
 }

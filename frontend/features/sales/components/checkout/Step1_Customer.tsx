@@ -3,10 +3,9 @@
 import { useDeviceContext } from "@/hooks/useDeviceContext"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { ContactCardGrid, MoneyDisplay } from "@/components/shared"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { FileWarning } from "lucide-react"
 import type { Contact } from "@/types/entities"
@@ -40,7 +39,7 @@ export function Step1_Customer({
     const { isTouchPOS } = useDeviceContext()
     // Show grid in POS inline mode (touch-optimised), fall back to prop or device detection
     const showContactGrid = isInline ? true : (touchMode ?? isTouchPOS)
-    const { openHub } = useHubPanel()
+
 
     const handleSelect = (contact: Contact) => {
         setSelectedCustomerId(contact.id.toString())
@@ -51,7 +50,7 @@ export function Step1_Customer({
         <div className="space-y-6">
             {/* Pending Debts Banner */}
             {pendingDebts && pendingDebts.length > 0 && (
-                <Alert className="border border-warning/30 bg-warning/5 p-3 sm:py-2.5 animate-in fade-in duration-300">
+                <Alert variant="warning" icon={null}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                             <FileWarning className="h-3.5 w-3.5 text-muted-foreground" />

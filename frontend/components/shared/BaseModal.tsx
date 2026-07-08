@@ -12,8 +12,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { type VariantProps } from "class-variance-authority"
-import { dialogContentVariants } from "@/components/ui/dialog"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { type dialogContentVariants } from "@/components/ui/dialog"
+import type * as DialogPrimitive from "@radix-ui/react-dialog"
 
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 
@@ -23,6 +23,8 @@ export interface BaseModalProps extends
     Omit<React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>, "title">,
     VariantProps<typeof dialogContentVariants>,
     PanelBaseProps {
+    /** Description text shown under the title (wrapped in DialogDescription for ARIA) */
+    description?: React.ReactNode
     hideScrollArea?: boolean
     allowOverflow?: boolean
     variant?: BaseModalVariant
@@ -80,11 +82,11 @@ export function BaseModal({
     )
 
     const iconElement: React.ReactNode = icon
-        ? (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any)))
+        ? (typeof icon === "function" || (typeof icon === "object" && "render" in icon))
             ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
                 className: cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-primary-foreground" : "text-muted-foreground/80")
             })
-            : icon as React.ReactNode
+            : icon
         : null
 
     return (
@@ -95,7 +97,7 @@ export function BaseModal({
                 className={cn(
                     "p-0 flex flex-col max-h-[95vh]",
                     allowOverflow ? "overflow-visible" : "overflow-hidden",
-                    isTransaction && "border-none shadow-2xl",
+                    isTransaction && "border-none shadow-overlay",
                     className
                 )}
                 {...props}
@@ -114,7 +116,7 @@ export function BaseModal({
                                     {title}
                                 </DialogTitle>
                             }
-                            description={description ? (
+                            subtitle={description ? (
                                 <DialogDescription
                                     asChild={typeof description !== "string"}
                                     className={descriptionStyles}

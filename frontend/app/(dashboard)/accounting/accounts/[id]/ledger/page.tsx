@@ -1,15 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { DataTable, DataCell, SkeletonShell } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
-import { JournalEntryDrawer } from "@/features/accounting"
-import { useJournalEntry } from "@/features/accounting"
+import { JournalEntryDrawer, useLedger, useJournalEntry } from "@/features/accounting"
 import type { JournalEntryInitialData } from "@/types/forms"
 
 export default function AccountLedgerPage() {
@@ -17,43 +14,12 @@ export default function AccountLedgerPage() {
     const router = useRouter()
     const accountId = params.id as string
 
-    const [account, setAccount] = useState<{ id: number, code: string, name: string } | null>(null)
-    const [movements, setMovements] = useState<Record<string, unknown>[]>([])
-    const [loading, setLoading] = useState(true)
+    const { data: ledger, isLoading } = useLedger(Number(accountId))
     const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null)
     const { data: selectedEntryData } = useJournalEntry(selectedEntryId ?? undefined)
 
-    const fetchLedger = async () => {
-        try {
-            const res = await api.get(`/accounting/accounts/${accountId}/ledger/`)
-            setAccount(res.data.account)
-            setMovements(res.data.movements)
-        } catch {
-            toast.error("Error al cargar el libro mayor")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        let cancelled = false
-        if (accountId) {
-            ;(async () => {
-                try {
-                    const res = await api.get(`/accounting/accounts/${accountId}/ledger/`)
-                    if (!cancelled) {
-                        setAccount(res.data.account)
-                        setMovements(res.data.movements)
-                    }
-                } catch {
-                    if (!cancelled) toast.error("Error al cargar el libro mayor")
-                } finally {
-                    if (!cancelled) setLoading(false)
-                }
-            })()
-        }
-        return () => { cancelled = true }
-    }, [accountId])
+    const account = ledger?.account ?? null
+    const movements = (ledger?.movements ?? []) as unknown as Record<string, unknown>[]
 
     const columns: ColumnDef<Record<string, unknown>>[] = [
         {
@@ -113,7 +79,7 @@ export default function AccountLedgerPage() {
         },
     ]
 
-    if (loading) {
+    if (isLoading) {
         return <div><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
     }
 
@@ -122,7 +88,7 @@ export default function AccountLedgerPage() {
     }
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex items-center gap-4 shrink-0">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4" />
@@ -140,9 +106,6 @@ export default function AccountLedgerPage() {
                     columns={columns}
                     data={movements}
                     variant="embedded"
-                useAdvancedFilter={true}
-                globalFilterFields={["date", "description", "partner"]}
-                searchPlaceholder="Buscar por fecha, descripción o tercero..."
                 defaultPageSize={50}
             />
             </div>
@@ -151,7 +114,7 @@ export default function AccountLedgerPage() {
                 open={selectedEntryId !== null}
                 onOpenChange={(open) => { if (!open) setSelectedEntryId(null) }}
                 initialData={selectedEntryData as unknown as JournalEntryInitialData}
-                onSuccess={() => { fetchLedger(); setSelectedEntryId(null) }}
+                onSuccess={() => { setSelectedEntryId(null) }}
             />
         </div>
     )

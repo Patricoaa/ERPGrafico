@@ -2,18 +2,19 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { BaseModal, Chip, DataTable } from '@/components/shared'
+import { BaseModal, Chip, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { DataCell, EntityCard } from '@/components/shared'
+import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
+import { type ColumnDef } from "@tanstack/react-table"
 
-import {Eye, ArrowRightLeft} from "lucide-react"
+import {ArrowRightLeft} from "lucide-react"
 
-import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 
-interface StockMove {
+export interface StockMove {
     id: number
     display_id?: string
     date: string
@@ -38,15 +39,27 @@ interface MovementClientViewProps {
 }
 
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { stockMoveSearchDef } from "@/features/inventory/searchDef"
+import { stockMoveSegDef } from "@/features/inventory/segmentationDef"
 import React from "react"
 
-export function MovementClientView({ externalOpen, onExternalOpenChange, createAction }: MovementClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(stockMoveSearchDef)
+const MOVE_TYPE_MAP: Record<string, { intent: "success" | "destructive" | "warning" | "neutral", label: string }> = {
+    'IN': { intent: 'success', label: 'Entrada' },
+    'OUT': { intent: 'destructive', label: 'Salida' },
+    'ADJ': { intent: 'warning', label: 'Ajuste' }
+}
+
+export function MovementClientView({ externalOpen, onExternalOpenChange, createAction: externalCreateAction }: MovementClientViewProps) {
+    const createAction = externalCreateAction
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(stockMoveSearchDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(stockMoveSegDef, basePeriod)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, moves, totalCount, isLoading, refetch } = useStockMoves({
-        ...filters,
+        ...allFilters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
@@ -84,6 +97,14 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
+    }
+
+    const actionsCtx: StockMoveActionsCtx = {
+        onViewDetails: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
     }
 
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
@@ -143,12 +164,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
                 const type = row.original.move_type
-                const typeMap: Record<string, { intent: "success" | "destructive" | "warning" | "neutral", label: string }> = {
-                    'IN': { intent: 'success', label: 'Entrada' },
-                    'OUT': { intent: 'destructive', label: 'Salida' },
-                    'ADJ': { intent: 'warning', label: 'Ajuste' }
-                }
-                const config = typeMap[type] || { intent: 'neutral', label: type }
+                const config = MOVE_TYPE_MAP[type] || { intent: 'neutral' as const, label: type }
                 return (
                     <div className="flex justify-center w-full">
                         <Chip intent={config.intent} size="sm">{config.label}</Chip>
@@ -157,26 +173,14 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
             },
             size: 100,
         },
-        createActionsColumn<StockMove>({
-            renderActions: (item) => (
-                <DataCell.Action
-                    icon={Eye}
-                    title="Ver Detalles"
-                    color="text-primary"
-                    onClick={() => {
-                        const params = new URLSearchParams(searchParams.toString())
-                        params.set('selected', String(item.id))
-                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                    }}
-                />
-            ),
-        }),
-    ], [])
+        stockMoveActions.column(actionsCtx),
+    ], [actionsCtx])
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="inventory.stockmove"
                     columns={columns}
                     data={moves}
                     isLoading={isLoading}
@@ -186,13 +190,41 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    segmentation={<SegmentationBar def={stockMoveSegDef} basePeriod={basePeriod} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay movimientos de stock",
                         description: "Los movimientos se registran al recibir, despachar o ajustar inventario.",
+                    }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'quantity', fn: 'sum', format: 'number' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
+                    renderCard={(move: StockMove) => {
+                        const typeConfig = MOVE_TYPE_MAP[move.move_type] || { intent: 'neutral' as const, label: move.move_type }
+                        return (
+                            <EntityCard
+                                key={move.id}
+                                onClick={() => {
+                                    const params = new URLSearchParams(searchParams.toString())
+                                    params.set('selected', String(move.id))
+                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                }}
+                                >
+                                <EntityCard.Header
+                                    title={move.product_name}
+                                    subtitle={move.display_id ?? String(move.id)}
+                                />
+                                <EntityCard.Body actions={stockMoveActions.render(move, actionsCtx)}>
+                                    <EntityCard.Field label="Fecha" value={<DataCell.Date value={move.date} />} />
+                                    <EntityCard.Field label="Almacén" value={move.warehouse_name} />
+                                    <EntityCard.Field label="Cantidad" value={<DataCell.NumericFlow value={move.quantity} unit={move.uom_name} showSign />} />
+                                    <EntityCard.Field label="Tipo" value={<Chip intent={typeConfig.intent} size="sm">{typeConfig.label}</Chip>} />
+                                </EntityCard.Body>
+                            </EntityCard>
+                        )
                     }}
                 />
             </div>

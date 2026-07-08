@@ -10,15 +10,16 @@ import { updateAdvance } from '@/features/hr/api/hrApi'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import { usePayrolls } from '@/features/hr/hooks/usePayrolls'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
-import { WalletCards, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 export const advanceSchema = z.object({
@@ -51,6 +52,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
     const [saving, setSaving] = useState(false)
+    const { dateString } = useServerDate()
 
     const width = formDrawerWidth("medium", !!advance)
 
@@ -59,7 +61,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
         defaultValues: {
             employee: "",
             amount: "",
-            date: new Date().toISOString().split('T')[0],
+            date: dateString,
             payroll: "",
             notes: "",
         }
@@ -78,7 +80,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             form.reset({
                 employee: "",
                 amount: "",
-                date: new Date().toISOString().split('T')[0],
+                date: dateString,
                 payroll: "",
                 notes: "",
             })
@@ -113,11 +115,9 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const selectedEmployee = form.watch("employee")
     const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
-    const drawerTitle = isView
-        ? `Ficha de Anticipo${advance?.id ? ` #${advance.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Anticipo"
-            : "Editar Anticipo"
+    const identity = useDrawerIdentity('hr.salaryadvance', mode, advance, {
+        overrideSubtitle: advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación.",
+    })
 
     return (
         <>
@@ -136,9 +136,10 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={width}
-                icon={WalletCards}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 mode={mode}
                 footer={isView ? undefined : (
                     <FormFooter
@@ -166,6 +167,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Empleado"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -205,7 +207,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
 
                                             <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
                                                 <LabeledSelect
-                                                    label="Vincular a Liquidación (Obligatorio)"
+                                                    label="Vincular a Liquidación"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -243,6 +246,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Empleado"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -282,7 +286,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
 
                                             <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
                                                 <LabeledSelect
-                                                    label="Vincular a Liquidación (Obligatorio)"
+                                                    label="Vincular a Liquidación"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}

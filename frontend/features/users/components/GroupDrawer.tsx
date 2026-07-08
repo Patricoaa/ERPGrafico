@@ -13,15 +13,16 @@ import {
     FormFooter,
     FormSplitLayout,
 } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
-import { AppGroup } from "@/types/entities"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { type AppGroup } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const formSchema = z.object({
@@ -89,7 +90,14 @@ export function GroupDrawer({
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const drawerTitle = mode === 'create' ? 'Nuevo Grupo' : mode === 'view' ? initialData?.name || 'Grupo' : `Editar: ${initialData?.name || ''}`
+    const overrideTitle = mode === 'create' ? undefined
+        : mode === 'view'
+            ? (initialData?.name || 'Grupo')
+            : `Editar: ${initialData?.name || ''}`
+    const identity = useDrawerIdentity('settings.group', mode, initialData, {
+        overrideTitle,
+        overrideSubtitle: "Configuración de grupo funcional y permisos de acceso",
+    })
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
@@ -130,8 +138,7 @@ export function GroupDrawer({
             setOpen?.(false)
             onSuccess?.()
         } catch (error) {
-            console.error(error)
-            toast.error("Error al guardar el grupo")
+            showApiError(error, "Error al guardar el grupo")
         } finally {
             setIsLoading(false)
         }
@@ -156,8 +163,10 @@ export function GroupDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle="Configuración de grupo funcional y permisos de acceso"
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

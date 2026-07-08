@@ -1,36 +1,39 @@
 "use client"
 
-import React, {useEffect, useCallback} from "react"
-import { useForm, UseFormReturn, Path } from "react-hook-form"
+import React from "react"
+import { useForm, type UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField, FormItem } from "@/components/ui/form"
 import { Check } from "lucide-react"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
-import {AutoSaveStatusBadge, FadeIn} from "@/components/shared"
+import { AutoSaveStatusBadge, SkeletonShell } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { billingSchema, type BillingFormValues } from "./BillingSettingsView.schema"
 
-export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTab = "accounts" }) => {
-    const { settings, updateSettings } = useBillingSettings()
+export function BillingSettingsView() {
+    const { settings, isLoading, updateSettings } = useBillingSettings()
 
     const form = useForm<BillingFormValues>({
-        // ... (existing form config)
         resolver: zodResolver(billingSchema),
         defaultValues: {
-            default_receivable_account: null,
-            default_payable_account: null,
-            default_advance_payment_account: null,
-            default_prepayment_account: null,
             allowed_dte_types_emit: [],
             allowed_dte_types_receive: [],
         }
     })
 
-    const onSave = useCallback(async (data: BillingFormValues) => {
+    React.useEffect(() => {
+        if (settings) {
+            form.reset({
+                allowed_dte_types_emit: settings.allowed_dte_types_emit || [],
+                allowed_dte_types_receive: settings.allowed_dte_types_receive || [],
+            })
+        }
+    }, [settings, form])
+
+    const onSave = React.useCallback(async (data: BillingFormValues) => {
         await updateSettings(data)
     }, [updateSettings])
 
@@ -38,28 +41,7 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
 
     useUnsavedChangesGuard(status)
 
-    // Update form when settings are loaded
-    useEffect(() => {
-        if (settings) {
-            const formattedSettings: Partial<BillingFormValues> = {}
-            const keys = Object.keys(billingSchema.shape) as (keyof BillingFormValues)[]
-
-            keys.forEach((key) => {
-                const val = settings[key]
-                if (val === null || val === undefined) {
-                    if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
-                        (formattedSettings as Record<string, unknown>)[key] = [];
-                    } else {
-                        (formattedSettings as Record<string, unknown>)[key] = null;
-                    }
-                } else {
-                    (formattedSettings as Record<string, unknown>)[key] = val
-                }
-            })
-
-            form.reset(formattedSettings as BillingFormValues)
-        }
-    }, [settings, form])
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
@@ -73,54 +55,20 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
             </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
-                    <FadeIn key={activeTab}>
-                        {activeTab === "accounts" && (
-                            <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Card variant="transparent">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg text-primary">Cuentas por Cobrar</CardTitle>
-                                            <CardDescription>Gestión de clientes y anticipos recibidos</CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <AccountField form={form} name="default_receivable_account" label="CxC Clientes (Activo)" accountType="ASSET" />
-                                            <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card variant="transparent">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg text-primary">Cuentas por Pagar</CardTitle>
-                                            <CardDescription>Gestión de proveedores y anticipos entregados</CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
-                                            <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === "dtes" && (
-                            <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <DTEConfigCard
-                                        form={form}
-                                        name="allowed_dte_types_emit"
-                                        title="Documentos a Emitir (Ventas/POS)"
-                                        description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
-                                    />
-                                    <DTEConfigCard
-                                        form={form}
-                                        name="allowed_dte_types_receive"
-                                        title="Documentos a Recibir (Compras)"
-                                        description="Seleccione qué tipos de documentos están habilitados para ser registrados."
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </FadeIn>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <DTEConfigCard
+                            form={form}
+                            name="allowed_dte_types_emit"
+                            title="Documentos a Emitir (Ventas/POS)"
+                            description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
+                        />
+                        <DTEConfigCard
+                            form={form}
+                            name="allowed_dte_types_receive"
+                            title="Documentos a Recibir (Compras)"
+                            description="Seleccione qué tipos de documentos están habilitados para ser registrados."
+                        />
+                    </div>
                 </form>
             </Form>
         </div>
@@ -128,31 +76,6 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
 }
 
 export default BillingSettingsView
-
-interface AccountFieldProps {
-    form: UseFormReturn<BillingFormValues>
-    name: Path<BillingFormValues>
-    label: string
-    accountType: string
-}
-
-function AccountField({ form, name, label, accountType }: AccountFieldProps) {
-    return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field, fieldState }) => (
-                <AccountSelector
-                    label={label}
-                    value={field.value as string}
-                    onChange={(val) => field.onChange(val)}
-                    accountType={accountType}
-                    error={fieldState.error?.message}
-                />
-            )}
-        />
-    )
-}
 
 interface DTEConfigCardProps {
     form: UseFormReturn<BillingFormValues>
@@ -170,7 +93,7 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
     ]
 
     return (
-        <Card variant="transparent">
+        <Card variant="default">
             <CardHeader>
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
@@ -183,7 +106,7 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
                         <FormItem>
                             <div className="grid grid-cols-1 gap-4">
                                 {dteTypes.map((type) => (
-                                    <div key={type.id} className="flex items-center space-x-3 space-y-0 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => {
+                                    <div key={type.id} className="flex items-center space-x-3 space-y-0 p-3 rounded-md border bg-card hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => {
                                         const current = (field.value as string[]) || [];
                                         const next = current.includes(type.id)
                                             ? current.filter((v) => v !== type.id)

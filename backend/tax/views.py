@@ -1,63 +1,72 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from core.api.pagination import StandardResultsSetPagination
+from core.idempotency import idempotent_endpoint
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
-from .models import TaxPeriod, F29Declaration, F29Payment, AccountingPeriod
-from .serializers import (
-    TaxPeriodSerializer, F29DeclarationSerializer, F29PaymentSerializer,
-    F29CalculationRequestSerializer, F29RegistrationSerializer, AccountingPeriodSerializer
-)
-from .services import F29CalculationService, TaxPeriodService, F29PaymentService, AccountingPeriodService
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status, viewsets, exceptions
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+
 from billing.models import Invoice
+
+from .models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
+from .serializers import (
+    AccountingPeriodSerializer,
+    F29CalculationRequestSerializer,
+    F29DeclarationSerializer,
+    F29PaymentSerializer,
+    F29RegistrationSerializer,
+    TaxPeriodSerializer,
+)
+from .services import (
+    AccountingPeriodService,
+    F29CalculationService,
+    F29PaymentService,
+    TaxPeriodService,
+)
 
 
 class TaxPeriodViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = TaxPeriod.objects.all()
     serializer_class = TaxPeriodSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['year', 'month', 'status']
-    ordering_fields = ['year', 'month', 'status']
-    ordering = ['-year', '-month']
+    filterset_fields = ["year", "month", "status"]
+    ordering_fields = ["year", "month", "status"]
+    ordering = ["-year", "-month"]
 
-    @action(detail=True, methods=['post'])
+    @idempotent_endpoint(scope="tax.period.close")
+    @action(detail=True, methods=["post"])
     def close(self, request, pk=None):
         """Close a tax period"""
         period = self.get_object()
         try:
-            updated_period = TaxPeriodService.close_period(
-                period.year,
-                period.month,
-                request.user
-            )
+            updated_period = TaxPeriodService.close_period(period.year, period.month, request.user)
             serializer = self.get_serializer(updated_period)
             return Response(serializer.data)
         except DjangoValidationError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def reopen(self, request, pk=None):
         """Reopen a closed tax period"""
         period = self.get_object()
+        reason = request.data.get("reason", "")
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        ip_address = x_forwarded_for.split(",")[0] if x_forwarded_for else request.META.get("REMOTE_ADDR")
         try:
             updated_period = TaxPeriodService.reopen_period(
-                period.year,
-                period.month,
-                request.user
+                period.year, period.month, request.user, reason=reason, ip_address=ip_address
             )
             serializer = self.get_serializer(updated_period)
             return Response(serializer.data)
         except DjangoValidationError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def checklist(self, request, pk=None):
         """Get checklist status for a period"""
         period = self.get_object()
@@ -66,238 +75,154 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
-        """
-        Check if a period is closed for a specific date.
-        Query param: ?date=YYYY-MM-DD
-        """
-        date_str = request.query_params.get('date')
-        if not date_str:
-            return Response({'error': 'Date parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
         try:
-            from datetime import datetime
-            query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            is_closed = TaxPeriodService.is_period_closed(query_date)
-            return Response({'is_closed': is_closed, 'date': date_str})
-        except (ValueError, TypeError):
-            return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(TaxPeriodService.parse_and_check_closed(request.query_params.get('date')))
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
 
 
 class F29DeclarationViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = F29Declaration.objects.all()
     serializer_class = F29DeclarationSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['tax_period__year', 'tax_period__month', 'tax_period__status']
-    ordering_fields = ['tax_period__year', 'tax_period__month', 'declaration_date']
-    ordering = ['-tax_period__year', '-tax_period__month']
+    filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
+    ordering_fields = ["tax_period__year", "tax_period__month", "declaration_date"]
+    ordering = ["-tax_period__year", "-tax_period__month"]
 
     def create(self, request, *args, **kwargs):
-        """
-        Create or update an F29 declaration.
-        Handles tax_period_year and tax_period_month from the request.
-        """
-        year = request.data.get('tax_period_year')
-        month = request.data.get('tax_period_month')
-        
-        if not year or not month:
-            # Fallback to current year/month if not provided
-            now = timezone.now()
-            year = year or now.year
-            month = month or now.month
-
+        from .services_ext import TaxServiceExt
+        from django.core.exceptions import ValidationError as DjangoValidationError
         try:
-            # The service handles finding/creating the TaxPeriod and calculation
-            declaration = F29CalculationService.create_or_update_declaration(
-                year=int(year),
-                month=int(month),
-                manual_fields=request.data
-            )
-            serializer = self.get_serializer(declaration)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except (ValueError, TypeError) as e:
-            return Response(
-                {'error': f"Año o mes inválidos: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except DjangoValidationError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            dec = TaxServiceExt.create_declaration_from_request(request)
+            return Response(self.get_serializer(dec).data, status=201)
+        except (ValueError, TypeError, DjangoValidationError) as e:
+            return Response({'error': str(e)}, status=400)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=["post"])
     def calculate(self, request):
         """Calculate F29 values for a period"""
         serializer = F29CalculationRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        year = serializer.validated_data['year']
-        month = serializer.validated_data['month']
-        
+
+        year = serializer.validated_data["year"]
+        month = serializer.validated_data["month"]
+
         calc_data = F29CalculationService.calculate_f29_for_period(year, month)
         return Response(calc_data)
 
-    @action(detail=True, methods=['post'])
+    @idempotent_endpoint(scope="tax.f29.register")
+    @action(detail=True, methods=["post"])
     def register(self, request, pk=None):
         """Register an F29 declaration officially"""
         declaration = self.get_object()
         serializer = F29RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         try:
             updated_declaration = F29CalculationService.register_declaration(
                 declaration.id,
-                serializer.validated_data.get('folio_number', ''),
-                serializer.validated_data.get('declaration_date')
+                serializer.validated_data.get("folio_number", ""),
+                serializer.validated_data.get("declaration_date"),
+                notes=serializer.validated_data.get("notes"),
             )
-            
-            # Update notes if provided
-            if 'notes' in serializer.validated_data:
-                updated_declaration.notes = serializer.validated_data['notes']
-                updated_declaration.save()
-            
+
             result_serializer = self.get_serializer(updated_declaration)
             return Response(result_serializer.data)
         except DjangoValidationError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])
     def documents(self, request, pk=None):
-        """Get all invoices included in this declaration"""
-        from billing.serializers import InvoiceSerializer
-        from datetime import date
-        
-        declaration = self.get_object()
-        period = declaration.tax_period
-        
-        # Calculate date range
-        start_date = date(period.year, period.month, 1)
-        if period.month == 12:
-            end_date = date(period.year + 1, 1, 1)
-        else:
-            end_date = date(period.year, period.month + 1, 1)
-        
-        # Get all invoices in period
-        invoices = Invoice.objects.filter(
-            date__gte=start_date,
-            date__lt=end_date,
-            status=Invoice.Status.POSTED
-        ).order_by('date', 'id')
-        
-        serializer = InvoiceSerializer(invoices, many=True)
-        return Response(serializer.data)
+        from .selectors import TaxSelectorExt
+        return Response(TaxSelectorExt.get_declaration_documents(self.get_object()))
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def attach_document(self, request, pk=None):
+        instance = self.get_object()
+        uploaded_file = request.FILES.get('document')
+
+        if not uploaded_file:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance.document = uploaded_file
+        instance.save(update_fields=['document'])
+        return Response(self.get_serializer(instance).data)
 
 
 class F29PaymentViewSet(viewsets.ModelViewSet):
+    pagination_class = StandardResultsSetPagination
     queryset = F29Payment.objects.all()
     serializer_class = F29PaymentSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['declaration', 'payment_date', 'payment_method']
-    ordering_fields = ['payment_date', 'amount']
-    ordering = ['-payment_date']
+    filterset_fields = ["declaration", "payment_date", "payment_method"]
+    ordering_fields = ["payment_date", "amount"]
+    ordering = ["-payment_date"]
 
     def create(self, request, *args, **kwargs):
         """Create a new tax payment"""
-        import logging
-        logger = logging.getLogger(__name__)
-        
         serializer = self.get_serializer(data=request.data)
-        
         try:
             serializer.is_valid(raise_exception=True)
-            
-            logger.info(f"F29 Payment request data: {request.data}")
-            logger.info(f"F29 Payment validated data: {serializer.validated_data}")
-            
             payment = F29PaymentService.register_payment(
-                serializer.validated_data['declaration'].id,
-                serializer.validated_data,
-                request.user
+                serializer.validated_data["declaration"].id, serializer.validated_data, request.user
             )
-            result_serializer = self.get_serializer(payment)
-            return Response(
-                result_serializer.data,
-                status=status.HTTP_201_CREATED
-            )
+            return Response(self.get_serializer(payment).data, status=status.HTTP_201_CREATED)
         except DjangoValidationError as e:
-            logger.error(f"F29 Payment ValidationError: {str(e)}")
-            # If it's a serializer error, it might be a dict
-            if hasattr(e, 'detail'):
-                 logger.error(f"F29 Payment Validation Detail: {e.detail}")
             return Response(
-                {'error': e.detail if hasattr(e, 'detail') else str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": getattr(e, "detail", str(e))}, status=status.HTTP_400_BAD_REQUEST
             )
+        except exceptions.APIException:
+            raise
         except Exception as e:
-            logger.error(f"F29 Payment unexpected error: {str(e)}", exc_info=True)
-            return Response(
-                {'error': f"Error inesperado: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": f"Error inesperado: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
     queryset = AccountingPeriod.objects.all()
     serializer_class = AccountingPeriodSerializer
+    pagination_class = None  # Master data
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['year', 'month', 'status']
-    ordering_fields = ['year', 'month', 'status']
-    ordering = ['-year', '-month']
+    filterset_fields = ["year", "month", "status"]
+    ordering_fields = ["year", "month", "status"]
+    ordering = ["-year", "-month"]
 
-    @action(detail=True, methods=['post'])
+    @idempotent_endpoint(scope="tax.period.close")
+    @action(detail=True, methods=["post"])
     def close(self, request, pk=None):
-        """Close an accounting period"""
-        # Check permission
-        if not request.user.has_perm('tax.can_close_accounting_period'):
-            return Response(
-                {'error': 'No tiene permisos para cerrar periodos contables.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        period = self.get_object()
         try:
+            AccountingPeriodService.validate_can_close(request.user)
+            period = self.get_object()
             updated_period = AccountingPeriodService.close_period(
-                period.year,
-                period.month,
-                request.user
+                period.year, period.month, request.user
             )
             serializer = self.get_serializer(updated_period)
             return Response(serializer.data)
         except DjangoValidationError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def reopen(self, request, pk=None):
-        """Reopen a closed accounting period"""
-        # Check permission
-        if not request.user.has_perm('tax.can_reopen_accounting_period'):
-            return Response(
-                {'error': 'No tiene permisos para reabrir periodos contables.'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        period = self.get_object()
         try:
+            AccountingPeriodService.validate_can_reopen(request.user)
+            period = self.get_object()
+            reason = request.data.get("reason", "")
+            x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+            ip_address = x_forwarded_for.split(",")[0] if x_forwarded_for else request.META.get("REMOTE_ADDR")
             updated_period = AccountingPeriodService.reopen_period(
-                period.year,
-                period.month,
-                request.user
+                period.year, period.month, request.user, reason=reason, ip_address=ip_address
             )
             serializer = self.get_serializer(updated_period)
             return Response(serializer.data)
         except DjangoValidationError as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=["get"])
     def status_check(self, request, pk=None):
         """Get status and checklist for an accounting period"""
         period = self.get_object()
@@ -306,20 +231,7 @@ class AccountingPeriodViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def check_closed(self, request):
-        """
-        Check if an accounting period is closed for a specific date.
-        Query param: ?date=YYYY-MM-DD
-        """
-        date_str = request.query_params.get('date')
-        if not date_str:
-            return Response({'error': 'Date parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
         try:
-            from datetime import datetime
-            query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            is_closed = AccountingPeriodService.is_period_closed(query_date)
-            return Response({'is_closed': is_closed, 'date': date_str})
-        except (ValueError, TypeError):
-            return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
-
-
+            return Response(AccountingPeriodService.parse_and_check_closed(request.query_params.get('date')))
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

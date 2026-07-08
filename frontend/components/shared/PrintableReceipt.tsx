@@ -4,6 +4,7 @@ import React, { forwardRef } from "react"
 import { formatCurrency } from "@/lib/money"
 import type { TransactionData, TransactionLine } from "@/types/transactions"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { formatPlainDate } from "@/lib/utils"
 
 interface PrintableReceiptProps {
     data: TransactionData & { terminal_name?: string }
@@ -20,7 +21,12 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
         const customerName = data?.customer?.name ?? data?.customer?.full_name ?? data?.partner?.name ?? data?.partner?.full_name ?? data?.partner_name ?? data?.customer_name ?? subTitle
         const displayId = data?.display_id ?? data?.number?.toString() ?? data?.transaction_number ?? "—"
         const date = data?.created_at ?? data?.date ?? data?.document_date ?? ""
-        const formattedDate = date ? new Date(date).toLocaleString("es-CL") : ""
+        const formattedDate = date
+            ? (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+                ? formatPlainDate(date)
+                // eslint-disable-next-line no-restricted-syntax -- date/time formatting, not currency or quantity
+                : new Date(date).toLocaleString("es-CL"))
+            : ""
         const terminalName = data?.terminal_name ?? data?.pos_session?.terminal_name ?? data?.session?.terminal_name ?? ""
 
         const totalNet = Number(data?.total_net ?? 0)
@@ -38,6 +44,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
                 {/* Header */}
                 <div className="text-center border-b border-dashed pb-3 mb-3">
                     {logo && (
+                        // eslint-disable-next-line @next/next/no-img-element -- print context, next/image doesn't support print CSS
                         <img
                             src={logo}
                             alt="Logo"

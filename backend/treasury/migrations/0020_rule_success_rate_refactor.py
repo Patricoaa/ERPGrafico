@@ -4,28 +4,35 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0019_bankstatementline_exclusion_notes_and_more'),
+        ("treasury", "0019_bankstatementline_exclusion_notes_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='historicalreconciliationrule',
-            name='success_rate',
+            model_name="historicalreconciliationrule",
+            name="success_rate",
         ),
         migrations.RemoveField(
-            model_name='reconciliationrule',
-            name='success_rate',
+            model_name="reconciliationrule",
+            name="success_rate",
         ),
         migrations.AddField(
-            model_name='historicalreconciliationrule',
-            name='times_succeeded',
-            field=models.IntegerField(default=0, help_text='Contador de veces que un match sugerido por esta regla fue confirmado', verbose_name='Veces Confirmada'),
+            model_name="historicalreconciliationrule",
+            name="times_succeeded",
+            field=models.IntegerField(
+                default=0,
+                help_text="Contador de veces que un match sugerido por esta regla fue confirmado",
+                verbose_name="Veces Confirmada",
+            ),
         ),
         migrations.AddField(
-            model_name='reconciliationrule',
-            name='times_succeeded',
-            field=models.IntegerField(default=0, help_text='Contador de veces que un match sugerido por esta regla fue confirmado', verbose_name='Veces Confirmada'),
+            model_name="reconciliationrule",
+            name="times_succeeded",
+            field=models.IntegerField(
+                default=0,
+                help_text="Contador de veces que un match sugerido por esta regla fue confirmado",
+                verbose_name="Veces Confirmada",
+            ),
         ),
     ]

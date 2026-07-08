@@ -3,29 +3,22 @@ import type { SearchDefinition } from '@/types/search'
 export const purchaseOrderSearchDef: SearchDefinition = {
   fields: [
     {
-      key: 'search',
+      key: 'supplier_name',
       label: 'Proveedor',
       type: 'text',
-      serverParam: 'search',
+      serverParam: 'supplier_name',
     },
     {
-      key: 'status',
-      label: 'Estado',
-      type: 'enum',
-      serverParam: 'status',
-      options: [
-        { label: 'Borrador', value: 'DRAFT' },
-        { label: 'Confirmado', value: 'CONFIRMED' },
-        { label: 'Recibido', value: 'RECEIVED' },
-        { label: 'Anulado', value: 'CANCELLED' },
-      ],
+      key: 'number',
+      label: 'Folio',
+      type: 'text',
+      serverParam: 'number',
     },
     {
-      key: 'date',
-      label: 'Fecha',
-      type: 'daterange',
-      serverParamStart: 'date_from',
-      serverParamEnd: 'date_to',
+      key: 'product_name',
+      label: 'Producto',
+      type: 'text',
+      serverParam: 'product_name',
     },
   ],
 }

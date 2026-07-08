@@ -1,12 +1,28 @@
-from django.utils import timezone
 from django.db import transaction
+from django.utils import timezone
 
-from workflow.models import Task, Notification, TaskAssignmentRule, NotificationRule
+from workflow.models import Notification, NotificationRule, Task, TaskAssignmentRule, Transition
+
 
 class WorkflowService:
     """
     Central service to handle business logic for Workflows.
     """
+
+    @staticmethod
+    def log_transition(instance, transition: str, user=None, reason: str = "") -> Transition:
+        """
+        Registra una transición de ciclo de vida (cancel/annul/purge) en el
+        audit log append-only. `instance` es el documento afectado.
+        """
+        meta = instance._meta
+        return Transition.objects.create(
+            entity_type=f"{meta.app_label}.{meta.model_name}",
+            entity_id=instance.pk,
+            transition=transition,
+            user=user if getattr(user, "pk", None) else None,
+            reason=reason or "",
+        )
 
     @staticmethod
     def get_assignee_for_task_type(task_type):
@@ -16,20 +32,27 @@ class WorkflowService:
         """
         try:
             rule = TaskAssignmentRule.objects.get(task_type=task_type)
-            return {
-                'user': rule.assigned_user,
-                'group': rule.assigned_group
-            }
+            return {"user": rule.assigned_user, "group": rule.assigned_group}
         except TaskAssignmentRule.DoesNotExist:
             return None
 
     @staticmethod
-    def create_task(task_type, title, description, content_object=None, priority=Task.Priority.MEDIUM, created_by=None, data=None, category=Task.Category.APPROVAL):
+    @transaction.atomic
+    def create_task(
+        task_type,
+        title,
+        description,
+        content_object=None,
+        priority=Task.Priority.MEDIUM,
+        created_by=None,
+        data=None,
+        category=Task.Category.APPROVAL,
+    ):
         """
         Creates a new task.
         If rule specifies a user, assigned_to is set.
         If rule specifies a group, assigned_to is None, but data['candidate_group'] is set (Pool Assignment).
-        
+
         category: APPROVAL (default) for workflow approvals, TASK for operational tasks
         """
         assignee_info = WorkflowService.get_assignee_for_task_type(task_type)
@@ -37,16 +60,13 @@ class WorkflowService:
         candidate_group = None
 
         if assignee_info:
-            assigned_user = assignee_info.get('user')
-            candidate_group = assignee_info.get('group')
+            assigned_user = assignee_info.get("user")
+            candidate_group = assignee_info.get("group")
 
-        # If data is None initialize it
         task_data = data or {}
-        
-        # If pool assignment (Group but no User)
         if candidate_group and not assigned_user:
-            task_data = {**task_data, 'candidate_group': candidate_group}
-        
+            task_data = {**task_data, "candidate_group": candidate_group}
+
         task = Task.objects.create(
             title=title,
             description=description,
@@ -56,36 +76,118 @@ class WorkflowService:
             assigned_to=assigned_user,
             content_object=content_object,
             data=task_data,
-            category=category
+            category=category,
         )
-        
+
         if assigned_user:
             WorkflowService.notify_assignment(task)
         elif candidate_group:
             WorkflowService.notify_group_assignment(task, candidate_group)
-            
+
+        return task
+
+    @staticmethod
+    def handle_task_update(task, old_status):
+        if old_status != task.status and task.status in [Task.Status.COMPLETED, Task.Status.REJECTED]:
+            if task.status == Task.Status.COMPLETED and task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
+                draft_id = task.data.get("request_data", {}).get("draft_id")
+                link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+                WorkflowService.send_notification(
+                    notification_type="POS_CREDIT_APPROVAL",
+                    user=task.created_by,
+                    title=f"Aprobación de Crédito Completada: {task.title}",
+                    message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
+                    link=link,
+                    level=Notification.Type.SUCCESS,
+                )
+            elif task.status == Task.Status.REJECTED and task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
+                WorkflowService.send_notification(
+                    notification_type="POS_CREDIT_APPROVAL",
+                    user=task.created_by,
+                    title=f"Aprobación de Crédito Rechazada: {task.title}",
+                    message="La solicitud de crédito para el POS ha sido rechazada.",
+                    link="/sales/pos",
+                    level=Notification.Type.ERROR,
+                )
+
+    @staticmethod
+    def finalize_task_completion(*, task: "Task", completed_by) -> None:
+        """
+        Persiste el usuario y timestamp de completado de una tarea.
+
+        Reemplaza el ``task.save(update_fields=["completed_by", "completed_at"])``
+        que antes vivía directamente en ``TaskViewSet.perform_update``.
+        """
+        task.completed_by = completed_by
+        task.completed_at = timezone.now()
+        task.save(update_fields=["completed_by", "completed_at"])
+
+    @staticmethod
+    @transaction.atomic
+    def complete_task(task, user, notes=None, files=None):
+        from rest_framework.exceptions import PermissionDenied
+        if task.category == Task.Category.TASK and task.task_type.startswith("HUB_"):
+            raise ValueError("Las tareas de etapa del HUB se completan automáticamente al finalizar la etapa correspondiente.")
+
+        if not user.is_superuser:
+            if task.assigned_to and task.assigned_to != user:
+                raise PermissionDenied("No tienes permisos para completar esta tarea asignada a otro usuario.")
+            if task.assigned_group and not user.groups.filter(id=task.assigned_group.id).exists():
+                raise PermissionDenied(f"No tienes permisos para completar esta tarea. Debes pertenecer al grupo '{task.assigned_group.name}'.")
+
+        task.status = Task.Status.COMPLETED
+        task.completed_at = timezone.now()
+        task.completed_by = user
+        if notes:
+            task.notes = notes
+        task.save()
+
+        if files:
+            from django.contrib.contenttypes.models import ContentType
+            from core.models import Attachment
+            task_ct = ContentType.objects.get_for_model(Task)
+            for f in files:
+                Attachment.objects.create(
+                    file=f,
+                    original_filename=f.name,
+                    content_type=task_ct,
+                    object_id=task.id,
+                    user=user,
+                )
+
+        if task.category == Task.Category.APPROVAL and task.created_by and task.task_type == "CREDIT_POS_REQUEST":
+            draft_id = task.data.get("request_data", {}).get("draft_id")
+            link = f"/sales/pos?draftId={draft_id}" if draft_id else "/sales/pos"
+            WorkflowService.send_notification(
+                notification_type="POS_CREDIT_APPROVAL",
+                user=task.created_by,
+                title=f"Aprobación de Crédito Completada: {task.title}",
+                message="La solicitud de crédito ha sido aprobada y está lista para ser procesada en el POS.",
+                level=Notification.Type.SUCCESS,
+                link=link,
+            )
         return task
 
     # --- HUB Stage Tasks ---
-    
+
     HUB_STAGES = [
-        ('origin', 'Origen (Confirmación)'),
-        ('logistics', 'Despacho / Recepción'),
-        ('billing', 'Facturación'),
-        ('treasury', 'Tesorería'),
+        ("origin", "Origen (Confirmación)"),
+        ("logistics", "Despacho / Recepción"),
+        ("billing", "Facturación"),
+        ("treasury", "Tesorería"),
     ]
 
     HUB_STAGE_TASK_TYPES = {
-        'origin': 'HUB_ORIGIN',
-        'logistics': 'HUB_LOGISTICS',
-        'billing': 'HUB_BILLING',
-        'treasury': 'HUB_TREASURY',
+        "origin": "HUB_ORIGIN",
+        "logistics": "HUB_LOGISTICS",
+        "billing": "HUB_BILLING",
+        "treasury": "HUB_TREASURY",
     }
 
     # Recurring F29 Tasks
-    F29_CREATE = 'F29_CREATE'
-    F29_PAY = 'F29_PAY'
-    PERIOD_CLOSE = 'PERIOD_CLOSE'
+    F29_CREATE = "F29_CREATE"
+    F29_PAY = "F29_PAY"
+    PERIOD_CLOSE = "PERIOD_CLOSE"
 
     @staticmethod
     def is_hub_stage_complete(order, stage_key):
@@ -93,101 +195,105 @@ class WorkflowService:
         Calculates ground truth for a HUB stage completion.
         Supports SaleOrder, PurchaseOrder and Invoice (NC/ND).
         """
-        if getattr(order, 'status', None) == 'CANCELLED':
+        if getattr(order, "status", None) == "CANCELLED":
             return True
-            
+
         from billing.models import Invoice
+
         is_invoice = isinstance(order, Invoice)
-            
-        if stage_key == 'origin':
+
+        if stage_key == "origin":
             if is_invoice:
                 # NC/ND are themselves the source of the hub, origin is always complete
                 return True
             # Origin is complete once confirmed (not DRAFT)
-            return getattr(order, 'status', 'DRAFT') != 'DRAFT'
-            
-        if stage_key == 'logistics':
+            return getattr(order, "status", "DRAFT") != "DRAFT"
+
+        if stage_key == "logistics":
             if is_invoice:
                 # For invoices, look at cached statuses or stock moves
-                if getattr(order, 'order_delivery_status', None) == 'DELIVERED':
+                if getattr(order, "order_delivery_status", None) == "DELIVERED":
                     return True
-                if getattr(order, 'po_receiving_status', None) == 'RECEIVED':
+                if getattr(order, "po_receiving_status", None) == "RECEIVED":
                     return True
-                
+
                 # Check for related returns (Credit Notes usually link here)
-                sale_returns = getattr(order, 'sale_returns', None)
-                if sale_returns and sale_returns.filter(status='CONFIRMED').exists():
+                sale_returns = getattr(order, "sale_returns", None)
+                if sale_returns and sale_returns.filter(status="CONFIRMED").exists():
                     return True
-                purchase_returns = getattr(order, 'purchase_returns', None)
-                if purchase_returns and purchase_returns.filter(status='CONFIRMED').exists():
+                purchase_returns = getattr(order, "purchase_returns", None)
+                if purchase_returns and purchase_returns.filter(status="CONFIRMED").exists():
                     return True
-                    
+
                 # Check for supplemental logistics (Debit Notes usually link here)
-                sale_deliveries = getattr(order, 'sale_deliveries', None)
-                if sale_deliveries and sale_deliveries.filter(status='CONFIRMED').exists():
+                sale_deliveries = getattr(order, "sale_deliveries", None)
+                if sale_deliveries and sale_deliveries.filter(status="CONFIRMED").exists():
                     return True
-                purchase_receipts = getattr(order, 'purchase_receipts', None)
-                if purchase_receipts and purchase_receipts.filter(status='CONFIRMED').exists():
+                purchase_receipts = getattr(order, "purchase_receipts", None)
+                if purchase_receipts and purchase_receipts.filter(status="CONFIRMED").exists():
                     return True
-                    
+
                 return False
 
             # SaleOrder delivery
-            delivery_status = getattr(order, 'delivery_status', None)
+            delivery_status = getattr(order, "delivery_status", None)
             if delivery_status is not None:
-                return delivery_status == 'DELIVERED'
-                
+                return delivery_status == "DELIVERED"
+
             # PurchaseOrder receiving
-            receiving_status = getattr(order, 'receiving_status', None)
+            receiving_status = getattr(order, "receiving_status", None)
             if receiving_status is not None:
-                return receiving_status == 'RECEIVED'
+                return receiving_status == "RECEIVED"
             return False
-            
-        if stage_key == 'billing':
+
+        if stage_key == "billing":
             if is_invoice:
                 # For a Note (NC/ND), billing is complete when it has a real folio
                 # Internal IDs like '#1' are not considered completed folios
-                order_number = getattr(order, 'number', None)
-                return bool(order_number and order_number != 'Draft' and not str(order_number).startswith('#'))
+                order_number = getattr(order, "number", None)
+                return bool(
+                    order_number
+                    and order_number != "Draft"
+                    and not str(order_number).startswith("#")
+                )
 
             # Check for any POSTED or PAID invoice with a number.
             # PAID is the final state (after POSTED) so it must also be considered complete.
             # Convention: POSTED = published/confirmed, PAID = settled. Both mean billing is done.
-            BILLED_STATUSES = ['POSTED', 'PAID']
-            invoices = getattr(order, 'invoices', None)
+            BILLED_STATUSES = ["POSTED", "PAID"]
+            invoices = getattr(order, "invoices", None)
             if invoices is not None:
-                return invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
-            purchase_invoices = getattr(order, 'purchase_invoices', None)
+                return invoices.filter(status__in=BILLED_STATUSES).exclude(number="").exists()
+            purchase_invoices = getattr(order, "purchase_invoices", None)
             if purchase_invoices is not None:
-                return purchase_invoices.filter(status__in=BILLED_STATUSES).exclude(number='').exists()
+                return (
+                    purchase_invoices.filter(status__in=BILLED_STATUSES).exclude(number="").exists()
+                )
             return False
-            
-        if stage_key == 'treasury':
+
+        if stage_key == "treasury":
             # Check if PAID status and no pending registration for Card/Transfer
-            is_paid = getattr(order, 'status', None) == 'PAID' or getattr(order, 'payment_status', None) == 'PAID'
-            
+            is_paid = (
+                getattr(order, "status", None) == "PAID"
+                or getattr(order, "payment_status", None) == "PAID"
+            )
+
             # Additional check: if zero pending amount
-            if not is_paid and hasattr(order, 'pending_amount'):
+            if not is_paid and hasattr(order, "pending_amount"):
                 try:
-                    pending_amount = getattr(order, 'pending_amount', 1)
+                    pending_amount = getattr(order, "pending_amount", 1)
                     is_paid = float(pending_amount) <= 0.01
                 except (TypeError, ValueError):
                     pass
 
             if not is_paid:
                 return False
-                
-            payments = getattr(order, 'payments', None)
+
+            payments = getattr(order, "payments", None)
             if payments is not None:
-                # Exact same logic as frontend: complete only if no payments are pending registration
-                has_pending = payments.filter(
-                    movement_type__in=['INBOUND', 'OUTBOUND', 'TRANSFER'],
-                    payment_method__in=['CARD', 'TRANSFER'],
-                    transaction_number__isnull=True
-                ).exclude(transaction_number__exact='').exists()
-                return not has_pending
+                return True
             return True
-            
+
         return False
 
     @staticmethod
@@ -198,41 +304,47 @@ class WorkflowService:
         Ensures tasks exist and their status (Pending/Completed) is correct.
         """
         from django.contrib.contenttypes.models import ContentType
-        
+
         # 1. Ensure tasks exist (reusing create_hub_stage_tasks logic)
         from billing.models import Invoice
-        order_type = 'sale'
-        
+
+        order_type = "sale"
+
         if isinstance(order, Invoice):
             # For invoices, determine type from order references or contact
-            if order.purchase_order or (order.dte_type and 'PURCHASE' in order.dte_type):
-                order_type = 'purchase'
+            if order.purchase_order or (order.dte_type and "PURCHASE" in order.dte_type):
+                order_type = "purchase"
             elif order.sale_order:
-                order_type = 'sale'
-            elif order.contact and hasattr(order.contact, 'is_supplier') and order.contact.is_supplier:
-                order_type = 'purchase'
-        elif hasattr(order, 'supplier_id') or hasattr(order, 'supplier'):
-            order_type = 'purchase'
-            
+                order_type = "sale"
+            elif (
+                order.contact
+                and hasattr(order.contact, "is_supplier")
+                and order.contact.is_supplier
+            ):
+                order_type = "purchase"
+        elif hasattr(order, "supplier_id") or hasattr(order, "supplier"):
+            order_type = "purchase"
+
         WorkflowService.create_hub_stage_tasks(order, order_type)
-        
+
         # 2. Re-evaluate all HUB tasks for this object
         content_type = ContentType.objects.get_for_model(order)
         tasks = Task.objects.filter(
             content_type=content_type,
             object_id=order.pk,
-            task_type__in=WorkflowService.HUB_STAGE_TASK_TYPES.values()
+            task_type__in=WorkflowService.HUB_STAGE_TASK_TYPES.values(),
         )
-        
+
         # Build inversion map
         type_to_stage = {v: k for k, v in WorkflowService.HUB_STAGE_TASK_TYPES.items()}
-        
+
         for task in tasks:
             stage_key = type_to_stage.get(task.task_type)
-            if not stage_key: continue
-            
+            if not stage_key:
+                continue
+
             should_be_complete = WorkflowService.is_hub_stage_complete(order, stage_key)
-            
+
             if should_be_complete and task.status != Task.Status.COMPLETED:
                 task.status = Task.Status.COMPLETED
                 task.completed_at = task.completed_at or timezone.now()
@@ -261,36 +373,36 @@ class WorkflowService:
         already_exists = Task.objects.filter(
             content_type=content_type,
             object_id=order.pk,
-            task_type='HUB_ORIGIN',
+            task_type="HUB_ORIGIN",
         ).exists()
         if already_exists:
             return
 
-        order_label = f"OCS-{order.number}"
-        contact_name = ''
+        order_label = order.display_id
+        contact_name = ""
         try:
-            if hasattr(order, 'supplier') and order.supplier:
+            if hasattr(order, "supplier") and order.supplier:
                 contact_name = str(order.supplier.name)
         except Exception:
             pass
 
-        order_total = float(order.total) if hasattr(order, 'total') else 0
+        order_total = float(order.total) if hasattr(order, "total") else 0
 
         WorkflowService.create_task(
-            task_type='HUB_ORIGIN',
+            task_type="HUB_ORIGIN",
             title=f"Origen (Confirmación): {order_label}",
             description=f"OC en borrador pendiente de completar o eliminar: {order_label}.",
             content_object=order,
             priority=Task.Priority.MEDIUM,
             data={
-                'stage': 'origin',
-                'order_type': 'purchase',
-                'order_number': str(order.number),
-                'contact_name': contact_name,
-                'order_total': order_total,
-                'is_draft': True,
+                "stage": "origin",
+                "order_type": "purchase",
+                "order_number": str(order.number),
+                "contact_name": contact_name,
+                "order_total": order_total,
+                "is_draft": True,
             },
-            category=Task.Category.TASK
+            category=Task.Category.TASK,
         )
 
     @staticmethod
@@ -299,75 +411,83 @@ class WorkflowService:
         Ensures the 4 HUB tasks are created for an order.
         """
         from django.contrib.contenttypes.models import ContentType
+
         content_type = ContentType.objects.get_for_model(order)
-        
+
         # Get existing to avoid duplicates
-        existing = set(Task.objects.filter(
-            content_type=content_type,
-            object_id=order.pk,
-            task_type__in=WorkflowService.HUB_STAGE_TASK_TYPES.values()
-        ).values_list('task_type', flat=True))
-        
+        existing = set(
+            Task.objects.filter(
+                content_type=content_type,
+                object_id=order.pk,
+                task_type__in=WorkflowService.HUB_STAGE_TASK_TYPES.values(),
+            ).values_list("task_type", flat=True)
+        )
+
         from billing.models import Invoice
+        from core.prefix_registry import EntityPrefix
+
         is_invoice = isinstance(order, Invoice)
-        prefix = ''
+        prefix = ""
         doc_num = str(order.number)
-        
+
         if is_invoice:
             # Map DTE type to prefix
-            if order.dte_type == 'NOTA_CREDITO': prefix = 'NC'
-            elif order.dte_type == 'NOTA_DEBITO': prefix = 'ND'
-            elif order.dte_type == 'BOLETA': prefix = 'BOL'
-            else: prefix = 'FAC'
-            
+            if order.dte_type == "NOTA_CREDITO":
+                prefix = EntityPrefix.NOTA_CREDITO
+            elif order.dte_type == "NOTA_DEBITO":
+                prefix = EntityPrefix.NOTA_DEBITO
+            elif order.dte_type == "BOLETA":
+                prefix = EntityPrefix.INVOICE_BOLETA
+            else:
+                prefix = EntityPrefix.INVOICE_FACTURA
+
             # Notes often start in Hub as draft, use ID if number not yet available
-            doc_num = order.number if (order.number and order.number != 'Draft') else f"#{order.id}"
+            doc_num = order.number if (order.number and order.number != "Draft") else f"#{order.id}"
             order_label = f"{prefix}-{doc_num}"
         else:
-            prefix = 'NV' if order_type == 'sale' else 'OC'
+            prefix = EntityPrefix.SALE_ORDER if order_type == "sale" else EntityPrefix.PURCHASE_ORDER
             order_label = f"{prefix}-{order.number}"
             # Default labels
-            label_prefix = f"{prefix}-" if prefix else ""
-            order_number = getattr(order, 'number', '???')
-            description = f"Registrar facturación para {label_prefix}{order_number}"
-        
-        contact_name = ''
+        contact_name = ""
         try:
-            if order_type == 'sale' and hasattr(order, 'customer'):
-                contact_name = str(order.customer.name) if order.customer else ''
-            elif order_type == 'purchase' and hasattr(order, 'supplier'):
-                contact_name = str(order.supplier.name) if order.supplier else ''
+            if order_type == "sale" and hasattr(order, "customer"):
+                contact_name = str(order.customer.name) if order.customer else ""
+            elif order_type == "purchase" and hasattr(order, "supplier"):
+                contact_name = str(order.supplier.name) if order.supplier else ""
         except Exception:
             pass
-        
-        order_total = float(order.total) if hasattr(order, 'total') else 0
-        
+
+        order_total = float(order.total) if hasattr(order, "total") else 0
+
         # Determine the relevant date (delivery_date for sales, receipt_date for purchases)
-        order_delivery_date = ''
-        if hasattr(order, 'delivery_date') and order.delivery_date:
+        order_delivery_date = ""
+        if hasattr(order, "delivery_date") and order.delivery_date:
             order_delivery_date = str(order.delivery_date)
-        elif hasattr(order, 'receipt_date') and order.receipt_date:
+        elif hasattr(order, "receipt_date") and order.receipt_date:
             order_delivery_date = str(order.receipt_date)
-        
+
         for stage_key, stage_name in WorkflowService.HUB_STAGES:
             task_type = WorkflowService.HUB_STAGE_TASK_TYPES[stage_key]
-            
+
             if task_type in existing:
                 continue
-            
+
             # Skip redundant origin stage for invoices (NC/ND)
-            if is_invoice and stage_key == 'origin':
+            if is_invoice and stage_key == "origin":
                 continue
-            
+
             # Use is_hub_stage_complete to set initial status
             is_complete = WorkflowService.is_hub_stage_complete(order, stage_key)
-            
+
             # Specialized action names for descriptions
-            action_name = 'Factura'
+            action_name = "Factura"
             if is_invoice:
-                if order.dte_type == 'NOTA_CREDITO': action_name = 'Nota de Crédito'
-                elif order.dte_type == 'NOTA_DEBITO': action_name = 'Nota de Débito'
-                elif order.dte_type == 'BOLETA': action_name = 'Boleta'
+                if order.dte_type == "NOTA_CREDITO":
+                    action_name = "Nota de Crédito"
+                elif order.dte_type == "NOTA_DEBITO":
+                    action_name = "Nota de Débito"
+                elif order.dte_type == "BOLETA":
+                    action_name = "Boleta"
 
             task = WorkflowService.create_task(
                 task_type=task_type,
@@ -376,62 +496,35 @@ class WorkflowService:
                 content_object=order,
                 priority=Task.Priority.MEDIUM,
                 data={
-                    'stage': stage_key,
-                    'order_type': order_type,
-                    'order_number': doc_num,
-                    'prefix': prefix,
-                    'is_invoice': is_invoice,
-                    'action_name': action_name,
-                    'contact_name': contact_name,
-                    'order_total': order_total,
-                    'delivery_date': order_delivery_date,
+                    "stage": stage_key,
+                    "order_type": order_type,
+                    "order_number": doc_num,
+                    "prefix": prefix,
+                    "is_invoice": is_invoice,
+                    "action_name": action_name,
+                    "contact_name": contact_name,
+                    "order_total": order_total,
+                    "delivery_date": order_delivery_date,
                 },
-                category=Task.Category.TASK
+                category=Task.Category.TASK,
             )
-            
+
             if is_complete:
                 task.status = Task.Status.COMPLETED
                 task.completed_at = timezone.now()
                 task.save()
 
     @staticmethod
-    def complete_hub_stage_task(content_object, stage):
-        """
-        Auto-completes the pending HUB stage task for a given object.
-        Called during stage transitions (dispatch, invoice, payment).
-        """
-        from django.contrib.contenttypes.models import ContentType
-        
-        task_type = WorkflowService.HUB_STAGE_TASK_TYPES.get(stage)
-        if not task_type:
-            return
-        
-        content_type = ContentType.objects.get_for_model(content_object)
-        
-        pending_tasks = Task.objects.filter(
-            content_type=content_type,
-            object_id=content_object.pk,
-            task_type=task_type,
-            category=Task.Category.TASK,
-            status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
-        )
-        
-        for task in pending_tasks:
-            task.status = Task.Status.COMPLETED
-            task.completed_at = timezone.now()
-            task.save()
-
-    @staticmethod
     def complete_periodic_task(task_type, year, month):
         """
-        Completes a periodic task (F29_CREATE, F29_PAY, PERIOD_CLOSE) 
+        Completes a periodic task (F29_CREATE, F29_PAY, PERIOD_CLOSE)
         for a specific period.
         """
         tasks = Task.objects.filter(
             task_type=task_type,
             status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS],
             data__year=year,
-            data__month=month
+            data__month=month,
         )
         for task in tasks:
             task.status = Task.Status.COMPLETED
@@ -445,10 +538,10 @@ class WorkflowService:
         """
         if task.content_type and task.content_object:
             model_name = task.content_type.model
-            if model_name == 'workorder':
+            if model_name == "workorder":
                 return f"/production/orders/{task.object_id}"
             # Add other models here (e.g. saleorder, purchaseorder)
-            
+
         return f"/workflow/tasks/{task.id}"
 
     @staticmethod
@@ -457,16 +550,16 @@ class WorkflowService:
         Notify all users in the specific group about a new unassigned task (Pool).
         """
         from django.contrib.auth.models import Group
+
         try:
-            group = Group.objects.get(name=group_name)
             WorkflowService.send_notification(
-                notification_type='TASK_GROUP_ASSIGNMENT',
+                notification_type="TASK_GROUP_ASSIGNMENT",
                 title=f"Nueva tarea grupal: {task.title}",
                 message=f"Se ha asignado una nueva tarea al grupo {group_name}: {task.description}",
                 link=WorkflowService._get_link_for_task(task),
                 content_object=task,
                 level=Notification.Type.INFO,
-                data={'task_id': task.id, 'group_name': group_name}
+                data={"task_id": task.id, "group_name": group_name},
             )
         except Group.DoesNotExist:
             pass
@@ -478,13 +571,13 @@ class WorkflowService:
         """
         if task.assigned_to:
             WorkflowService.send_notification(
-                notification_type='TASK_ASSIGNMENT',
+                notification_type="TASK_ASSIGNMENT",
                 title=f"Nueva tarea asignada: {task.title}",
                 message=f"Se te ha asignado una nueva tarea: {task.description}",
                 link=WorkflowService._get_link_for_task(task),
                 content_object=task,
                 level=Notification.Type.INFO,
-                data={'task_id': task.id}
+                data={"task_id": task.id},
             )
 
     @staticmethod
@@ -492,30 +585,30 @@ class WorkflowService:
         """
         Auto-completes all pending approval tasks for a given object.
         Called during state transitions (e.g., WorkOrder advances to next stage).
-        
+
         Args:
             content_object: The object (WorkOrder, SaleOrder, etc.) being transitioned
             user: The user performing the transition (for audit trail)
         """
         from django.contrib.contenttypes.models import ContentType
         from django.utils import timezone
-        
+
         content_type = ContentType.objects.get_for_model(content_object)
-        
+
         # Find all pending approval tasks for this object
         pending_approvals = Task.objects.filter(
             content_type=content_type,
             object_id=content_object.pk,
             category=Task.Category.APPROVAL,
-            status=Task.Status.PENDING
+            status=Task.Status.PENDING,
         )
-        
+
         for task in pending_approvals:
             task.status = Task.Status.COMPLETED
             task.completed_at = timezone.now()
             task.completed_by = user
             task.save()
-            
+
             # Notify the assignee (if any) that the task was completed
             # Notifications disabled to focus only on credit approvals and subscription OCS
             pass
@@ -527,31 +620,36 @@ class WorkflowService:
         If stage_ids is provided, only tasks matching those stages (via task_type) are reset.
         """
         from django.contrib.contenttypes.models import ContentType
-        
+
         content_type = ContentType.objects.get_for_model(content_object)
-        
+
         query = Task.objects.filter(
             content_type=content_type,
             object_id=content_object.pk,
             category=Task.Category.APPROVAL,
-            status=Task.Status.COMPLETED
+            status=Task.Status.COMPLETED,
         )
-        
+
         # We assume OT_STAGE_ID_APPROVAL is the task type pattern
         if stage_ids:
             # Create a list of task types to match
             task_types = [f"OT_{stage}_APPROVAL" for stage in stage_ids]
             query = query.filter(task_type__in=task_types)
-            
-        reset_count = query.update(
-            status=Task.Status.PENDING,
-            completed_at=None,
-            completed_by=None
-        )
+
+        reset_count = query.update(status=Task.Status.PENDING, completed_at=None, completed_by=None)
         return reset_count
 
     @staticmethod
-    def send_notification(notification_type, title, message, link="", creator=None, content_object=None, level=Notification.Type.INFO, data=None):
+    def send_notification(
+        notification_type,
+        title,
+        message,
+        link="",
+        creator=None,
+        content_object=None,
+        level=Notification.Type.INFO,
+        data=None,
+    ):
         """
         Sends notifications based on configured NotificationRules.
         Uses a list to collect notifications and saves them individually to trigger signals.
@@ -561,75 +659,140 @@ class WorkflowService:
 
         try:
             rule = NotificationRule.objects.get(notification_type=notification_type)
-            
+
             # 1. Notify Creator?
             if rule.notify_creator and creator:
-                notifications_to_create.append(Notification(
-                    user=creator,
-                    title=title,
-                    message=message,
-                    link=link,
-                    type=level,
-                    content_object=content_object,
-                    data=notification_data,
-                    notification_type=notification_type
-                ))
-            
+                notifications_to_create.append(
+                    Notification(
+                        user=creator,
+                        title=title,
+                        message=message,
+                        link=link,
+                        type=level,
+                        content_object=content_object,
+                        data=notification_data,
+                        notification_type=notification_type,
+                    )
+                )
+
             # 2. Notify assigned user?
             if rule.assigned_user:
-                notifications_to_create.append(Notification(
-                    user=rule.assigned_user,
-                    title=title,
-                    message=message,
-                    link=link,
-                    type=level,
-                    content_object=content_object,
-                    data=notification_data,
-                    notification_type=notification_type
-                ))
-            
+                notifications_to_create.append(
+                    Notification(
+                        user=rule.assigned_user,
+                        title=title,
+                        message=message,
+                        link=link,
+                        type=level,
+                        content_object=content_object,
+                        data=notification_data,
+                        notification_type=notification_type,
+                    )
+                )
+
             # 3. Notify assigned group?
             if rule.assigned_group:
                 users = rule.assigned_group.user_set.all()
                 for u in users:
-                    notifications_to_create.append(Notification(
-                        user=u,
-                        title=title,
-                        message=message,
-                        link=link,
-                        type=level,
-                        content_object=content_object,
-                        data=notification_data
-                    ))
-                    
+                    notifications_to_create.append(
+                        Notification(
+                            user=u,
+                            title=title,
+                            message=message,
+                            link=link,
+                            type=level,
+                            content_object=content_object,
+                            data=notification_data,
+                        )
+                    )
+
         except NotificationRule.DoesNotExist:
             # Fallback for credit approvals if no rule defined: notify creator
-            if notification_type == 'POS_CREDIT_APPROVAL' and creator:
-                notifications_to_create.append(Notification(
-                    user=creator,
-                    title=title,
-                    message=message,
-                    link=link,
-                    type=level,
-                    content_object=content_object,
-                    data=notification_data
-                ))
-            # Fallback for subscription OC if no rule: notify superusers
-            elif notification_type == 'SUBSCRIPTION_OC_CREATED':
-                from core.models import User
-                superusers = User.objects.filter(is_superuser=True)
-                for su in superusers:
-                    notifications_to_create.append(Notification(
-                        user=su,
+            if notification_type == "POS_CREDIT_APPROVAL" and creator:
+                notifications_to_create.append(
+                    Notification(
+                        user=creator,
                         title=title,
                         message=message,
                         link=link,
                         type=level,
                         content_object=content_object,
-                        data=notification_data
-                    ))
+                        data=notification_data,
+                    )
+                )
+            # Fallback for subscription OC if no rule: notify superusers
+            elif notification_type == "SUBSCRIPTION_OC_CREATED":
+                from core.models import User
+
+                superusers = User.objects.filter(is_superuser=True)
+                for su in superusers:
+                    notifications_to_create.append(
+                        Notification(
+                            user=su,
+                            title=title,
+                            message=message,
+                            link=link,
+                            type=level,
+                            content_object=content_object,
+                            data=notification_data,
+                        )
+                    )
 
         if notifications_to_create:
             # We save them individually so that post_save signals fire for real-time updates.
             for n in notifications_to_create:
                 n.save()
+
+    @staticmethod
+    def add_comment(*, content_object, user, text: str) -> "Comment":
+        """
+        Crea un Comment genérico sobre cualquier modelo (WorkOrder, SaleOrder, etc.).
+
+        Centraliza el patrón ``Comment.objects.create(content_type=..., object_id=..., user=..., text=...)``
+        que antes se duplicaba en production/views.py y sales/views.py.
+
+        Args:
+            content_object: Instancia del modelo al que se adjunta el comentario.
+            user: Usuario autor del comentario.
+            text: Texto del comentario (debe ser no vacío; validar antes de llamar).
+
+        Returns:
+            Instancia ``Comment`` recién creada.
+        """
+        from django.contrib.contenttypes.models import ContentType
+
+        from workflow.models import Comment
+
+        ct = ContentType.objects.get_for_model(content_object.__class__)
+        return Comment.objects.create(
+            content_type=ct,
+            object_id=content_object.pk,
+            user=user,
+            text=text,
+        )
+
+    @staticmethod
+    def mark_notification_read(*, notification: "Notification") -> None:
+        notification.read = True
+        notification.save(update_fields=["read"])
+
+    @staticmethod
+    def mark_all_notifications_read(user):
+        from .selectors import NotificationSelector
+
+        NotificationSelector.get_queryset_for_user(user).filter(read=False).update(read=True)
+
+    @staticmethod
+    @transaction.atomic
+    def finalize_task_update(instance, serializer, user):
+        old_status = instance.status
+        updated_task = serializer.save()
+        if old_status != updated_task.status and updated_task.status in [
+            "COMPLETED",
+            "REJECTED",
+        ]:
+            if not updated_task.completed_by:
+                WorkflowService.finalize_task_completion(
+                    task=updated_task, completed_by=user
+                )
+            WorkflowService.handle_task_update(updated_task, old_status)

@@ -1,5 +1,5 @@
 export { useWorkOrderProducts } from './useWorkOrderProducts'
-export { useBOMs, useAllBOMs, useProductionVariants, BOMS_QUERY_KEY, VARIANTS_QUERY_KEY, ALL_BOMS_QUERY_KEY } from './useBOMs'
+export { useBOMs, useAllBOMs, useBOM, useDeleteBomMutation, useProductionVariants, BOMS_QUERY_KEY, VARIANTS_QUERY_KEY, ALL_BOMS_QUERY_KEY } from './useBOMs'
 export { useUoMs, UOMS_QUERY_KEY } from './useUoMs'
 export { useProductDetail } from './useProductDetail'
 export { useActiveBom } from './useActiveBom'

@@ -20,3 +20,5 @@ export type { VariantSelectorModalProps } from './VariantSelectorModal'
 
 export { ProductSelector } from './ProductSelector'
 export type { ProductSelectorProps } from './ProductSelector'
+
+export { CategoryDropdown } from './CategoryDropdown'

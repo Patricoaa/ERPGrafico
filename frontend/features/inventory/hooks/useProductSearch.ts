@@ -24,7 +24,7 @@ const resolveVariants = async (productList: Product[], limit?: number): Promise<
     await Promise.all(itemsToResolve.map(async (p, idx) => {
         if (p.has_variants && (!p.variants || p.variants.length === 0)) {
             try {
-                const res = await api.get(`/inventory/products/${p.id}/variants/`)
+                const res = await api.get<Product[]>(`/inventory/products/${p.id}/variants/`)
                 resolved[idx] = { ...p, variants: res.data }
             } catch (e) {
                 console.error("Failed to fetch variants for", p.name, e)
@@ -56,8 +56,8 @@ export function useProductSearch(params: ProductSearchParams = {}, enabled: bool
                 }
             }
 
-            const res = await api.get<Product[]>(`/inventory/products/?${q.toString()}`, { signal })
-            const results = res.data
+            const res = await api.get<{ results: Product[] }>(`/inventory/products/?${q.toString()}`, { signal })
+            const results = res.data.results
             
             return await resolveVariants(results, limit)
         },
@@ -74,7 +74,7 @@ export function useProductSearch(params: ProductSearchParams = {}, enabled: bool
 
 export function useSingleProduct(id: string | number | null) {
     const query = useQuery({
-        queryKey: PRODUCT_KEYS.detail(id!),
+        queryKey: id ? PRODUCT_KEYS.detail(id) : ['products', 'detail', 'noop'],
         queryFn: async ({ signal }) => {
             const res = await api.get(`/inventory/products/${id}/`, { signal })
             return res.data as Product

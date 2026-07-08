@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm, useFieldArray, FieldValues } from "react-hook-form"
+import { useForm, useFieldArray, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/form"
 
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
-import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package, Printer } from "lucide-react"
+import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -19,13 +22,10 @@ import { toast } from "sonner"
 import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
+import type { Product } from "@/types/entities"
 import { ActionSlideButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell } from '@/components/shared'
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
@@ -73,7 +73,7 @@ const bomSchema = z.object({
     path: ["lines"]
 })
 
-type BOMFormValues = z.infer<typeof bomSchema> & FieldValues
+type BOMFormValues = z.infer<typeof bomSchema>
 
 interface BOMDrawerProps {
     open: boolean
@@ -93,7 +93,7 @@ export function BOMDrawer({
     mode: modeProp
 }: BOMDrawerProps) {
     const { multiplier: vatMultiplier } = useVatRate()
-    const [loading, setLoading] = useState(false)
+    const [, setLoading] = useState(false)
 
     const mode: DrawerMode = modeProp ?? (bomToEdit ? 'edit' : 'create')
     const isView = mode === 'view'
@@ -104,19 +104,19 @@ export function BOMDrawer({
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
     const [lineVariantsCache, setLineVariantsCache] = useState<Record<string, ProductMinimal[]>>({})
 
-    const fetchLineVariants = async (productId: string | number, index: number, isService: boolean = false) => {
+    const fetchLineVariants = async (productId: string | number) => {
         if (!productId) return
         try {
             const vars = await productionApi.getProductVariants(productId)
-            setLineVariantsCache(prev => ({ ...prev, [productId]: vars as any[] }))
+            setLineVariantsCache(prev => ({ ...prev, [productId]: vars as unknown as ProductMinimal[] }))
         } catch (error) {
             console.error("Error fetching line variants:", error)
         }
     }
 
     const getEffectiveCost = (baseCost: number, productUomId: string | number, targetUomId: string | number) => {
-        const productUom = uoms.find((u: any) => u.id.toString() === productUomId.toString())
-        const targetUom = uoms.find((u: any) => u.id.toString() === targetUomId.toString())
+        const productUom = uoms.find((u: UoM) => u.id.toString() === productUomId.toString())
+        const targetUom = uoms.find((u: UoM) => u.id.toString() === targetUomId.toString())
 
         if (!productUom || !targetUom) return baseCost
 
@@ -154,7 +154,7 @@ export function BOMDrawer({
     }, [variants, bomToEdit])
 
     const form = useForm<BOMFormValues>({
-        resolver: zodResolver(bomSchema) as any,
+        resolver: zodResolver(bomSchema) as unknown as Resolver<BOMFormValues>,
         defaultValues: {
             name: "",
             active: true,
@@ -306,11 +306,17 @@ export function BOMDrawer({
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Lista de Materiales${bomToEdit?.id ? ` #${bomToEdit.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Lista de Materiales"
-            : "Editar Lista de Materiales"
+    const identity = useDrawerIdentity('production.bom', mode, bomToEdit, {
+        overrideSubtitle: selectedVariant
+            ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
+            : (selectedProduct && selectedProduct.has_variants)
+                ? `Lista de Materiales • Plantilla Base: ${selectedProduct.name}`
+                : selectedProduct
+                    ? `Lista de Materiales • P: ${selectedProduct.name}`
+                    : "Lista de Materiales • Receta de Fabricación",
+        printable: (mode === 'view' || mode === 'edit') && !!bomToEdit?.id,
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -334,17 +340,10 @@ export function BOMDrawer({
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!bomToEdit)}
                 mode={mode}
-                icon={Workflow}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={
-                    selectedVariant
-                        ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
-                        : (selectedProduct && selectedProduct.has_variants)
-                            ? `Lista de Materiales • Plantilla Base: ${selectedProduct.name}`
-                            : selectedProduct
-                                ? `Lista de Materiales • P: ${selectedProduct.name}`
-                                : "Lista de Materiales • Receta de Fabricación"
-                }
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -369,7 +368,7 @@ export function BOMDrawer({
                         <Form {...form}>
                             <form id="bom-form"
                                 onSubmit={(e) => {
-                                    e.stopPropagation(); form.handleSubmit(onSubmit as any, (errors) => {
+                                    e.stopPropagation(); form.handleSubmit(onSubmit, (errors) => {
                                         console.log("Validation errors:", errors)
                                         toast.error("Por favor, verifique los campos marcados en rojo")
                                     })(e)
@@ -381,7 +380,7 @@ export function BOMDrawer({
                                     <div className="grid grid-cols-2 gap-4 items-start border-b border-border/40 pb-8 mb-2">
                                         {/* FILA 1 */}
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<BOMFormValues>}
                                             name="active"
                                             render={({ field }) => (
                                                 <LabeledSwitch
@@ -392,14 +391,14 @@ export function BOMDrawer({
                                                     icon={field.value ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Workflow className="h-4 w-4 text-muted-foreground/30" />}
                                                     className={cn(
                                                         "transition-all",
-                                                        field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed"
+                                                        field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed"
                                                     )}
                                                 />
                                             )}
                                         />
 
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<BOMFormValues>}
                                             name="name"
                                             render={({ field, fieldState }) => (
                                                 <LabeledInput
@@ -421,20 +420,21 @@ export function BOMDrawer({
                                                             label="Producto a fabricar"
                                                             required
                                                             value={selectedProduct?.id}
-                                                            onSelect={(p) => setSelectedProduct(p)}
+                                                            onSelect={(p: Product) => setSelectedProduct(p as ProductMinimal)}
                                                             onChange={(val) => {
                                                                 if (!val) setSelectedProduct(null)
                                                             }}
                                                             placeholder="Seleccionar producto..."
                                                             allowedTypes={['MANUFACTURABLE']}
                                                             shouldResolveVariants={false}
+                                                            className="!rounded-sm"
                                                         />
                                                     </div>
 
                                                     {selectedProduct?.has_variants && (
                                                         <div className="sm:col-span-1 animate-in fade-in slide-in-from-left-2">
                                                             <LabeledSelect
-                                                                label="Variante (Opcional)"
+                                                                label="Variante (opcional)"
                                                                 placeholder="Plantilla Base..."
                                                                 value={selectedVariant?.id?.toString() || "template"}
                                                                 onChange={(val) => {
@@ -442,13 +442,13 @@ export function BOMDrawer({
                                                                         setSelectedVariant(null)
                                                                         return
                                                                     }
-                                                                    const v = variants.find((varnt: any) => varnt.id.toString() === val)
+                                                                    const v = variants.find((varnt: ProductMinimal) => varnt.id.toString() === val)
                                                                     setSelectedVariant(v || null)
                                                                 }}
                                                                 disabled={!!bomToEdit || loadingVariants}
                                                                 options={[
                                                                     { value: "template", label: "-- Plantilla Base --" },
-                                                                    ...variants.map((v: any) => ({
+                                                                    ...variants.map((v: ProductMinimal) => ({
                                                                         value: v.id.toString(),
                                                                         label: `${v.variant_display_name || v.name} (${v.internal_code || v.code})`
                                                                     }))
@@ -458,7 +458,7 @@ export function BOMDrawer({
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center gap-3 bg-primary/[0.02] p-2 rounded-md border border-primary/10 h-[2.5rem]">
+                                                <div className="flex items-center gap-3 bg-primary/[0.02] p-2 rounded-sm border border-primary/10 h-[2.5rem]">
                                                     <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                                         <Box className="h-3.5 w-3.5 text-primary" />
                                                     </div>
@@ -476,7 +476,7 @@ export function BOMDrawer({
 
                                         <div className="col-span-1">
                                             <FormField
-                                                control={form.control as any}
+                                                control={form.control as unknown as Control<BOMFormValues>}
                                                 name="yield_uom"
                                                 render={({ field, fieldState }) => (
                                                     <UoMSelector
@@ -485,7 +485,7 @@ export function BOMDrawer({
                                                         value={field.value || ""}
                                                         onChange={field.onChange}
                                                         context="sale"
-                                                        product={(selectedVariant ?? selectedProduct ?? undefined) as any}
+                                                        product={(selectedVariant ?? selectedProduct ?? undefined) as unknown as Parameters<typeof UoMSelector>[0]['product']}
                                                         uoms={uoms}
                                                         error={fieldState.error?.message}
                                                     />
@@ -495,7 +495,7 @@ export function BOMDrawer({
 
                                         <div className="col-span-1">
                                             <FormField
-                                                control={form.control as any}
+                                                control={form.control as unknown as Control<BOMFormValues>}
                                                 name="yield_quantity"
                                                 render={({ field, fieldState }) => (
                                                     <LabeledInput
@@ -532,8 +532,8 @@ export function BOMDrawer({
                                         addButtonText="Agregar Línea"
                                         footer={(() => {
                                             const materials = form.watch("lines") || []
-                                            const totalUnitCost = materials.reduce((sum: number, m: any) => sum + (Number(m.component_cost) || 0), 0)
-                                            const totalLineCost = materials.reduce((sum: number, m: any) => sum + ((Number(m.quantity) || 0) * (Number(m.component_cost) || 0)), 0)
+            const totalUnitCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + (Number(m.component_cost) || 0), 0)
+            const totalLineCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + ((Number(m.quantity) || 0) * (Number(m.component_cost) || 0)), 0)
                                             return (
                                                 <div className="flex flex-col items-end text-[10px] font-black uppercase text-foreground/80 pr-12 gap-1">
                                                     <div className="flex items-center gap-4">
@@ -554,7 +554,7 @@ export function BOMDrawer({
                                                     {/* Componente + variante */}
                                                     <TableCell className="py-1 px-3">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`lines.${index}.component`}
                                                             render={({ field: propField, fieldState }) => {
                                                                 const compId = form.watch(`lines.${index}.component`)
@@ -578,7 +578,7 @@ export function BOMDrawer({
                                                                                 if (p.uom) {
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`lines.${index}.uom`, uomId)
-                                                                                    form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
+                                                                                    form.setValue(`lines.${index}.uom_name`, typeof p.uom === 'object' ? p.uom.name : "")
 
                                                                                     const effectiveCost = getEffectiveCost(baseCost, baseUomId, uomId)
                                                                                     form.setValue(`lines.${index}.component_cost`, effectiveCost)
@@ -586,13 +586,13 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index)
+                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
+                                                                                if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar componente..."
                                                                             allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                            customFilter={(p: ProductMinimal) =>
+                                                                            customFilter={(p: Product) =>
                                                                                 !!(p.product_type === 'STORABLE' ||
                                                                                     (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
                                                                             }
@@ -621,7 +621,7 @@ export function BOMDrawer({
                                                                                 if (p.uom) {
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`lines.${index}.uom`, uomId)
-                                                                                    form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
+                                                                                    form.setValue(`lines.${index}.uom_name`, typeof p.uom === 'object' ? p.uom.name : "")
 
                                                                                     const effectiveCost = getEffectiveCost(baseCost, baseUomId, uomId)
                                                                                     form.setValue(`lines.${index}.component_cost`, effectiveCost)
@@ -629,13 +629,13 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index)
+                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
+                                                                                if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
                                                                             allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                            customFilter={(p: ProductMinimal) =>
+                                                                            customFilter={(p: Product) =>
                                                                                 !!(p.product_type === 'STORABLE' ||
                                                                                     (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
                                                                             }
@@ -659,7 +659,7 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.base_cost`, baseCost)
                                                                                     form.setValue(`lines.${index}.base_uom`, baseUomId)
 
-                                                                                    if (v.uom_category) form.setValue(`lines.${index}.component_uom_category` as any, v.uom_category)
+                                                                                    if (v.uom_category) form.setValue(`lines.${index}.component_uom_category` as unknown as `lines.${number}.component_uom_category`, v.uom_category)
 
                                                                                     const currentLineUom = form.getValues(`lines.${index}.uom`)
                                                                                     const effectiveCost = getEffectiveCost(baseCost, baseUomId, currentLineUom)
@@ -680,7 +680,7 @@ export function BOMDrawer({
                                                     {/* Cantidad */}
                                                     <TableCell className="py-2 px-3 text-center">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`lines.${index}.quantity`}
                                                             render={({ field, fieldState }) => (
                                                                 <input type="number" step="1" {...field} className={cn(tableInputClass, "text-center font-bold", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
@@ -691,7 +691,7 @@ export function BOMDrawer({
                                                     {/* Unidad */}
                                                     <TableCell className="py-1 px-3">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`lines.${index}.uom`}
                                                             render={({ field, fieldState }) => {
                                                                 const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1
@@ -762,10 +762,12 @@ export function BOMDrawer({
 
                                     {form.formState.errors.lines && (
                                         <div className="rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive mt-2">
-                                            {(form.formState.errors.lines as any).root?.message
-                                                ? (form.formState.errors.lines as any).root.message
-                                                : `Hay errores en ${Object.keys(form.formState.errors.lines).length} componente(s). Verifique los campos en rojo.`
-                                            }
+                                            {(() => {
+                                                const linesRoot = (form.formState.errors.lines as unknown as { root?: { message?: string } }).root
+                                                return linesRoot?.message
+                                                    ? linesRoot.message
+                                                    : `Hay errores en ${Object.keys(form.formState.errors.lines).length} componente(s). Verifique los campos en rojo.`
+                                            })()}
                                         </div>
                                     )}
 
@@ -793,7 +795,7 @@ export function BOMDrawer({
                                         addButtonText="Agregar Servicio"
                                         footer={(() => {
                                             const services = form.watch("service_lines") || []
-                                            const totalGrossPrice = services.reduce((sum: number, s: any) => sum + (Number(s.gross_price) || 0), 0)
+                                            const totalGrossPrice = services.reduce((sum: number, s: z.infer<typeof serviceLineSchema>) => sum + (Number(s.gross_price) || 0), 0)
                                             return (
                                                 <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-foreground/80 pr-24">
                                                     <span className="text-muted-foreground">Total Bruto Unit.:</span>
@@ -811,7 +813,7 @@ export function BOMDrawer({
                                                     {/* Servicio */}
                                                     <TableCell className="py-1 px-3">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`service_lines.${index}.component`}
                                                             render={({ field: propField, fieldState }) => {
                                                                 const compId = form.watch(`service_lines.${index}.component`)
@@ -829,13 +831,13 @@ export function BOMDrawer({
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`service_lines.${index}.uom`, uomId)
                                                                                 }
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index, true)
-                                                                            }}
+if (p.has_variants) fetchLineVariants(p.id)
+                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar servicio..."
                                                                             shouldResolveVariants={false}
                                                                             variant="inline"
-                                                                            customFilter={(p: ProductMinimal & { product_type?: string, can_be_purchased?: boolean }) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
+                                                                            customFilter={(p: Product) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
                                                                             className={cn(tableInputClass, "w-full text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                     )
@@ -852,13 +854,13 @@ export function BOMDrawer({
                                                                                     const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                     form.setValue(`service_lines.${index}.uom`, uomId)
                                                                                 }
-                                                                                if (p.has_variants) fetchLineVariants(p.id, index, true)
-                                                                            }}
+ if (p.has_variants) fetchLineVariants(p.id)
+                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
                                                                             placeholder="Buscar..."
                                                                             shouldResolveVariants={false}
                                                                             variant="inline"
-                                                                            customFilter={(p: ProductMinimal & { product_type?: string, can_be_purchased?: boolean }) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
+                                                                            customFilter={(p: Product) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
                                                                             className={cn(tableInputClass, "flex-1 text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                                         />
                                                                         <LabeledSelect
@@ -885,7 +887,7 @@ export function BOMDrawer({
                                                     {/* Proveedor */}
                                                     <TableCell className="py-1 px-3">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`service_lines.${index}.supplier`}
                                                             render={({ field, fieldState }) => (
                                                                 <AdvancedContactSelector
@@ -908,7 +910,7 @@ export function BOMDrawer({
                                                     {/* Cantidad */}
                                                     <TableCell className="py-2 px-3 text-center">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`service_lines.${index}.quantity`}
                                                             render={({ field, fieldState }) => (
                                                                 <input type="number" step="1" {...field} className={cn(tableInputClass, "text-center font-bold", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
@@ -919,7 +921,7 @@ export function BOMDrawer({
                                                     {/* Unidad */}
                                                     <TableCell className="py-1 px-3">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`service_lines.${index}.uom`}
                                                             render={({ field, fieldState }) => (
                                                                 <UoMSelector
@@ -942,7 +944,7 @@ export function BOMDrawer({
                                                     {/* Bruto Unit. */}
                                                     <TableCell className="py-1 px-3">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`service_lines.${index}.gross_price`}
                                                             render={({ field, fieldState }) => (
                                                                 <input
@@ -958,7 +960,7 @@ export function BOMDrawer({
                                                     {/* Doc. */}
                                                     <TableCell className="py-1 px-3">
                                                         <FormField
-                                                            control={form.control as any}
+                                                            control={form.control as unknown as Control<BOMFormValues>}
                                                             name={`service_lines.${index}.document_type`}
                                                             render={({ field }) => (
                                                                 <LabeledSelect
@@ -966,7 +968,7 @@ export function BOMDrawer({
                                                                     onChange={field.onChange}
                                                                     variant="inline"
                                                                     className={tableInputClass}
-                                                                    options={allowedDteTypes.map((t: any) => ({ value: t, label: t }))}
+                                                                    options={allowedDteTypes.map((t: string) => ({ value: t, label: t }))}
                                                                 />
                                                             )}
                                                         />

@@ -5,21 +5,38 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0007_accountingsettings_billing_model'),
-        ('treasury', '0005_rename_processes_via_terminal_historicalpaymentmethod_process_via_terminal_and_more'),
+        ("accounting", "0007_accountingsettings_billing_model"),
+        (
+            "treasury",
+            "0005_rename_processes_via_terminal_historicalpaymentmethod_process_via_terminal_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicalpaymentterminalprovider',
-            name='commission_iva_account',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='accounting.account', verbose_name='Cuenta IVA Comisión'),
+            model_name="historicalpaymentterminalprovider",
+            name="commission_iva_account",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="accounting.account",
+                verbose_name="Cuenta IVA Comisión",
+            ),
         ),
         migrations.AddField(
-            model_name='paymentterminalprovider',
-            name='commission_iva_account',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='terminal_provider_iva', to='accounting.account', verbose_name='Cuenta IVA Comisión'),
+            model_name="paymentterminalprovider",
+            name="commission_iva_account",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="terminal_provider_iva",
+                to="accounting.account",
+                verbose_name="Cuenta IVA Comisión",
+            ),
         ),
     ]

@@ -2,16 +2,19 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useState, useMemo } from "react"
+import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { DataCell } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 // useDeletePricingRule consumido vía usePricingRules.
-import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
+import { PricingRuleDrawer } from "@/features/sales"
+import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inventory/pricingRuleActions"
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface PricingRule {
     id: number
@@ -45,25 +48,31 @@ interface PricingRuleClientViewProps {
 }
 
 import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
-import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { pricingRuleSearchDef } from "@/features/inventory/searchDef"
+import { pricingRuleSegDef } from "@/features/inventory/segmentationDef"
 
 export function PricingRuleClientView({ externalOpen, onExternalOpenChange, createAction }: PricingRuleClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(pricingRuleSearchDef)
-    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(filters)
-    const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(pricingRuleSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(pricingRuleSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
+    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(allFilters)
 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingRule(null)
-        onExternalOpenChange?.(false)
+    const isCreateModal = searchParams.get("modal") === "new"
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<PricingRule>({ endpoint: '/inventory/pricing-rules' })
+    const { openSelected } = useEntityRouteActions()
 
-        if (externalOpen || searchParams.get("modal")) {
+    const dialogOpen = isCreateModal || !!selectedFromUrl || !!externalOpen
+
+    const handleCloseModal = () => {
+        clearSelection()
+        onExternalOpenChange?.(false)
+        if (searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
@@ -83,6 +92,11 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     })
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
+
+    const actionsCtx: PricingRuleActionsCtx = {
+        onEdit: (item) => openSelected(item.id),
+        onDelete: (id) => handleDelete(id),
+    }
 
     const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
         {
@@ -204,28 +218,17 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                 </div>
             ),
         },
-        createActionsColumn<PricingRule>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => { setEditingRule(item); setIsFormOpen(true) }} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
-                </>
-            ),
-        }),
-    ], [])
+        pricingRuleActions.column(actionsCtx),
+    ], [actionsCtx])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <PricingRuleDrawer
-                initialData={editingRule || undefined}
-                onSuccess={refetch}
-                open={isFormOpen || !!externalOpen}
+                initialData={isCreateModal ? undefined : (selectedFromUrl ?? undefined)}
+                onSuccess={() => { handleCloseModal(); refetch() }}
+                open={dialogOpen}
                 onOpenChange={(open: boolean) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
-                    }
+                    if (!open) handleCloseModal()
                 }}
             />
 
@@ -236,7 +239,10 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                     isLoading={isLoading}
                     entityLabel="inventory.pricingrule"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
+                    segmentation={<SegmentationBar def={pricingRuleSegDef} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{
@@ -245,13 +251,13 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Crea reglas para automatizar descuentos y precios por producto o categoría.",
                     }}
                     renderCard={(rule: PricingRule) => (
-                        <EntityCard onClick={() => { setEditingRule(rule); setIsFormOpen(true) }}>
+                        <EntityCard onClick={() => openSelected(rule.id)}>
                             <EntityCard.Header
                                 title={rule.name}
                                 subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
                                 trailing={<StatusBadge status={rule.active ? 'active' : 'inactive'} size="sm" />}
                             />
-                            <EntityCard.Body>
+                            <EntityCard.Body actions={pricingRuleActions.render(rule, actionsCtx)}>
                                 <EntityCard.Field label="Tipo" value={rule.rule_type_display} />
                                 <EntityCard.Field
                                     label="Precio"

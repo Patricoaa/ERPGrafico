@@ -5,21 +5,37 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('sales', '0004_saleorder_payment_pending'),
-        ('treasury', '0014_backfill_settlement_account'),
+        ("sales", "0004_saleorder_payment_pending"),
+        ("treasury", "0014_backfill_settlement_account"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicalsaleorder',
-            name='payment_method_ref',
-            field=models.ForeignKey(blank=True, db_constraint=False, help_text='FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='treasury.paymentmethod', verbose_name='Método de Pago (Ref)'),
+            model_name="historicalsaleorder",
+            name="payment_method_ref",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                help_text="FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="treasury.paymentmethod",
+                verbose_name="Método de Pago (Ref)",
+            ),
         ),
         migrations.AddField(
-            model_name='saleorder',
-            name='payment_method_ref',
-            field=models.ForeignKey(blank=True, help_text='FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.', null=True, on_delete=django.db.models.deletion.PROTECT, related_name='sale_orders', to='treasury.paymentmethod', verbose_name='Método de Pago (Ref)'),
+            model_name="saleorder",
+            name="payment_method_ref",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="sale_orders",
+                to="treasury.paymentmethod",
+                verbose_name="Método de Pago (Ref)",
+            ),
         ),
     ]

@@ -1,7 +1,7 @@
 "use client"
 
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react"
-import { Column } from "@tanstack/react-table"
+import { type Column } from "@tanstack/react-table"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,7 @@ export function DataTableColumnHeader<TData, TValue>({
                 className="-ml-3 h-8 data-[state=open]:bg-accent/50 hover:bg-primary/5 hover:text-primary transition-all rounded-sm"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             >
-                <span className="text-[10px] uppercase font-black font-heading tracking-widest">{title}</span>
+                <span className="text-[10px] uppercase font-black  tracking-widest">{title}</span>
                 {column.getIsSorted() === "desc" ? (
                     <ArrowDown className="ml-2 h-3.5 w-3.5 text-primary" />
                 ) : column.getIsSorted() === "asc" ? (

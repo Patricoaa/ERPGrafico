@@ -5,8 +5,8 @@ import { useInvoices } from "@/features/billing"
 import { useVatRate } from "@/hooks/useVatRate"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { FadeIn, SkeletonShell } from "@/components/shared"
-import { SaleOrder, SaleOrderLine } from "../types"
-import { Invoice } from "@/features/billing/types"
+import { type SaleOrder, type SaleOrderLine } from "../types"
+import { type Invoice } from "@/features/billing"
 import { useEntitySubscription } from "@/features/realtime"
 import { SALES_KEYS } from "../hooks/queryKeys"
 
@@ -16,7 +16,7 @@ const SALES_ORDER_LIST_KEYS = [[...SALES_KEYS.all, 'orders']] as const
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
 const DeliveryDrawer = lazy(() => import("./DeliveryDrawer"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
-const SaleNoteModal = lazy(() => import("./SaleNoteModal"))
+const UnifiedNoteWizard = lazy(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
 
 interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
@@ -37,7 +37,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
 
     return (
         <>
-            <FadeIn key={viewMode} className="h-full">
+            <FadeIn key={viewMode}>
                 <SalesOrdersView viewMode={viewMode} />
             </FadeIn>
 
@@ -58,7 +58,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                              id: l.product as number,
                              product_name: l.product_name || l.description,
                              name: l.product_name || l.description,
-                             code: (l as any).product_code || (l as any).code,
+                              code: (l as unknown as Record<string, unknown>).product_code as string || (l as unknown as Record<string, unknown>).code as string,
                              qty: l.quantity,
                              unit_price_net: l.unit_price,
                          }))}
@@ -91,7 +91,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                          open={!!completingFolio}
                          onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
                          invoiceId={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id || 0}
-                         invoiceType={(completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft') as any)?.type || "BOLETA"}
+                            invoiceType={(completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft') as unknown as Record<string, unknown>)?.type as string || "BOLETA"}
                          contactId={completingFolio?.customer}
                          isPurchase={false}
                          onComplete={async (invoiceId, formData) => {
@@ -105,14 +105,66 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
              )}
 
              {addingNote && (
-                 <SkeletonShell isLoading={true} ariaLabel="Cargando modal de nota de venta">
+                 <SkeletonShell isLoading={true} ariaLabel="Cargando wizard de nota de venta">
                      <Suspense fallback={<div />}>
-                         <SaleNoteModal
+                         <UnifiedNoteWizard
                              open={!!addingNote}
                              onOpenChange={(open: boolean) => !open && setAddingNote(null)}
-                             orderId={addingNote?.id}
-                             orderNumber={addingNote?.number}
-                             invoiceId={addingNote?.related_documents?.invoices?.[0]?.id}
+                             mode="sales"
+                             initialType="NOTA_CREDITO"
+                             features={{ logistics: true, manufacturing: true }}
+                             referenceLabel={addingNote?.related_documents?.invoices?.[0]?.number as string | undefined}
+                             fetchSource={async () => {
+                                 const invoiceId = addingNote?.related_documents?.invoices?.[0]?.id ?? 0;
+                                 const { billingApi } = await import('@/features/billing/api/billingApi')
+                                 const inv = (await billingApi.getInvoice(invoiceId) as unknown) as Record<string, unknown>
+                                 const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
+                                     lineId: l.id as number,
+                                     productId: l.product as number,
+                                     productName: l.product_name as string,
+                                     productCode: l.product_code as string | undefined,
+                                     productType: l.product_type as string | undefined,
+                                     trackInventory: l.track_inventory as boolean | undefined,
+                                     hasBom: l.has_bom as boolean | undefined,
+                                     requiresAdvancedManufacturing: l.requires_advanced_manufacturing as boolean | undefined,
+                                     mfgAutoFinalize: l.mfg_auto_finalize as boolean | undefined,
+                                     createsStockMove: (l.track_inventory as boolean) && (l.product_type as string) !== 'MANUFACTURABLE',
+                                     uomName: l.uom_name as string | undefined,
+                                     originalQuantity: (l.quantity_delivered as number) || (l.quantity as number),
+                                     noteQuantity: 0,
+                                     noteUnitPrice: (l.unit_price as number) || 0,
+                                     taxAmountPerUnit: ((l.unit_price as number) || 0) * (((l.tax_rate as number) ?? 19) / 100),
+                                     reason: '',
+                                 }))
+                                 return {
+                                     label: `${inv.dte_type_display as string} ${inv.number as string}`,
+                                     isExempt: (inv.dte_type as string) === 'FACTURA_EXENTA' || (inv.dte_type as string) === 'BOLETA_EXENTA',
+                                     originalTotal: inv.total as number,
+                                     lines: invLines,
+                                 }
+                             }}
+                             onSubmit={async (payload) => {
+                                 const invoiceId = addingNote?.related_documents?.invoices?.[0]?.id ?? 0;
+                                 const { billingApi } = await import('@/features/billing/api/billingApi')
+                                 const formData = new FormData()
+                                 formData.append('original_invoice_id', invoiceId.toString())
+                                 formData.append('note_type', payload.noteType)
+                                 formData.append('selected_items', JSON.stringify(payload.lines.map(l => ({
+                                     line_id: l.lineId,
+                                     product_id: l.productId,
+                                     quantity: l.noteQuantity,
+                                     unit_price: l.noteUnitPrice,
+                                     tax_amount: l.taxAmountPerUnit ?? 0,
+                                     reason: l.reason ?? '',
+                                     manufacturing_data: l.manufacturingData ?? null,
+                                 }))))
+                                 if (payload.logistics) formData.append('logistics_data', JSON.stringify(payload.logistics))
+                                 const reg = payload.registration
+                                 formData.append('registration_data', JSON.stringify({ document_number: reg.documentNumber, document_date: reg.documentDate, is_pending: reg.isPending }))
+                                 if (reg.attachment) formData.append('document_attachment', reg.attachment)
+                                 if (payload.payment.method) formData.append('payment_data', JSON.stringify(payload.payment))
+                                 await billingApi.noteWorkflowCheckout(formData)
+                             }}
                              onSuccess={() => setAddingNote(null)}
                          />
                      </Suspense>

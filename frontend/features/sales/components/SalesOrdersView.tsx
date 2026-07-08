@@ -1,18 +1,15 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { DataTableView, DataCell, DomainHubStatus, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DomainHubStatus } from "@/components/shared"
-import { DataCell } from '@/components/shared'
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"
+import { salesOrderSegDef, salesNoteSegDef } from "@/features/sales/segmentationDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
 
@@ -21,15 +18,22 @@ interface SalesOrdersViewProps {
     posSessionId?: number | null
     onActionSuccess?: () => void
     hideStatusInCards?: boolean
+    onSelectOrder?: (id: number | null) => void
+    selectedId?: number | null
 }
 
-export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
-    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
+export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selectedId }: SalesOrdersViewProps) {
+    const { hubConfig, isHubOpen } = useHubPanel()
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
 
     const toggleSelection = (id: number) => {
+        if (onSelectOrder) {
+            const isSelected = selectedId === id
+            onSelectOrder(isSelected ? null : id)
+            return
+        }
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
         const params = new URLSearchParams(searchParams.toString())
 
@@ -43,58 +47,41 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
-    const { filters: smartFilters, isFiltered } = useSmartSearch(salesOrderSearchDef)
-    const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSalesOrders({
+    const searchDef = viewMode === 'orders' ? salesOrderSearchDef : salesNoteSearchDef
+    const segDef = viewMode === 'orders' ? salesOrderSegDef : salesNoteSegDef
+    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(searchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
+    const isFiltered = isTextFiltered || isSegFiltered
+
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const [pageStateNotes, setPageStateNotes] = useState({ pageIndex: 0, pageSize: 20 })
+
+    const { page, orders, isLoading: isLoadingOrders, isRefetching } = useSalesOrders({
         filters: {
-            ...(smartFilters as SaleOrderFilters),
+            ...(textFilters as SaleOrderFilters),
+            ...(segFilters as Record<string, string>),
             pos_session: posSessionId || undefined,
-        }
+            page: pageState.pageIndex + 1,
+            page_size: pageState.pageSize,
+        },
     })
-    const { notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
+    const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes } = useSalesNotes({
         filters: {
-            customer_name: (smartFilters as Record<string, string>).customer_name,
-            date_after: (smartFilters as Record<string, string>).date_after,
-            date_before: (smartFilters as Record<string, string>).date_before,
+            ...(textFilters as Record<string, string>),
+            ...(segFilters as Record<string, string>),
+            page: pageStateNotes.pageIndex + 1,
+            page_size: pageStateNotes.pageSize,
         }
     })
-
-    const handleActionSuccess = () => {
-        // Refetch both to ensure cards background update
-        refetchOrders()
-        refetchNotes()
-        // Call the parent success (e.g. closing modal or custom logic)
-        if (onActionSuccess) onActionSuccess()
-    }
-
-    const filteredNotes = (notes || []).filter(note =>
-        ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type) && !!note.sale_order
-    )
 
     const columns: ColumnDef<SaleOrder>[] = [
-        {
-            accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original} />,
-            meta: { title: "Folio" },
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
-            meta: { title: "Fecha" },
-        },
-        {
-            accessorKey: "customer_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={row.original.customer}>{row.getValue("customer_name")}</DataCell.ContactLink>,
-            meta: { title: "Cliente" },
-        },
-        {
-            accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
-            meta: { title: "Total" },
-        },
+        createCodeColumn<SaleOrder>("number", "Folio", {
+            render: (entity) => <DataCell.Code>{entity.display_id ?? entity.number}</DataCell.Code>,
+        }),
+        createDateColumn<SaleOrder>("date", "Fecha"),
+        createContactColumn<SaleOrder>("customer_name", "Cliente", "customer"),
+        createCurrencyColumn<SaleOrder>("total", "Total"),
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
@@ -107,15 +94,15 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             enableHiding: false,
             cell: ({ row }) => {
                 const item = row.original
-                const isSelected = hubConfig?.orderId === item.id
+                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.orderId === item.id && isHubOpen)
                 return (
                     <div className="flex justify-end pr-2">
                         <DataCell.Action
-                            icon={isSelected && isHubOpen ? ArrowLeft : ArrowRight}
-                            title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
+                            icon={isSelected ? ArrowLeft : ArrowRight}
+                            title={isSelected ? "Cerrar Panel" : "Abrir Panel"}
                             className={cn(
                                 "transition-all",
-                                isSelected && isHubOpen
+                                isSelected
                                     ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
                                     : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
                             )}
@@ -137,13 +124,13 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Número" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Entity label="billing.invoice" data={row.original} />,
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
             meta: { title: "Número" },
         },
         {
             accessorKey: "customer_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer || row.original.partner}>{(row.original as any).customer_name || row.original.partner_name}</DataCell.ContactLink>,
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as unknown as Record<string, unknown>).customer as number || row.original.partner}>{(row.original as unknown as Record<string, unknown>).customer_name as string || row.original.partner_name}</DataCell.ContactLink>,
             meta: { title: "Cliente" },
         },
         {
@@ -167,7 +154,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             enableHiding: false,
             cell: ({ row }) => {
                 const item = row.original
-                const isSelected = hubConfig?.invoiceId === item.id
+                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.invoiceId === item.id && isHubOpen)
                 return (
                     <div className="flex justify-end pr-2">
                         <DataCell.Action
@@ -190,29 +177,44 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     // Determine entity label based on tab
     const entityLabel = viewMode === 'orders' ? 'sales.saleorder' : 'billing.invoice'
 
-    const getSelectionId = (item: any) => {
+    const getSelectionId = (item: SaleOrder | SaleNote) => {
         const id = Number(item.id)
+        if (onSelectOrder) return selectedId === id
         return viewMode === 'orders' ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
     }
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel={entityLabel}
-                    columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                    data={(viewMode === 'orders' ? orders : filteredNotes) as any}
-                    onRowClick={(row: any) => toggleSelection(row.id)}
+                    columns={(viewMode === 'orders' ? columns : noteColumns) as unknown as ColumnDef<SaleOrder | SaleNote, unknown>[]}
+                    data={(viewMode === 'orders' ? orders : notes) as unknown as (SaleOrder | SaleNote)[]}
+                    onRowClick={(row: SaleOrder | SaleNote) => toggleSelection(row.id)}
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                    leftAction={viewMode === 'orders'
+                    isRefetching={viewMode === 'orders' ? isRefetching : isRefetchingNotes}
+                    manualPagination
+                    pageCount={viewMode === 'orders'
+                        ? (page ? Math.ceil(page.count / page.pageSize) : 0)
+                        : (pageNotes ? Math.ceil(pageNotes.count / pageNotes.pageSize) : 0)
+                    }
+                    rowCount={viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)}
+                    pagination={viewMode === 'orders' ? pageState : pageStateNotes}
+                    onPaginationChange={(viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
+                    smartSearch={viewMode === 'orders'
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
                     }
-                    showToolbarSort={true}
+                    segmentation={viewMode === 'orders'
+                        ? <SegmentationBar def={salesOrderSegDef} basePeriod={basePeriod} />
+                        : <SegmentationBar def={salesNoteSegDef} basePeriod={basePeriod} />
+                    }
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
-                    isSelected={(data: any) => !!getSelectionId(data)}
-                    isHubOpen={isHubOpen}
+                    isSelected={(data: SaleOrder | SaleNote) => !!getSelectionId(data)}
+                    isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}
                     isFiltered={isFiltered}
                     emptyState={{
                         context: viewMode === 'orders' ? "sale" : "finance",
@@ -221,6 +223,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             ? "Crea una orden de venta o regístrala desde el punto de venta."
                             : "Las notas de crédito y débito asociadas a tus ventas aparecerán aquí.",
                     }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
             </div>
         </div>

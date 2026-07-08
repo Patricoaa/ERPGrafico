@@ -14,11 +14,11 @@ import { ActionCategory } from './ActionCategory'
 import { filterAvailableActions } from '@/lib/action-utils'
 import { formatPlainDate } from '@/lib/utils'
 import { formatCurrency } from '@/lib/money'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { saleOrderActions } from '@/features/sales/actions'
+import { purchaseOrderActions } from '@/features/purchasing'
+import { saleOrderActions } from '@/features/sales'
 import { ordersApi } from '../hooks/useOrdersMutations'
-import type { UserPermissions } from '@/types/actions'
-import { Order } from '../types'
+import type { UserPermissions, ActionCategory as CategoryType } from '@/types/actions'
+import { type Order } from '../types'
 
 interface OrderActionPanelProps {
     open: boolean
@@ -123,12 +123,12 @@ export function OrderActionPanel({
                         ) : (
                             <div className="flex items-center gap-2">
                                 <span className="font-mono">
-                                    {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', order)}
+                                    {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', (order ?? {}) as Record<string, unknown>)}
                                 </span>
                                 <StatusBadge status={order?.status || ""} />
                             </div>
                         )}
-                        description={loading ? (
+                        subtitle={loading ? (
                             <div className="flex flex-col gap-2">
                                 <Skeleton className="h-5 w-48" />
                                 <Skeleton className="h-3 w-32" />
@@ -156,7 +156,7 @@ export function OrderActionPanel({
                     ) : (
                         <div className="space-y-6 py-6">
                             {/* Order Summary Card */}
-                            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                            <div className="bg-muted/50 rounded-md p-4 space-y-3">
                                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                                     Resumen de Orden
                                 </h3>
@@ -225,11 +225,11 @@ export function OrderActionPanel({
                                     Acciones Disponibles
                                 </h3>
 
-                                {Object.entries(filteredActions).map(([key, category]) => (
+                                {order && Object.entries(filteredActions).map(([key, category]) => (
                                     <ActionCategory
                                         key={key}
-                                        category={category}
-                                        order={order!}
+                                        category={category as unknown as CategoryType}
+                                        order={order}
                                         userPermissions={userPermissions?.permissions || []}
                                         onActionSuccess={handleActionComplete}
                                     />

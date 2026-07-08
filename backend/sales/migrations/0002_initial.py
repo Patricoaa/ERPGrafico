@@ -6,42 +6,73 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('accounting', '0003_initial'),
-        ('billing', '0005_initial'),
-        ('inventory', '0001_initial'),
-        ('sales', '0001_initial'),
-        ('treasury', '0001_initial'),
+        ("accounting", "0003_initial"),
+        ("billing", "0005_initial"),
+        ("inventory", "0001_initial"),
+        ("sales", "0001_initial"),
+        ("treasury", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='draftcart',
-            name='pos_session',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='draft_carts', to='treasury.possession', verbose_name='Sesión POS'),
+            model_name="draftcart",
+            name="pos_session",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="draft_carts",
+                to="treasury.possession",
+                verbose_name="Sesión POS",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalsaledelivery',
-            name='history_user',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="historicalsaledelivery",
+            name="history_user",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='historicalsaledelivery',
-            name='journal_entry',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='accounting.journalentry'),
+            model_name="historicalsaledelivery",
+            name="journal_entry",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="accounting.journalentry",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalsaledelivery',
-            name='related_note',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='billing.invoice'),
+            model_name="historicalsaledelivery",
+            name="related_note",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="billing.invoice",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalsaledelivery',
-            name='warehouse',
-            field=models.ForeignKey(blank=True, db_constraint=False, help_text='Bodega desde donde se despacha', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='inventory.warehouse'),
+            model_name="historicalsaledelivery",
+            name="warehouse",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                help_text="Bodega desde donde se despacha",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="inventory.warehouse",
+            ),
         ),
     ]

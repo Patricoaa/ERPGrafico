@@ -11,11 +11,14 @@ import {
     CancelButton, ActionSlideButton, MoneyDisplay,
 } from '@/components/shared'
 import { Send, AlertCircle, Settings } from 'lucide-react'
-import { useLoanMutations } from './hooks'
+import { useLoanMutations } from '../hooks/useLoans'
+import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasurySettings } from '@/features/settings'
 import type { BankLoan } from './types'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 const schema = z.object({
     date: z.string().min(1, 'Fecha es requerida'),
@@ -41,14 +44,15 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
     // están definidos. Si NO lo están y hay cargos > 0, mostramos los
     // selectores como escape híbrido (Opción C).
     const { settings: treasurySettings } = useTreasurySettings()
+    const { dateString } = useServerDate()
 
     const defaultValues = useMemo<FormValues>(() => ({
-        date: new Date().toISOString().slice(0, 10),
+        date: dateString || new Date().toISOString().slice(0, 10),
         opening_fee: loan?.opening_fee ?? '0',
         stamp_tax: loan?.stamp_tax ?? '0',
         commission_expense_account: '',
         stamp_tax_expense_account: '',
-    }), [loan])
+    }), [loan, dateString])
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema) as unknown as Resolver<FormValues>,
@@ -75,22 +79,26 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
     if (!loan) return null
 
     const onSubmit = async (values: FormValues) => {
-        await disburse({
-            id: loan.id,
-            payload: {
-                date: values.date,
-                opening_fee: values.opening_fee,
-                stamp_tax: values.stamp_tax,
-                commission_expense_account: values.commission_expense_account
-                    ? parseInt(values.commission_expense_account)
-                    : null,
-                stamp_tax_expense_account: values.stamp_tax_expense_account
-                    ? parseInt(values.stamp_tax_expense_account)
-                    : null,
-            },
-        })
-        onSuccess?.()
-        onOpenChange(false)
+        try {
+            await disburse({
+                id: loan.id,
+                payload: {
+                    date: values.date,
+                    opening_fee: values.opening_fee,
+                    stamp_tax: values.stamp_tax,
+                    commission_expense_account: values.commission_expense_account
+                        ? parseInt(values.commission_expense_account)
+                        : null,
+                    stamp_tax_expense_account: values.stamp_tax_expense_account
+                        ? parseInt(values.stamp_tax_expense_account)
+                        : null,
+                },
+            })
+            onSuccess?.()
+            onOpenChange(false)
+        } catch (error) {
+            showApiError(error, "Error al desembolsar crédito")
+        }
     }
 
     return (
@@ -98,9 +106,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
             open={open}
             onOpenChange={onOpenChange}
             side="right"
-            defaultSize="560px"
-            minSize="480px"
-            maxSize="720px"
+            defaultSize={formDrawerWidth("complex", false)}
             resizable
             title={
                 <div className="flex items-center gap-3">
@@ -174,7 +180,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                                 <LabeledInput
                                     label="Comisión de Apertura"
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     required
                                     {...field}
                                     error={fieldState.error?.message}
@@ -188,7 +194,7 @@ export function LoanDisburseDrawer({ open, onOpenChange, loan, onSuccess }: Prop
                                 <LabeledInput
                                     label="Impuesto de Timbres"
                                     type="number"
-                                    step="0.01"
+                                    step="1"
                                     required
                                     {...field}
                                     error={fieldState.error?.message}

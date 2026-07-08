@@ -17,7 +17,7 @@ export default function POSLayout({
                             {children}
                         </POSShell>
                     </main>
-                    <Toaster />
+                    <Toaster position="top-left" />
                 </div>
             </ErrorBoundary>
         </AuthGuard>

@@ -1,8 +1,10 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from sales.models import SaleOrder, SaleLine
+
+from sales.models import SaleOrder
+
 from .services import WorkOrderService
-from inventory.models import Product
+
 
 @receiver(post_save, sender=SaleOrder)
 def auto_create_work_orders(sender, instance, created, **kwargs):
@@ -12,7 +14,7 @@ def auto_create_work_orders(sender, instance, created, **kwargs):
     if instance.status == SaleOrder.Status.CONFIRMED:
         for line in instance.lines.all():
             product = line.product
-            if product and product.product_type == Product.Type.MANUFACTURABLE and product.has_bom:
+            if product and product.strategy.requires_manufacturing_profile and product.has_bom:
                 # ONLY create OT if Advanced manufacturing is enabled.
                 # Express products (mfg_auto_finalize=True) now have OTs created at dispatch time.
                 if product.requires_advanced_manufacturing:

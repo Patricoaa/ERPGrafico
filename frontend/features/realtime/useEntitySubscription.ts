@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useQueryClient, type QueryKey } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from './RealtimeProvider'
 import type { EntityChangedEvent, EntitySubscriptionOptions } from './types'
@@ -42,7 +43,7 @@ export function useEntitySubscription(
                 return
             }
             for (const key of queryKeys) {
-                queryClient.invalidateQueries({ queryKey: key })
+                invalidateCrossFeature(queryClient, [key])
             }
         }
 

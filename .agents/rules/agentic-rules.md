@@ -66,6 +66,7 @@ Before writing any code, verify:
 8. **All forms** use `react-hook-form` + `zodResolver` with schema in `components/forms/schema.ts`.
 9. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
 10. **Component suffix must match its surface** — `Drawer` (slide-over), `Modal` (dialog), `Sheet`, `Wizard`, `Form` (no surface), `View` (page-level). `FormModal` / `FormDrawer` are **prohibited**. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
+11. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM (`.objects.filter/get/create`). Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Grafos de objetos se crean en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](docs/90-governance/zero-n-plus-one-policy.md).
 
 ## Stack (short)
 

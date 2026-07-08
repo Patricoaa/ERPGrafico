@@ -1,28 +1,27 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { billingApi } from '../api/billingApi'
 import { INVOICES_QUERY_KEY } from './useInvoices'
+import { useRealtime } from '@/features/realtime'
 
 export function useNoteCheckout() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
+        invalidateCrossFeature(queryClient, [INVOICES_QUERY_KEY])
     }
 
     const checkoutMutation = useMutation({
         mutationFn: async (formData: FormData) => billingApi.noteWorkflowCheckout(formData),
-        onSuccess: () => invalidate(),
-    })
-
-    const completeMutation = useMutation({
-        mutationFn: async (id: number) => billingApi.completeNoteWorkflow(id),
-        onSuccess: () => invalidate(),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
     })
 
     return {
         checkout: checkoutMutation.mutateAsync,
         isCheckingOut: checkoutMutation.isPending,
-        completeWorkflow: completeMutation.mutateAsync,
-        isCompleting: completeMutation.isPending,
     }
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, Eye, Pencil, RotateCcw } from "lucide-react"
 import {
@@ -65,8 +66,8 @@ export function WizardProcessSidebar({
                             className={cn(
                                 "group rounded-lg transition-all duration-200",
                                 isClickable ? "cursor-pointer" : "cursor-not-allowed",
-                                isActive && isCreationStep && "bg-accent text-accent-foreground shadow-sm",
-                                isActive && !isCreationStep && "bg-primary text-primary-foreground shadow-sm",
+                                isActive && isCreationStep && "bg-accent text-accent-foreground shadow-card",
+                                isActive && !isCreationStep && "bg-primary text-primary-foreground shadow-card",
                                 isPast && !isActive && isCreationStep && "bg-success/5 text-success hover:bg-success/10",
                                 isPast && !isActive && !isCreationStep && "bg-success/10 text-success hover:bg-success/20",
                                 isCurrent && !isActive && isCreationStep && "bg-accent/50 border border-accent/20 text-accent-foreground hover:border-accent/50",
@@ -104,16 +105,17 @@ export function WizardProcessSidebar({
                                             {/* View */}
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <button
+                                                    <Button
+                                                        variant="ghost"
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-accent transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                             isActive && stepMode === 'view' && "bg-accent"
                                                         )}
                                                         onClick={() => onStepClick(index, 'view')}
                                                         aria-label="Ver etapa"
                                                     >
                                                         <Eye className="h-3.5 w-3.5" />
-                                                    </button>
+                                                    </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent side="right">Ver etapa (solo lectura)</TooltipContent>
                                             </Tooltip>
@@ -121,10 +123,11 @@ export function WizardProcessSidebar({
                                             {/* Edit-in-place */}
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <button
+                                                    <Button
+                                                        variant="ghost"
                                                         disabled={!capabilities.canEdit}
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-accent transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                             !capabilities.canEdit && "opacity-30 cursor-not-allowed",
                                                             isActive && stepMode === 'edit-in-place' && "bg-info/20"
                                                         )}
@@ -132,7 +135,7 @@ export function WizardProcessSidebar({
                                                         aria-label="Editar datos de etapa"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
-                                                    </button>
+                                                    </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent side="right">
                                                     {capabilities.canEdit
@@ -144,10 +147,11 @@ export function WizardProcessSidebar({
                                             {/* Rewind */}
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <button
+                                                    <Button
+                                                        variant="ghost"
                                                         disabled={!capabilities.canRewind}
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-accent transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors h-auto w-auto border-none bg-transparent shadow-none",
                                                             !capabilities.canRewind && "opacity-30 cursor-not-allowed",
                                                             isActive && stepMode === 'rewind' && "bg-warning/20"
                                                         )}
@@ -155,7 +159,7 @@ export function WizardProcessSidebar({
                                                         aria-label="Retroceder a esta etapa"
                                                     >
                                                         <RotateCcw className="h-3.5 w-3.5" />
-                                                    </button>
+                                                    </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent side="right">
                                                     {capabilities.canRewind

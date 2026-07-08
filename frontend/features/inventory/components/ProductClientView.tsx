@@ -7,45 +7,95 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 import type { BulkAction } from "@/components/shared"
+import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
-import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
+import type { ProductInitialData } from "@/types/forms"
+import { ChevronDown, Plus, AlertTriangle, Layers, ChevronDown as ChevronDownIcon } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
 import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { useVatRate } from '@/hooks/useVatRate'
+import { PricingUtils } from '@/lib/pricing-utils'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 
-import { DataCell, createActionsColumn, MoneyDisplay } from '@/components/shared'
+import { DataCell, MoneyDisplay } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
-import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
+import { useCategories } from "@/features/inventory/hooks/useCategories"
+import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
+import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, SEG_ACTIVE, SEG_INACTIVE, SEG_WRAPPER, Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
-import { createEntityCardView } from "@/lib/view-helpers"
+import { productSegDef } from "@/features/inventory/segmentationDef"
+import { useQueryState, parseAsString } from "nuqs"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 
 interface ProductClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
+    initialProducts?: Product[]
 }
 
-export function ProductClientView({ externalOpen, onExternalOpenChange, createAction }: ProductClientViewProps) {
-    const { filters: smartFilters, isFiltered } = useSmartSearch(productSearchDef)
-    const filters = useMemo<ProductFilters>(() => ({
-        active: 'all',
-        parent_template__isnull: true,
-        page_size: 1000,
-        ...(smartFilters as Partial<ProductFilters>),
-    }), [smartFilters])
+export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
+    const { rate } = useVatRate()
+    const { categories: categoryOptions } = useCategories()
+    const categoryIconMap = useMemo(() => {
+        const map = new Map<number, string | undefined>()
+        for (const cat of (categoryOptions ?? [])) map.set(cat.id, cat.icon)
+        return map
+    }, [categoryOptions])
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(productSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(productSegDef)
+    const [categoryValue, setCategoryValue] = useQueryState('category', parseAsString)
+    const isCategoryFiltered = categoryValue !== null
+    const isFiltered = isTextFiltered || isSegFiltered || isCategoryFiltered
+    const filters = useMemo<ProductFilters>(() => {
+        const segs = { ...segFilters } as Record<string, string>
 
-    const { products, isLoading, refetch, updateProduct } = useProducts({ filters })
+        // Parse availability multi-select into can_be_sold / can_be_purchased
+        const availability = segs['availability']
+        if (availability) {
+            const values = availability.split(',').filter(Boolean)
+            if (values.includes('sale')) segs.can_be_sold = 'true'
+            if (values.includes('purchase')) segs.can_be_purchased = 'true'
+        } else {
+            delete segs.can_be_sold
+            delete segs.can_be_purchased
+        }
+        delete segs['availability']
+
+        return {
+            parent_template__isnull: true,
+            ...textFilters as Partial<ProductFilters>,
+            ...segs as unknown as Partial<ProductFilters>,
+            ...(categoryValue ? { category: Number(categoryValue) } as Partial<ProductFilters> : {}),
+        }
+    }, [textFilters, segFilters, categoryValue])
+
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+
+    const { page, products, isLoading, refetch, updateProduct } = useProducts({
+        filters,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+        initialData: initialProducts ? { results: initialProducts, count: initialProducts.length } as Page<Product> : undefined,
+    })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -92,10 +142,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
     const displayProducts = React.useMemo(() => {
         const result: Product[] = []
-        products.forEach(p => {
+        products.forEach((p: Product) => {
             result.push(p)
             if (p.has_variants && expandedTemplates.has(p.id) && p.variants) {
-                p.variants.forEach(v => {
+                p.variants.forEach((v: Product) => {
                     result.push({ ...v, is_child_variant: true })
                 })
             }
@@ -104,7 +154,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     }, [products, expandedTemplates])
 
     const handleArchive = async (product: Product, isConfirmed = false) => {
-        const isArchiving = product.active
+        const isArchiving = product.is_active
         const action = isArchiving ? "archivar" : "restaurar"
 
         if (!isConfirmed) {
@@ -122,7 +172,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
 
         try {
-            await updateProduct({ id: targetProduct.id, payload: { active: !targetProduct.active } })
+            await updateProduct({ id: targetProduct.id, payload: { is_active: !targetProduct.is_active } })
             toast.success(`Producto ${isArchiving ? 'archivado' : 'restaurar'} correctamente.`, {
                 description: targetProduct.product_type === 'SUBSCRIPTION'
                     ? `Las suscripciones asociadas han sido ${isArchiving ? 'ocultas' : 'restauradas en la lista'}.`
@@ -162,11 +212,14 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
     }, [selectedFromUrl])
 
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+
+    const actionsCtx: ProductActionsCtx = {
+        onEdit: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('selected', String(id))
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+        onArchive: (product) => handleArchive(product),
     }
 
     const columns = useMemo<ColumnDef<Product>[]>(() => [
@@ -178,6 +231,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
                     className="translate-y-[2px]"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => {
@@ -189,6 +243,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
                         aria-label="Select row"
                         className="translate-y-[2px]"
+                        variant="circle"
                     />
                 )
             },
@@ -230,18 +285,13 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 return (
                     <div className={cn("w-full flex items-center justify-center gap-2", isChild && "pl-8")}>
                         {isChild && <div className="h-4 w-4 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg -mt-2" />}
-                        {product.image_thumbnail && !isChild && (
-                            <Avatar className="h-7 w-7 rounded border bg-muted shrink-0">
-                                <AvatarImage src={resolveMediaUrl(product.image_thumbnail) || undefined} alt={product.name} className="object-cover" />
-                                <AvatarFallback className="rounded bg-muted text-[8px]"></AvatarFallback>
-                            </Avatar>
-                        )}
+
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <DataCell.Text>
                                     {product.name}
                                 </DataCell.Text>
-                                {!product.active && (
+                                {!product.is_active && (
                                     <StatusBadge
                                         status="inactive"
                                         label="ARCHIVADO"
@@ -250,7 +300,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                     />
                                 )}
                                 {product.has_variants && !isChild && (
-                                    <button
+                                    <Button
                                         onClick={() => toggleExpand(product.id)}
                                         className={cn(
                                             "flex items-center gap-2 px-1 transition-all duration-200 group/var",
@@ -270,7 +320,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                             "h-3 w-3 transition-transform duration-300",
                                             expandedTemplates.has(product.id) ? "rotate-180" : "opacity-40 group-hover/var:opacity-100"
                                         )} />
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                             {isChild && product.variant_display_name && (
@@ -289,14 +339,14 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             cell: ({ row }) => <DataCell.Text>{row.getValue("category_name")}</DataCell.Text>,
         },
         {
-            accessorKey: "active",
-            id: "active",
+            accessorKey: "is_active",
+            id: "is_active",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             enableHiding: true,
             cell: ({ row }) => (
                 <DataCell.Status
-                    status={row.original.active ? "active" : "inactive"}
-                    label={row.original.active ? "Activo" : "Archivado"}
+                    status={row.original.is_active ? "active" : "inactive"}
+                    label={row.original.is_active ? "Activo" : "Archivado"}
                 />
             ),
         },
@@ -330,7 +380,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         },
         {
             id: "tax",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="IVA (19%)" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title={`IVA (${rate}%)`} className="justify-center" />,
             cell: ({ row }) => {
                 if (row.original.is_dynamic_pricing) {
                     return (
@@ -379,27 +429,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 </div>
             ),
         },
-        createActionsColumn<Product>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action
-                        action="edit"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(item.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                    <DataCell.Action
-                        action={item.active ? "archive" : "restore"}
-                        onClick={() => handleArchive(item)}
-                    />
-                </>
-            ),
-        }),
-    ], [expandedTemplates])
+        productActions.column(actionsCtx),
+    ], [actionsCtx, expandedTemplates])
 
-    const initialColumnVisibility = useMemo(() => ({ active: false }), [])
+    const initialColumnVisibility = useMemo(() => ({ is_active: false }), [])
 
     const bulkActions = useMemo<BulkAction<Product>[]>(() => [
         {
@@ -407,10 +440,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             label: "Restaurar",
             icon: Plus,
             intent: "success",
-            disabled: (items) => items.length === 0 || !items.every(p => !p.active),
+            disabled: (items) => items.length === 0 || !items.every(p => !p.is_active),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { active: true } })))
+                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: true } })))
                     toast.success(`${items.length} productos restaurados correctamente.`)
                     refetch()
                 } catch {
@@ -423,10 +456,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             label: "Archivar",
             icon: ArchiveIcon,
             intent: "destructive",
-            disabled: (items) => items.length === 0 || !items.every(p => p.active),
+            disabled: (items) => items.length === 0 || !items.every(p => p.is_active),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { active: false } })))
+                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { is_active: false } })))
                     toast.success(`${items.length} productos archivados correctamente.`)
                     refetch()
                 } catch (error) {
@@ -437,7 +470,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     ], [updateProduct, refetch])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="inventory.product"
@@ -445,56 +478,78 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
+                    manualPagination
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={page?.count ?? 0}
+                    pagination={pageState}
+                    onPaginationChange={setPageState}
+                    smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
+                    segmentation={
+                        <SegmentationBar def={{
+                            ...productSegDef,
+                            segments: [
+                                ...productSegDef.segments,
+                                { key: 'category', label: 'Categoría', type: 'custom', render: () => (
+                                    <CategoryFilter
+                                        categories={categoryOptions}
+                                        value={categoryValue}
+                                        onChange={setCategoryValue}
+                                    />
+                                )},
+                            ],
+                        }} />
+                    }
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg(); setCategoryValue(null) }}
                     initialColumnVisibility={initialColumnVisibility}
-                    renderCustomView={createEntityCardView('inventory.product', {
-                        isFiltered,
-                        emptyState: {
-                            context: "inventory",
-                            title: "Aún no hay productos",
-                            description: "Crea tu primer producto para empezar a construir el catálogo.",
-                            action: createAction,
-                        },
-                        renderCard: (product: Product) => (
+                    renderCard={(product: Product) => {
+                        const iconName = categoryIconMap.get(product.category_id)
+                        const fallbackIcon = iconName
+                            ? (LucideIcons as unknown as Record<string, LucideIcon | undefined>)[iconName]
+                            : undefined
+                        const imageUrl = (product.image ?? product.image_thumbnail) ? resolveMediaUrl(product.image ?? product.image_thumbnail) ?? undefined : undefined
+
+                        return (
                             <EntityCard key={product.id} onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
                                 params.set('selected', String(product.id))
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}>
                                 <EntityCard.Header
+                                    imageSrc={imageUrl}
+                                    icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
+                                    iconClassName="bg-muted"
                                     title={product.name}
-                                    subtitle={<span className="font-mono text-xs">{product.code}</span>}
+                                    subtitle={
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs">{product.code}</span>
+                                            <StatusBadge
+                                                status={product.is_active ? "active" : "inactive"}
+                                                size="sm"
+                                            />
+                                        </div>
+                                    }
                                     trailing={
-                                        <StatusBadge
-                                            status={product.active ? "active" : "inactive"}
-                                            size="sm"
-                                        />
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">Total</span>
+                                            {product.is_dynamic_pricing
+                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
+                                                : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary font-bold" />
+                                            }
+                                        </div>
                                     }
                                 />
-                                <EntityCard.Body>
+                                <EntityCard.Body actions={productActions.render(product, actionsCtx)}>
                                     <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
                                     <EntityCard.Field label="Categoría" value={product.category_name} />
                                     <EntityCard.Field
-                                        label="Precio Neto"
-                                        value={
-                                            product.is_dynamic_pricing
-                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                                : <MoneyDisplay amount={product.sale_price} />
-                                        }
-                                    />
-                                    <EntityCard.Field
-                                        label="Precio Total"
-                                        value={
-                                            product.is_dynamic_pricing
-                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                                : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary" />
-                                        }
-                                        className="font-bold"
+                                        label="Código Interno"
+                                        value={product.internal_code || <span className="text-muted-foreground/40">—</span>}
                                     />
                                 </EntityCard.Body>
                             </EntityCard>
                         )
-                    })}
+                    }}
                     bulkActions={bulkActions}
                     defaultPageSize={500}
                     createAction={createAction}
@@ -516,7 +571,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         setIsFormOpen(true)
                     }
                 }}
-                initialData={editingProduct || undefined}
+                initialData={(editingProduct || undefined) as ProductInitialData | undefined}
                 onSuccess={refetch}
             />
 
@@ -532,18 +587,18 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             <ActionConfirmModal
                 open={isConfirmModalOpen}
                 onOpenChange={setIsConfirmModalOpen}
-                title={currentArchivingProduct?.active ? "Archivar Producto" : "Restaurar Producto"}
-                variant={currentArchivingProduct?.active ? "warning" : "default"}
+                title={currentArchivingProduct?.is_active ? "Archivar Producto" : "Restaurar Producto"}
+                variant={currentArchivingProduct?.is_active ? "warning" : "default"}
                 onConfirm={() => { if (currentArchivingProduct) return handleArchive(currentArchivingProduct, true) }}
-                confirmText={currentArchivingProduct?.active ? "Archivar" : "Restaurar"}
+                confirmText={currentArchivingProduct?.is_active ? "Archivar" : "Restaurar"}
                 description={
                     <div className="space-y-3">
                         <p>
-                            ¿Está seguro de que desea {currentArchivingProduct?.active ? "archivar" : "restaurar"} el producto{" "}
+                            ¿Está seguro de que desea {currentArchivingProduct?.is_active ? "archivar" : "restaurar"} el producto{" "}
                             <strong>{currentArchivingProduct?.name}</strong>?
                         </p>
 
-                        {currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
+                        {currentArchivingProduct?.is_active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
                             <div className="bg-warning/10 border border-warning/10 p-3 rounded-md flex gap-3 text-warning">
                                 <AlertTriangle className="h-5 w-5 shrink-0" />
                                 <div className="text-xs">
@@ -553,7 +608,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                             </div>
                         )}
 
-                        {!currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
+                        {!currentArchivingProduct?.is_active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
                             <p className="text-xs bg-primary/10 text-primary p-2 rounded-md">
                                 Al restaurar el producto, sus suscripciones volverán a aparecer en el gestor central.
                             </p>
@@ -562,5 +617,63 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 }
             />
         </div >
+    )
+}
+
+/* ─── CategoryFilter ─── */
+
+interface CategoryFilterProps {
+    categories: { id: number; name: string }[]
+    value: string | null
+    onChange: (value: string | null) => Promise<unknown>
+}
+
+function CategoryFilter({ categories, value, onChange }: CategoryFilterProps) {
+    const currentLabel = value
+        ? categories.find((c) => String(c.id) === value)?.name
+        : null
+
+    return (
+        <div className={SEG_WRAPPER}>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                            SEG_TRIGGER,
+                            value ? SEG_ACTIVE : SEG_INACTIVE,
+                        )}
+                    >
+                        {currentLabel ?? 'Categoría'}
+                        <ChevronDownIcon className="h-3 w-3" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[200px] p-1">
+                    <DropdownMenuRadioGroup
+                        value={value ?? ''}
+                        onValueChange={(v) => onChange(v === '' ? null : v)}
+                    >
+                        <DropdownMenuRadioItem value="" className={SEG_DROPDOWN_ITEM}>
+                            Todas
+                        </DropdownMenuRadioItem>
+                        {categories.map((cat) => (
+                            <DropdownMenuRadioItem
+                                key={cat.id}
+                                value={String(cat.id)}
+                                className={SEG_DROPDOWN_ITEM}
+                            >
+                                {cat.name}
+                            </DropdownMenuRadioItem>
+                        ))}
+                        {categories.length === 0 && (
+                            <DropdownMenuRadioItem value="" disabled className={`${SEG_DROPDOWN_ITEM} text-muted-foreground/40`}>
+                                Sin categorías
+                            </DropdownMenuRadioItem>
+                        )}
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
     )
 }

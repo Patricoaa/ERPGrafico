@@ -5,48 +5,121 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0053_check_issued_endorsed_fields'),
+        ("treasury", "0053_check_issued_endorsed_fields"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Checkbook',
+            name="Checkbook",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('start_folio', models.PositiveIntegerField(help_text='Número de cheque inicial del talonario.', verbose_name='Primer Folio')),
-                ('end_folio', models.PositiveIntegerField(help_text='Número de cheque final del talonario.', verbose_name='Último Folio')),
-                ('next_folio', models.PositiveIntegerField(help_text='Próximo número a asignar. Se incrementa automáticamente.', verbose_name='Siguiente Folio')),
-                ('status', models.CharField(choices=[('ACTIVE', 'Activo'), ('CLOSED', 'Cerrado'), ('EXHAUSTED', 'Agotado')], default='ACTIVE', max_length=12, verbose_name='Estado')),
-                ('notes', models.TextField(blank=True, verbose_name='Notas')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Creado')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Actualizado')),
-                ('bank', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='checkbooks', to='treasury.bank', verbose_name='Banco')),
-                ('bank_account', models.ForeignKey(limit_choices_to={'account_type': 'CHECKING'}, on_delete=django.db.models.deletion.PROTECT, related_name='checkbooks', to='treasury.treasuryaccount', verbose_name='Cuenta Bancaria')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "start_folio",
+                    models.PositiveIntegerField(
+                        help_text="Número de cheque inicial del talonario.",
+                        verbose_name="Primer Folio",
+                    ),
+                ),
+                (
+                    "end_folio",
+                    models.PositiveIntegerField(
+                        help_text="Número de cheque final del talonario.",
+                        verbose_name="Último Folio",
+                    ),
+                ),
+                (
+                    "next_folio",
+                    models.PositiveIntegerField(
+                        help_text="Próximo número a asignar. Se incrementa automáticamente.",
+                        verbose_name="Siguiente Folio",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("ACTIVE", "Activo"),
+                            ("CLOSED", "Cerrado"),
+                            ("EXHAUSTED", "Agotado"),
+                        ],
+                        default="ACTIVE",
+                        max_length=12,
+                        verbose_name="Estado",
+                    ),
+                ),
+                ("notes", models.TextField(blank=True, verbose_name="Notas")),
+                ("created_at", models.DateTimeField(auto_now_add=True, verbose_name="Creado")),
+                ("updated_at", models.DateTimeField(auto_now=True, verbose_name="Actualizado")),
+                (
+                    "bank",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="checkbooks",
+                        to="treasury.bank",
+                        verbose_name="Banco",
+                    ),
+                ),
+                (
+                    "bank_account",
+                    models.ForeignKey(
+                        limit_choices_to={"account_type": "CHECKING"},
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="checkbooks",
+                        to="treasury.treasuryaccount",
+                        verbose_name="Cuenta Bancaria",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Chequera',
-                'verbose_name_plural': 'Chequeras',
-                'ordering': ['bank_account', 'start_folio'],
+                "verbose_name": "Chequera",
+                "verbose_name_plural": "Chequeras",
+                "ordering": ["bank_account", "start_folio"],
             },
         ),
         migrations.AddField(
-            model_name='check',
-            name='checkbook',
-            field=models.ForeignKey(blank=True, help_text='Talonario del que se tomó el folio (solo cheques propios).', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='checks', to='treasury.checkbook', verbose_name='Chequera'),
+            model_name="check",
+            name="checkbook",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Talonario del que se tomó el folio (solo cheques propios).",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="checks",
+                to="treasury.checkbook",
+                verbose_name="Chequera",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalcheck',
-            name='checkbook',
-            field=models.ForeignKey(blank=True, db_constraint=False, help_text='Talonario del que se tomó el folio (solo cheques propios).', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='treasury.checkbook', verbose_name='Chequera'),
+            model_name="historicalcheck",
+            name="checkbook",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                help_text="Talonario del que se tomó el folio (solo cheques propios).",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="treasury.checkbook",
+                verbose_name="Chequera",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='checkbook',
-            constraint=models.CheckConstraint(condition=models.Q(('start_folio__lte', models.F('end_folio'))), name='ck_checkbook_folio_range'),
+            model_name="checkbook",
+            constraint=models.CheckConstraint(
+                condition=models.Q(("start_folio__lte", models.F("end_folio"))),
+                name="ck_checkbook_folio_range",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='checkbook',
-            constraint=models.UniqueConstraint(fields=('bank_account', 'start_folio'), name='uniq_checkbook_start'),
+            model_name="checkbook",
+            constraint=models.UniqueConstraint(
+                fields=("bank_account", "start_folio"), name="uniq_checkbook_start"
+            ),
         ),
     ]

@@ -1,21 +1,18 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
+import { Check, ChevronDown } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
 
-import { BaseModal, DataTable, EmptyState, StatusBadge } from '@/components/shared'
+import { BaseModal, DataTable, LabeledContainer, SearchablePopover, StatusBadge } from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
-import { Account } from "@/types/entities"
+import { type Account } from "@/types/entities"
 import type { ColumnDef } from "@tanstack/react-table"
+
+const AccountIcon = getEntityIcon('accounting.account')
 
 interface AccountSelectorProps {
     value?: string | number | null
@@ -25,6 +22,7 @@ interface AccountSelectorProps {
     showAll?: boolean
     isReconcilable?: boolean
     disabled?: boolean
+    required?: boolean
     label?: string
     error?: string
     className?: string
@@ -54,7 +52,7 @@ const accountColumns: ColumnDef<Account, unknown>[] = [
     },
 ]
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, label, error, className }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, required, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -67,7 +65,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
 
     // 1. Filter base accounts (leaf vs parent)
     const selectableAccounts = useMemo(() => {
-        if (!allAccounts) return []
+        if (!Array.isArray(allAccounts)) return []
         return allAccounts.filter((a: Account) => {
             const isReconcilableMatch = isReconcilable !== undefined ? a.is_reconcilable === isReconcilable : true;
 
@@ -105,7 +103,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
         if (singleAccount && singleAccount.id.toString() === value.toString()) {
             return singleAccount
         }
-        if (allAccounts) {
+        if (Array.isArray(allAccounts)) {
             return allAccounts.find((a: Account) => a.id.toString() === value.toString()) || null
         }
         return null
@@ -122,101 +120,70 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
     }
 
     return (
-        <div className={cn("relative w-full flex flex-col group", className)}>
-            <fieldset
-                data-disabled={disabled || undefined}
-                className={cn(
-                    "notched-field w-full group transition-all",
-                    open && "focused",
-                    error && "error"
-                )}
-            >
-                {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive")}>
-                        {label}
-                    </legend>
-                )}
-                <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            role="combobox"
-                            aria-expanded={open}
-                            disabled={disabled}
-                            className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
-                        >
-                            {selectedAccount ? (() => {
-                                const AccountIcon = getEntityIcon('accounting.account');
-                                return (
-                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                        <AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                        <span className="font-mono text-xs font-semibold shrink-0 text-primary">{selectedAccount.code}</span>
-                                        <span className="text-sm truncate text-foreground">{selectedAccount.name}</span>
-                                    </div>
-                                );
-                            })() : (
-                                <span className="text-muted-foreground truncate">{placeholder}</span>
+        <LabeledContainer
+            label={label}
+            required={required}
+            error={error}
+            disabled={disabled}
+            className={className}
+        >
+            <SearchablePopover
+                open={open}
+                onOpenChange={setOpen}
+                searchValue={searchTerm}
+                onSearchChange={searchAccounts}
+                searchPlaceholder="Buscar código o nombre..."
+                items={filteredAccounts.slice(0, 20)}
+                isLoading={accountsLoading}
+                selectedId={value ? value.toString() : null}
+                getId={(a) => a.id}
+                onSelect={handleSelect}
+                emptyTitle="No se encontraron cuentas"
+                renderItem={(account) => (
+                    <>
+                        <Check
+                            className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
                             )}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                        <div className="p-2">
-                            <div className="flex items-center px-3 border rounded-md mb-2">
-                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                <input
-                                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                                    placeholder="Buscar código o nombre..."
-                                    value={searchTerm}
-                                    onChange={(e) => searchAccounts(e.target.value)}
-                                />
+                        />
+                        <span className="font-mono text-xs font-semibold text-primary shrink-0 mr-2">{account.code}</span>
+                        <span className="text-sm truncate">{account.name}</span>
+                    </>
+                )}
+                trigger={
+                    <Button
+                        variant="ghost"
+                        role="combobox"
+                        aria-expanded={open}
+                        disabled={disabled}
+                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                    >
+                        {selectedAccount ? (
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <AccountIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="font-mono text-xs font-semibold shrink-0 text-primary">{selectedAccount.code}</span>
+                                <span className="text-sm truncate text-foreground">{selectedAccount.name}</span>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                    setOpen(false)
-                                    setModalOpen(true)
-                                }}
-                                className="w-full mb-1 text-xs text-center text-primary hover:underline"
-                            >
-                                Búsqueda avanzada…
-                            </Button>
-                            <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                {accountsLoading ? (
-                                    <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                                ) : filteredAccounts.length === 0 ? (
-                                    <EmptyState context="search" variant="compact" title="No se encontraron cuentas" />
-                                ) : (
-                                    filteredAccounts.slice(0, 20).map((account) => (
-                                        <div
-                                            key={account.id}
-                                            className={cn(
-                                                "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                                                selectedAccount?.id === account.id && "bg-accent"
-                                            )}
-                                            onClick={() => handleSelect(account)}
-                                        >
-                                            <Check
-                                                className={cn(
-                                                    "mr-2 h-4 w-4",
-                                                    selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
-                                                )}
-                                            />
-                                            {account.code} - {account.name}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </fieldset>
-            {error && (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                    {error}
-                </p>
-            )}
+                        ) : (
+                            <span className="text-muted-foreground truncate">{placeholder}</span>
+                        )}
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                }
+            >
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        setOpen(false)
+                        setModalOpen(true)
+                    }}
+                    className="w-full mb-1 text-xs text-center text-primary hover:underline"
+                >
+                    Búsqueda avanzada…
+                </Button>
+            </SearchablePopover>
 
             <BaseModal
                 open={modalOpen}
@@ -242,6 +209,6 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                     />
                 </div>
             </BaseModal>
-        </div>
+        </LabeledContainer>
     )
 }

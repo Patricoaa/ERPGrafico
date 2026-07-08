@@ -2,8 +2,9 @@
 
 import * as React from "react"
 import {
-    ColumnDef,
-    VisibilityState,
+    type ColumnDef,
+    type SortingState,
+    type VisibilityState,
     flexRender,
     getCoreRowModel,
     getFilteredRowModel,
@@ -13,21 +14,22 @@ import {
     getFacetedRowModel,
     useReactTable,
     getExpandedRowModel,
-    Row,
-    RowSelectionState,
-    Table as ReactTable,
+    type Row,
+    type RowSelectionState,
+    type Table as ReactTable,
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 
 import { cn } from "@/lib/utils"
 
-import { motion, AnimatePresence } from "framer-motion"
+
 import { Skeleton } from "@/components/ui/skeleton"
-import { LucideIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { X, type LucideIcon } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction } from '@/components/shared'
+import { BulkActionButtons, ActionDock, CmykRing, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, StatCard, type BulkAction, type AnalyticsPanelConfig, type ToolbarActionItem } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
@@ -35,28 +37,19 @@ export interface DataTableProps<TData, TValue> {
     data: TData[]
     defaultPageSize?: number
     pageSizeOptions?: number[]
-    filterColumn?: string
-    searchPlaceholder?: string
-    globalFilterFields?: string[]
-    facetedFilters?: {
-        column: string
-        title: string
-        options?: {
-            label: string
-            value: string
-            icon?: LucideIcon
-        }[]
-    }[]
-    toolbarAction?: React.ReactNode
+    hideToolbar?: boolean
+    /** Items de acciones secundarias agrupadas en dropdown "Acciones". */
+    toolbarActions?: ToolbarActionItem[]
     onRowSelectionChange?: (selection: RowSelectionState) => void
     initialColumnVisibility?: VisibilityState
     hiddenColumns?: string[]
-    useAdvancedFilter?: boolean
     onReset?: () => void
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
-    leftAction?: React.ReactNode
-    rightAction?: React.ReactNode
-    showToolbarSort?: boolean
+    smartSearch?: React.ReactNode
+    segmentation?: React.ReactNode
+    showReset?: boolean
+    sortOptions?: boolean
+    analyticsPanel?: AnalyticsPanelConfig
     onRowClick?: (row: TData) => void
     /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
     variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'
@@ -69,38 +62,34 @@ export interface DataTableProps<TData, TValue> {
     /** Render callback for the actions cell in compact variant. Receives the row data and returns a ReactNode. Occupies the last grid track. */
     renderRowActions?: (row: TData) => React.ReactNode
     isLoading?: boolean
+    isRefetching?: boolean
     skeletonRows?: number
     renderSubComponent?: (row: Row<TData>) => React.ReactNode
     hidePagination?: boolean
     toolbarClassName?: string
     noBorder?: boolean
     /**
-     * Declarative bulk actions rendered in a floating BulkActionDock when
+     * Declarative bulk actions rendered in a floating ActionDock when
      * one or more rows are selected. For custom layouts (stats, dropdowns)
      * use `bulkDock` instead.
      */
     bulkActions?: BulkAction<TData>[]
     /**
      * Escape hatch: full control over the floating dock. Receives the
-     * selected items and a `clear` callback. Wraps content with
-     * `BulkActionDock` to keep visual consistency.
+     * selected items and a `clear` callback. Renders inside ActionDock.
      */
     bulkDock?: (items: TData[], clear: () => void) => React.ReactNode
     viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
     currentView?: string
     onViewChange?: (view: string) => void
-    showColumnToggle?: boolean
+    columnToggle?: boolean
     renderFooter?: (table: ReactTable<TData>) => React.ReactNode
-    customFilters?: React.ReactNode
-    isCustomFiltered?: boolean
-    customFilterCount?: number
     getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
     autoExpand?: boolean
     initialColumnFilters?: { id: string; value: unknown }[]
+    initialSorting?: SortingState
     /** Primary create action rendered at the right-most end of the toolbar, after the button group */
     createAction?: React.ReactNode
-    /** Custom actions/buttons rendered inside the main toolbar button group */
-    rightButtonGroupAction?: React.ReactNode
     /**
      * Empty-state copy. Flat fields describe the "no records at all" case
      * (entity truly empty). The optional `filtered` sub-object overrides the
@@ -118,6 +107,8 @@ export interface DataTableProps<TData, TValue> {
      */
     isFiltered?: boolean
     renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
+    /** Callback to compute a CSS class name for each row. Receives the full TanStack Row object. */
+    getRowClassName?: (row: Row<TData>) => string
     manualPagination?: boolean
     pageCount?: number
     /**
@@ -127,13 +118,24 @@ export interface DataTableProps<TData, TValue> {
      */
     rowCount?: number
     pagination?: { pageIndex: number; pageSize: number }
-    onPaginationChange?: (updater: any) => void
+    onPaginationChange?: React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>
     rowSelection?: RowSelectionState
     renderLoadingView?: () => React.ReactNode
+    kpiCards?: KpiCardDef[]
+}
+
+export interface KpiCardDef {
+    label: string
+    value: React.ReactNode
+    icon?: LucideIcon
+    accent?: "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
+    subtext?: string
+    variant?: "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart"
+    className?: string
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
-const EMPTY_ARRAY: any[] = []
+const EMPTY_ARRAY: never[] = []
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500]
 function getSkeletonCellContent(columnIndex: number, totalColumns: number): { width: string; height: string; shape: 'bar' | 'pill' | 'icon' | 'code' } {
     if (columnIndex === totalColumns - 1) {
@@ -154,23 +156,22 @@ export function DataTable<TData, TValue>({
     data,
     defaultPageSize = 20,
     pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
-    filterColumn,
-    searchPlaceholder,
-    globalFilterFields,
-    facetedFilters,
-    toolbarAction,
+    hideToolbar = false,
+    toolbarActions,
     onRowSelectionChange,
     initialColumnVisibility = DEFAULT_COLUMN_VISIBILITY,
     hiddenColumns = EMPTY_ARRAY,
-    useAdvancedFilter = false,
     onReset,
     renderCustomView,
-    leftAction,
-    rightAction,
-    showToolbarSort,
+    smartSearch,
+    segmentation,
+    showReset,
+    sortOptions,
+    analyticsPanel,
     onRowClick,
     variant,
     isLoading = false,
+    isRefetching = false,
     skeletonRows,
     renderSubComponent,
     hidePagination = false,
@@ -181,19 +182,17 @@ export function DataTable<TData, TValue>({
     viewOptions,
     currentView,
     onViewChange,
-    showColumnToggle,
+    columnToggle,
     renderFooter,
-    customFilters,
-    isCustomFiltered,
-    customFilterCount,
     getSubRows,
     autoExpand,
     createAction,
-    rightButtonGroupAction,
     emptyState: customEmptyState,
     isFiltered,
     initialColumnFilters = EMPTY_ARRAY,
+    initialSorting,
     renderRow,
+    getRowClassName,
     manualPagination,
     pageCount,
     rowCount,
@@ -201,6 +200,7 @@ export function DataTable<TData, TValue>({
     onPaginationChange,
     rowSelection,
     renderLoadingView,
+    kpiCards,
     gridTemplate,
     gridGap = "gap-x-3",
     compactMaxHeight = "max-h-[65vh]",
@@ -263,6 +263,7 @@ export function DataTable<TData, TValue>({
             columnVisibility: initialVisibility,
             expanded: autoExpand ? true : {},
             columnFilters: initialColumnFilters,
+            sorting: initialSorting,
         },
         // IMPORTANT: pasar `onPaginationChange: undefined` sobrescribe el default
         // `makeStateUpdater('pagination', table)` de TanStack v8 (merge por spread
@@ -309,7 +310,17 @@ export function DataTable<TData, TValue>({
         }
     }, [internalRowSelection, onRowSelectionChange])
 
-    const showToolbar = !isMinimal && !isCompact && (filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort)
+    const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
+        smartSearch ||
+        segmentation ||
+        (toolbarActions && toolbarActions.length > 0) ||
+        createAction ||
+        (viewOptions && viewOptions.length > 0) ||
+        sortOptions ||
+        analyticsPanel ||
+        columnToggle ||
+        !!currentView
+    )
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
     const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
@@ -319,44 +330,62 @@ export function DataTable<TData, TValue>({
         if (bulkDock) return bulkDock(selectedItems, clearSelection)
         if (bulkActions && bulkActions.length > 0) {
             return (
-                <BulkActionDock selectedCount={selectedRows.length} onClear={clearSelection}>
+                <ActionDock isVisible>
+                    <div className="flex items-center gap-2">
+                        <CmykRing className="h-2.5 w-2.5 animate-pulse" />
+                        <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
+                            {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
+                        </span>
+                    </div>
                     <BulkActionButtons actions={bulkActions} items={selectedItems} />
-                </BulkActionDock>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearSelection}
+                        className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
+                    >
+                        <X className="h-3 w-3 mr-1.5" />
+                        Limpiar
+                    </Button>
+                </ActionDock>
             )
         }
         return null
     })()
 
+    const kpiCardsNode = kpiCards && (
+        <div className="grid gap-4 md:grid-cols-4">
+            {kpiCards.map((card, i) => (
+                <StatCard key={i} {...card} loading={isLoading} />
+            ))}
+        </div>
+    )
+
     // ─── Loading state (unified) ────────────────────────────────────────
     if (isLoading) {
         return (
             <div ref={containerRef} className={cn(
-                isEmbedded && "relative flex flex-col h-full space-y-1 min-h-0",
-                !isEmbedded && !isMinimal && "space-y-4",
+                isEmbedded && "relative flex flex-col h-full w-full space-y-1 min-h-0",
+                !isEmbedded && !isMinimal && "w-full space-y-4",
                 isMinimal && "space-y-0"
             )}>
+                {kpiCardsNode}
+
                 {showToolbar && !isMinimal && (
                     <DataTableToolbar
                         table={table}
-                        filterColumn={filterColumn}
-                        globalFilterFields={globalFilterFields}
-                        searchPlaceholder={searchPlaceholder}
-                        facetedFilters={facetedFilters}
-                        toolbarAction={toolbarAction}
-                        useAdvancedFilter={useAdvancedFilter}
+                        toolbarActions={toolbarActions}
                         onReset={onReset}
-                        leftAction={leftAction}
-                        rightAction={rightAction}
-                        showToolbarSort={showToolbarSort}
+                        sortOptions={sortOptions}
                         viewOptions={viewOptions}
                         currentView={currentView}
                         onViewChange={onViewChange}
-                        showColumnToggle={showColumnToggle}
-                        customFilters={customFilters}
-                        isCustomFiltered={isCustomFiltered}
-                        customFilterCount={customFilterCount}
+                        columnToggle={columnToggle}
+                        smartSearch={smartSearch}
+                        segmentation={segmentation}
+                        showReset={showReset}
+                        analyticsPanel={analyticsPanel}
                         createAction={createAction}
-                        rightButtonGroupAction={rightButtonGroupAction}
                     />
                 )}
 
@@ -442,7 +471,8 @@ export function DataTable<TData, TValue>({
                                     key={row.id}
                                     className={cn(
                                         "table-row-hover border-b border-border/40",
-                                        onRowClick && "cursor-pointer"
+                                        onRowClick && "cursor-pointer",
+                                        getRowClassName?.(row)
                                     )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
@@ -488,17 +518,17 @@ export function DataTable<TData, TValue>({
         if (isLoading) {
             return (
                 <div ref={containerRef} className="relative">
-                    <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
-                        {table.getHeaderGroups()[0]?.headers.map((header) => (
-                            <div key={header.id} className="text-center">
-                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                            </div>
-                        ))}
-                        {renderRowActions && <div />}
-                    </div>
-                    <div className="divide-y divide-border/60">
+                    <div className={cn("grid", effectiveGridTemplate, gridGap)}>
+                        <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
+                            {table.getHeaderGroups()[0]?.headers.map((header) => (
+                                <div key={header.id} className="text-center">
+                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                </div>
+                            ))}
+                            {renderRowActions && <div />}
+                        </div>
                         {Array.from({ length: effectiveSkeletonRows }, (_, i) => (
-                            <div key={`skel-${i}`} className={cn("grid", effectiveGridTemplate, gridGap, "items-center px-3 py-2.5")}>
+                            <div key={`skel-${i}`} className={cn("grid grid-cols-subgrid col-span-full items-center px-3 py-2.5 border-b border-border/60 last:border-b-0")}>
                                 {columns.map((_, j) => (
                                     <div key={`skel-${i}-${j}`} className="flex justify-center">
                                         <Skeleton className="h-4 w-16" />
@@ -516,27 +546,26 @@ export function DataTable<TData, TValue>({
             <div ref={containerRef} className="relative">
                 {table.getRowModel().rows?.length ? (
                     <ScrollArea className={compactMaxHeight}>
-                        {/* Header */}
-                        <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
-                            {table.getHeaderGroups()[0]?.headers.map((header) => (
-                                <div key={header.id} role="columnheader">
-                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                </div>
-                            ))}
-                            {renderRowActions && <div role="columnheader" />}
-                        </div>
-                        {/* Body */}
-                        <div className="divide-y divide-border/60" role="rowgroup">
+                        <div className={cn("grid", effectiveGridTemplate, gridGap)}>
+                            {/* Header */}
+                            <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
+                                {table.getHeaderGroups()[0]?.headers.map((header) => (
+                                    <div key={header.id} role="columnheader">
+                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </div>
+                                ))}
+                                {renderRowActions && <div role="columnheader" />}
+                            </div>
+                            {/* Body */}
                             {table.getRowModel().rows.map((row) => (
                                 <div
                                     key={row.id}
                                     role="row"
                                     className={cn(
-                                        "grid",
-                                        effectiveGridTemplate,
-                                        gridGap,
-                                        "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300",
-                                        onRowClick && "cursor-pointer"
+                                        "grid grid-cols-subgrid col-span-full",
+                                        "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300 border-b border-border/60 last:border-b-0",
+                                        onRowClick && "cursor-pointer",
+                                        getRowClassName?.(row)
                                     )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
@@ -579,7 +608,8 @@ export function DataTable<TData, TValue>({
                                     className={cn(
                                         "group border-b border-border/40 table-row-hover transition-all",
                                         onRowClick && "cursor-pointer",
-                                        row.getIsSelected() && "bg-primary/5"
+                                        row.getIsSelected() && "bg-primary/5",
+                                        getRowClassName?.(row)
                                     )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
@@ -599,7 +629,8 @@ export function DataTable<TData, TValue>({
                                 className={cn(
                                     "group border-b border-border/40 table-row-hover transition-all",
                                     onRowClick && "cursor-pointer",
-                                    row.getIsSelected() && "bg-primary/5"
+                                    row.getIsSelected() && "bg-primary/5",
+                                    getRowClassName?.(row)
                                 )}
                                 onClick={() => onRowClick?.(row.original)}
                             >
@@ -613,22 +644,13 @@ export function DataTable<TData, TValue>({
                                 ))}
                             </TableRow>
                         )}
-                        <AnimatePresence>
-                            {row.getIsExpanded() && renderSubComponent && (
-                                <motion.tr
-                                    key={`exp-${row.id}`}
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                                    className="overflow-hidden"
-                                >
-                                    <TableCell colSpan={row.getVisibleCells().length} className="p-0" style={{ backgroundColor: 'var(--table-expanded-bg)' }}>
-                                        {renderSubComponent(row)}
-                                    </TableCell>
-                                </motion.tr>
-                            )}
-                        </AnimatePresence>
+                        {row.getIsExpanded() && renderSubComponent && (
+                            <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
+                                <TableCell colSpan={row.getVisibleCells().length} className="p-0" style={{ backgroundColor: 'var(--table-expanded-bg)' }}>
+                                    {renderSubComponent(row)}
+                                </TableCell>
+                            </tr>
+                        )}
                     </React.Fragment>
                 ))
             ) : (
@@ -656,42 +678,37 @@ export function DataTable<TData, TValue>({
         const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
-            <div ref={containerRef} className="relative flex flex-col h-full space-y-1 min-h-0">
+            <div ref={containerRef} className="relative flex flex-col h-full w-full space-y-1 min-h-0">
                 {/* Toolbar Section (Outside) */}
+                {kpiCardsNode}
+
                 {showToolbar && (
                     <div className={cn(
-                        "px-1 shrink-0",
+                        "w-full shrink-0",
                         !isInModal && "sticky top-0 z-20 bg-transparent py-2",
                         toolbarClassName
                     )}>
                         <DataTableToolbar
                             table={table}
-                            filterColumn={filterColumn}
-                            globalFilterFields={globalFilterFields}
-                            searchPlaceholder={searchPlaceholder}
-                            facetedFilters={facetedFilters}
-                            toolbarAction={toolbarAction}
-                            useAdvancedFilter={useAdvancedFilter}
+                            toolbarActions={toolbarActions}
                             onReset={onReset}
-                            leftAction={leftAction}
-                            rightAction={rightAction}
-                            showToolbarSort={showToolbarSort}
+                            sortOptions={sortOptions}
                             viewOptions={viewOptions}
                             currentView={currentView}
                             onViewChange={onViewChange}
-                            showColumnToggle={showColumnToggle}
-                            customFilters={customFilters}
-                            isCustomFiltered={isCustomFiltered}
-                            customFilterCount={customFilterCount}
+                            columnToggle={columnToggle}
+                            smartSearch={smartSearch}
+                            segmentation={segmentation}
+                            showReset={showReset}
+                            analyticsPanel={analyticsPanel}
                             createAction={createAction}
-                            rightButtonGroupAction={rightButtonGroupAction}
                         />
                     </div>
                 )}
 
-                <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-x-auto" : "flex flex-col overflow-hidden")}>
+                <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-y-scroll custom-scrollbar overflow-x-auto" : "flex flex-col overflow-hidden")}>
                     {renderCustomView ? (
-                        <div className="py-0 h-full overflow-y-scroll custom-scrollbar">
+                        <div className="py-0">
                             {renderCustomView(table)}
                         </div>
                     ) : (
@@ -749,40 +766,43 @@ export function DataTable<TData, TValue>({
 
     // ─── Classic Mode (unchanged) ─────────────────────────────────────────────
     return (
-        <div ref={containerRef} className="space-y-4">
+        <div ref={containerRef} className="w-full space-y-4">
+            {kpiCardsNode}
             {showToolbar && (
                 <div className={cn(
+                    "w-full",
                     !isInModal && "sticky top-0 z-20 bg-transparent py-2",
                     toolbarClassName
                 )}>
                     <DataTableToolbar
                         table={table}
-                        filterColumn={filterColumn}
-                        globalFilterFields={globalFilterFields}
-                        searchPlaceholder={searchPlaceholder}
-                        facetedFilters={facetedFilters}
-                        toolbarAction={toolbarAction}
-                        useAdvancedFilter={useAdvancedFilter}
+                        toolbarActions={toolbarActions}
                         onReset={onReset}
-                        leftAction={leftAction}
-                        rightAction={rightAction}
-                        showToolbarSort={showToolbarSort}
+                        sortOptions={sortOptions}
                         viewOptions={viewOptions}
                         currentView={currentView}
                         onViewChange={onViewChange}
-                        showColumnToggle={showColumnToggle}
-                        customFilters={customFilters}
-                        isCustomFiltered={isCustomFiltered}
-                        customFilterCount={customFilterCount}
+                        columnToggle={columnToggle}
+                        smartSearch={smartSearch}
+                        segmentation={segmentation}
+                        showReset={showReset}
+                        analyticsPanel={analyticsPanel}
                         createAction={createAction}
-                        rightButtonGroupAction={rightButtonGroupAction}
                     />
                 </div>
             )}
             {renderCustomView ? (
                 renderCustomView(table)
             ) : (
-                <div className={cn(!noBorder && "rounded-md border")}>
+                <div className={cn("relative", !noBorder && "rounded-md border")}>
+                    <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden pointer-events-none">
+                        <div
+                            className={cn(
+                                "h-full bg-primary origin-left transition-transform duration-300 ease-in-out",
+                                isRefetching ? "scale-x-100" : "scale-x-0"
+                            )}
+                        />
+                    </div>
                     <Table containerClassName={cn(
                         !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
                     )}>
@@ -814,7 +834,8 @@ export function DataTable<TData, TValue>({
                                                     data-state={row.getIsSelected() && "selected"}
                                                     className={cn(
                                                         "group table-row-hover",
-                                                        onRowClick && "cursor-pointer"
+                                                        onRowClick && "cursor-pointer",
+                                                        getRowClassName?.(row)
                                                     )}
                                                     onClick={() => onRowClick?.(row.original)}
                                                 >
@@ -833,7 +854,8 @@ export function DataTable<TData, TValue>({
                                                 data-state={row.getIsSelected() && "selected"}
                                                 className={cn(
                                                     "group table-row-hover",
-                                                    onRowClick && "cursor-pointer"
+                                                    onRowClick && "cursor-pointer",
+                                                    getRowClassName?.(row)
                                                 )}
                                                 onClick={() => onRowClick?.(row.original)}
                                             >
@@ -847,22 +869,13 @@ export function DataTable<TData, TValue>({
                                                 ))}
                                             </TableRow>
                                         )}
-                                        <AnimatePresence>
-                                            {row.getIsExpanded() && renderSubComponent && (
-                                                <motion.tr
-                                                    key={`exp-${row.id}`}
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                                                    className="overflow-hidden"
-                                                >
-                                                    <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
-                                                        {renderSubComponent(row)}
-                                                    </TableCell>
-                                                </motion.tr>
-                                            )}
-                                        </AnimatePresence>
+                                        {row.getIsExpanded() && renderSubComponent && (
+                                            <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
+                                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                                    {renderSubComponent(row)}
+                                                </TableCell>
+                                            </tr>
+                                        )}
                                     </React.Fragment>
                                 ))
                             ) : (

@@ -14,6 +14,7 @@ Scope (deliberate):
   scope here. (Source-file link checking is future work — there is pre-existing rot
   in the historical audit docs that would make a strict source check noisy.)
 """
+
 import re
 import urllib.parse
 from pathlib import Path

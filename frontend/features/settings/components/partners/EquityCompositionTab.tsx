@@ -1,26 +1,16 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import {
-    TrendingUp,
     Plus,
-    ArrowRightLeft,
     AlertCircle,
-    Banknote,
-    History,
     MoveHorizontal
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import {
-    DropdownMenuItem,
-
-} from "@/components/ui/dropdown-menu"
-
-
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type Partner, type PartnerSummary } from "@/features/contacts"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
@@ -28,9 +18,9 @@ import {
     SkeletonShell,
         DataTable,
     DataCell,
-    createActionsColumn,
     Chip
 } from "@/components/shared"
+import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
     SubscriptionMovementModal,
     EquityTransferModal,
@@ -43,17 +33,15 @@ import { InitialCapitalModal } from "@/features/settings/components/InitialCapit
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
 import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
 import { EquityStatsDrawer } from "@/features/settings/components/partners/EquityStatsDrawer"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
     initialStatsOpen = false,
-    onModalClose,
     createAction
 }: {
     initialAddPartnerOpen?: boolean,
     initialStatsOpen?: boolean,
-    onModalClose?: () => void,
     createAction?: React.ReactNode
 }) {
     const [loading, setLoading] = useState(true)
@@ -67,6 +55,15 @@ export function EquityCompositionTab({
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+
+    const clearModalParam = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (params.has('modal')) {
+            params.delete('modal')
+            const query = params.toString()
+            router.replace(query ? `?${query}` : pathname, { scroll: false })
+        }
+    }, [searchParams, router, pathname])
 
     // Custom action modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
@@ -158,6 +155,20 @@ export function EquityCompositionTab({
     }
 
     const hasPartners = partners.length > 0
+
+    const partnerActionsCtx: PartnerActionsCtx = {
+        onFormalizeExcessCapital: (id, amount) => {
+            setSubModalParams({ partnerId: id.toString(), amount: amount.toString() })
+            setIsSubscriptionOpen(true)
+        },
+        onPayDividends: (id) => { setSelectedPartnerId(id); setIsDividendOpen(true) },
+        onDistributeEarnings: (id) => { setSelectedPartnerId(id); setIsMobilizeOpen(true) },
+        onViewLedger: (id) => {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set("ledger", id.toString())
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        },
+    }
 
     const columns: ColumnDef<Partner>[] = [
         {
@@ -277,63 +288,11 @@ export function EquityCompositionTab({
                 </div>
             )
         },
-        createActionsColumn<Partner>({
-            renderActions: (partner) => {
-                const hasEarnings = parseFloat(partner.partner_earnings_balance) > 0
-                const hasDividends = parseFloat(partner.partner_dividends_payable_balance) > 0
-
-                return (
-                    <>
-                        {parseFloat(partner.partner_excess_capital) > 0 && (
-                            <DataCell.Action
-                                icon={TrendingUp}
-                                title="Formalizar Exceso de Capital"
-                                className="text-warning"
-                                onClick={() => {
-                                    setSubModalParams({
-                                        partnerId: partner.id.toString(),
-                                        amount: partner.partner_excess_capital.toString()
-                                    })
-                                    setIsSubscriptionOpen(true)
-                                }}
-                            />
-                        )}
-                        <DataCell.Action
-                            icon={Banknote}
-                            title="Pagar Dividendos"
-                            className={hasDividends ? "text-primary" : "text-muted-foreground/30 pointer-events-none"}
-                            onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setIsDividendOpen(true)
-                            }}
-                        />
-                        <DataCell.Action
-                            icon={ArrowRightLeft}
-                            title="Distribuir Utilidades Retenidas"
-                            className={hasEarnings ? "text-primary/70" : "text-muted-foreground/30 pointer-events-none"}
-                            onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setIsMobilizeOpen(true)
-                            }}
-                        />
-                        <DataCell.Action
-                            icon={History}
-                            title="Ver Libro Auxiliar"
-                            className="text-primary font-black"
-                            onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set("ledger", partner.id.toString())
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        />
-                    </>
-                )
-            }
-        })
+        partnerActions.column(partnerActionsCtx)
     ]
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
                 columns={columns}
@@ -341,35 +300,13 @@ export function EquityCompositionTab({
                 isLoading={loading}
                 variant="embedded"
                 createAction={createAction}
-                toolbarAction={
-                    <>
-                        {!hasPartners ? (
-                            <DropdownMenuItem
-                                onClick={() => setIsInitialSetupOpen(true)}
-                                className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
-                            >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Configuración Inicial
-                            </DropdownMenuItem>
-                        ) : (
-                            <>
-                                <DropdownMenuItem
-                                    onClick={() => setIsSubscriptionOpen(true)}
-                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
-                                >
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Nueva Suscripción
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() => setIsTransferOpen(true)}
-                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
-                                >
-                                    <MoveHorizontal className="h-4 w-4 mr-2" />
-                                    Transferencia
-                                </DropdownMenuItem>
-                            </>
-                        )}
-                    </>
+                toolbarActions={
+                    !hasPartners
+                        ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
+                        : [
+                            { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
+                            { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
+                        ]
                 }
             />
             </div>
@@ -432,9 +369,7 @@ export function EquityCompositionTab({
                     open={isStatsOpen}
                     onOpenChange={(open) => {
                         setIsStatsOpen(open)
-                        if (!open) {
-                            onModalClose?.()
-                        }
+                        if (!open) clearModalParam()
                     }}
                     partners={partners}
                     summary={summary}
@@ -444,9 +379,7 @@ export function EquityCompositionTab({
                 open={isAddPartnerOpen}
                 onOpenChange={(open) => {
                     setIsAddPartnerOpen(open)
-                    if (!open) {
-                        onModalClose?.()
-                    }
+                    if (!open) clearModalParam()
                 }}
                 onSuccess={fetchData}
             />

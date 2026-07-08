@@ -1,3 +1,5 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -7,9 +9,9 @@ import { ClipboardList, Ban } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { useAnnulWorkOrder } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, OrderLine, PhaseDocument, WorkOrder } from "../../types"
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
+import { type Order, type OrderLine, type PhaseDocument, type WorkOrder, type InvoiceSummary } from "../../types"
 
 interface ProductionPhaseProps {
     order: Order | null
@@ -39,15 +41,16 @@ export function ProductionPhase({
 }: ProductionPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
 
-    const annulWorkOrder = useAnnulWorkOrder()
+    const { annulWorkOrder } = useAnnulWorkOrder()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -68,19 +71,23 @@ export function ProductionPhase({
 
     const invoices = activeDoc.related_documents?.invoices || []
 
-    const handleAnnulWorkOrder = async (id: number) => {
+    const canAnnulWorkOrder = userPermissions.includes('production.delete_workorder')
+
+    const handleAnnulWorkOrder = (id: number) => {
         setConfirmModal({
             open: true,
             title: "Anular Orden de Trabajo",
             variant: "destructive",
             confirmText: "Anular OT",
-            onConfirm: async () => {
+            requireReason: true,
+            onConfirm: async (reason?: string) => {
                 try {
-                    await annulWorkOrder.mutateAsync(id)
+                    await annulWorkOrder({ id, reason })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
                     showApiError(error, "Error al anular OT")
+                    throw error
                 }
             },
             description: "Esta acción reverterá los consumos de materiales y liberará las reservas. ¿Está seguro?"
@@ -93,6 +100,7 @@ export function ProductionPhase({
                 title="Producción"
                 icon={ClipboardList}
                 variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
+                progress={totalOTProgress}
                 documents={activeDoc.work_orders?.map((ot: WorkOrder) => ({
                     type: 'Orden de Trabajo',
                     number: formatEntityDisplay('production.workorder', ot),
@@ -103,8 +111,9 @@ export function ProductionPhase({
                     progressValue: ot.production_progress || 0,
                     actions: [
                         // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
-                        ...((ot.status !== 'CANCELLED' &&
-                            invoices.some((inv: any) => inv.status === 'DRAFT') &&
+                        ...((canAnnulWorkOrder &&
+                            ot.status !== 'CANCELLED' &&
+                            invoices.some((inv: InvoiceSummary) => inv.status === 'DRAFT') &&
                             ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage as string)) ? [{
                                 icon: Ban,
                                 title: 'Anular OT',
@@ -147,6 +156,8 @@ export function ProductionPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
         </>
     )

@@ -1,15 +1,14 @@
 "use client"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import {FileText, Receipt, AlertCircle} from "lucide-react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput, LabeledSwitch, LabeledContainer, RadioCard, StepHeader } from '@/components/shared'
 
-import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput } from '@/components/shared'
-
-import { DTEData } from "../../types"
+import { type DTEData } from "../../types"
 
 interface Step2_PurchaseDTEProps {
     dteData: DTEData
@@ -55,93 +54,79 @@ export function Step2_PurchaseDTE({
     }, [allowedDteTypes])
     return (
         <div className="space-y-8">
-            <div className="flex flex-col gap-1">
-                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-primary" />
-                    Registro de Documento
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Ingrese la información relacionada al DTE y adjunte el respaldo legal.
-                </p>
+            <div className="flex flex-col gap-1 mb-2">
+                <StepHeader title="Registro de Documento" description="Ingrese la información relacionada al DTE y adjunte el respaldo legal." icon={FileText} />
             </div>
             <div className="space-y-4">
-                <RadioGroup
-                    value={dteData.type}
-                    onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                    className="flex flex-wrap gap-4 w-full"
-                >
+                <LabeledContainer label="Tipo de Documento">
+                    <RadioGroup
+                        value={dteData.type}
+                        onValueChange={(val) => setDteData({ ...dteData, type: val })}
+                        className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
+                    >
                     {filteredOptions.map((opt) => (
-                        <label
+                        <RadioCard
                             key={opt.id}
-                            htmlFor={`type-${opt.id.toLowerCase().replace('_', '-')}`}
-                            className={cn(
-                                "flex flex-1 flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer min-w-[120px]",
-                                dteData.type === opt.id ? 'border-primary' : ''
-                            )}
-                        >
-                            <RadioGroupItem value={opt.id} id={`type-${opt.id.toLowerCase().replace('_', '-')}`} className="sr-only" />
-                            <opt.icon className={`mb-3 h-6 w-6 ${opt.color || ''}`} />
-                            <span className="text-sm font-medium">{opt.label}</span>
-                            <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: {opt.code}</span>
-                        </label>
+                            id={`type-${opt.id.toLowerCase().replace('_', '-')}`}
+                            value={opt.id}
+                            label={opt.label}
+                            description={`Código SII: ${opt.code}`}
+                            icon={<opt.icon className="h-4 w-4" />}
+                            iconColor={opt.color}
+                        />
                     ))}
-                </RadioGroup>
+                    </RadioGroup>
+                </LabeledContainer>
             </div>
 
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg border border-dashed">
-                    <Checkbox
-                        id="is-pending"
-                        checked={dteData.isPending}
-                        onCheckedChange={(checked) => {
-                            const pending = !!checked;
-                            if (pending) {
-                                setDteData({ ...dteData, isPending: true, number: '', attachment: null });
-                                onValidityChange?.(true);
-                                onPeriodValidityChange?.(true);
-                            } else {
-                                setDteData({ ...dteData, isPending: false });
-                            }
-                        }}
-                    />
-                    <label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
-                        Recibiré el documento luego
-                    </label>
-                </div>
+                <LabeledSwitch
+                    label="Recepción"
+                    description={dteData.isPending ? "Recibiré el documento luego" : "Recepción inmediata"}
+                    checked={!!dteData.isPending}
+                    onCheckedChange={(checked) => {
+                        const pending = !!checked;
+                        if (pending) {
+                            setDteData({ ...dteData, isPending: true, number: '', attachment: null });
+                            onValidityChange?.(true);
+                            onPeriodValidityChange?.(true);
+                        } else {
+                            setDteData({ ...dteData, isPending: false });
+                        }
+                    }}
+                    icon={<FileText className={cn("h-4 w-4 transition-colors", dteData.isPending ? "text-warning" : "text-muted-foreground/30")} />}
+                    className={cn(dteData.isPending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
+                />
 
                 {!dteData.isPending && (
-                    <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
-                        <div className="space-y-2">
-                            <FolioValidationInput
-                                value={dteData.number}
-                                onChange={(val: string) => setDteData({ ...dteData, number: val })}
-                                dteType={dteData.type}
-                                contactId={contactId ? Number(contactId) : undefined}
-                                isPurchase={true}
-                                onValidityChange={onValidityChange}
-                                disabled={dteData.isPending}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <PeriodValidationDateInput
-                                label="Fecha Emisión"
-                                required
-                                date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
-                                onDateChange={(d) => {
-                                    if (d) {
-                                        const year = d.getFullYear()
-                                        const month = String(d.getMonth() + 1).padStart(2, '0')
-                                        const day = String(d.getDate()).padStart(2, '0')
-                                        setDteData({ ...dteData, date: `${year}-${month}-${day}` })
-                                    } else {
-                                        setDteData({ ...dteData, date: "" })
-                                    }
-                                }}
-                                validationType="both"
-                                onValidityChange={onPeriodValidityChange}
-                                disabled={dteData.isPending}
-                            />
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FolioValidationInput
+                            value={dteData.number}
+                            onChange={(val: string) => setDteData({ ...dteData, number: val })}
+                            dteType={dteData.type}
+                            contactId={contactId ? Number(contactId) : undefined}
+                            isPurchase={true}
+                            onValidityChange={onValidityChange}
+                            disabled={dteData.isPending}
+                        />
+                        <PeriodValidationDateInput
+                            label="Fecha Emisión"
+                            required
+                            date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (d) {
+                                    const year = d.getFullYear()
+                                    const month = String(d.getMonth() + 1).padStart(2, '0')
+                                    const day = String(d.getDate()).padStart(2, '0')
+                                    setDteData({ ...dteData, date: `${year}-${month}-${day}` })
+                                } else {
+                                    setDteData({ ...dteData, date: "" })
+                                }
+                            }}
+                            validationType="both"
+                            onValidityChange={onPeriodValidityChange}
+                            disabled={dteData.isPending}
+                        />
                         <div className="col-span-2">
                             <DocumentAttachmentDropzone
                                 file={dteData.attachment}
@@ -155,14 +140,14 @@ export function Step2_PurchaseDTE({
             </div>
 
             {dteData.type === 'BOLETA' && !dteData.isPending && (
-                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-lg text-xs leading-tight">
+                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-md text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque &quot;Recibiré el documento luego&quot;.</p>
                 </div>
             )}
 
             {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-lg text-xs leading-tight">
+                <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-md text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Plus, LucideIcon } from "lucide-react"
+import { Plus, type LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DynamicIcon } from '@/components/shared'
 import { cn } from "@/lib/utils"
@@ -20,6 +20,7 @@ export function ToolbarCreateButton({
     iconName,
     href,
     className,
+    size: _,
     ...props
 }: ToolbarCreateButtonProps) {
     const renderIcon = () => {
@@ -28,11 +29,11 @@ export function ToolbarCreateButton({
         return <Plus className="h-3.5 w-3.5 mr-2" />
     }
 
-    const button = (
+    const buttonContent = (
         <Button
+            size="sm"
             className={cn(
-                "h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-card",
-                "bg-primary text-primary-foreground hover:bg-primary/90",
+                "px-4 font-semibold tracking-widest gap-1 rounded-sm shrink-0 cursor-pointer",
                 className
             )}
             {...props}
@@ -45,10 +46,10 @@ export function ToolbarCreateButton({
     if (href) {
         return (
             <Link href={href} scroll={false}>
-                {button}
+                {buttonContent}
             </Link>
         )
     }
 
-    return button
+    return buttonContent
 }

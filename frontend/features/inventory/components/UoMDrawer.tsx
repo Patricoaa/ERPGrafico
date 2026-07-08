@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/incompatible-library */
+/* eslint-disable no-restricted-syntax */
 "use client"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell } from "@/components/shared"
@@ -13,16 +15,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { Ruler, ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
+import { ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -56,7 +58,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const isFetchingInitialData = open && isCategoriesLoading
 
     const form = useForm<UoMFormValues>({
-        resolver: zodResolver(uomSchema) as any,
+        resolver: zodResolver(uomSchema) as unknown as Resolver<UoMFormValues>,
         defaultValues: {
             name: "",
             category: undefined,
@@ -127,11 +129,9 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const watchType = form.watch("uom_type")
 
-    const drawerTitle = isView
-        ? `Ficha de Unidad de Medida${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Unidad de Medida"
-            : "Editar Unidad de Medida"
+    const identity = useDrawerIdentity('inventory.uom', mode, initialData, {
+        overrideSubtitle: initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión.",
+    })
 
     return (
         <>
@@ -163,9 +163,10 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={Ruler}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

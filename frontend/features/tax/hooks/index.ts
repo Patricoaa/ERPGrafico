@@ -6,5 +6,7 @@ export {
   useClosePeriod,
   useCreateTaxPayment,
   useCheckPeriodClosed,
+  useUploadF29Document,
+  useReopenPeriod,
 } from './useTaxMutations'
 export { TAX_KEYS } from './queryKeys'

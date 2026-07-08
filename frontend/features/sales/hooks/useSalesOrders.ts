@@ -1,30 +1,43 @@
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import {showApiError} from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
-import { SaleOrderFilters, SaleOrderPayload } from '../types'
+import { type SaleOrderFilters, type SaleOrderPayload, type SaleOrder } from '../types'
 import { useRealtime } from '@/features/realtime'
+import type { Page } from '@/lib/pagination'
 
 import { SALES_KEYS } from './queryKeys'
 
 export { SALES_KEYS }
 
-export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {}) {
+export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFilters, initialData?: Page<SaleOrder> } = {}) {
     const queryClient = useQueryClient()
+    const invalidateSales = () => invalidateCrossFeature(queryClient, [SALES_KEYS.all])
     const { markLocalMutation } = useRealtime()
 
-    const { data: orders, isLoading, refetch } = useQuery({
-        queryKey: SALES_KEYS.orders(filters || {}),
-        queryFn: () => salesApi.getOrders(filters),
+    const { page = 1, page_size = 50, ...restFilters } = filters || {}
+    const activeFilters = { page, page_size, ...restFilters }
+
+    const query = useQuery({
+        queryKey: SALES_KEYS.orders(activeFilters),
+        queryFn: () => salesApi.getOrders(activeFilters),
         staleTime: 2 * 60 * 1000, // 2 min
+        initialData,
+        placeholderData: (prev) => prev,
     })
+
+    const orders = query.data?.results ?? []
+    const showSkeleton = query.isLoading && !orders.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
 
     const createMutation = useMutation({
         mutationFn: salesApi.createOrder,
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta creada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear la nota de venta')
@@ -37,7 +50,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta actualizada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar la nota de venta')
@@ -49,9 +62,9 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta eliminada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
-        onError: (error: Error) => {
+        onError: () => {
             toast.error('Error al eliminar')
         }
     })
@@ -65,7 +78,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             // un invoice asociado → invalida sales completo. Billing también
             // debe refrescarse pero esa invalidación la dispara el bus o el
             // próximo useInvoices al volverse stale.
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
     })
 
@@ -77,7 +90,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             // dispatch cambia el delivery_status de la orden y crea movimientos
             // de stock. Invalidamos sales (estado) y la query externa de stockMoves
             // se invalidará si el bus está habilitado.
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
     })
 
@@ -88,13 +101,15 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         }) => salesApi.dispatchOrderPartial(orderId, payload),
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateSales()
         },
     })
 
     return {
-        orders: orders ?? [],
-        isLoading,
+        page: query.data,
+        orders,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         createOrder: createMutation.mutateAsync,
         updateOrder: updateMutation.mutateAsync,
@@ -111,18 +126,39 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
 }
 
 export interface SaleNoteFilters {
+    page?: number
+    page_size?: number
     date_after?: string
     date_before?: string
     customer_name?: string
+    total_min?: string
+    total_max?: string
+    number?: string
+    status?: string
 }
 
 export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
-    const { data, isLoading, refetch } = useQuery({
-        queryKey: SALES_KEYS.notes(filters || {}),
-        queryFn: () => salesApi.getSalesNotes(filters),
+    const { page = 1, page_size = 50, ...restFilters } = filters || {}
+    const activeFilters = { page, page_size, ...restFilters }
+
+    const query = useQuery({
+        queryKey: SALES_KEYS.notes(activeFilters),
+        queryFn: () => salesApi.getSalesNotes(activeFilters),
+        staleTime: 2 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 
-    return { notes: data ?? [], isLoading, refetch }
+    const notes = query.data?.results ?? []
+    const showSkeleton = query.isLoading && !notes.length
+    const isRefetching = query.isFetching && !showSkeleton
+
+    return {
+        page: query.data,
+        notes,
+        isLoading: showSkeleton,
+        isRefetching,
+        refetch: query.refetch,
+    }
 }
 
 /**
@@ -132,9 +168,11 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
  * SaleReturnDetailClient (las tres pantallas fetchean la misma orden padre).
  */
 export function useSaleOrder(id: number | null | undefined) {
-    return useQuery({
+    const { data: saleOrder, isLoading, isError } = useQuery({
         queryKey: id ? SALES_KEYS.order(id) : ['sales', 'order', 'noop'],
-        queryFn: () => salesApi.getOrder(id!),
+        queryFn: () => salesApi.getOrder(id as number),
+        staleTime: 2 * 60 * 1000,
         enabled: !!id,
     })
+    return { saleOrder: saleOrder ?? null, isLoading, isError }
 }

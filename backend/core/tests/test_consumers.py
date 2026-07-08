@@ -8,6 +8,7 @@ Contrato : docs/20-contracts/realtime-channels.md §"Entity Bus"
 async con `asyncio.run()`. El cache del channel layer se resetea entre tests
 para garantizar aislamiento (las colas in-memory son por-event-loop).
 """
+
 import asyncio
 from unittest.mock import MagicMock
 
@@ -18,9 +19,8 @@ from django.test import override_settings
 
 from core.consumers import EntityBusConsumer
 
-
 CHANNEL_LAYERS_INMEMORY = {
-    'default': {'BACKEND': 'channels.layers.InMemoryChannelLayer'},
+    "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
 }
 
 
@@ -28,10 +28,10 @@ CHANNEL_LAYERS_INMEMORY = {
 def _isolated_channel_layer():
     """Force a fresh InMemoryChannelLayer per test — queues are bound to the
     event loop created by asyncio.run(), so reusing a cached layer leaks state."""
-    channel_layers.backends.pop('default', None)
+    channel_layers.backends.pop("default", None)
     with override_settings(CHANNEL_LAYERS=CHANNEL_LAYERS_INMEMORY):
         yield
-    channel_layers.backends.pop('default', None)
+    channel_layers.backends.pop("default", None)
 
 
 def _fake_user(uid: int = 42):
@@ -51,6 +51,7 @@ async def _open(user) -> WebsocketCommunicator:
 
 
 # ─── Auth gate ────────────────────────────────────────────────────────────────
+
 
 def test_anonymous_user_is_rejected_with_4001():
     async def go():
@@ -85,9 +86,11 @@ def test_authenticated_user_is_accepted():
 
 # ─── Auto-join al grupo de usuario (cross-tab del propio usuario) ─────────────
 
+
 def test_authenticated_user_receives_broadcasts_on_their_user_group():
     """Connect → server group_send a `entity.user.<id>` → cliente recibe el payload
     sin haber hecho `subscribe`. Esto garantiza el cross-tab del propio usuario."""
+
     async def go():
         comm = await _open(_fake_user(uid=42))
         connected, _ = await comm.connect()
@@ -95,8 +98,12 @@ def test_authenticated_user_receives_broadcasts_on_their_user_group():
 
         payload = {
             "event": "entity.changed",
-            "app": "sales", "model": "saleorder", "id": 9,
-            "op": "updated", "actor_id": 42, "ts": "2026-05-22T00:00:00Z",
+            "app": "sales",
+            "model": "saleorder",
+            "id": 9,
+            "op": "updated",
+            "actor_id": 42,
+            "ts": "2026-05-22T00:00:00Z",
         }
         layer = get_channel_layer()
         await layer.group_send("entity.user.42", {"type": "entity.changed", "payload": payload})
@@ -110,6 +117,7 @@ def test_authenticated_user_receives_broadcasts_on_their_user_group():
 
 # ─── Subscribe / unsubscribe protocol ─────────────────────────────────────────
 
+
 def test_subscribe_acks_and_then_forwards_topic_broadcast():
     async def go():
         comm = await _open(_fake_user())
@@ -121,8 +129,12 @@ def test_subscribe_acks_and_then_forwards_topic_broadcast():
 
         payload = {
             "event": "entity.changed",
-            "app": "sales", "model": "saleorder", "id": 1,
-            "op": "created", "actor_id": 99, "ts": "2026-05-22T00:00:00Z",
+            "app": "sales",
+            "model": "saleorder",
+            "id": 1,
+            "op": "created",
+            "actor_id": 99,
+            "ts": "2026-05-22T00:00:00Z",
         }
         layer = get_channel_layer()
         await layer.group_send(
@@ -153,10 +165,18 @@ def test_unsubscribe_stops_delivery_to_that_topic():
         layer = get_channel_layer()
         await layer.group_send(
             "entity.sales.saleorder.123",
-            {"type": "entity.changed", "payload": {"event": "entity.changed",
-                                                   "app": "sales", "model": "saleorder",
-                                                   "id": 123, "op": "updated",
-                                                   "actor_id": None, "ts": "..."}},
+            {
+                "type": "entity.changed",
+                "payload": {
+                    "event": "entity.changed",
+                    "app": "sales",
+                    "model": "saleorder",
+                    "id": 123,
+                    "op": "updated",
+                    "actor_id": None,
+                    "ts": "...",
+                },
+            },
         )
         assert await comm.receive_nothing(timeout=0.4) is True
         await comm.disconnect()
@@ -165,6 +185,7 @@ def test_unsubscribe_stops_delivery_to_that_topic():
 
 
 # ─── Validation ───────────────────────────────────────────────────────────────
+
 
 def test_malformed_topic_returns_invalid_topic_error():
     async def go():

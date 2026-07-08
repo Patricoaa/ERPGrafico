@@ -8,12 +8,21 @@ import Link from "next/link"
 import React from "react"
 
 type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
-type Variant = "default" | "compact" | "minimal"
+type Variant = "default" | "compact" | "minimal" | "fill" | "chart" | "metric-chart"
 type ValueSize = "sm" | "md" | "lg" | "xl"
+
+export interface StatCardChart {
+  type: "bar-chart" | "pie-chart" | "line-chart"
+  data: unknown
+  keys?: string[]
+  indexBy?: string
+  colors?: unknown
+  compact?: boolean
+}
 
 interface StatCardProps {
   label: string
-  value: React.ReactNode
+  value?: React.ReactNode
   icon?: LucideIcon
   subtext?: string
   trend?: { direction: "up" | "down"; value: string; label?: string }
@@ -24,19 +33,10 @@ interface StatCardProps {
   onClick?: () => void
   active?: boolean
   loading?: boolean
+  chart?: React.ReactNode
   children?: React.ReactNode
   className?: string
 }
-
-const accentBorder = {
-  primary: "border-l-primary",
-  info: "border-l-info",
-  success: "border-l-success",
-  warning: "border-l-warning",
-  destructive: "border-l-destructive",
-  accent: "border-l-accent",
-  muted: "border-l-muted",
-} as const
 
 const accentBg = {
   primary: "bg-primary/5 border-primary/10",
@@ -96,6 +96,7 @@ export function StatCard({
   valueSize = "lg",
   href,
   onClick,
+  chart,
   active = false,
   loading = false,
   children,
@@ -106,7 +107,7 @@ export function StatCard({
 
   if (loading) {
     return (
-      <div className={cn("rounded-lg border p-4 space-y-3 bg-card", className)} role="status" aria-label="Cargando">
+      <div className={cn("rounded-md border p-4 space-y-3 bg-card", className)} role="status" aria-label="Cargando">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-8 w-1/2" />
         <Skeleton className="h-3 w-3/4" />
@@ -114,23 +115,44 @@ export function StatCard({
     )
   }
 
-  const wrapperClass =
-    variant === "minimal"
-      ? cn(
-          "rounded-lg p-3",
-          accentBg[accent],
-          active && activeRing[accent],
-          href && "block",
-          className,
-        )
-      : undefined
+  const baseCardClasses =
+    "rounded-md border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0"
 
-  const Container = variant === "minimal" ? "div" : Card
+  const Container = variant === "minimal" || variant === "fill" ? "div" : Card
+
+  const isInteractive = !!(onClick || href)
+
+  const interactiveClasses = isInteractive
+    ? variant === "minimal" || variant === "fill"
+        ? "card-base cursor-pointer hover:brightness-95 dark:hover:brightness-125"
+        : "card-base cursor-pointer"
+    : ""
 
   const containerProps =
     variant === "minimal"
       ? {
-          className: wrapperClass,
+          className: cn(
+            baseCardClasses,
+            "p-3 rounded-md",
+            accentBg[accent],
+            interactiveClasses,
+            active && activeRing[accent],
+            className,
+          ),
+          onClick,
+          role: onClick ? "button" as const : undefined,
+          tabIndex: onClick ? 0 : undefined,
+          onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
+        }
+      : variant === "fill"
+      ? {
+          className: cn(
+            baseCardClasses,
+            accentBg[accent],
+            interactiveClasses,
+            active && activeRing[accent],
+            className,
+          ),
           onClick,
           role: onClick ? "button" as const : undefined,
           tabIndex: onClick ? 0 : undefined,
@@ -138,11 +160,10 @@ export function StatCard({
         }
       : {
           className: cn(
-            "shadow-sm transition-shadow",
-            variant === "default" && cn(accentBorder[accent], "border-l-4"),
-            variant === "compact" && cn("border", accentBg[accent]),
-            variant === "default" && !accent.startsWith("muted") && "hover:shadow-md",
-            onClick && "cursor-pointer hover:border-primary/20",
+            baseCardClasses,
+            variant === "default" && "gap-0 py-3",
+            variant === "compact" && accentBg[accent],
+            interactiveClasses,
             active && activeRing[accent],
             className,
           ),
@@ -175,7 +196,7 @@ export function StatCard({
       <div
         className={cn(
           valueSizeMap[valueSize],
-          "font-black font-heading tracking-tighter",
+          "font-black  tracking-tighter",
           variant === "minimal" ? accentText[accent] : "text-foreground",
         )}
       >
@@ -213,6 +234,7 @@ export function StatCard({
         </p>
         {renderValue()}
         {renderSubtext()}
+        {chart && <div className="mt-2">{chart}</div>}
         {children}
       </>
     )
@@ -220,26 +242,93 @@ export function StatCard({
     inner = (
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             {label}
           </p>
           {renderArrowIcon()}
         </div>
         {renderValue()}
         {renderSubtext()}
+        {chart && <div className="mt-2 h-20">{chart}</div>}
         {children}
       </CardContent>
+    )
+  } else if (variant === "fill") {
+    inner = (
+      <CardContent className="flex-1 flex flex-col items-center justify-center gap-2 p-5">
+        {Icon && (
+          <div className={cn("p-3 rounded-full border-2", accentIconBg[accent])}>
+            <Icon className="h-6 w-6" />
+          </div>
+        )}
+        <div className={cn(valueSizeMap[valueSize], "font-black  tracking-tighter text-center")}>
+          {value}
+        </div>
+        <p className="text-xs font-bold text-muted-foreground text-center leading-tight">
+          {label}
+        </p>
+        {renderSubtext()}
+        {chart && <div className="flex-1 min-h-0 w-full mt-2">{chart}</div>}
+        {children}
+      </CardContent>
+    )
+  } else if (variant === "chart") {
+    const TrendIcon = trendIcon
+    inner = (
+      <>
+        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0">
+          <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            {label}
+          </CardTitle>
+          {trend && (
+            <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
+              <TrendIcon className="h-3 w-3" />
+              <span>{trend.value}</span>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+          {chart}
+        </CardContent>
+      </>
+    )
+  } else if (variant === "metric-chart") {
+    const TrendIcon = trendIcon
+    inner = (
+      <>
+        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0 gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={cn("font-black  tracking-tighter shrink-0", valueSizeMap[valueSize])}>
+              {value}
+            </span>
+            <span className="text-xs font-bold text-muted-foreground truncate">
+              {label}
+            </span>
+          </div>
+          {trend && (
+            <div className={cn("flex items-center gap-1 text-xs font-bold shrink-0", trendColor)}>
+              <TrendIcon className="h-3 w-3" />
+              <span>{trend.value}</span>
+              {trend.label && <span className="text-muted-foreground font-normal">{trend.label}</span>}
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+          {chart}
+        </CardContent>
+      </>
     )
   } else {
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
           <CardTitle className="text-sm font-medium">{label}</CardTitle>
           {renderArrowIcon()}
         </CardHeader>
-        <CardContent>
+        <CardContent className="py-0">
           {renderValue()}
           {renderSubtext()}
+          {chart && <div className="mt-2 h-20">{chart}</div>}
           {children}
         </CardContent>
       </>

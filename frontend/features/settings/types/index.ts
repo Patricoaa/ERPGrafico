@@ -47,6 +47,7 @@ export interface TreasurySettings {
     rounding_adjustment_account: string | null
     error_adjustment_account: string | null
     miscellaneous_adjustment_account: string | null
+    tax_withholding_account: string | null
     // POS Session Difference accounts
     pos_cash_difference_gain_account: string | null
     pos_cash_difference_loss_account: string | null
@@ -115,7 +116,6 @@ export interface InventorySettings {
     // Adjustment accounts
     adjustment_income_account: string | null
     adjustment_expense_account: string | null
-    initial_inventory_account: string | null
     revaluation_account: string | null
     // COGS accounts
     merchandise_cogs_account: string | null
@@ -126,6 +126,13 @@ export interface InventorySettings {
 
 export type InventorySettingsUpdatePayload = Partial<InventorySettings>
  
+ // HR / Payroll Default Accounts
+ export interface HRSettings {
+     account_remuneraciones_por_pagar: string | null
+     account_previred_por_pagar: string | null
+     account_anticipos: string | null
+ }
+
  // Partner Equity Settings
  export interface PartnerSettings {
      // Account Mappings (Equity)
@@ -158,7 +165,7 @@ export type InventorySettingsUpdatePayload = Partial<InventorySettings>
  export type PartnerSettingsUpdatePayload = Partial<PartnerSettings>
  
  // Combined settings type
- export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings & PartnerSettings
+ export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings & PartnerSettings & HRSettings
  export type AccountingSettingsUpdatePayload = Partial<AccountingSettings>
 
 // Company Settings

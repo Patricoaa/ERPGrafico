@@ -27,11 +27,11 @@ related_adrs:
 | Surface | Renderer | Action registry |
 |---------|----------|-----------------|
 | Table row (DataTable) | `createActionsColumn<T>` + `DataCell.Action` / `DataCell.ActionMenu` | `ROW_ACTIONS` |
-| Card grid (EntityCard) | `CardActions` slot inside `<EntityCard.Footer>` | `ROW_ACTIONS` |
+| Card grid (EntityCard) | `actions` prop on `<EntityCard>` (top-right corner) | `ROW_ACTIONS` |
 | Kanban card | `CardActions` slot inside the card body | `ROW_ACTIONS` |
 
 All three surfaces share the **same registry, the same icons, the same tooltips and the same
-canonical order.** The only difference is the *renderer wrapper* (column factory vs. footer slot).
+canonical order.** The only difference is the *renderer wrapper* (column factory vs. card actions prop).
 
 > Never hand-roll an icon button for a CRUD action. If the action is in `ROW_ACTIONS`, use
 > `DataCell.Action action="<key>"` or `<CardActions.Item action="<key>">`. If the action is
@@ -61,7 +61,8 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 | `restore` | `ArchiveRestore` | "Restaurar" | write | reverse archive |
 | `lock` | `Lock` | "Bloquear" | write | toggle lock |
 | `unlock` | `Unlock` | "Desbloquear" | write | toggle lock |
-| `annul` | `Ban` | "Anular" | destructive | open `ActionConfirmModal variant="destructive"` — **transactional docs** (invoice, order, payment); preserves the record for audit — added in ADR-0023 |
+| `cancel` | `Trash2` | "Cancelar" | destructive | open `ActionConfirmModal variant="destructive"` — **DRAFT transactional docs**; no reversals, marks status=CANCELLED, deletes JE if DRAFT |
+| `annul` | `Ban` | "Anular" | destructive | open `ActionConfirmModal variant="destructive"` — **POSTED/PAID transactional docs** (invoice, order, payment); preserves the record for audit, creates reversal entries — added in ADR-0023 |
 | `delete` | `Trash2` | "Eliminar" | destructive | open `ActionConfirmModal variant="destructive"` — **masters / config** (category, warehouse); removes the record |
 
 Any addition to the registry **requires an ADR** (governance: changing a contract).
@@ -94,20 +95,20 @@ left → right or top → bottom in cards):
 
 ```
 detail → hub → edit → duplicate → pay → deliver → receive →
-  download → print → share → archive → restore → lock / unlock → annul → delete
+  download → print → share → archive → restore → lock / unlock → cancel → annul → delete
 ```
 
-`annul` and `delete` are **always last**, in that order. `edit` is the visual anchor — if
+`cancel`, `annul` and `delete` are **always last**, in that order. `edit` is the visual anchor — if
 present, it should be the first *write* action. Read actions (`detail`, `hub`) come
 before any write action. Transactional workflow verbs (`pay`, `deliver`, `receive`) sit between
 `duplicate` and the read-only export block (`download`/`print`/`share`).
 
-**`annul` vs `delete` — when to use which:**
+**`cancel` vs `annul` vs `delete` — when to use which:**
 
-| Use `annul` for | Use `delete` for |
-|-----------------|------------------|
-| Transactional documents that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) |
-| Backend keeps the row and flips `status`/`voided_at` | Backend hard-deletes (or soft-deletes via `deleted_at`) |
+| Use `cancel` for | Use `annul` for | Use `delete` for |
+|------------------|-----------------|------------------|
+| DRAFT transactional docs where the entire document tree is DRAFT — no reversals needed | Posted/confirmed transactional docs that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) |
+| Backend marks `status=CANCELLED`, deletes DRAFT Journal Entries (no reversal) | Backend creates reversal entries (JE REVERSAL, StockMove reversal) | Backend hard-deletes (or soft-deletes via `deleted_at`) |
 
 Both are destructive — both MUST open `ActionConfirmModal` with `variant="destructive"`.
 
@@ -169,30 +170,49 @@ const columns = [
 - The legacy form `DataCell.Action icon={Pencil} title="Editar"` remains supported for
   module-specific actions only.
 
-### 5.2 Card / Kanban — `CardActions`
+### 5.2 Card / Kanban — `actions` prop + `CardActions`
+
+Actions are passed via the **`actions` prop** on `<EntityCard>`, which renders them in the
+top-right corner (absolute positioned) with `stopPropagation` so they never trigger the card's
+`onClick`. Use `createEntityActions().render(item, ctx)` (recommended) or hand-rolled `CardActions`.
 
 ```tsx
 import { EntityCard, CardActions } from "@/components/shared"
+import { myActions } from "./myActions"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
-const { openSelected, openHub } = useEntityRouteActions()
+const { openSelected } = useEntityRouteActions()
 
-<EntityCard onClick={() => openSelected(item.id)}>
+const ctx: MyActionsCtx = {
+  onEdit: (id) => openSelected(id),
+  onDelete: (id) => confirmDelete(id),
+}
+
+<EntityCard onClick={() => openSelected(item.id)} actions={myActions.render(item, ctx)}>
   <EntityCard.Header title={item.name} />
   <EntityCard.Body>…</EntityCard.Body>
-  <EntityCard.Footer>
-    <CardActions>
-      <CardActions.Item action="hub"  onClick={() => openHub(item.id)} />
-      <CardActions.Item action="edit" onClick={() => openSelected(item.id)} />
-      <CardActions.Menu
-        items={[
-          { action: "duplicate", onClick: () => duplicate(item) },
-          { separator: true },
-          { action: "delete",    onClick: () => confirmDelete(item) },
-        ]}
-      />
-    </CardActions>
-  </EntityCard.Footer>
+</EntityCard>
+```
+
+For custom action layouts that differ from the shared entity-actions file (e.g. module-specific
+actions), use hand-rolled `CardActions` children:
+
+```tsx
+<EntityCard onClick={() => openSelected(item.id)} actions={
+  <CardActions orientation="horizontal">
+    <CardActions.Item action="hub" onClick={() => openHub(item.id)} />
+    <CardActions.Item action="edit" onClick={() => openSelected(item.id)} />
+    <CardActions.Menu
+      items={[
+        { action: "duplicate", onClick: () => duplicate(item) },
+        { separator: true },
+        { action: "delete", onClick: () => confirmDelete(item) },
+      ]}
+    />
+  </CardActions>
+}>
+  <EntityCard.Header title={item.name} />
+  <EntityCard.Body>…</EntityCard.Body>
 </EntityCard>
 ```
 
@@ -216,6 +236,26 @@ three while preserving every other param (filters, pagination, viewMode, etc).
 > Do not use `?view=` as a param — it is **reserved** for the table/card viewMode switch
 > (see `useViewMode`).
 
+### 5.4 Card `onClick` — navigation convention
+
+The `<EntityCard>` component accepts an `onClick` prop that, when present, makes the card
+keyboard-accessible (`role="button"`, `tabIndex={0}`, `cursor-pointer`).
+
+**Convention:** `onClick` navigates to `?selected={id}` (ADR-0020) to open the entity's edit
+drawer. This is the predominant pattern (~64% of clickable cards).
+
+```tsx
+<EntityCard onClick={() => openSelected(item.id)} actions={myActions.render(item, ctx)}>
+  ...
+</EntityCard>
+```
+
+The `actions` prop container calls `stopPropagation()` on click, so action buttons never trigger
+the card's `onClick`.
+
+Exceptions exist for entities where card-click has a different meaning (e.g. opening a wizard,
+setting local modal state). These are evaluated case-by-case.
+
 ---
 
 ## 6. Anti-patterns
@@ -225,6 +265,7 @@ three while preserving every other param (filters, pagination, viewMode, etc).
 | Hand-rolled `<Button variant="ghost"><Pencil /></Button>` in a table row | `DataCell.Action action="edit"` |
 | `DataCell.Action icon={Edit2} title="Editar"` | `DataCell.Action action="edit"` — registry icon is `Pencil` |
 | Popover + custom button list for >2 row actions | `DataCell.ActionMenu items={[…]}` |
+| Card with actions in `EntityCard.Footer` instead of the `actions` prop | Prop `actions` on `<EntityCard>` (top-right corner) — Footer is for metadata, not CRUD actions |
 | Card with a single hidden `Pencil` reachable only on hover | Explicit `CardActions` row with at minimum `edit` + `delete` visible |
 | `delete` placed before `edit` | Canonical order: `delete` always last |
 | `?id=42` / `?edit=42` / `?modal=42` to open the edit modal | `?selected=42` (ADR-0020) |

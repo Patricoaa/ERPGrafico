@@ -82,7 +82,7 @@ it('shows empty state when no orders', () => {
 |------|-------|
 | `test_models.py` | Model invariants, constraints, signals |
 | `test_services.py` | Business rules, transactions, atomicity |
-| `test_services.py` | Business rules, query correctness via service functions |
+| `test_selectors.py` | Selector query optimization, N+1 prevention |
 | `test_views.py` | HTTP contract: status codes, auth, permission, validation |
 | `test_tasks.py` | Idempotency, retry behavior |
 | `test_permissions.py` | Role matrix |

@@ -41,13 +41,13 @@ export function useTreasuryAccounts(options: UseTreasuryAccountsOptions) {
 
             if (context === 'POS') {
                 const endpoint = `/treasury/pos-terminals/${terminalId}/available_accounts/`
-                const params: any = paymentMethod ? { payment_method: paymentMethod } : {}
+                const params: Record<string, unknown> = paymentMethod ? { payment_method: paymentMethod } : {}
                 if (excludeId) params.exclude_id = excludeId
 
                 const res = await api.get(endpoint, { params, signal })
                 fetchedAccounts = res.data
             } else {
-                const params: any = {}
+                const params: Record<string, unknown> = {}
                 if (excludeId) params.exclude_id = excludeId
 
                 const res = await api.get('/treasury/accounts/', { params, signal })
@@ -77,7 +77,7 @@ export function useTreasuryAccounts(options: UseTreasuryAccountsOptions) {
     return {
         accounts: query.data ?? [],
         loading: query.isLoading,
-        error: query.error ? (query.error as any).message || 'Error al cargar cuentas de tesorería' : null,
+        error: query.error ? (query.error instanceof Error ? query.error.message : 'Error al cargar cuentas de tesorería') : null,
         refetch: query.refetch,
     }
 }

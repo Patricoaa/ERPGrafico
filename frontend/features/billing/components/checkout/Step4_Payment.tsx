@@ -1,7 +1,8 @@
 "use client"
 
 import { CheckCircle2 } from "lucide-react"
-import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
+import { StepHeader } from "@/components/shared"
 import { useEffect } from "react"
 
 interface Step4_PaymentProps {
@@ -39,15 +40,16 @@ export function Step4_Payment({
     // Credit Note -> Purchases
 
     const operation = !isCreditNote ? 'sales' : 'purchases'
-    const d = data as any
+    const d = data as unknown as { method: string; amount: number; treasury_account_id: string | null; is_pending: boolean }
+
+    // Map internal snake_case data to PaymentData (camelCase)
 
     // Map internal snake_case data to PaymentData (camelCase)
     const paymentData: PaymentData = {
-        method: d.method,
+        method: d.method as PaymentData['method'],
         amount: d.amount,
         treasuryAccountId: d.treasury_account_id || null,
-        paymentMethodId: null, // Not strictly used by logic but part of type
-        transactionNumber: d.transaction_number,
+        paymentMethodId: null,
         isPending: d.is_pending
     }
 
@@ -57,7 +59,6 @@ export function Step4_Payment({
             method: newData.method,
             amount: newData.amount,
             treasury_account_id: newData.treasuryAccountId,
-            transaction_number: newData.transactionNumber,
             is_pending: newData.isPending
         })
     }
@@ -78,24 +79,19 @@ export function Step4_Payment({
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col gap-1">
-                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3 text-xl">
-                    <CheckCircle2 className="h-6 w-6 text-primary" />
-                    {isCreditNote ? 'Método de Devolución' : 'Método de Cobro'}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    {isCreditNote
-                        ? 'Indique cómo se realizará la devolución del dinero (o deje pendiente para saldo a favor).'
-                        : 'Seleccione cómo realizará el cobro de esta nota de débito.'}
-                </p>
-            </div>
+            <StepHeader 
+                title={isCreditNote ? 'Método de Devolución' : 'Método de Cobro'} 
+                description={isCreditNote
+                    ? 'Indique cómo se realizará la devolución del dinero (o deje pendiente para saldo a favor).'
+                    : 'Seleccione cómo realizará el cobro de esta nota de débito.'}
+                icon={CheckCircle2}
+            />
 
-            <PaymentMethodCardSelector
+            <PaymentMethodSelector
                 operation={operation}
                 total={total}
                 paymentData={paymentData}
                 onPaymentDataChange={handlePaymentDataChange}
-                compactMode={false}
                 allowCreditBalanceAccumulation={isCreditNote}
                 labels={{
                     totalLabel: "Total Documento",
