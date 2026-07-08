@@ -170,7 +170,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     axisBottom={{
                                                         tickSize: 0,
                                                         tickPadding: 10,
-                                                        format: (v: string) => format(parseDateOnly(v), 'MMM d', { locale: es }),
+                                                        format: (v: string) => format(parseDateOnly(v.split('T')[0]), 'MMM d', { locale: es }),
                                                     }}
                                                     axisLeft={{
                                                         tickSize: 0,
