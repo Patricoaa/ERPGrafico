@@ -246,7 +246,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         axisBottom={{
                                             tickSize: 0,
                                             tickPadding: 10,
-                                            format: (v: string) => format(parseDateOnly(v), 'MMM d'),
+                                            format: (v: string) => format(parseDateOnly(v.split('T')[0]), 'MMM d', { locale: es }),
                                         }}
                                         axisLeft={{
                                             tickSize: 0,

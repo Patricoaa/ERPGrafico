@@ -276,7 +276,7 @@ class ProductSelector:
             if h.sale_price != last_sale or h.cost_price != last_cost:
                 price_history.append(
                     {
-                        "date": h.history_date,
+                        "date": h.history_date.date().isoformat(),
                         "sale_price": float(h.sale_price),
                         "cost_price": float(h.cost_price),
                         "user": h.history_user.username if h.history_user else "System",
