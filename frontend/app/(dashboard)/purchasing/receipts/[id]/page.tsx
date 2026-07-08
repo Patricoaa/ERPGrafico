@@ -4,7 +4,7 @@ interface PageProps {
     params: Promise<{ id: string }>
 }
 
-export default async function SaleDeliveryDetailPage({ params }: PageProps) {
+export default async function PurchaseReceiptDetailPage({ params }: PageProps) {
     const { id } = await params
-    redirect(`/sales/deliveries?selected=${id}`)
+    redirect(`/purchasing/receipts?selected=${id}`)
 }

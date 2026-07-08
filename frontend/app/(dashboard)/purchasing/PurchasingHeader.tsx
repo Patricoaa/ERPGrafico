@@ -17,6 +17,7 @@ export function PurchasingHeader() {
 
     const tabs = [
         { value: "orders", label: "Órdenes", iconName: getEntityIconName('purchasing.purchaseorder'), href: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders") },
+        { value: "receipts", label: "Recepciones", iconName: getEntityIconName('purchasing.purchasereceipt'), href: "/purchasing/receipts" },
         { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: getViewModeUrl('billing.invoice', "/purchasing/notes") },
     ]
 
@@ -30,6 +31,7 @@ export function PurchasingHeader() {
 
     const getHeaderConfig = () => {
         if (activeValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de notas de crédito y débito de proveedores", iconName: "file-text" as const }
+        if (activeValue === 'receipts') return { title: "Recepciones de Compra", description: "Historial de ingresos de mercadería por compras y notas de débito", iconName: getEntityIconName('purchasing.purchasereceipt') ?? "package-check" as const }
         return { title: "Órdenes de Compra", description: "Gestión integral de órdenes de compra y recepciones", iconName: getEntityIconName('purchasing.purchaseorder') ?? "shopping-bag" }
     }
 

@@ -149,3 +149,15 @@ class PurchaseOrderSelector:
             })
 
         return docs
+
+
+class PurchaseReceiptSelector:
+    @staticmethod
+    def get_base_queryset():
+        from .models import PurchaseReceipt
+
+        return PurchaseReceipt.objects.select_related(
+            "purchase_order__supplier", "warehouse", "related_note"
+        ).prefetch_related(
+            "lines__product", "lines__uom"
+        ).all()

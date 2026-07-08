@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -14,8 +14,9 @@ from rest_framework.response import Response
 from core.api.search import DistinctSearchFilter
 from core.mixins import AuditHistoryMixin, NoDestroyModelMixin
 
+from .filters import SaleDeliveryFilter
 from .models import SaleDelivery, SaleOrder, SaleReturn, SalesSettings
-from .selectors import SaleOrderSelector
+from .selectors import SaleDeliverySelector, SaleOrderSelector
 from .serializers import (
     CreateSaleOrderSerializer,
     SaleDeliverySerializer,
@@ -375,8 +376,17 @@ class SaleOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryM
 
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
-    queryset = SaleDelivery.objects.all()
     serializer_class = SaleDeliverySerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = SaleDeliveryFilter
+    search_fields = [
+        "number",
+        "sale_order__customer__name",
+        "sale_order__number",
+    ]
+
+    def get_queryset(self):
+        return SaleDeliverySelector.get_base_queryset()
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

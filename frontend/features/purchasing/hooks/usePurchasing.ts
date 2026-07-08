@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { purchasingApi } from '../api/purchasingApi'
 import type { PurchaseOrderAPI } from '../types'
 import { PURCHASING_KEYS } from './queryKeys'
+import { toPage } from '@/lib/pagination'
 import type { Page } from '@/lib/pagination'
 
 export { PURCHASING_KEYS }
@@ -99,9 +100,28 @@ export function usePurchasingOrder(id: number) {
     return { order, isLoading }
 }
 
+export function usePurchaseReceipts(filters?: Record<string, unknown>) {
+    const page = Number(filters?.page ?? 1)
+    const pageSize = Number(filters?.page_size ?? 50)
+    const query = useQuery({
+        queryKey: PURCHASING_KEYS.receipts({ page, page_size: pageSize, ...filters }),
+        queryFn: () => purchasingApi.getReceiptsPaginated({ page, page_size: pageSize, ...filters }),
+        staleTime: 2 * 60 * 1000,
+    })
+
+    return {
+        page: query.data,
+        receipts: query.data?.results ?? [],
+        totalCount: query.data?.count ?? 0,
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        refetch: query.refetch,
+    }
+}
+
 export function usePurchaseReceipt(id: number | null, enabled = true) {
     const { data: receipt, isLoading } = useQuery({
-        queryKey: [...PURCHASING_KEYS.all, 'receipt', id],
+        queryKey: PURCHASING_KEYS.receipt(id as number),
         queryFn: () => purchasingApi.getReceipt(id as number),
         staleTime: 2 * 60 * 1000,
         enabled: !!id && enabled,

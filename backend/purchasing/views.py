@@ -141,7 +141,8 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
     @action(detail=True, methods=["get"])
     def cancel_impact(self, request, pk=None):
         """Preview what will happen when cancelling this purchase order."""
-        from .selectors import PurchaseOrderSelector
+from .filters import PurchaseReceiptFilter
+from .selectors import PurchaseOrderSelector, PurchaseReceiptSelector
 
         impact = PurchaseOrderSelector.get_cancel_impact(self.get_object())
         return Response(impact)
@@ -249,14 +250,18 @@ class PurchaseOrderViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHist
 
 
 class PurchaseReceiptViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMixin):
-    def get_queryset(self):
-        return PurchaseReceipt.objects.select_related(
-            "purchase_order__supplier", "warehouse"
-        ).prefetch_related(
-            "lines__product"
-        ).all()
     serializer_class = PurchaseReceiptSerializer
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = PurchaseReceiptFilter
+    search_fields = [
+        "number",
+        "purchase_order__supplier__name",
+        "purchase_order__number",
+    ]
+
+    def get_queryset(self):
+        return PurchaseReceiptSelector.get_base_queryset()
 
     @action(detail=True, methods=["post"])
     def annul(self, request, pk=None):

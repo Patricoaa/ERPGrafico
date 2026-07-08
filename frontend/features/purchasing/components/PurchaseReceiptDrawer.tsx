@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef } from "react"
-import { Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
+import { Chip, Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { useDrawerIdentity } from "@/features/_shared"
@@ -108,8 +108,18 @@ export function PurchaseReceiptDrawer({ receiptId, id, open, onOpenChange }: Pur
                     (() => {
                         const r = receipt as Record<string, unknown>
                         const lines = r.lines as Array<Record<string, unknown>> | undefined
+                        const receiptType = r.receipt_type as string | undefined
+                        const relatedNote = r.related_note_display as string | undefined
                         return (
                             <div className="p-4 space-y-4">
+                                {receiptType === 'debit_note' && (
+                                    <div className="flex items-center gap-2">
+                                        <Chip intent="warning" size="sm">Nota Débito</Chip>
+                                        {relatedNote && (
+                                            <span className="text-sm text-muted-foreground">ND: {relatedNote}</span>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span className="text-muted-foreground">Número</span>
