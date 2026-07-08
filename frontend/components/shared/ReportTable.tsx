@@ -75,8 +75,9 @@ const ReportRow = ({
                     <div className="flex items-center gap-2" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {(hasChildren || mode === 'flat') && (
                             <Button 
+                                variant="ghost"
                                 onClick={() => mode === 'tree' && setExpanded(!expanded)} 
-                                className={cn("flex-shrink-0", !hasChildren && mode === 'flat' && "cursor-default opacity-50")}
+                                className={cn("flex-shrink-0 h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", !hasChildren && mode === 'flat' && "cursor-default opacity-50")}
                                 disabled={!hasChildren}
                             >
                                 <RowIcon isExpanded={expanded} hasChildren={!!hasChildren} level={level} />

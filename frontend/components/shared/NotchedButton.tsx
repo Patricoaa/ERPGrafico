@@ -35,10 +35,11 @@ export const NotchedButton = forwardRef<HTMLButtonElement, NotchedButtonProps>(
                     </legend>
                 )}
                 <Button
+                    variant="ghost"
                     ref={ref}
                     type="button"
                     disabled={disabled}
-                    className="flex items-center justify-center w-full h-full cursor-inherit"
+                    className="flex items-center justify-center w-full h-full cursor-inherit bg-transparent hover:bg-transparent border-none shadow-none"
                     {...props}
                 >
                     {children}

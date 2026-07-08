@@ -134,8 +134,9 @@ function ProductGridComponent({
                             {/* Left side Favorite Badge */}
                             {onToggleFavorite && (
                                 <Button
+                                    variant="ghost"
                                     className={cn(
-                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all",
+                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
                                         product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
                                     )}
                                     onClick={(e) => {
