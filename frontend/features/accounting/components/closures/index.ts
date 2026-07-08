@@ -1,2 +1,3 @@
-export * from './AccountingClosuresView';
+export * from './AccountingClosuresClientView';
 export * from './ClosuresSkeleton';
+export * from './AccountingPeriodCloseChecklist';

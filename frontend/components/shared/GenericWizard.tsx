@@ -1,7 +1,8 @@
 "use client"
 
 import React from "react"
-import { BaseModal, BaseModalProps } from "./BaseModal"
+import { BaseModal, type BaseModalProps } from "./BaseModal"
+import { Drawer } from "./Drawer"
 import { ActionSlideButton } from "./ActionSlideButton"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
@@ -30,12 +31,17 @@ export interface GenericWizardProps extends Omit<BaseModalProps, "children" | "t
     successContent?: React.ReactNode
     /** Optional footer-left element (e.g. "Suspender" button) */
     footerLeft?: React.ReactNode
+    
+    /** Surface layout. Default: "modal" */
+    surface?: "modal" | "drawer"
+    drawerSide?: "top" | "right" | "bottom" | "left"
+    drawerBoundary?: "screen" | "embedded"
 }
 
 /**
  * GenericWizard
  *
- * Industrial-themed multi-step wizard built on BaseModal.
+ * Industrial-themed multi-step wizard built on BaseModal or Drawer.
  * Uses ActionSlideButton for primary navigation (matching the kinetic interaction contract).
  * Includes a monospaced industrial step counter for prepress-style progress indication.
  */
@@ -48,16 +54,29 @@ export function GenericWizard({
     onClose,
     initialStep = 0,
     completeButtonLabel = "Finalizar",
+    completeButtonIcon,
     isCompleting = false,
     isLoading = false,
     successContent,
     footerLeft,
     size = "md",
+    surface = "modal",
+    drawerSide = "right",
+    drawerBoundary = "embedded",
     ...props
 }: GenericWizardProps) {
     const [currentStep, setCurrentStep] = React.useState(initialStep)
     const [isStepTransitioning, startTransition] = React.useTransition()
     const [isFinished, setIsFinished] = React.useState(false)
+    const prevOpen = React.useRef(open)
+
+    // Reset step when modal opens (transitions false → true)
+    React.useEffect(() => {
+        if (open && !prevOpen.current) {
+            requestAnimationFrame(() => setCurrentStep(initialStep))
+        }
+        prevOpen.current = open
+    }, [open, initialStep])
 
     // Sync internal state with prop to allow external navigation jumps
     React.useEffect(() => {
@@ -99,7 +118,7 @@ export function GenericWizard({
             <span className="font-mono font-black text-xs text-primary tracking-wider">
                 {String(currentStep + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
             </span>
-            <span className="text-[10px] font-heading font-black uppercase tracking-wider text-muted-foreground">
+            <span className="text-[10px]  font-black uppercase tracking-wider text-muted-foreground">
                 {currentStepData.title}
             </span>
         </div>
@@ -130,7 +149,7 @@ export function GenericWizard({
                         onClick={() => startTransition(handleNext)}
                         disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
                         loading={isCompleting || isStepTransitioning}
-                        icon={isCompleting || isStepTransitioning ? undefined : CheckCircle2}
+                        icon={isCompleting || isStepTransitioning ? undefined : (completeButtonIcon ?? CheckCircle2)}
                     >
                         {completeButtonLabel}
                     </ActionSlideButton>
@@ -149,7 +168,45 @@ export function GenericWizard({
         </div>
     )
 
+    const sizeMap: Record<string, string> = {
+        sm: "400px",
+        md: "600px",
+        lg: "800px",
+        xl: "1000px",
+        full: "100%"
+    }
+
+    const drawerSize = sizeMap[size as string] || "600px"
+
     if (isFinished && successContent) {
+        if (surface === "drawer") {
+            return (
+                <Drawer
+                    open={open}
+                    onOpenChange={(val) => {
+                        if (!val) onClose?.()
+                        onOpenChange(val)
+                    }}
+                    title={title}
+                    side={drawerSide}
+                    boundary={drawerBoundary}
+                    defaultSize={drawerSize}
+                    contentClassName="p-6"
+                    {...props}
+                >
+                    <div className="py-8">
+                        {successContent}
+                    </div>
+                    <div className="mt-6 flex justify-end">
+                        <Button onClick={() => {
+                            onClose?.()
+                            onOpenChange(false)
+                        }}>Cerrar</Button>
+                    </div>
+                </Drawer>
+            )
+        }
+
         return (
             <BaseModal
                 open={open}
@@ -175,6 +232,43 @@ export function GenericWizard({
         )
     }
 
+    const contentWrapper = (
+        <div className={cn(
+            "animate-in fade-in slide-in-from-right-4 duration-300 px-1 py-1",
+            (isStepTransitioning || isLoading) && "opacity-50 pointer-events-none"
+        )}>
+            {isLoading ? (
+                <div className="py-20">
+                    <LoadingFallback message="Cargando datos del asistente..." />
+                </div>
+            ) : (
+                currentStepData.component
+            )}
+        </div>
+    )
+
+    if (surface === "drawer") {
+        return (
+            <Drawer
+                open={open}
+                onOpenChange={(val) => {
+                    if (!val) onClose?.()
+                    onOpenChange(val)
+                }}
+                title={title}
+                subtitle={stepDescription}
+                side={drawerSide}
+                boundary={drawerBoundary}
+                defaultSize={drawerSize}
+                footer={footer}
+                contentClassName="p-6"
+                {...props}
+            >
+                {contentWrapper}
+            </Drawer>
+        )
+    }
+
     return (
         <BaseModal
             open={open}
@@ -189,18 +283,7 @@ export function GenericWizard({
             footer={footer}
             {...props}
         >
-            <div className={cn(
-                "animate-in fade-in slide-in-from-right-4 duration-300",
-                (isStepTransitioning || isLoading) && "opacity-50 pointer-events-none"
-            )}>
-                {isLoading ? (
-                    <div className="py-20">
-                        <LoadingFallback message="Cargando datos del asistente..." />
-                    </div>
-                ) : (
-                    currentStepData.component
-                )}
-            </div>
+            {contentWrapper}
         </BaseModal>
     )
 }

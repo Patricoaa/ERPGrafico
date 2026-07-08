@@ -6,79 +6,97 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0007_accountingsettings_billing_model'),
-        ('billing', '0007_alter_historicalinvoice_dte_type_and_more'),
-        ('treasury', '0003_migrate_payment_methods_to_providers'),
+        ("accounting", "0007_accountingsettings_billing_model"),
+        ("billing", "0007_alter_historicalinvoice_dte_type_and_more"),
+        ("treasury", "0003_migrate_payment_methods_to_providers"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='terminalbatch',
-            name='treasury_te_payment_89882a_idx',
+            model_name="terminalbatch",
+            name="treasury_te_payment_89882a_idx",
         ),
         migrations.RemoveIndex(
-            model_name='terminalbatch',
-            name='treasury_te_supplie_83b6db_idx',
+            model_name="terminalbatch",
+            name="treasury_te_supplie_83b6db_idx",
         ),
         migrations.RemoveField(
-            model_name='historicalpaymentmethod',
-            name='commission_expense_account',
+            model_name="historicalpaymentmethod",
+            name="commission_expense_account",
         ),
         migrations.RemoveField(
-            model_name='historicalpaymentmethod',
-            name='commission_product',
+            model_name="historicalpaymentmethod",
+            name="commission_product",
         ),
         migrations.RemoveField(
-            model_name='historicalpaymentmethod',
-            name='supplier',
+            model_name="historicalpaymentmethod",
+            name="supplier",
         ),
         migrations.RemoveField(
-            model_name='historicalpaymentmethod',
-            name='terminal_receivable_account',
+            model_name="historicalpaymentmethod",
+            name="terminal_receivable_account",
         ),
         migrations.RemoveField(
-            model_name='historicalterminalbatch',
-            name='supplier',
+            model_name="historicalterminalbatch",
+            name="supplier",
         ),
         migrations.RemoveField(
-            model_name='paymentmethod',
-            name='commission_expense_account',
+            model_name="paymentmethod",
+            name="commission_expense_account",
         ),
         migrations.RemoveField(
-            model_name='paymentmethod',
-            name='commission_product',
+            model_name="paymentmethod",
+            name="commission_product",
         ),
         migrations.RemoveField(
-            model_name='paymentmethod',
-            name='supplier',
+            model_name="paymentmethod",
+            name="supplier",
         ),
         migrations.RemoveField(
-            model_name='paymentmethod',
-            name='terminal_receivable_account',
+            model_name="paymentmethod",
+            name="terminal_receivable_account",
         ),
         migrations.AlterUniqueTogether(
-            name='terminalbatch',
-            unique_together={('provider', 'sales_date', 'terminal_reference')},
+            name="terminalbatch",
+            unique_together={("provider", "sales_date", "terminal_reference")},
         ),
         migrations.AddField(
-            model_name='historicaltreasurymovement',
-            name='terminal_device',
-            field=models.ForeignKey(blank=True, db_constraint=False, help_text='Hardware usado para el cobro (si corresponde)', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='treasury.paymentterminaldevice', verbose_name='Dispositivo de Terminal'),
+            model_name="historicaltreasurymovement",
+            name="terminal_device",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                help_text="Hardware usado para el cobro (si corresponde)",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="treasury.paymentterminaldevice",
+                verbose_name="Dispositivo de Terminal",
+            ),
         ),
         migrations.AddField(
-            model_name='treasurymovement',
-            name='terminal_device',
-            field=models.ForeignKey(blank=True, help_text='Hardware usado para el cobro (si corresponde)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='movements', to='treasury.paymentterminaldevice', verbose_name='Dispositivo de Terminal'),
+            model_name="treasurymovement",
+            name="terminal_device",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Hardware usado para el cobro (si corresponde)",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="movements",
+                to="treasury.paymentterminaldevice",
+                verbose_name="Dispositivo de Terminal",
+            ),
         ),
         migrations.AddIndex(
-            model_name='terminalbatch',
-            index=models.Index(fields=['provider', 'sales_date'], name='treasury_te_provide_399366_idx'),
+            model_name="terminalbatch",
+            index=models.Index(
+                fields=["provider", "sales_date"], name="treasury_te_provide_399366_idx"
+            ),
         ),
         migrations.RemoveField(
-            model_name='terminalbatch',
-            name='supplier',
+            model_name="terminalbatch",
+            name="supplier",
         ),
     ]

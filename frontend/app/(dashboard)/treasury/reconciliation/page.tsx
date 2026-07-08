@@ -1,6 +1,6 @@
-import { Metadata } from "next"
-import { ToolbarCreateButton, FadeIn } from "@/components/shared"
-import { StatementsList } from "@/features/finance"
+import { type Metadata } from "next"
+import { PageSectionHeader, ToolbarCreateButton, FadeIn } from "@/components/shared"
+import { StatementsClientView } from "@/features/finance"
 
 export const metadata: Metadata = {
     title: "Conciliación Bancaria | ERPGrafico",
@@ -24,8 +24,10 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
     )
 
     return (
-        <FadeIn>
-            <StatementsList externalOpen={modalOpen} createAction={createAction} />
-        </FadeIn>
-    )
+        <>
+            <PageSectionHeader title="Conciliación Bancaria" description="Gestión de cartolas y cuadratura de movimientos" />
+            <FadeIn>
+                <StatementsClientView externalOpen={modalOpen} createAction={createAction} />
+            </FadeIn>
+        </>)
 }

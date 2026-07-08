@@ -52,6 +52,8 @@ useQuery({
 
 ### staleTime tiers
 
+The global default is **5 min** (configured in `lib/react-query.ts`). Every `useQuery` MUST declare `staleTime` when the value differs from the global default, or when the data category needs explicit documentation.
+
 | Data category | staleTime | Examples |
 |---|---|---|
 | Static master data | 60 min | UoMs, banks, payment methods |
@@ -61,6 +63,12 @@ useQuery({
 | Transactional | 2 min | Orders, invoices, journal entries, movements |
 | Reports / aggregates | 5 min | Trial balance, budgets, statements |
 | Real-time (POS) | 1 min | POS sessions |
+| Realtime-sensitive | 0 | Panel-bound detail queries (drawer/modal close → force refetch) |
+| Server date | 30 s | `useServerDate` — used for folios, fiscal periods, time-sensitive ops |
+
+- **Polling sync**: when a query uses `refetchInterval`, set `staleTime` to match the interval (or less) to avoid extra refetches between polls.
+- **WebSocket + staleTime**: entity-bus `invalidateQueries` bypasses staleTime. staleTime only applies between invalidations or on component remount.
+- **`useSelectedEntity`** uses `staleTime: 0 + gcTime: 0` intentionally (panel close → discard cache). Do not copy this pattern unless the same panel-lifecycle semantics are needed.
 
 ### Forbidden patterns
 
@@ -353,6 +361,32 @@ const { entity, isLoading, clearSelection } = useSelectedEntity<Category>({
 
 Ver contrato completo: [list-modal-edit-pattern.md §2.3](./list-modal-edit-pattern.md#23-hook-useselectedentity).
 
+### `useInitializeForm<TData, TForm>(opts)` 🟢
+
+Initializes a `react-hook-form` instance from server data using the "adjust state during render" pattern (ADR-0051). Replaces the `useEffect` + `initialized` flag boilerplate for settings panels and any form that receives async data.
+
+```ts
+import { useInitializeForm } from "@/hooks/useInitializeForm"
+
+useInitializeForm({
+    form,
+    data: settings,
+    mapData: (s) => ({
+        default_revenue_account: s.default_revenue_account?.toString() ?? null,
+    }),
+})
+```
+
+| Prop | Type | Notes |
+|------|------|-------|
+| `form` | `UseFormReturn<TForm>` | Instance from `useForm()` |
+| `data` | `TData \| undefined` | Server data; falsy = skip (loading state) |
+| `mapData` | `((data: TData) => Partial<TForm>)?` | Optional mapping from API shape to form shape |
+
+**Behavior**: On first render where `data` is truthy, calls `form.reset()` with the (mapped) values. A `useRef` guard prevents re-initialization on subsequent renders. Runs during render — no `useEffect`, no cascading `setState`.
+
+Ver contrato completo: [component-state-sync.md §Variante 2](./component-state-sync.md#4-variante-2-server-data--form-useinitializeform).
+
 ### `useAllowedPaymentMethods(opts)` 🟢
 
 ```ts
@@ -407,6 +441,7 @@ Este contrato se respalda con barreras automáticas en ESLint y `tsc`. No es opt
 | Regla | Configurada en | Cubre | Severidad |
 |---|---|---|---|
 | `fsd/no-api-in-component` (custom) | [frontend/eslint-rules/fsd-no-api-in-component.mjs](../../frontend/eslint-rules/fsd-no-api-in-component.mjs) | `import … from '@/lib/api'` en `features/*/components/**` (invariante #5) | `warn` (sube a `error` al llegar a 0 violaciones) |
+| `require-staletime` (custom) | [frontend/eslint-rules/](../../frontend/eslint-rules/) | `useQuery({…})` sin `staleTime` (invariante #9 del contrato) | `error` (crear e implementar) |
 | `no-restricted-imports` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `useQuery`/`useMutation`/`useSuspenseQuery` directos en `features/*/components/**` (invariante #4) | `error` |
 | `no-restricted-imports` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `@/features/*/{components,hooks,api,types}/*` — cross-feature sin barrel | `error` |
 | `boundaries/dependencies` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `@/lib/api` en `components/shared/**` y `components/ui/**` | `error` |
@@ -432,7 +467,8 @@ Estructura objetivo para una feature con mutaciones. Referencia ejecutable: [`fe
 ```
 features/<feature>/
 ├── api/
-│   └── <feature>Api.ts        ← funciones puras (list, get, create, update, delete)
+│   ├── <feature>Api.ts              ← funciones puras (list, get, create, update, delete)
+│   └── index.ts                     ← barrel: exporta funciones de API públicas
 ├── hooks/
 │   ├── queryKeys.ts            ← factory jerárquica
 │   ├── use<Entity>.ts          ← hook principal con useQuery + useMutation
@@ -442,7 +478,7 @@ features/<feature>/
 │   ├── <Entity>Form.tsx        ← consume hook
 │   └── <Entity>DetailClient.tsx ← consume hook
 ├── types.ts
-└── index.ts                    ← barrel: exporta hooks y componentes públicos
+└── index.ts                    ← barrel: exporta hooks, tipos y componentes públicos
 ```
 
 ### `queryKeys.ts` — esqueleto

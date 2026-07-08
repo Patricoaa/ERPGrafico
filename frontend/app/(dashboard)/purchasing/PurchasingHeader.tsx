@@ -1,37 +1,38 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function PurchasingHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
+    const { getViewModeUrl } = useViewModePreference()
     
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'orders'
     
-    const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
-    const subActiveValue = currentSegment === 'settings' ? (searchParams.get('tab') || 'global') : undefined
+    const activeValue = currentSegment === 'settings' ? 'orders' : currentSegment
+    const subActiveValue = undefined
 
     const tabs = [
-        { value: "orders", label: "Órdenes", iconName: "shopping-bag", href: "/purchasing/orders" },
-        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing/notes" },
-        { value: "config", label: "Configuración", iconName: "settings", href: "/purchasing/settings" },
+        { value: "orders", label: "Órdenes", iconName: getEntityIconName('purchasing.purchaseorder'), href: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders") },
+        { value: "receipts", label: "Recepciones", iconName: getEntityIconName('purchasing.purchasereceipt'), href: "/purchasing/receipts" },
+        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: getViewModeUrl('billing.invoice', "/purchasing/notes") },
     ]
 
     const navigation = {
         moduleName: "Compras",
-        moduleHref: "/purchasing/orders",
+        moduleHref: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders"),
         tabs,
         activeValue,
         subActiveValue,
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Compras", description: "Gestione las cuentas de gastos para diferentes tipos de compras.", iconName: "settings" as const }
         if (activeValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de notas de crédito y débito de proveedores", iconName: "file-text" as const }
-        return { title: "Órdenes de Compra", description: "Gestión integral de órdenes de compra y recepciones", iconName: getModuleIconName('purchasing') ?? "shopping-bag" }
+        if (activeValue === 'receipts') return { title: "Recepciones de Compra", description: "Historial de ingresos de mercadería por compras y notas de débito", iconName: getEntityIconName('purchasing.purchasereceipt') ?? "package-check" as const }
+        return { title: "Órdenes de Compra", description: "Gestión integral de órdenes de compra y recepciones", iconName: getEntityIconName('purchasing.purchaseorder') ?? "shopping-bag" }
     }
 
     const config = getHeaderConfig()

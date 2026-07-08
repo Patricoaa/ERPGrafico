@@ -1,8 +1,8 @@
 // Stock Calculator Utilities
 // Business logic for stock validation and limit calculation
 
-import type {Product, CartItem, BOM, UoM, BOMCache} from '@/types/pos'
-import api from '@/lib/api'
+import type {Product, CartItem, BOM, UoM, BOMCache} from '../types'
+import { posApi } from '../api/posApi'
 
 /**
  * Calculate Unit of Measurement conversion factor
@@ -39,7 +39,7 @@ export async function calculateConsumption(
     for (const item of cartItems) {
         if (ignoreItemId && item.cartItemId === ignoreItemId) continue
 
-        const itemRefUomId_base = (item as any).uom
+        const itemRefUomId_base = item.uom
         const productDef = products.find(p => p.id === item.id)
         const itemRefUomId = productDef ? productDef.uom : itemRefUomId_base
 
@@ -47,7 +47,7 @@ export async function calculateConsumption(
         const qtyRef = item.qty * itemFactor
 
         const isManufacturable = (item.product_type === 'MANUFACTURABLE' || item.requires_advanced_manufacturing)
-        const hasBom = item.has_bom || (item as any).has_active_bom
+        const hasBom = item.has_bom || item.has_active_bom
 
         if (isManufacturable && hasBom) {
             let bom = bomCache[item.id]
@@ -83,7 +83,6 @@ export async function calculateMaxQty(
     bomCache: BOMCache,
     fetchComponentData: (componentId: number) => Promise<{ stock: number, uom: number } | null>,
     calculateConsumption: (items: CartItem[], ignoreItemId?: string) => Promise<Record<number, number>>,
-    currentQty: number = 0,
     cartItemId?: string
 ): Promise<number> {
     const consumption = await calculateConsumption(items, cartItemId)
@@ -91,19 +90,17 @@ export async function calculateMaxQty(
     let maxQty = Infinity
 
     const isManufacturable = (product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing)
-    const hasBom = product.has_bom || (product as any).has_active_bom
+    const hasBom = product.has_bom || product.has_active_bom
 
     const productDef = products.find(p => p.id === product.id)
     if (!productDef && product.product_type === 'STORABLE') return Infinity
 
-    const itemUom = (product as any).uom
+    const itemUom = product.uom
     const defUom = productDef ? productDef.uom : itemUom
     const factorToRef = getConversionFactor(itemUom, defUom, uoms)
 
     if (product.product_type === 'STORABLE') {
-        const prod = product as any
-        const def = productDef as any
-        const availableStock = prod.qty_available ?? def?.qty_available ?? prod.current_stock ?? def?.current_stock ?? 0
+        const availableStock = product.qty_available ?? productDef?.qty_available ?? product.current_stock ?? productDef?.current_stock ?? 0
         const availableRef = availableStock - (consumption[product.id] || 0)
         maxQty = availableRef / factorToRef
     } else if (isManufacturable && hasBom) {
@@ -150,8 +147,7 @@ export async function validateStock(
             let name = prod?.name
             if (!name) {
                 try {
-                    const res = await api.get(`/inventory/products/${componentId}/`)
-                    name = res.data.name
+                    name = await posApi.getProductName(componentId)
                 } catch {
                     name = `Componente #${componentId}`
                 }

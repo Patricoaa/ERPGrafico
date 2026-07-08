@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, BookOpen, Printer } from "lucide-react"
+import { Plus, Printer } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import {
     Form,
     FormField,
@@ -12,13 +14,13 @@ import {
 import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
-import { AccountPayload } from "@/features/accounting/types"
+import { type AccountPayload } from "@/features/accounting"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { PrintableLayout } from "@/features/_shared"
 import { useReactToPrint } from "react-to-print"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -80,7 +82,7 @@ export function AccountDrawer({
             code: initialData?.code as string || "",
             name: initialData?.name as string || "",
             account_type: (initialData?.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE") || "ASSET",
-            parent: (typeof initialData?.parent === 'object' ? (initialData?.parent as any)?.id?.toString() : initialData?.parent?.toString()) || parentId || undefined,
+            parent: (typeof initialData?.parent === 'object' ? String((initialData.parent as Record<string, unknown>).id ?? '') : String(initialData?.parent ?? '')) || parentId || undefined,
         },
     })
 
@@ -102,7 +104,7 @@ export function AccountDrawer({
                     code: initialData.code as string,
                     name: initialData.name as string,
                     account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
-                    parent: (typeof initialData.parent === 'object' ? (initialData.parent as any)?.id?.toString() : initialData.parent?.toString()) || undefined,
+                    parent: (typeof initialData.parent === 'object' ? String((initialData.parent as Record<string, unknown>).id ?? '') : String(initialData.parent ?? '')) || undefined,
                 })
             } else {
                 form.reset({
@@ -120,10 +122,9 @@ export function AccountDrawer({
     useEffect(() => {
         if (!watchParentId || watchParentId === "__none__" || watchParentId === "none") return;
 
-        const parent = accounts.find((a: any) => a.id.toString() === watchParentId.toString());
+        const parent = accounts.find((a: Record<string, unknown>) => String(a.id) === watchParentId.toString());
         if (parent) {
-            // Force account_type to match parent
-            form.setValue("account_type", (parent as any).account_type);
+            form.setValue("account_type", parent.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE");
         }
     }, [watchParentId, accounts, form])
 
@@ -146,7 +147,7 @@ export function AccountDrawer({
             setOpen(false)
             if (onSuccess) onSuccess()
         } catch (error) {
-            console.error("Error saving account:", error)
+            showApiError(error, "Error al guardar la cuenta")
         }
     }
 
@@ -200,6 +201,7 @@ export function AccountDrawer({
                     render={({ field, fieldState }) => (
                         <LabeledSelect
                             label="Tipo de Cuenta"
+                            required
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
@@ -219,7 +221,7 @@ export function AccountDrawer({
                     name="parent"
                     render={({ field, fieldState }) => (
                         <AccountSelector
-                            label="Cuenta Padre (Opcional)"
+                            label="Cuenta Padre (opcional)"
                             value={field.value}
                             onChange={field.onChange}
                             showAll={true}
@@ -244,19 +246,16 @@ export function AccountDrawer({
         </FormSplitLayout>
     )
 
+    const identity = useDrawerIdentity('accounting.account', mode, initialData as Record<string, unknown> | undefined, {
+        overrideTitle: isViewMode ? `Ficha de Cuenta #${initialData?.id}` : undefined,
+        overrideSubtitle: isViewMode
+            ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
+            : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
+    })
+
     if (inline) {
         return <>{formContent}</>
     }
-
-    const drawerTitle = isViewMode
-        ? `Ficha de Cuenta #${initialData?.id}`
-        : mode === 'create'
-            ? "Nueva Cuenta Contable"
-            : "Editar Cuenta Contable"
-
-    const drawerSubtitle = isViewMode
-        ? `${(initialData as any)?.code || ""} • ${form.watch("name") || "Vista de detalle"}`
-        : `${(initialData as any)?.code || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`
 
     return (
         <>
@@ -265,20 +264,20 @@ export function AccountDrawer({
                 <PrintableLayout
                     ref={printRef}
                     title="Comprobante Contable"
-                    displayId={(initialData as any)?.code || `#${initialData.id}`}
+                    displayId={(initialData?.code as string) || `#${initialData.id}`}
                 >
                     <div className="text-[9px] space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
-                            <span>{(initialData as any)?.name ?? '-'}</span>
+                            <span>{(initialData?.name as string) ?? '-'}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Código:</span>
-                            <span>{(initialData as any)?.code ?? '-'}</span>
+                            <span>{(initialData?.code as string) ?? '-'}</span>
                         </div>
                         <div className="flex justify-between">
                             <span>Tipo:</span>
-                            <span>{(initialData as any)?.account_type ?? '-'}</span>
+                            <span>{(initialData?.account_type as string) ?? '-'}</span>
                         </div>
                     </div>
                 </PrintableLayout>
@@ -288,9 +287,10 @@ export function AccountDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                icon={BookOpen}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={drawerSubtitle}
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 mode={mode}
                 footer={isViewMode ? undefined : (
                     <FormFooter

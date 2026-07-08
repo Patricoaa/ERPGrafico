@@ -3,7 +3,7 @@ layer: 90-governance
 doc: pr-review-checklist
 status: active
 owner: core-team
-last_review: 2026-05-28
+last_review: 2026-06-25
 ---
 
 # PR Review Checklist
@@ -18,7 +18,7 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 
 ## Types and contracts
 
-- [ ] Zero `any` (see `zero-any-policy.md`).
+- [ ] Zero `any` (see [`zero-any-policy.md`](zero-any-policy.md)).
 - [ ] Zod schemas match backend serializers.
 - [ ] No contract (`docs/20-contracts/*`) changed without ADR.
 - [ ] API docs updated if endpoint added/changed.
@@ -48,7 +48,7 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 
 ## Tests
 
-- [ ] New code covered at thresholds in `testing.md`.
+- [ ] New code covered at thresholds in [`testing.md`](../40-quality/testing.md).
 - [ ] Happy path + permission denied + validation error tests for new endpoints.
 - [ ] Hook tests assert query key + invalidation.
 - [ ] No skipped / disabled tests without linked issue.
@@ -64,10 +64,16 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 
 - [ ] INFO log on new business event.
 - [ ] Error path reaches Sentry.
-- [ ] New KPI surfaced via the existing audit-log / DB aggregation — no Prometheus-style metrics stack on the PYME single-node deployment (see `40-quality/observability.md`).
+- [ ] New KPI surfaced via the existing audit-log / DB aggregation — no Prometheus-style metrics stack on the PYME single-node deployment (see [`40-quality/observability.md`](../40-quality/observability.md)).
 
-## Performance
+## Performance & N+1 (Backend)
 
+Ver contrato completo: [zero-n-plus-one-policy.md](zero-n-plus-one-policy.md)
+
+- [ ] Ningún `serializers.py` contiene llamadas `.objects.filter()` / `.objects.get()` / `.objects.create()`.
+- [ ] El `ViewSet` del endpoint modificado tiene `select_related` y `prefetch_related` declarados para todas las relaciones que el serializer consume.
+- [ ] La creación de grafos de objetos (cabecera + líneas + relaciones) está en `services.py` con `@transaction.atomic`, no en `Serializer.create()`.
+- [ ] Test `assertNumQueries` existe para el endpoint de lista y pasa — el número de queries es constante independientemente del tamaño del resultado.
 - [ ] No new N+1 (assert query count test).
 - [ ] Indexes on new filter/sort fields.
 - [ ] Bundle delta <target; dynamic import if heavy.

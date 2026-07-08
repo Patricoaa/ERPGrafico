@@ -9,7 +9,8 @@ To introduce a v2 in the future:
   2. Update the `StageData` TypedDict.
   3. Write a Django data migration that calls `migrate_stage_data_to_v1` for every WorkOrder.
 """
-from typing import Optional, List, Literal, TypedDict
+
+from typing import List, Literal, Optional, TypedDict
 
 
 class Phases(TypedDict, total=False):
@@ -48,11 +49,11 @@ class StageData(TypedDict, total=False):
     postpress_specs: str
 
     design_needed: bool
-    design_attachments: List[str]    # filenames
+    design_attachments: List[str]  # filenames
     approval_attachment: Optional[str]
     folio_enabled: bool
     folio_start: str
-    print_type: Optional[Literal['offset', 'digital', 'especial']]
+    print_type: Optional[Literal["offset", "digital", "especial"]]
 
     # Context
     internal_notes: str
@@ -63,8 +64,6 @@ class StageData(TypedDict, total=False):
 
     # Comments (stored inline — TASK-307 will migrate these to polymorphic Comment model)
     comments: List[Comment]
-
-
 
 
 def migrate_stage_data_to_v1(data: dict) -> dict:
@@ -81,15 +80,15 @@ def migrate_stage_data_to_v1(data: dict) -> dict:
     Idempotent: already-v1 documents are returned unchanged.
     """
     if not data:
-        return {'_version': 1}
+        return {"_version": 1}
 
-    if data.get('_version') == 1:
+    if data.get("_version") == 1:
         return data
 
     flat = dict(data)
 
     # Lift any legacy phase-nested copies
-    for phase_key in ('prepress', 'press', 'postpress'):
+    for phase_key in ("prepress", "press", "postpress"):
         phase_val = data.get(phase_key)
         if isinstance(phase_val, dict):
             for key, value in phase_val.items():
@@ -98,5 +97,5 @@ def migrate_stage_data_to_v1(data: dict) -> dict:
                     flat[key] = value
             del flat[phase_key]  # remove the nested copy
 
-    flat['_version'] = 1
+    flat["_version"] = 1
     return flat

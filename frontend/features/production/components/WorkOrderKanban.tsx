@@ -10,7 +10,7 @@ import {
     CheckCircle2,
 } from "lucide-react"
 import { CardActions, CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
-import { WorkOrder } from "../types"
+import { type WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
 import { isWorkOrderOverdue } from "../utils"
@@ -37,21 +37,21 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
     const canDelete = !!onDelete && EDITABLE_STAGES.includes(order.current_stage)
     const canAnnul = !!onAnnul && !NON_ANNULLABLE_STATUSES.includes(order.status)
     const overflowItems = [
-        ...(canAnnul ? [{ action: 'annul' as const, onClick: () => onAnnul!(order.id) }] : []),
-        ...(canDelete ? [{ action: 'delete' as const, onClick: () => onDelete!(order.id) }] : []),
+        ...(canAnnul ? [{ action: 'annul' as const, onClick: () => onAnnul?.(order.id) }] : []),
+        ...(canDelete ? [{ action: 'delete' as const, onClick: () => onDelete?.(order.id) }] : []),
     ]
 
     return (
         <Card
             onClick={() => onManage(order.id)}
             className={cn(
-                "cursor-pointer hover:shadow-md transition-all border-none shadow-sm rounded-md",
-                "active:scale-95 duration-100"
+                "card-base cursor-pointer",
+                "active:scale-95"
             )}
         >
             <CardContent className="p-3 space-y-3">
                 <div className="flex items-center justify-between mb-3">
-                    <Chip size="xs">{formatEntityDisplay('production.workorder', order)}</Chip>
+                    <Chip size="xs">{formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)}</Chip>
                     <StatusBadge status={order.status} size="sm" />
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
@@ -123,7 +123,7 @@ export function WorkOrderKanban({ orders, onManage, onDuplicate, onAnnul, onDele
                     <div
                         key={stage.id}
                         className={cn(
-                            "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-sm",
+                            "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-card",
                             stage.color
                         )}
                     >

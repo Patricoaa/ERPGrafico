@@ -1,8 +1,11 @@
 ---
 layer: 10-architecture
 doc: adr/0037-bank-archive-restore
-status: accepted
+id: 0037
+title: "Eliminación de bancos — patrón Archivo"
+status: Accepted
 date: 2026-06-03
+author: core-team
 ---
 
 # ADR-0037: Eliminación de bancos — patrón Archivo

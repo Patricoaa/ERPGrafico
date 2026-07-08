@@ -1,4 +1,4 @@
-import { ToolbarCreateButton } from "@/components/shared"
+import { PageSectionHeader, ToolbarCreateButton } from "@/components/shared"
 import EntriesClientView from "./EntriesClientView"
 
 interface PageProps {
@@ -16,6 +16,8 @@ export default async function EntriesPage({ searchParams }: PageProps) {
     )
 
     return (
-        <EntriesClientView externalOpen={modal === 'new'} createAction={createAction} />
-    )
+        <>
+            <PageSectionHeader title="Asientos Contables" description="Registro de transacciones contables" />
+            <EntriesClientView externalOpen={modal === 'new'} createAction={createAction} />
+        </>)
 }

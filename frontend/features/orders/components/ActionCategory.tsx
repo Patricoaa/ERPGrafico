@@ -1,11 +1,11 @@
 "use client"
 
-import { showApiError, getErrorMessage } from "@/lib/errors"
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal, Chip } from '@/components/shared'
 import { ActionButton } from "./ActionButton"
-import {ActionCategory as CategoryType} from "@/types/actions"
+import {type ActionCategory as CategoryType} from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
@@ -20,21 +20,23 @@ const ReceiptModal = dynamic(() => import("@/features/purchasing/components/Rece
 const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
 const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
-const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
+const UnifiedNoteWizard = dynamic(() => import("@/features/notes").then(m => ({ default: m.UnifiedNoteWizard })))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
-import { LazyDrawer } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 import {
-    useAnnulInvoice,
-    useDeleteInvoice,
     useCreateInvoiceFromOrder,
     useConfirmInvoice,
     useRegisterPaymentMovement,
+    useRegisterPaymentReturn,
 } from "../hooks/useOrdersMutations"
+import { useCancelOrderFlow } from "../hooks/useCancelOrderFlow"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { Order, OrderLine } from "../types"
+import { type Order, type OrderLine } from "../types"
+import type { DocumentItem } from "./DocumentListModal"
+import type { Payment as TreasuryPayment } from "@/features/treasury"
 
 interface ActionCategoryProps {
     category: CategoryType
@@ -60,7 +62,7 @@ export const ActionCategory = forwardRef(({
     showBadge = true,
     posSessionId = null,
     headless = false
-}: ActionCategoryProps, ref) => {
+}: ActionCategoryProps, ref: React.ForwardedRef<{ handleActionClick: (actionId: string) => void }>) => {
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [viewConfig, setViewConfig] = useState<{ type: string, id: number | string } | null>(null)
 
@@ -73,51 +75,36 @@ export const ActionCategory = forwardRef(({
         setActiveModal(null)
         setViewConfig(null)
     }
-    const [isProcessing, setIsProcessing] = useState(false)
-    const [hasNotifiedOpen, setHasNotifiedOpen] = useState(false)
-    const [confirmModal, setConfirmModal] = useState<{
-        open: boolean
-        title: string
-        description: React.ReactNode
-        onConfirm: () => Promise<void> | void
-        variant?: 'destructive' | 'warning'
-        confirmText?: string
-    }>({
-        open: false,
-        title: "",
-        description: null,
-        onConfirm: () => { }
-    })
+    const [, setIsProcessing] = useState(false)
 
     const { setHubTemporarilyHidden, triggerAction } = useHubPanel()
-
-    // Notify parent about modal state changes without clobbering other instances
-    useEffect(() => {
-        const isAnyModalActive = activeModal !== null || confirmModal.open;
-        if (isAnyModalActive) {
-            console.log(`[ActionEngine] Hub should hide now. activeModal: ${activeModal}, confirmOpen: ${confirmModal.open}`);
-            setHubTemporarilyHidden(true)
-            return () => {
-                console.log(`[ActionEngine] Hub should restore now.`);
-                setHubTemporarilyHidden(false)
-            }
-        }
-    }, [activeModal, confirmModal.open, setHubTemporarilyHidden])
     const [tempInvoiceId, setTempInvoiceId] = useState<number | null>(null)
 
     useImperativeHandle(ref, () => ({
         handleActionClick
     }))
 
-    const annulInvoice = useAnnulInvoice()
-    const deleteInvoice = useDeleteInvoice()
-    const createInvoiceFromOrder = useCreateInvoiceFromOrder()
-    const confirmInvoice = useConfirmInvoice()
-    const registerPaymentMovement = useRegisterPaymentMovement()
-
     // Determine order type helper - supporting both Order and Note models
     const isSale = !!order?.customer_name || !!order?.customer || !!order?.sale_order
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
+
+    const { createInvoiceFromOrder } = useCreateInvoiceFromOrder()
+    const { confirmInvoice } = useConfirmInvoice()
+    const { registerPaymentMovement } = useRegisterPaymentMovement()
+    const { registerPaymentReturn } = useRegisterPaymentReturn()
+    const { modalProps: cancelModalProps, isModalOpen: isCancelModalOpen } =
+        useCancelOrderFlow(isSale ? 'sale' : 'purchase', { onSuccess: onActionSuccess })
+
+    // Notify parent about modal state changes without clobbering other instances
+    useEffect(() => {
+        const isAnyModalActive = activeModal !== null || isCancelModalOpen;
+        if (isAnyModalActive) {
+            setHubTemporarilyHidden(true)
+            return () => {
+                setHubTemporarilyHidden(false)
+            }
+        }
+    }, [activeModal, isCancelModalOpen, setHubTemporarilyHidden])
 
     const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
 
@@ -171,9 +158,9 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
-                const targetDoc = docs[0] as any
-                const viewType = targetDoc.docType || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
-                const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
+                const targetDoc = docs[0] as Record<string, unknown>
+                const viewType = targetDoc.docType as string || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
+                const viewId = actionId === 'view-documents' ? targetDoc.id as number | string : ((targetDoc.id as number | string) || targetDoc.stock_move_id as number | string)
 
                 if (!viewId) {
                     toast.error("Error al identificar el documento.")
@@ -186,12 +173,6 @@ export const ActionCategory = forwardRef(({
             case 'regenerate-document':
                 handleRegenerateDocument()
                 break
-            case 'annul-document':
-                handleAnnulDocument()
-                break
-            case 'delete-draft':
-                handleDeleteDraft()
-                break
             default:
                 console.warn(`No handler for action: ${actionId}`)
         }
@@ -199,44 +180,10 @@ export const ActionCategory = forwardRef(({
 
     const closeModal = () => setActiveModal(null)
 
-    const handleAnnulDocument = async (force: boolean = false) => {
-        const invoices = resolvedInvoices
-        const invoice = invoices.find((inv: any) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
-
-        if (!invoice) {
-            toast.error("No se encontró un documento válido para anular")
-            return
-        }
-
-        setIsProcessing(true)
-        try {
-            await annulInvoice.mutateAsync({ id: Number(invoice.id), force })
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            console.error("Error annulling document:", error)
-            const errorMessage = getErrorMessage(error) || "Error al anular documento"
-
-            if (errorMessage.includes("pagos asociados") && !force) {
-                setConfirmModal({
-                    open: true,
-                    title: "Anular Documento con Pagos",
-                    variant: "warning",
-                    confirmText: "Anular Todo",
-                    onConfirm: () => handleAnnulDocument(true),
-                    description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos?"
-                })
-            } else {
-                toast.error(errorMessage)
-            }
-        } finally {
-            setIsProcessing(false)
-        }
-    }
-
     const handleRegenerateDocument = async () => {
         setIsProcessing(true)
         try {
-            const result = await createInvoiceFromOrder.mutateAsync({
+            const result = await createInvoiceFromOrder({
                 order_id: order?.id,
                 order_type: isSale ? 'sale' : 'purchase',
                 dte_type: 'FACTURA_ELECTRONICA',
@@ -254,50 +201,55 @@ export const ActionCategory = forwardRef(({
         }
     }
 
-    const handleDeleteDraft = async () => {
-        const invoices = resolvedInvoices
-        const draftInvoice = invoices.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
-
-        if (!draftInvoice) {
-            toast.error("No se encontró un borrador para eliminar")
-            return
-        }
-
-        setConfirmModal({
-            open: true,
-            title: "Eliminar Borrador",
-            variant: "destructive",
-            confirmText: "Eliminar",
-            onConfirm: async () => {
-                setIsProcessing(true)
-                try {
-                    await deleteInvoice.mutateAsync(Number(draftInvoice.id))
-                    setConfirmModal(prev => ({ ...prev, open: false }))
-                    onActionSuccess?.()
-                } catch (error: unknown) {
-                    console.error("Error deleting draft:", error)
-                    toast.error("No se pudo eliminar el borrador")
-                } finally {
-                    setIsProcessing(false)
-                }
-            },
-            description: "¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer."
-        })
-    }
-
     const handlePaymentConfirm = async (data: Record<string, unknown>) => {
         setIsProcessing(true)
+        const idempotencyKey = crypto.randomUUID?.() ?? 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = (Math.random() * 16) | 0; const v = c === 'x' ? r : (r & 0x3) | 0x8; return v.toString(16) })
         try {
+            // ── Return flow (register-payment-return) ──────────────────────
+            if (activeModal === 'register-payment-return') {
+                const isInvoice = !!order?.dte_type
+
+                // For NOTA_CREDITO: create a new refund payment (current behavior)
+                if (isInvoice && order.dte_type === 'NOTA_CREDITO') {
+                    const payload = {
+                        ...data,
+                        payment_type: isSale ? 'OUTBOUND' : 'INBOUND',
+                        partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id),
+                        ...(posSessionId ? { pos_session_id: posSessionId } : {})
+                    };
+                    (payload as Record<string, unknown>).invoice = order.id
+                    await registerPaymentMovement({ data: payload, idempotencyKey })
+                } else {
+                    // DRAFT invoice + posted payments: return the first posted payment
+                    const payments = order?.related_documents?.payments || []
+                    const firstPosted = payments.find((p) => (p.journal_entry as Record<string, unknown>)?.state === 'POSTED')
+                    const paymentId = firstPosted?.id
+                    if (!paymentId) {
+                        toast.error("No se encontró un pago contabilizado para devolver.")
+                        return
+                    }
+                    await registerPaymentReturn({
+                        paymentId: Number(paymentId),
+                        amount: data.amount as number,
+                        treasuryAccountId: data.treasury_account_id
+                            ? Number(data.treasury_account_id) : null,
+                    })
+                }
+
+                closeModal()
+                onActionSuccess?.()
+                return
+            }
+
+            // ── Standard payment flow ──────────────────────────────────────
             const isInvoice = !!order?.dte_type
             const installments = data.installments as number | undefined
             const isCardPurchase = data.paymentMethod === 'CREDIT_CARD' && installments && installments > 1
 
             if (isCardPurchase) {
-                // Call card-purchase endpoint for credit card installments
                 const { treasuryApi } = await import("@/features/treasury/api/treasuryApi")
                 const fromAccountId = parseInt(data.treasury_account_id as string)
                 const partnerId = (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)
-                
                 await treasuryApi.createCardPurchase({
                     amount: data.amount as string | number,
                     from_account: fromAccountId,
@@ -309,7 +261,6 @@ export const ActionCategory = forwardRef(({
                     client_reference: `ORDER-${order?.id}`,
                 })
             } else {
-                // Standard payment flow
                 const payload = {
                     ...data,
                     payment_type: isSale ?
@@ -318,14 +269,12 @@ export const ActionCategory = forwardRef(({
                     partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id),
                     ...(posSessionId ? { pos_session_id: posSessionId } : {})
                 }
-
                 if (isInvoice) {
                     (payload as Record<string, unknown>).invoice = order.id
                 } else {
                     (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
                 }
-
-                await registerPaymentMovement.mutateAsync(payload)
+                await registerPaymentMovement({ data: payload, idempotencyKey })
             }
 
             closeModal()
@@ -360,16 +309,16 @@ export const ActionCategory = forwardRef(({
         <>
             {!headless && (
                 <div className={cn(
-                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-lg border bg-card/50 shadow-sm")
+                    layout === 'grid' ? "space-y-0" : (ghost || layout === 'flex' ? "space-y-2" : "p-4 space-y-4 rounded-md border bg-card/50 hover:shadow-elevated transition-shadow")
                 )}>
                     {layout === 'list' && (category.icon || category.label) && (
-                        <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                        <div className="flex items-center gap-2 pb-2 border-b border-border">
                             {category.icon && (
                                 <div className="p-1.5 rounded bg-primary/10 text-primary border border-primary/10">
                                     <category.icon className="h-4 w-4" />
                                 </div>
                             )}
-                            {category.label && <h3 className="font-heading font-extrabold uppercase text-xs tracking-wider">{category.label}</h3>}
+                            {category.label && <h3 className=" font-extrabold uppercase text-xs tracking-wider">{category.label}</h3>}
                             {categoryBadgeCount > 0 && (
                                 <Chip.Count value={categoryBadgeCount} size="sm" intent="neutral" className="ml-auto rounded" />
                             )}
@@ -405,16 +354,16 @@ export const ActionCategory = forwardRef(({
                      <DocumentCompletionModal
                          open={true}
                          onOpenChange={closeModal}
-                         invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
-                         invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
-                         contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
+                          invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
+                          invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : resolvedInvoices?.find((inv) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type as string) || "FACTURA_ELECTRONICA"}
+                          contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order.customer_id : order.supplier_id)) as number || 0}
                          isPurchase={isPurchase}
                           onComplete={async (invoiceId, formData) => {
                               if (!invoiceId) {
                                   toast.error("Error: No se pudo identificar el borrador de la factura.")
                                   throw new Error("Missing invoice ID")
                               }
-                              await confirmInvoice.mutateAsync({ id: invoiceId, formData: formData as unknown as Record<string, unknown> })
+                               await confirmInvoice({ id: invoiceId, formData: formData as unknown as Record<string, unknown> })
                           }}
                          onSuccess={() => { closeModal(); onActionSuccess?.() }}
                      />
@@ -453,7 +402,7 @@ export const ActionCategory = forwardRef(({
                 <PaymentHistoryModal
                     open={true}
                     onOpenChange={closeModal}
-                    order={order as any}
+                    order={order}
                 />
             )}
 
@@ -465,9 +414,10 @@ export const ActionCategory = forwardRef(({
                     pendingAmount={Number(order?.pending_amount ?? order?.total ?? 0)}
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
+                    isRefund={activeModal === 'register-payment-return'}
                     title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                     posSessionId={posSessionId}
-                    customerCreditBalance={(order?.customer as any)?.credit_balance || (order?.customer_name as any)?.credit_balance || 0}
+                    customerCreditBalance={(order?.customer?.credit_balance as number) || ((order as Record<string, unknown>)['customer_name'] as Record<string, unknown>)?.credit_balance as number || 0}
                     allowCreditBalanceAccumulation={order?.dte_type === 'NOTA_CREDITO'}
                 />
             )}
@@ -476,21 +426,75 @@ export const ActionCategory = forwardRef(({
                 <PaymentReferenceModal
                     open={true}
                     onOpenChange={closeModal}
-                    payments={(order?.related_documents?.payments || order?.serialized_payments || []) as any}
+                    payments={(order?.related_documents?.payments || order?.serialized_payments || []) as unknown as TreasuryPayment[]}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
 
-            {(activeModal === 'create-credit-note' || activeModal === 'create-debit-note') && (
-                <NoteCheckoutWizard
-                    open={true}
-                    onOpenChange={closeModal}
-                    orderId={order?.id}
-                    invoiceId={(resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0}
-                    initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
-                    onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                />
-            )}
+            {(activeModal === 'create-credit-note' || activeModal === 'create-debit-note') && (() => {
+                const resolvedInvoiceId = (resolvedInvoices?.find((inv) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0
+                const noteInitialType = activeModal === 'create-debit-note' ? 'NOTA_DEBITO' as const : 'NOTA_CREDITO' as const
+                return (
+                    <UnifiedNoteWizard
+                        open={true}
+                        onOpenChange={closeModal}
+                        mode="sales"
+                        initialType={noteInitialType}
+                        features={{ logistics: true, manufacturing: true }}
+                        referenceLabel={resolvedInvoices?.find((inv) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.number}
+                        fetchSource={async () => {
+                            const { billingApi } = await import('@/features/billing/api/billingApi')
+                            const inv = (await billingApi.getInvoice(resolvedInvoiceId) as unknown) as Record<string, unknown>
+                            const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
+                                lineId: l.id as number,
+                                productId: l.product as number,
+                                productName: l.product_name as string,
+                                productCode: l.product_code as string | undefined,
+                                productType: l.product_type as string | undefined,
+                                trackInventory: l.track_inventory as boolean | undefined,
+                                hasBom: l.has_bom as boolean | undefined,
+                                requiresAdvancedManufacturing: l.requires_advanced_manufacturing as boolean | undefined,
+                                mfgAutoFinalize: l.mfg_auto_finalize as boolean | undefined,
+                                createsStockMove: (l.track_inventory as boolean) && (l.product_type as string) !== 'MANUFACTURABLE',
+                                uomName: l.uom_name as string | undefined,
+                                originalQuantity: (l.quantity_delivered as number) || (l.quantity as number),
+                                noteQuantity: 0,
+                                noteUnitPrice: (l.unit_price as number) || 0,
+                                taxAmountPerUnit: ((l.unit_price as number) || 0) * (((l.tax_rate as number) ?? 19) / 100),
+                                reason: '',
+                            }))
+                            return {
+                                label: `${inv.dte_type_display as string} ${inv.number as string}`,
+                                isExempt: (inv.dte_type as string) === 'FACTURA_EXENTA' || (inv.dte_type as string) === 'BOLETA_EXENTA',
+                                originalTotal: inv.total as number,
+                                lines: invLines,
+                            }
+                        }}
+                        onSubmit={async (payload) => {
+                            const { billingApi } = await import('@/features/billing/api/billingApi')
+                            const formData = new FormData()
+                            formData.append('original_invoice_id', resolvedInvoiceId.toString())
+                            formData.append('note_type', payload.noteType)
+                            formData.append('selected_items', JSON.stringify(payload.lines.map(l => ({
+                                line_id: l.lineId,
+                                product_id: l.productId,
+                                quantity: l.noteQuantity,
+                                unit_price: l.noteUnitPrice,
+                                tax_amount: l.taxAmountPerUnit ?? 0,
+                                reason: l.reason ?? '',
+                                manufacturing_data: l.manufacturingData ?? null,
+                            }))))
+                            if (payload.logistics) formData.append('logistics_data', JSON.stringify(payload.logistics))
+                            const reg = payload.registration
+                            formData.append('registration_data', JSON.stringify({ document_number: reg.documentNumber, document_date: reg.documentDate, is_pending: reg.isPending }))
+                            if (reg.attachment) formData.append('document_attachment', reg.attachment)
+                            if (payload.payment.method) formData.append('payment_data', JSON.stringify(payload.payment))
+                            await billingApi.noteWorkflowCheckout(formData)
+                        }}
+                        onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                    />
+                )
+            })()}
 
             {activeModal === 'transaction-view' && viewConfig && (
                 <LazyDrawer
@@ -505,7 +509,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     type="work_orders"
-                    data={(order?.work_orders || []) as any}
+                    data={(order?.work_orders || []) as unknown as DocumentItem[]}
                     onItemClick={(type, id) => {
                         openTransaction(type, id)
                     }}
@@ -524,7 +528,7 @@ export const ActionCategory = forwardRef(({
                             sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
                                 l.product_type === 'MANUFACTURABLE' &&
                                 l.requires_advanced_manufacturing &&
-                                !((l as any).work_order_summary)
+                                !l.work_order_summary
                             )?.id?.toString()
                         }
                     }}
@@ -542,15 +546,7 @@ export const ActionCategory = forwardRef(({
                      onOpenChange={(open) => !open && closeTransaction()}
                  />
              )}
-             <ActionConfirmModal
-                 open={confirmModal.open}
-                 onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
-                 title={confirmModal.title}
-                 description={confirmModal.description}
-                 onConfirm={confirmModal.onConfirm}
-                 variant={confirmModal.variant}
-                 confirmText={confirmModal.confirmText}
-             />
+             <ActionConfirmModal {...cancelModalProps} />
              </Suspense>
          </SkeletonShell>
         </>

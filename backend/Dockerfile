@@ -1,4 +1,25 @@
-FROM python:3.12-slim
+# ── Stage: Rust builder (PyO3 native extension) ──────
+FROM rust:1.85-slim-bookworm AS rust-builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-dev \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Cache layer: Cargo dependency metadata
+COPY rust_ext/Cargo.toml rust_ext/Cargo.lock* ./rust_ext/
+COPY rust_ext/pyproject.toml ./rust_ext/
+RUN mkdir -p rust_ext/src && touch rust_ext/src/lib.rs && \
+    pip install maturin --no-cache-dir --break-system-packages && cd rust_ext && cargo fetch
+
+# Build layer: actual source + compilation
+COPY rust_ext/src ./rust_ext/src
+RUN cd rust_ext && maturin build --release --out /build/wheels
+
+# ── Target: production ───────────────────────────────────
+FROM python:3.12-slim AS production
 
 WORKDIR /app
 
@@ -36,12 +57,14 @@ RUN apt-get update \
     libpangoft2-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-
-
 # Instalar dependencias Python
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+
+# Instalar extensión nativa Rust (PyO3)
+COPY --from=rust-builder /build/wheels/*.whl /tmp/
+RUN pip install /tmp/*.whl --no-cache-dir && rm /tmp/*.whl
 
 # Crear usuario no root
 RUN groupadd -g 1000 django && \
@@ -52,7 +75,14 @@ COPY . .
 RUN chown -R django:django /app
 
 COPY entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod 755 /entrypoint.sh
+
+USER django
+
+EXPOSE 8100
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8100} config.asgi:application"]
 
 # ── Target: development ──────────────────────────────────
 FROM python:3.12-slim AS development
@@ -61,8 +91,6 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_DEBUG=True
-
 # Mitigación para "Illegal Instruction" (SIGILL / status -4) en hardware antiguo
 ENV OPENBLAS_CORETYPE=GENERIC
 ENV NPY_DISABLE_CPU_FEATURES="AVX512F AVX512_SKX AVX2 AVX F16C FMA3 SSE42 SSE41 SSE4A"
@@ -97,6 +125,10 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+
+# Instalar extensión nativa Rust (PyO3)
+COPY --from=rust-builder /build/wheels/*.whl /tmp/
+RUN pip install /tmp/*.whl --no-cache-dir && rm /tmp/*.whl
 
 # Crear usuario no root en stage de desarrollo
 RUN groupadd -g 1000 django && \

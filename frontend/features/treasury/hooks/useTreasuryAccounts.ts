@@ -1,5 +1,6 @@
 import { showApiError } from "@/lib/errors"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import { TREASURY_ACCOUNTS_KEYS, PAYMENT_METHODS_KEYS } from './queryKeys'
@@ -16,19 +17,20 @@ export function useProvisionAccount() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const provisionMutation = useMutation({
         mutationFn: (payload: TreasuryAccountProvisionPayload) =>
             treasuryApi.provisionAccount(payload),
         onSuccess: () => {
             markLocalMutation()
             toast.success('Cuenta creada con sus formas de pago')
-            queryClient.invalidateQueries({ queryKey: TREASURY_ACCOUNTS_KEYS.all })
-            queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_KEYS.all })
+            invalidateCrossFeature(queryClient, [TREASURY_ACCOUNTS_KEYS.all, PAYMENT_METHODS_KEYS.all])
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear la cuenta')
         },
     })
+
+    return { provision: provisionMutation.mutateAsync, isProvisioning: provisionMutation.isPending }
 }
 
 export interface TreasuryAccountFilters {
@@ -58,8 +60,7 @@ export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilt
     })
 
     const invalidate = () => {
-        queryClient.invalidateQueries({ queryKey: TREASURY_ACCOUNTS_KEYS.lists() })
-        queryClient.invalidateQueries({ queryKey: TREASURY_ACCOUNTS_KEYS.details() })
+        invalidateCrossFeature(queryClient, [TREASURY_ACCOUNTS_KEYS.lists(), TREASURY_ACCOUNTS_KEYS.details()])
     }
 
     const createMutation = useMutation({

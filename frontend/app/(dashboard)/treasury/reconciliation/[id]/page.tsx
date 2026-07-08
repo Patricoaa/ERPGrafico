@@ -3,25 +3,25 @@ import { formatCurrency } from "@/lib/money"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, use } from "react"
+import { useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Calendar, Banknote, TrendingUp, TrendingDown,
-    Undo2, Info, AlertCircle, ExternalLink, Activity
+    Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { ActionConfirmModal, PageHeader, SkeletonShell } from '@/components/shared'
+import { ActionConfirmModal, PageHeader, SkeletonShell, SegmentationBar } from '@/components/shared'
 
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import api from "@/lib/api"
 
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx, useBankStatement, treasuryApi } from '@/features/treasury'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -69,46 +69,26 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const { id } = use(params)
     const router = useRouter()
 
-    const [statement, setStatement] = useState<BankStatement | null>(null)
-    const [loading, setLoading] = useState(true)
+    const { statement, isLoading, refetch } = useBankStatement<BankStatement>(Number(id))
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
-    const [confirming, setConfirming] = useState(false)
-    const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
+    const [, setConfirming] = useState(false)
+    const [, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
 
-    const fetchStatement = async () => {
-        try {
-            setLoading(true)
-            const response = await api.get(`/treasury/statements/${id}/`)
-            setStatement(response.data)
-        } catch (error) {
-            console.error('Error fetching statement:', error)
-        } finally {
-            setLoading(false)
-        }
+    const statementLineUnmatchActionsCtx: StatementLineUnmatchActionsCtx = {
+        onUnmatch: (lineId) => setUnmatchDialog({ open: true, lineId }),
+        canUnmatch: (item) => {
+            const line = item as { reconciliation_state?: string }
+            const state = line.reconciliation_state || ''
+            return ['MATCHED', 'RECONCILED', 'EXCLUDED'].includes(state) && statement?.state !== 'CONFIRMED'
+        },
     }
-
-    useEffect(() => {
-        let cancelled = false
-            ; (async () => {
-                setLoading(true)
-                try {
-                    const response = await api.get(`/treasury/statements/${id}/`)
-                    if (!cancelled) setStatement(response.data)
-                } catch (error) {
-                    if (!cancelled) console.error('Error fetching statement:', error)
-                } finally {
-                    if (!cancelled) setLoading(false)
-                }
-            })()
-        return () => { cancelled = true }
-    }, [id])
 
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return
 
         try {
-            await api.post(`/treasury/statement-lines/${unmatchDialog.lineId}/unmatch/`)
-            await fetchStatement()
+            await treasuryApi.unmatchStatementLine(unmatchDialog.lineId)
+            await refetch()
         } catch (error) {
             console.error('Error unmatching line:', error)
             toast.error('Error al deshacer la reconciliación')
@@ -120,7 +100,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const confirmAction = useConfirmAction(async () => {
         try {
             setConfirming(true)
-            await api.post(`/treasury/statements/${id}/confirm/`)
+            await treasuryApi.confirmStatement(Number(id))
             toast.success('Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
         } catch (error: unknown) {
@@ -234,24 +214,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 )
             },
         },
-        createActionsColumn<BankStatementLine>({
-            renderActions: (line) => {
-                const state = line.reconciliation_state
-                const canUnmatch = ['MATCHED', 'RECONCILED', 'EXCLUDED'].includes(state) && statement?.state !== 'CONFIRMED'
-
-                return canUnmatch ? (
-                    <DataCell.Action
-                        icon={Undo2}
-                        title="Deshacer reconciliación"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => setUnmatchDialog({ open: true, lineId: line.id })}
-                    />
-                ) : <></>
-            }
-        }),
+        statementLineUnmatchActions.column(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
     ]
 
-    if (loading) return (
+    if (isLoading) return (
         <div className="flex-1">
             <SkeletonShell isLoading ariaLabel="Cargando..." />
         </div>
@@ -287,19 +253,18 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         moduleName: "Tesorería",
         moduleHref: "/treasury",
         tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones?tab=movements" },
-            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos?tab=all" },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro?tab=providers" },
-            { value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings?tab=conciliation" },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
+            { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center" },
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
         ],
-        activeValue: "centro-bancos",
+        activeValue: "bank-center",
         breadcrumbs: [
             { label: statement.display_id }
         ]
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pt-2 pb-4">
                 <PageHeader
                     title={statement.display_id}
@@ -314,7 +279,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
                 {/* Summary Grid */}
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
                             <Banknote className="h-3.5 w-3.5 text-primary" />
@@ -330,7 +295,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
                             <TrendingUp className="h-3.5 w-3.5 text-success" />
@@ -346,7 +311,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
                             <TrendingDown className="h-3.5 w-3.5 text-destructive" />
@@ -361,7 +326,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         </CardContent>
                     </Card>
 
-                    <Card className="shadow-sm bg-card border">
+                    <Card className="shadow-card bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
                             <TrendingUp className="h-3.5 w-3.5 text-success/50" />
@@ -378,7 +343,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 </div>
 
                 {/* Progress Bar Container */}
-                <div className="bg-card p-4 rounded-xl border shadow-sm">
+                <div className="bg-card p-4 rounded-md border shadow-card">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado de la Conciliación</span>
@@ -397,22 +362,19 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     columns={columns}
                     data={statement.lines}
                     variant="embedded"
-                    filterColumn="description"
-                    searchPlaceholder="Buscar por descripción o referencia..."
-                    facetedFilters={[
-                        {
-                            column: "reconciliation_state",
-                            title: "Estado Reconciliación",
-                            options: [
-                                { label: "Sin Conciliar", value: "UNRECONCILED" },
-                                { label: "Conciliado", value: "RECONCILED" },
-                                { label: "Sugerencia (Match)", value: "MATCHED" },
-                                { label: "Excluido", value: "EXCLUDED" },
-                                { label: "En Disputa", value: "DISPUTED" },
-                            ]
-                        }
-                    ]}
-                    useAdvancedFilter={true}
+                    segmentation={
+                        <SegmentationBar def={{
+                            segments: [
+                                { key: 'reconciliation_state', label: 'Estado Reconciliación', type: 'multiselect', serverParam: 'reconciliation_state', columnId: 'reconciliation_state', options: [
+                                    { label: "Sin Conciliar", value: "UNRECONCILED" },
+                                    { label: "Conciliado", value: "RECONCILED" },
+                                    { label: "Sugerencia (Match)", value: "MATCHED" },
+                                    { label: "Excluido", value: "EXCLUDED" },
+                                    { label: "En Disputa", value: "DISPUTED" },
+                                ] },
+                            ],
+                        }} />
+                    }
                     defaultPageSize={20}
                     createAction={
                         statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 ? (

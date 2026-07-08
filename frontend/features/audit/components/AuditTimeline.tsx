@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { HistoricalRecord } from "@/types/audit";
+import { type HistoricalRecord } from "@/types/audit";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Chip } from "@/components/shared";
 import { cn } from "@/lib/utils";

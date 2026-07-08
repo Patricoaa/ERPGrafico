@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import { Partner, PartnerSummary, PartnerStatement, PartnerTransactionPayload, ProfitDistribution } from "../types/partner"
+import { type Partner, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution } from "../types/partner"
 
 export const partnersApi = {
     /**
@@ -7,6 +7,7 @@ export const partnersApi = {
      */
     getSummary: async (): Promise<PartnerSummary> => {
         const response = await api.get('/contacts/partners_summary/')
+        // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
 
@@ -15,6 +16,7 @@ export const partnersApi = {
      */
     getPartners: async (): Promise<Partner[]> => {
         const response = await api.get('/contacts/partners/')
+        // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
 
@@ -73,6 +75,7 @@ export const partnersApi = {
 
     getTransactions: async () => {
         const response = await api.get('/contacts/all_partner_transactions/')
+        // eslint-disable-next-line pagination/no-raw-response-data
         return response.data
     },
 
@@ -82,7 +85,7 @@ export const partnersApi = {
     getProfitDistributions: async (year?: number): Promise<ProfitDistribution[]> => {
         const url = year ? `/contacts/profit-distributions/?fiscal_year=${year}` : '/contacts/profit-distributions/'
         const response = await api.get(url)
-        return response.data
+        return response.data.results
     },
 
     createProfitDistribution: async (data: { fiscal_year_id: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }): Promise<ProfitDistribution> => {

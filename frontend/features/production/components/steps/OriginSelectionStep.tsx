@@ -30,9 +30,9 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
           variant="outline"
           aria-pressed={isLinkedSelected}
           className={cn(
-            "relative h-[200px] w-full rounded-xl transition-all duration-300",
+            "relative h-[200px] w-full rounded-md transition-all duration-300",
             isLinkedSelected
-              ? "border-2 border-primary bg-primary/[0.06] ring-2 ring-primary/20 shadow-sm"
+              ? "border-2 border-primary bg-primary/[0.06] ring-2 ring-primary/20 shadow-card"
               : "border border-border/30 hover:border-primary/50 hover:bg-primary/[0.03]",
             // When another card is already selected, dim this one
             selected && !isLinkedSelected && "opacity-40"
@@ -63,9 +63,9 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
           variant="outline"
           aria-pressed={isNoneSelected}
           className={cn(
-            "relative h-[200px] w-full rounded-xl transition-all duration-300",
+            "relative h-[200px] w-full rounded-md transition-all duration-300",
             isNoneSelected
-              ? "border-2 border-warning bg-warning/[0.06] ring-2 ring-warning/20 shadow-sm"
+              ? "border-2 border-warning bg-warning/[0.06] ring-2 ring-warning/20 shadow-card"
               : "border border-border/30 hover:border-warning/50 hover:bg-warning/[0.03]",
             selected && !isNoneSelected && "opacity-40"
           )}

@@ -1,13 +1,24 @@
 ---
 layer: 30-playbooks
 doc: home-server-setup
+task: "Setup home server for remote development"
+triggers: ["home server", "old pc", "ssh development", "remote setup", "proxmox"]
 status: active
 owner: core-team
 last_review: 2026-05-21
 kind: setup
+preconditions:
+  - Hardware with virtualization support (VT-x/AMD-V)
+  - Proxmox installed
+validation:
+  - SSH access successful
+  - docker compose up -d
+  - frontend access http://localhost
+forbidden:
+  - using cloud services for main stack
 ---
 
-# Playbook: Setup de Home Server (Proxmox + Cloudflare R2)
+# Playbook — Setup de Home Server (Proxmox + Cloudflare R2)
 
 Este manual guía la creación de un entorno de desarrollo profesional en hardware propio.
 **Arquitectura**: PC Vieja -> Proxmox -> VM Ubuntu Server -> Docker Stack -> Cloudflare R2.
@@ -95,7 +106,7 @@ Debes crear este archivo en la raíz del proyecto (`/mnt/data/ERPGrafico/.env.de
 
 ```env
 # --- Configuración Básica ---
-DJANGO_DEBUG=True
+DEBUG=1
 DJANGO_SECRET_KEY=cambiame_por_algo_seguro_o_usa_el_comando_abajo
 ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.50 # Pon aquí la IP de tu PC vieja
 

@@ -4,20 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0015_remove_location_custodian_is_physical'),
+        ("treasury", "0015_remove_location_custodian_is_physical"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicalpaymentterminaldevice',
-            name='supported_payment_methods',
-            field=models.JSONField(blank=True, default=list, help_text='Lista de códigos soportados. 1: Crédito, 2: Débito. Ej: [1, 2]', verbose_name='Métodos Soportados'),
+            model_name="historicalpaymentterminaldevice",
+            name="supported_payment_methods",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Lista de códigos soportados. 1: Crédito, 2: Débito. Ej: [1, 2]",
+                verbose_name="Métodos Soportados",
+            ),
         ),
         migrations.AddField(
-            model_name='paymentterminaldevice',
-            name='supported_payment_methods',
-            field=models.JSONField(blank=True, default=list, help_text='Lista de códigos soportados. 1: Crédito, 2: Débito. Ej: [1, 2]', verbose_name='Métodos Soportados'),
+            model_name="paymentterminaldevice",
+            name="supported_payment_methods",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Lista de códigos soportados. 1: Crédito, 2: Débito. Ej: [1, 2]",
+                verbose_name="Métodos Soportados",
+            ),
         ),
     ]

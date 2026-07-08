@@ -1,8 +1,8 @@
 // BOM Resolver Utilities
 // Business logic for fetching and caching Bill of Materials
 
-import type { Product, BOM, BOMCache, ComponentCache } from '@/types/pos'
-import api from '@/lib/api'
+import type { Product, BOM, BOMCache, ComponentCache } from '../types'
+import { posApi } from '../api/posApi'
 
 /**
  * Fetch BOM for a product with caching
@@ -28,11 +28,10 @@ export async function fetchBOM(
 
     // Fetch from API
     try {
-        const res = await api.get<BOM[]>(`/production/boms/?product_id=${productId}&active=true`)
-        const activeBom = res.data.find((b: BOM) => b.active)
+        const activeBom = await posApi.getActiveBOM(productId)
         if (activeBom) {
-            updateBomCache(productId, activeBom)
-            return activeBom
+            updateBomCache(productId, activeBom as unknown as BOM)
+            return activeBom as unknown as BOM
         }
     } catch (error) {
         console.error(`Error fetching BOM for product ${productId}`, error)
@@ -64,10 +63,10 @@ export async function fetchComponentData(
 
     // Fetch from API
     try {
-        const res = await api.get(`/inventory/products/${componentId}/`)
+        const productData = await posApi.getProduct(componentId)
         const data = {
-            stock: res.data.current_stock || 0,
-            uom: res.data.uom || 0
+            stock: productData.current_stock || 0,
+            uom: productData.uom || 0
         }
         updateComponentCache(componentId, data)
         return data

@@ -1,20 +1,14 @@
 "use client"
 
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { BaseModal, MoneyDisplay } from '@/components/shared'
+import { showApiError } from '@/lib/errors'
+import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect } from '@/components/shared'
 import { toast } from 'sonner'
+import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
 interface AddChargeModalProps {
     cardAccountId: number
@@ -29,8 +23,18 @@ const CHARGE_TYPES = [
     { value: 'TAX', label: 'Impuesto' },
     { value: 'FEE', label: 'Cargo' },
     { value: 'INSURANCE', label: 'Seguro' },
+    { value: 'INTEREST', label: 'Interés' },
     { value: 'OTHER', label: 'Otro' },
 ]
+
+const addChargeSchema = z.object({
+    amount: z.string().min(1, "El monto es requerido"),
+    chargeType: z.string().min(1, "El tipo es requerido"),
+    description: z.string().optional(),
+    date: z.string().min(1, "La fecha es requerida"),
+})
+
+type AddChargeFormValues = z.infer<typeof addChargeSchema>
 
 export function AddChargeModal({
     cardAccountId,
@@ -39,38 +43,41 @@ export function AddChargeModal({
     onSuccess,
     onCancel,
 }: AddChargeModalProps) {
-    const [amount, setAmount] = useState('')
-    const [chargeType, setChargeType] = useState('OTHER')
-    const [description, setDescription] = useState('')
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-    const [loading, setLoading] = useState(false)
+    const { dateString } = useServerDate()
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const form = useForm<AddChargeFormValues>({
+        resolver: zodResolver(addChargeSchema),
+        defaultValues: {
+            amount: "",
+            chargeType: "OTHER",
+            description: "",
+            date: dateString || new Date().toISOString().split('T')[0],
+        },
+    })
 
-        if (!amount || parseFloat(amount) <= 0) {
+    const amount = form.watch("amount")
+    const numericAmount = parseFloat(amount) || 0
+    const loading = form.formState.isSubmitting
+
+    const handleSubmit = async (data: AddChargeFormValues) => {
+        if (!data.amount || parseFloat(data.amount) <= 0) {
             toast.error('El monto debe ser mayor a cero')
             return
         }
 
         try {
-            setLoading(true)
             await treasuryApi.addUnbilledCharge({
                 card_account: cardAccountId,
-                amount: parseFloat(amount),
-                charge_type: chargeType,
-                description,
-                date,
+                amount: parseFloat(data.amount),
+                charge_type: data.chargeType,
+                description: data.description ?? "",
+                date: data.date,
             })
             onSuccess()
         } catch (error) {
-            toast.error('Error al agregar cargo')
-        } finally {
-            setLoading(false)
+            showApiError(error, 'Error al agregar cargo')
         }
     }
-
-    const numericAmount = parseFloat(amount) || 0
 
     return (
         <BaseModal
@@ -90,7 +97,7 @@ export function AddChargeModal({
                 </div>
             }
         >
-            <form id="add-charge-form" onSubmit={handleSubmit}>
+            <form id="add-charge-form" onSubmit={form.handleSubmit(handleSubmit)}>
                 <div className="space-y-4">
                     {numericAmount > 0 && (
                         <div className="rounded-md border bg-muted/20 p-3">
@@ -100,53 +107,39 @@ export function AddChargeModal({
                             </div>
                         </div>
                     )}
-                    <div className="grid gap-2">
-                        <Label htmlFor="amount">Monto</Label>
-                        <Input
-                            id="amount"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="0.00"
-                            required
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="chargeType">Tipo de Cargo</Label>
-                        <Select value={chargeType} onValueChange={setChargeType}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar tipo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {CHARGE_TYPES.map((type) => (
-                                    <SelectItem key={type.value} value={type.value}>
-                                        {type.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="date">Fecha</Label>
-                        <Input
-                            id="date"
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="description">Descripción</Label>
-                        <Textarea
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Descripción del cargo"
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Monto"
+                        type="number"
+                        step="1"
+                        min="0"
+                        {...form.register("amount")}
+                        placeholder="0"
+                        required
+                    />
+                    {form.formState.errors.amount && (
+                        <p className="text-xs text-destructive">{form.formState.errors.amount.message}</p>
+                    )}
+                    <LabeledSelect
+                        label="Tipo de Cargo"
+                        options={CHARGE_TYPES}
+                        value={form.watch("chargeType")}
+                        onChange={(v) => form.setValue("chargeType", v)}
+                        placeholder="Seleccionar tipo"
+                        required
+                    />
+                    <LabeledInput
+                        label="Fecha"
+                        type="date"
+                        {...form.register("date")}
+                        required
+                    />
+                    <LabeledInput
+                        label="Descripción (opcional)"
+                        as="textarea"
+                        rows={3}
+                        {...form.register("description")}
+                        placeholder="Descripción del cargo"
+                    />
                 </div>
             </form>
         </BaseModal>

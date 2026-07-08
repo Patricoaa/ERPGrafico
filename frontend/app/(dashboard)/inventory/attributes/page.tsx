@@ -1,4 +1,5 @@
-import { AttributeManager } from "@/features/inventory"
+import { PageSectionHeader } from "@/components/shared"
+import { AttributesClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from '@/components/shared'
 
 interface PageProps {
@@ -10,8 +11,9 @@ export default async function AttributesPage({ searchParams }: PageProps) {
     const isModalOpen = modal === "new"
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <AttributeManager
+        <div className="h-full flex flex-col">
+            <PageSectionHeader title="Atributos de Producto" description="Variantes, tallas, colores y otros atributos" />
+            <AttributesClientView
                 externalOpen={isModalOpen}
                 createAction={
                     <ToolbarCreateButton

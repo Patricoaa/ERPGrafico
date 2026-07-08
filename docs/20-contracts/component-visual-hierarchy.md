@@ -39,7 +39,7 @@ Sections use a "Line-Title-Line" pattern to break the vertical flow without addi
 
 Legends are part of the `notched-field` pattern (fieldset/legend).
 
-- **Typography**: `text-[10px] font-black uppercase tracking-[0.15em]`
+- **Typography**: `text-[10px] font-black uppercase tracking-widest`
 - **Color**: `text-muted-foreground` (Inactive) / `text-primary` (Focused)
 - **Positioning**: Sits on the border notch.
 

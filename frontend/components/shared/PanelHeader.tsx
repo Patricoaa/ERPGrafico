@@ -14,7 +14,6 @@ export interface PanelBaseProps {
     icon?: React.ComponentType<{ className?: string }> | React.ReactNode
     title: string | React.ReactNode
     subtitle?: string | React.ReactNode
-    description?: string | React.ReactNode
     headerActions?: React.ReactNode
     children?: React.ReactNode
     footer?: React.ReactNode
@@ -23,7 +22,6 @@ export interface PanelBaseProps {
     headerClassName?: string
     footerClassName?: string
     titleClassName?: string
-    descriptionClassName?: string
 }
 
 // ──────────────────────────────────────────
@@ -34,11 +32,9 @@ export interface PanelHeaderProps {
     icon?: React.ComponentType<{ className?: string }> | React.ReactNode
     title: React.ReactNode
     subtitle?: React.ReactNode
-    description?: React.ReactNode
     headerActions?: React.ReactNode
     className?: string
     titleClassName?: string
-    descriptionClassName?: string
     /** If provided, renders a close button at the right side */
     onClose?: () => void
     /** Tooltip text for the close button (defaults to "Cerrar") */
@@ -51,11 +47,9 @@ export function PanelHeader({
     icon,
     title,
     subtitle,
-    description,
     headerActions,
     className,
     titleClassName,
-    descriptionClassName,
     onClose,
     closeTooltip,
     closeButtonClassName,
@@ -76,9 +70,9 @@ export function PanelHeader({
                     <div className={cn("min-w-0 truncate", titleClassName)}>
                         {title}
                     </div>
-                    {(subtitle || description) && (
-                        <div className={cn("min-w-0 truncate", descriptionClassName)}>
-                            {subtitle || description}
+                    {subtitle && (
+                        <div className="min-w-0 truncate text-xs font-medium text-muted-foreground">
+                            {subtitle}
                         </div>
                     )}
                 </div>

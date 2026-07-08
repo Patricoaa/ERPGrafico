@@ -14,7 +14,7 @@ Este documento resume la implementación exitosa del entorno de desarrollo remot
 ## 🏘️ Arquitectura Final
 - **Hardware**: PC Vieja (2011) con Proxmox.
 - **Virtualización**: VM Ubuntu 24.04 LTS (Minimized).
-- **Orquestación**: Docker Compose (Stack completo: Postgres, Redis, MinIO/R2, Nginx, Django, Next.js).
+- **Orquestación**: Docker Compose (Stack completo: Postgres, Redis, Cloudflare R2, Nginx, Django, Next.js).
 - **Almacenamiento**: Híbrido (Postgres Local + Cloudflare R2 para Media).
 - **IDE**: Antigravity (VS Code Fork) conectado vía Remote-SSH.
 
@@ -30,9 +30,9 @@ Este documento resume la implementación exitosa del entorno de desarrollo remot
 - [x] **Frontend Access**: Disponible en `http://localhost` vía proxy Nginx.
 - [x] **Login**: Validado con el nuevo sistema de seguridad CSRF configurado en `.env.dev`.
 
-## 📸 Evidencias de Éxito
-- **Setup Final**: [pato_dashboard.png](file:///home/pato/.gemini/antigravity/brain/e706252f-4b8a-4dcd-bb03-e867a417e6be/artifacts/pato_dashboard.png)
-- **Migraciones OK**: [pato_migrations_ok.png](file:///home/pato/.gemini/antigravity/brain/e706252f-4b8a-4dcd-bb03-e867a417e6be/artifacts/pato_migrations_ok.png)
+## Evidencias de Éxito
+- Setup Final: verificado
+- Migraciones OK: verificado
 
 ---
 **Estado del Entorno**: 🟢 Operativo y Optimizado.

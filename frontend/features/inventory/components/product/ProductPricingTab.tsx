@@ -1,3 +1,5 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 import { ActionConfirmModal, Chip, DataCell, EmptyState, StatusBadge } from '@/components/shared'
 import { FormLineItemsTable } from "@/components/shared"
@@ -8,13 +10,14 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { Product, PricingRule } from "@/types/entities"
-import { ProductInitialData } from "@/types/forms"
+import { type Product, type PricingRule } from "@/types/entities"
+import { type ProductInitialData } from "@/types/forms"
 import { usePricingRules } from "../../hooks/usePricingRules"
+import { parseDateOnly } from "@/lib/utils"
 
 function getRuleStatus(rule: PricingRule): 'RULE_ACTIVE' | 'RULE_EXPIRED' | 'RULE_INACTIVE' {
     if (!rule.active) return 'RULE_INACTIVE'
-    if (rule.end_date && new Date(rule.end_date) < new Date()) return 'RULE_EXPIRED'
+    if (rule.end_date && parseDateOnly(rule.end_date) < new Date()) return 'RULE_EXPIRED'
     return 'RULE_ACTIVE'
 }
 
@@ -69,7 +72,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
 
             {/* Variant notice — rules are managed at template level */}
             {initialData && isVariant && (
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-info/5 border border-info/20 text-sm">
+                <div className="flex items-start gap-3 p-4 rounded-md bg-info/5 border border-info/20 text-sm">
                     <Info className="h-4 w-4 text-info mt-0.5 shrink-0" />
                     <p className="text-info/80 font-medium text-xs leading-relaxed">
                         Las reglas de precios se gestionan en el <strong>producto plantilla</strong>, no en variantes individuales.

@@ -229,7 +229,6 @@ Sistema central de tablas de datos y sus primitivas de vista.
 | `DataTable` (minimal) | Tabla display simple sin toolbar ni paginación | `variant="minimal"` |
 | `DataTable` (compact) | Tabla densa CSS Grid para modals/drawers | `variant="compact"` |
 | `EntityCard` | Shell estandarizado para vistas de tarjeta/grilla | `variant="default" | "compact"` |
-| `ExpandableTableRow` 🔴 | **Deprecado.** Usar `renderSubComponent` + `createExpandableRowView` | `onExpand`, `cellClassName` |
 
 ---
 
@@ -792,6 +791,24 @@ The outer `SheetContent` uses the shared `@utility panel-surface` (defined in `a
 
 > **Do not** override `border`, `shadow`, `rounded-*` or `bg-*` on `CollapsibleSheet` instances. If a variant is needed, add a new prop that composes with `panel-surface` instead of replacing it.
 
+### Surface textures (industrial/prepress)
+
+POS panels, product grids, and other industrial-themed surfaces use background textures from the `@utility` surface family (defined in `app/globals.css`):
+
+| Utility | When to use | How to apply |
+|---------|-------------|-------------|
+| `dot-grid-surface` | POS cart, product grid panels, any `bg-card` surface needing a subtle dot texture (24px grid) | `className="bg-card dot-grid-surface"` |
+| `dot-grid-surface-sm` | Compact panels where 24px grid feels too sparse (12px grid) | `className="bg-card dot-grid-surface-sm"` |
+| `cross-grid-surface` | Technical/engineering surfaces (production grids, Gantt charts) | `className="bg-card cross-grid-surface"` |
+| `ribbon-cmyk` | CMY gradient top border on cards | `className="bg-card ribbon-cmyk"` |
+| `card-accent-cmyk` | CMY vertical accent on left edge of cards | `className="card-accent-cmyk"` |
+
+**Rules:**
+- Apply only to surfaces with `bg-card` as base.
+- Do not combine two background textures on the same element.
+- Do not apply to overlays (modals, sheets) — those use `panel-surface`.
+- Full definitions and examples in `app/globals.css` and [`design-system.md`](../10-architecture/design-system.md).
+
 ---
 
 ## CommentSystem 🟢
@@ -1047,8 +1064,6 @@ Universal close primitive for Modals, Sheets, and Panels. Standardizes the 32px 
 Componentes de uso estrictamente interno, no consumir directamente en features:
 
 - `ColorBar`: Componente decorativo
-- `CropFrame`: Utilidad visual para recorte de imágenes
-- `IndustryMark`: Marca de agua de la aplicación
 
 ---
 

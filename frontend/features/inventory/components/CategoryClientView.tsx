@@ -4,16 +4,16 @@ import { showApiError } from "@/lib/errors"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { DataCell, SmartSearchBar, useClientSearch } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
+import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
 
 import { toast } from "sonner"
 
 import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
-import { SmartSearchBar, useClientSearch } from "@/components/shared"
 import { categorySearchDef } from "@/features/inventory/searchDef"
 import * as LucideIcons from "lucide-react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -101,6 +101,11 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         }
     }, [deleteCategory])
 
+    const actionsCtx: CategoryActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDelete: (category) => handleDelete(category),
+    }
+
     const columns = useMemo<ColumnDef<Category>[]>(() => [
         {
             accessorKey: "id",
@@ -136,15 +141,8 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
         },
-        createActionsColumn<Category>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => openSelected(item.id)} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item)} />
-                </>
-            ),
-        }),
-    ], [handleDelete])
+        categoryActions.column(actionsCtx),
+    ], [actionsCtx])
 
     // Sync external trigger (toolbar button) → create modal
     React.useEffect(() => {
@@ -152,7 +150,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     }, [externalOpen])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     columns={columns}
@@ -160,7 +158,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                     isLoading={isLoading}
                     entityLabel="inventory.category"
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     createAction={createAction}
                     isFiltered={isFiltered}
                     emptyState={{
@@ -174,6 +172,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                                 title={category.name}
                                 subtitle={category.parent_name ?? 'Categoría raíz'}
                             />
+                            <EntityCard.Body actions={categoryActions.render(category, actionsCtx)} />
                         </EntityCard>
                     )}
                 />

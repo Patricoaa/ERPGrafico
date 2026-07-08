@@ -1,6 +1,6 @@
 "use client"
 
-import { ApprovalTaskList } from './ApprovalTaskList'
+import { ApprovalTaskListPanel } from './ApprovalTaskListPanel'
 import type { WorkOrder, WorkOrderTask } from '../../types'
 
 interface PostpressStepProps {
@@ -15,7 +15,7 @@ interface PostpressStepProps {
 export function PostpressStep({ order, canComplete, taskNotes, taskFiles, onNoteChange, onFileChange }: PostpressStepProps) {
   return (
     <div className="space-y-6">
-      <ApprovalTaskList
+      <ApprovalTaskListPanel
         tasks={order.workflow_tasks ?? []}
         taskType="OT_POSTPRESS_APPROVAL"
         canComplete={canComplete}

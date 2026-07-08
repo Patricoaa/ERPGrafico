@@ -12,28 +12,36 @@ class Migration(migrations.Migration):
     """
 
     dependencies = [
-        ('treasury', '0056_treasuryaccount_paymentmethod_bank_provisioned'),
+        ("treasury", "0056_treasuryaccount_paymentmethod_bank_provisioned"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='treasuryaccount',
-            name='bank_provisioned',
-            field=models.BooleanField(db_default=False, default=False, verbose_name='Provisionada por banco'),
+            model_name="treasuryaccount",
+            name="bank_provisioned",
+            field=models.BooleanField(
+                db_default=False, default=False, verbose_name="Provisionada por banco"
+            ),
         ),
         migrations.AlterField(
-            model_name='historicaltreasuryaccount',
-            name='bank_provisioned',
-            field=models.BooleanField(db_default=False, default=False, verbose_name='Provisionada por banco'),
+            model_name="historicaltreasuryaccount",
+            name="bank_provisioned",
+            field=models.BooleanField(
+                db_default=False, default=False, verbose_name="Provisionada por banco"
+            ),
         ),
         migrations.AlterField(
-            model_name='paymentmethod',
-            name='bank_provisioned',
-            field=models.BooleanField(db_default=False, default=False, verbose_name='Provisionado por banco'),
+            model_name="paymentmethod",
+            name="bank_provisioned",
+            field=models.BooleanField(
+                db_default=False, default=False, verbose_name="Provisionado por banco"
+            ),
         ),
         migrations.AlterField(
-            model_name='historicalpaymentmethod',
-            name='bank_provisioned',
-            field=models.BooleanField(db_default=False, default=False, verbose_name='Provisionado por banco'),
+            model_name="historicalpaymentmethod",
+            name="bank_provisioned",
+            field=models.BooleanField(
+                db_default=False, default=False, verbose_name="Provisionado por banco"
+            ),
         ),
     ]

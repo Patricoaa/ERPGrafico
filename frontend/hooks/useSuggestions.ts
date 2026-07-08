@@ -13,7 +13,7 @@ export function useSuggestions(url: string | undefined, query: string) {
     const timeout = setTimeout(async () => {
       setIsLoading(true)
       try {
-        const { data } = await api.get<string[]>(url!, { params: { q: query } })
+        const { data } = await api.get<string[]>(url, { params: { q: query } })
         if (!cancelled) setSuggestions(Array.isArray(data) ? data : [])
       } catch {
         if (!cancelled) setSuggestions([])

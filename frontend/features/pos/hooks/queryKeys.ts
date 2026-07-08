@@ -58,7 +58,7 @@ export const POS_KEYS = {
   products: {
     all: ['products'] as const,
     lists: () => [...POS_KEYS.products.all, 'list'] as const,
-    list: (filters?: { active?: boolean; can_be_sold?: boolean }) => [...POS_KEYS.products.lists(), { filters }] as const,
+    list: (filters?: { is_active?: boolean; can_be_sold?: boolean }) => [...POS_KEYS.products.lists(), { filters }] as const,
     details: () => [...POS_KEYS.products.all, 'detail'] as const,
     detail: (id: number) => [...POS_KEYS.products.details(), id] as const,
   },

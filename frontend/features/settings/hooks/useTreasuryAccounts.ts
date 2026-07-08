@@ -10,6 +10,7 @@ export function useTreasuryAccounts(enabled = true) {
     return useQuery<TreasuryAccount[]>({
         queryKey: TREASURY_ACCOUNTS_QUERY_KEY,
         queryFn: settingsApi.getTreasuryAccounts,
+        staleTime: 10 * 60 * 1000,
         enabled,
     })
 }

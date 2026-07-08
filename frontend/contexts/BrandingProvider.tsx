@@ -1,12 +1,12 @@
 "use client"
 
 import React, { createContext, useContext, useMemo } from 'react'
-import { useCompanySettings } from '@/features/settings'
-import { resolveMediaUrl } from '@/lib/api'
+import { useCompanySettings, type CompanySettings } from '@/features/settings'
+import { resolveMediaUrl } from '@/lib/media-url'
 
 interface BrandingContextType {
     logo: string | null
-    company?: any
+    company?: CompanySettings
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined)

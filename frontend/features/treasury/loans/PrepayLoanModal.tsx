@@ -1,13 +1,14 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import { Banknote, ArrowRight, Coins, AlertTriangle, Calculator } from 'lucide-react'
+import { Banknote, ArrowRight, Coins, Calculator } from 'lucide-react'
 import {
     BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect,
     MoneyDisplay, LabeledInput,
 } from '@/components/shared'
+import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
-import { useLoanMutations } from './hooks'
+import { useLoanMutations } from '../hooks/useLoans'
 import type { BankLoan } from './types'
 
 interface Props {
@@ -19,9 +20,10 @@ interface Props {
 export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
     const { accounts } = useTreasuryAccounts()
     const { prepay, isPrepaying } = useLoanMutations()
+    const { dateString } = useServerDate()
 
     const [paymentAccount, setPaymentAccount] = useState('')
-    const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10))
+    const [payDate, setPayDate] = useState(dateString || new Date().toISOString().slice(0, 10))
     const [insuranceAmount, setInsuranceAmount] = useState('0')
     const [taxAmount, setTaxAmount] = useState('0')
     const [penaltyAmount, setPenaltyAmount] = useState('0')
@@ -44,11 +46,6 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
 
     const totalInterest = useMemo(() =>
         pendingInstallments.reduce((sum, inst) => sum + parseFloat(inst.interest_amount), 0),
-        [pendingInstallments],
-    )
-
-    const totalInsurance = useMemo(() =>
-        pendingInstallments.reduce((sum, inst) => sum + parseFloat(inst.insurance_amount), 0),
         [pendingInstallments],
     )
 
@@ -110,7 +107,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
         >
             <div className="space-y-5">
                 {/* Resumen del saldo insoluto */}
-                <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="rounded-md border border-border p-4 space-y-2">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
                         Saldo Insoluto
@@ -135,7 +132,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                 </div>
 
                 {/* Desglose editable */}
-                <div className="rounded-lg border border-border p-4 space-y-3">
+                <div className="rounded-md border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Calculator className="h-4 w-4" />
                         Desglose del Pago
@@ -181,7 +178,7 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
 
                 {/* Conversión UF → CLP */}
                 {isUF && (
-                    <div className="rounded-lg border border-info/30 bg-info/5 p-4 space-y-2">
+                    <div className="rounded-md border border-info/30 bg-info/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-info">
                             <ArrowRight className="h-4 w-4" />
                             Conversión UF → CLP

@@ -5,18 +5,15 @@ from django.db import migrations
 
 def convert_merchant_to_bridge(apps, schema_editor):
     """Convierte cuentas MERCHANT → BRIDGE (MERCHANT fue eliminado del modelo)."""
-    TreasuryAccount = apps.get_model('treasury', 'TreasuryAccount')
-    updated = TreasuryAccount.objects.filter(account_type='MERCHANT').update(
-        account_type='BRIDGE'
-    )
+    TreasuryAccount = apps.get_model("treasury", "TreasuryAccount")
+    updated = TreasuryAccount.objects.filter(account_type="MERCHANT").update(account_type="BRIDGE")
     if updated:
         print(f"  → {updated} cuenta(s) MERCHANT migrada(s) a BRIDGE")
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0058_make_bank_treasury_account_nullable'),
+        ("treasury", "0058_make_bank_treasury_account_nullable"),
     ]
 
     operations = [

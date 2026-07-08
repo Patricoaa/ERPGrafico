@@ -12,6 +12,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 import { WORK_ORDERS_LIST_KEY, WORK_ORDER_QUERY_KEY } from './useWorkOrderMutations'
 
 interface DeletePayload { id: number | string }
@@ -28,12 +30,14 @@ export function useWorkOrderListActions(
   { onSuccess }: { onSuccess?: () => void } = {}
 ) {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
 
   const invalidate = (id?: number | string) => {
+    const keys: Array<readonly unknown[]> = [[WORK_ORDERS_LIST_KEY]]
     if (id) {
-      queryClient.invalidateQueries({ queryKey: [WORK_ORDER_QUERY_KEY, String(id)] })
+      keys.push([WORK_ORDER_QUERY_KEY, String(id)])
     }
-    queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+    invalidateCrossFeature(queryClient, keys)
     onSuccess?.()
   }
 
@@ -43,6 +47,7 @@ export function useWorkOrderListActions(
       await api.delete(`/production/orders/${id}/`)
     },
     onSuccess: (_, { id }) => {
+      markLocalMutation()
       toast.success('OT eliminada correctamente.')
       invalidate(id)
     },
@@ -56,6 +61,7 @@ export function useWorkOrderListActions(
       return res.data
     },
     onSuccess: (_, { id }) => {
+      markLocalMutation()
       toast.success('OT anulada correctamente.')
       invalidate(id)
     },
@@ -69,8 +75,9 @@ export function useWorkOrderListActions(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('OT duplicada correctamente.')
-      queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+      invalidateCrossFeature(queryClient, [[WORK_ORDERS_LIST_KEY]])
       onSuccess?.()
     },
     onError: (err) => showApiError(err, 'Error al duplicar la OT'),
@@ -85,6 +92,7 @@ export function useWorkOrderListActions(
       return res.data
     },
     onSuccess: (_, { id }) => {
+      markLocalMutation()
       toast.success('Etapa actualizada.')
       invalidate(id)
     },
@@ -101,6 +109,7 @@ export function useWorkOrderListActions(
       return res.data as { ok: number[]; errors: { id: number; error: string }[] }
     },
     onSuccess: (data) => {
+      markLocalMutation()
       const errCount = data.errors?.length ?? 0
       if (errCount > 0) {
         toast.warning(`${data.ok.length} OTs avanzadas, ${errCount} con error.`)
@@ -127,7 +136,10 @@ export function useWorkOrderListActions(
       a.click()
       URL.revokeObjectURL(url)
     },
-    onSuccess: () => toast.success('PDF generado correctamente.'),
+    onSuccess: () => {
+      markLocalMutation()
+      toast.success('PDF generado correctamente.')
+    },
     onError: (err) => showApiError(err, 'Error al generar PDF'),
   })
 

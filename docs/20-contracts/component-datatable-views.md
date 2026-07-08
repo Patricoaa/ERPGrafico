@@ -389,30 +389,6 @@ Ver helper `createExpandableRowView` en `@/lib/view-helpers`.
 - El detalle se carga bajo demanda (lazy fetch)
 - Se quiere mantener la tabla como DataTable estándar sin custom views
 
-### 9.2 `ExpandableTableRow` — 🔴 Deprecado
-
-> **DEPRECADO:** Usa `renderSubComponent` de DataTable o el helper `createExpandableRowView()` para nuevos consumidores.
-> `ExpandableTableRow` se eliminará en una versión futura.
-
-Existente en:
-- `ExpandableContactRow` en `PortfolioTable` (créditos vigentes) — pendiente de migración
-- `ExpandableBlacklistRow` en `BlacklistView` (incobrables/bloqueados) — pendiente de migración
-
-API (solo referencia, no usar en código nuevo):
-
-```tsx
-import { ExpandableTableRow } from "@/components/shared"
-
-<ExpandableTableRow
-    row={row}
-    onExpand={(isExpanding) => {...}}
-    cellClassName="py-3 px-4"
-    panelClassName="px-8 py-4 bg-background"
->
-    {loadingDetail ? <TableSkeleton rows={2} /> : <MyDetailPanel data={detail} />}
-</ExpandableTableRow>
-```
-
 ---
 
 ---
@@ -430,25 +406,34 @@ El toolbar del DataTable sigue una jerarquía visual consistente con el [design 
 
 **Regla:** Usar siempre la opacidad del nivel correspondiente. No inventar opacidades intermedias (`/60`).
 
-### 10.2 Shadow tokens
+### 10.2 Shadow tokens (elevation system)
 
-| Nivel | Token | Elementos |
-|-------|-------|-----------|
-| Card/surface | `shadow-card` | Button group container, ToolbarCreateButton, TableHeader |
-| Floating/overlay | `shadow-floating` | DropdownMenuContent, PopoverContent |
+| Token | CSS value | Elementos |
+|-------|-----------|-----------|
+| `shadow-card` | `0 1px 3px oklch(0.12 0.02 240 / 0.06)` | Cards, containers, tables, buttons, badges, small surfaces |
+| `shadow-elevated` | `0 4px 16px oklch(0.12 0.02 240 / 0.08), 0 1px 4px oklch(0.12 0.02 240 / 0.04)` | Hover states, elevated cards (RatiosView, BIAnalyticsView), button emphasis |
+| `shadow-floating` | `0 8px 32px oklch(0.12 0.02 240 / 0.12), 0 2px 8px oklch(0.12 0.02 240 / 0.06)` | DropdownMenu, Popover, Select, tooltips, floating sidebars, scroll buttons |
+| `shadow-overlay` | `0 16px 48px oklch(0.12 0.02 240 / 0.16)` | Modals (BaseModal), Sheets/Drawers, search dialogs, full-screen overlays |
 
-**Regla:** Usar siempre los tokens semánticos del elevation system (`shadow-card`, `shadow-floating`), nunca Tailwind defaults (`shadow-sm`, `shadow-xl`, `shadow-md`).
+**Regla:** Usar **siempre** los tokens semánticos del elevation system. **Prohibido** usar Tailwind defaults (`shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-xl`, `shadow-2xl`).
+
+**Excepciones permitidas:**
+- `shadow-none` — remoción explícita de sombra (selectores, tabs underline, contenedores anidados)
+- `shadow-inner` — elementos decorativos inset (drag handles, dock containers) — no hay token semántico equivalente
 
 ### 10.3 Radius hierarchy
 
 | Nivel | Clase | Tamaño | Elementos |
 |-------|-------|--------|-----------|
-| Contenedor toolbar | `rounded-md` | 12px | Button group container, ToolbarCreateButton, inputs de búsqueda, SelectTrigger, botones de paginación |
+| Contenedor toolbar | `rounded-md` | 12px | Button group container, ToolbarCreateButton |
+| Atomic (elementos interactivos) | `rounded-sm` | 8px | Todos los botones del toolbar (Sort, Columnas, Vista, Acciones), inputs de búsqueda (SmartSearch), SelectTrigger, botones de paginación, DropdownMenuItem, checkbox, option items |
 | Overlay (dropdown/popover) | `rounded-lg` | 16px | DropdownMenuContent, PopoverContent (heredado del base `ui/` component) |
-| Atomic (items internos) | `rounded-sm` | 8px | DropdownMenuItem, checkbox, option items |
 | Pill | `rounded-full` | ∞ | Badge de filtros activos, skeleton shapes |
 
-**Regla:** No sobreescribir `rounded-lg` por `rounded-md` en overlays del toolbar. Los DropdownMenuContent y PopoverContent heredan el radius del componente base (`rounded-lg`).
+**Reglas:**
+- Todos los elementos interactivos del toolbar son **atómicos** → `rounded-sm`.
+- Los contenedores estructurales (button group container, ToolbarCreateButton) usan `rounded-md`.
+- No sobreescribir `rounded-lg` por `rounded-md` en overlays del toolbar. Los DropdownMenuContent y PopoverContent heredan el radius del componente base (`rounded-lg`).
 
 ### 10.4 Segmented button group
 
@@ -456,6 +441,333 @@ El grupo de botones del toolbar (Sort, Columnas, Vista, Acciones) usa el patrón
 - Contenedor: `rounded-md border border-border/50 shadow-card divide-x divide-border/50`
 - Botones internos: `rounded-none border-0`
 - El `divide-x` reemplaza `border-r last:border-r-0` en cada hijo
+
+---
+
+## 11. Agrupación de Cards por Fecha — `cardGroupBy` / `createCardGroupView`
+
+### 11.1 Propósito
+
+Agrupar visualmente las tarjetas de una vista `"card"` por fecha, mostrando un **encabezado de grupo** con:
+- Label inteligente de fecha ("Hoy", "Ayer", "lunes", o fecha formateada)
+- Sublabel con la fecha completa (ej: "19 de junio de 2026")
+- **Total acumulado** de montos para el segmento (si se configura `amountField`)
+
+Los encabezados son sticky (`sticky top-0 z-10`) para mantenerse visibles al hacer scroll dentro del grupo.
+
+### 11.2 Activación vía `DataTableView` (camino preferido)
+
+Agregar la prop `cardGroupBy` al `DataTableView`. Funciona con ambos tipos de card:
+
+```tsx
+// entity cardComponent — con renderCard
+<DataTableView
+  entityLabel="treasury.movement"
+  cardGroupBy={{ dateField: 'date', amountField: 'amount' }}
+  renderCard={(m: TreasuryMovement) => (
+    <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+      <EntityCard.Header title={`Movimiento ${m.display_id}`} subtitle={m.date} trailing={<StatusBadge ... />} />
+      <EntityCard.Body>
+        <EntityCard.Field label="Monto" value={<DataCell.Currency value={m.amount} />} />
+      </EntityCard.Body>
+    </EntityCard>
+  )}
+/>
+
+// domain cardComponent — sin renderCard
+<DataTableView
+  entityLabel="sales.saleorder"
+  cardGroupBy={{ dateField: 'date', amountField: 'total' }}
+/>
+```
+
+### 11.3 Activación vía Factory (uso directo con `renderCustomView`)
+
+Usar `createCardGroupView` directamente para vistas custom:
+
+```tsx
+import { createCardGroupView, createCardLoadingView } from "@/lib/view-helpers"
+
+renderCustomView={isCustomView ? createCardGroupView({
+  renderCard: (data) => <DomainCard label="sales.saleorder" data={data} />,
+  cardGroupBy: { dateField: 'date', amountField: 'total' },
+  gridLayout: 'single-column',
+  emptyState: { context: 'filter' },
+  isFiltered: isFiltered,
+}) : undefined}
+renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+```
+
+### 11.4 API del factory
+
+```ts
+function createCardGroupView<TData>(options: {
+  renderCard: (data: TData) => React.ReactNode
+  cardGroupBy: {
+    dateField: string   // campo que contiene la fecha (ISO string o Date)
+    amountField?: string // campo opcional para sumar montos
+  }
+  gridLayout?: 'single-column' | 'multi-column'
+  emptyState?: DataTableEmptyState
+  isFiltered?: boolean
+}): (table: ReactTable<TData>) => React.ReactNode
+```
+
+### 11.5 Comportamiento de labels de fecha
+
+| Condición | Label | Sublabel |
+|-----------|-------|----------|
+| Misma fecha que hoy | `"Hoy"` | Fecha formateada (ej: "19 de junio de 2026") |
+| Día anterior | `"Ayer"` | Fecha formateada |
+| Últimos 7 días | Nombre del día (ej: "lunes") | Fecha formateada |
+| Más de 7 días | Fecha formateada | — (vacío) |
+| Sin fecha (null/vacío) | `"Sin fecha"` | — |
+
+### 11.6 Reglas de renderizado
+
+- Los encabezados usan `sticky top-0 z-10` para mantenerse visibles durante el scroll
+- El total usa `MoneyDisplay` con `showColor={false}` (color neutral)
+- Si no hay `amountField` o el total es 0, se omite la columna de total
+- Cards se renderizan en gap `gap-2` (single-column) o `gap-3` (multi-column)
+- El skeleton de carga usa el mismo `createCardLoadingView` que las vistas no segmentadas
+
+### 11.7 Visual
+
+```
+┌────────────────────────────────────────────────────────┐
+│ ◷  Hoy                           Total    $1.500.000   │  ← sticky header
+│    19 de junio de 2026                                  │
+│ ───────────────────────────────────────────────────────  │
+├────────────────────────────────────────────────────────┤
+│ [EntityCard]                                             │
+│ [EntityCard]                                             │
+├────────────────────────────────────────────────────────┤
+│ ◷  Ayer                          Total     $850.000    │  ← sticky header
+│    18 de junio de 2026                                  │
+│ ───────────────────────────────────────────────────────  │
+├────────────────────────────────────────────────────────┤
+│ [EntityCard]                                             │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 12. Analytics Panel — `analyticsPanel` prop
+
+El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column Toggle) que abre un `Drawer` con gráficos y métricas.
+
+### 12.1 API
+
+```tsx
+<DataTable
+  analyticsPanel={{
+    screen: {
+      entityName: "Órdenes de Compra",
+      granularity,
+      onGranularityChange: setGranularity,
+      dateRange,
+      onDateRangeChange: setDateRange,
+      tabs: [
+        {
+          value: "financiero",
+          label: "Financiero",
+          icon: BarChart3,
+          columns: [
+            {
+              id: "col-main",
+              weight: 2,
+              sections: [
+                {
+                  id: "combo-chart",
+                  content: {
+                    type: "stat-card",
+                    config: {
+                      label: "Volumen",
+                      variant: "chart",
+                      chart: {
+                        type: "line-chart",
+                        data: lineData,
+                        enableArea: true,
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  }}
+/>
+```
+
+- `onClick?`: callback cuando se presiona el botón (útil para tracking)
+- `screen`: cuando está presente, renderiza un `AnalyticsPanel` dentro de un `Drawer` con `side="bottom"` y `defaultSize="70vh"`
+- Cada tab tiene `columns` con `sections` que pueden ser `StatCard`, `Custom`, o chart directo (bar/line/pie)
+
+### 12.2 Data flow
+
+```
+Consumer → AnalyticsPanelConfig (useMemo) → DataTable → DataTableToolbar
+  → botón LayoutDashboard → Drawer → TabBar → AnalyticsLayout → StatCard/Chart
+  → AnalyticsSegmentation (granularity, date range, card account)
+```
+
+### 12.3 Reglas
+
+- Los datos de analytics deben venir de un hook dedicado (ej. `usePurchasingAnalyticsData`)
+- `AnalyticsPanelConfig` se importa desde `@/components/shared`
+- No abusar: reservar para entidades con volumen de datos que justifique análisis visual
+
+---
+
+## 13. Footer de Totales — `renderFooter` prop
+
+Slot opcional para renderizar una fila de totales/sumario al final de la tabla.
+
+```tsx
+<DataTable
+  renderFooter={(table) => {
+    const rows = table.getFilteredRowModel().rows
+    const total = rows.reduce((sum, r) => sum + r.original.amount, 0)
+    return (
+      <TableRow className="bg-muted/10 font-bold">
+        <TableCell colSpan={3}>Total</TableCell>
+        <TableCell className="text-right">{formatCurrency(total)}</TableCell>
+      </TableRow>
+    )
+  }}
+/>
+```
+
+**Reglas:**
+- Recibe la instancia `table` de TanStack — usar `getFilteredRowModel().rows` para respetar filtros activos
+- Renderizar dentro de `<TableRow>` nativo (no DataTable row)
+- Útil para tablas financieras (libro mayor, movimientos de socio)
+
+---
+
+## 14. Bulk Actions
+
+El DataTable soporta dos mecanismos para acciones sobre filas seleccionadas, ambos renderizados en un `ActionDock` flotante.
+
+### 14.1 `bulkActions` — Declarativo (preferido)
+
+```tsx
+const bulkActions = useMemo<BulkAction<Product>[]>(() => [
+  {
+    key: 'delete',
+    label: 'Eliminar',
+    icon: Trash2,
+    intent: 'destructive',
+    onClick: (items) => handleBulkDelete(items),
+    disabled: (items) => items.some(item => !item.can_delete),
+  },
+], [])
+
+<DataTable bulkActions={bulkActions} />
+```
+
+### 14.2 `bulkDock` — Escape hatch
+
+Para UI de bulk action que no encaja en el modelo declarativo (selects, múltiples controles):
+
+```tsx
+<DataTable
+  bulkDock={(items, clear) => (
+    <ActionDock isVisible>
+      <div className="flex items-center gap-2">
+        <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-foreground whitespace-nowrap">
+          {`${items.length} ${items.length === 1 ? "seleccionado" : "seleccionados"}`}
+        </span>
+      </div>
+      <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
+        <SelectTrigger>Asignar Categoría</SelectTrigger>
+        <SelectContent>
+          <SelectItem value="cat-a">Categoría A</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button variant="ghost" size="sm" onClick={clear}
+        className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted">
+        <X className="h-3 w-3 mr-1.5" /> Limpiar
+      </Button>
+    </ActionDock>
+  )}
+/>
+```
+
+### 14.3 Reglas
+
+- `bulkActions` declarativo para acciones simples (eliminar, cambiar estado)
+- `bulkDock` escape hatch reservado para UIs complejas (selects, formularios inline)
+- `bulkDock` debe incluir manualmente el pill de conteo y botón limpiar usando `ActionDock`
+- Los tipos `BulkAction`, `BulkActionButtons` y `ActionDock` se importan de `@/components/shared`
+
+---
+
+## 15. Toolbar — Slot de Acciones Secundarias
+
+El toolbar tiene dos mecanismos para el dropdown "Acciones" en la esquina superior derecha:
+
+### 15.1 `toolbarActions` — Typed (preferido)
+
+```tsx
+import type { ToolbarActionItem } from '@/components/shared'
+
+const actions: ToolbarActionItem[] = [
+  {
+    key: 'deposit',
+    label: 'Registrar Aporte',
+    icon: Wallet,
+    onClick: () => openDeposit(),
+    intent: 'success',
+  },
+  {
+    key: 'withdraw',
+    label: 'Registrar Retiro',
+    icon: LogOut,
+    onClick: () => openWithdraw(),
+    intent: 'destructive',
+  },
+]
+
+<DataTable toolbarActions={actions} />
+```
+
+### 15.2 `toolbarAction` — Legacy (deprecado)
+
+Acepta `ReactNode` de `<DropdownMenuItem>`. Migrar a `toolbarActions`.
+
+### 15.3 Intent → Color mapping
+
+| Intent      | Color     |
+|-------------|-----------|
+| `default`   | primary   |
+| `primary`   | primary   |
+| `success`   | success   |
+| `destructive` | destructive |
+
+---
+
+## 16. SmartSearchBar — `prefix` slot
+
+El `SmartSearchBar` acepta un slot `prefix?: ReactNode` renderizado antes del ícono de búsqueda. Útil para badges de contexto (cuenta activa, filtro permanente).
+
+```tsx
+<SmartSearchBar
+  searchDef={mySearchDef}
+  prefix={isFiltered ? (
+    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
+      Cta. #123
+      <button onClick={handleClear}>×</button>
+    </span>
+  ) : undefined}
+/>
+```
+
+---
 
 ## Checklist de PR
 
@@ -476,3 +788,16 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] `variant="compact"` siempre declara `gridTemplate`
 - [ ] `variant="compact"` con `renderRowActions`: `gridTemplate` tiene `columns.length + 1` tracks
 - [ ] Expandable rows nuevos usan `renderSubComponent` o `createExpandableRowView` — **no** `ExpandableTableRow`
+- [ ] Si se usa `cardGroupBy`: `dateField` requerido; `amountField` opcional
+- [ ] `cardGroupBy` compatible con `cardComponent: 'domain'` y `cardComponent: 'entity'`
+- [ ] `createCardGroupView` usa `renderCard` con firma `(data: TData) => ReactNode` (no recibe `row`)
+- [ ] Los grupos se ordenan descendente por fecha (más reciente primero)
+- [ ] Items sin fecha se agrupan al final bajo "Sin fecha"
+- [ ] La agrupación visual (`cardGroupBy`) es ortogonal al filtrado del toolbar (`SegmentationBar`) — uno filtra, el otro organiza
+- [ ] Usar `groupByDate` desde `@/lib/group-by-date` si se necesita agrupación fuera del factory
+- [ ] `analyticsPanel` usado solo si hay hook de datos dedicado (no construir inline en el componente)
+- [ ] `renderFooter` usado solo para tablas financieras que requieren fila de totales
+- [ ] `bulkActions` preferido sobre `bulkDock` para acciones declarativas
+- [ ] `toolbarActions` preferido sobre `toolbarAction` legacy
+- [ ] `toolbarActions` usa `intent` semántico (no className inline)
+- [ ] `SmartSearchBar` con `prefix` para decoraciones contextuales (no wrapper divs)

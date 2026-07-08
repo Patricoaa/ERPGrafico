@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 
 interface CollapsibleSheetProps {
     children: React.ReactNode
@@ -24,6 +24,7 @@ interface CollapsibleSheetProps {
     variant?: "module" | "global"
     hideTab?: boolean
     priority?: number
+    badge?: number
 }
 
 export function CollapsibleSheet({
@@ -42,7 +43,8 @@ export function CollapsibleSheet({
     allowOverflow = false,
     variant = "module",
     hideTab,
-    priority = 20
+    priority = 20,
+    badge
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
     const [isMounted, setIsMounted] = useState(false)
@@ -125,7 +127,7 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 h-full",
+                "p-0 h-full panel-surface",
                 "top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))]",
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
@@ -169,7 +171,14 @@ export function CollapsibleSheet({
                     aria-label={`Expandir panel ${tabLabel}`}
                 >
                     <div className="flex flex-col items-center gap-4 py-4 animate-in fade-in slide-in-from-right-4 duration-700">
-                        <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
+                        <div className="relative">
+                            <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
+                            {badge !== undefined && badge > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-destructive text-destructive-foreground text-[8px] font-black rounded-full px-1 shadow-card border-2 border-primary/95">
+                                    {badge > 99 ? '99+' : badge}
+                                </span>
+                            )}
+                        </div>
                         <div className="flex flex-col items-center whitespace-nowrap">
                             <span className="text-[13px] font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest leading-none">
                                 {tabLabel}

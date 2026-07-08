@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
@@ -10,12 +11,12 @@ import {
     ArrowDownCircle,
     Banknote
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, WizardStep } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner } from "@/features/contacts/types/partner"
-import { TreasuryAccount } from "@/features/treasury/types"
-import { Product } from "@/features/inventory/types"
-import { settingsApi } from "../../hooks"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, type WizardStep } from "@/components/shared"
+import { partnersApi } from "@/features/contacts"
+import { type Partner } from "@/features/contacts"
+import { type TreasuryAccount } from "@/features/treasury"
+import { type Product } from "@/features/inventory"
+import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 import {Alert} from "@/components/ui/alert"
@@ -43,7 +44,7 @@ export function PartnerContributionWizard({
 
     // Data lists
     const [partners, setPartners] = useState<Partner[]>([])
-    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
 
     // Form State
@@ -71,7 +72,7 @@ export function PartnerContributionWizard({
 
     // Product details for assets
     const [productDetails, setProductDetails] = useState<Product | null>(null)
-    const [productUoMs, setProductUoMs] = useState<any[]>([])
+    const [productUoMs, setProductUoMs] = useState<UoM[]>([])
 
     // Load initial data
     useEffect(() => {
@@ -84,7 +85,7 @@ export function PartnerContributionWizard({
             ]).then(([pData, warehouses, accounts]) => {
                 setPartners(pData)
                 setWarehouses(warehouses)
-                setTreasuryAccounts(accounts as any)
+                setTreasuryAccounts(accounts as TreasuryAccount[])
 
                 if (initialPartnerId) setPartnerId(initialPartnerId)
             }).catch(err => {
@@ -127,17 +128,17 @@ export function PartnerContributionWizard({
             return
         }
 
-        settingsApi.getProduct(assetData.productId)
-            .then(data => {
-                setProductDetails(data as any)
-                setAssetData(prev => ({ ...prev, unitCost: (data as any).cost_price?.toString() || "0" }))
+            settingsApi.getProduct(assetData.productId)
+            .then((data: ProductMinimal) => {
+                setProductDetails(data as unknown as Product)
+                setAssetData(prev => ({ ...prev, unitCost: data.cost_price?.toString() || "0" }))
 
-                if ((data as any).uom_category) {
-                    settingsApi.getUoms({ category: (data as any).uom_category })
-                        .then(uoms => {
+                if (data.uom_category) {
+                    settingsApi.getUoms({ category: data.uom_category })
+                        .then((uoms) => {
                             setProductUoMs(uoms)
-                            const baseId = typeof (data as any).uom === 'object' ? (data as any).uom.id : (data as any).uom
-                            const base = uoms.find((u: { id: number }) => u.id === baseId)
+                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                            const base = uoms.find((u) => u.id === baseId)
                             if (base) setAssetData(prev => ({ ...prev, uomId: base.id.toString() }))
                         })
                 }
@@ -211,7 +212,7 @@ export function PartnerContributionWizard({
                         }))}
                     />
                     {selectedPartner && (
-                        <div className="p-3 bg-muted/30 border-2 border-dashed rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                        <div className="p-3 bg-muted/30 border-2 border-dashed rounded-md space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
                                 <span>Estado Societario</span>
                                 <Chip size="xs" intent="primary">Activo</Chip>
@@ -238,12 +239,12 @@ export function PartnerContributionWizard({
             isValid: !!method,
             component: (
                 <div className="grid grid-cols-2 gap-4 py-8">
-                    <button
+                    <Button
                         onClick={() => setMethod("CASH")}
                         className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
+                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
                             method === "CASH"
-                                ? "border-success bg-success/5 shadow-lg shadow-success/10"
+                                ? "border-success bg-success/5 shadow-floating shadow-success/10"
                                 : "border-muted hover:border-success/30 hover:bg-muted/50"
                         )}
                     >
@@ -257,14 +258,14 @@ export function PartnerContributionWizard({
                             <p className="font-black text-sm uppercase tracking-tight">Efectivo</p>
                             <p className="text-[10px] text-muted-foreground leading-tight">Caja, banco o transferencia bancaria electrónica.</p>
                         </div>
-                    </button>
+                    </Button>
 
-                    <button
+                    <Button
                         onClick={() => setMethod("ASSETS")}
                         className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
+                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
                             method === "ASSETS"
-                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10"
+                                ? "border-warning bg-warning/5 shadow-floating shadow-warning/10"
                                 : "border-muted hover:border-warning/30 hover:bg-muted/50"
                         )}
                     >
@@ -278,7 +279,7 @@ export function PartnerContributionWizard({
                             <p className="font-black text-sm uppercase tracking-tight">Bienes / Stock</p>
                             <p className="text-[10px] text-muted-foreground leading-tight">Materias primas, insumos o productos para la venta.</p>
                         </div>
-                    </button>
+                    </Button>
                 </div>
             )
         },
@@ -377,7 +378,7 @@ export function PartnerContributionWizard({
                     </div>
 
                     {assetTotalValue > 0 && (
-                        <Alert className="bg-success/5 border-success/20 py-2">
+                        <Alert variant="success" className="py-2" icon={null}>
                             <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-2 text-success">
                                     <ArrowDownCircle className="h-4 w-4" />

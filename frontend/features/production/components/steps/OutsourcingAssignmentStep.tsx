@@ -6,12 +6,11 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from '@/lib/errors'
-import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
-import { OutsourcedServiceForm, OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
-import type { WorkOrder, WorkOrderMaterial, UoM } from '../../types'
+import { OutsourcedServiceForm, type OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
+import type { WorkOrder, WorkOrderMaterial, UoM, ProductMinimal } from '../../types'
 
 interface OutsourcingAssignmentStepProps {
   order: WorkOrder
@@ -23,7 +22,6 @@ interface OutsourcingAssignmentStepProps {
 export function OutsourcingAssignmentStep({
   order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted,
 }: OutsourcingAssignmentStepProps) {
-  const { openHub } = useHubPanel()
   const { multiplier: vatMultiplier } = useVatRate()
   const { addMaterial, updateMaterial, removeMaterial, isAddingMaterial } = useWorkOrderMutations(
     order.id,
@@ -45,6 +43,8 @@ export function OutsourcingAssignmentStep({
   const handleSave = async () => {
     if (!formData.productId || parseFloat(formData.qty) <= 0 || !formData.supplierId || parseFloat(formData.grossPrice) <= 0) return
     try {
+      const productId = formData.productId
+      if (!productId) return
       if (editingId) {
         await updateMaterial({
           materialId: editingId, quantity: formData.qty, uomId: formData.uomId,
@@ -52,7 +52,7 @@ export function OutsourcingAssignmentStep({
         })
       } else {
         await addMaterial({
-          productId: formData.productId!, quantity: formData.qty, uomId: formData.uomId,
+          productId, quantity: formData.qty, uomId: formData.uomId,
           isOutsourced: true, supplierId: formData.supplierId, unitPrice: formData.netPrice, documentType: formData.documentType,
         })
       }
@@ -75,7 +75,7 @@ export function OutsourcingAssignmentStep({
       documentType: (m.document_type as 'FACTURA' | 'BOLETA') ?? 'FACTURA'
     })
     productionApi.getProduct(m.component).then((data) => {
-      setFormData(prev => ({ ...prev, productObj: data as any }))
+      setFormData(prev => ({ ...prev, productObj: data as unknown as ProductMinimal }))
       setIsAddOpen(true)
     })
   }

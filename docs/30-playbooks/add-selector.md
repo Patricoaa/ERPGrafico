@@ -23,16 +23,17 @@ last_review: 2026-04-22
 
 ## Where query logic lives
 
-ERPGrafico does not use dedicated `selectors.py` files. Query logic lives in:
+ERPGrafico uses dedicated `selectors.py` files for complex read queries. See the canonical app skeleton in [backend-apps.md](../10-architecture/backend-apps.md#app-skeleton-each-app-follows). Query logic lives in:
 
 | Location | When |
 |----------|------|
-| `ViewSet.get_queryset()` | List queries with filters, ordering, prefetch |
-| `ViewSet.retrieve()` / detail action | Single-object with additional prefetch |
+| `selectors.py` | Complex read queries (annotations, joins, aggregations, N+1 prevention) — **preferred** |
+| `ViewSet.get_queryset()` | Simple list queries with basic filters, ordering, prefetch (≤10 lines) |
+| `ViewSet.retrieve()` / detail action | Single-object with additional prefetch (≤5 extra lines) |
 | `service.py` function | Query needed for business logic (not directly for API response) |
 | `@action` method | Custom endpoint with aggregations or complex filtering |
 
-Rule: views ≤20 lines. Extract to service when query logic exceeds 10 lines.
+Rule: views ≤20 lines. Extract to service when query logic exceeds 10 lines. Extract to `selectors.py` when the query involves `select_related`, `prefetch_related`, `annotate`, or `aggregate`.
 
 ---
 

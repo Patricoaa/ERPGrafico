@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import React, { useState, useEffect, useRef } from "react"
-import { ProductCategory } from "@/types/entities"
+import { type ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
+import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -16,15 +18,15 @@ import {
 import { useCategoryMutations } from "../hooks/useCategoryMutations"
 import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
-import { Check, Printer } from "lucide-react"
+import { Check, type LucideIcon } from "lucide-react"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const ICON_OPTIONS = [
     // Imprenta y Diseño
@@ -78,7 +80,7 @@ const ICON_OPTIONS = [
 ]
 
 function RichIconSelector({ value, onChange, label, error, required }: { value: string, onChange: (val: string) => void, label?: string, error?: string, required?: boolean }) {
-    const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
+    const SelectedIcon = (LucideIcons as unknown as Record<string, LucideIcon>)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
@@ -119,7 +121,7 @@ function RichIconSelector({ value, onChange, label, error, required }: { value: 
                         </div>
                         <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
                             {ICON_OPTIONS.map((item) => {
-                                const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
+                                const Icon = (LucideIcons as unknown as Record<string, LucideIcon>)[item.name] || LucideIcons.Package
                                 const isSelected = value === item.name
                                 return (
                                     <div
@@ -199,11 +201,11 @@ export function CategoryDrawer({
         resolver: zodResolver(categorySchema),
         defaultValues: initialData ? {
             ...initialData,
-            parent: (initialData.parent as any)?.id?.toString() || initialData.parent?.toString() || "none",
+            parent: (initialData.parent as { id?: number })?.id?.toString() || initialData.parent?.toString() || "none",
             has_custom_accounting: !!(initialData.asset_account || initialData.income_account || initialData.expense_account),
-            asset_account: (initialData.asset_account as any)?.id?.toString() || initialData.asset_account?.toString() || "none",
-            income_account: (initialData.income_account as any)?.id?.toString() || initialData.income_account?.toString() || "none",
-            expense_account: (initialData.expense_account as any)?.id?.toString() || initialData.expense_account?.toString() || "none",
+            asset_account: (initialData.asset_account as { id?: number })?.id?.toString() || initialData.asset_account?.toString() || "none",
+            income_account: (initialData.income_account as { id?: number })?.id?.toString() || initialData.income_account?.toString() || "none",
+            expense_account: (initialData.expense_account as { id?: number })?.id?.toString() || initialData.expense_account?.toString() || "none",
         } : {
             name: "",
             has_custom_accounting: false,
@@ -278,7 +280,7 @@ export function CategoryDrawer({
             setOpen(false)
             if (onSuccess) onSuccess(response)
         } catch (error: unknown) {
-            console.error("Error saving category:", error)
+            showApiError(error, "Error al guardar la categoría")
         } finally {
             setLoading(false)
             if (onLoadingChange) onLoadingChange(false)
@@ -375,7 +377,7 @@ export function CategoryDrawer({
                                     checked={!!field.value}
                                     onCheckedChange={field.onChange}
                                     icon={<LucideIcons.Calculator className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                 />
                             )}
                         />
@@ -432,15 +434,17 @@ export function CategoryDrawer({
         </FormSplitLayout>
     )
 
+    const identity = useDrawerIdentity('inventory.category', mode, initialData, {
+        overrideSubtitle: form.watch("name")
+            ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`
+            : (initialData ? undefined : "Nueva Categoría"),
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
+    })
+
     if (inline) {
         return <>{formContent}</>
     }
-
-    const drawerTitle = isView
-        ? `Ficha de Categoría${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nueva Categoría"
-            : "Editar Categoría"
 
     return (
         <>
@@ -469,13 +473,10 @@ export function CategoryDrawer({
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={LucideIcons.Tag}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={
-                    form.watch("name")
-                        ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`
-                        : (initialData ? undefined : "Nueva Categoría")
-                }
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
 
                 footer={isView ? undefined : (
                     <FormFooter

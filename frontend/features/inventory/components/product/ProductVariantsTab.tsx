@@ -3,20 +3,20 @@
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, {useState, useMemo} from "react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
 import { Layers, Wand2, X, Archive } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { Product, ProductAttributeValue } from "@/types/entities"
-import { ProductInitialData } from "@/types/forms"
-import { ActionConfirmModal, Chip, DataCell, MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
+import { type Product, type ProductAttributeValue } from "@/types/entities"
+import { type ProductInitialData } from "@/types/forms"
+import { ActionConfirmModal, Chip, DataCell, type MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
-import { BulkVariantEditFormV2 } from "./BulkVariantEditFormV2"
+import { BulkVariantEditForm } from "./BulkVariantEditForm"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { useAttributes } from "../../hooks/useAttributes"
@@ -40,7 +40,7 @@ interface AttributeValue {
     value: string
 }
 
-export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChange }: ProductVariantsTabProps) {
+export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVariantsTabProps) {
     // Attributes y attribute-values vienen unidos por useAttributes.
     // Cast: el hook tipa AttributeValue con name/code pero el serializer
     // del backend usa { value } — el componente trabaja con la forma runtime.
@@ -48,11 +48,11 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     const availableAttributes = hookAttributes as unknown as Attribute[]
 
     // Variants del template (incluye archivadas — la vista admin las muestra grises).
-    const { data: variantsData, refetch: refetchVariants } = useVariants({
+    const { variants: variantsData, refetch: refetchVariants } = useVariants({
         productId: initialData?.id,
         activeOnly: false,
     })
-    const variants = (variantsData ?? []) as Product[]
+    const variants = useMemo(() => (variantsData ?? []) as Product[], [variantsData])
 
     const { updateProduct, generateVariants, isGeneratingVariants: isGenerating } = useProducts()
     const { createAttributeValue } = useAttributes()
@@ -90,7 +90,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         if (!variantToDelete) return
         const variant = variantToDelete
         try {
-            await updateProduct({ id: variant.id, payload: { active: false } as never })
+            await updateProduct({ id: variant.id, payload: { is_active: false } as never })
             toast.success("Variante archivada exitosamente")
             setSelectedVariantIds(prev => prev.filter(id => id !== variant.id))
             // updateProduct invalida PRODUCTS_KEYS.all → variants list incluida.
@@ -116,7 +116,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     const handleGenerateVariants = async () => {
         const selection = Object.entries(selectedValues).map(([id, vals]) => ({
             attribute: Number(id),
-            values: vals
+            values: vals.map(String)
         })).filter(item => item.values.length > 0)
 
         if (selection.length === 0) {
@@ -137,7 +137,13 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         // generateVariants invalida PRODUCTS_KEYS.all + ['inventory','variants']
         // → la tabla se refresca automáticamente. isGenerating viene del hook.
         try {
-            await generateVariants({ templateId: initialData.id, selection })
+            await generateVariants({
+                templateId: initialData.id,
+                selection: selection.map(s => ({
+                    attribute: s.attribute,
+                    values: s.values.map(Number)
+                }))
+            })
             toast.success("Variantes generadas con éxito")
             setSelectedValues({})
         } catch (error: unknown) {
@@ -198,7 +204,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             {/* Header / Actions */}
             <div className="flex items-center justify-between bg-card p-4 rounded-md border border-primary/20">
                 <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
+                    <div className="p-2.5 bg-primary/10 rounded-md border border-primary/20">
                         <Layers className="h-5 w-5 text-primary" />
                     </div>
                     <div>
@@ -277,12 +283,13 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 )}>
                     <div className="overflow-y-auto scrollbar-thin flex-1">
                         <Table>
-                            <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-sm">
+                            <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-card">
                                 <TableRow>
                                     <TableHead className="w-12 pl-4">
                                         <Checkbox
                                             checked={variants.length > 0 && selectedVariantIds.length === variants.length}
                                             onCheckedChange={toggleSelectAll}
+                                            variant="circle"
                                         />
                                     </TableHead>
                                     <TableHead className="font-bold">ID</TableHead>
@@ -313,6 +320,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                     checked={isSelected}
                                                     onCheckedChange={() => toggleVariantSelect(v.id)}
                                                     onClick={(e) => e.stopPropagation()}
+                                                    variant="circle"
                                                 />
                                             </TableCell>
                                             <TableCell>
@@ -407,11 +415,11 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 {/* Right: Detail View / Generator */}
                 <div className="w-full md:w-1/2 lg:w-5/12 flex-shrink-0 h-full">
                     {selectedVariantIds.length > 1 ? (
-                        <BulkVariantEditFormV2
+                        <BulkVariantEditForm
                             selectedVariants={selectedVariantsList}
                             availableVariants={variants}
                             templateData={initialData as Product | undefined}
-                            onSaved={(_updatedVariants: Product[]) => {
+                            onSaved={() => {
                                 refetchVariants();
                                 setSelectedVariantIds([]);
                             }}
@@ -422,7 +430,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             variant={activeEditVariant}
                             templateData={initialData as Product | undefined}
                             availableVariants={variants}
-                            onSaved={(_updatedVariant: Product) => {
+                            onSaved={() => {
                                 refetchVariants();
                             }}
                             onCancel={() => setSelectedVariantIds([])}
@@ -466,7 +474,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             <div className="shrink-0 pt-4 mt-4">
                                 <Button
                                     type="button"
-                                    className="w-full rounded-md font-black uppercase tracking-widest text-[11px] shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
+                                    className="w-full rounded-md font-black uppercase tracking-widest text-[11px] shadow-elevated bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
                                     onClick={handleGenerateVariants}
                                     disabled={isGenerating || availableAttributes.length === 0}
                                 >
@@ -475,7 +483,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                 </Button>
 
                                 {!initialData?.id && (
-                                    <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-xl">
+                                    <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-md">
                                         <p className="text-[10px] text-warning text-center font-black uppercase tracking-tighter italic">
                                             * Las variantes se crearán automáticamente al guardar la ficha principal del producto.
                                         </p>

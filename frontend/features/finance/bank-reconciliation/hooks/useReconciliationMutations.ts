@@ -1,13 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { financeApi } from '../../api/financeApi'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { reconciliationKeys } from './queryKeys'
+import { useRealtime } from '@/features/realtime'
 
 export function useMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
 
-    return useMutation({
+    const matchMutation = useMutation({
         mutationFn: async ({ lineId, paymentId, isBatch, confirmData }: { lineId: number; paymentId: number; isBatch?: boolean; confirmData?: Record<string, unknown> }) => {
             if (isBatch) {
                 await financeApi.groupMatchLines({
@@ -49,17 +51,20 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { match: matchMutation.mutateAsync, isMatching: matchMutation.isPending }
 }
 
 export function useGroupMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
 
-    return useMutation({
+    const groupMatchMutation = useMutation({
         mutationFn: async ({ payload, confirmPayload, lineId }: { payload: { line_ids?: number[], payment_ids?: number[], batch_ids?: number[] }, confirmPayload?: Record<string, unknown>, lineId: number }) => {
             await financeApi.groupMatchLines(payload)
             if (confirmPayload && Object.keys(confirmPayload).length > 0) {
@@ -96,17 +101,21 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { groupMatch: groupMatchMutation.mutateAsync, isGroupMatching: groupMatchMutation.isPending }
 }
 
 export function useExcludeMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const excludeMutation = useMutation({
         mutationFn: async ({ lineId, reason, notes }: { lineId: number; reason: string; notes: string }) => {
             return financeApi.updateStatementLine(lineId, {
                 reconciliation_status: 'EXCLUDED',
@@ -118,19 +127,24 @@ export function useExcludeMutation(statementId: number) {
             showApiError(err, 'Error al excluir')
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimiento excluido correctamente")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { exclude: excludeMutation.mutateAsync, isExcluding: excludeMutation.isPending }
 }
 
 export function useBulkExcludeMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const bulkExcludeMutation = useMutation({
         mutationFn: async ({ lineIds, reason, notes }: { lineIds: number[]; reason: string; notes: string }) => {
             return financeApi.bulkExcludeLines({
                 line_ids: lineIds,
@@ -142,19 +156,24 @@ export function useBulkExcludeMutation(statementId: number) {
             showApiError(err, 'Error al excluir masivamente')
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimientos excluidos correctamente")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { bulkExclude: bulkExcludeMutation.mutateAsync, isBulkExcluding: bulkExcludeMutation.isPending }
 }
 
 export function useRestoreMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const restoreMutation = useMutation({
         mutationFn: async (lineId: number) => {
             return financeApi.updateStatementLine(lineId, {
                 reconciliation_status: 'UNRECONCILED',
@@ -163,63 +182,75 @@ export function useRestoreMutation(statementId: number) {
             })
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimiento restaurado")
         },
         onError: (err) => {
             showApiError(err, 'Error al restaurar')
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { restore: restoreMutation.mutateAsync, isRestoring: restoreMutation.isPending }
 }
 
 export function useAutoMatchMutation(statementId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const autoMatchMutation = useMutation({
         mutationFn: async ({ confidenceThreshold }: { confidenceThreshold: number }) => {
             return financeApi.autoMatch(statementId, { confidence_threshold: confidenceThreshold })
         },
         onSuccess: (data) => {
+            markLocalMutation()
+            const res = data as { matched_count?: number; total_unreconciled?: number }
             toast.success(`Conciliación Finalizada`, {
-                description: `${data.matched_count} de ${data.total_unreconciled} líneas conciliadas automáticamente.`
+                description: `${res.matched_count ?? 0} de ${res.total_unreconciled ?? 0} líneas conciliadas automáticamente.`
             })
         },
         onError: (err) => {
             showApiError(err, 'Error en auto-match')
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            // Auto match could have matched payments across accounts — invalidate all unreconciled-payments
-            // but scoped to reconciliation domain, not everything
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments'] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            // Auto match could have matched payments across accounts — scoped to reconciliation domain
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments'],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { autoMatch: autoMatchMutation.mutateAsync, isAutoMatching: autoMatchMutation.isPending }
 }
 
 export function useUpdateReconciliationSettingsMutation(accountId?: number | string) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const updateSettingsMutation = useMutation({
         mutationFn: async (settings: Record<string, unknown> & { id: number }) => {
             const { id, ...rest } = settings
             return financeApi.updateReconciliationSettings(id, rest)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Configuración de inteligencia actualizada')
             if (accountId) {
-                queryClient.invalidateQueries({ queryKey: reconciliationKeys.settings(Number(accountId)) })
+                invalidateCrossFeature(queryClient, [reconciliationKeys.settings(Number(accountId))])
             } else {
-                queryClient.invalidateQueries({ queryKey: reconciliationKeys.all })
+                invalidateCrossFeature(queryClient, [reconciliationKeys.all])
             }
         },
         onError: (err) => {
             showApiError(err, 'Error al guardar configuración')
         }
     })
+    return { updateSettings: updateSettingsMutation.mutateAsync, isUpdatingSettings: updateSettingsMutation.isPending }
 }
 
 /**
@@ -227,26 +258,31 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
  */
 export function useCreateAndMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const createAndMatchMutation = useMutation({
         mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: Record<string, unknown> }) => {
-            const movement = await financeApi.createMovement(movementData)
-            const paymentId = (movement as any).id
+            const movement = await financeApi.createMovement(movementData) as Record<string, unknown>
+            const paymentId = movement.id as number
             await financeApi.matchStatementLine(lineId, { payment_id: paymentId })
             return { lineId, paymentId }
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Pago registrado y conciliado correctamente")
         },
         onError: (err) => {
             showApiError(err, "Error al crear y conciliar pago")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { createAndMatch: createAndMatchMutation.mutateAsync, isCreatingAndMatching: createAndMatchMutation.isPending }
 }
 
 /**
@@ -254,23 +290,28 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
  */
 export function useUnmatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const unmatchMutation = useMutation({
         mutationFn: async (lineId: number) => {
             return financeApi.unmatchLine(lineId)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Conciliación revertida")
         },
         onError: (err) => {
             showApiError(err, "Error al deshacer conciliación")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+            invalidateCrossFeature(queryClient, [
+                [...reconciliationKeys.all, 'unreconciled-lines', statementId],
+                [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId],
+                reconciliationKeys.statement(statementId),
+            ])
         }
     })
+    return { unmatch: unmatchMutation.mutateAsync, isUnmatching: unmatchMutation.isPending }
 }
 
 /**
@@ -278,12 +319,14 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
  */
 export function useAllocateMutation(movementId: number, treasuryAccountId?: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const allocateMutation = useMutation({
         mutationFn: async ({ allocations, validateSum = false }: { allocations: Record<string, unknown>[], validateSum?: boolean }) => {
             return financeApi.allocateMovement(movementId, { allocations, validate_sum: validateSum })
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Distribución guardada correctamente")
         },
         onError: (err) => {
@@ -291,11 +334,12 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
         },
         onSettled: () => {
             if (treasuryAccountId) {
-                queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+                invalidateCrossFeature(queryClient, [reconciliationKeys.unreconciledPayments(treasuryAccountId)])
             }
             // Invalidate other generic movement/payment queries if necessary
         }
     })
+    return { allocate: allocateMutation.mutateAsync, isAllocating: allocateMutation.isPending }
 }
 
 /**
@@ -303,19 +347,22 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
  */
 export function useCreateMovementMutation(treasuryAccountId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    return useMutation({
+    const createMovementMutation = useMutation({
         mutationFn: async (movementData: Record<string, unknown>) => {
             return financeApi.createMovement(movementData)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success("Movimiento creado correctamente")
         },
         onError: (err) => {
             showApiError(err, "Error al crear movimiento")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
+            invalidateCrossFeature(queryClient, [[...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId]])
         }
     })
+    return { createMovement: createMovementMutation.mutateAsync, isCreatingMovement: createMovementMutation.isPending }
 }

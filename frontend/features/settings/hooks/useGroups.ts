@@ -1,41 +1,40 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { settingsApi } from "../api/settingsApi"
 import { toast } from "sonner"
+import { useRealtime } from '@/features/realtime'
 import type { Group } from "../api/types"
 
+export const GROUPS_QUERY_KEY = ['groups']
+
 export function useGroups() {
-    const [groups, setGroups] = useState<Group[]>([])
-    const [loading, setLoading] = useState(true)
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
-    const fetchGroups = useCallback(async () => {
-        setLoading(true)
-        try {
-            const data = await settingsApi.getGroups()
-            setGroups(data)
-        } catch {
-            toast.error("Error al cargar grupos")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+    const { data: groups = [], isLoading } = useQuery({
+        queryKey: GROUPS_QUERY_KEY,
+        queryFn: settingsApi.getGroups,
+        staleTime: 10 * 60 * 1000,
+    })
 
-    useEffect(() => {
-        fetchGroups()
-    }, [fetchGroups])
-
-    const deleteGroup = useCallback(async (id: number): Promise<boolean> => {
-        try {
-            await settingsApi.deleteGroup(id)
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => settingsApi.deleteGroup(id),
+        onSuccess: () => {
+            markLocalMutation()
             toast.success("Grupo eliminado correctamente")
-            await fetchGroups()
-            return true
-        } catch {
+            invalidateCrossFeature(queryClient, [GROUPS_QUERY_KEY])
+        },
+        onError: () => {
             toast.error("Error al eliminar grupo")
-            return false
         }
-    }, [fetchGroups])
+    })
 
-    return { groups, loading, fetchGroups, deleteGroup }
+    return {
+        groups,
+        loading: isLoading,
+        fetchGroups: () => invalidateCrossFeature(queryClient, [GROUPS_QUERY_KEY]),
+        deleteGroup: deleteMutation.mutateAsync,
+    }
 }

@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useEffect, useCallback, useState } from "react"
-import { useForm } from "react-hook-form"
+import Image from "next/image"
+import { useForm, type Resolver, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { useCompanySettings } from "@/features/settings"
@@ -9,23 +10,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import {Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil} from "lucide-react"
-import ContactDrawer from "@/features/contacts/components/ContactDrawer"
-import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
+import ContactDrawer from "@/features/contacts"
+import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect, FadeIn, SkeletonShell } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formatRUT } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
-import { resolveMediaUrl } from "@/features/settings/api/settingsApi"
-import { CompanySettings } from "@/features/settings/types"
-import { contactsApi } from "@/features/contacts/api/contactsApi"
+import { resolveMediaUrl } from "@/lib/media-url"
+import { type CompanySettings } from "@/features/settings/types"
+import { contactsApi } from "@/features/contacts"
 
 import {companySchema, type CompanyFormValues } from "./CompanySettingsView.schema"
-import { Contact } from "@/features/contacts/types"
+import { type Contact } from "@/features/contacts"
 
 export function CompanySettingsView({ activeTab }: { activeTab: string }) {
-    const { settings, updateSettings } = useCompanySettings()
+    const { settings, isLoading, updateSettings } = useCompanySettings()
 
     const [syncing, setSyncing] = useState(false)
     const [contacts, setContacts] = useState<Contact[]>([])
@@ -33,8 +34,8 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     const [isEditContactOpen, setIsEditContactOpen] = useState(false)
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-    const form = useForm<any>({
-        resolver: zodResolver(companySchema) as any,
+    const form = useForm<CompanyFormValues>({
+        resolver: zodResolver(companySchema) as unknown as Resolver<CompanyFormValues>,
         defaultValues: {
             name: "",
             trade_name: "",
@@ -76,17 +77,13 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
         fetchContacts()
     }, [])
 
-    const onSave = useCallback(async (data: any) => {
-        await updateSettings(data as Partial<CompanySettings>)
+    const onSave = useCallback(async (data: CompanyFormValues) => {
+        await updateSettings(data as unknown as Partial<CompanySettings>)
     }, [updateSettings])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: true })
 
     useUnsavedChangesGuard(status)
-
-    const linkedContactId = form.watch("contact")
-    const isLinked = !!linkedContactId
-    const selectedContact = contacts.find(c => c.id === linkedContactId)
 
     const syncFromContact = useCallback(async (customId?: number | null) => {
         const idToSync = customId !== undefined ? customId : form.getValues("contact")
@@ -114,6 +111,12 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
             setSyncing(false)
         }
     }, [form])
+
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
+
+    const linkedContactId = form.watch("contact")
+    const isLinked = !!linkedContactId
+    const selectedContact = contacts.find(c => c.id === linkedContactId)
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -143,8 +146,8 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     }
 
     return (
-        <>
-            <div className="flex justify-end mb-4">
+        <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex justify-end">
                 <AutoSaveStatusBadge
                     status={status}
                     invalidReason={invalidReason}
@@ -153,10 +156,11 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                 />
             </div>
             <Form {...form}>
+                <form className="space-y-6">
                 <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
                     <FadeIn key={activeTab}>
                         <TabsContent value="general" className="space-y-6">
-                            <Card variant="transparent">
+                            <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary flex items-center gap-2">
                                         <Building2 className="h-5 w-5" />
@@ -167,7 +171,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                 <CardContent className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="contact"
                                             render={({ field, fieldState }) => (
                                                 <div className="col-span-2 space-y-2">
@@ -215,7 +219,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                             type="button"
                                                             variant="outline"
                                                             size="icon"
-                                                            className="h-[52px] w-[52px] shadow-sm"
+                                                            className="h-[52px] w-[52px] shadow-card"
                                                             onClick={() => syncFromContact()}
                                                             disabled={syncing || !isLinked}
                                                             title="Sincronizar datos"
@@ -235,7 +239,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="trade_name"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -246,7 +250,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             )}
                                         />
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="business_activity"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -260,7 +264,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", isLinked && "hidden")}>
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="name"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -271,7 +275,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             )}
                                         />
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="tax_id"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -287,7 +291,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", isLinked && "hidden")}>
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="email"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -302,7 +306,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             )}
                                         />
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="phone"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -319,7 +323,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
                                     <div className={cn(isLinked && "hidden")}>
                                         <FormField
-                                            control={form.control as any}
+                                            control={form.control as unknown as Control<CompanyFormValues>}
                                             name="address"
                                             render={({ field }) => (
                                                 <LabeledInput
@@ -337,7 +341,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                     </div>
 
                                     <FormField
-                                        control={form.control as any}
+                                        control={form.control as unknown as Control<CompanyFormValues>}
                                         name="website"
                                         render={({ field }) => (
                                             <LabeledInput
@@ -356,7 +360,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                         </TabsContent>
 
                         <TabsContent value="branding" className="space-y-6">
-                            <Card variant="transparent">
+                            <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary flex items-center gap-2">
                                         <Palette className="h-5 w-5" />
@@ -369,17 +373,18 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Logo de la Empresa</p>
                                         <div className="flex flex-col md:flex-row gap-6 items-start">
                                             <div
-                                                className="h-32 w-32 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner cursor-pointer hover:bg-muted/50 transition-colors"
+                                                className="h-32 w-32 rounded-md border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner cursor-pointer hover:bg-muted/50 transition-colors"
                                                 onClick={() => !settings?.logo && fileInputRef.current?.click()}
                                             >
                                                 {uploadingLogo ? (
                                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                                 ) : settings?.logo ? (
                                                     <div className="relative w-full h-full">
-                                                        <img
-                                                            src={resolveMediaUrl(settings.logo) || undefined}
+                                                        <Image
+                                                            src={resolveMediaUrl(settings.logo) || ""}
                                                             alt="Logo"
-                                                            className="max-h-full max-w-full object-contain p-2 w-full h-full"
+                                                            fill
+                                                            className="object-contain p-2"
                                                         />
                                                         <div className="absolute inset-0 bg-overlay/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                             <Button
@@ -422,7 +427,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             </div>
                                             <div className="flex-1 space-y-4 w-full">
                                                 <FormField
-                                                    control={form.control as any}
+                                                    control={form.control as unknown as Control<CompanyFormValues>}
                                                     name="logo_url"
                                                     render={({ field }) => (
                                                         <LabeledInput
@@ -445,6 +450,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                         </TabsContent>
                     </FadeIn>
                 </Tabs>
+                </form>
 
                 <ContactDrawer
                     open={isEditContactOpen}
@@ -455,6 +461,6 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                     }}
                 />
             </Form>
-        </>
+        </div>
     )
 }

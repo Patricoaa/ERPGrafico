@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -20,15 +21,16 @@ import {
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Product, UoM } from "@/types/entities"
+import { type Product, type UoM } from "@/types/entities"
 import { cn } from "@/lib/utils"
-import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useUoMs } from "../hooks/useUoMs"
 import { useProduct } from "../hooks/useProducts"
 import { useStockAdjustment } from "../hooks/useStockMoves"
 import { usePartners } from "@/features/contacts"
-import { FormSection, FormTabs, LabeledInput, LabeledSelect, SkeletonShell, type FormTabItem } from '@/components/shared'
+import { useServerDate } from '@/hooks/useServerDate'
+import { usePeriodValidation } from '@/hooks/usePeriodValidation'
+import { FormSection, TabBar, LabeledInput, LabeledSelect, SkeletonShell, type TabItem } from '@/components/shared'
 
 const adjustmentSchema = z.object({
     product_id: z.string().min(1, "Seleccione un producto"),
@@ -77,6 +79,15 @@ export function AdjustmentForm({
     onLoadingChange
 }: AdjustmentFormProps) {
     // Reads reactivos vía hooks.
+    const { dateString } = useServerDate()
+    const { validatePeriodImmediate, isClosed: periodClosed, message: periodMessage } = usePeriodValidation()
+
+    useEffect(() => {
+        if (dateString) {
+            validatePeriodImmediate(dateString, 'accounting')
+        }
+    }, [dateString, validatePeriodImmediate])
+
     const { warehouses, isLoading: isWarehousesLoading } = useWarehouses()
     const { data: partnersData, isLoading: isPartnersLoading } = usePartners()
     const partners = (partnersData ?? []) as { id: number, name: string }[]
@@ -89,8 +100,6 @@ export function AdjustmentForm({
     useEffect(() => {
         onLoadingChange?.(isLoading)
     }, [isLoading, onLoadingChange])
-    const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string; date?: string; error?: string } | null>(null)
-
     const form = useForm<z.infer<typeof adjustmentSchema>>({
         resolver: zodResolver(adjustmentSchema),
         defaultValues: {
@@ -107,32 +116,24 @@ export function AdjustmentForm({
         }
     })
 
-    const selectedProductId = form.watch("product_id")
-    const selectedUoMId = form.watch("uom_id")
-    const moveType = form.watch("type")
-    const adjustmentReason = form.watch("adjustment_reason")
-    const quantity = Number(form.watch("quantity") || 0)
-    const unitCost = Number(form.watch("unit_cost") || 0)
-    const totalCostWatch = Number(form.watch("total_cost") || 0)
+    const { watch } = form
+    const selectedProductId = watch("product_id")
+    const selectedUoMId = watch("uom_id")
+    const moveType = watch("type")
+    const adjustmentReason = watch("adjustment_reason")
+    const quantity = Number(watch("quantity") || 0)
+    const unitCost = Number(watch("unit_cost") || 0)
 
     const isPartnerReason = adjustmentReason === 'PARTNER_CONTRIBUTION' || adjustmentReason === 'PARTNER_WITHDRAWAL'
 
     // warehouses + partners se reciben reactivamente de useWarehouses / usePartners
     // (declarados al inicio del componente). Cero fetch imperativo aquí.
 
-    // Check period status for today
-    useEffect(() => {
-        const checkPeriod = async () => {
-            const today = new Date().toISOString().split('T')[0]
-            const status = await validateAccountingPeriod(today)
-            setPeriodStatus(status)
-        }
-        checkPeriod()
-    }, [])
+    // (Period validation done in the usePeriodValidation effect above)
 
     // Producto seleccionado — detalle reactivo vía useProduct.
     const numericProductId = selectedProductId ? Number(selectedProductId) : null
-    const { data: productDetailRaw, isLoading: isProductLoading } = useProduct(numericProductId)
+    const { product: productDetailRaw, isLoading: isProductLoading } = useProduct(numericProductId)
     const productDetails = productDetailRaw as (Product & { cost_price?: number, uom_category?: number }) | null | undefined
 
     // UoMs filtradas por categoría del producto.
@@ -158,7 +159,7 @@ export function AdjustmentForm({
         const baseId = typeof productUom === 'object' && productUom !== null
             ? (productUom as { id: number }).id
             : (productUom as number | undefined)
-        const base = productUoMs.find((u: any) => u.id === baseId) || null
+        const base = productUoMs.find((u) => u.id === baseId) || null
         // Safe: ratio differs string vs number at type level only, runtime value is compatible
         setBaseUoM(base as unknown as UoM)
         if (base && !form.getValues("uom_id")) {
@@ -170,10 +171,8 @@ export function AdjustmentForm({
         setIsLoading(true)
         try {
             // Check period closure
-            const today = new Date().toISOString().split('T')[0]
-            const status = await validateAccountingPeriod(today)
-            if (status.is_closed) {
-                toast.error(`No se puede registrar el ajuste: El periodo ${(status as any).period_name || ''} está cerrado.`, {
+            if (periodClosed) {
+                toast.error(periodMessage || 'El periodo contable está cerrado.', {
                     icon: <ShieldAlert className="h-4 w-4 text-destructive" />
                 })
                 setIsLoading(false)
@@ -214,9 +213,7 @@ export function AdjustmentForm({
         }
     }
 
-    // Helper: Calculate Total Value Preview
-    const totalValue = quantity * unitCost
-    const selectedUoM = productUoMs.find((u: any) => u.id.toString() === selectedUoMId)
+    const selectedUoM = productUoMs.find((u) => u.id.toString() === selectedUoMId)
 
     // Helper: Conversion Preview
     const getConversionPreview = () => {
@@ -224,7 +221,7 @@ export function AdjustmentForm({
         if (baseUoM.id === selectedUoM.id) return null
 
         // Ratio logic: Qty Base = Qty * (FromRatio / ToRatio)
-        const factor = Number((selectedUoM as any).ratio) / Number((baseUoM as any).ratio)
+        const factor = Number(selectedUoM.ratio) / Number(baseUoM.ratio)
         const qtyInBase = quantity * factor
         const costInBase = unitCost / factor
 
@@ -237,7 +234,7 @@ export function AdjustmentForm({
 
     const conversion = getConversionPreview()
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "IN",
             label: "Entrada",
@@ -253,34 +250,35 @@ export function AdjustmentForm({
     return (
         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de ajuste">
             <Form {...form}>
-                <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
 
-                    {periodStatus?.is_closed && (
-                        <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive py-2 mb-2">
-                            <ShieldAlert className="h-4 w-4" />
+                    {periodClosed && (
+                        <Alert variant="destructive" className="shrink-0 py-2 mx-6 mt-6">
                             <AlertTitle className="text-xs font-bold mb-1">Periodo Cerrado</AlertTitle>
                             <AlertDescription className="text-xs opacity-90">
-                                El periodo contable actual (<strong>{periodStatus.period_name}</strong>) está cerrado. No podrá guardar este ajuste.
+                                {periodMessage || 'El periodo contable actual está cerrado. No podrá guardar este ajuste.'}
                             </AlertDescription>
                         </Alert>
                     )}
 
-                    <FormTabs
-                        items={tabItems}
-                        value={moveType}
-                        onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
-                        orientation="horizontal"
-                        variant="underline"
-                        listClassName={cn(
-                            moveType === 'IN'
-                                ? "[&_[data-state=active]]:text-success [&_[data-state=active]]:border-success"
-                                : "[&_[data-state=active]]:text-destructive [&_[data-state=active]]:border-destructive"
-                        )}
-                        className="flex-1 flex flex-col min-h-0"
-                        headerClassName="bg-transparent"
-                        contentClassName="flex-1 flex flex-col overflow-hidden bg-background"
-                    >
-                        <div className="flex-1 overflow-y-auto space-y-8 pt-6 px-8 pb-8 scrollbar-thin">
+                    <div className="shrink-0 px-6 pt-4 pb-2">
+                        <TabBar
+                            items={tabItems}
+                            value={moveType}
+                            onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
+                            variant="toolbar"
+                            listClassName={cn(
+                                moveType === 'IN'
+                                    ? "[&_[data-state=active]]:bg-success/15 [&_[data-state=active]]:text-success [&_[data-state=active]]:border-success/30"
+                                    : "[&_[data-state=active]]:bg-destructive/15 [&_[data-state=active]]:text-destructive [&_[data-state=active]]:border-destructive/30"
+                            )}
+                        >
+                            <div className="hidden" />
+                        </TabBar>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto scrollbar-thin px-6 pb-6">
+                        <div className="space-y-8 pt-6">
                             <FormSection title="Clasificación y Origen" icon={Info} />
 
                             <div className="grid grid-cols-4 gap-6">
@@ -373,7 +371,6 @@ export function AdjustmentForm({
                             <FormSection title="Detalles del Movimiento" icon={WarehouseIcon} />
 
                             <div className="space-y-6">
-                                {/* Row 1: Almacén | Producto */}
                                 <div className="grid grid-cols-4 gap-6">
                                     <div className="col-span-2">
                                         <FormField
@@ -417,7 +414,6 @@ export function AdjustmentForm({
                                     </div>
                                 </div>
 
-                                {/* Row 2: Cantidad | Unidad | Costo */}
                                 <div className="grid grid-cols-4 gap-6">
                                     <div className="col-span-1">
                                         <FormField
@@ -527,11 +523,9 @@ export function AdjustmentForm({
                                     </div>
                                 </div>
 
-                                {/* Conversion Alert / Info */}
                                 {conversion && baseUoM && (
-                                    <Alert className="bg-primary/5 border-primary/20 animate-in slide-in-from-top-2 duration-300">
-                                        <Info className="h-4 w-4 text-primary" />
-                                        <AlertTitle className="text-[10px] font-bold uppercase text-primary mb-0.5">Conversión Automática</AlertTitle>
+                                    <Alert variant="primary" className="animate-in slide-in-from-top-2 duration-300">
+                                        <AlertTitle className="text-[10px] font-bold uppercase mb-0.5">Conversión Automática</AlertTitle>
                                         <AlertDescription className="text-[11px] leading-tight">
                                             Se registrará como <span className="font-black">{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</span> a un costo base de <span className="font-black">${conversion.cost.toFixed(2)}</span>.
                                         </AlertDescription>
@@ -540,7 +534,7 @@ export function AdjustmentForm({
                             </div>
 
                         </div>
-                    </FormTabs>
+                    </div>
                 </form>
             </Form>
         </SkeletonShell>

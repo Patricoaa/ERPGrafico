@@ -1,13 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from .views import WorkOrderViewSet, BillOfMaterialsViewSet, BillOfMaterialsLineViewSet, WorkOrderTemplateViewSet
+
+from .views import BillOfMaterialsViewSet, WorkOrderViewSet
 
 router = DefaultRouter()
-router.register(r'orders', WorkOrderViewSet)
-router.register(r'boms', BillOfMaterialsViewSet)
-router.register(r'bom-lines', BillOfMaterialsLineViewSet)
-router.register(r'templates', WorkOrderTemplateViewSet)
-
+router.register(r"orders", WorkOrderViewSet, basename="workorder")
+router.register(r"boms", BillOfMaterialsViewSet, basename="billofmaterials")
 urlpatterns = [
-    path('', include(router.urls)),
+    path("", include(router.urls)),
 ]

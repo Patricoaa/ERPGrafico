@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { BaseModal, DataCell, LoadingFallback, MoneyDisplay, FormFooter, CancelButton } from "@/components/shared";
+import { BaseModal, DataCell, MoneyDisplay, SkeletonShell, FormFooter, CancelButton } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -12,7 +12,9 @@ import {
     TooltipProvider,
     TooltipTrigger
 } from "@/components/ui/tooltip";
-import { Info, History, Split, BarChart2 } from "lucide-react";
+import { Info, History, Split, BarChart2 } from "lucide-react"
+import { parseDateOnly } from "@/lib/utils";
+import { useServerDate } from '@/hooks/useServerDate';
 import { financeApi } from "../api/financeApi";
 import { cn } from "@/lib/utils";
 
@@ -96,6 +98,7 @@ const BudgetAccountRow = React.memo(({
 BudgetAccountRow.displayName = 'BudgetAccountRow';
 
 export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEditorProps) {
+    const { serverDate } = useServerDate();
     const [accounts, setAccounts] = useState<BudgetAccount[]>([]);
     // accountId -> month (1-12) -> amount
     const [items, setItems] = useState<Record<number, Record<number, number>>>({});
@@ -110,21 +113,23 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             const accData = await financeApi.getBudgetableAccounts();
             await financeApi.getBudgetExecution(budget.id);
 
-            const fetchedAccounts = (accData as any).results || accData;
+            const accResult = accData as Record<string, unknown>
+            const fetchedAccounts = (accResult.results as BudgetAccount[]) ?? (accData as BudgetAccount[]);
             setAccounts(fetchedAccounts);
 
             const currItems: Record<number, Record<number, number>> = {};
-            const budgetData = await financeApi.getBudgetDetail(budget.id);
+            const budgetData = await financeApi.getBudgetDetail(budget.id) as Record<string, unknown>;
+            const budgetItems = budgetData.items as BudgetItem[] | undefined;
 
-            if ((budgetData as any).items) {
-                (budgetData as any).items.forEach((item: BudgetItem) => {
+            if (budgetItems) {
+                budgetItems.forEach((item: BudgetItem) => {
                     if (!currItems[item.account]) currItems[item.account] = {};
                     currItems[item.account][item.month] = parseFloat(String(item.amount));
                 });
             }
             setItems(currItems);
 
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
         } finally {
             setLoading(false);
@@ -143,7 +148,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
         if (!budget) return;
         setLoading(true);
         try {
-            const fetchedItems = await financeApi.getBudgetPreviousYearActuals(budget.id);
+            const fetchedItems = await financeApi.getBudgetPreviousYearActuals(budget.id) as BudgetItem[];
             const newItems: Record<number, Record<number, number>> = {};
 
             fetchedItems.forEach((item: BudgetItem) => {
@@ -152,7 +157,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             });
 
             setItems(prev => ({ ...prev, ...newItems }));
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
         } finally {
             setLoading(false);
@@ -195,7 +200,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     const handleSave = async () => {
         try {
             const payload: Array<Record<string, unknown>> = [];
-            const budgetYear = budget ? new Date(budget.start_date).getFullYear() : new Date().getFullYear();
+            const budgetYear = budget ? parseDateOnly(budget.start_date).getFullYear() : (serverDate ?? new Date()).getFullYear();
 
             Object.entries(items).forEach(([accId, monthlyData]) => {
                 Object.entries(monthlyData).forEach(([month, amount]) => {
@@ -215,7 +220,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             }
             onOpenChange(false);
             onSave();
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(error);
         }
     };
@@ -292,7 +297,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                 </div>
 
                 <div className="flex-1 overflow-hidden p-4">
-                    <ScrollArea className="h-full border rounded-lg overflow-hidden shadow-sm">
+                    <ScrollArea className="h-full border rounded-md overflow-hidden shadow-card">
                         <div className="min-w-[1200px]">
                             <div className="flex bg-muted/50 border-b sticky top-0 z-10 font-bold text-[11px] uppercase tracking-wider text-muted-foreground">
                                 <div className="w-[300px] p-3 border-r bg-muted/50">Cuenta Contable</div>
@@ -302,21 +307,17 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                                 <div className="w-[100px] p-3 text-center bg-muted/50">Total Anual</div>
                             </div>
 
-                            {loading && (
-                                <div className="py-12">
-                                    <LoadingFallback message="Cargando cuentas..." />
-                                </div>
-                            )}
-
-                            {!loading && filteredAccounts.map(acc => (
-                                <BudgetAccountRow
-                                    key={acc.id}
-                                    account={acc}
-                                    monthlyData={items[acc.id]}
-                                    onAmountChange={handleAmountChange}
-                                    onAutoDistribute={handleAutoDistribute}
-                                />
-                            ))}
+                            <SkeletonShell isLoading={loading} ariaLabel="Cargando cuentas presupuestables">
+                                {filteredAccounts.map(acc => (
+                                    <BudgetAccountRow
+                                        key={acc.id}
+                                        account={acc}
+                                        monthlyData={items[acc.id]}
+                                        onAmountChange={handleAmountChange}
+                                        onAutoDistribute={handleAutoDistribute}
+                                    />
+                                ))}
+                            </SkeletonShell>
                         </div>
                     </ScrollArea>
                 </div>

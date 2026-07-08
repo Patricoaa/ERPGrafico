@@ -8,7 +8,7 @@ import { format } from "date-fns"
 import { toast } from "sonner"
 import { Lock, Pencil, Calendar, User, Package, Settings, X, RotateCcw, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import {
     Tooltip,
     TooltipContent,
@@ -30,7 +30,7 @@ import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/s
 import type { ManufacturingData } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import type { Contact } from "@/features/contacts/types"
+import type { Contact } from "@/features/contacts"
 import type { WorkOrder } from "../../types"
 import type { MfgSection } from "../../lib/mfgConfigEditability"
 import { canEditMfgSection } from "../../lib/mfgConfigEditability"
@@ -71,7 +71,8 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
                 <TooltipProvider delayDuration={200}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <button
+                            <Button
+                                variant="ghost"
                                 disabled={!canEdit || editingSection !== null}
                                 onClick={() => canEdit && editingSection === null && onEdit(section)}
                                 className={cn(
@@ -83,7 +84,7 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
                             >
                                 {canEdit ? <Pencil className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                                 {canEdit ? "Editar" : "Bloqueado"}
-                            </button>
+                            </Button>
                         </TooltipTrigger>
                         <TooltipContent side="left">
                             {!canEdit
@@ -103,7 +104,7 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
 const mfgConfigSchema = z.object({
     quantity: z.string().optional(),
     uomId: z.string().optional(),
-    contact: z.any().nullable().optional(),
+    contact: z.unknown().nullable().optional(),
     startDate: z.date().nullable().optional(),
     dueDate: z.date().nullable().optional(),
     notes: z.string().optional(),
@@ -182,8 +183,8 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                 contact: order.stage_data?.contact_id
                     ? { id: Number(order.stage_data.contact_id), name: order.stage_data.contact_name ?? "", tax_id: order.stage_data.contact_tax_id ?? "" } as Contact
                     : null,
-                startDate: order.start_date ? new Date(order.start_date) : null,
-                dueDate: order.due_date ? new Date(order.due_date) : null,
+                startDate: order.start_date ? parseDateOnly(order.start_date) : null,
+                dueDate: order.due_date ? parseDateOnly(order.due_date) : null,
                 notes: order.stage_data?.internal_notes ?? "",
             })
         }
@@ -282,7 +283,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
         <form id="wizard-edit-form" onSubmit={handleSave} className="space-y-4">
 
             {/* ── Card 1: Identidad (always locked) ── */}
-            <div className="border rounded-lg p-4 bg-muted/20">
+            <div className="border rounded-md p-4 bg-muted/20">
                 <SectionHeader
                     icon={<Package className="h-3.5 w-3.5" />}
                     title="Identidad"
@@ -355,7 +356,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
             </div>
 
             {/* ── Card 2: Volumen ── */}
-            <div className={cn("border rounded-lg p-4", editingSection === 'volume' && "border-info/40 bg-info/5")}>
+            <div className={cn("border rounded-md p-4", editingSection === 'volume' && "border-info/40 bg-info/5")}>
                 <SectionHeader
                     icon={<Package className="h-3.5 w-3.5" />}
                     title="Volumen"
@@ -396,7 +397,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
             </div>
 
             {/* ── Card 3: Parámetros de fabricación ── */}
-            <div className={cn("border rounded-lg p-4", ['prepress', 'press', 'postpress'].includes(editingSection ?? '') && "border-info/40 bg-info/5")}>
+            <div className={cn("border rounded-md p-4", ['prepress', 'press', 'postpress'].includes(editingSection ?? '') && "border-info/40 bg-info/5")}>
                 <SectionHeader
                     icon={<Settings className="h-3.5 w-3.5" />}
                     title="Parámetros de Fabricación"
@@ -435,7 +436,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
             </div>
 
             {/* ── Card 4: Planificación ── */}
-            <div className={cn("border rounded-lg p-4", editingSection === 'planning' && "border-info/40 bg-info/5")}>
+            <div className={cn("border rounded-md p-4", editingSection === 'planning' && "border-info/40 bg-info/5")}>
                 <SectionHeader
                     icon={<Calendar className="h-3.5 w-3.5" />}
                     title="Planificación"
@@ -467,9 +468,14 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                                         <User className="h-3.5 w-3.5 text-primary shrink-0" />
                                         <span className="font-semibold text-sm truncate">{(form.watch("contact") as Contact).name}</span>
                                     </div>
-                                    <button type="button" onClick={() => form.setValue("contact", null)} className="text-muted-foreground hover:text-destructive">
+                                    <Button
+                                        variant="ghost"
+                                        type="button"
+                                        onClick={() => form.setValue("contact", null)}
+                                        className="text-muted-foreground hover:text-destructive h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
+                                    >
                                         <X className="h-3.5 w-3.5" />
-                                    </button>
+                                    </Button>
                                 </div>
                             ) : (
                                 <AdvancedContactSelector
@@ -491,13 +497,13 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                         <div>
                             <p className="text-xs text-muted-foreground">Fecha Inicio</p>
                             <p className="font-medium">
-                                {order.start_date ? format(new Date(order.start_date), 'dd/MM/yyyy') : "—"}
+                                {order.start_date ? format(parseDateOnly(order.start_date), 'dd/MM/yyyy') : "—"}
                             </p>
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Fecha Entrega</p>
                             <p className="font-medium">
-                                {order.due_date ? format(new Date(order.due_date), 'dd/MM/yyyy') : "—"}
+                                {order.due_date ? format(parseDateOnly(order.due_date), 'dd/MM/yyyy') : "—"}
                             </p>
                         </div>
                         <div>

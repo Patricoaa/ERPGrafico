@@ -3,8 +3,9 @@
 import { showApiError } from "@/lib/errors"
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import {ActionConfirmModal, DataCell, DataTableColumnHeader, DataTableView, EntityCard, createActionsColumn} from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import {ActionConfirmModal, DataCell, DataTableColumnHeader, DataTableView} from '@/components/shared'
+import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseDrawer } from "./WarehouseDrawer"
 import { Trash2 } from "lucide-react"
@@ -102,6 +103,11 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         }
     }
 
+    const actionsCtx: WarehouseActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDelete: (warehouse) => handleDelete(warehouse),
+    }
+
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
         {
             id: "select",
@@ -110,6 +116,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -117,6 +124,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             enableSorting: false,
@@ -152,15 +160,8 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 </DataCell.Secondary>
             ),
         },
-        createActionsColumn<Warehouse>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action action="edit" onClick={() => openSelected(item.id)} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item)} />
-                </>
-            ),
-        }),
-    ], [handleDelete])
+        warehouseActions.column(actionsCtx),
+    ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [
         {
@@ -170,10 +171,10 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
             intent: "destructive",
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteWarehouse, bulkDeleteConfirm])
+    ], [bulkDeleteConfirm])
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="inventory.warehouse"
@@ -181,7 +182,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                     data={filterFn(warehouses)}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." className="w-full" />}
                     bulkActions={bulkActions}
                     createAction={createAction}
                     isFiltered={isFiltered}
@@ -190,15 +191,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                         title: "Aún no hay almacenes",
                         description: "Crea un almacén para gestionar ubicaciones y existencias de inventario.",
                     }}
-                    renderCard={(warehouse: Warehouse) => (
-                        <EntityCard onClick={() => openSelected(warehouse.id)}>
-                            <EntityCard.Header
-                                title={warehouse.name}
-                                subtitle={warehouse.address ?? ''}
-                                trailing={<DataCell.Code>{warehouse.code}</DataCell.Code>}
-                            />
-                        </EntityCard>
-                    )}
                 />
             </div>
 

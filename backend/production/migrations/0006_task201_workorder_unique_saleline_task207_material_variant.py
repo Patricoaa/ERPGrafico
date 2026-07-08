@@ -4,26 +4,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('billing', '0012_fts_gin_index'),
-        ('contacts', '0009_fts_gin_index'),
-        ('inventory', '0007_fts_gin_index'),
-        ('production', '0005_alter_historicalworkorder_status_and_more'),
-        ('purchasing', '0005_fts_gin_index'),
-        ('sales', '0010_fts_gin_index'),
+        ("billing", "0012_fts_gin_index"),
+        ("contacts", "0009_fts_gin_index"),
+        ("inventory", "0007_fts_gin_index"),
+        ("production", "0005_alter_historicalworkorder_status_and_more"),
+        ("purchasing", "0005_fts_gin_index"),
+        ("sales", "0010_fts_gin_index"),
     ]
 
     def remove_unique_together(apps, schema_editor):
         vendor = schema_editor.connection.vendor
-        if vendor == 'postgresql':
-            model = apps.get_model('production', 'WorkOrderMaterial')
+        if vendor == "postgresql":
+            model = apps.get_model("production", "WorkOrderMaterial")
             schema_editor.alter_unique_together(
                 model,
-                old_unique_together=(('work_order', 'component'),),
+                old_unique_together=(("work_order", "component"),),
                 new_unique_together=set(),
             )
-        elif vendor == 'sqlite':
+        elif vendor == "sqlite":
             with schema_editor.connection.cursor() as cursor:
                 cursor.execute(
                     "SELECT name FROM sqlite_master WHERE type='index' AND sql LIKE '%UNIQUE%' "
@@ -37,11 +36,18 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(remove_unique_together, migrations.RunPython.noop),
         migrations.AddConstraint(
-            model_name='workorder',
-            constraint=models.UniqueConstraint(condition=models.Q(('status__in', ['DRAFT', 'IN_PROGRESS'])), fields=('sale_line',), name='unique_active_workorder_per_saleline'),
+            model_name="workorder",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("status__in", ["DRAFT", "IN_PROGRESS"])),
+                fields=("sale_line",),
+                name="unique_active_workorder_per_saleline",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='workordermaterial',
-            constraint=models.UniqueConstraint(fields=('work_order', 'component', 'is_outsourced', 'supplier', 'uom'), name='unique_workorder_material_variant'),
+            model_name="workordermaterial",
+            constraint=models.UniqueConstraint(
+                fields=("work_order", "component", "is_outsourced", "supplier", "uom"),
+                name="unique_workorder_material_variant",
+            ),
         ),
     ]

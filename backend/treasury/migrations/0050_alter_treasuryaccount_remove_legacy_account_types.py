@@ -15,44 +15,43 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0049_alter_historicaltreasuryaccount_account_type_and_more'),
+        ("treasury", "0049_alter_historicaltreasuryaccount_account_type_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='historicaltreasuryaccount',
-            name='account_type',
+            model_name="historicaltreasuryaccount",
+            name="account_type",
             field=models.CharField(
                 choices=[
-                    ('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'),
-                    ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'),
-                    ('CASH', 'Caja Física (Efectivo)'),
-                    ('BRIDGE', 'Puente'),
-                    ('MERCHANT', 'Cuenta Recaudadora'),
-                    ('CHECK_PORTFOLIO', 'Cheques en Cartera'),
+                    ("CHECKING", "Cuenta Bancaria (Corriente/Vista)"),
+                    ("CREDIT_CARD", "Tarjeta de Crédito (Cta. Propia)"),
+                    ("CASH", "Caja Física (Efectivo)"),
+                    ("BRIDGE", "Puente"),
+                    ("MERCHANT", "Cuenta Recaudadora"),
+                    ("CHECK_PORTFOLIO", "Cheques en Cartera"),
                 ],
-                default='CASH',
+                default="CASH",
                 max_length=20,
-                verbose_name='Tipo',
+                verbose_name="Tipo",
             ),
         ),
         migrations.AlterField(
-            model_name='treasuryaccount',
-            name='account_type',
+            model_name="treasuryaccount",
+            name="account_type",
             field=models.CharField(
                 choices=[
-                    ('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'),
-                    ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'),
-                    ('CASH', 'Caja Física (Efectivo)'),
-                    ('BRIDGE', 'Puente'),
-                    ('MERCHANT', 'Cuenta Recaudadora'),
-                    ('CHECK_PORTFOLIO', 'Cheques en Cartera'),
+                    ("CHECKING", "Cuenta Bancaria (Corriente/Vista)"),
+                    ("CREDIT_CARD", "Tarjeta de Crédito (Cta. Propia)"),
+                    ("CASH", "Caja Física (Efectivo)"),
+                    ("BRIDGE", "Puente"),
+                    ("MERCHANT", "Cuenta Recaudadora"),
+                    ("CHECK_PORTFOLIO", "Cheques en Cartera"),
                 ],
-                default='CASH',
+                default="CASH",
                 max_length=20,
-                verbose_name='Tipo',
+                verbose_name="Tipo",
             ),
         ),
     ]

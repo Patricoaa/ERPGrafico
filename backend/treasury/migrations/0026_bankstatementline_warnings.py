@@ -4,30 +4,29 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0025_bankstatement_period_end_bankstatement_period_start_and_more'),
+        ("treasury", "0025_bankstatement_period_end_bankstatement_period_start_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bankstatementline',
-            name='has_warning',
-            field=models.BooleanField(default=False, verbose_name='Tiene Advertencia'),
+            model_name="bankstatementline",
+            name="has_warning",
+            field=models.BooleanField(default=False, verbose_name="Tiene Advertencia"),
         ),
         migrations.AddField(
-            model_name='bankstatementline',
-            name='warning_message',
-            field=models.TextField(blank=True, null=True, verbose_name='Mensaje de Advertencia'),
+            model_name="bankstatementline",
+            name="warning_message",
+            field=models.TextField(blank=True, null=True, verbose_name="Mensaje de Advertencia"),
         ),
         migrations.AddField(
-            model_name='historicalbankstatementline',
-            name='has_warning',
-            field=models.BooleanField(default=False, verbose_name='Tiene Advertencia'),
+            model_name="historicalbankstatementline",
+            name="has_warning",
+            field=models.BooleanField(default=False, verbose_name="Tiene Advertencia"),
         ),
         migrations.AddField(
-            model_name='historicalbankstatementline',
-            name='warning_message',
-            field=models.TextField(blank=True, null=True, verbose_name='Mensaje de Advertencia'),
+            model_name="historicalbankstatementline",
+            name="warning_message",
+            field=models.TextField(blank=True, null=True, verbose_name="Mensaje de Advertencia"),
         ),
     ]

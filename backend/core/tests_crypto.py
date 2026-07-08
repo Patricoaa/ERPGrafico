@@ -1,4 +1,5 @@
 """Tests for core.crypto — ADR 002."""
+
 from django.test import TestCase
 
 from core.crypto import CryptoError, decrypt_secret, encrypt_secret

@@ -3,12 +3,12 @@ import type { ActionRegistry, Action, UserPermissions } from '@/types/actions'
 /**
  * Filter actions based on order state and user permissions
  */
-export function filterAvailableActions(
-    registry: ActionRegistry,
-    order: any,
+export function filterAvailableActions<T extends { status: string }>(
+    registry: ActionRegistry<T>,
+    order: T,
     userPermissions?: UserPermissions
-): ActionRegistry {
-    const filtered: ActionRegistry = {}
+): ActionRegistry<T> {
+    const filtered: ActionRegistry<T> = {}
 
     for (const [categoryKey, category] of Object.entries(registry)) {
         const availableActions = category.actions.filter(action => {
@@ -56,17 +56,18 @@ export function filterAvailableActions(
 /**
  * Calculate dynamic badge count for an action
  */
-export function getActionBadgeCount(action: Action, order: any): number | undefined {
+export function getActionBadgeCount(action: Action<unknown>, order: unknown): number | undefined {
     if (!order) return undefined
+    const o = order as { related_documents?: Record<string, { length?: number }>; serialized_payments?: { length?: number }; invoices?: { length?: number } }
     switch (action.id) {
         case 'payment-history':
-            return order.related_documents?.payments?.length || order.serialized_payments?.length
+            return o.related_documents?.payments?.length || o.serialized_payments?.length
         case 'view-receptions':
-            return order.related_documents?.receipts?.length
+            return o.related_documents?.receipts?.length
         case 'view-deliveries':
-            return order.related_documents?.deliveries?.length
+            return o.related_documents?.deliveries?.length
         case 'view-documents':
-            return order.related_documents?.invoices?.length || order.invoices?.length
+            return o.related_documents?.invoices?.length || o.invoices?.length
         default:
             return action.badge?.count
     }

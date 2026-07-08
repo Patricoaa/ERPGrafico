@@ -6,6 +6,9 @@
 // not from individual component files.
 // ─────────────────────────────────────────────────────────
 
+// Charts
+export * from './charts';
+
 // Search
 export * from './UniversalSearch';
 
@@ -23,12 +26,15 @@ export * from './GenericWizard';
 export * from './ActionFoldButton';
 export * from './ActionSlideButton';
 export * from './ToolbarCreateButton';
-export * from './ActionButtons';
+export * from './ActionButtons'
+export * from './StepHeader';
+export * from './WizardStepsSidebar';
+export * from './WizardSummarySidebar';
 export * from './ActionDock';
-export * from './BulkActionDock';
 
 // Cards & Containers
 export * from './StatCard';
+export * from './AnalyticsPanel';
 export * from './CardSkeleton';
 export * from './SkeletonShell';
 export * from './LayoutSkeletons';
@@ -43,6 +49,7 @@ export * from './Chip';
 export * from './HubStatus';
 export * from './EntityBadge';
 export * from './SourceDocumentLink';
+export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';
 export * from './ReportTable';
 export * from './DataManagement';
@@ -57,15 +64,14 @@ export * from './HeaderNavDropdowns';
 export * from './EntityHeader';
 export * from './PageHeader';
 export * from './PageContainer';
-export * from './FormTabs';
+export * from './PageSectionHeader';
+export * from './TabBar';
 export * from './FormFooter';
 export * from './FormSplitLayout';
 export * from './EmptyState';
+export * from './SectionHeader';
+export * from './ModuleLauncher';
 
-
-// Industrial Identity
-export * from './CropFrame';
-export * from './IndustryMark';
 export * from './Separators';
 export * from './FormSection';
 
@@ -75,53 +81,67 @@ export * from './LoadingFallback';
 // Animations
 export * from './FadeIn';
 
+// Generic Popover with search
+export { SearchablePopover } from './SearchablePopover';
+export type { SearchablePopoverProps } from './SearchablePopover';
+
 // Smart Search
 export { SmartSearchBar, useSmartSearch, useClientSearch } from './SmartSearchBar';
 export type { FilterState } from './SmartSearchBar';
 
+// Segmentation
+export { SegmentationBar, useSegmentation } from './SegmentationBar';
+export type { UseSegmentationReturn, SegmentationFilterState } from './SegmentationBar';
+export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX, SEG_INPUT, TOOLBAR_ICON_BTN, TOOLBAR_MENU_ITEM, TAB_TOOLBAR_TRIGGER } from './SegmentationBar';
+
 // Filters & Inputs
 export * from './DatePicker';
 export * from './DateRangeFilter';
-export * from './FacetedFilter';
+export * from './ReportToolbar';
+export * from './FacetedFilter'
+export * from './RadioCard';
 export * from './FolioValidationInput';
 export * from './LabeledInput';
 export * from './LabeledSelect';
 export * from './LabeledContainer';
 export * from './LabeledSwitch';
 export * from './LabeledCheckbox';
+export * from './LabeledCheckboxGroup';
 export * from './NotchedButton';
 export * from './MultiTagInput';
 export * from './MultiSelectTagInput';
 export * from './PeriodValidationDateInput';
+export * from './AccountField';
 export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
 
 export * from './EntityCard'
 export * from './DomainCard'
 export * from './CardActions'
-export * from './ExpandableTableRow'
-
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './emptyStateResolver';
 export * from './DataTable';
 export * from './DataTableView';
 export * from './DataTableToolbar';
-export * from './DataTableFilters';
 export * from './DataTablePagination';
 export * from './DataTableColumnHeader';
 export * from './DataTableFacetedFilter';
+export * from './DataTableColumnToggle';
 export * from './DataTableCells';
 
 // Utilities
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
+export * from './CmykRing'
+export * from './PrepressPanel'
+export * from './entity-actions'
 export * from './Numpad'
 
 export * from './PrintableReceipt'
 
 export * from './ContactSelector'
 // Product Selector family (PR-1, PR-2, PR-3)
-export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector } from './ProductSelector'
+export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector, CategoryDropdown } from './ProductSelector'
 export type { SearchBarProps, CategoryFilterProps, ProductGridProps, SharedStockLimits, VariantSelectorModalProps, ProductSelectorProps } from './ProductSelector'
 export * from './manufacturing'

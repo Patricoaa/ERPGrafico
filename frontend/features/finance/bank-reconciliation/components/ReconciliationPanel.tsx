@@ -2,8 +2,6 @@
 
 import * as React from "react"
 import { formatCurrency } from "@/lib/money"
-import dynamic from "next/dynamic"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {useState, useEffect, useMemo, useCallback} from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -12,29 +10,29 @@ import { ExclusionModal } from "./ExclusionModal"
 import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, SEG_TRIGGER, SEG_WRAPPER } from '@/components/shared'
 import { reconciliationSearchDef } from "../searchDef"
+import { reconciliationSegDef } from "../segmentationDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
-    Loader2, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain, Plus
+    Loader2, Sparkles, X, Wand2, Calculator, Brain, Plus
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { financeApi } from "../../api/financeApi"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { cn } from "@/lib/utils"
+import { cn, parseDateOnly } from "@/lib/utils"
 import {
     DndContext,
-    DragEndEvent,
+    type DragEndEvent,
     useDraggable,
     useDroppable,
     PointerSensor,
     useSensor,
     useSensors,
-    useSensors as useDndSensors,
 } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import {
@@ -51,20 +49,22 @@ import {
     useExcludeMutation,
     useBulkExcludeMutation,
     useCreateAndMatchMutation,
-    useUnmatchMutation,
     useRestoreMutation,
     useCreateMovementMutation
 } from "../hooks/useReconciliationMutations"
 
-import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
+import { useServerDate } from '@/hooks/useServerDate'
+import { MovementWizard, type MovementData } from "@/features/treasury"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
-import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
+import { ReconciliationIntelligencePanel } from "./ReconciliationIntelligencePanel"
 
 import { DataTable } from '@/components/shared'
-import { LazyDrawer } from "@/features/_shared/transaction-drawer"
-import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
+import { LazyDrawer } from "@/features/_shared"
+import { type ColumnDef, type RowSelectionState, type PaginationState, type Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { statementLineActions, type StatementLineActionsCtx } from './statementLineActions'
+import { systemItemActions, type SystemItemActionsCtx } from './systemItemActions'
 
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -73,19 +73,24 @@ import { toast } from "sonner"
 import type {
     BankStatementLine,
     ReconciliationSystemItem,
-    QueryPaginationParams
+    ReconciliationMovement,
+    ReconciliationBatch,
+    QueryPaginationParams,
+    PaymentSuggestion,
+    LineSuggestion
 } from "../types"
 
-interface PaymentSuggestion {
-    is_batch?: boolean
-    payment_data?: { id: number, contact_name: string }
-    batch_data?: { id: number, name: string }
-    difference: string
+interface ReconGroupData {
+    id: number
+    movements: ReconciliationMovement[]
+    batches: ReconciliationBatch[]
+    difference_amount: number
+    difference_type: string
+    difference_type_display: string
+    difference_journal_entry?: number
 }
 
-interface LineSuggestion {
-    line_data: { id: number, description: string }
-}
+
 
 interface ReconciliationPanelProps {
     statementId: number
@@ -108,19 +113,19 @@ function DraggablePayment({ id, children, disabled }: { id: number, children: Re
     } : undefined;
 
     if (!React.isValidElement(children)) return <>{children}</>;
-    const child = children as React.ReactElement<any>;
+    const child = children as React.ReactElement<Record<string, unknown>>;
 
     return React.cloneElement(child, {
         ref: setNodeRef,
-        style: { ...style, ...child.props.style },
+        style: { ...style, ...(child.props.style as React.CSSProperties | undefined) },
         className: cn(
-            child.props.className,
+            child.props.className as string,
             "touch-none",
             isDragging && "opacity-50 grayscale-[0.5] scale-95"
         ),
         ...listeners,
         ...attributes
-    });
+    } as Record<string, unknown>);
 }
 
 function DroppableBankLine({ id, children }: { id: number, children: React.ReactNode }) {
@@ -130,14 +135,14 @@ function DroppableBankLine({ id, children }: { id: number, children: React.React
     });
 
     if (!React.isValidElement(children)) return <>{children}</>;
-    const child = children as React.ReactElement<any>;
+    const child = children as React.ReactElement<Record<string, unknown>>;
 
     return React.cloneElement(child, {
         ref: setNodeRef,
         className: cn(
-            child.props.className,
+            child.props.className as string,
             "transition-all duration-200",
-            isOver && "bg-primary/20 scale-[1.01] shadow-lg ring-2 ring-primary ring-inset z-10 relative"
+            isOver && "bg-primary/20 scale-[1.01] shadow-overlay ring-2 ring-primary ring-inset z-10 relative"
         )
     });
 }
@@ -145,7 +150,7 @@ function DroppableBankLine({ id, children }: { id: number, children: React.React
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
-    const { isHubOpen } = useHubPanel()
+    const { serverDate } = useServerDate()
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
     const [selectedPayments, setSelectedPayments] = useState<ReconciliationSystemItem[]>([])
 
@@ -155,11 +160,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
-    const { filters } = useSmartSearch(reconciliationSearchDef)
+    const { filters: textFilters } = useSmartSearch(reconciliationSearchDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters } = useSegmentation(reconciliationSegDef, basePeriod)
+    const allFilters = { ...textFilters, ...segFilters }
 
     // Synchronize smart search filters to query parameters
     useEffect(() => {
-        const f = filters
+        const f = allFilters
         requestAnimationFrame(() => {
             setBankParams(prev => ({
                 ...prev,
@@ -178,16 +186,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 date_to: f.date_to || "",
             }))
         })
-    }, [filters])
+    }, [allFilters])
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
-    const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: any } | null>(null)
+    const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: string } | null>(null)
     const [detailsOpen, setDetailsOpen] = useState(false)
 
-    const openTransactionDetail = (id: number | string, type: any) => {
+    const openTransactionDetail = (id: number | string, type: string) => {
         setSelectedMovement({ id, type })
         setDetailsOpen(true)
     }
@@ -197,22 +201,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         setDetailsOpen(false)
     }
 
-    const { data: statement } = useStatementQuery(statementId)
-    const { data: bankData, isLoading: loadingLines } = useUnreconciledLinesQuery(statementId, bankParams)
-    const { data: systemData, isLoading: loadingPayments } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
-    const { data: reconciledData, isLoading: loadingReconciled } = useReconciledLinesQuery(statementId, { page: 1, pageSize: 200 })
+    const { data: statement, isError: isErrorStmt } = useStatementQuery(statementId)
+    const { data: bankData, isLoading: loadingLines, isError: isErrorBank } = useUnreconciledLinesQuery(statementId, bankParams)
+    const { data: systemData, isLoading: loadingPayments, isError: isErrorSystem } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
+    const { data: reconciledData, isLoading: loadingReconciled, isError: isErrorReconciled } = useReconciledLinesQuery(statementId, { page: 1, pageSize: 200 })
 
     const reconciledGroups = useMemo(() => {
         if (!reconciledData?.results) return []
-        const groups: Record<number, { id: number, group: any, lines: BankStatementLine[] }> = {}
+        const groups: Record<number, { id: number; group: ReconGroupData; lines: BankStatementLine[] }> = {} as Record<number, { id: number; group: ReconGroupData; lines: BankStatementLine[] }>
 
         reconciledData.results.forEach(line => {
-            const groupId = line.reconciliation_group_data?.id
-            if (groupId) {
-                if (!groups[groupId]) {
-                    groups[groupId] = { id: groupId, group: line.reconciliation_group_data, lines: [] }
+            const groupData = line.reconciliation_group_data
+            if (groupData) {
+                if (!groups[groupData.id]) {
+                    groups[groupData.id] = { id: groupData.id, group: groupData, lines: [] }
                 }
-                groups[groupId].lines.push(line)
+                groups[groupData.id].lines.push(line)
             }
         })
 
@@ -224,17 +228,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { data: suggestions = [] } = useLineSuggestionsQuery(lineIdStr, selectedLines.length === 1)
     const { data: lineSuggestions = [] } = usePaymentSuggestionsQuery(paymentIdStr, selectedPayments.length === 1)
 
-    const matchMutation = useMatchMutation(statementId, treasuryAccountId)
-    const groupMatchMutation = useGroupMatchMutation(statementId, treasuryAccountId)
-    const autoMatchMutation = useAutoMatchMutation(statementId)
-    const excludeMutation = useExcludeMutation(statementId)
-    const bulkExcludeMutation = useBulkExcludeMutation(statementId)
-    const unmatchMutation = useUnmatchMutation(statementId, treasuryAccountId)
-    const restoreMutation = useRestoreMutation(statementId)
+    const { match, isMatching } = useMatchMutation(statementId, treasuryAccountId)
+    const { groupMatch, isGroupMatching } = useGroupMatchMutation(statementId, treasuryAccountId)
+    const { autoMatch, isAutoMatching } = useAutoMatchMutation(statementId)
+    const { exclude } = useExcludeMutation(statementId)
+    const { bulkExclude } = useBulkExcludeMutation(statementId)
+    const { restore } = useRestoreMutation(statementId)
 
     const loading = loadingLines || loadingPayments || loadingReconciled
-    const matching = matchMutation.isPending || groupMatchMutation.isPending
-    const autoMatching = autoMatchMutation.isPending
+    const isError = isErrorStmt || isErrorBank || isErrorSystem || isErrorReconciled
+    const matching = isMatching || isGroupMatching
 
     const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string, isGroup?: boolean, accountingDate?: Date }>({
         open: false, lineId: 0, paymentId: 0, amount: '0', isGroup: false, accountingDate: undefined
@@ -253,6 +256,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         open: false, payment: null
     })
 
+    const statementLineActionsCtx: StatementLineActionsCtx = {
+        onExclude: (lineId) => setActionDialog({ open: true, type: 'exclude', lineId }),
+        onRestore: (lineId) => restore(lineId),
+    }
+
+    const systemItemActionsCtx: SystemItemActionsCtx = {
+        onSplit: (payment) => setSplitDialog({ open: true, payment }),
+    }
+
     const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
 
     // Create and Match "On the fly"
@@ -260,13 +272,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         open: false, line: null
     })
     const [isCreateMovementOpen, setIsCreateMovementOpen] = useState(false)
-    const createAndMatchMutation = useCreateAndMatchMutation(statementId, treasuryAccountId)
-    const createMovementMutation = useCreateMovementMutation(treasuryAccountId)
+    const { createAndMatch } = useCreateAndMatchMutation(statementId, treasuryAccountId)
+    const { createMovement } = useCreateMovementMutation(treasuryAccountId)
 
     // S4.8: Async auto-match progress state
     const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
 
-    const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [, setSidebarOpen] = useState(false)
     const [intelOpen, setIntelOpen] = useState(false)
 
     const sensors = useSensors(
@@ -323,20 +335,19 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Matching Logic ───────────────────────────────────────────────────────
 
-    const handleMatch = async (lineId: number, paymentId: number, isBatch: boolean = false, force: boolean = false) => {
+    const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
         if (!force) {
             const suggestion = suggestions.find((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)
             const diffAmount = suggestion ? parseFloat(suggestion.difference) : 0
 
             if (diffAmount !== 0) {
                 const line = unreconciledLines.find(l => l.id === lineId)
-                const defaultDate = line ? new Date(line.transaction_date) : new Date()
-                // Adjust for local timezone to avoid off-by-one day issues
+                const defaultDate = line ? parseDateOnly(line.transaction_date) : (serverDate ?? new Date())
                 const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
                 setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString(), accountingDate: localDate })
                 try {
                     const diffData = await financeApi.getSuggestedDifference(lineId)
-                    setDiffType((diffData as any).suggestion)
+                    setDiffType((diffData as Record<string, unknown>).suggestion as string)
                 } catch { /* ignore */ }
                 return
             }
@@ -354,7 +365,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 }
             }
 
-            await matchMutation.mutateAsync({ lineId, paymentId, isBatch, confirmData })
+            await match({ lineId, paymentId, isBatch, confirmData })
 
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
@@ -379,7 +390,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
         if (!force && Math.abs(diff) > 1) {
             const line = selectedLines[0]
-            const defaultDate = line ? new Date(line.transaction_date) : new Date()
+            const defaultDate = line ? parseDateOnly(line.transaction_date) : (serverDate ?? new Date())
             const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
             setDiffDialog({ open: true, lineId: selectedLines[0].id, paymentId: 0, amount: diff.toString(), isGroup: true, accountingDate: localDate })
             setDiffType(diff < 0 ? "COMMISSION" : "ROUNDING")
@@ -403,7 +414,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 }
             }
 
-            await groupMatchMutation.mutateAsync({ payload, confirmPayload, lineId: selectedLines[0].id })
+            await groupMatch({ payload, confirmPayload, lineId: selectedLines[0].id })
 
             setSelectedPayments([])
             setSelectedLines([])
@@ -447,7 +458,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
 
         try {
-            await createAndMatchMutation.mutateAsync({
+            await createAndMatch({
                 lineId: createMatchDialog.line.id,
                 movementData: payload
             })
@@ -473,7 +484,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
 
         try {
-            await createMovementMutation.mutateAsync(payload)
+            await createMovement(payload)
             setIsCreateMovementOpen(false)
         } catch (error) {
             throw error
@@ -490,6 +501,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -497,6 +509,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             size: 40,
@@ -507,7 +520,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => (
                 <div className="flex flex-col justify-center h-full">
                     <span className="font-mono font-bold text-xs">
-                        {format(new Date(row.original.transaction_date), 'dd MMM yy', { locale: es })}
+                        {format(parseDateOnly(row.original.transaction_date), 'dd MMM yy', { locale: es })}
                     </span>
                     <span className="text-[10px] font-black uppercase text-muted-foreground opacity-50"> {/* intentional: badge density */} L{row.original.line_number}</span>
                 </div>
@@ -563,7 +576,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isCredit = safeParseFloat(row.original.credit) > safeParseFloat(row.original.debit)
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
-                        <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
+                        <span className={cn("font-mono font-black text-sm tracking-tight", isCredit ? "text-success" : "text-destructive")}>
                             {formatCurrency(amount)}
                         </span>
                     </div>
@@ -571,28 +584,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        createActionsColumn<BankStatementLine>({
-            headerLabel: "",
-            renderActions: (item) => [
-                item.reconciliation_status === 'EXCLUDED' ? (
-                    <DataCell.Action
-                        key="restore"
-                        icon={RotateCcw}
-                        title="Restaurar"
-                        className="text-success hover:text-success/80"
-                        onClick={(e) => { e.stopPropagation(); restoreMutation.mutate(item.id) }}
-                    />
-                ) : (
-                    <DataCell.Action
-                        key="exclude"
-                        icon={Ban}
-                        title="Excluir"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: item.id }) }}
-                    />
-                ),
-            ]
-        })
+        statementLineActions.column(statementLineActionsCtx)
     ], [lineSuggestions, setActionDialog, setCreateMatchDialog])
 
     const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
@@ -603,6 +595,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={table.getIsAllPageRowsSelected()}
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -610,6 +603,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
+                    variant="circle"
                 />
             ),
             size: 40,
@@ -623,7 +617,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         {row.original.display_id || row.original.code || 'PEND'}
                     </span>
                     <span className="text-[10px] font-medium text-muted-foreground"> {/* intentional: badge density */}
-                        {format(new Date(row.original.date), 'dd/MM/yy', { locale: es })}
+                        {format(parseDateOnly(row.original.date), 'dd/MM/yy', { locale: es })}
                     </span>
                 </div>
             ),
@@ -636,7 +630,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = suggestions.some((s: PaymentSuggestion) =>
                     s.is_batch ? s.batch_data?.id === row.original.terminal_batch_id : s.payment_data?.id === row.original.id
                 )
-                const isSettlement = row.original.terminal_batch_id != null
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
@@ -649,7 +642,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
-                                <Sparkles className="h-2.5 w-2.5 text-warning shadow-sm" />
+                                <Sparkles className="h-2.5 w-2.5 text-warning shadow-card" />
                                 <span className="text-[10px] font-black uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
                             </div>
                         )}
@@ -690,7 +683,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
                         <span className={cn(
-                            "font-mono font-black text-[13px] tracking-tight group-hover:scale-105 transition-transform",
+                            "font-mono font-black text-sm tracking-tight group-hover:scale-105 transition-transform",
                             isDeposit ? "text-success" : "text-destructive"
                         )}>
                             {formatCurrency(Math.abs(parseFloat(item.amount)))}
@@ -700,24 +693,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        createActionsColumn<ReconciliationSystemItem>({
-            headerLabel: "",
-            renderActions: (item) => [
-                <DataCell.Action
-                    key="split"
-                    icon={SplitSquareHorizontal}
-                    title="Distribuir"
-                    className="text-primary hover:text-primary/80"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setSplitDialog({ open: true, payment: item })
-                    }}
-                />
-            ]
-        })
+        systemItemActions.column(systemItemActionsCtx)
     ], [suggestions])
 
     // ─── Render ───────────────────────────────────────────────────────────────
+
+    if (isError) {
+        return <EmptyState context="finance" variant="compact" title="Error al cargar datos" description="No se pudieron cargar los datos de conciliación." />
+    }
 
     if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
@@ -726,53 +709,64 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
                 {/* ─── Unified Workbench Toolbar ─── */}
                 <div className="flex items-center justify-between gap-4 w-full mb-3 h-9">
-                    {/* Left: Smart Search Bar (Unified Filtering for Both Tables) */}
-                    <div className="flex-1 min-w-0 h-9">
+                    {/* Left: Smart Search Bar + Segmentation (Unified Filtering for Both Tables) */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0 h-9">
                         <SmartSearchBar
                             searchDef={reconciliationSearchDef}
-                            placeholder="Buscar movimientos y pagos por descripción, monto, tipo (type:IN/OUT) o rango de fechas..."
-                            className="w-full"
+                            placeholder="Buscar movimientos y pagos por descripción, monto..."
+                            className="flex-1"
                         />
+                        <SegmentationBar def={reconciliationSegDef} basePeriod={basePeriod} />
                     </div>
 
                     {/* Right: Actions & Navigation Group */}
                     <div className="flex items-center gap-3 shrink-0 h-9">
                         {/* Navigation Tabs List */}
-                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-9 gap-0.5 overflow-hidden items-center">
-                            <TabsTrigger
-                                value="unreconciled"
-                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
-                            >
-                                Pendientes
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="reconciled"
-                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
-                            >
-                                Conciliados
-                            </TabsTrigger>
-                        </TabsList>
+                        <div className={SEG_WRAPPER}>
+                            <TabsList className="h-7 p-0 gap-0 bg-transparent shrink-0">
+                                <TabsTrigger
+                                    value="unreconciled"
+                                    className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
+                                >
+                                    Pendientes
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="reconciled"
+                                    className={SEG_TRIGGER + " data-[state=active]:bg-accent/50 data-[state=active]:shadow-none rounded-sm hover:bg-accent/30 transition-all duration-150"}
+                                >
+                                    Conciliados
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
 
-                        <Button
-                            onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                            disabled={autoMatching}
-                            variant="outline"
-                            className="h-9 text-[10px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-4"
-                        >
-                            {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
-                            Auto-Match
-                        </Button>
-                        <Button
-                            onClick={() => setIntelOpen(prev => !prev)}
-                            variant="outline"
-                            className={cn(
-                                "h-9 w-9 p-0 rounded-md border-primary/20 hover:border-primary/45 transition-all flex items-center justify-center",
-                                intelOpen && "bg-primary text-primary-foreground border-primary"
-                            )}
-                            title="Configurar Inteligencia"
-                        >
-                            <Brain className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={() => setActionDialog({ open: true, type: 'automatch' })}
+                                    disabled={isAutoMatching}
+                                    variant="ghost"
+                                    className="h-9 w-9 p-0 bg-success/5 hover:bg-success/10 text-success group transition-all"
+                                >
+                                    {isAutoMatching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Auto-Match</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={() => setIntelOpen(prev => !prev)}
+                                    variant="ghost"
+                                    className={cn(
+                                        "h-9 w-9 p-0 transition-all",
+                                        intelOpen && "bg-primary text-primary-foreground"
+                                    )}
+                                >
+                                    <Brain className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Configurar Inteligencia</TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
 
@@ -804,7 +798,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             columns={bankColumns}
                                             data={unreconciledLines}
                                             variant="embedded"
-                                            searchPlaceholder="Buscar movimiento..."
                                             rowSelection={bankRowSelection}
                                             onRowSelectionChange={handleLineSelectionChange}
                                             skeletonRows={10}
@@ -812,21 +805,21 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             defaultPageSize={50}
                                             renderRow={(row, children) => {
                                                 const line = row.original as BankStatementLine
-                                                const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
-                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
+                                                const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data?.id === line.id)
+                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as unknown as Record<string, unknown>).reconciliation_state === 'EXCLUDED'
 
-                                                if (!React.isValidElement(children)) return children as any
+                                                if (!React.isValidElement(children)) return children as unknown as React.ReactElement
 
                                                 return (
                                                     <DroppableBankLine id={line.id}>
-                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                        {React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
                                                             className: cn(
-                                                                (children.props as any).className,
+                                                                (children.props as Record<string, unknown>).className as string,
                                                                 "group transition-all duration-300",
                                                                 isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.05)]",
                                                                 isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
                                                             )
-                                                        })}
+                                                        } as Record<string, unknown>)}
                                                     </DroppableBankLine>
                                                 )
                                             }}
@@ -869,7 +862,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             columns={paymentColumns}
                                             data={unreconciledPayments}
                                             variant="embedded"
-                                            searchPlaceholder="Buscar pago..."
                                             rowSelection={systemRowSelection}
                                             onRowSelectionChange={handlePaymentSelectionChange}
                                             skeletonRows={10}
@@ -877,23 +869,23 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             defaultPageSize={50}
                                             renderRow={(row, children) => {
                                                 const item = row.original as ReconciliationSystemItem
-                                                const isSuggested = suggestions.some((s: any) => {
+                                                const isSuggested = suggestions.some((s: PaymentSuggestion) => {
                                                     if (s.is_batch) {
                                                         return s.batch_data?.id === item.terminal_batch_id
                                                     }
                                                     return s.payment_data?.id === item.id
                                                 })
-                                                if (!React.isValidElement(children)) return children as any
+                                                if (!React.isValidElement(children)) return children as unknown as React.ReactElement
 
                                                 return (
                                                     <DraggablePayment id={item.id}>
-                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                        {React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
                                                             className: cn(
-                                                                (children.props as any).className,
+                                                                (children.props as Record<string, unknown>).className as string,
                                                                 "group transition-all duration-300",
                                                                 isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.08)]"
                                                             )
-                                                        })}
+                                                        } as Record<string, unknown>)}
                                                     </DraggablePayment>
                                                 )
                                             }}
@@ -943,7 +935,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
                                             {/* Connecting Visual Resource */}
                                             <div className="absolute top-1/2 -right-3 -translate-y-1/2 z-10">
-                                                <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-sm group-hover/card:border-primary/40 transition-all">
+                                                <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-card group-hover/card:border-primary/40 transition-all">
                                                     <CheckCircle2 className="h-3.5 w-3.5" />
                                                 </div>
                                             </div>
@@ -959,7 +951,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
 
                                                         return (
-                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-sm">
+                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-card">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
                                                                         <FileText className="h-4 w-4" />
@@ -972,7 +964,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                                                                 <div className="text-right shrink-0">
                                                                     <span className="text-[9px] font-mono font-bold text-muted-foreground/60 uppercase block mb-0.5">
-                                                                        {format(new Date(line.transaction_date), 'dd MMM yyyy', { locale: es })}
+                                                                        {format(parseDateOnly(line.transaction_date), 'dd MMM yyyy', { locale: es })}
                                                                     </span>
                                                                     <span className={cn(
                                                                         "text-sm font-mono font-black tracking-tighter leading-none",
@@ -995,7 +987,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                 </div>
 
                                                 <div className="space-y-1.5">
-                                                    {movements.map((m: any) => (
+                                                    {movements.map((m: ReconciliationMovement) => (
                                                         <div
                                                             key={m.id}
                                                             onClick={() => openTransactionDetail(m.id, 'payment')}
@@ -1020,7 +1012,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         </div>
                                                     ))}
 
-                                                    {batches.map((b: any) => (
+                                                    {batches.map((b: ReconciliationBatch) => (
                                                         <div
                                                             key={b.id}
                                                             onClick={() => openTransactionDetail(b.id, 'terminal_batch')}
@@ -1081,14 +1073,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                         try {
                             if (isBulk) {
-                                await bulkExcludeMutation.mutateAsync({
+                                await bulkExclude({
                                     lineIds: selectedLines.map(l => l.id),
                                     reason,
                                     notes
                                 })
                                 setSelectedLines([])
                             } else if (actionDialog.lineId) {
-                                await excludeMutation.mutateAsync({
+                                await exclude({
                                     lineId: actionDialog.lineId,
                                     reason,
                                     notes
@@ -1159,7 +1151,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4">
                             <p>Existe una diferencia de <span className="font-bold text-primary">{formatCurrency(parseFloat(diffDialog.amount))}</span>. Selecciona cómo deseas procesarla.</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-3">
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
                                 <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                                 <div className="space-y-1">
                                     <p className="text-[11px] font-black uppercase text-destructive leading-none">Acción Irreversible</p>
@@ -1175,7 +1167,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <CancelButton onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))} />
                                     <Button
                                         disabled={!diffDateValid || matching}
-                                        onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}
+                                        onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, true)}
                                         className=""
                                     >
                                         Confirmar con Ajuste
@@ -1252,7 +1244,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     onOpenChange={(open) => {
                         setAutoMatchProgressOpen(open)
                     }}
-                    onSuccess={(matchedCount, totalUnreconciled) => {
+                    onSuccess={(matchedCount) => {
                         setAutoMatchProgressOpen(false)
                         // Invalidate queries so the tables reflect the new matches
                         setBankParams(prev => ({ ...prev }))
@@ -1269,10 +1261,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <div className="flex flex-col items-start gap-1">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles className="h-3 w-3 text-warning animate-pulse" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-warning/80">Sugerencias</span>
+                                    <span className="text-xs font-bold uppercase tracking-widest text-warning/80">Sugerencias</span>
                                 </div>
                                 {suggestions.length === 1 ? (
-                                    <button
+                                    <Button
                                         onClick={() => {
                                             const s = suggestions[0]
                                             const paymentId = s.is_batch ? s.batch_data?.id : s.payment_data?.id
@@ -1287,21 +1279,21 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                     contact_name: s.batch_data.name || "Lote Terminal",
                                                     terminal_batch_id: s.batch_data.id,
                                                     display_id: s.batch_data.id.toString()
-                                                } as any])
+                                                } as ReconciliationSystemItem])
                                             } else if (s.payment_data) {
-                                                setSelectedPayments([s.payment_data as any])
+                                                setSelectedPayments([s.payment_data as ReconciliationSystemItem])
                                             }
                                         }}
-                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pl-3 pr-1 group shadow-sm hover:shadow-md"
+                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pl-3 pr-1 group shadow-card hover:shadow-elevated"
                                     >
-                                        <span className="text-[10px] font-bold truncate max-w-[150px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
+                                        <span className="text-xs font-bold truncate max-w-[150px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
                                         <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
                                             <ChevronRight className="h-3 w-3 text-warning group-hover:translate-x-0.5 transition-transform" />
                                         </div>
-                                    </button>
+                                    </Button>
                                 ) : (
-                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-sm">
-                                        <span className="text-[9px] text-warning">{suggestions.length} Coincidencias</span>
+                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
+                                        <span className="text-xs text-warning">{suggestions.length} Coincidencias</span>
                                     </div>
                                 )}
                             </div>
@@ -1309,32 +1301,32 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     ) : selectedPayments.length === 1 && selectedLines.length === 0 && lineSuggestions.length > 0 ? (
                         <ActionDock.Section className="mr-6 flex items-center gap-4 border-r px-4 border-border/40">
                             <div className="flex flex-col items-start gap-1">
-                                <div className="flex items-center gap-1.5">
-                                    <Sparkles className="h-3 w-3 text-warning animate-pulse" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-warning/80">Sugerencias</span>
-                                </div>
-                                {lineSuggestions.length === 1 ? (
-                                    <button
-                                        onClick={() => {
-                                            const s = lineSuggestions[0]
-                                            const lineId = s.line_data?.id
-                                            const item = unreconciledLines.find(l => l.id === lineId)
-                                            if (item) {
-                                                setSelectedLines([item])
-                                            } else if (s.line_data) {
-                                                setSelectedLines([s.line_data as any])
-                                            }
-                                        }}
-                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pr-3 pl-1 group shadow-sm hover:shadow-md"
-                                    >
-                                        <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
-                                            <ChevronLeft className="h-3 w-3 text-warning group-hover:-translate-x-0.5 transition-transform" />
-                                        </div>
-                                        <span className="text-[10px] font-bold truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
-                                    </button>
+                            <div className="flex items-center gap-1.5">
+                                <Sparkles className="h-3 w-3 text-warning animate-pulse" />
+                                <span className="text-xs font-bold uppercase tracking-widest text-warning/80">Sugerencias</span>
+                            </div>
+                            {lineSuggestions.length === 1 ? (
+                                <Button
+                                    onClick={() => {
+                                        const s = lineSuggestions[0]
+                                        const lineId = s.line_data?.id
+                                        const item = unreconciledLines.find(l => l.id === lineId)
+                                        if (item) {
+                                            setSelectedLines([item])
+                                        } else if (s.line_data) {
+                                            setSelectedLines([s.line_data as BankStatementLine])
+                                        }
+                                    }}
+                                    className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1 pr-3 pl-1 group shadow-card hover:shadow-elevated"
+                                >
+                                    <div className="h-5 w-5 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
+                                        <ChevronLeft className="h-3 w-3 text-warning group-hover:-translate-x-0.5 transition-transform" />
+                                    </div>
+                                    <span className="text-xs font-bold truncate max-w-[150px]">{lineSuggestions[0].line_data?.description}</span>
+                                    </Button>
                                 ) : (
-                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-sm">
-                                        <span className="text-[9px] text-warning">{lineSuggestions.length} Coincidencias</span>
+                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
+                                        <span className="text-xs text-warning">{lineSuggestions.length} Coincidencias</span>
                                     </div>
                                 )}
                             </div>
@@ -1384,27 +1376,28 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-4"
+                                className="h-9 rounded-full px-4 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
                             >
-                                <Ban className="h-3 w-3 mr-1.5" />
-                                Excluir Seleccionados
+                                <Ban className="h-3.5 w-3.5 mr-1.5" />
+                                Excluir
                             </Button>
                         )}
 
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-full px-4"
-                            onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
+                                className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground"
+                                onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
                         >
-                            <X className="h-3 w-3 mr-1.5" />
+                            <X className="h-3.5 w-3.5 mr-1.5" />
                             Limpiar
                         </Button>
 
                         <Button
+                            variant="ghost"
                             size="sm"
-                            className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-full"
+                            className="h-9 rounded-full px-6 text-xs font-bold text-primary hover:bg-primary/10 hover:text-primary shadow-floating transition-transform active:scale-95"
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
                             disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
                         >
@@ -1422,7 +1415,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     description={
                         <div className="space-y-4 pt-2">
                             <p>¿Estás seguro de que deseas conciliar estos movimientos?</p>
-                            <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 flex items-start gap-3">
+                            <div className="bg-destructive/5 border border-destructive/20 rounded-md p-3 flex items-start gap-3">
                                 <Ban className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                                 <div className="space-y-1">
                                     <p className="text-[11px] font-black uppercase text-destructive leading-none">Acción Irreversible</p>
@@ -1457,7 +1450,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     tabIcon={Brain}
                     fullWidth={400}
                 >
-                    <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden text-foreground">
+                    <div className="flex flex-col h-full bg-background rounded-md overflow-hidden text-foreground">
                         <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="bg-primary/10 p-1.5 rounded-sm">
@@ -1478,7 +1471,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </Button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                            <ReconciliationIntelligence />
+                            <ReconciliationIntelligencePanel />
                         </div>
                     </div>
                 </CollapsibleSheet>

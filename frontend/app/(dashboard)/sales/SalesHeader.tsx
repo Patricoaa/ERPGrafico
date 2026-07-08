@@ -1,13 +1,13 @@
 "use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
-import { ENTITY_REGISTRY } from "@/lib/entity-registry"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getEntityIconName } from "@/lib/entity-registry"
+import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function SalesHeader() {
     const pathname = usePathname()
-    const searchParams = useSearchParams()
+    const { getViewModeUrl } = useViewModePreference()
 
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'orders'
@@ -21,18 +21,17 @@ export function SalesHeader() {
         settings: 'config',
     }
 
-    const tabParam = searchParams.get('tab')
     const activeValue = segmentToTab[currentSegment] || 'orders'
 
-    // Determine subActiveValue
+    // Determine subActiveValue from path segments
     const subActiveValue = (() => {
-        if (activeValue === 'config') return tabParam || 'income'
-        if (activeValue === 'orders') return tabParam || 'orders'
+        if (activeValue === 'config') return segments[2] || 'credit'
+        if (activeValue === 'orders') return segments[2] || 'orders'
         if (activeValue === 'pos') {
             if (currentSegment === 'sessions') return 'sessions'
-            return tabParam || 'cajas'
+            return segments[2] || 'cajas'
         }
-        if (activeValue === 'credits') return tabParam || 'portfolio'
+        if (activeValue === 'credits') return segments[2] || 'portfolio'
         return undefined
     })()
 
@@ -40,20 +39,21 @@ export function SalesHeader() {
         {
             value: "orders",
             label: "Órdenes",
-            iconName: "shopping-cart",
-            href: "/sales/orders",
+            iconName: getEntityIconName('sales.saleorder'),
+            href: getViewModeUrl('sales.saleorder', "/sales/orders"),
             subTabs: [
-                { value: "orders", label: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", href: "/sales/orders?tab=orders" },
-                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders?tab=notes" },
+                { value: "orders", label: "Notas de Venta", href: getViewModeUrl('sales.saleorder', "/sales/orders") },
+                { value: "deliveries", label: "Despachos", href: "/sales/deliveries" },
+                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders/notes" },
             ]
         },
         {
             value: "pos",
             label: "POS",
             iconName: "banknote",
-            href: "/sales/pos?tab=cajas",
+            href: "/sales/pos/cajas",
             subTabs: [
-                { value: "cajas", label: "Cajas", href: "/sales/pos?tab=cajas" },
+                { value: "cajas", label: "Cajas", href: "/sales/pos/cajas" },
                 { value: "sessions", label: "Sesiones", href: "/sales/sessions" },
             ]
         },
@@ -63,9 +63,9 @@ export function SalesHeader() {
             iconName: "pie-chart",
             href: "/sales/credits",
             subTabs: [
-                { value: "portfolio", label: "Cartera", href: "/sales/credits?tab=portfolio" },
-                { value: "history", label: "Historial", href: "/sales/credits?tab=history" },
-                { value: "blacklist", label: "Lista Negra", href: "/sales/credits?tab=blacklist" },
+                { value: "portfolio", label: "Cartera", href: "/sales/credits/portfolio" },
+                { value: "history", label: "Historial", href: "/sales/credits/history" },
+                { value: "blacklist", label: "Lista Negra", href: "/sales/credits/blacklist" },
             ]
         },
         {
@@ -74,23 +74,22 @@ export function SalesHeader() {
             iconName: "settings",
             href: "/sales/settings",
             subTabs: [
-                { value: "income", label: "Ingresos", href: "/sales/settings?tab=income", iconName: "trending-up" },
-                { value: "credit", label: "Crédito", href: "/sales/settings?tab=credit", iconName: "credit-card" },
-                { value: "config_pos", label: "POS", href: "/sales/settings?tab=config_pos", iconName: "settings" },
+                { value: "credit", label: "Crédito", href: "/sales/settings/credit", iconName: "credit-card" },
+                { value: "config-pos", label: "POS", href: "/sales/settings/config-pos", iconName: "settings" },
             ]
         },
     ]
 
     const navigation = {
         moduleName: "Ventas",
-        moduleHref: "/sales/orders?tab=orders",
+        moduleHref: getViewModeUrl('sales.saleorder', "/sales/orders"),
         tabs,
         activeValue,
         subActiveValue,
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Ventas", description: "Gestione los ingresos, políticas de crédito y parámetros del POS.", iconName: "settings" as const }
+        if (activeValue === 'config') return { title: "Configuración de Ventas", description: "Gestione las políticas de crédito y parámetros del POS.", iconName: "settings" as const }
         if (activeValue === 'credits') {
             if (subActiveValue === 'history') return { title: "Historial de Asignaciones", description: "Registro global de créditos asignados a clientes.", iconName: "history" as const }
             if (subActiveValue === 'blacklist') return { title: "Lista Negra", description: "Clientes con historial de impago o riesgo crediticio.", iconName: "user-x" as const }
@@ -102,9 +101,10 @@ export function SalesHeader() {
         }
         if (activeValue === 'orders') {
             if (subActiveValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.", iconName: "file-text" as const }
-            return { title: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: "shopping-cart" as const }
+            if (subActiveValue === 'deliveries') return { title: "Guías de Despacho", description: "Historial de envíos y entregas a clientes, incluyendo notas de débito.", iconName: "truck" as const }
+            return { title: "Notas de Venta", description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: getEntityIconName('sales.saleorder') }
         }
-        return { title: "Ventas", description: "", iconName: getModuleIconName('sales') ?? "shopping-cart" }
+        return { title: "Ventas", description: "", iconName: getEntityIconName('sales.saleorder') ?? "shopping-cart" }
     }
 
     const config = getHeaderConfig()

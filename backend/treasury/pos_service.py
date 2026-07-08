@@ -2,8 +2,10 @@
 POSService — business logic for POS session lifecycle (open / close).
 Extracted from POSSessionViewSet to keep views thin.
 """
+
 from decimal import Decimal
 
+from core.prefix_registry import EntityPrefix
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -19,7 +21,6 @@ from .services import TreasuryService
 
 
 class POSService:
-
     # ------------------------------------------------------------------ #
     # Open session                                                         #
     # ------------------------------------------------------------------ #
@@ -174,11 +175,12 @@ class POSService:
                 pos_session=session,
                 created_by=user,
                 notes=f"Retiro de cierre sesión #{session.id}",
-                reference=f"Retiro de Cierre POS - Sesión #{session.id}",
+                reference=f"{EntityPrefix.POS_SESSION}-RETIRO-{session.id}",
             )
 
         # Clean up draft carts
         from sales.draft_cart_service import DraftCartService
+
         DraftCartService.cleanup_on_session_close(session.id)
 
         session.status = "CLOSED"
@@ -187,6 +189,144 @@ class POSService:
         session.save()
 
         return session, audit
+
+    # ------------------------------------------------------------------ #
+    # Request wrappers                                                    #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def open_session_from_request(request):
+        return POSService.open_session(
+            user=request.user,
+            terminal_id=request.data.get("terminal_id"),
+            treasury_account_id=request.data.get("treasury_account_id"),
+            opening_balance=Decimal(str(request.data.get("opening_balance", "0"))),
+            fund_source_id=request.data.get("fund_source_id"),
+            justify_reason=request.data.get("justify_reason"),
+            justify_target_id=request.data.get("justify_target_id"),
+            notes=request.data.get("notes", ""),
+        )
+
+    @staticmethod
+    def close_session_from_request(request, session: POSSession):
+        return POSService.close_session(
+            session=session,
+            actual_cash=Decimal(str(request.data.get("actual_cash", "0"))),
+            notes=request.data.get("notes", ""),
+            justify_reason=request.data.get("justify_reason", "UNKNOWN"),
+            justify_target_id=request.data.get("justify_target_id"),
+            withdrawal_amount=Decimal(str(request.data.get("withdrawal_amount", "0"))),
+            cash_destination_id=request.data.get("cash_destination_id"),
+            user=request.user,
+        )
+
+    # ------------------------------------------------------------------ #
+    # Manual Movement                                                      #
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def register_manual_movement_from_request(request, session: "POSSession") -> "TreasuryMovement":
+        is_inflow = request.data.get("is_inflow", False)
+        if isinstance(is_inflow, str):
+            is_inflow = is_inflow.lower() == "true"
+        else:
+            is_inflow = bool(is_inflow)
+
+        return POSService.register_manual_movement(
+            session=session,
+            move_type=request.data.get("type"),
+            amount=Decimal(str(request.data.get("amount", "0"))),
+            is_inflow=is_inflow,
+            notes=request.data.get("notes", ""),
+            target_account_id=request.data.get("target_account_id"),
+            user=request.user,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def register_manual_movement(
+        *,
+        session: POSSession,
+        move_type: str,
+        amount: Decimal,
+        is_inflow: bool,
+        notes: str = "",
+        target_account_id: int | None = None,
+        user,
+    ) -> TreasuryMovement:
+        from accounting.models import AccountingSettings
+
+        if session.status != "OPEN":
+            raise ValidationError("La sesión no está abierta")
+
+        if amount <= 0:
+            raise ValidationError("El monto debe ser mayor a cero")
+
+        settings = AccountingSettings.get_solo()
+        if not settings:
+            raise ValidationError("Configuración contable no encontrada")
+
+        direction = "IN" if is_inflow else "OUT"
+
+        if move_type == "TRANSFER":
+            if not target_account_id:
+                raise ValidationError("Debe especificar la cuenta para traspasos")
+
+            try:
+                target_obj = TreasuryAccount.objects.get(id=target_account_id)
+            except TreasuryAccount.DoesNotExist:
+                raise ValidationError("Cuenta no encontrada")
+
+            treasury_account_obj = _get_session_treasury(session)
+
+            if treasury_account_obj == target_obj:
+                raise ValidationError("No puede transferir a la misma cuenta de origen")
+
+        else:
+            target_account = TreasuryService._get_reason_account(settings, move_type, direction)
+            if not target_account:
+                lbl = _LABEL_MAP.get(move_type, move_type)
+                raise ValidationError(f"Cuenta contable no configurada para {lbl}")
+
+        if not is_inflow and amount > session.expected_cash:
+            raise ValidationError(f"Saldo insuficiente en efectivo. Máximo disponible para retiro: ${session.expected_cash:,.0f}")
+
+        treasury_account_obj = _get_session_treasury(session)
+        if not treasury_account_obj:
+            raise ValidationError("No se pudo determinar la cuenta de tesorería para esta sesión")
+
+        from_account = None
+        to_account = None
+
+        if move_type == "TRANSFER":
+            if is_inflow:
+                from_account = TreasuryAccount.objects.get(id=target_account_id)
+                to_account = treasury_account_obj
+            else:
+                from_account = treasury_account_obj
+                to_account = TreasuryAccount.objects.get(id=target_account_id)
+        elif is_inflow:
+            to_account = treasury_account_obj
+        else:
+            from_account = treasury_account_obj
+
+        movement = TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.TRANSFER
+            if move_type == "TRANSFER"
+            else (TreasuryMovement.Type.INBOUND if is_inflow else TreasuryMovement.Type.OUTBOUND),
+            created_by=user,
+            from_account=from_account,
+            to_account=to_account,
+            pos_session=session,
+            notes=notes,
+            justify_reason=move_type,
+        )
+        movement.reference = f"{EntityPrefix.POS_SESSION}-MANUAL-{movement.id}"
+        movement.save(update_fields=["reference"])
+
+        session.refresh_from_db()
+        return movement
 
 
 # ------------------------------------------------------------------ #
@@ -269,7 +409,7 @@ def _apply_opening_fund_adjustment(
         pos_session=session,
         notes=full_notes,
         justify_reason=justify_reason,
-        reference=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}",
+        reference=f"{EntityPrefix.POS_SESSION}-AJUSTE-{session.id}",
     )
 
 
@@ -303,7 +443,6 @@ def _create_difference_movement(
             from_account, to_account = None, pos_treasury
             movement_type = TreasuryMovement.Type.INBOUND
 
-    surplus_label = "Sobrante" if difference > 0 else "Faltante"
     return TreasuryService.create_movement(
         movement_type=movement_type,
         amount=abs(difference),
@@ -313,5 +452,5 @@ def _create_difference_movement(
         pos_session=session,
         notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
         justify_reason=justify_reason,
-        reference=f"{surplus_label} de Caja ({justify_reason}) - Sesión #{session.id}",
+        reference=f"{EntityPrefix.POS_SESSION}-EXCEDENTE-{session.id}",
     )

@@ -1,18 +1,30 @@
-export * from './DraftCartsList';
-export * from './POSClientView';
-export * from './NumpadModal';
-export * from './PINPadModal';
-export * from './POSReport';
-export * from './POSVariantSelectorModal';
-export * from './SalesOrdersDrawer';
-export * from './ScannerFeedback';
-export * from './SessionCloseModal';
-export * from './SessionControl';
-export * from './Cart';
-export * from './CartItem';
-export * from './CategoryFilter';
-export * from './POSCheckoutHeader';
-export * from './POSShell';
-export * from './ProductGrid';
-export * from './SearchBar';
-export * from './skeletons/POSLayoutSkeleton';
+export { Cart } from './Cart'
+export { CartItem } from './CartItem'
+export { DraftCartsClientView } from './DraftCartsClientView'
+export { NumpadModal } from './NumpadModal'
+export { PINPadModal } from './PINPadModal'
+export { POSCheckoutHeader } from './POSCheckoutHeader'
+export { POSClientView } from './POSClientView'
+export { POSReport } from './POSReport'
+export { POSShell } from './POSShell'
+export { POSVariantSelectorModal } from './POSVariantSelectorModal'
+export { SalesOrdersDrawer } from './SalesOrdersDrawer'
+export { ScannerFeedback } from './ScannerFeedback'
+export { SessionCloseModal } from './SessionCloseModal'
+export { SessionControl } from './SessionControl'
+export { POSCartItemsSkeleton, POSGridSkeleton, POSLayoutSkeleton, POSSearchSkeleton } from './skeletons/POSLayoutSkeleton'
+
+// Deprecated shims — re-export from shared for backwards compat
+export { CategoryFilter } from '@/components/shared'
+export { ProductGrid } from '@/components/shared'
+export { SearchBar } from '@/components/shared'
+
+export type { POSVariantSelectorModalProps } from './POSVariantSelectorModal'
+export type { POSReportData } from './POSReport'
+export type { ScannerFeedbackHandle } from './ScannerFeedback'
+export type { SessionControlHandle } from './SessionControl'
+
+// Deprecated shim types — re-export from shared
+export type { CategoryFilterProps } from '@/components/shared'
+export type { ProductGridProps } from '@/components/shared'
+export type { SearchBarProps } from '@/components/shared'

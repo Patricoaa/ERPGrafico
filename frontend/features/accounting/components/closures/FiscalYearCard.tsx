@@ -1,49 +1,62 @@
 import React from 'react';
-;
-;
-import { EmptyState, EntityCard, IconButton, StatusBadge, SubmitButton } from '@/components/shared';
+import { EntityCard, IconButton, StatusBadge, SubmitButton } from '@/components/shared';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FiscalYear, AccountingPeriod } from '../../types';
-import { CalendarRange, Lock, MoreVertical, PlayCircle, Settings2, ShieldAlert } from 'lucide-react';
-import { PeriodGridItem } from './PeriodGridItem';
-;
+import { type FiscalYear, type AccountingPeriod, type TaxPeriod } from '../../types';
+import { CalendarRange, Lock, MoreVertical, Settings2, ShieldAlert, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { CombinedPeriodCard } from './CombinedPeriodCard';
 import { formatPlainDate } from '@/lib/utils';
 
 interface FiscalYearCardProps {
     year: number;
     fiscalYear?: FiscalYear;
     periods: AccountingPeriod[];
+    taxPeriods: TaxPeriod[];
     onClosePeriod: (id: number) => void;
-    onReopenPeriod: (id: number) => void;
+    onReopenPeriod: (params: { id: number; reason?: string }) => Promise<unknown>;
+    onCreatePeriod: (year: number, month: number) => Promise<unknown>;
     isPeriodActionLoading: boolean;
+    onCloseTaxPeriod: (id: number) => Promise<void>;
+    onReopenTaxPeriod: (params: { id: number; reason?: string }) => Promise<unknown>;
+    onOpenDeclaration: (params: { id?: number; year: number; month: number }) => void;
+    isTaxActionLoading: boolean;
     onPreviewClosing: (year: number) => void;
     onReopenFiscalYear: (year: number) => void;
-    onGenerateOpening: (year: number) => void;
     isFiscalYearLoading: boolean;
+    onPayF29?: (periodId: number) => void;
 }
 
 export function FiscalYearCard({
     year,
     fiscalYear,
     periods,
+    taxPeriods,
     onClosePeriod,
     onReopenPeriod,
+    onCreatePeriod,
     isPeriodActionLoading,
+    onCloseTaxPeriod,
+    onReopenTaxPeriod,
+    onOpenDeclaration,
+    isTaxActionLoading,
     onPreviewClosing,
     onReopenFiscalYear,
-    onGenerateOpening,
-    isFiscalYearLoading
+    isFiscalYearLoading,
+    onPayF29,
 }: FiscalYearCardProps) {
     
-    // Default to OPEN if fiscal year model doesn't exist yet for this year
     const status = fiscalYear?.status || 'OPEN';
     const isClosed = status === 'CLOSED';
+
+    const closedTaxCount = taxPeriods.filter(p => p.status === 'CLOSED').length;
+    const closedAcctCount = periods.filter(p => p.status === 'CLOSED').length;
+    const allTaxClosed = taxPeriods.length > 0 && taxPeriods.every(p => p.status === 'CLOSED');
+    const allAcctClosed = periods.length > 0 && periods.every(p => p.status === 'CLOSED');
+    const canCloseFiscalYear = allTaxClosed && allAcctClosed;
 
     return (
         <EntityCard className="mb-6 cursor-default">
@@ -51,16 +64,14 @@ export function FiscalYearCard({
                 title={
                     <div className="flex items-center gap-3">
                         <CalendarRange className="w-5 h-5 text-muted-foreground" />
-                        <span className="font-heading font-extrabold text-xl uppercase tracking-tighter">
+                        <span className=" font-extrabold text-xl uppercase tracking-tighter">
                             Ejercicio {year}
                         </span>
+                        <StatusBadge status={status} />
                     </div>
                 }
                 subtitle={
-                    <div className="flex flex-col gap-1 mt-1">
-                        <div className="flex items-center gap-2">
-                            <StatusBadge status={status} />
-                        </div>
+                    <div className="flex flex-col gap-1.5 mt-1">
                         {isClosed && fiscalYear?.closed_at ? (
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <Lock className="w-3 h-3" />
@@ -68,9 +79,22 @@ export function FiscalYearCard({
                                 {fiscalYear.closed_by_name && ` por ${fiscalYear.closed_by_name}`}
                             </div>
                         ) : (
-                            <span className="text-xs text-muted-foreground">
-                                {periods.length} periodos mensuales registrados.
-                            </span>
+                            <div className="flex flex-wrap items-center gap-3 text-xs">
+                                <span className="flex items-center gap-1 text-muted-foreground">
+                                    {allTaxClosed
+                                        ? <CheckCircle2 className="w-3 h-3 text-success" />
+                                        : <AlertTriangle className="w-3 h-3 text-warning" />
+                                    }
+                                    F29: {closedTaxCount}/{taxPeriods.length} cerrados
+                                </span>
+                                <span className="flex items-center gap-1 text-muted-foreground">
+                                    {allAcctClosed
+                                        ? <CheckCircle2 className="w-3 h-3 text-success" />
+                                        : <AlertTriangle className="w-3 h-3 text-warning" />
+                                    }
+                                    Contable: {closedAcctCount}/{periods.length} cerrados
+                                </span>
+                            </div>
                         )}
                     </div>
                 }
@@ -79,7 +103,7 @@ export function FiscalYearCard({
                         {!isClosed && (
                             <SubmitButton
                                 onClick={() => onPreviewClosing(year)}
-                                disabled={periods.length === 0 || periods.some(p => p.status !== 'CLOSED')}
+                                disabled={!canCloseFiscalYear}
                                 loading={isFiscalYearLoading}
                                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest text-[10px] h-8 px-3"
                                 icon={<ShieldAlert className="w-3.5 h-3.5 mr-1.5" />}
@@ -100,11 +124,6 @@ export function FiscalYearCard({
                                             <Lock className="w-4 h-4 mr-2 text-warning" />
                                             Reabrir Ejercicio
                                         </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => onGenerateOpening(year)} disabled={isFiscalYearLoading}>
-                                            <PlayCircle className="w-4 h-4 mr-2 text-success" />
-                                            Generar Asiento Apertura
-                                        </DropdownMenuItem>
                                     </>
                                 ) : (
                                     <DropdownMenuItem disabled>
@@ -119,30 +138,30 @@ export function FiscalYearCard({
             />
 
             <div className="p-4 bg-muted/5 border-t border-border/50">
-                <h4 className="font-heading font-bold text-[10px] text-muted-foreground uppercase tracking-widest mb-3">
-                    Periodos Mensuales
-                </h4>
-                
-                {periods.length === 0 ? (
-                    <EmptyState
-                        context="generic"
-                        variant="compact"
-                        title="Sin periodos registrados"
-                        description={`No existen asientios contables o periodos habilitados para el año ${year}.`}
-                    />
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {periods.map(period => (
-                            <PeriodGridItem
-                                key={period.id}
-                                period={period}
-                                onClose={onClosePeriod}
-                                onReopen={onReopenPeriod}
-                                isActionLoading={isPeriodActionLoading}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+                        const acct = periods.find(p => p.month === m);
+                        const tax = taxPeriods.find(p => p.month === m);
+                        return (
+                            <CombinedPeriodCard
+                                key={m}
+                                month={m}
+                                year={year}
+                                accountingPeriod={acct}
+                                taxPeriod={tax}
+                                onClosePeriod={onClosePeriod}
+                                onReopenPeriod={onReopenPeriod}
+                                onCreatePeriod={onCreatePeriod}
+                                isPeriodActionLoading={isPeriodActionLoading}
+                                onCloseTaxPeriod={onCloseTaxPeriod}
+                                onReopenTaxPeriod={onReopenTaxPeriod}
+                                onOpenDeclaration={onOpenDeclaration}
+                                isTaxActionLoading={isTaxActionLoading}
+                                onPayF29={onPayF29}
                             />
-                        ))}
-                    </div>
-                )}
+                        );
+                    })}
+                </div>
             </div>
         </EntityCard>
     );

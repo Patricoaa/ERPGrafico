@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-    GenericWizard, LabeledInput, LabeledSelect, MultiSelectTagInput, FormSection,
+    GenericWizard, LabeledInput, LabeledSelect, MultiSelectTagInput, FormSection, MoneyDisplay,
 } from "@/components/shared"
 import type { WizardStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -56,7 +56,7 @@ const USAGE_CARDS: { value: Usage; label: string; hint: string; icon: typeof Wal
 
 export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBankId }: TreasuryAccountWizardProps) {
     const { banks } = useBanks()
-    const { mutateAsync: provision, isPending } = useProvisionAccount()
+    const { provision, isProvisioning } = useProvisionAccount()
 
     const [stepIndex, setStepIndex] = useState(0)
     const [accountType, setAccountType] = useState<TreasuryAccountType | "">("")
@@ -66,6 +66,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
     const [accountId, setAccountId] = useState<string | null>(null)
     const [bank, setBank] = useState<string>("")
     const [accountNumber, setAccountNumber] = useState("")
+    const [creditLimit, setCreditLimit] = useState("")
     const [tenders, setTenders] = useState<string[]>([])
     const [usage, setUsage] = useState<Usage>("both")
 
@@ -81,6 +82,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             setAccountId(null)
             setBank(defaultBankId ? String(defaultBankId) : "")
             setAccountNumber("")
+            setCreditLimit("")
             setTenders([])
             setUsage("both")
         })
@@ -199,6 +201,15 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                         />
+                        {accountType === "CREDIT_CARD" && (
+                            <LabeledInput
+                                label="Cupo Total"
+                                placeholder="5000000"
+                                type="number"
+                                value={creditLimit}
+                                onChange={(e) => setCreditLimit(e.target.value)}
+                            />
+                        )}
                     </div>
                 ),
             },
@@ -260,7 +271,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             {
                 id: "summary",
                 title: "Confirmación",
-                isValid: !isPending,
+                isValid: !isProvisioning,
                 component: (
                     <div className="space-y-5 pt-2">
                         <p className="text-center text-sm text-muted-foreground">Revise antes de crear la cuenta.</p>
@@ -275,13 +286,16 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                                 value={fixedTenderLabel ?? (tenders.length ? tenders.map((t) => TENDER_LABELS[t] ?? t).join(", ") : "—")}
                             />
                             <SummaryRow label="Uso" value={USAGE_CARDS.find((u) => u.value === usage)?.label ?? "—"} />
+                            {accountType === "CREDIT_CARD" && creditLimit && (
+                                <SummaryRow label="Cupo Total" value={<MoneyDisplay amount={Number(creditLimit)} />} />
+                            )}
                         </div>
                     </div>
                 ),
             },
         ]
         return list.filter((s): s is WizardStep => s !== null)
-    }, [accountType, name, code, currency, accountId, bank, accountNumber, tenders, usage, isPending, banks,
+    }, [accountType, name, code, currency, accountId, bank, accountNumber, creditLimit, tenders, usage, isProvisioning, banks,
         requiresBank, requiresAccountNumber, showTendersStep, fixedTenderLabel, isLiabilityType])
 
     const handleComplete = async () => {
@@ -294,6 +308,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                 account_type: accountType as TreasuryAccountType,
                 bank: requiresBank && bank ? parseInt(bank) : null,
                 account_number: accountNumber.trim() || null,
+                credit_limit: creditLimit ? Number(creditLimit) : null,
                 tenders: accountType === "CHECKING" ? tenders : [],
                 usage,
             })
@@ -313,7 +328,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
             initialStep={stepIndex}
             onComplete={handleComplete}
             onClose={() => onOpenChange(false)}
-            isCompleting={isPending}
+            isCompleting={isProvisioning}
             completeButtonLabel="Crear Cuenta"
             completeButtonIcon={<CheckCircle2 className="h-4 w-4" />}
             size="md"
@@ -321,7 +336,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
     )
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
         <div className="p-3 flex justify-between items-center">
             <span className="text-muted-foreground font-medium">{label}:</span>

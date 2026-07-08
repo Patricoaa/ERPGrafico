@@ -3,11 +3,12 @@
 import { FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledSwitch, FormSection, LabeledSelect } from "@/components/shared"
 import { DollarSign, Zap } from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
-import { PricingUtils } from "../../utils/pricing"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
+import { useVatRate } from '@/hooks/useVatRate'
+import { PricingUtils } from "@/lib/pricing-utils"
 import { cn } from "@/lib/utils"
-import { UoM } from "@/types/entities"
+import { type UoM } from "@/types/entities"
 
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
@@ -17,6 +18,7 @@ interface ProductPricingSectionProps {
 }
 
 export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingSectionProps) {
+    const { rate } = useVatRate()
     const isDynamicPricing = form.watch("is_dynamic_pricing")
     const productType = form.watch("product_type")
     const allowedSaleUomStrings = form.watch("allowed_sale_uoms") || []
@@ -49,7 +51,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
             <FormSection title="Precio de Venta" icon={DollarSign} />
 
             <div className="space-y-4">
-                <FormField<ProductFormValues>
+                <FormField
                     control={form.control}
                     name="is_dynamic_pricing"
                     render={({ field }) => (
@@ -66,7 +68,7 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                     )}
                 />
 
-                <div className={cn("p-6 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center", !isDynamicPricing && "hidden")}>
+                <div className={cn("p-6 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center", !isDynamicPricing && "hidden")}>
                     <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center mb-3">
                         <Zap className="h-5 w-5 text-warning" />
                     </div>
@@ -78,8 +80,8 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
 
                 {/* Base price row */}
                 <div className={cn(isDynamicPricing && "hidden")}>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-lg items-end">
-                        <FormField<ProductFormValues>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-md items-end">
+                        <FormField
                             control={form.control}
                             name="sale_price"
                             render={({ field, fieldState }) => (
@@ -99,13 +101,13 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                         />
 
                         <LabeledInput
-                            label="IVA (19%)"
+                            label={`IVA (${rate}%)`}
                             value={PricingUtils.formatCurrency(taxAmount)}
                             readOnly
                             className="h-9 text-right bg-info/5 border-info/20 text-info/80 cursor-default font-bold"
                         />
 
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="sale_price_gross"
                             render={({ field, fieldState }) => (
@@ -124,10 +126,10 @@ export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingS
                             )}
                         />
 
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="sale_uom"
-                            render={({ field, fieldState }) => (
+                            render={({ field }) => (
                                 <LabeledSelect
                                     label="Unidad Base de Venta"
                                     placeholder={allowedSaleUomsOptions.length === 0 ? "Configure en Logística" : "Seleccione UoM..."}

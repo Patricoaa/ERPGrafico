@@ -9,9 +9,10 @@ export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accounting', 'settings', 'current
  * resolver las cuentas configuradas.
  */
 export function useAccountingSettings() {
-    return useQuery({
+    const { data: settings, isLoading, isError } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: () => accountingApi.getSettings(),
-        staleTime: 30 * 60 * 1000, // 30 min — configuración cambia raramente
+        staleTime: 30 * 60 * 1000,
     })
+    return { settings: settings ?? null, isLoading, isError }
 }

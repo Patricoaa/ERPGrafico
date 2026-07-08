@@ -8,7 +8,6 @@ import {
     ArrowDownCircle,
     ArrowUpCircle,
     Users,
-    Info,
     Warehouse as WarehouseIcon
 } from "lucide-react"
 
@@ -19,11 +18,11 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { settingsApi } from "../../hooks"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { settingsApi, type ProductMinimal } from "../../hooks"
+import { partnersApi } from "@/features/contacts"
 import { cn } from "@/lib/utils"
-import { Partner } from "@/features/contacts/types/partner"
-import { Product } from "@/features/inventory/types"
+import { type Partner } from "@/features/contacts"
+import { type Product } from "@/features/inventory"
 
 interface InventoryContributionModalProps {
     open: boolean
@@ -102,15 +101,15 @@ export function InventoryContributionModal({
         }
         settingsApi.getProduct(productId)
             .then(data => {
-                setProductDetails(data as any)
-                setUnitCost((data as any).cost_price?.toString() || "0")
+                setProductDetails(data as unknown as Product)
+                setUnitCost(data.cost_price?.toString() || "0")
 
-                if ((data as any).uom_category) {
-                    return settingsApi.getUoms({ category: (data as any).uom_category })
+                if (data.uom_category) {
+                    return settingsApi.getUoms({ category: data.uom_category })
                         .then(uoms => {
-                            setProductUoMs(uoms as any)
-                            const baseId = typeof (data as any).uom === 'object' && (data as any).uom !== null ? (data as any).uom.id : (data as any).uom
-                            const base = uoms.find((u: { id: number }) => u.id === baseId)
+                            setProductUoMs(uoms)
+                            const baseId = typeof data.uom === 'object' && data.uom !== null ? data.uom.id : data.uom
+                            const base = uoms.find((u) => u.id === (baseId as number))
                             if (base) setUomId(base.id.toString())
                         })
                 }
@@ -203,7 +202,7 @@ export function InventoryContributionModal({
                 onClick={handleSubmit}
                 loading={isLoading}
                 className={cn(
-                    "rounded-lg text-xs font-bold",
+                    "rounded-sm text-xs font-bold",
                     moveType === 'IN' ? 'bg-success hover:bg-success/90 text-primary-foreground' : 'bg-destructive hover:bg-destructive/90 text-primary-foreground'
                 )}
             >
@@ -236,14 +235,14 @@ export function InventoryContributionModal({
                     <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-11 p-1 border">
                         <TabsTrigger
                             value="IN"
-                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-sm h-full"
+                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-card h-full"
                         >
                             <ArrowDownCircle className="mr-2 h-4 w-4" />
                             Aporte
                         </TabsTrigger>
                         <TabsTrigger
                             value="OUT"
-                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-sm h-full"
+                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-card h-full"
                         >
                             <ArrowUpCircle className="mr-2 h-4 w-4" />
                             Retiro
@@ -333,7 +332,7 @@ export function InventoryContributionModal({
                         placeholder="UoM"
                     />
 
-                    <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
+                    <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-md px-2 -mx-2 sm:mx-0">
                         <LabeledInput
                             label={
                                 <div className="flex justify-between w-full">
@@ -342,7 +341,7 @@ export function InventoryContributionModal({
                                 </div>
                             }
                             type={isCostEditable ? "number" : "text"}
-                            step={isCostEditable ? "0.01" : undefined}
+                            step={isCostEditable ? "1" : undefined}
                             min="0"
                             readOnly={!isCostEditable}
                             value={isCostEditable ? unitCost : formatCurrency(Number(unitCost))}
@@ -359,9 +358,8 @@ export function InventoryContributionModal({
                 </div>
 
                 {conversion && baseUoM && (
-                    <Alert className="bg-info/5 border-info/20 text-info py-2">
-                        <Info className="h-4 w-4 text-info" />
-                        <AlertDescription className="text-xs ml-2">
+                    <Alert variant="info" className="py-2">
+                        <AlertDescription className="text-xs">
                             Se registrará formalmente como <strong>{conversion.qty.toFixed(4)} {baseUoM.name}</strong> a un costo base de <strong>{formatCurrency(conversion.cost)} c/u</strong>.
                         </AlertDescription>
                     </Alert>
@@ -369,7 +367,7 @@ export function InventoryContributionModal({
 
                 {/* Stock Info */}
                 {productDetails && (
-                    <div className="flex items-center gap-4 text-[10px] font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-lg border">
+                    <div className="flex items-center gap-4 text-[10px] font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-md border">
                         <span>Stock actual: <strong className="font-mono">{productDetails.qty_on_hand ?? '—'}</strong></span>
                         <span>Costo promedio: <strong className="font-mono">{formatCurrency(productDetails.cost_price || 0)}</strong></span>
                     </div>

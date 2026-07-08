@@ -1,15 +1,14 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
-import { Button } from '@/components/ui/button'
-import { Printer, Layers } from 'lucide-react'
-import { useReactToPrint } from 'react-to-print'
+import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
-import { PrintableLayout } from '@/features/_shared/transaction-drawer'
+import { PrintableLayout } from '@/features/_shared'
 import { useTerminalBatch } from '@/features/treasury/hooks/useTerminalBatch'
-import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
+import type { TransactionDrawerProps } from '@/features/_shared'
+import { formDrawerWidth } from '@/lib/form-widths'
 
 interface TerminalBatchDrawerProps extends TransactionDrawerProps {
   batchId?: number
@@ -18,10 +17,12 @@ interface TerminalBatchDrawerProps extends TransactionDrawerProps {
 export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: TerminalBatchDrawerProps) {
   const entityId = id ?? batchId ?? null
   const { data: batch, isLoading } = useTerminalBatch(entityId)
-  const printRef = useRef<HTMLDivElement>(null)
-  const handlePrint = useReactToPrint({ contentRef: printRef })
+  const { printRef, handlePrint } = usePrintableDrawer()
 
   const displayId = batch?.display_id ?? `#${entityId}`
+  const identity = useDrawerIdentity('treasury.terminalbatch', 'view', batch, {
+    onPrint: handlePrint,
+  })
 
   return (
     <>
@@ -47,15 +48,15 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
       </PrintableLayout>
 
       <Drawer
+        mode="view"
         open={open}
         onOpenChange={onOpenChange}
         side="left"
-        defaultSize="50%"
-        icon={Layers}
-        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
-        subtitle="Lote de Liquidación"
-        description={batch?.provider_name ?? batch?.payment_method ?? ''}
-
+        defaultSize={formDrawerWidth("master", false)}
+        icon={identity.icon}
+        title={identity.title}
+        headerActions={identity.headerActions}
+        subtitle={identity.subtitle}
       >
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando lote de terminal">
           {batch && (

@@ -5,22 +5,23 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { UserInitialData } from "@/types/forms"
+import { type UserInitialData } from "@/types/forms"
 import * as z from "zod"
 import { toast } from "sonner"
 import { usersApi } from "../api/usersApi"
+import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormField } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, Printer } from "lucide-react"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
-import { Checkbox } from "@/components/ui/checkbox"
+import { ActivitySidebar } from "@/features/audit"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, TabBar, TabBarContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { AppGroup } from "@/types/entities"
+import { type AppGroup } from "@/types/entities"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -34,7 +35,6 @@ const userSchema = z.object({
 type UserFormValues = z.infer<typeof userSchema>
 
 interface UserDrawerProps {
-    auditSidebar?: React.ReactNode
     initialData?: UserInitialData
     onSuccess?: () => void
     trigger?: React.ReactNode
@@ -43,11 +43,11 @@ interface UserDrawerProps {
     mode?: DrawerMode
 }
 
-export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen, mode: modeProp }: UserDrawerProps) {
+export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen, mode: modeProp }: UserDrawerProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const isControlled = controlledOpen !== undefined
     const open = isControlled ? controlledOpen : internalOpen
-    const setOpen = isControlled ? setControlledOpen! : setInternalOpen
+    const setOpen = isControlled ? (setControlledOpen as (v: boolean) => void) : setInternalOpen
     const [loading, setLoading] = useState(false)
     const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
@@ -58,9 +58,13 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
-    // Helper to parse groups from initialData
+    const userId = initialData?.id ?? null
+    const { user: apiUser, loading: userLoading } = useSingleUser(userId)
+
+    // Helper to parse groups from initialData or API data
     const parsedInitialValues = useMemo(() => {
-        const rawGroups = initialData?.groups || []
+        const source = apiUser ?? initialData ?? {}
+        const rawGroups = source.groups || []
         const groups: string[] = rawGroups.map((g) => (typeof g === 'string' ? g : g.name))
         const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
 
@@ -68,21 +72,21 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         const functionalGroups = groups.filter((g) => !systemRoles.includes(g))
 
         return {
-            username: initialData?.username || "",
+            username: initialData?.username || apiUser?.username || "",
             primary_role: primaryRole,
             functional_groups: functionalGroups,
-            contact: Number(initialData?.contact || 0),
+            contact: Number(source.contact || 0),
             password: "",
-            is_active: initialData?.is_active ?? true,
+            is_active: source.is_active ?? true,
         }
-    }, [initialData])
+    }, [apiUser, initialData])
 
     const form = useForm<UserFormValues>({
         resolver: zodResolver(userSchema),
         defaultValues: parsedInitialValues
     })
 
-    const width = formDrawerWidth("master", !!initialData?.id)
+    const width = formDrawerWidth("medium", !!initialData?.id)
 
     // Fetch static data once when opened
     useEffect(() => {
@@ -113,7 +117,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         fetchDisplayData()
     }, [open])
 
-    const isFetchingInitialData = open && isFetchingDeps
+    const isFetchingInitialData = open && (isFetchingDeps || userLoading)
 
     // Sync form values with initialData when modal opens or initialData changes
     const lastResetId = useRef<string | number | undefined>(undefined)
@@ -153,10 +157,10 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
             if (data.password) payload.password = data.password
 
             if (initialData?.id) {
-                await usersApi.updateUser(initialData.id, payload)
+                await usersApi.updateUser(initialData.id, payload as unknown as Record<string, unknown>)
                 toast.success("Usuario actualizado")
             } else {
-                await usersApi.createUser(payload)
+                await usersApi.createUser(payload as unknown as Record<string, unknown>)
                 toast.success("Usuario creado")
             }
             setOpen(false)
@@ -190,7 +194,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
 
     const tabErrors = getTabsWithErrors()
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "general",
             label: "General",
@@ -205,20 +209,9 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         },
     ]
 
-    const headerSlot = (
-        <EntityHeader
-            entityLabel="core.user"
-            data={initialData}
-            action={initialData ? 'edit' : 'create'}
-            className="border-none px-6 py-4 bg-muted/5 print:hidden"
-        />
-    )
-
-    const drawerTitle = isView
-        ? `Ficha de Usuario${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Usuario"
-            : "Editar Usuario"
+    const identity = useDrawerIdentity('core.user', mode, initialData, {
+        overrideSubtitle: "Gestión de cuentas, roles y permisos de acceso.",
+    })
 
     return (
         <>
@@ -255,11 +248,12 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                headerClassName="sr-only"
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle="Gestión de cuentas, roles y permisos de acceso."
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 defaultSize={width}
                 mode={mode}
+                icon={identity.icon}
                 side="left"
                 footer={isView ? undefined : (
                     <FormFooter
@@ -274,109 +268,104 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                     />
                 )}
             >
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de usuario" className="flex-1 flex flex-col">
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de usuario" className="flex-1 flex flex-col h-full">
                     <Form {...form}>
-                        <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                        <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
                             <fieldset disabled={isView} className="contents">
-                                <FormTabs
-                                    items={tabItems}
-                                    value={activeTab}
-                                    onValueChange={setActiveTab}
-                                    orientation="horizontal"
-                                    variant="underline"
-                                    header={headerSlot}
-                                    contentClassName="bg-transparent"
-                                    className="flex-1"
-                                >
-                                    <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
-                                        <FormTabsContent value="general" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
-                                            <FormSplitLayout sidebar={auditSidebar} showSidebar={!!initialData?.id} className="p-0">
-                                                <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
-                                                    <div className="space-y-8">
-                                                        <div className="space-y-4">
-                                                            <FormSection title="Vinculación y Cuenta" icon={User} />
-                                                            <div className="grid grid-cols-4 gap-6">
+                                <FormSplitLayout sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id.toString()} entityType="user" /> : undefined} showSidebar={!!initialData?.id} className="min-w-0 h-full overflow-hidden p-0">
+                                    <TabBar
+                                        items={tabItems}
+                                        value={activeTab}
+                                        onValueChange={setActiveTab}
+                                        orientation="horizontal"
+                                        variant="underline"
+                                        contentClassName="bg-transparent"
+                                        className="flex-1"
+                                    >
+                                        <fieldset disabled={loading} className="flex-1 min-w-0 flex flex-col h-full min-h-0">
+                                            <TabBarContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                                <div className="space-y-8">
+                                                    <div className="space-y-4">
+                                                        <FormSection title="Vinculación y Cuenta" icon={User} />
+                                                        <div className="grid grid-cols-4 gap-6">
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="contact"
+                                                                render={({ field, fieldState }) => (
+                                                                    <div className="col-span-4">
+                                                                        <AdvancedContactSelector
+                                                                            label="Contacto Vinculado"
+                                                                            error={fieldState.error?.message}
+                                                                            required
+                                                                            value={field.value?.toString() || ""}
+                                                                            onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
+                                                                            disabled={!!initialData}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            />
+                                                            <div className="col-span-4">
                                                                 <FormField
                                                                     control={form.control}
-                                                                    name="contact"
+                                                                    name="username"
                                                                     render={({ field, fieldState }) => (
-                                                                        <div className="col-span-4">
-                                                                            <AdvancedContactSelector
-                                                                                label="Contacto Vinculado"
-                                                                                error={fieldState.error?.message}
-                                                                                required
-                                                                                value={field.value?.toString() || ""}
-                                                                                onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
-                                                                                disabled={!!initialData}
-                                                                            />
-                                                                        </div>
+                                                                        <LabeledInput
+                                                                            label="Nombre de Usuario"
+                                                                            required
+                                                                            disabled={!!initialData}
+                                                                            placeholder="ej: pmartinez"
+                                                                            error={fieldState.error?.message}
+                                                                            hint={initialData ? "Identificador único de sistema" : undefined}
+                                                                            {...field}
+                                                                        />
                                                                     )}
                                                                 />
-                                                                <div className="col-span-4">
-                                                                    <FormField
-                                                                        control={form.control}
-                                                                        name="username"
-                                                                        render={({ field, fieldState }) => (
-                                                                            <LabeledInput
-                                                                                label="Nombre de Usuario"
-                                                                                required
-                                                                                disabled={!!initialData}
-                                                                                placeholder="ej: pmartinez"
-                                                                                error={fieldState.error?.message}
-                                                                                hint={initialData ? "Identificador único de sistema" : undefined}
-                                                                                {...field}
-                                                                            />
-                                                                        )}
-                                                                    />
-                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="space-y-4">
-                                                            <FormSection title="Seguridad y Acceso" icon={ShieldCheck} />
-                                                            <div className="grid grid-cols-4 gap-6">
-                                                                <div className="col-span-2">
-                                                                    <FormField
-                                                                        control={form.control}
-                                                                        name="password"
-                                                                        render={({ field, fieldState }) => (
-                                                                            <LabeledInput
-                                                                                label={`Contraseña Credencial${initialData ? " (Cambiar)" : ""}`}
-                                                                                required={!initialData}
-                                                                                type="password"
-                                                                                placeholder="••••••••"
-                                                                                hint={!initialData ? "Mínimo 6 caracteres" : "Dejar en blanco para mantener"}
-                                                                                error={fieldState.error?.message}
-                                                                                {...field}
-                                                                            />
-                                                                        )}
-                                                                    />
-                                                                </div>
-                                                                <div className="col-span-2">
-                                                                    <FormField
-                                                                        control={form.control}
-                                                                        name="is_active"
-                                                                        render={({ field }) => (
-                                                                            <LabeledSwitch
-                                                                                label="Estado del Acceso"
-                                                                                description={field.value ? "ACTIVO" : "INACTIVO"}
-                                                                                checked={field.value}
-                                                                                onCheckedChange={field.onChange}
-                                                                                icon={<ShieldCheck className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
-                                                                                className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
-                                                                            />
-                                                                        )}
-                                                                    />
-                                                                </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <FormSection title="Seguridad y Acceso" icon={ShieldCheck} />
+                                                        <div className="grid grid-cols-4 gap-6">
+                                                            <div className="col-span-2">
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="password"
+                                                                    render={({ field, fieldState }) => (
+                                                                        <LabeledInput
+                                                                            label={`Contraseña Credencial${initialData ? " (Cambiar)" : ""}`}
+                                                                            required={!initialData}
+                                                                            type="password"
+                                                                            placeholder="••••••••"
+                                                                            hint={!initialData ? "Mínimo 6 caracteres" : "Dejar en blanco para mantener"}
+                                                                            error={fieldState.error?.message}
+                                                                            {...field}
+                                                                        />
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                            <div className="col-span-2">
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="is_active"
+                                                                    render={({ field }) => (
+                                                                        <LabeledSwitch
+                                                                            label="Estado del Acceso"
+                                                                            description={field.value ? "ACTIVO" : "INACTIVO"}
+                                                                            checked={field.value}
+                                                                            onCheckedChange={field.onChange}
+                                                                            icon={<ShieldCheck className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
+                                                                            className={cn(field.value ? "bg-success/5 border-success/20 shadow-card" : "border-dashed")}
+                                                                        />
+                                                                    )}
+                                                                />
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </FormSplitLayout>
-                                        </FormTabsContent>
-                                        <FormTabsContent value="permissions" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
-                                            <FormSplitLayout sidebar={auditSidebar} showSidebar={!!initialData?.id} className="p-0">
-                                                <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
-                                                    <div className="space-y-8">
+                                            </TabBarContent>
+                                            <TabBarContent value="permissions" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
+                                                <div className="flex flex-col flex-1 min-h-0 gap-8">
+                                                    <div className="shrink-0">
                                                         <FormField
                                                             control={form.control}
                                                             name="primary_role"
@@ -385,57 +374,34 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                                                     label="Nivel de Permisos (Rol)"
                                                                     required
                                                                     error={fieldState.error?.message}
-                                                                    hint="Define la capacidad técnica global del usuario."
                                                                     options={availableRoles.map(([val, label]) => ({ value: val, label }))}
                                                                     value={field.value}
                                                                     onChange={field.onChange}
                                                                 />
                                                             )}
                                                         />
-                                                        <div className="space-y-4">
-                                                            <FormSection title="Equipos Funcionales" icon={ShieldCheck} />
-                                                            <FormField
-                                                                control={form.control}
-                                                                name="functional_groups"
-                                                                render={() => (
-                                                                    <FormItem>
-                                                                        <div className="grid grid-cols-2 gap-4">
-                                                                            {availableGroups.map((group) => (
-                                                                                <FormField
-                                                                                    key={group.id}
-                                                                                    control={form.control}
-                                                                                    name="functional_groups"
-                                                                                    render={({ field }) => (
-                                                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 bg-muted/5 rounded-xl border border-primary/5 hover:border-primary/20 hover:bg-muted/10 transition-all cursor-pointer group">
-                                                                                            <FormControl>
-                                                                                                <Checkbox
-                                                                                                    checked={field.value?.includes(group.name)}
-                                                                                                    onCheckedChange={(checked) => {
-                                                                                                        return checked
-                                                                                                            ? field.onChange([...field.value, group.name])
-                                                                                                            : field.onChange(field.value?.filter((v) => v !== group.name))
-                                                                                                    }}
-                                                                                                />
-                                                                                            </FormControl>
-                                                                                            <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer w-full group-hover:text-primary transition-colors">
-                                                                                                {group.name}
-                                                                                            </FormLabel>
-                                                                                        </FormItem>
-                                                                                    )}
-                                                                                />
-                                                                            ))}
-                                                                        </div>
-                                                                        <FormMessage />
-                                                                    </FormItem>
-                                                                )}
-                                                            />
-                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="functional_groups"
+                                                            render={({ field }) => (
+                                                                 <LabeledCheckboxGroup
+                                                                     columns={2}
+                                                                     label="Equipos Funcionales"
+                                                                     items={availableGroups.map((g) => ({ value: g.name, label: g.name }))}
+                                                                     value={field.value || []}
+                                                                     onChange={field.onChange}
+                                                                     maxHeight="none"
+                                                                 />
+                                                            )}
+                                                        />
                                                     </div>
                                                 </div>
-                                            </FormSplitLayout>
-                                        </FormTabsContent>
-                                    </fieldset>
-                                </FormTabs>
+                                            </TabBarContent>
+                                        </fieldset>
+                                    </TabBar>
+                                </FormSplitLayout>
                             </fieldset>
                         </form>
                     </Form>

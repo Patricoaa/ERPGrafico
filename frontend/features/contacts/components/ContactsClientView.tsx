@@ -1,16 +1,20 @@
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
+"use client"
+
+import { useRouter, useSearchParams } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { Building2, User as UserIcon, Banknote } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, createActionsColumn, Chip, EntityCard } from '@/components/shared'
+import { DataCell, Chip, EntityCard } from '@/components/shared'
+import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
+import { LoadingFallback, SmartSearchBar, SegmentationBar, useSmartSearch, useSegmentation } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
+import { contactSegDef } from "@/features/contacts/segmentationDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -23,19 +27,24 @@ const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmM
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
     createAction?: React.ReactNode
+    initialContacts?: Contact[]
 }
 
-export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
-    const { filters: smartFilters, isFiltered } = useSmartSearch(contactSearchDef)
-    const { contacts, isLoading, deleteContact } = useContacts({ filters: smartFilters as ContactFilters })
+export function ContactsClientView({ isNewModalOpen = false, createAction, initialContacts }: ContactsClientViewProps) {
+    const { filters: smartFilters, isFiltered: isTextFiltered } = useSmartSearch(contactSearchDef)
+    const { filters: segFilters, isFiltered: isSegFiltered } = useSegmentation(contactSegDef)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const allFilters = { ...smartFilters, ...segFilters }
+    const { contacts, isLoading, isRefetching, deleteContact } = useContacts({
+        filters: allFilters as ContactFilters,
+        initialData: initialContacts,
+    })
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
-    const pathname = usePathname()
-
     const { openSelected } = useEntityRouteActions()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Contact>({
@@ -91,8 +100,9 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         }
     }
 
-    const getContactTypeBadge = (type: string) => {
-        return <StatusBadge status={type} size="sm" />
+    const actionsCtx: ContactActionsCtx = {
+        onEdit: (id) => openSelected(id),
+        onDelete: (contact) => handleDelete(contact),
     }
 
     const columns: ColumnDef<Contact>[] = [
@@ -124,7 +134,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                                         <TooltipTrigger asChild>
                                             <Chip size="xs" intent="primary" icon={UserIcon} className="cursor-help shrink-0">Cliente</Chip>
                                         </TooltipTrigger>
-                                        <TooltipContent>Cliente por defecto</TooltipContent>
+                                        <TooltipContent className="rounded-sm">Cliente por defecto</TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
@@ -134,7 +144,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                                         <TooltipTrigger asChild>
                                             <Chip size="xs" intent="success" icon={Building2} className="cursor-help shrink-0">Proveedor</Chip>
                                         </TooltipTrigger>
-                                        <TooltipContent>Proveedor por defecto</TooltipContent>
+                                        <TooltipContent className="rounded-sm">Proveedor por defecto</TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
@@ -151,7 +161,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                                                 Crédito
                                             </Chip>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="rounded-sm">
                                             <div className="flex flex-col gap-1">
                                                 {Number(contact.credit_limit || 0) > 0 && (
                                                     <span>Límite de Crédito: {formatCurrency(Number(contact.credit_limit || 0))} ({contact.credit_days} días)</span>
@@ -196,35 +206,22 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
             cell: ({ row }) => <DataCell.Text>{row.getValue("phone") || "-"}</DataCell.Text>,
         },
-        createActionsColumn<Contact>({
-            renderActions: (contact) => (
-                <>
-                    <DataCell.Action
-                        action="edit"
-                        onClick={() => openSelected(contact.id)}
-                    />
-                    {!contact.is_default_customer && !contact.is_default_vendor && (
-                        <DataCell.Action
-                            action="delete"
-                            onClick={() => handleDelete(contact)}
-                        />
-                    )}
-                </>
-            ),
-        }),
+        contactActions.column(actionsCtx),
     ]
 
     return (
 
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                     <DataTableView
                         entityLabel="contacts.contact"
                         columns={columns}
                         data={contacts}
                         isLoading={isLoading}
+                        isRefetching={isRefetching}
                         variant="embedded"
-                        leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-full" />}
+                        smartSearch={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o email..." className="w-full" />}
+                        segmentation={<SegmentationBar def={contactSegDef} />}
                         defaultPageSize={20}
                         createAction={createAction}
                         isFiltered={isFiltered}
@@ -252,7 +249,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                                         </div>
                                     }
                                 />
-                                <EntityCard.Body>
+                                <EntityCard.Body actions={contactActions.render(contact, actionsCtx)}>
                                     <EntityCard.Field label="Email" value={contact.email || '-'} />
                                     <EntityCard.Field label="Teléfono" value={contact.phone || '-'} />
                                     {Number(contact.credit_limit || 0) > 0 && (

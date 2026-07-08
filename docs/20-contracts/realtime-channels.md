@@ -46,7 +46,7 @@ ERPGrafico usa **tres canales realtime complementarios**, no uno solo. La elecci
 |------|-------|---------|----------|-----------|
 | POS draft sync multi-terminal | WebSocket por-feature | `sales.consumers.POSDraftConsumer` + `sales.signals` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente edita carrito, lock por sesión, broadcast a otros terminales |
 | Notificaciones globales | WebSocket por-feature | `workflow.consumers.NotificationConsumer` + `workflow.signals.push_notification_to_channels` | `features/notifications/hooks/useNotifications.ts` | Solo recepción de notificaciones por usuario — bidireccionalidad reservada para read-receipts |
-| **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.consumers.EntityBusConsumer` + `core.signals.entity_bus` (allowlist) | `RealtimeProvider` + `useEntitySubscription` | **Piloto en `sales` (SaleOrder + lines). Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md). Estado: Proposed — implementación pendiente.** |
+| **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.consumers.EntityBusConsumer` + `core.signals.entity_bus` (allowlist) | `RealtimeProvider` + `useEntitySubscription` | **Piloto activo en `sales` (SaleOrder + SaleLine). Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md). Estado: Activo (piloto). Extender a otras apps requiere validar carga de WS sobre el piloto primero.** |
 | Workflow transitions | (routing existente, no consumer activo) | `workflow.routing` registrado en ASGI | — | Reservado para presencia/colaboración en aprobaciones |
 
 ---
@@ -186,7 +186,7 @@ export function useDraftSync(sessionId: string, onRemoteUpdate: (p: DraftPayload
 
 **Reglas:**
 - Hook por feature en `features/[feature]/hooks/use*Sync.ts`. **Nunca** un hook genérico `useWebSocket` global — el manejo de mensajes es siempre específico del dominio.
-- Reconexión con backoff exponencial (1s, 2s, 4s, ...; cap 30s). Detener si el código de cierre es 4001 (no autorizado) o 4003 (forbidden).
+- Reconexión con backoff exponencial (1s, 2s, 4s, …; cap 30s). Detener si el código de cierre es 4001 (no autorizado) o 4003 (forbidden).
 - Heartbeat: el cliente envía `{ "type": "ping" }` cada 30s si lleva sin recibir nada; el servidor responde `{ "type": "pong" }`. Esto detecta TCP-half-open y permite reconexión.
 - **Auth:** JWT como query param `?token=<jwt>`. WebSocket no permite custom headers desde el browser. Aceptado pese a que el token queda en logs de Nginx — mitigación: tokens de vida corta (15 min, ver [security.md](../40-quality/security.md)).
 

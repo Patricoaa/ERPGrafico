@@ -2,7 +2,7 @@ from django.db import migrations
 
 
 def create_product_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("""
         CREATE INDEX CONCURRENTLY IF NOT EXISTS inventory_product_fts_gin
@@ -18,7 +18,7 @@ def create_product_gin_index(apps, schema_editor):
 
 
 def create_stockmove_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("""
         CREATE INDEX CONCURRENTLY IF NOT EXISTS inventory_stockmove_fts_gin
@@ -33,13 +33,13 @@ def create_stockmove_gin_index(apps, schema_editor):
 
 
 def drop_product_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("DROP INDEX IF EXISTS inventory_product_fts_gin;")
 
 
 def drop_stockmove_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("DROP INDEX IF EXISTS inventory_stockmove_fts_gin;")
 
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
-        ('inventory', '0006_t44_backfill_mfg_profile'),
+        ("inventory", "0006_t44_backfill_mfg_profile"),
     ]
 
     operations = [

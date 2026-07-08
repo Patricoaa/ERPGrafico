@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react"
 import api from "@/lib/api"
 import { showApiError } from "@/lib/errors"
-import { WorkOrder } from "@/types/entities"
+import { type WorkOrder } from "@/types/entities"
 
 interface UseWorkOrderSearchReturn {
     orders: WorkOrder[]
@@ -42,8 +42,8 @@ export function useWorkOrderSearch(): UseWorkOrderSearchReturn {
             params.append("limit", "50")
 
             const res = await api.get(`/production/orders/?${params.toString()}`)
-            const data = res.data
-            
+            const data: WorkOrder[] = res.data.results
+
             globalCache[cacheKey] = data
             setOrders(data)
         } catch (err) {

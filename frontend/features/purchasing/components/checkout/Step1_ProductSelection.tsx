@@ -1,26 +1,27 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { useState, useEffect, useMemo } from "react"
 import {
-    Table,
     TableBody,
     TableCell,
-    TableHead,
-    TableHeader,
     TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {Plus, ShoppingCart} from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calculator, ShoppingCart, AlertTriangle } from "lucide-react"
+import { useForm, useFieldArray } from "react-hook-form"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { useVatRate } from '@/hooks/useVatRate'
+import { useUoMs } from '@/features/inventory'
 import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
 
-import { CheckoutLine } from "../../types"
-import { ProductMinimal, UoM } from "@/types/entities"
+import { type CheckoutLine } from "../../types"
+import { type ProductMinimal, type UoM } from "@/types/entities"
 import { formatCurrency } from "@/lib/money"
-import { DataCell, EmptyState, MoneyDisplay } from '@/components/shared'
+import { DataCell, MoneyDisplay, FormLineItemsTable, StepHeader } from '@/components/shared'
 
 interface Step1_ProductSelectionProps {
     orderLines: CheckoutLine[]
@@ -30,8 +31,84 @@ interface Step1_ProductSelectionProps {
     selectedSupplierId?: string | null
 }
 
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calculator, AlertTriangle } from "lucide-react"
+const COLUMNS = [
+    { header: "Producto", width: "w-[50%]", align: "left" as const },
+    { header: "Cantidad", width: "w-[8%]", align: "center" as const },
+    { header: "Unidad", width: "w-[16%]", align: "left" as const },
+    { header: "Costo Unit.", width: "w-[10%]", align: "left" as const },
+    { header: "Subtotal", width: "w-[10%]", align: "right" as const },
+    { header: "", width: "w-[6%]" },
+]
+
+function GrossToNetCalculator({ rate, multiplier }: { rate: number; multiplier: number }) {
+    const [grossInput, setGrossInput] = useState("")
+    const netResult = grossInput ? Math.round(Number(grossInput) / multiplier) : null
+    const ivaAmount = netResult !== null ? Math.round(Number(grossInput)) - netResult : null
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button
+                    type="button"
+                    className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 hover:text-primary transition-colors"
+                    title="Calculadora bruto a neto"
+                >
+                    <Calculator className="h-3 w-3" />
+                    Bruto → Neto
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-4" align="end">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <Calculator className="h-4 w-4 text-primary" />
+                        <p className="text-[12px] font-bold uppercase tracking-wide">Conversor Bruto → Neto</p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                        Útil para boletas. Ingresa el precio bruto (IVA incluido) para obtener el neto.
+                    </p>
+                    <div className="space-y-1.5">
+                        <div className="space-y-1.5">
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground px-0.5">Monto Bruto (c/IVA)</span>
+                            <Input
+                                type="number"
+                                placeholder="Ej: 11.900"
+                                value={grossInput}
+                                onChange={(e) => setGrossInput(e.target.value)}
+                                className="h-8 text-sm"
+                            />
+                        </div>
+                        {netResult !== null && (
+                            <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Neto (sin IVA)</span>
+                                    <span className="font-bold text-success">
+                                        {formatCurrency(netResult)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">IVA ({rate}%)</span>
+                                    <span className="font-medium">
+                                        {formatCurrency(ivaAmount ?? 0)}
+                                    </span>
+                                </div>
+                                <div className="border-t pt-1.5 flex justify-between">
+                                    <span className="text-muted-foreground">Bruto</span>
+                                    <span className="font-medium">
+                                        {formatCurrency(Number(grossInput))}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+interface FormValues {
+    lines: CheckoutLine[]
+}
 
 export function Step1_ProductSelection({
     orderLines,
@@ -40,25 +117,63 @@ export function Step1_ProductSelection({
     onWarehouseChange,
     selectedSupplierId
 }: Step1_ProductSelectionProps) {
+    const { rate, multiplier } = useVatRate()
     const [products, setProducts] = useState<ProductMinimal[]>([])
-    const [uoms, setUoMs] = useState<UoM[]>([])
     const [loading, setLoading] = useState(true)
-    const [grossInput, setGrossInput] = useState<string>("")
-    const netResult = grossInput ? Math.round(Number(grossInput) / 1.19) : null
-    const ivaAmount = netResult !== null ? Math.round(Number(grossInput)) - netResult : null
+    const { uoms: rawUoms, isLoading: isUoMsLoading } = useUoMs()
+    const uoms = rawUoms as unknown as UoM[]
 
+    const defaultLine = useMemo<CheckoutLine>(() => ({
+        product: "",
+        product_name: "",
+        quantity: 1,
+        unit_cost: 0,
+        uom: "",
+        uom_name: "",
+        tax_rate: rate,
+    }), [rate])
+
+    const form = useForm<FormValues>({
+        defaultValues: {
+            lines: orderLines.length > 0 ? orderLines : [{ ...defaultLine }],
+        },
+    })
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "lines",
+        keyName: "_key",
+    })
+
+    // Sync form changes to parent (strip auto-generated keys)
+    useEffect(() => {
+        const sub = form.watch((value) => {
+            if (value.lines) {
+                const cleanLines = (value.lines as CheckoutLine[]).map(l => ({
+                    ...l,
+                    id: typeof l.id === "number" ? l.id : undefined,
+                }))
+                setOrderLines(cleanLines)
+            }
+        })
+        return () => sub.unsubscribe()
+    }, [form, setOrderLines])
+
+    // Auto-initialize with one empty line
+    useEffect(() => {
+        if (fields.length === 0) {
+            append({ ...defaultLine })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // Fetch products
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [allProducts, uomsData] = await Promise.all([
-                    purchasingApi.getPurchasableProducts(),
-                    purchasingApi.getUoms(),
-                ])
-
-                setProducts(allProducts as any)
-                setUoMs(uomsData as any)
+                const allProducts = await purchasingApi.getPurchasableProducts()
+                setProducts((allProducts ?? []) as unknown as ProductMinimal[])
             } catch (error) {
-                console.error("Error fetching data:", error)
+                console.error("Error fetching products:", error)
                 toast.error("Error al cargar productos")
             } finally {
                 setLoading(false)
@@ -67,243 +182,128 @@ export function Step1_ProductSelection({
         fetchData()
     }, [])
 
-    const handleAddLine = () => {
-        setOrderLines([
-            ...orderLines,
-            { product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: 19 }
-        ])
-    }
-
-    const handleRemoveLine = (index: number) => {
-        if (orderLines.length > 1) {
-            const newLines = [...orderLines]
-            newLines.splice(index, 1)
-            setOrderLines(newLines)
-        }
-    }
-
-    const updateLine = (index: number, fieldOrUpdates: keyof CheckoutLine | Partial<CheckoutLine>, value?: any) => {
-        setOrderLines(prev => {
-            const newLines = [...prev]
-            if (typeof fieldOrUpdates === 'string') {
-                newLines[index] = { ...newLines[index], [fieldOrUpdates]: value }
-            } else {
-                newLines[index] = { ...newLines[index], ...fieldOrUpdates }
-            }
-            return newLines
-        })
-    }
-
     const handleProductChange = (index: number, productId: string | null) => {
         if (!productId) {
-            updateLine(index, 'product', "")
+            form.setValue(`lines.${index}.product`, "")
             return
         }
         const product = products.find(p => p.id.toString() === productId)
         if (product) {
-            updateLine(index, {
-                product: productId,
-                name: product.name,
-                // Removed: id: product.id, which was overwriting line.id
-                unit_cost: parseFloat(String(product.last_purchase_price || 0)) || 0,
-                uom: (product.purchase_uom || product.uom)?.toString() || "",
-                uom_name: uoms.find(u => u.id.toString() === ((product.purchase_uom || product.uom)?.toString()))?.name,
-                product_type: product.product_type
-            })
+            form.setValue(`lines.${index}.product`, productId)
+            form.setValue(`lines.${index}.name`, product.name)
+            form.setValue(`lines.${index}.product_name`, product.name)
+            form.setValue(`lines.${index}.unit_cost`, parseFloat(String(product.last_purchase_price || 0)) || 0)
+            const uomId = (product.purchase_uom || product.uom)?.toString() || ""
+            form.setValue(`lines.${index}.uom`, uomId)
+            form.setValue(`lines.${index}.uom_name`, uoms.find(u => u.id.toString() === uomId)?.name || "")
+            form.setValue(`lines.${index}.product_type`, product.product_type || "")
 
-            // Suggest warehouse if not set
             if (!selectedWarehouseId && product.receiving_warehouse && onWarehouseChange) {
                 onWarehouseChange(product.receiving_warehouse.toString())
             }
         } else {
-            updateLine(index, 'product', productId)
+            form.setValue(`lines.${index}.product`, productId)
         }
     }
 
-    // Initialize with one line if empty
-    useEffect(() => {
-        if (orderLines.length === 0) {
-            // Don't auto-add here to avoid infinite loops or overwriting if parent manages initial state differently, 
-            // but normally checkout wizard starts with lines. If validly empty, maybe we should add one.
-            // For now, let's leave it to user to add or parent to initialize.
-            // Actually, standard behavior in form is to have at least one line.
-            handleAddLine()
-        }
-    }, [])
-
     return (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <ShoppingCart className="h-5 w-5 text-primary" />
-                    Selección de Productos
-                </h3>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddLine}
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Agregar Producto
-                </Button>
-            </div>
+        <>
+            <StepHeader title="Selección de Productos" description="Agregue los productos que se incluirán en esta orden de compra." icon={ShoppingCart} />
+            <FormLineItemsTable
+            className="bg-transparent"
+            columns={COLUMNS}
+            onAdd={() => append({ ...defaultLine })}
+            addButtonText="Agregar Producto"
+            isLoading={loading || isUoMsLoading}
+            footer={<GrossToNetCalculator rate={rate} multiplier={multiplier} />}
+        >
+            <TableBody>
+                {fields.map((field, index) => {
+                    const lineProductId = form.watch(`lines.${index}.product`)?.toString() || ""
+                    const product = products.find(p => p.id.toString() === lineProductId)
+                    const lineQty = form.watch(`lines.${index}.quantity`) || 0
+                    const lineCost = form.watch(`lines.${index}.unit_cost`) || 0
+                    const lineUom = form.watch(`lines.${index}.uom`)?.toString() || ""
 
-            <div className="rounded-md border flex-1 overflow-auto min-h-[400px]">
-                <Table>
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                        <TableRow>
-                            <TableHead className="w-[50%]">Producto</TableHead>
-                            <TableHead className="w-[8%] text-center">Cantidad</TableHead>
-                            <TableHead className="w-[16%]">Unidad</TableHead>
-                            <TableHead className="w-[10%]">
-                                <div className="flex items-center gap-1">
-                                    Costo Unit.
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <button
-                                                type="button"
-                                                className="text-muted-foreground/50 hover:text-primary transition-colors"
-                                                title="Calculadora bruto a neto"
-                                            >
-                                                <Calculator className="h-3 w-3" />
-                                            </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-64 p-4" align="start">
-                                            <div className="space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Calculator className="h-4 w-4 text-primary" />
-                                                    <p className="text-[12px] font-bold uppercase tracking-wide">Conversor Bruto → Neto</p>
-                                                </div>
-                                                <p className="text-[11px] text-muted-foreground">Útil para boletas. Ingresa el precio bruto (IVA incluido) para obtener el neto.</p>
-                                                <div className="space-y-1.5">
-                                                    <div className="space-y-1.5">
-                                                        <span className="text-[10px] uppercase font-bold text-muted-foreground px-0.5">Monto Bruto (c/IVA)</span>
-                                                        <Input
-                                                            type="number"
-                                                            placeholder="Ej: 11.900"
-                                                            value={grossInput}
-                                                            onChange={(e) => setGrossInput(e.target.value)}
-                                                            className="h-8 text-sm"
-                                                        />
-                                                    </div>
-                                                    {netResult !== null && (
-                                                        <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
-                                                            <div className="flex justify-between">
-                                                                <span className="text-muted-foreground">Neto (sin IVA)</span>
-                                                                <span className="font-bold text-success">
-                                                                    {formatCurrency(netResult)}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <span className="text-muted-foreground">IVA (19%)</span>
-                                                                <span className="font-medium">
-                                                                    {formatCurrency(ivaAmount ?? 0)}
-                                                                </span>
-                                                            </div>
-                                                            <div className="border-t pt-1.5 flex justify-between">
-                                                                <span className="text-muted-foreground">Bruto</span>
-                                                                <span className="font-medium">
-                                                                    {formatCurrency(Number(grossInput))}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
+                    return (
+                        <TableRow key={field._key} className="hover:bg-primary/5 transition-colors">
+                            <TableCell className="py-2 px-3">
+                                <ProductSelector
+                                    value={lineProductId}
+                                    context="purchase"
+                                    onChange={(val) => handleProductChange(index, val)}
+                                    variant="inline"
+                                    placeholder="Seleccionar..."
+                                    className="border border-input rounded-sm h-8"
+                                />
+                                {(() => {
+                                    const prefSupplierId = product?.preferred_supplier && (
+                                        typeof product.preferred_supplier === "object"
+                                            ? product.preferred_supplier.id
+                                            : product.preferred_supplier
+                                    )
+                                    if (product && prefSupplierId && selectedSupplierId && prefSupplierId.toString() !== selectedSupplierId) {
+                                        return (
+                                            <div className="flex items-center gap-1 mt-1 text-[10px] text-warning font-medium">
+                                                <AlertTriangle className="h-3 w-3" />
+                                                Sugerido: {product.preferred_supplier_name}
                                             </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </TableHead>
-                            <TableHead className="w-[10%] text-right">Subtotal</TableHead>
-                            <TableHead className="w-[6%]"></TableHead>
+                                        )
+                                    }
+                                    return null
+                                })()}
+                            </TableCell>
+                            <TableCell className="py-2 px-3 text-center">
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full text-center h-8 bg-background"
+                                    value={lineQty}
+                                    onChange={(e) => form.setValue(`lines.${index}.quantity`, parseFloat(e.target.value) || 0)}
+                                />
+                            </TableCell>
+                            <TableCell className="py-2 px-3">
+                                <UoMSelector
+                                    product={product as unknown as { id: number; name: string; uom?: number | { id: number } } | null}
+                                    context="purchase"
+                                    value={lineUom}
+                                    onChange={(val) => {
+                                        const uomName = uoms.find(u => u.id.toString() === val)?.name
+                                        form.setValue(`lines.${index}.uom`, val)
+                                        form.setValue(`lines.${index}.uom_name`, uomName || "")
+                                    }}
+                                    uoms={uoms}
+                                    showConversionHint={true}
+                                    quantity={Number(lineQty) || 1}
+                                    variant="inline"
+                                    className="h-8"
+                                />
+                            </TableCell>
+                            <TableCell className="py-2 px-3">
+                                <Input
+                                    type="number"
+                                    step="1"
+                                    className="w-full h-8 bg-background"
+                                    value={lineCost}
+                                    onChange={(e) => form.setValue(`lines.${index}.unit_cost`, parseFloat(e.target.value) || 0)}
+                                />
+                            </TableCell>
+                            <TableCell className="py-2 px-3 text-right font-medium">
+                                <MoneyDisplay amount={Number(lineQty) * Number(lineCost)} />
+                            </TableCell>
+                            <TableCell className="py-2 px-3 text-center">
+                                <DataCell.Action
+                                    action="delete"
+                                    onClick={() => remove(index)}
+                                    disabled={fields.length === 1}
+                                />
+                            </TableCell>
                         </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {orderLines.map((line, index) => (
-                            <TableRow key={index}>
-                                <TableCell>
-                                    <ProductSelector
-                                        value={line.product?.toString() || line.id?.toString() || ""}
-                                        context="purchase"
-                                        onChange={(val) => handleProductChange(index, val)}
-                                        variant="inline"
-                                        placeholder="Seleccionar..."
-                                    />
-                                    {(() => {
-                                        const product = products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString()))
-                                        const prefSupplierId = product?.preferred_supplier && (typeof product.preferred_supplier === 'object' ? product.preferred_supplier.id : product.preferred_supplier);
-
-                                        if (product && prefSupplierId && selectedSupplierId && prefSupplierId.toString() !== selectedSupplierId) {
-                                            return (
-                                                <div className="flex items-center gap-1 mt-1 text-[10px] text-warning font-medium">
-                                                    <AlertTriangle className="h-3 w-3" />
-                                                    Sugerido: {product.preferred_supplier_name}
-                                                </div>
-                                            )
-                                        }
-                                        return null
-                                    })()}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        className="w-full text-center"
-                                        value={line.quantity || line.qty || 0}
-                                        onChange={(e) => updateLine(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <UoMSelector
-                                        product={(products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString())) || null) as any}
-                                        context="purchase"
-                                        value={line.uom?.toString() || ""}
-                                        onChange={(val) => {
-                                            const uomName = uoms.find(u => u.id.toString() === val)?.name
-                                            updateLine(index, {
-                                                uom: val,
-                                                uom_name: uomName
-                                            })
-                                        }}
-                                        uoms={uoms}
-                                        showConversionHint={true}
-                                        quantity={Number(line.quantity || line.qty) || 1}
-                                        variant="inline"
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Input
-                                        type="number"
-                                        step="1"
-                                        value={line.unit_cost || 0}
-                                        onChange={(e) => updateLine(index, 'unit_cost', parseFloat(e.target.value) || 0)}
-                                    />
-                                </TableCell>
-                                <TableCell className="text-right font-medium">
-                                    <MoneyDisplay amount={(Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0)} />
-                                </TableCell>
-                                <TableCell className="text-center">
-                                    <DataCell.Action
-                                        action="delete"
-                                        onClick={() => handleRemoveLine(index)}
-                                        disabled={orderLines.length === 1}
-                                    />
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {orderLines.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={6} className="p-0">
-                                    <EmptyState context="inventory" variant="compact" description="No hay productos seleccionados" />
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-
-        </div>
+                    )
+                })}
+            </TableBody>
+        </FormLineItemsTable>
+        </>
     )
 }

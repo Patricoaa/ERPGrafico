@@ -26,7 +26,7 @@ export function useAllBanksOverview() {
                 banks.filter(b => b.is_active).map(async (bank) => {
                     try {
                         const overview = await treasuryApi.getBankOverview(bank.id)
-                        return overview as BankSummary
+                        return overview as unknown as BankSummary
                     } catch {
                         return null
                     }

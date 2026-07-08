@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { AlertCircle, Loader2, CheckCircle } from "lucide-react"
 import { LabeledInput } from "./LabeledInput"
-import { useFolioValidation, FolioValidationResult } from "@/hooks/useFolioValidation"
+import { useFolioValidation, type FolioValidationResult } from "@/hooks/useFolioValidation"
 import { cn } from "@/lib/utils"
 import { useTouchMode } from "@/hooks/useTouchMode"
 import { NumpadModal } from "@/features/pos/components/NumpadModal"

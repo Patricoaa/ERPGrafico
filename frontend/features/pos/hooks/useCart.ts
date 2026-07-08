@@ -2,19 +2,18 @@
 // Manages cart operations with stock validation and pricing
 
 import { useCallback } from 'react'
-import { usePOS } from '../contexts/POSContext'
-import type { Product, CartItem } from '@/types/pos'
+import { usePOS } from '../contexts/POSProvider'
+import type { Product, CartItem } from '../types'
 import { toast } from 'sonner'
-import * as CartUtils from '@/features/pos/utils/cart-utils'
-import * as Validation from '@/features/pos/utils/validation'
-import * as StockCalculator from '@/features/pos/utils/stock-calculator'
-import * as BOMResolver from '@/features/pos/utils/bom-resolver'
+import * as CartUtils from '../utils/cart-utils'
+import * as Validation from '../utils/validation'
+import * as StockCalculator from '../utils/stock-calculator'
+import * as BOMResolver from '../utils/bom-resolver'
 import { posApi } from '../api/posApi'
 
 export function useCart() {
     const {
         items,
-        setItems,
         addItem,
         updateItem,
         removeItem,
@@ -73,9 +72,10 @@ export function useCart() {
                 quantity: quantity.toString(),
                 uom_id: uomId.toString()
             })
+            const priceData = data as Record<string, unknown>
             return {
-                net: parseFloat((data as any).price_net),
-                gross: parseFloat((data as any).price_gross)
+                net: parseFloat(priceData.price_net as string),
+                gross: parseFloat(priceData.price_gross as string)
             }
         } catch (error) {
             console.error("Error fetching price:", error)

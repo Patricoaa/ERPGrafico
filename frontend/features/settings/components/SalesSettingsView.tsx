@@ -1,9 +1,10 @@
 "use client"
  
 
+import { Button } from "@/components/ui/button"
 import React, { useEffect, useCallback, useState } from "react"
 
-import { useForm, UseFormReturn, Path } from "react-hook-form"
+import { useForm, type UseFormReturn, type Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,32 +14,15 @@ import {
     User as UserIcon,
     Users as UsersIcon,
 } from "lucide-react"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import {AutoSaveStatusBadge, LabeledInput, LabeledSwitch} from "@/components/shared"
-import { SalesSettingsUpdatePayload } from "@/features/settings/types"
+import {AutoSaveStatusBadge, FadeIn, LabeledInput, LabeledSwitch, SkeletonShell} from "@/components/shared"
+import { type SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { salesSchema, type SalesFormValues } from "./SalesSettingsView.schema"
-
-const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<SalesFormValues>, name: Path<SalesFormValues>, label: string, accountType: string | string[] }) => (
-    <FormField
-        control={form.control}
-        name={name}
-        render={({ field, fieldState }) => (
-            <AccountSelector
-                label={label}
-                value={field.value as string}
-                onChange={field.onChange}
-                accountType={accountType}
-                error={fieldState.error?.message}
-            />
-        )}
-    />
-)
 
 const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseFormReturn<SalesFormValues>, userField: Path<SalesFormValues>, groupField: Path<SalesFormValues> }) => {
     const groupVal = form.watch(groupField)
@@ -46,12 +30,12 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 
     return (
         <div className="flex flex-col gap-3">
-            <div className="flex items-center p-0.5 bg-muted rounded-lg border shadow-sm w-fit self-start">
-                <button
+            <div className="flex items-center p-0.5 bg-muted rounded-md border shadow-card w-fit self-start">
+                <Button
                     type="button"
                     className={cn(
                         "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                        mode === 'user' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        mode === 'user' ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
                         setMode('user')
@@ -60,12 +44,12 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                 >
                     <UserIcon className="h-3 w-3" />
                     Usuario
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
                     className={cn(
                         "px-3 py-1 rounded-md text-[10px] font-medium transition-all flex items-center gap-1.5",
-                        mode === 'group' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                        mode === 'group' ? "bg-background text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={() => {
                         setMode('group')
@@ -74,7 +58,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                 >
                     <UsersIcon className="h-3 w-3" />
                     Grupo
-                </button>
+                </Button>
             </div>
 
             <div className="w-full">
@@ -111,14 +95,11 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 }
 
 export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string }) {
-    const { settings, updateSettings } = useSalesSettings()
+    const { settings, isLoading, updateSettings } = useSalesSettings()
 
     const form = useForm<SalesFormValues>({
         resolver: zodResolver(salesSchema),
         defaultValues: {
-            default_revenue_account: null,
-            default_service_revenue_account: null,
-            default_subscription_revenue_account: null,
             pos_default_credit_percentage: 0,
             pos_enable_line_discounts: false,
             pos_enable_total_discounts: false,
@@ -127,16 +108,12 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
             pos_global_discount_user: null,
             pos_global_discount_group: "",
             credit_auto_block_days: 60,
-            default_uncollectible_expense_account: null,
         }
     })
 
     useEffect(() => {
         if (settings) {
             form.reset({
-                default_revenue_account: settings.default_revenue_account?.toString() ?? null,
-                default_service_revenue_account: settings.default_service_revenue_account?.toString() ?? null,
-                default_subscription_revenue_account: settings.default_subscription_revenue_account?.toString() ?? null,
                 pos_default_credit_percentage: Number(settings.pos_default_credit_percentage) || 0,
                 pos_enable_line_discounts: !!settings.pos_enable_line_discounts,
                 pos_enable_total_discounts: !!settings.pos_enable_total_discounts,
@@ -145,7 +122,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                 pos_global_discount_user: settings.pos_global_discount_user ?? null,
                 pos_global_discount_group: settings.pos_global_discount_group ?? "",
                 credit_auto_block_days: settings.credit_auto_block_days ?? null,
-                default_uncollectible_expense_account: settings.default_uncollectible_expense_account?.toString() ?? null,
             })
         }
     }, [settings, form])
@@ -160,6 +136,8 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
     useUnsavedChangesGuard(status)
 
+    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
+
     return (
         <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex justify-end">
@@ -172,27 +150,10 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
             </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
-                    {activeTab === "income" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card variant="transparent">
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
-                                    <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <AccountField form={form} name="default_revenue_account" label="Ingreso General (Productos)" accountType="INCOME" />
-                                        <AccountField form={form} name="default_service_revenue_account" label="Ingresos por Servicios" accountType="INCOME" />
-                                        <AccountField form={form} name="default_subscription_revenue_account" label="Ingresos por Suscripciones" accountType="INCOME" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-
+                    <FadeIn key={activeTab}>
                     {activeTab === "credit" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card variant="transparent">
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                            <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
                                     <CardDescription>Configure políticas de crédito, bloqueos automáticos y cuentas de castigo</CardDescription>
@@ -250,19 +211,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                             </Card>
                                         </div>
 
-                                        <Card className="bg-muted/10 border shadow-none overflow-hidden h-full">
-                                            <div className="p-4 space-y-4">
-                                                <AccountField
-                                                    form={form}
-                                                    name="default_uncollectible_expense_account"
-                                                    label="Cuenta Gasto Incobrables"
-                                                    accountType="EXPENSE"
-                                                />
-                                                <p className="text-[10px] text-muted-foreground leading-tight px-1">
-                                                    Cuenta donde se cargarán las pérdidas al castigar deudas de clientes.
-                                                </p>
-                                            </div>
-                                        </Card>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -271,7 +219,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
                     {activeTab === "config_pos" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card variant="transparent">
+                            <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Parámetros Operativos POS</CardTitle>
                                     <CardDescription>Configure el comportamiento y permisos del punto de venta</CardDescription>
@@ -296,7 +244,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                 checked={field.value}
                                                                 onCheckedChange={field.onChange}
                                                                 icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                                             />
                                                         )}
                                                     />
@@ -326,7 +274,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                                                                 checked={field.value}
                                                                 onCheckedChange={field.onChange}
                                                                 icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
                                                             />
                                                         )}
                                                     />
@@ -349,7 +297,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                             </Card>
                         </div>
                     )}
-
+                    </FadeIn>
                 </form>
             </Form>
         </div>

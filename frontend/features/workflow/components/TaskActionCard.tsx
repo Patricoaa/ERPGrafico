@@ -1,6 +1,6 @@
 "use client"
 
-import { Task, TaskAttachment } from '@/features/workflow/api/workflowApi'
+import { type Task, type TaskAttachment } from '@/features/workflow/api/workflowApi'
 
 import { Input } from "@/components/ui/input"
 import {CheckCircle2, Circle, User, Paperclip, MessageSquare, Download, AlertCircle, ChevronDown, ChevronUp} from "lucide-react"
@@ -29,7 +29,7 @@ export function TaskActionCard({
 
     return (
         <div className={cn(
-            "p-3 border rounded-lg flex flex-col transition-all gap-2",
+            "p-3 border rounded-md flex flex-col transition-all gap-2",
             isPending ? "bg-warning/10 border-warning/20" : "bg-success/10 border-success/20 opacity-80"
         )}>
             <div className="flex items-center justify-between">

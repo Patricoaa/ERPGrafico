@@ -1,10 +1,10 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Upload, X, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { LabeledContainer } from "@/components/shared"
 
 interface DocumentAttachmentDropzoneProps {
     file: File | null
@@ -15,6 +15,7 @@ interface DocumentAttachmentDropzoneProps {
     label?: string
     requiredOverride?: boolean
     accept?: string
+    /** @deprecated — leave label undefined instead */
     hideLabel?: boolean
 }
 
@@ -27,26 +28,22 @@ export function DocumentAttachmentDropzone({
     label = "Archivo Adjunto",
     requiredOverride,
     accept = ".pdf,.xml,image/*",
-    hideLabel = false
+    hideLabel = false,
 }: DocumentAttachmentDropzoneProps) {
-    // If requiredOverride is provided, use it.
-    // Otherwise, if dteType is provided, it's required for all types except BOLETA and NONE, unless isPending is true.
-    const isRequired = requiredOverride !== undefined 
-        ? requiredOverride 
-        : (dteType && dteType !== 'BOLETA' && dteType !== 'NONE' && !isPending);
+    const isRequired = requiredOverride !== undefined
+        ? requiredOverride
+        : (dteType && dteType !== 'BOLETA' && dteType !== 'NONE' && !isPending)
+
+    const showLabel = !hideLabel && !!label
 
     return (
-        <div className={`w-full ${!hideLabel ? 'space-y-2' : 'py-2'} ${disabled ? 'opacity-50' : ''}`}>
-            {!hideLabel && (
-                <Label className="text-xs font-bold uppercase flex items-center gap-2">
-                    <Upload className="h-3 w-3" />
-                    {label}
-                    {isRequired && <span className="text-destructive font-black ml-1">*</span>}
-                </Label>
-            )}
-
+        <LabeledContainer
+            label={showLabel ? label : undefined}
+            required={!!isRequired}
+            disabled={disabled}
+        >
             {!file ? (
-                <div className="relative group min-h-[80px] w-full">
+                <div className="relative group w-full min-h-[72px]">
                     <Input
                         type="file"
                         accept={accept}
@@ -54,43 +51,45 @@ export function DocumentAttachmentDropzone({
                         onChange={(e) => onFileChange(e.target.files?.[0] || null)}
                         disabled={disabled}
                     />
-                    <div className="h-20 w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-background/50 transition-all group-hover:bg-primary/5 group-hover:border-primary/30">
-                        <Upload className="h-4 w-4 text-muted-foreground mb-1 group-hover:text-primary" />
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase text-center px-4">
-                            Seleccionar o arrastrar archivo al recuadro
+                    <div className="min-h-[72px] w-full flex flex-col items-center justify-center gap-1 group-hover:text-primary transition-colors">
+                        <Upload className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase text-center px-4 group-hover:text-primary transition-colors">
+                            Seleccionar o arrastrar archivo
                         </p>
                     </div>
                 </div>
             ) : (
-                <div className="flex items-center justify-between p-3 w-full bg-success/5 border rounded-lg animate-in zoom-in duration-300">
-                    <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-success/10 rounded text-success">
-                            <FileText className="h-4 w-4" />
+                <div className="flex items-center justify-between w-full px-2 py-1.5 animate-in zoom-in duration-200">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1 bg-success/10 rounded text-success shrink-0">
+                            <FileText className="h-3.5 w-3.5" />
                         </div>
                         <div className="flex flex-col min-w-0">
                             <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className="text-xs font-bold truncate max-w-[250px]">{file.name}</span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">{file.name}</TooltipContent>
-                        </Tooltip>
-                            <span className="text-[10px] uppercase font-black text-success/50">{(file.size / 1024).toFixed(1)} KB</span>
+                                <TooltipTrigger asChild>
+                                    <span className="text-xs font-bold truncate max-w-[220px] text-success">{file.name}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{file.name}</TooltipContent>
+                            </Tooltip>
+                            <span className="text-[10px] uppercase font-black text-muted-foreground">
+                                {(file.size / 1024).toFixed(1)} KB
+                            </span>
                         </div>
                     </div>
-                    <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full shrink-0" 
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-full shrink-0"
                         onClick={(e) => {
-                            e.preventDefault();
-                            onFileChange(null);
+                            e.preventDefault()
+                            onFileChange(null)
                         }}
                         disabled={disabled}
                     >
-                        <X className="h-4 w-4" />
+                        <X className="h-3.5 w-3.5" />
                     </Button>
                 </div>
             )}
-        </div>
+        </LabeledContainer>
     )
 }

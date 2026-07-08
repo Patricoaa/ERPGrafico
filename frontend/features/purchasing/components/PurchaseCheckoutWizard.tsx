@@ -11,16 +11,28 @@ import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import { purchasingApi } from "../api/purchasingApi"
-import { PurchaseOrderAPI, CheckoutLine, DTEData, ReceiptData } from "../types"
-import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { type PurchaseOrderAPI, type PurchaseOrderLineAPI, type CheckoutLine, type DTEData, type ReceiptData } from "../types"
+import { type PaymentData } from "@/features/treasury"
 
-import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { PricingUtils } from '@/lib/pricing-utils'
+
+function generateUUID(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID()
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0
+        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+    })
+}
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal, CancelButton, FormFooter } from '@/components/shared'
+import { Drawer, CancelButton, FormFooter } from '@/components/shared'
+import { useRef } from "react"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -48,9 +60,11 @@ export function PurchaseCheckoutWizard({
     const [internalOrder, setInternalOrder] = useState<PurchaseOrderAPI | null>(order)
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
+    const idempotencyKeyRef = useRef<string>(generateUUID())
     const [currentOrderLines, setCurrentOrderLines] = useState<CheckoutLine[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
     const { dateString } = useServerDate()
+    const { rate } = useVatRate()
     
     const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
     const [selectedSupplierName, setSelectedSupplierName] = useState("")
@@ -76,22 +90,22 @@ export function PurchaseCheckoutWizard({
                     const data = await purchasingApi.getOrder(orderId)
                     setInternalOrder(data)
 
-                    const mappedLines = (data.lines || []).map((l: any) => ({
+                    const mappedLines = (data.lines || []).map((l: PurchaseOrderLineAPI) => ({
                         id: l.id,
                         product: l.product,
                         product_name: l.product_name,
-                        qty: l.quantity,
-                        quantity: l.quantity,
-                        unit_cost: l.unit_cost,
+                        qty: Number(l.quantity),
+                        quantity: Number(l.quantity),
+                        unit_cost: Number(l.unit_cost),
                         uom: l.uom,
                         uom_name: l.uom_name,
-                        tax_rate: l.tax_rate || 19,
+                        tax_rate: Number(l.tax_rate ?? rate),
                         product_type: l.product_type
                     }))
                     setCurrentOrderLines(mappedLines)
                     setCurrentTotal(parseFloat(data.total as string))
-                    setSelectedSupplierId((data.supplier as any)?.toString() || null)
-                    setSelectedWarehouseId((data.warehouse as any)?.toString() || "")
+                    setSelectedSupplierId(typeof data.supplier === 'object' ? String((data.supplier as unknown as Record<string, unknown>).id) : String(data.supplier ?? ""))
+                    setSelectedWarehouseId(data.warehouse ? (typeof data.warehouse === 'object' ? String((data.warehouse as unknown as Record<string, unknown>).id) : String(data.warehouse)) : "")
                 } catch (error) {
                     console.error("Error fetching order in wizard:", error)
                     toast.error("Error al cargar la orden")
@@ -151,7 +165,6 @@ export function PurchaseCheckoutWizard({
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,
         amount: total,
-        transactionNumber: '',
         treasuryAccountId: null,
         paymentMethodId: null,
         isPending: false
@@ -181,7 +194,7 @@ export function PurchaseCheckoutWizard({
             const fetchWarehouseName = async () => {
                 try {
                     const warehouseData = await purchasingApi.getWarehouse(selectedWarehouseId)
-                    setSelectedWarehouseName((warehouseData as any).name)
+                    setSelectedWarehouseName(String((warehouseData as Record<string, unknown>).name ?? ''))
                 } catch (error) {
                     console.error("Failed to fetch warehouse name", error)
                 }
@@ -235,7 +248,7 @@ export function PurchaseCheckoutWizard({
             toast.error("Debe ingresar el número de folio de la boleta.")
             return false
         }
-        if (targetStep === 4 && paymentData.amount > 0) {
+        if (targetStep === 5 && paymentData.amount > 0) {
             // Check if payment method is selected
             if (!paymentData.method) {
                 toast.error("Debe seleccionar un método de pago para continuar.")
@@ -264,12 +277,8 @@ export function PurchaseCheckoutWizard({
                 toast.error("Debe seleccionar una cuenta de tesorería / caja origen.")
                 return false
             }
-            if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
-                toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
-                return false
-            }
             if (paymentData.method === 'CHECK') {
-                if (!paymentData.transactionNumber) {
+                if (!paymentData.checkNumber) {
                     toast.error("Debe ingresar el número de cheque.")
                     return false
                 }
@@ -319,7 +328,7 @@ export function PurchaseCheckoutWizard({
                     quantity: l.qty || l.quantity,
                     unit_cost: l.unit_cost || 0,
                     uom: l.uom,
-                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : 19
+                    tax_rate: (dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA') ? 0 : rate
                 }))
             }
             formData.append('order_data', JSON.stringify(payloadOrder))
@@ -336,9 +345,9 @@ export function PurchaseCheckoutWizard({
                 formData.append('payment_method', paymentData.method || "")
                 formData.append('amount', paymentData.amount.toString())
                 formData.append('payment_is_pending', (paymentData.isPending || false).toString())
-                if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
                 if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
                 if (paymentData.paymentMethodId) formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkNumber) formData.append('check_number', paymentData.checkNumber)
                 if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
                 if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
                 if (paymentData.installments && paymentData.installments > 1) {
@@ -360,14 +369,14 @@ export function PurchaseCheckoutWizard({
                 }))
             } else {
                 formData.append('receipt_type', receiptData.type)
-                const receiptPayload: any = {
+                const receiptPayload: Record<string, unknown> = {
                     delivery_reference: receiptData.deliveryReference,
                     notes: receiptData.notes
                 }
 
                 // Add partial quantities if applicable
                 if (receiptData.type === 'PARTIAL' && receiptData.partialQuantities) {
-                    receiptPayload.line_data = receiptData.partialQuantities.map((pq: any) => ({
+                    receiptPayload.line_data = receiptData.partialQuantities.map((pq) => ({
                         line_id: pq.lineId,
                         product_id: pq.productId,
                         quantity: pq.receivedQty,
@@ -378,7 +387,8 @@ export function PurchaseCheckoutWizard({
                 formData.append('receipt_data', JSON.stringify(receiptPayload))
             }
 
-            await purchasingApi.createOrder(formData)
+            await purchasingApi.createOrder(formData, idempotencyKeyRef.current)
+            idempotencyKeyRef.current = generateUUID()
 
             toast.success("Compra procesada correctamente")
             onComplete()
@@ -394,17 +404,17 @@ export function PurchaseCheckoutWizard({
     // const totalSteps = 5 -- calculated dynamically now
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            variant="wizard"
             icon={ShoppingCart}
             title="Procesar Compra"
-            description="Asistente de compra rápida, facturación y recepción de inventario."
-            size="full"
-            hideScrollArea
-            className="h-[90vh]"
-            contentClassName="p-0"
+            subtitle="Asistente de compra rápida, facturación y recepción de inventario."
+            side="bottom"
+            defaultSize="100%"
+            boundary="embedded"
+            contentClassName="p-0 flex flex-col"
+            headerClassName="border-b pb-2 px-6 py-3"
             footer={
                 <FormFooter
                     leftActions={
@@ -431,7 +441,7 @@ export function PurchaseCheckoutWizard({
                         ) : (
                             <Button
                                 onClick={handleFinish}
-                                className="w-48 bg-success hover:bg-success/90 text-success-foreground font-bold transition-all shadow-lg shadow-success/20"
+                                className="w-48 bg-success hover:bg-success/90 text-success-foreground font-bold transition-all shadow-elevated shadow-success/20"
                                 disabled={loading}
                             >
                                 {loading ? (
@@ -454,12 +464,12 @@ export function PurchaseCheckoutWizard({
                     supplierName={selectedSupplierName}
                     warehouseName={selectedWarehouseName}
                     dteType={step > 2 ? dteData.type : undefined}
-                    paymentData={step > 3 ? {
-                        method: paymentData.method as any,
+                    receiptData={step > 3 ? receiptData : undefined}
+                    paymentData={step > 4 ? {
+                        method: paymentData.method,
                         amount: paymentData.amount,
                         pendingDebt: currentTotal - paymentData.amount
                     } : undefined}
-                    receiptData={step > 4 ? receiptData : undefined}
                 />
 
                 {/* Center - Content Area Wrapper */}
@@ -493,19 +503,19 @@ export function PurchaseCheckoutWizard({
                                 onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                             />
                         )}
-                        {step === 4 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
-                        {step === 5 && (
+                        {step === 4 && (
                             <Step4_Receipt
                                 receiptData={receiptData}
                                 setReceiptData={(data) => {
                                     setReceiptData(data)
-                                    if ((data as any).warehouseId) {
-                                        setSelectedWarehouseId((data as any).warehouseId)
+                                    if (typeof data !== 'function' && data.warehouseId) {
+                                        setSelectedWarehouseId(data.warehouseId)
                                     }
                                 }}
                                 orderLines={currentOrderLines}
                             />
                         )}
+                        {step === 5 && <Step3_PurchasePayment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} />}
                     </div>
                 </div>
 
@@ -518,6 +528,6 @@ export function PurchaseCheckoutWizard({
                     />
                 </div>
             </div>
-        </BaseModal>
+        </Drawer>
     )
 }

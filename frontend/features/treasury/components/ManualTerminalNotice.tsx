@@ -145,11 +145,11 @@ export function ManualTerminalNotice({
     return (
         <div className="flex flex-col items-center gap-8 py-2">
             <div className="flex flex-col items-center gap-4 text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-warning/30 bg-warning/5 shadow-inner">
+                <div className="flex h-20 w-20 items-center justify-center rounded-md border-2 border-warning/30 bg-warning/5 shadow-inner">
                     {config.icon}
                 </div>
                 <div className="space-y-1">
-                    <h4 className="font-heading text-xl font-black uppercase tracking-tighter text-foreground leading-none">
+                    <h4 className=" text-xl font-black uppercase tracking-tighter text-foreground leading-none">
                         {config.title}
                     </h4>
                     {paymentMethodName && (
@@ -208,7 +208,7 @@ export function ManualTerminalNotice({
                     </Button>
                     <ActionSlideButton
                         variant="primary"
-                        className="flex-[1.5] h-12 shadow-lg shadow-primary/10 active:translate-y-1 transition-all"
+                        className="flex-[1.5] h-12 shadow-floating shadow-primary/10 active:translate-y-1 transition-all"
                         onClick={onConfirm}
                         disabled={isLoading}
                     >

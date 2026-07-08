@@ -6,7 +6,7 @@ import { FileText, Package, Truck, ClipboardList, ExternalLink } from "lucide-re
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { ColumnDef } from "@tanstack/react-table"
 
-interface DocumentItem {
+export interface DocumentItem {
     id: number | string
     number?: string | number
     type_display?: string
@@ -71,9 +71,9 @@ function InvoiceColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_ord
 
 function WorkOrderColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
     return [
-        { header: "N° OT", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('production.workorder', row.original)}</DataCell.Code> },
+        { header: "N° OT", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('production.workorder', row.original as unknown as Record<string, unknown>)}</DataCell.Code> },
         { header: "Producto", cell: ({ row }) => <DataCell.Text>{row.original.product_name}</DataCell.Text> },
-        { header: "Cantidad", cell: ({ row }) => <DataCell.Number value={row.original.quantity!} suffix={row.original.unit} /> },
+        { header: "Cantidad", cell: ({ row }) => <DataCell.Number value={row.original.quantity ?? 0} suffix={row.original.unit} /> },
         { header: "Vencimiento", cell: ({ row }) => <DataCell.Date value={row.original.due_date} /> },
         { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status_display || row.original.status || ""} /> },
         { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
@@ -82,7 +82,7 @@ function WorkOrderColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_o
 
 function StockMoveColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
     return [
-        { header: "N°", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('inventory.stockmove', row.original)}</DataCell.Code> },
+        { header: "N°", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('inventory.stockmove', row.original as unknown as Record<string, unknown>)}</DataCell.Code> },
         { header: "Folio Guía", cell: ({ row }) => <DataCell.Code>{row.original.reference || '--'}</DataCell.Code> },
         { header: "Fecha", cell: ({ row }) => <DataCell.Date value={row.original.date} /> },
         { header: "Ítems", cell: ({ row }) => <DataCell.Number value={row.original.items_count || 0} suffix="ítems" /> },
@@ -97,7 +97,7 @@ function ActionsCell({ item, onClick }: { item: DocumentItem; onClick?: (type: '
             {item.pdf_url && (
                 <DataCell.Action
                     action="download"
-                    onClick={() => window.open(item.pdf_url!, '_blank', 'noopener,noreferrer')}
+                    onClick={() => window.open(item.pdf_url ?? '', '_blank', 'noopener,noreferrer')}
                 />
             )}
             <ExternalLink

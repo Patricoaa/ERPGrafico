@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 export interface Warehouse {
     id: number
@@ -35,14 +36,14 @@ export function useWarehouses() {
         queryKey: WAREHOUSES_KEYS.list(),
         queryFn: async (): Promise<Warehouse[]> => {
             const response = await api.get<Warehouse[]>('/inventory/warehouses/')
+            // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
             return response.data
         },
         staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
     })
 
     const invalidate = () => {
-        // Cubre lista, detalle y cualquier sub-recurso futuro de warehouses.
-        queryClient.invalidateQueries({ queryKey: WAREHOUSES_KEYS.all })
+        invalidateCrossFeature(queryClient, [WAREHOUSES_KEYS.all])
     }
 
     const saveWarehouseMutation = useMutation({
@@ -86,12 +87,14 @@ export function useWarehouses() {
  * Fetch a single warehouse by id. Returns null while loading or when id is null.
  */
 export function useWarehouse(id: number | null | undefined) {
-    return useQuery({
+    const { data: warehouse, isLoading, isError } = useQuery({
         queryKey: id ? WAREHOUSES_KEYS.detail(id) : ['warehouses', 'detail', 'noop'],
         queryFn: async (): Promise<Warehouse> => {
-            const res = await api.get<Warehouse>(`/inventory/warehouses/${id!}/`)
+            const res = await api.get<Warehouse>(`/inventory/warehouses/${id as number}/`)
             return res.data
         },
+        staleTime: 15 * 60 * 1000,
         enabled: !!id,
     })
+    return { warehouse: warehouse ?? null, isLoading, isError }
 }

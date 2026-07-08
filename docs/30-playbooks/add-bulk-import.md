@@ -29,24 +29,12 @@ Receta para que un entity acepte importación bulk siguiendo el flujo canónico 
 - Endpoint `GET /api/jobs/{id}/` existe. Si no: crearlo primero.
 - El entity tiene serializer de `create` que valida correctamente. Si la validación de `create` está incompleta, **arreglar eso primero** — el importer la reusa.
 
-## Step 1 — Modelo ImportJob (si no existe ya)
+## Step 1 — Modelo BackgroundJob (ya existe)
 
 ```python
 # backend/core/models/jobs.py
-class ImportJob(models.Model):
-    JOB_STATUS = [("pending","pending"),("running","running"),("done","done"),("error","error")]
-    user             = models.ForeignKey("core.User", on_delete=models.PROTECT)
-    entity           = models.CharField(max_length=64)
-    preview_token    = models.CharField(max_length=64)
-    column_mapping   = models.JSONField()
-    options          = models.JSONField(default=dict)
-    idempotency_key  = models.CharField(max_length=64, unique=True, db_index=True)
-    status           = models.CharField(max_length=16, choices=JOB_STATUS, default="pending")
-    progress         = models.JSONField(default=dict)
-    report_rows      = models.JSONField(default=list)
-    report_storage_key = models.CharField(max_length=256, blank=True)
-    created_at       = models.DateTimeField(auto_now_add=True)
-    completed_at     = models.DateTimeField(null=True)
+# El modelo `BackgroundJob` ya existe y gestiona el ciclo de vida.
+# Consta de campos: user, job_type, status, title, progress_percent, result_file_url, error_message
 ```
 
 Migration aparte. Indexar `idempotency_key` (unique) y `created_at`.
@@ -118,7 +106,7 @@ class CommitReport:
     errors: int
     report_storage_key: str  # xlsx detallado
 
-def commit_{entity}_import(job: ImportJob) -> CommitReport:
+def commit_{entity}_import(job: BackgroundJob) -> CommitReport:
     df = load_preview_file(job.user_id, job.preview_token)
     mapping = job.column_mapping
     dedupe_by = job.options.get("dedupe_by")
@@ -190,8 +178,10 @@ class {Entity}ImportView(APIView):
     @action(detail=False, methods=["post"], url_path="commit")
     @idempotent_endpoint(scope="{app}.{entity}.import_commit")
     def commit(self, request):
-        job = ImportJob.objects.create(
+        job = BackgroundJob.objects.create(
             user=request.user,
+            job_type="IMPORT",
+            title="Importación de {Entity}",
             entity="{app}.{entity}",
             preview_token=request.data["preview_token"],
             column_mapping=request.data["column_mapping"],
@@ -199,7 +189,7 @@ class {Entity}ImportView(APIView):
             idempotency_key=request.headers["Idempotency-Key"],
         )
         run_{entity}_import_task.delay(job.id)
-        return Response({"job_id": job.id, "poll_url": f"/api/jobs/{job.id}/"}, status=202)
+        return Response({"job_id": job.id, "status": "PENDING"}, status=202)
 ```
 
 URL routing:
@@ -214,20 +204,17 @@ path("{entity}/import/commit/",  {Entity}ImportView.as_view({"post": "commit"}))
 
 ```python
 # backend/{app}/tasks.py
+from core.tasks import start_job, finish_job_success, finish_job_error
+
 @shared_task(bind=True, max_retries=2)
 def run_{entity}_import_task(self, job_id: int):
-    job = ImportJob.objects.get(pk=job_id)
-    job.status = "running"; job.save(update_fields=["status"])
+    start_job(job_id)
     try:
-        report = commit_{entity}_import(job)
-        job.report_rows = []  # opcional: si se persiste también en JSON
-        job.report_storage_key = report.report_storage_key
-        job.status = "done"
-        job.completed_at = timezone.now()
-        job.save(update_fields=["status", "completed_at", "report_storage_key"])
+        # Lógica de importación
+        # ...
+        finish_job_success(job_id, file_url="url_del_reporte_si_aplica")
     except Exception as e:
-        job.status = "error"; job.error_message = str(e)
-        job.save(update_fields=["status", "error_message"])
+        finish_job_error(job_id, str(e))
         raise
 ```
 

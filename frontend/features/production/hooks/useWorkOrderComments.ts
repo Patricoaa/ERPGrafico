@@ -3,6 +3,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 
 export interface WorkOrderComment {
     id: number
@@ -17,6 +19,7 @@ const COMMENTS_KEY = 'work-order-comments'
 
 export function useWorkOrderComments(orderId: number) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: comments = [], isLoading } = useQuery<WorkOrderComment[]>({
         queryKey: [COMMENTS_KEY, orderId],
@@ -24,6 +27,7 @@ export function useWorkOrderComments(orderId: number) {
             const res = await api.get(`/production/orders/${orderId}/comments/`)
             return res.data
         },
+        staleTime: 30 * 1000,
         enabled: !!orderId,
     })
 
@@ -33,7 +37,8 @@ export function useWorkOrderComments(orderId: number) {
             return res.data as WorkOrderComment
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [COMMENTS_KEY, orderId] })
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [[COMMENTS_KEY, orderId]])
         },
         onError: (err) => showApiError(err, 'Error al agregar comentario'),
     })

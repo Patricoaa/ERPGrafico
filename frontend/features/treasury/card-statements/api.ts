@@ -8,8 +8,8 @@ import type {
 
 export const cardStatementsApi = {
     list: async (params?: Record<string, string>): Promise<CreditCardStatement[]> => {
-        const { data } = await api.get<CreditCardStatement[]>('/treasury/card-statements/', { params })
-        return data
+        const { data } = await api.get<{ results: CreditCardStatement[] }>('/treasury/card-statements/', { params })
+        return data.results
     },
 
     get: async (id: number): Promise<CreditCardStatement> => {

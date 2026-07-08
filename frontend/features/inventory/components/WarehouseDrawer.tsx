@@ -1,10 +1,12 @@
+/* eslint-disable react-hooks/incompatible-library */
+/* eslint-disable no-restricted-syntax */
 "use client"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { WarehouseInitialData } from "@/types/forms"
+import { type WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import {
@@ -13,13 +15,13 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
-import { List, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -173,15 +175,18 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
         </FormSplitLayout>
     )
 
+    const identity = useDrawerIdentity('inventory.warehouse', mode, initialData, {
+        overrideTitle: isView
+            ? `Ficha de Almacén${initialData?.id ? ` #${initialData.id}` : ""}`
+            : mode === 'create' ? "Nuevo Almacén" : "Editar Almacén",
+        overrideSubtitle: form.watch("name")
+            ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
+            : (initialData ? undefined : "Nuevo Almacén"),
+    })
+
     if (inline) {
         return <>{formContent}</>
     }
-
-    const drawerTitle = isView
-        ? `Ficha de Almacén${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Almacén"
-            : "Editar Almacén"
 
     return (
         <>
@@ -212,13 +217,10 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 side="left"
                 defaultSize={width}
                 mode={mode}
-                icon={List}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle={
-                    form.watch("name")
-                        ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
-                        : (initialData ? undefined : "Nuevo Almacén")
-                }
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={

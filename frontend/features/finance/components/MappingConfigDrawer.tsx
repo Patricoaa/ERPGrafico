@@ -1,21 +1,22 @@
 "use client"
 
 import React, { useEffect, useCallback } from "react"
-import { DataTable, BulkActionDock, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { DataTable, ActionDock, Chip, CmykRing, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 
-import { SlidersHorizontal, AlertCircle, Tag } from "lucide-react"
+import { SlidersHorizontal, AlertCircle, Tag, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAccountMappings, MappingType } from "@/features/finance/hooks/useAccountMappings"
+import { Button } from "@/components/ui/button"
+import { useAccountMappings, type MappingType } from "@/features/finance/hooks/useAccountMappings"
 import {
     IS_CATEGORIES,
     CF_CATEGORIES,
     BS_CATEGORIES,
-    Account
-} from "@/features/accounting/types"
+    type Account
+} from "@/features/accounting"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
@@ -144,6 +145,7 @@ export function MappingConfigDrawer({
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                     aria-label="Select all"
                     className="translate-y-[2px] border-muted-foreground/30"
+                    variant="circle"
                 />
             ),
             cell: ({ row }) => (
@@ -152,6 +154,7 @@ export function MappingConfigDrawer({
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
                     aria-label="Select row"
                     className="translate-y-[2px] border-muted-foreground/30"
+                    variant="circle"
                 />
             ),
             enableSorting: false,
@@ -263,15 +266,18 @@ export function MappingConfigDrawer({
                     columns={columns}
                     data={accounts}
                     isLoading={isLoading}
-                    variant="standalone"
-                    searchPlaceholder="Buscar por nombre de cuenta..."
-                    filterColumn="name"
-                    useAdvancedFilter={true}
+                    variant="embedded"
                     bulkDock={(items, clear) => (
-                        <BulkActionDock selectedCount={items.length} onClear={clear}>
+                        <ActionDock isVisible>
+                            <div className="flex items-center gap-2">
+                                <CmykRing className="h-2.5 w-2.5 animate-pulse" />
+                                <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
+                                    {`${items.length} ${items.length === 1 ? "seleccionado" : "seleccionados"}`}
+                                </span>
+                            </div>
                             <ActionDock.Actions>
                                 <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
-                                    <SelectTrigger className="h-9 rounded-full border-border/40 bg-muted/30 text-[10px] font-black uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
+                                    <SelectTrigger className="h-9 rounded-sm border-border/40 bg-muted/30 text-xs font-bold uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
                                         <Tag className="mr-2 h-3.5 w-3.5" />
                                         <SelectValue placeholder="Asignar Categoría" />
                                     </SelectTrigger>
@@ -285,7 +291,16 @@ export function MappingConfigDrawer({
                                     </SelectContent>
                                 </Select>
                             </ActionDock.Actions>
-                        </BulkActionDock>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clear}
+                                className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
+                            >
+                                <X className="h-3 w-3 mr-1.5" />
+                                Limpiar
+                            </Button>
+                        </ActionDock>
                     )}
                 />
             </div>

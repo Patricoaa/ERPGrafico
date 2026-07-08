@@ -13,19 +13,19 @@ from django.db import migrations, models
 
 
 def backfill_charges_movement(apps, schema_editor):
-    CreditCardStatement = apps.get_model('treasury', 'CreditCardStatement')
-    TreasuryMovement = apps.get_model('treasury', 'TreasuryMovement')
+    CreditCardStatement = apps.get_model("treasury", "CreditCardStatement")
+    TreasuryMovement = apps.get_model("treasury", "TreasuryMovement")
 
     for stmt in CreditCardStatement.objects.filter(charges_movement__isnull=True):
         display_id = f"EST-{stmt.id}"
         mv = TreasuryMovement.objects.filter(
-            movement_type='ADJUSTMENT',
+            movement_type="ADJUSTMENT",
             reference=display_id,
             from_account=stmt.card_account_id,
         ).first()
         if mv is not None:
             stmt.charges_movement_id = mv.id
-            stmt.save(update_fields=['charges_movement'])
+            stmt.save(update_fields=["charges_movement"])
 
 
 def reverse_backfill(apps, schema_editor):
@@ -34,21 +34,21 @@ def reverse_backfill(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0067_data_migrate_loan_liability_accounts_to_loan_type'),
+        ("treasury", "0067_data_migrate_loan_liability_accounts_to_loan_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='creditcardstatement',
-            name='charges_movement',
+            model_name="creditcardstatement",
+            name="charges_movement",
             field=models.OneToOneField(
-                blank=True, null=True,
+                blank=True,
+                null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                related_name='card_statement_charges',
-                to='treasury.treasurymovement',
-                verbose_name='Movimiento de Cargos',
+                related_name="card_statement_charges",
+                to="treasury.treasurymovement",
+                verbose_name="Movimiento de Cargos",
                 help_text=(
                     "ADJUSTMENT que imputa interest_charged + fees_charged "
                     "como gasto financiero y sube la deuda. Simétrico a "
@@ -57,14 +57,16 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
-            model_name='historicalcreditcardstatement',
-            name='charges_movement',
+            model_name="historicalcreditcardstatement",
+            name="charges_movement",
             field=models.ForeignKey(
-                blank=True, db_constraint=False, null=True,
+                blank=True,
+                db_constraint=False,
+                null=True,
                 on_delete=django.db.models.deletion.DO_NOTHING,
-                related_name='+',
-                to='treasury.treasurymovement',
-                verbose_name='Movimiento de Cargos',
+                related_name="+",
+                to="treasury.treasurymovement",
+                verbose_name="Movimiento de Cargos",
                 help_text=(
                     "ADJUSTMENT que imputa interest_charged + fees_charged "
                     "como gasto financiero y sube la deuda. Simétrico a "

@@ -1,8 +1,10 @@
 "use client"
 
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { useRealtime } from '@/features/realtime'
 
 export interface SaleOrderComment {
     id: number
@@ -24,8 +26,11 @@ export function useSaleOrderComments(orderId: number | string) {
             const res = await api.get(`/sales/orders/${orderId}/comments/`)
             return res.data
         },
+        staleTime: 30 * 1000,
         enabled: !!orderId,
     })
+
+    const { markLocalMutation } = useRealtime()
 
     const addMutation = useMutation({
         mutationFn: async (text: string) => {
@@ -33,7 +38,8 @@ export function useSaleOrderComments(orderId: number | string) {
             return res.data as SaleOrderComment
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [COMMENTS_KEY, orderId] })
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [[COMMENTS_KEY, orderId]])
         },
         onError: (err) => showApiError(err, 'Error al agregar comentario'),
     })

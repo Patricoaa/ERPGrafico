@@ -10,8 +10,10 @@ import { createPayroll, getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
 
 import { Form, FormField } from "@/components/ui/form"
-import { Plus, FileText } from "lucide-react"
+import { FileText } from "lucide-react"
+import { useDrawerIdentity } from "@/features/_shared"
 import { CancelButton, Drawer, FormFooter, LabeledInput, LabeledSelect, SkeletonShell, SubmitButton } from '@/components/shared'
+import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 const MONTHS = [
@@ -58,8 +60,9 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
 
     const isFetchingInitialData = open && isFetchingEmployees
 
-    const currentYear = new Date().getFullYear()
-    const currentMonth = new Date().getMonth() + 1
+    const { year: serverYear, month: serverMonth } = useServerDate()
+    const currentYear = serverYear ?? new Date().getFullYear()
+    const currentMonth = serverMonth ?? new Date().getMonth() + 1
 
     const form = useForm<CreatePayrollValues>({
         resolver: zodResolver(createPayrollSchema),
@@ -89,13 +92,18 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
         }
     }
 
+    const identity = useDrawerIdentity('hr.payroll', 'create', undefined, {
+        overrideTitle: "Nueva Liquidación",
+        overrideSubtitle: "RRHH • Emisión Mensual",
+    })
+
     return (
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            icon={Plus}
-            title="Nueva Liquidación"
+            icon={identity.icon}
+            title={identity.title}
             subtitle="RRHH • Emisión Mensual"
             defaultSize={formDrawerWidth("medium", false)}
             footer={
@@ -126,6 +134,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                         <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                             <LabeledSelect
                                 label="Empleado"
+                                required
                                 value={field.value}
                                 onChange={field.onChange}
                                 error={fieldState.error?.message}
@@ -140,6 +149,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                         <FormField control={form.control} name="period_year" render={({ field, fieldState }) => (
                             <LabeledSelect
                                 label="Año"
+                                required
                                 value={field.value}
                                 onChange={field.onChange}
                                 error={fieldState.error?.message}
@@ -152,6 +162,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                         <FormField control={form.control} name="period_month" render={({ field, fieldState }) => (
                             <LabeledSelect
                                 label="Mes"
+                                required
                                 value={field.value}
                                 onChange={field.onChange}
                                 error={fieldState.error?.message}

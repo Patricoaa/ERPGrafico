@@ -1,319 +1,432 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
-import { useState } from "react"
-import {useForm, SubmitHandler} from "react-hook-form"
-import { Product } from "@/types/entities"
+import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
+import { type Product } from "@/types/entities"
+import { useForm, type UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, FormSection, SkeletonShell } from "@/components/shared"
-import { Checkbox } from "@/components/ui/checkbox"
-import {Save, DollarSign, AlertCircle} from "lucide-react"
-import { useUoMs } from "../../hooks/useUoMs"
-import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { TabBar, TabBarContent } from "@/components/shared"
+import { LabeledInput, LabeledSelect, SkeletonShell } from "@/components/shared"
+import { Factory, AlertCircle, Copy, PlusCircle, DollarSign, Users } from "lucide-react"
+import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
+import { showApiError } from "@/lib/errors"
+import { toast } from "sonner"
+import { BOMDrawer } from "@/features/production"
+import type { ProductMinimal } from "@/features/production"
+import { useVatRate } from '@/hooks/useVatRate'
+import { useUoMs } from "../../hooks/useUoMs"
+import { useProductMutations } from "../../hooks/useProductMutations"
 
-const ALL_PRICE_MODE_OPTIONS = [
-    { label: '--- Mantener actual ---', value: 'none' },
-    { label: 'Hereda del template', value: 'INHERIT' },
-    { label: 'Precio propio', value: 'OVERRIDE' },
-    { label: 'Template + sobrecargo', value: 'SURCHARGE' },
+type ProductWithBomClone = Product & { copy_bom_from?: string }
+
+const ALL_PRICE_INHERITANCE_OPTIONS = [
+  { label: '— Mantener actual —', value: 'none' },
+  { label: 'Hereda del template', value: 'INHERIT' },
+  { label: 'Precio propio', value: 'OVERRIDE' },
+  { label: 'Template + sobrecargo', value: 'SURCHARGE' },
 ]
-const INHERIT_ONLY_MODE_OPTIONS = [
-    { label: '--- Mantener actual ---', value: 'none' },
-    { label: 'Hereda del template', value: 'INHERIT' },
+const INHERIT_ONLY_OPTION = [
+  { label: '— Mantener actual —', value: 'none' },
+  { label: 'Hereda del template', value: 'INHERIT' },
 ]
 
 const bulkEditSchema = z.object({
-    sale_price: z.string().optional(),
-    sale_uom: z.string().optional(),
-    price_inheritance_mode: z.string().optional(),
-    price_surcharge: z.string().optional(),
-    has_bom: z.boolean().default(false),
-    apply_has_bom: z.boolean().default(false),
-    copy_bom_from: z.string().optional(),
+  sale_price: z.coerce.number().int("El precio debe ser un número entero").min(0).optional(),
+  sale_uom: z.string().optional(),
+  price_inheritance_mode: z.string().default('none'),
+  price_surcharge: z.coerce.number().int("El sobrecargo debe ser un número entero").min(0).optional(),
 })
 
 type BulkEditValues = z.infer<typeof bulkEditSchema>
 
 interface BulkVariantEditFormProps {
-    selectedVariants: Product[]
-    availableVariants?: Product[]
-    templateData?: Product
-    onSaved: (updatedVariants: Product[]) => void
-    onCancel: () => void
+  selectedVariants: Product[]
+  templateData?: Product
+  availableVariants?: Product[]
+  onSaved: (updatedVariants: Product[]) => void
+  onCancel: () => void
 }
 
-export function BulkVariantEditForm({ selectedVariants, availableVariants = [], templateData, onSaved, onCancel }: BulkVariantEditFormProps) {
-    const [loading, setLoading] = useState(false)
-    const { uoms, isLoading: isUoMsLoading } = useUoMs()
+export function BulkVariantEditForm({
+  selectedVariants,
+  templateData,
+  availableVariants = [],
+  onSaved,
+}: BulkVariantEditFormProps) {
+  const [mounted, setMounted] = useState(false)
+  const { uoms, isLoading: isUoMsLoading } = useUoMs()
+  const { rate, multiplier } = useVatRate()
+    const { updateProduct } = useProductMutations()
+  const [cloneSourceId, setCloneSourceId] = useState<string>('none')
+  const [activeTab, setActiveTab] = useState<string>('precios')
+  const [bomModalOpen, setBomModalOpen] = useState(false)
 
-    // If template has UoM-specific prices, only INHERIT is allowed
-    const hasUomPrices = Array.isArray((templateData as any)?.uom_prices)
-        ? (templateData as any).uom_prices.length > 0
-        : false
-    const priceModeOptions = hasUomPrices ? INHERIT_ONLY_MODE_OPTIONS : ALL_PRICE_MODE_OPTIONS
+  const hasUomPrices = Array.isArray((templateData as unknown as Record<string, unknown>)?.uom_prices)
+    ? ((templateData as unknown as Record<string, unknown[]>).uom_prices.length > 0)
+    : false
+  const priceOptions = hasUomPrices ? INHERIT_ONLY_OPTION : ALL_PRICE_INHERITANCE_OPTIONS
 
-    const form = useForm<BulkEditValues>({
-        resolver: zodResolver(bulkEditSchema) as any,
-        defaultValues: {
-            apply_has_bom: false,
-            has_bom: true,
-            sale_price: "",
-            sale_uom: "",
-            price_inheritance_mode: "",
-            price_surcharge: "",
-            copy_bom_from: "",
-        }
-    })
+  const form: UseFormReturn<BulkEditValues> = useForm<BulkEditValues>({
+    resolver: zodResolver(bulkEditSchema) as never,
+    defaultValues: {
+      sale_price: undefined,
+      sale_uom: "",
+      price_inheritance_mode: 'none',
+      price_surcharge: undefined,
+    },
+  })
 
-    const onSubmit: SubmitHandler<BulkEditValues> = async (data) => {
-        setLoading(true)
-        const payload: Partial<Product> & { copy_bom_from?: number } = {}
-        if (data.sale_price !== undefined && data.sale_price !== "") payload.sale_price = Number(data.sale_price)
-        if (data.sale_uom !== undefined && data.sale_uom !== "" && data.sale_uom !== "none") payload.sale_uom = Number(data.sale_uom)
-        if (data.price_inheritance_mode && data.price_inheritance_mode !== "none") {
-            payload.price_inheritance_mode = data.price_inheritance_mode as 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'
-            if (data.price_inheritance_mode === 'INHERIT') payload.price_surcharge = null
-        }
-        // Apply surcharge amount if provided
-        if (data.price_surcharge !== undefined && data.price_surcharge !== "") {
-            payload.price_surcharge = Number(data.price_surcharge)
-            if (!payload.price_inheritance_mode) payload.price_inheritance_mode = 'SURCHARGE'
-        }
-        if (data.apply_has_bom) {
-            payload.has_bom = data.has_bom
-            if (data.has_bom) payload.product_type = "MANUFACTURABLE"
-        }
-        if (data.copy_bom_from && data.copy_bom_from !== "" && data.copy_bom_from !== "none") {
-            payload.copy_bom_from = Number(data.copy_bom_from)
-            payload.has_bom = true
-            payload.product_type = "MANUFACTURABLE"
-        }
+  useEffect(() => { setMounted(true) }, [])
 
-        if (Object.keys(payload).length === 0) {
-            toast.info("No se seleccionaron cambios masivos.")
-            setLoading(false)
-            return
-        }
+  // uoms vienen de useUoMs (TanStack Query, reactivos y cacheados 1h).
 
-        const updatedVariants = selectedVariants.map(v => {
-            return {
-                ...v,
-                sale_price: payload.sale_price !== undefined ? payload.sale_price : v.sale_price,
-                sale_uom: payload.sale_uom !== undefined ? payload.sale_uom : v.sale_uom,
-                has_active_bom: payload.copy_bom_from !== undefined ? true : (payload.has_bom !== undefined ? payload.has_bom : v.has_active_bom),
-                product_type: payload.product_type !== undefined ? payload.product_type : v.product_type,
-                copy_bom_from: payload.copy_bom_from,
-                price_inheritance_mode: payload.price_inheritance_mode ?? v.price_inheritance_mode,
-                price_surcharge: payload.price_surcharge !== undefined ? payload.price_surcharge : v.price_surcharge,
-            }
+  const onSubmit = async (data: BulkEditValues) => {
+    if (!templateData?.id) {
+      toast.error("No se puede guardar: producto padre no disponible")
+      return
+    }
+    const mode = data.price_inheritance_mode
+    const variantPayload: Record<string, unknown> = {}
+
+    if (mode !== 'none') {
+      variantPayload.price_inheritance_mode = mode
+      if (mode === 'OVERRIDE' && data.sale_price !== undefined) variantPayload.sale_price = data.sale_price
+      if (mode === 'SURCHARGE' && data.price_surcharge !== undefined) variantPayload.price_surcharge = data.price_surcharge
+      if (mode === 'INHERIT') variantPayload.price_surcharge = null
+    }
+    if (data.sale_uom && data.sale_uom !== 'none') variantPayload.sale_uom = Number(data.sale_uom)
+
+    if (Object.keys(variantPayload).length === 0) {
+      toast.info("No se seleccionaron cambios.")
+      return
+    }
+
+    try {
+      await updateProduct({
+        id: templateData.id,
+        payload: {
+          variant_updates: selectedVariants.map(v => ({ id: v.id, ...variantPayload })),
+        } as never,
+      })
+      const updatedVariants = selectedVariants.map(v => ({ ...v, ...variantPayload })) as Product[]
+      toast.success(`${selectedVariants.length} variantes actualizadas.`)
+      onSaved(updatedVariants)
+    } catch (e) {
+      showApiError(e, "Error al actualizar variantes")
+    }
+  }
+
+  const handleCloneBOM = () => {
+    if (cloneSourceId === 'none') return
+    const updatedVariants: ProductWithBomClone[] = selectedVariants.map(v => ({
+      ...v,
+      has_active_bom: true,
+      product_type: "MANUFACTURABLE",
+      copy_bom_from: cloneSourceId,
+    }))
+    toast.success(`LDM clonada a ${selectedVariants.length} variantes.`)
+    onSaved(updatedVariants as Product[])
+  }
+
+  const handleNewBOMSuccess = async () => {
+    const anchor = selectedVariants[0]
+    setBomModalOpen(false)
+
+    const others = selectedVariants.slice(1)
+    if (others.length > 0 && templateData?.id) {
+      try {
+        await updateProduct({
+          id: templateData.id,
+          payload: {
+            variant_updates: others.map(v => ({ id: v.id, copy_bom_from: String(anchor.id) })),
+          } as never,
         })
-
-        toast.success(`${selectedVariants.length} variantes guardadas.`);
-        onSaved(updatedVariants as Product[])
-        setLoading(false)
+      } catch (e) {
+        console.error('Error cloning BOM to other variants', e)
+        toast.error('Error al clonar LDM a otras variantes')
+        return
+      }
     }
 
-    const currentMode = form.watch('price_inheritance_mode');
-    const overrideNetRaw = form.watch('sale_price');
-    const overrideNet = parseFloat(overrideNetRaw as string) || 0;
-    const currentIva = overrideNetRaw ? overrideNet * 0.19 : 0;
-    const currentGross = overrideNetRaw ? overrideNet * 1.19 : 0;
+    const updatedVariants: Product[] = selectedVariants.map(v => ({
+      ...v,
+      has_active_bom: true,
+      product_type: "MANUFACTURABLE" as Product['product_type'],
+    }))
+    toast.success(`LDM creada y clonada a ${selectedVariants.length} variantes.`)
+    onSaved(updatedVariants)
+  }
 
-    const handleOverrideGrossChange = (value: string) => {
-        const gross = parseFloat(value) || 0;
-        if (!value) {
-            form.setValue("sale_price", "", { shouldDirty: true, shouldValidate: true });
-            return;
-        }
-        const net = gross / 1.19;
-        form.setValue("sale_price", net.toFixed(2), { shouldDirty: true, shouldValidate: true });
-    }
+  const currentMode = form.watch('price_inheritance_mode')
+  const overrideNet = form.watch('sale_price') ?? 0
+  const currentSurcharge = form.watch('price_surcharge') ?? 0
+  const templateNet = Number(templateData?.sale_price) || 0
 
-    return (
-        <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva de variantes">
-        <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="p-6 overflow-y-auto flex-1 scrollbar-thin">
-                <Form {...form}>
-                    <form id="bulk-edit-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-8">
+  const showPreview = currentMode === 'OVERRIDE' || currentMode === 'SURCHARGE'
+  const previewNet = currentMode === 'OVERRIDE' ? overrideNet : templateNet + currentSurcharge
 
-                        <FormSection title="Precios y Logística" icon={DollarSign} />
-                        <FormField<BulkEditValues>
-                            control={form.control}
-                            name="price_inheritance_mode"
-                            render={({ field }) => (
-                                <LabeledSelect
-                                    label="Modo de Precio"
-                                    value={(field.value as string) || "none"}
-                                    onChange={(val) => {
-                                        field.onChange(val);
-                                        if (val !== 'SURCHARGE') form.setValue('price_surcharge', "");
-                                        if (val !== 'OVERRIDE') form.setValue('sale_price', "");
-                                    }}
-                                    options={priceModeOptions}
-                                    className="h-10 font-black"
-                                    disabled={hasUomPrices}
-                                    hint={hasUomPrices ? "Bloqueado: template con precios por UoM" : undefined}
-                                />
-                            )}
-                        />
+  const handleOverrideNetChange = (value: string) => {
+    if (currentMode !== 'OVERRIDE') return
+    form.setValue("sale_price", Math.round(parseFloat(value) || 0), { shouldDirty: true, shouldValidate: true })
+  }
 
-                        {currentMode === 'SURCHARGE' && !hasUomPrices && (
-                            <FormField<BulkEditValues>
-                                control={form.control}
-                                name="price_surcharge"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        name={field.name}
-                                        ref={field.ref}
-                                        value={(field.value as string) ?? ""}
-                                        onChange={field.onChange}
-                                        onBlur={field.onBlur}
-                                        label="Sobrecargo (Neto)"
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        error={fieldState.error?.message}
-                                        className="h-10 font-bold bg-warning/5 border-warning/20"
-                                    />
-                                )}
-                            />
-                        )}
+  const handleOverrideGrossChange = (value: string) => {
+    if (currentMode !== 'OVERRIDE') return
+    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / multiplier), { shouldDirty: true, shouldValidate: true })
+  }
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border-2 border-primary/10 rounded-lg bg-primary/5">
-                            <FormField<BulkEditValues>
-                                control={form.control}
-                                name="sale_price"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        name={field.name}
-                                        ref={field.ref}
-                                        value={(field.value as string) ?? ""}
-                                        onChange={field.onChange}
-                                        onBlur={field.onBlur}
-                                        label="Precio Neto"
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="Mantener actual"
-                                        error={fieldState.error?.message}
-                                        readOnly={currentMode !== 'OVERRIDE' && currentMode !== 'none'}
-                                        className={cn("h-10 font-bold text-right", currentMode !== 'OVERRIDE' && currentMode !== 'none' && "bg-muted/30 cursor-default")}
-                                    />
-                                )}
-                            />
-                            <LabeledInput
-                                label="IVA (19%)"
-                                type="number"
-                                value={overrideNetRaw ? currentIva.toFixed(2) : ""}
-                                placeholder="-"
-                                readOnly
-                                className="h-10 font-medium text-right bg-muted/20 cursor-default text-muted-foreground"
-                            />
-                            <LabeledInput
-                                label="Precio Bruto"
-                                type="number"
-                                value={overrideNetRaw ? currentGross.toFixed(2) : ""}
-                                placeholder="-"
-                                readOnly={currentMode !== 'OVERRIDE' && currentMode !== 'none'}
-                                onChange={(e) => handleOverrideGrossChange(e.target.value)}
-                                className={cn("h-10 font-black text-right", currentMode !== 'OVERRIDE' && currentMode !== 'none' && "bg-muted/30 cursor-default")}
-                            />
+  const cloneSources = [
+    { label: "--- Seleccione origen ---", value: "none" },
+    ...(templateData?.has_active_bom
+      ? [{ label: `Template Padre (${templateData.name})`, value: 'template' }]
+      : []),
+    ...(availableVariants)
+      .filter(v => v.has_active_bom)
+      .map(v => ({ label: `Variante: ${v.variant_display_name || v.name}`, value: String(v.id) })),
+  ]
 
-                            <FormField<BulkEditValues>
-                                control={form.control}
-                                name="sale_uom"
-                                render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Ud. Venta"
-                                        value={(field.value as string) || "none"}
-                                        onChange={field.onChange}
-                                        options={[
-                                            { label: "--- Mantener actual ---", value: "none" },
-                                            ...uoms.map(u => ({ label: u.name, value: u.id.toString() }))
-                                        ]}
-                                        error={fieldState.error?.message}
-                                        className="h-10"
-                                    />
-                                )}
-                            />
-                        </div>
+  const variantsWithBOM = selectedVariants.filter(v => v.has_active_bom).length
 
-                        {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') && (templateData as any)?.discount_active && (
-                            <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-[11px] font-bold text-warning-foreground">
-                                <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
-                                El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado para estas variantes.
-                            </div>
-                        )}
-                        <FormSection title="Configuración Industrial" icon={Save} />
-                        <div className="space-y-6">
-                            <FormField<BulkEditValues>
-                                control={form.control}
-                                name="apply_has_bom"
-                                render={({ field }) => (
-                                    <div className={cn(
-                                        "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                                        field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed border-muted-foreground/20"
-                                    )}>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-black uppercase tracking-widest text-primary">Sincronizar Requisito de LdM</label>
-                                            <p className="text-[10px] text-muted-foreground font-medium leading-tight">Actualizar masivamente si las variantes requieren fabricación.</p>
-                                        </div>
-                                        <Checkbox checked={!!field.value} onCheckedChange={field.onChange} className="h-5 w-5" />
-                                    </div>
-                                )}
-                            />
+  const anchorVariant: ProductMinimal = {
+    id: selectedVariants[0]?.id,
+    name: selectedVariants[0]?.variant_display_name || selectedVariants[0]?.name,
+    code: selectedVariants[0]?.code,
+    product_type: selectedVariants[0]?.product_type,
+  }
 
-                            {form.watch("apply_has_bom") && (
-                                <FormField<BulkEditValues>
-                                    control={form.control}
-                                    name="has_bom"
-                                    render={({ field }) => (
-                                        <div className="flex flex-row items-center justify-between space-x-3 rounded-lg border-2 p-4 bg-background animate-in fade-in duration-200">
-                                            <div className="space-y-1 leading-none">
-                                                <label className="text-xs font-bold uppercase">Requieren Lista de Materiales</label>
-                                                <p className="text-[10px] text-muted-foreground font-medium italic">
-                                                    Forzará a las {selectedVariants.length} variantes a ser Fabricables.
-                                                </p>
-                                            </div>
-                                            <Checkbox
-                                                checked={!!field.value}
-                                                onCheckedChange={field.onChange}
-                                                className="h-5 w-5"
-                                            />
-                                        </div>
-                                    )}
-                                />
-                            )}
-
-                            <FormField<BulkEditValues>
-                                control={form.control}
-                                name="copy_bom_from"
-                                render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Copiar Receta (BOM) desde:"
-                                        value={(field.value as string) || ""}
-                                        onChange={field.onChange}
-                                        options={[
-                                            { label: "--- No copiar / Sin cambios ---", value: "none" },
-                                            ...availableVariants
-                                                .filter(v => v.has_active_bom)
-                                                .map(v => ({
-                                                    label: `${v.variant_display_name || v.name} (${v.internal_code || v.code})`,
-                                                    value: v.id.toString()
-                                                }))
-                                        ]}
-                                        error={fieldState.error?.message}
-                                        hint="Elegir una variante origen con LdM configurada para replicarla en todas."
-                                        className="h-11 font-black"
-                                    />
-                                )}
-                            />
-                        </div>
-                    </form>
-                </Form>
-            </div>
+  return (
+    <>
+    {mounted && createPortal(
+      <form id="bulk-edit-form" onSubmit={(e) => { e.stopPropagation(); form.handleSubmit(onSubmit)(e) }} style={{ display: 'none' }} />,
+      document.body
+    )}
+    <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva">
+    <div className="flex flex-col h-full bg-card rounded-md border shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="px-5 pt-4 pb-1 bg-muted/5">
+          <div className="flex items-center gap-2 mb-3">
+            <Users className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[11px] font-black uppercase tracking-widest text-primary">
+              {selectedVariants.length} variantes seleccionadas
+            </span>
+          </div>
         </div>
-        </SkeletonShell>
-    )
+        <TabBar
+          value={activeTab}
+          onValueChange={setActiveTab}
+          items={[
+            { value: 'precios', label: 'Precios', icon: DollarSign },
+            { value: 'ldm', label: 'LDM', icon: Factory, badge: variantsWithBOM > 0 ? `${variantsWithBOM}/${selectedVariants.length}` : undefined },
+          ]}
+          className="flex-1"
+          contentClassName="flex flex-col p-0"
+        >
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+
+        {/* ── Tab: Precios ─────────────────────────────────── */}
+        <TabBarContent value="precios" className="mt-0">
+          <Form {...form}>
+            <div className="space-y-5">
+
+              <FormField
+                control={form.control}
+                name="price_inheritance_mode"
+                render={({ field }) => (
+                  <LabeledSelect
+                    label="Modo de Precio"
+                    value={String(field.value ?? 'none')}
+                    onChange={(val) => {
+                      if (hasUomPrices && val !== 'none' && val !== 'INHERIT') return
+                      field.onChange(val)
+                      if (val !== 'SURCHARGE') form.setValue('price_surcharge', undefined)
+                      if (val !== 'OVERRIDE') form.setValue('sale_price', undefined)
+                    }}
+                    options={priceOptions}
+                    disabled={hasUomPrices}
+                    hint={hasUomPrices ? "Bloqueado: el template tiene precios por UoM configurados" : undefined}
+                  />
+                )}
+              />
+
+              {currentMode === 'SURCHARGE' && (
+                <FormField
+                  control={form.control}
+                  name="price_surcharge"
+                  render={({ field, fieldState }) => (
+                    <LabeledInput
+                      label="Sobrecargo (Neto)"
+                      type="number"
+                      placeholder="0"
+                      error={fieldState.error?.message}
+                      className="h-10 font-bold bg-warning/5 border-warning/20"
+                      value={field.value !== undefined ? String(field.value) : ""}
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                    />
+                  )}
+                />
+              )}
+
+              <div className="grid grid-cols-3 gap-3">
+                <LabeledInput
+                  label="Precio Neto"
+                  type="number"
+                  step="1"
+                  value={showPreview ? String(Math.round(previewNet)) : ""}
+                  placeholder="Mantener"
+                  readOnly={currentMode !== 'OVERRIDE'}
+                  onChange={(e) => handleOverrideNetChange(e.target.value)}
+                  className={cn("h-10 font-bold text-right", currentMode !== 'OVERRIDE' && "bg-muted/30 cursor-default")}
+                />
+                <LabeledInput
+                  label={`IVA (${rate}%)`}
+                  type="number"
+                  value={showPreview ? (previewNet * (rate / 100)).toFixed(2) : ""}
+                  placeholder="—"
+                  readOnly
+                  className="h-10 font-medium text-right bg-muted/20 cursor-default text-muted-foreground"
+                />
+                <LabeledInput
+                  label="Precio Bruto"
+                  type="number"
+                  step="1"
+                  value={showPreview ? String(Math.round(previewNet * multiplier)) : ""}
+                  placeholder="Mantener"
+                  readOnly={currentMode !== 'OVERRIDE'}
+                  onChange={(e) => handleOverrideGrossChange(e.target.value)}
+                  className={cn("h-10 font-black text-right", currentMode !== 'OVERRIDE' && "bg-muted/30 cursor-default")}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="sale_uom"
+                render={({ field, fieldState }) => (
+                  <LabeledSelect
+                    label="Ud. Venta"
+                    value={String(field.value || "")}
+                    onChange={(val) => field.onChange(val)}
+                    options={[
+                      { label: "— Mantener actual —", value: "none" },
+                      ...uoms.map(u => ({ label: u.name, value: u.id.toString() })),
+                    ]}
+                    error={fieldState.error?.message}
+                    className={cn("h-10", currentMode !== 'OVERRIDE' && "bg-muted/30")}
+                    disabled={currentMode !== 'OVERRIDE'}
+                  />
+                )}
+              />
+
+              {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') &&
+                !!((templateData as unknown as Record<string, unknown>)?.discount_active) && (
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-[11px] font-bold text-warning-foreground">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
+                    El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado de estas variantes.
+                  </div>
+                )}
+
+            </div>
+          </Form>
+        </TabBarContent>
+
+        {/* ── Tab: LDM ─────────────────────────────────────── */}
+        <TabBarContent value="ldm" className="mt-0">
+          <div className="space-y-5">
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-widest text-foreground">
+                  Recetas de Producción
+                </h4>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {variantsWithBOM === selectedVariants.length
+                    ? `Todas las variantes tienen LDM configurada.`
+                    : variantsWithBOM > 0
+                      ? `${variantsWithBOM} de ${selectedVariants.length} variantes tienen LDM.`
+                      : `Ninguna variante tiene LDM configurada.`}
+                </p>
+              </div>
+              {variantsWithBOM === selectedVariants.length
+                ? <Chip intent="success">Todas configuradas</Chip>
+                : variantsWithBOM > 0
+                  ? <Chip intent="warning">Parcial</Chip>
+                  : <Chip intent="neutral">Sin configurar</Chip>}
+            </div>
+
+            {/* Create + clone to all */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-9 text-xs font-bold border-dashed"
+              onClick={() => setBomModalOpen(true)}
+            >
+              <PlusCircle className="h-3.5 w-3.5 mr-2" />
+              Crear Receta y Clonar a Todas
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center -mt-2">
+              Crea una receta nueva y la replica automáticamente al resto de la selección.
+            </p>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-[10px]">
+                <span className="bg-card px-2 text-muted-foreground font-bold uppercase tracking-widest">
+                  O clonar desde existente
+                </span>
+              </div>
+            </div>
+
+            {/* Clone source selector */}
+            {cloneSources.length <= 1 ? (
+              <div className="p-3 bg-muted/10 border rounded-md text-center">
+                <p className="text-[11px] text-muted-foreground">
+                  No hay fuentes disponibles para clonar.
+                  {!templateData?.has_active_bom && " El template padre tampoco tiene LDM configurada."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <LabeledSelect
+                  label="Origen a clonar"
+                  value={cloneSourceId}
+                  onChange={setCloneSourceId}
+                  options={cloneSources}
+                  className="h-10"
+                />
+                <Button
+                  type="button"
+                  className="w-full font-bold h-9"
+                  variant="secondary"
+                  disabled={cloneSourceId === 'none'}
+                  onClick={handleCloneBOM}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Clonar LDM a {selectedVariants.length} Variantes
+                </Button>
+              </div>
+            )}
+
+          </div>
+        </TabBarContent>
+          </div>
+        </TabBar>
+
+      {/* BOM create modal — anchored to first selected variant */}
+      <BOMDrawer
+        open={bomModalOpen}
+        onOpenChange={(open) => setBomModalOpen(open)}
+        product={anchorVariant}
+        onSuccess={handleNewBOMSuccess}
+      />
+    </div>
+    </SkeletonShell>
+    </>
+  )
 }

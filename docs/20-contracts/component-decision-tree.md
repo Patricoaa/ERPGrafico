@@ -45,8 +45,8 @@ graph TD
 ```
 
 - **Forma preferida:** `<DataCell.Action action="edit" onClick={…} />` — icono, tooltip y color salen del registry.
-- **Acciones específicas del módulo (no CRUD):** mismo componente, pasando `icon` + `title` propios — se conservan tamaño (h-7 w-7), tooltip (delay 400ms, paleta sidebar) y `CropFrame`.
-- **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?hub` CollapsibleSheet). Para ver el detalle de una entidad, `openEntity(label, id)` con `mode='view'` ([component-entity-drawers.md](./component-entity-drawers.md), ADR-0028; `?detail` quedó deprecado). Nunca uses `?id`, `?edit`, `?modal`, y reserva `?view` exclusivamente para el switch de viewMode.
+- **Acciones específicas del módulo (no CRUD):** mismo componente, pasando `icon` + `title` propios — se conservan tamaño (h-7 w-7), tooltip (delay 400ms, paleta sidebar).
+- **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?hub` CollapsibleSheet). Para ver el detalle de una entidad, `openEntity(label, id)` con `mode='view'` ([component-entity-drawers.md](./component-entity-drawers.md), ADR-0028; `?detail` quedó deprecado). Nunca uses `?id`, `?edit` para edición de entidades — `?selected` es el canónico (ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)). `?modal` está reservado para apertura de wizards de creación/import (ver [list-modal-edit-pattern.md §9](./list-modal-edit-pattern.md#9-parámetro-modal-para-wizards-de-creaciónimport)). Reserva `?view` exclusivamente para el switch de viewMode.
 - **Orden canónico (siempre):** `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden.
 - **`annul` vs `delete`:** `annul` para documentos transaccionales (factura, OV, pago — preserva el registro para auditoría); `delete` para masters/config (categoría, almacén — borra el registro). Ambas son destructivas.
 - **Confirmación destructiva obligatoria:** `annul` y `delete` SIEMPRE abren `ActionConfirmModal` con `variant="destructive"`. Nunca destruyen directo.
@@ -58,9 +58,10 @@ graph TD
     A[¿Qué necesitas mostrar?]
     A -->|Dinero o Divisa| B(MoneyDisplay)
     A -->|Estado de una entidad| C(StatusBadge)
-    A -->|Tag o etiqueta genérica| D[Badge de shadcn]
+    A -->|Tag o etiqueta genérica| D[Chip]
     A -->|Contenedor/Tarjeta simple| E[Card de shadcn]
     A -->|KPI / métrica / stat| H(StatCard)
+    A -->|Título de sección dentro de card o listado| I(SectionHeader)
     A -->|Sin resultados/Vacio| F(EmptyState)
     A -->|Reporte jerárquico contable| G(ReportTable)
 ```
@@ -76,6 +77,7 @@ graph TD
 ```
 
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
+- **`SectionHeader`**: **Obligatorio** para títulos de sección dentro de cards y listados. 2 variantes (`card` y `list`). [Ver contrato completo](./component-section-header.md).
 - **`StatCard`**: **Obligatorio** para tarjetas de métrica/resumen con label + valor. 3 variantes (default, compact, minimal), 7 acentos, trend, href, onClick. [Ver contrato completo](./component-statcard.md).
 - **`Card` de shadcn**: Contenedor estándar para contenido arbitrario (formularios, charts, tablas). [Ver documentación oficial (component-card.md)](./component-card.md).
 

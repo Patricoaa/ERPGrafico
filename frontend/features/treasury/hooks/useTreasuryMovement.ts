@@ -5,9 +5,10 @@ export function useTreasuryMovement(id: number | null) {
   return useQuery({
     queryKey: id ? ['treasury', 'movement', id] : ['treasury', 'movement', 'noop'],
     queryFn: async () => {
-      const res = await api.get(`/treasury/cash-movements/${id}/`)
+      const res = await api.get(`/treasury/movements/${id}/`)
       return res.data
     },
+    staleTime: 2 * 60 * 1000,
     enabled: !!id,
   })
 }

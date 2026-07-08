@@ -4,7 +4,6 @@ import { BaseModal, DataCell, DataTable } from '@/components/shared'
 import { formatCurrency } from "@/lib/money"
 import { Landmark, User, Hash, FileText } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import type { TransactionData } from "@/types/transactions"
 import type { ColumnDef } from "@tanstack/react-table"
 
 interface Payment {
@@ -22,7 +21,7 @@ interface Payment {
 interface PaymentHistoryModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    order: TransactionData
+    order: Record<string, unknown>
 }
 
 export function PaymentHistoryModal({
@@ -30,7 +29,7 @@ export function PaymentHistoryModal({
     onOpenChange,
     order
 }: PaymentHistoryModalProps) {
-    const payments = (order as any).serialized_payments || (order as any).related_documents?.payments || []
+    const orderRec = order as Record<string, unknown>; const payments = (orderRec['serialized_payments'] ?? (orderRec['related_documents'] as Record<string, unknown> | undefined)?.['payments'] ?? []) as Payment[]
 
     const columns: ColumnDef<Payment>[] = [
         {
@@ -110,7 +109,7 @@ export function PaymentHistoryModal({
                 />
 
                 {payments.length > 0 && (
-                    <div className="mt-4 p-4 rounded-lg bg-primary/5 flex justify-between items-center border border-primary/10">
+                    <div className="mt-4 p-4 rounded-md bg-primary/5 flex justify-between items-center border border-primary/10">
                         <span className="text-sm font-medium">Total Pagado:</span>
                         <span className="text-lg font-bold text-primary">
                             {formatCurrency(payments.reduce((acc: number, p: Payment) => acc + parseFloat(String(p.amount)), 0))}

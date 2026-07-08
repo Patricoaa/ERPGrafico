@@ -1,15 +1,23 @@
 ---
 layer: 30-playbooks
 doc: add-settings-panel
+task: "Add settings panel (page-level autosave)"
+triggers: ["settings panel", "settings page", "configuration page", "autosave settings"]
 status: active
 owner: frontend-team
 last_review: 2026-05-28
 preconditions:
   - autosave-contract.md
   - component-form-patterns.md §8
+validation:
+  - npm run type-check
+  - npm run lint
+forbidden:
+  - creating settings without autosave pattern
+  - non-singleton settings
 ---
 
-# Playbook: agregar un panel de configuración (settings page-level)
+# Playbook — Agregar un panel de configuración (settings page-level)
 
 Guía para añadir o migrar un panel de configuración singleton que sigue el patrón autosave centralizado.
 

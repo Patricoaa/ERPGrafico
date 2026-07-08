@@ -2,7 +2,7 @@ from django.db import migrations
 
 
 def create_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("""
         CREATE INDEX CONCURRENTLY IF NOT EXISTS production_workorder_fts_gin
@@ -17,7 +17,7 @@ def create_gin_index(apps, schema_editor):
 
 
 def drop_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("DROP INDEX IF EXISTS production_workorder_fts_gin;")
 
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
-        ('production', '0002_initial'),
+        ("production", "0002_initial"),
     ]
 
     operations = [

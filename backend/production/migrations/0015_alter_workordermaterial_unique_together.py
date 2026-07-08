@@ -15,9 +15,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('production', '0014_remove_specifications_field'),
+        ("production", "0014_remove_specifications_field"),
     ]
 
     operations = [
@@ -25,7 +24,7 @@ class Migration(migrations.Migration):
             database_operations=[],
             state_operations=[
                 migrations.AlterUniqueTogether(
-                    name='workordermaterial',
+                    name="workordermaterial",
                     unique_together=set(),
                 ),
             ],

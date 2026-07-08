@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { CompanySettings, CompanySettingsUpdatePayload } from '../types'
+import { useRealtime } from '@/features/realtime'
 
 export const COMPANY_SETTINGS_QUERY_KEY = ['settings-company']
 
@@ -9,7 +11,7 @@ interface UseCompanySettingsReturn {
     settings: CompanySettings | undefined
     isLoading: boolean
     saving: boolean
-    updateSettings: (payload: CompanySettingsUpdatePayload) => Promise<void>
+    updateSettings: (payload: CompanySettingsUpdatePayload) => Promise<CompanySettings>
     refetch: () => Promise<unknown>
 }
 
@@ -18,6 +20,7 @@ interface UseCompanySettingsReturn {
  */
 export function useCompanySettings(): UseCompanySettingsReturn {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: settings, refetch, isLoading } = useQuery({
         queryKey: COMPANY_SETTINGS_QUERY_KEY,
@@ -30,16 +33,16 @@ export function useCompanySettings(): UseCompanySettingsReturn {
             return settingsApi.updateCompanySettings(payload)
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: COMPANY_SETTINGS_QUERY_KEY })
+            markLocalMutation()
+            toast.success('Configuración de empresa aplicada')
+            invalidateCrossFeature(queryClient, [COMPANY_SETTINGS_QUERY_KEY])
         },
         onError: () => {
             toast.error('Error al guardar cambios de empresa')
         }
     })
 
-    const updateSettings = async (payload: CompanySettingsUpdatePayload) => {
-        await updateMutation.mutateAsync(payload)
-    }
+    const updateSettings = updateMutation.mutateAsync
 
     return {
         settings,

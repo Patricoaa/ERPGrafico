@@ -4,10 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/shared"
-import { AlertCircle, Edit, CheckCircle2, Settings2 } from "lucide-react"
+import { AlertCircle, Edit, CheckCircle2, Settings2, Zap, Package } from "lucide-react"
 import { AdvancedManufacturingDrawer } from "../forms/AdvancedManufacturingDrawer"
 
-import { SaleOrderLine } from "../../types"
+import { type SaleOrderLine } from "../../types"
 
 type ManufacturableLine = SaleOrderLine & { originalIndex: number }
 
@@ -19,11 +19,18 @@ interface Step2_ManufacturingDetailsProps {
 export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_ManufacturingDetailsProps) {
     const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null)
 
-    // Filter to show only items that require advanced manufacturing
+    // Determine manufacturing sub-type
+    const getMfgSubType = (line: SaleOrderLine): 'SIMPLE' | 'EXPRESS' | 'ADVANCED' => {
+        if (line.requires_advanced_manufacturing) return 'ADVANCED'
+        if (line.mfg_auto_finalize) return 'EXPRESS'
+        return 'SIMPLE'
+    }
+
+    // Filter to show all manufacturable items
     const manufacturableItems: ManufacturableLine[] = orderLines
         .map((line, index) => ({ ...line, originalIndex: index }))
         .filter(line =>
-            line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
+            line.product_type === 'MANUFACTURABLE'
         ) as ManufacturableLine[]
 
     const handleEditClick = (index: number) => {
@@ -45,7 +52,8 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
         setEditingLineIndex(null)
     }
 
-    const editingLine = editingLineIndex !== null ? orderLines[editingLineIndex] : null
+    const editingLineRaw = editingLineIndex !== null ? orderLines[editingLineIndex] : null
+    const editingLine = editingLineRaw && getMfgSubType(editingLineRaw) === 'ADVANCED' ? editingLineRaw : null
 
     return (
         <div className="space-y-6">
@@ -92,19 +100,65 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                             ),
                         },
                         {
+                            header: "Tipo",
+                            id: "subtype",
+                            cell: ({ row }) => {
+                                const subtype = getMfgSubType(row.original)
+                                if (subtype === 'ADVANCED') {
+                                    return (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-sm w-fit">
+                                            <Settings2 className="h-3 w-3" />
+                                            Avanzada
+                                        </div>
+                                    )
+                                }
+                                if (subtype === 'EXPRESS') {
+                                    return (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-info bg-info/10 border border-info/20 px-2 py-1 rounded-sm w-fit">
+                                            <Zap className="h-3 w-3" />
+                                            Express
+                                        </div>
+                                    )
+                                }
+                                return (
+                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-muted-foreground bg-muted/30 border border-muted-foreground/20 px-2 py-1 rounded-sm w-fit">
+                                        <Package className="h-3 w-3" />
+                                        Simple
+                                    </div>
+                                )
+                            },
+                        },
+                        {
                             header: "Estado",
                             id: "status",
                             cell: ({ row }) => {
-                                const hasConfig = !!row.original.manufacturing_data
-                                return hasConfig ? (
+                                const subtype = getMfgSubType(row.original)
+                                if (subtype === 'ADVANCED') {
+                                    const hasConfig = !!row.original.manufacturing_data
+                                    return hasConfig ? (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-success bg-success/10 border border-success/20 px-2 py-1 rounded-sm w-fit">
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            Configurado
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-warning bg-warning/10 border border-warning/20 px-2 py-1 rounded-sm w-fit">
+                                            <AlertCircle className="h-3 w-3" />
+                                            Pendiente
+                                        </div>
+                                    )
+                                }
+                                if (subtype === 'EXPRESS') {
+                                    return (
+                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-info bg-info/10 border border-info/20 px-2 py-1 rounded-sm w-fit">
+                                            <Zap className="h-3 w-3" />
+                                            Auto-Finalizado
+                                        </div>
+                                    )
+                                }
+                                return (
                                     <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-success bg-success/10 border border-success/20 px-2 py-1 rounded-sm w-fit">
                                         <CheckCircle2 className="h-3 w-3" />
-                                        Configurado
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-warning bg-warning/10 border border-warning/20 px-2 py-1 rounded-sm w-fit">
-                                        <AlertCircle className="h-3 w-3" />
-                                        Pendiente
+                                        Disponible
                                     </div>
                                 )
                             },
@@ -113,6 +167,8 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                             header: "Acciones",
                             id: "actions",
                             cell: ({ row }) => {
+                                const subtype = getMfgSubType(row.original)
+                                if (subtype !== 'ADVANCED') return null
                                 const hasConfig = !!row.original.manufacturing_data
                                 return (
                                     <Button
@@ -121,7 +177,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                         onClick={() => handleEditClick(row.original.originalIndex)}
                                         className={cn(
                                             "h-7 text-[10px] font-bold uppercase tracking-tight",
-                                            !hasConfig && "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                                            !hasConfig && "bg-primary hover:bg-primary/90 text-primary-foreground shadow-card"
                                         )}
                                     >
                                         {hasConfig ? (
@@ -139,7 +195,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                     data={manufacturableItems}
                     variant="embedded"
                     hidePagination
-                    emptyState={{ description: "No hay productos fabricables pendientes de configuración" }}
+                    emptyState={{ description: "No hay productos fabricables en esta orden" }}
                 />
             </div>
 
@@ -149,7 +205,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                     onOpenChange={(open) => !open && setEditingLineIndex(null)}
                     product={{
                         ...editingLine,
-                        id: editingLine.id!,
+                        id: editingLine.id as number,
                         // Ensure required flags are present for the dialog logic
                         requires_advanced_manufacturing: true,
                         mfg_enable_prepress: editingLine.mfg_enable_prepress ?? true,

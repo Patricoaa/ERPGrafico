@@ -1,4 +1,5 @@
 import os
+
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -13,9 +14,9 @@ for c in Contact.objects.all():
         emp = c.employees.exists()
     except Exception as e:
         emp = f"Error: {e}"
-    
+
     try:
-        usr = hasattr(c, 'system_user')
+        usr = hasattr(c, "system_user")
     except Exception as e:
         usr = f"Error: {e}"
 

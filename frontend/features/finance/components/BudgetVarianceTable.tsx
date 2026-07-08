@@ -1,4 +1,5 @@
 "use client"
+import { Button } from "@/components/ui/button"
 import { useState } from "react";
 
 import {
@@ -98,12 +99,12 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                 <TableCell className="p-2 min-w-[280px]">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {hasChildren ? (
-                            <button
+                            <Button
                                 onClick={() => setExpanded(!expanded)}
                                 className="mr-2 h-5 w-5 flex items-center justify-center hover:bg-accent rounded transition-colors"
                             >
                                 {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                            </button>
+                            </Button>
                         ) : (
                             <div className="w-7" />
                         )}
@@ -164,21 +165,21 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
 
     return (
         <SkeletonShell isLoading={loading ?? false} ariaLabel="Cargando variación presupuestal">
-            <div className="relative overflow-x-auto border rounded-sm shadow-sm bg-card">
+            <div className="relative overflow-x-auto border rounded-sm shadow-card bg-card">
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow className="hover:bg-transparent border-b-2">
-                            <TableHead className="w-[300px] font-heading text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
+                            <TableHead className="w-[300px]  text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
 
                             {/* Month Group */}
-                            <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l">Real Mes</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase border-r/50">Ppto Mes</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase">Var Mes</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase text-primary border-l">Real Mes</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase border-r/50">Ppto Mes</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase">Var Mes</TableHead>
 
                             {/* YTD Group */}
-                            <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
-                            <TableHead className="text-right font-heading text-[10px] uppercase bg-muted/20">Var YTD</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
+                            <TableHead className="text-right  text-[10px] uppercase bg-muted/20">Var YTD</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

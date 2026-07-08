@@ -7,12 +7,15 @@ so we extract the JWT from the query string: ws://host/ws/path/?token=<jwt>
 This is the industry-standard approach used by Discord, Slack, Firebase, etc.
 Over WSS (TLS), the query string is encrypted in transit.
 """
-from channels.middleware import BaseMiddleware
+
+from urllib.parse import parse_qs
+
 from channels.db import database_sync_to_async
+from channels.middleware import BaseMiddleware
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import AccessToken
+
 from core.models import User
-from urllib.parse import parse_qs
 
 
 class JWTAuthMiddleware(BaseMiddleware):

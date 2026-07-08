@@ -1,7 +1,9 @@
 "use client"
 
+import { Button } from "@/components/ui/button"
 import { useEffect, useRef, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import {
     ArrowRight,
     CornerDownLeft,
@@ -51,9 +53,12 @@ export function UniversalSearch() {
         return () => document.removeEventListener("keydown", handleKeyDown)
     }, [])
 
+    if (open && query !== "") {
+        setQuery("")
+    }
+
     useEffect(() => {
         if (open) {
-            setQuery("")
             requestAnimationFrame(() => {
                 setActiveIndex(0)
                 setSelectedType(null)
@@ -113,26 +118,24 @@ export function UniversalSearch() {
     return (
         <>
             {/* Wider Trigger Button */}
-            <button
+            <Button
+                variant="ghost"
+                size="icon"
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
-                className="group relative flex w-10 items-center gap-1.5 rounded-xl border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:w-full sm:max-w-[600px]"
+                className="group rounded-md text-foreground/50 transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             >
-                <Search className="size-3.5 transition-colors group-hover:text-foreground" aria-hidden />
-                <span className="hidden flex-1 text-left sm:inline">Busqueda global...</span>
-                <span className="pointer-events-none hidden select-none items-center gap-1 font-mono text-[9px] font-medium text-muted-foreground/60 sm:flex">
-                    <span>ctrl</span>+<span>k</span>
-                </span>
-            </button>
+                <Search className="h-5 w-5 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
+            </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogPortal>
                     <DialogOverlay className="bg-overlay/40 backdrop-blur-md" />
                     <DialogContent
-                        size="xl"
+                        size="md"
                         showCloseButton={false}
-                        className="gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-3xl dark:bg-overlay/95"
+                        className="gap-0 overflow-hidden border-none p-0 shadow-overlay backdrop-blur-3xl dark:bg-overlay/95"
                         aria-label="Búsqueda universal"
                     >
                         <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
@@ -145,8 +148,8 @@ export function UniversalSearch() {
                         )}
 
                         {/* Search Input Area */}
-                        <div className="relative flex items-center border-b border-border px-6 py-8">
-                            <Search className="mr-4 size-8 shrink-0 text-muted-foreground/60" aria-hidden />
+                        <div className="relative flex items-center border-b border-border px-4 py-3">
+                            <Search className="mr-2 size-4 shrink-0 text-muted-foreground/40" aria-hidden />
                             <input
                                 ref={inputRef}
                                 role="combobox"
@@ -156,59 +159,61 @@ export function UniversalSearch() {
                                 onChange={(e) => setQuery(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Busca por número, nombre, RUT o código..."
-                                className="flex-1 bg-transparent text-3xl font-light outline-none placeholder:text-muted-foreground/30"
+                                className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/30"
                                 autoComplete="off"
                                 spellCheck={false}
                             />
                             {isLoading ? (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                                    <Loader2 className="size-6 animate-spin text-primary" />
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                                    <Loader2 className="size-4 animate-spin text-primary" />
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-3">
-                                    <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-accent">
-                                        <X className="size-6 text-muted-foreground" />
-                                    </button>
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" onClick={() => setOpen(false)} className="rounded-md p-1.5 hover:bg-accent transition-colors">
+                                        <X className="size-4 text-muted-foreground/60" />
+                                    </Button>
                                 </div>
                             )}
                         </div>
 
                         {/* Segmenters (Tabs) - Horizontal Scrollable */}
                         {results.length > 0 && (
-                            <div className="flex items-center border-b border-border bg-overlay/20 px-6 py-3">
+                            <div className="flex items-center border-b border-border bg-overlay/20 px-4 py-2">
                                 <div className="flex w-full items-center gap-2 overflow-x-auto flex-nowrap scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
-                                    <button
+                                    <Button
+                                        variant={!selectedType ? "default" : "ghost"}
                                         onClick={() => setSelectedType(null)}
                                         className={cn(
-                                            "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
+                                            "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
                                             !selectedType
-                                                ? "bg-primary text-primary-foreground "
+                                                ? ""
                                                 : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                         )}
                                     >
                                         Todos
-                                    </button>
+                                    </Button>
                                     {entityTypes.map((type) => (
-                                        <button
+                                        <Button
                                             key={type.label}
+                                            variant={selectedType === type.label ? "default" : "ghost"}
                                             onClick={() => setSelectedType(type.label)}
                                             className={cn(
-                                                "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
+                                                "flex shrink-0 items-center gap-2 rounded-sm px-4 py-2 text-[10px] uppercase tracking-widest transition-all",
                                                 selectedType === type.label
-                                                    ? "bg-primary text-primary-foreground "
+                                                    ? ""
                                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                             )}
                                         >
                                             {type.icon && <DynamicIcon name={type.icon} className="size-3" />}
                                             {type.title_plural}
-                                        </button>
+                                        </Button>
                                     ))}
                                 </div>
                             </div>
                         )}
 
                         {/* Results List - Fixed Height for 5 items (5 * 64px = 320px) */}
-                        <ScrollArea className="h-[320px]">
+                        <ScrollArea className="h-[300px]">
                             <ul
                                 id="search-results"
                                 role="listbox"
@@ -217,7 +222,7 @@ export function UniversalSearch() {
                                 {isLoading && (
                                     <>
                                         {[...Array(5)].map((_, i) => (
-                                            <li key={i} className="flex items-center gap-4 px-6 py-4">
+                                            <li key={i} className="flex items-center gap-4 px-4 py-3">
                                                 <Skeleton className="size-10 rounded-full" />
                                                 <div className="flex-1 space-y-2">
                                                     <Skeleton className="h-4 w-[40%]" />
@@ -230,32 +235,32 @@ export function UniversalSearch() {
                                 )}
 
                                 {!isLoading && filteredResults.length === 0 && debouncedQuery.length >= 2 && (
-                                    <li className="flex h-full flex-col items-center justify-center py-20 text-center">
-                                        <div className="mb-4 rounded-full bg-muted/20 p-6">
-                                            <Search className="size-10 text-muted-foreground/30" />
+                                    <li className="flex h-full flex-col items-center justify-center py-12 text-center">
+                                        <div className="mb-3 rounded-full bg-muted/20 p-4">
+                                            <Search className="size-6 text-muted-foreground/30" />
                                         </div>
-                                        <p className="text-base font-medium text-foreground">
+                                        <p className="text-sm font-medium text-foreground">
                                             No se encontraron coincidencias
                                         </p>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-xs text-muted-foreground">
                                             Intenta con términos más generales
                                         </p>
                                     </li>
                                 )}
 
                                 {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
-                                    <li className="flex flex-col items-center justify-center py-24 text-center">
-                                        <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-2xl overflow-hidden">
-                                            <div className="absolute inset-0 animate-pulse rounded-2xl bg-primary/5 blur-xl" />
+                                    <li className="flex flex-col items-center justify-center py-16 text-center">
+                                        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-primary/5 shadow-floating overflow-hidden">
+                                            <div className="absolute inset-0 animate-pulse rounded-md bg-primary/5 blur-lg" />
                                             {logo ? (
-                                                <img src={logo} alt="Logo" className="relative h-full w-full object-cover" />
+                                                <Image src={logo} alt="Logo" fill className="object-cover" />
                                             ) : (
-                                                <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-4xl font-black tracking-tighter text-transparent">
+                                                <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-2xl font-black tracking-tighter text-transparent">
                                                     {getInitials()}
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="max-w-[300px] text-sm text-muted-foreground">
+                                        <p className="max-w-[280px] text-xs text-muted-foreground">
                                             Ingresa un número de documento, nombre de cliente o código de producto para comenzar.
                                         </p>
                                     </li>
@@ -304,7 +309,7 @@ export function UniversalSearch() {
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground/40 sm:block">
+                                            <span className="hidden text-[10px] uppercase tracking-widest text-muted-foreground/40 sm:block">
                                                 {result.title}
                                             </span>
                                             <ArrowRight className={cn(
@@ -318,7 +323,7 @@ export function UniversalSearch() {
                         </ScrollArea>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between border-t border-border bg-overlay/40 px-4 py-3 text-[10px]">
+                        <div className="flex items-center justify-between border-t border-border bg-overlay/40 px-4 py-2 text-[10px]">
                             <div className="flex items-center gap-4 text-muted-foreground">
                                 <span className="flex items-center gap-1.5">
                                     <kbd className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium text-foreground">↑↓</kbd>
@@ -338,7 +343,7 @@ export function UniversalSearch() {
 
                             {filteredResults.length > 0 && (
                                 <div className="text-muted-foreground">
-                                    <span className="font-medium text-foreground">{filteredResults.length}</span> resultados encontrados
+                                    <span className="text-foreground">{filteredResults.length}</span> resultados encontrados
                                 </div>
                             )}
                         </div>

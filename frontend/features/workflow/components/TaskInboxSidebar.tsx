@@ -3,7 +3,7 @@
 import { Inbox } from "lucide-react"
 import { CollapsibleSheet, PanelHeader } from "@/components/shared"
 import { TaskInbox } from "@/features/workflow/components/TaskInbox"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useState } from "react"
 
 interface TaskInboxSidebarProps {
     isOpen: boolean
@@ -11,7 +11,7 @@ interface TaskInboxSidebarProps {
 }
 
 export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
-    const { isHubEffectivelyOpen } = useHubPanel()
+    const [taskCount, setTaskCount] = useState(0)
 
     return (
         <CollapsibleSheet
@@ -23,6 +23,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             variant="global"
             fullWidth={320}
             priority={0}
+            badge={taskCount}
         >
             {/* Header */}
             <div className="border-b shrink-0 px-6 pt-6 pb-4">
@@ -36,10 +37,9 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             </div>
 
             {/* Task Inbox Content */}
-            <div className="flex-1 overflow-y-auto p-4 ">
-                {isOpen && <TaskInbox />}
+            <div className="flex-1 overflow-y-auto py-4">
+                {isOpen && <TaskInbox onCountChange={(c) => setTaskCount(c.total)} />}
             </div>
         </CollapsibleSheet>
     )
 }
-

@@ -4,26 +4,25 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0001_initial'),
+        ("core", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='companysettings',
-            name='primary_color',
+            model_name="companysettings",
+            name="primary_color",
         ),
         migrations.RemoveField(
-            model_name='companysettings',
-            name='secondary_color',
+            model_name="companysettings",
+            name="secondary_color",
         ),
         migrations.RemoveField(
-            model_name='historicalcompanysettings',
-            name='primary_color',
+            model_name="historicalcompanysettings",
+            name="primary_color",
         ),
         migrations.RemoveField(
-            model_name='historicalcompanysettings',
-            name='secondary_color',
+            model_name="historicalcompanysettings",
+            name="secondary_color",
         ),
     ]

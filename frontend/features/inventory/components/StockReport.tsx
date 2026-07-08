@@ -2,34 +2,67 @@
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
-import { BaseModal, DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
-import { ArrowRightLeft, History } from "lucide-react"
+import { ArrowRightLeft } from "lucide-react"
+import { useQueryState, parseAsString } from 'nuqs'
 
-import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
-
-import { CancelButton, SubmitButton, FormFooter, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { stockReportSearchDef } from "@/features/inventory/searchDef"
-import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
-import { DataCell, createActionsColumn } from '@/components/shared'
-import { PageContainer } from "@/components/shared"
+import { BaseModal, DataCell, DataTableView, EntityCard, DataTableColumnHeader, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
+import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
+import { stockReportSearchDef } from "@/features/inventory/searchDef"
+import { stockReportSegDef } from "@/features/inventory/segmentationDef"
+import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
+import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
+import { StockReportCategoryFilter, StockReportWarehouseFilter } from './stockReportFilters'
+
+interface StockReportItem {
+    id: number | string
+    name?: string
+    code?: string
+    internal_code?: string
+    category_id?: number | string
+    category_name?: string
+    stock_qty?: number | string
+    qty_reserved?: number | string
+    qty_available?: number | string
+    uom_name?: string
+    unit_cost?: number | string
+    total_value?: number | string
+}
 
 export function StockReport() {
-    const { report, isLoading, refetch } = useStockReport()
-    const { filters: smartFilters, isFiltered } = useSmartSearch(stockReportSearchDef)
-    const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
-    const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
+    const [categoryValue, setCategoryValue] = useQueryState('category', parseAsString)
+    const [warehouseId, setWarehouseId] = useQueryState('warehouse_id', parseAsString)
+
+    const { report, isLoading, refetch } = useStockReport(warehouseId)
+    const { filters: smartFilters, isFiltered: smartIsFiltered, clearAll: smartClearAll } = useSmartSearch(stockReportSearchDef)
+    const { filters: segFilters, isFiltered: segIsFiltered, clearAll: segClearAll } = useSegmentation(stockReportSegDef)
+    const [adjustingProduct, setAdjustingProduct] = useState<StockReportItem | null>(null)
+    const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
 
-    const filteredReport = useMemo(() => {
-        if (!smartFilters || Object.keys(smartFilters).length === 0) return report;
+    const stockReportActionsCtx: StockReportActionsCtx = {
+        onAdjust: (product) => setAdjustingProduct(product as StockReportItem | null),
+        onHistory: (product) => setInsightsProduct(product as StockReportItem | null),
+    }
 
-        return report.filter((item: any) => {
-            // Text search (Product/SKU/Code)
+    const isFiltered = smartIsFiltered || segIsFiltered || categoryValue !== null || warehouseId !== null
+
+    const clearAll = async () => {
+        await smartClearAll()
+        await segClearAll()
+        await setCategoryValue(null)
+        await setWarehouseId(null)
+    }
+
+    const filteredReport = (() => {
+        const items = report as unknown as StockReportItem[]
+        if (!isFiltered) return items;
+
+        return items.filter((item: StockReportItem) => {
+            // Text search (Product/SKU)
             if (smartFilters.search) {
                 const search = String(smartFilters.search).toLowerCase();
                 const matchesSearch =
@@ -40,16 +73,47 @@ export function StockReport() {
             }
 
             // Category filter
-            if (smartFilters.category_name) {
-                const cat = String(smartFilters.category_name).toLowerCase();
-                if (!item.category_name?.toLowerCase().includes(cat)) return false;
+            if (categoryValue) {
+                if (String(item.category_id) !== categoryValue) return false;
+            }
+
+            // Stock qty range
+            if (segFilters.stock_qty_from) {
+                if (Number(item.stock_qty) < Number(segFilters.stock_qty_from)) return false;
+            }
+            if (segFilters.stock_qty_to) {
+                if (Number(item.stock_qty) > Number(segFilters.stock_qty_to)) return false;
+            }
+
+            // Available qty range
+            if (segFilters.qty_available_from) {
+                if (Number(item.qty_available) < Number(segFilters.qty_available_from)) return false;
+            }
+            if (segFilters.qty_available_to) {
+                if (Number(item.qty_available) > Number(segFilters.qty_available_to)) return false;
+            }
+
+            // Reserved qty range
+            if (segFilters.qty_reserved_from) {
+                if (Number(item.qty_reserved) < Number(segFilters.qty_reserved_from)) return false;
+            }
+            if (segFilters.qty_reserved_to) {
+                if (Number(item.qty_reserved) > Number(segFilters.qty_reserved_to)) return false;
+            }
+
+            // Valuation range
+            if (segFilters.total_value_from) {
+                if (Number(item.total_value) < Number(segFilters.total_value_from)) return false;
+            }
+            if (segFilters.total_value_to) {
+                if (Number(item.total_value) > Number(segFilters.total_value_to)) return false;
             }
 
             return true;
         });
-    }, [report, smartFilters]);
+    })();
 
-    const columns = useMemo<ColumnDef<any>[]>(() => [
+    const columns = useMemo<ColumnDef<StockReportItem>[]>(() => [
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
@@ -141,7 +205,7 @@ export function StockReport() {
                 const item = row.original;
                 return (
                     <div className="flex flex-col items-center w-full">
-                        <DataCell.Currency value={item.total_value} className="text-[13px] text-primary" />
+                        <DataCell.Currency value={item.total_value} className="text-sm text-primary" />
                         <DataCell.Secondary className="text-[9px] opacity-40 uppercase tracking-tighter">
                             {formatCurrency(item.unit_cost)} c/{item.uom_name}
                         </DataCell.Secondary>
@@ -150,26 +214,31 @@ export function StockReport() {
             },
         },
 
-        createActionsColumn<any>({
-            renderActions: (item) => (
-                <>
-                    <DataCell.Action icon={ArrowRightLeft} title="Ajustar Stock" onClick={() => setAdjustingProduct(item)} />
-                    <DataCell.Action icon={History} title="Ver Historial" onClick={() => setInsightsProduct(item)} />
-                </>
-            ),
-        }),
-    ], [setAdjustingProduct, setInsightsProduct])
+        stockReportActions.column(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
+    ], [setAdjustingProduct, setInsightsProduct, stockReportActionsCtx])
 
     return (
-        <PageContainer className="space-y-6 h-full flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="inventory.stockreport"
                     columns={columns}
                     data={filteredReport}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto, SKU o categoría..." className="w-full" />}
-                    useAdvancedFilter={true}
+                    smartSearch={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto o SKU..." className="w-full" />}
+                    segmentation={
+                        <SegmentationBar def={{
+                            ...stockReportSegDef,
+                            segments: [
+                                ...stockReportSegDef.segments,
+                                { key: 'category', label: 'Categoría', type: 'custom' as const, render: () => <StockReportCategoryFilter /> },
+                                { key: 'warehouse', label: 'Bodega', type: 'custom' as const, render: () => <StockReportWarehouseFilter /> },
+                            ],
+                        }} />
+                    }
+                    showReset={isFiltered}
+                    onReset={clearAll}
                     defaultPageSize={50}
                     isFiltered={isFiltered}
                     emptyState={{
@@ -177,6 +246,19 @@ export function StockReport() {
                         title: "Sin productos para reportar",
                         description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
                     }}
+                    renderCard={(item: StockReportItem) => (
+                        <EntityCard key={item.id}>
+                            <EntityCard.Header
+                                title={item.name}
+                                subtitle={item.category_name}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Stock" value={`${item.stock_qty ?? 0} ${item.uom_name ?? ''}`} />
+                                <EntityCard.Field label="Disponible" value={`${item.qty_available ?? 0} ${item.uom_name ?? ''}`} />
+                                <EntityCard.Field label="Valorización" value={<DataCell.Currency value={item.total_value} />} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 
@@ -223,9 +305,9 @@ export function StockReport() {
             <ProductInsightsModal
                 open={!!insightsProduct}
                 onOpenChange={(open) => !open && setInsightsProduct(null)}
-                productId={insightsProduct?.id}
-                productName={insightsProduct?.name}
+                productId={(insightsProduct?.id as number) ?? null}
+                productName={insightsProduct?.name ?? null}
             />
-        </PageContainer>
+        </div>
     )
 }

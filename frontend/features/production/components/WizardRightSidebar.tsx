@@ -31,7 +31,7 @@ export function WizardRightSidebar({
     productName,
     stageData,
 }: WizardRightSidebarProps) {
-    const { comments, addComment, isAdding } = useWorkOrderComments(order.id)
+    const { comments, addComment } = useWorkOrderComments(order.id)
     
     // Map backend comments to the format expected by CommentSystem
     const mappedComments = comments.map(c => ({
@@ -61,7 +61,7 @@ export function WizardRightSidebar({
                         <AccordionContent className="pt-2">
                             <div className="space-y-3">
                                 {order?.prepress_archive && (
-                                    <div className="bg-primary/10/50 border border-primary/20 rounded-lg p-3 space-y-2">
+                                    <div className="bg-primary/10/50 border border-primary/20 rounded-md p-3 space-y-2">
                                         <p className="font-bold text-[10px] uppercase text-primary flex items-center gap-1.5">
                                             <FileText className="h-3 w-3" />
                                             Archivo de Diseño
@@ -78,7 +78,7 @@ export function WizardRightSidebar({
                                 )}
                                 {techSpecs.length > 0 ? techSpecs.map((spec, i) => (
                                     <div key={i} className={cn(
-                                        "rounded-lg border p-3 space-y-1",
+                                        "rounded-md border p-3 space-y-1",
                                         spec.label === "Diseño Requerido" && spec.value === "SÍ" ? "bg-primary/10/50 border-primary/20" : "bg-background"
                                     )}>
                                         <p className={cn(
@@ -106,7 +106,7 @@ export function WizardRightSidebar({
                             Información General
                         </AccordionTrigger>
                         <AccordionContent className="pt-2">
-                            <div className="bg-background rounded-lg border divide-y overflow-hidden">
+                            <div className="bg-background rounded-md border divide-y overflow-hidden">
                                 <div className="p-3 space-y-1">
                                     <p className="text-sm font-medium leading-tight">{productName}</p>
                                     {order?.product_description && (

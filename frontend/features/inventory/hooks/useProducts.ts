@@ -2,8 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { inventoryApi } from '../api/inventoryApi'
 import { useRealtime } from '@/features/realtime'
-import type { ProductFilters, ProductUpdatePayload } from '../types'
+import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
+import type { Page } from '@/lib/pagination'
 import { BOMS_QUERY_KEY, PRODUCTS_KEYS, PRODUCTS_QUERY_KEY } from './queryKeys'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 
 // Re-export for backward compatibility with external consumers that still
 // import the flat constant directly (production/useBOMs, usePricingRules).
@@ -11,24 +13,32 @@ export { PRODUCTS_QUERY_KEY, PRODUCTS_KEYS }
 
 interface UseProductsProps {
     filters?: ProductFilters
+    initialData?: Page<Product>
+    page?: number
+    page_size?: number
 }
 
-export function useProducts({ filters }: UseProductsProps = {}) {
+export function useProducts({ filters, initialData, page = 1, page_size = 50 }: UseProductsProps = {}) {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const { data: products, isLoading, refetch } = useQuery({
-        queryKey: PRODUCTS_KEYS.list(filters),
-        queryFn: () => inventoryApi.getProducts(filters),
+    const activeFilters = { ...filters, page, page_size }
+
+    const query = useQuery({
+        queryKey: PRODUCTS_KEYS.list(activeFilters),
+        queryFn: () => inventoryApi.getProducts(activeFilters),
+        staleTime: 5 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const products = query.data?.results ?? []
+    const showSkeleton = query.isLoading && !products.length
+    const isRefetching = query.isFetching && !showSkeleton
+    const refetch = query.refetch
+
     const invalidateProductsAndBoms = () => {
-        // Cover both list AND detail queries — invalidating `PRODUCTS_KEYS.all`
-        // hits every descendant (list, detail, and any future sub-resources).
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
-        // A product change can affect BOMs that reference it (has_bom flag,
-        // component availability). Keep this cross-invalidation explicit.
-        queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
+        invalidateCrossFeature(queryClient, [PRODUCTS_KEYS.all, BOMS_QUERY_KEY])
     }
 
     const updateProductMutation = useMutation({
@@ -74,8 +84,7 @@ export function useProducts({ filters }: UseProductsProps = {}) {
             markLocalMutation()
             // Genera N nuevos productos hijos — invalida lista, detalle y BOMs.
             // También invalida las queries de variants (parent_template-filtradas).
-            invalidateProductsAndBoms()
-            queryClient.invalidateQueries({ queryKey: ['inventory', 'variants'] })
+            invalidateCrossFeature(queryClient, [PRODUCTS_KEYS.all, BOMS_QUERY_KEY, ['inventory', 'variants']])
         },
     })
 
@@ -91,8 +100,10 @@ export function useProducts({ filters }: UseProductsProps = {}) {
         })
 
     return {
-        products: products ?? [],
-        isLoading,
+        page: query.data,
+        products,
+        isLoading: showSkeleton,
+        isRefetching,
         refetch,
         fetchProductById,
         updateProduct: updateProductMutation.mutateAsync,
@@ -111,11 +122,13 @@ export function useProducts({ filters }: UseProductsProps = {}) {
  * Use this in detail panels, modals and forms that need to display one product.
  */
 export function useProduct(id: number | null | undefined) {
-    return useQuery({
+    const { data: product, isLoading, isError } = useQuery({
         queryKey: id ? PRODUCTS_KEYS.detail(id) : ['products', 'detail', 'noop'],
-        queryFn: () => inventoryApi.getProduct(id!),
+        queryFn: () => inventoryApi.getProduct(id as number),
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
+    return { product: product ?? null, isLoading, isError }
 }
 
 /**
@@ -128,12 +141,14 @@ export function useProduct(id: number | null | undefined) {
  * PRODUCTS_KEYS.all).
  */
 export function useProductInsights<T = unknown>(id: number | null | undefined) {
-    return useQuery<T | null>({
+    const { data: insights, isLoading, isError, refetch } = useQuery<T | null>({
         queryKey: id ? [...PRODUCTS_KEYS.detail(id), 'insights'] : ['products', 'insights', 'noop'],
         queryFn: async () => {
             if (!id) return null
             return inventoryApi.getProductInsights<T>(id)
         },
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
+    return { insights: insights ?? null, isLoading, isError, refetch }
 }

@@ -1,20 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Check } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
+import { ChevronDown } from "lucide-react"
 
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUserSearch, useSingleUser } from "@/features/users/hooks/useUserSearch"
-import { CardSkeleton, EmptyState } from '@/components/shared'
+import { LabeledContainer, SearchablePopover } from '@/components/shared'
 import type { AppUser } from "@/types/entities"
+
+const UserIcon = getEntityIcon('core.user')
 
 interface UserSelectorProps {
     value?: number | null
@@ -29,13 +26,12 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
-    
+
     const { users, loading: searchLoading } = useUserSearch(debouncedSearch, open)
     const { user: singleUser } = useSingleUser(value || null)
-    
+
     const [selectedUser, setSelectedUser] = useState<AppUser | null>(null)
 
-    // Sync fetched single user to local state
     useEffect(() => {
         if (singleUser && singleUser.id === value) {
             requestAnimationFrame(() => setSelectedUser(singleUser))
@@ -44,99 +40,58 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
         }
     }, [singleUser, value])
 
-    const handleSelect = (user: AppUser) => {
+    const handleSelect = useCallback((user: AppUser) => {
         setSelectedUser(user)
         onChange(user.id)
         setOpen(false)
         setSearchTerm("")
-    }
+    }, [onChange])
 
     return (
-        <div className="relative w-full flex flex-col group">
-            <fieldset 
-                data-disabled={disabled || undefined}
-                className={cn(
-                    "notched-field w-full group transition-all",
-                    open && "focused",
-                    error && "error"
+        <LabeledContainer label={label} error={error} disabled={disabled}>
+            <SearchablePopover
+                open={open}
+                onOpenChange={setOpen}
+                searchValue={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchPlaceholder="Buscar usuario..."
+                items={users}
+                isLoading={searchLoading}
+                selectedId={value}
+                getId={(u) => u.id}
+                onSelect={handleSelect}
+                renderItem={(user) => (
+                    <>
+                        <div className="flex flex-col flex-1 min-w-0">
+                            <span className="font-medium">{user.username}</span>
+                            <span className="text-[10px] text-muted-foreground">{user.email}</span>
+                        </div>
+                        {selectedUser?.id === user.id && (
+                            <Check className="ml-auto h-4 w-4 shrink-0 opacity-100" />
+                        )}
+                    </>
                 )}
-            >
-                {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive")}>
-                        {label}
-                    </legend>
-                )}
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="ghost"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
-                    disabled={disabled}
-                >
-                    {selectedUser ? (() => {
-                        const UserIcon = getEntityIcon('core.user');
-                        return (
+                trigger={
+                    <Button
+                        variant="ghost"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                        disabled={disabled}
+                    >
+                        {selectedUser ? (
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <UserIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
                                 <span className="font-medium text-sm truncate">{selectedUser.username}</span>
                                 <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{selectedUser.email}</span>
                             </div>
-                        );
-                    })() : (
-                        <span className="text-muted-foreground truncate">{placeholder}</span>
-                    )}
-                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <div className="p-2">
-                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                        <input
-                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                            placeholder="Buscar usuario..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            autoFocus
-                        />
-                    </div>
-                    <div className="max-h-[300px] overflow-y-auto space-y-1">
-                        {searchLoading ? (
-                            <CardSkeleton count={3} variant="compact" />
-                        ) : users.length === 0 ? (
-                            <EmptyState context="users" variant="compact" title="No se encontraron usuarios" />
                         ) : (
-                            users.map((u) => (
-                                <div
-                                    key={u.id}
-                                    className={cn(
-                                        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                        selectedUser?.id === u.id && "bg-accent"
-                                    )}
-                                    onClick={() => handleSelect(u)}
-                                >
-                                    <div className="flex flex-col">
-                                        <span className="font-medium">{u.username}</span>
-                                        <span className="text-[10px] text-muted-foreground">{u.email}</span>
-                                    </div>
-                                    {selectedUser?.id === u.id && (
-                                        <Check className="ml-auto h-4 w-4 opacity-100" />
-                                    )}
-                                </div>
-                            ))
+                            <span className="text-muted-foreground truncate">{placeholder}</span>
                         )}
-                    </div>
-                </div>
-            </PopoverContent>
-        </Popover>
-        </fieldset>
-            {error && (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                    {error}
-                </p>
-            )}
-        </div>
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                }
+            />
+        </LabeledContainer>
     )
 }

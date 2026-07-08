@@ -5,12 +5,11 @@ interface PageProps {
 }
 
 export default async function TreasuryPage({ searchParams }: PageProps) {
-    const { view, sub, tab } = await searchParams
+    const { view, sub } = await searchParams
 
-    if (view === 'accounts') redirect(sub ? `/treasury/operaciones?tab=${sub}` : '/treasury/operaciones?tab=accounts')
-    if (view === 'reconciliation') redirect(sub ? `/treasury/reconciliation?tab=${sub}` : '/treasury/reconciliation')
-    if (view === 'config') redirect(tab ? `/treasury/settings?tab=${tab}` : '/treasury/settings')
-    if (view === 'movements') redirect('/treasury/operaciones?tab=movements')
+    if (view === 'accounts') redirect(sub ? `/treasury/operaciones/${sub}` : '/treasury/operaciones/accounts')
+    if (view === 'reconciliation') redirect('/treasury/reconciliation')
+    if (view === 'movements') redirect('/treasury/operaciones/movements')
 
-    redirect('/treasury/operaciones?tab=movements')
+    redirect('/treasury/operaciones/movements')
 }

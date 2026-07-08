@@ -1,6 +1,6 @@
 "use client"
 
-import { MovementWizard, MovementData } from "@/features/treasury/components/MovementWizard"
+import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
 
 interface CashMovementModalProps {

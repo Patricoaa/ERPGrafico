@@ -5,7 +5,7 @@ export * from './GlobalHubPanel';
 export * from './NoteLogisticsModal';
 export * from './OrderActionPanel';
 export * from './OrderHeaderDashboard';
-export * from './OrderHubIntegrated';
+export * from './OrderHubView';
 export * from './OrderHubPanel';
 export * from './PaymentHistoryModal';
 export * from './phases';

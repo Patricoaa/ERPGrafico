@@ -5,15 +5,16 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Building2, Settings, Printer } from "lucide-react"
-import { useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
+import { useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalProviderCreatePayload, type PaymentTerminalProviderUpdatePayload } from "@/features/treasury"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -26,6 +27,7 @@ const providerSchema = z.object({
     commission_expense_account: z.string().nullable().optional(),
     commission_iva_account: z.string().nullable().optional(),
     commission_product: z.string().nullable().optional(),
+    default_deposit_account: z.string().nullable().optional(),
 })
 
 type ProviderFormValues = z.infer<typeof providerSchema>
@@ -56,6 +58,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             commission_expense_account: null,
             commission_iva_account: null,
             commission_product: null,
+            default_deposit_account: null,
         }
     })
 
@@ -71,6 +74,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                         commission_expense_account: provider.commission_expense_account?.toString() || null,
                         commission_iva_account: provider.commission_iva_account?.toString() || null,
                         commission_product: provider.commission_product?.toString() || null,
+                        default_deposit_account: provider.default_deposit_account?.toString() || null,
                     })
                 } else {
                     form.reset({
@@ -81,6 +85,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                         commission_expense_account: null,
                         commission_iva_account: null,
                         commission_product: null,
+                        default_deposit_account: null,
                     })
                 }
             })
@@ -98,18 +103,19 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             const data = {
                 name: values.name,
                 provider_type: values.provider_type as PaymentTerminalProvider['provider_type'],
-                supplier: values.supplier ? Number(values.supplier) : undefined as any,
-                receivable_account: values.receivable_account ? Number(values.receivable_account) : undefined as any,
-                commission_expense_account: values.commission_expense_account ? Number(values.commission_expense_account) : undefined as any,
-                commission_iva_account: values.commission_iva_account ? Number(values.commission_iva_account) : undefined as any,
-                commission_product: values.commission_product ? Number(values.commission_product) : undefined as any,
+                supplier: values.supplier ? Number(values.supplier) : undefined,
+                receivable_account: values.receivable_account ? Number(values.receivable_account) : undefined,
+                commission_expense_account: values.commission_expense_account ? Number(values.commission_expense_account) : undefined,
+                commission_iva_account: values.commission_iva_account ? Number(values.commission_iva_account) : undefined,
+                commission_product: values.commission_product ? Number(values.commission_product) : undefined,
+                default_deposit_account: values.default_deposit_account ? Number(values.default_deposit_account) : null,
                 is_active: true,
             }
 
             if (provider) {
-                await updateProvider({ id: provider.id, data: data as any })
+                await updateProvider({ id: provider.id, data: data as unknown as PaymentTerminalProviderUpdatePayload })
             } else {
-                await createProvider(data as any)
+                await createProvider(data as unknown as PaymentTerminalProviderCreatePayload)
             }
             onSuccess?.()
             onOpenChange(false)
@@ -120,11 +126,15 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
         }
     }
 
-    const drawerTitle = isView
+    const overrideTitle = isView
         ? `Ficha de Proveedor${provider?.id ? ` #${provider.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Proveedor de Pago"
-            : "Editar Proveedor"
+        : mode === 'edit'
+            ? "Editar Proveedor"
+            : undefined
+    const identity = useDrawerIdentity('treasury.terminalprovider', mode, provider, {
+        overrideTitle,
+        overrideSubtitle: "Configure las cuentas contables para recaudación y comisiones.",
+    })
 
     return (
         <>
@@ -148,8 +158,10 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!provider)}
                 mode={mode}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && provider?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle="Configure las cuentas contables para recaudación y comisiones."
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && provider?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -254,6 +266,18 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                                                 value={field.value || null}
                                                 onChange={(v) => field.onChange(v)}
                                                 label="Producto Servicio Comisión"
+                                            />
+                                        )}
+                                    />
+                                    <Controller
+                                        control={form.control}
+                                        name="default_deposit_account"
+                                        render={({ field }) => (
+                                            <TreasuryAccountSelector
+                                                value={field.value || null}
+                                                onChange={(v) => field.onChange(v)}
+                                                accountTypes={['CHECKING', 'CASH']}
+                                                label="Cuenta de Tesorería por Defecto (Depósito)"
                                             />
                                         )}
                                     />

@@ -1,7 +1,7 @@
 "use client"
 
 import {useState, useEffect} from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, RadioCard, StepHeader } from "@/components/shared"
 import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -12,10 +12,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { ReceiptData, CheckoutLine, PartialReceiptLine } from "../../types"
-import { Warehouse, UoM } from "@/types/entities"
+import { type ReceiptData, type CheckoutLine, type PartialReceiptLine } from "../../types"
+import { type Warehouse, type UoM } from "@/types/entities"
 import { Package, Receipt, FileText, FileCheck } from "lucide-react"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 interface Step4_ReceiptProps {
     receiptData: ReceiptData
@@ -60,8 +62,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                     purchasingApi.getUoms(),
                     purchasingApi.getWarehouses()
                 ])
-                setUoMs(uomsData as any)
-                setWarehouses(warehousesData as any)
+                setUoMs((uomsData ?? []) as unknown as UoM[])
+                setWarehouses((warehousesData ?? []) as unknown as Warehouse[])
             } catch (error) {
                 console.error("Failed to fetch receipt metadata", error)
             }
@@ -201,39 +203,26 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
     return (
         <div className="space-y-6">
-            {/* Removed Warehouse Selector as per requirements */}
+            <StepHeader title="Recepción de Mercadería" description="Indique cómo y cuándo se realizará la recepción del inventario." icon={Receipt} />
 
             <LabeledContainer
-                label={
-                    <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        <span>Tipo de {receiptLabel}</span>
-                    </div>
-                }
-                containerClassName="bg-primary/5 rounded-lg"
+                label={`Tipo de ${receiptLabel}`}
             >
                 <RadioGroup
                     value={receiptData.type}
-                    onValueChange={(val) => setReceiptData({ ...receiptData, type: val as any })}
-                    className="space-y-3 w-full p-2"
+                    onValueChange={(val) => setReceiptData({ ...receiptData, type: val as ReceiptData['type'] })}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
                 >
                     {receiptTypes.map((type) => (
-                        <div key={type.id} className="relative">
-                            <label
-                                htmlFor={`receipt-${type.id}`}
-                                className={`flex items-start gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all ${receiptData.type === type.id ? 'border-primary bg-primary/5' : ''
-                                    }`}
-                            >
-                                <RadioGroupItem value={type.id} id={`receipt-${type.id}`} className="mt-1" />
-                                <div className={`p-2 rounded-lg bg-background border ${type.color}`}>
-                                    <type.icon className="h-5 w-5" />
-                                </div>
-                                <div className="flex-1">
-                                    <span className="text-sm font-semibold block">{type.label}</span>
-                                    <span className="text-xs text-muted-foreground">{type.description}</span>
-                                </div>
-                            </label>
-                        </div>
+                        <RadioCard
+                            key={type.id}
+                            id={`receipt-${type.id}`}
+                            value={type.id}
+                            label={type.label}
+                            description={type.description}
+                            icon={<type.icon className="h-4 w-4" />}
+                            iconColor={type.color}
+                        />
                     ))}
                 </RadioGroup>
             </LabeledContainer>
@@ -254,7 +243,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                             <TableBody>
                                 {orderLines.map((line, idx) => {
                                     const pendingQty = line.quantity || line.qty || 0;
-                                    const currentPartial = (receiptData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
+                                    const currentPartial = (receiptData.partialQuantities || []).find((pq) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
                                     const currentReceivedQty = currentPartial?.receivedQty ?? 0;
                                     const currentUom = currentPartial?.uom || line.uom;
 
@@ -333,7 +322,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) !== 'DEFERRED' && (
-                <div className="space-y-6 p-4 bg-muted/30 rounded-lg border border-dashed animate-in fade-in">
+                <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
                     <LabeledInput
                         label="Referencia de Entrega"
                         placeholder="Ej: Guía de despacho #123"
@@ -354,8 +343,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) === 'DEFERRED' && (
-                <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-lg text-warning">
-                    <div className="p-2 rounded-lg bg-background border border-warning/20">
+                <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-md text-warning">
+                    <div className="p-2 rounded-md bg-background border border-warning/20">
                         <FileText className="h-5 w-5" />
                     </div>
                     <div className="space-y-1">

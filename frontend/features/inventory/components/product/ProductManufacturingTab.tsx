@@ -1,22 +1,23 @@
+/* eslint-disable no-restricted-syntax */
 "use client"
 
-import { UoM, Product } from "@/types/entities"
-import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch} from '@/components/shared'
+import { type UoM, type Product } from "@/types/entities"
+import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, RadioCard} from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
 import {TableRow, TableBody, TableCell} from "@/components/ui/table"
 import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Trash2} from "lucide-react"
-import { UseFormReturn } from "react-hook-form"
-import { ProductFormValues } from "./schema"
-import { ProductInitialData } from "@/types/forms"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { type UseFormReturn } from "react-hook-form"
+import { type ProductFormValues } from "./schema"
+import { type ProductInitialData } from "@/types/forms"
+import { RadioGroup } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
 import { Switch } from "@/components/ui/switch"
 
-import { useBOMs } from "@/features/production/hooks/useBOMs"
-import { BOMDrawer } from "@/features/production/components/BOMDrawer"
-import { BOM } from "@/features/production/types"
+import { useBOMs } from "@/features/production"
+import { BOMDrawer } from "@/features/production"
+import { type BOM, type ProductMinimal } from "@/features/production"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Edit } from "lucide-react"
@@ -29,14 +30,13 @@ interface ProductManufacturingTabProps {
     variantMode?: boolean
 }
 
-export function ProductManufacturingTab({ form, products, uoms, variantMode = false, initialData }: ProductManufacturingTabProps) {
+export function ProductManufacturingTab({ form, initialData }: ProductManufacturingTabProps) {
     const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs({ product_id: initialData?.id })
     const [isBomModalOpen, setIsBomModalOpen] = useState(false)
     const [bomToEdit, setBomToEdit] = useState<BOM | undefined>(undefined)
     const [confirmDeleteBomId, setConfirmDeleteBomId] = useState<number | undefined>(undefined)
 
     const hasBom = form.watch("has_bom")
-    const isEditing = !!initialData
     const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
     const isExpress = form.watch("mfg_auto_finalize")
     const hasVariants = form.watch("has_variants")
@@ -51,7 +51,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                     <LabeledContainer
                         label="Modo de Producción"
                     >
-                        <Tabs
+                        <RadioGroup
                             value={productionMode}
                             onValueChange={(value) => {
                                 if (value === productionMode) return;
@@ -76,47 +76,43 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                             };
 
                                 Object.entries(patch).forEach(([k, v]) => {
-                                    if (form.getValues(k as any) !== v) {
-                                        form.setValue(k as any, v, { shouldDirty: true });
+                                    const key = k as keyof ProductFormValues;
+                                    if (form.getValues(key) !== v) {
+                                        form.setValue(key, v, { shouldDirty: true });
                                     }
                                 });
                             }}
-                            className="w-full"
+                            className="grid grid-cols-3 gap-3 w-full"
                         >
-                            <TabsList className="grid w-full grid-cols-3 h-20 bg-transparent p-1 border-none shadow-none">
-                                <TabsTrigger
-                                    type="button"
-                                    value="simple"
-                                    className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-primary/5 data-[state=active]:border-primary/50 data-[state=active]:ring-1 data-[state=active]:ring-primary/10 border-2 border-transparent transition-all duration-300"
-                                >
-                                    <Package className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-tighter">Simple</span>
-                                    <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Manual / Lote</span>
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    type="button"
-                                    value="express"
-                                    className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-primary/5 data-[state=active]:border-primary/50 data-[state=active]:ring-1 data-[state=active]:ring-primary/10 border-2 border-transparent transition-all duration-300"
-                                >
-                                    <Clock className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-tighter">Express</span>
-                                    <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Auto-cierre</span>
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    type="button"
-                                    value="advanced"
-                                    className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-primary/5 data-[state=active]:border-primary/50 data-[state=active]:ring-1 data-[state=active]:ring-primary/10 border-2 border-transparent transition-all duration-300"
-                                >
-                                    <Layers className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-tighter">Avanzado</span>
-                                    <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Wizard Etapas</span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
+                            <RadioCard
+                                id="mfg-mode-simple"
+                                value="simple"
+                                label="Simple"
+                                description="Manual / Lote"
+                                icon={<Package className="h-4 w-4" />}
+                                orientation="vertical"
+                            />
+                            <RadioCard
+                                id="mfg-mode-express"
+                                value="express"
+                                label="Express"
+                                description="Auto-cierre"
+                                icon={<Clock className="h-4 w-4" />}
+                                orientation="vertical"
+                            />
+                            <RadioCard
+                                id="mfg-mode-advanced"
+                                value="advanced"
+                                label="Avanzado"
+                                description="Wizard Etapas"
+                                icon={<Layers className="h-4 w-4" />}
+                                orientation="vertical"
+                            />
+                        </RadioGroup>
                     </LabeledContainer>
 
                     <div className="space-y-4">
-                        <FormField<ProductFormValues>
+                        <FormField
                             control={form.control}
                             name="has_bom"
                             render={({ field }) => (
@@ -147,21 +143,21 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                         />
 
                         <div className="space-y-2">
-                            {[
+                            {([
                                 { name: "mfg_enable_prepress", label: "Pre-Impresión", icon: Monitor },
                                 { name: "mfg_enable_press", label: "Impresión", icon: Printer },
                                 { name: "mfg_enable_postpress", label: "Post-Impresión", icon: Scissors }
-                            ].map((stage) => (
-                                <FormField<ProductFormValues>
+                            ] as const).map((stage) => (
+                                <FormField
                                     key={stage.name}
                                     control={form.control}
-                                    name={stage.name as any}
+                                    name={stage.name}
                                     render={({ field }) => (
                                         <LabeledSwitch
                                             label={stage.label}
                                             checked={field.value}
                                             onCheckedChange={(val) => {
-                                                form.setValue(stage.name as any, val, { shouldDirty: true, shouldValidate: false })
+                                                form.setValue(stage.name, val, { shouldDirty: true, shouldValidate: false })
                                             }}
                                             icon={<stage.icon className="h-4 w-4" />}
                                         />
@@ -234,8 +230,8 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     checked={bom.active}
                                                     disabled={bom.active}
                                                     onCheckedChange={(checked) => {
-                                                        if (checked) {
-                                                            toggleActive(bom.id!)
+                                                        if (checked && bom.id != null) {
+                                                            toggleActive(bom.id)
                                                         }
                                                     }}
                                                 />
@@ -260,7 +256,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={() => setConfirmDeleteBomId(bom.id!)}
+                                                    onClick={() => bom.id != null && setConfirmDeleteBomId(bom.id)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -285,7 +281,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                 <BOMDrawer
                     open={isBomModalOpen}
                     onOpenChange={setIsBomModalOpen}
-                    product={initialData as any}
+                    product={initialData as ProductMinimal}
                     bomToEdit={bomToEdit}
                     onSuccess={() => refetch()}
                 />

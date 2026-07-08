@@ -1,0 +1,275 @@
+"use client";
+
+import { DataTable, SegmentationBar } from '@/components/shared';
+import { Card, CardContent } from "@/components/ui/card";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import {
+    LogIn,
+    LogOut,
+    Settings,
+    ShieldAlert,
+    FileDown,
+    Printer,
+    Activity,
+    Plus,
+    Minus,
+    RefreshCw
+} from "lucide-react";
+import { Skeleton, Chip } from "@/components/shared";
+import { useAuditLogs, type GlobalAuditLog } from "@/features/settings";
+import { DataCell } from '@/components/shared';
+import { DataTableColumnHeader } from '@/components/shared';
+import { type ColumnDef } from "@tanstack/react-table";
+
+interface AuditPageClientProps {
+    initialLogs?: GlobalAuditLog[]
+}
+
+export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
+    const { logs, loading } = useAuditLogs(initialLogs);
+
+    const getActionIcon = (type: string, source: string) => {
+        if (source === 'action_log') {
+            switch (type) {
+                case "LOGIN": return LogIn;
+                case "LOGOUT": return LogOut;
+                case "SETTINGS_CHANGE": return Settings;
+                case "SECURITY": return ShieldAlert;
+                case "EXPORT": return FileDown;
+                case "PRINT": return Printer;
+                default: return Activity;
+            }
+        } else {
+            switch (type) {
+                case '+': return Plus;
+                case '~': return RefreshCw;
+                case '-': return Minus;
+                default: return Activity;
+            }
+        }
+    };
+
+    const columns: ColumnDef<GlobalAuditLog>[] = [
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha y Hora" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const date = new Date(row.original.date);
+                return (
+                    <div className="flex flex-col">
+                        <DataCell.Text>
+                            {format(date, "dd/MM/yyyy", { locale: es })}
+                        </DataCell.Text>
+                        <DataCell.Secondary>
+                            {format(date, "HH:mm:ss")}
+                        </DataCell.Secondary>
+                    </div>
+                );
+            }
+        },
+        {
+            accessorKey: "user_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <Chip size="xs">{row.original.user_name || "Sistema"}</Chip>
+                </div>
+            )
+        },
+        {
+            accessorKey: "entity_label",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Entidad" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <Chip size="xs">{row.original.entity_label || "Sistema"}</Chip>
+                </div>
+            )
+        },
+        {
+            id: "action_type_label",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Acción" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const hType = row.original.history_type;
+                const source = row.original.source;
+                const icon = getActionIcon((row.original.action_type || hType || 'default'), source);
+                const label = row.original.type_label || (
+                    hType === '+' ? 'Creación' :
+                        hType === '~' ? 'Edición' :
+                            hType === '-' ? 'Eliminación' : 'Cambio'
+                );
+
+                let intent: "neutral" | "success" | "destructive" | "info" | "warning" = "neutral";
+                if (source === 'action_log') {
+                    if (row.original.action_type === 'LOGIN') intent = "success";
+                    if (row.original.action_type === 'SECURITY') intent = "destructive";
+                } else {
+                    if (hType === '+') intent = "info";
+                    if (hType === '~') intent = "warning";
+                    if (hType === '-') intent = "destructive";
+                }
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <DataCell.Icon icon={icon} />
+                        <Chip size="xs" intent={intent}>{label}</Chip>
+                    </div>
+                );
+            }
+        },
+        {
+            accessorKey: "description",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <DataCell.Text>
+                    {row.original.description}
+                </DataCell.Text>
+            )
+        },
+        {
+            accessorKey: "source",
+            header: "Origen",
+            id: "source",
+            cell: ({ row }) => {
+                const source = row.original.source;
+                const label = source === 'action_log' ? 'Sistema' : 'Datos';
+
+                return (
+                    <div className="flex justify-center w-full">
+                        <Chip size="xs">{label}</Chip>
+                    </div>
+                );
+            }
+        }
+    ];
+
+    const actionTypeOptions = Array.from(new Set(logs.map(l => {
+        const hType = l.history_type;
+        if (l.source === 'action_log') return l.action_type || 'Unknown';
+        if (l.source === 'history') {
+            if (hType === '+') return 'Creación';
+            if (hType === '~') return 'Edición';
+            if (hType === '-') return 'Eliminación';
+        }
+        return 'Cambio';
+    }))).filter(Boolean).map(val => ({
+        label: (val === 'LOGIN' ? 'Inicio de Sesión' :
+            val === 'LOGOUT' ? 'Cierre de Sesión' :
+                val === 'SETTINGS_CHANGE' ? 'Configuración' :
+                    val === 'SECURITY' ? 'Seguridad' :
+                        val === 'EXPORT' ? 'Exportación' :
+                            val === 'PRINT' ? 'Impresión' : val) as string,
+        value: val as string
+    }));
+
+    const entityOptions = Array.from(new Set(logs.map(l => l.entity_label))).filter(Boolean).map(label => ({
+        label: label as string,
+        value: label as string
+    }));
+
+    return (
+        <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={logs}
+                    isLoading={loading}
+                    variant="embedded"
+                    segmentation={
+                        <SegmentationBar def={{
+                            segments: [
+                                { key: 'source', label: 'Origen', type: 'multiselect', serverParam: 'source', columnId: 'source', options: [{ label: "Sistema", value: "action_log" }, { label: "Datos", value: "history" }] },
+                                { key: 'entity_label', label: 'Entidad', type: 'multiselect', serverParam: 'entity_label', columnId: 'entity_label', dynamic: true, options: entityOptions },
+                                { key: 'action_type_label', label: 'Acción', type: 'multiselect', serverParam: 'action_type_label', columnId: 'action_type_label', options: actionTypeOptions },
+                            ],
+                        }} />
+                    }
+                    hiddenColumns={["source"]}
+                    defaultPageSize={50}
+                />
+            </div>
+
+            <div
+                className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8"
+                role={loading ? "status" : undefined}
+                aria-label={loading ? "Cargando estadísticas" : undefined}
+            >
+                {loading ? (
+                    <>
+                        {[1, 2, 3, 4].map((i) => (
+                            <Card key={i} className="shadow-card">
+                                <CardContent className="p-4 flex items-center gap-4">
+                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-2 w-16" />
+                                        <Skeleton className="h-6 w-10" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </>
+                ) : (
+                    <>
+                        <Card className="bg-success/10 border-success/20 shadow-card rounded-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-success/10 rounded-sm">
+                                    <LogIn className="h-5 w-5 text-success" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-success font-black uppercase tracking-tight">Logins (Sesión)</p>
+                                    <p className="text-2xl font-black text-success tabular-nums">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-primary/5 border-primary/10 shadow-card rounded-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-primary/10 rounded-sm">
+                                    <Activity className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-primary font-black uppercase tracking-tight">Cambios Datos</p>
+                                    <p className="text-2xl font-black text-primary tabular-nums">{logs.filter(l => l.source === 'history').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-info/5 border-info/10 shadow-card rounded-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-info/10 rounded-sm">
+                                    <Settings className="h-5 w-5 text-info" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-info font-black uppercase tracking-tight">Configuración</p>
+                                    <p className="text-2xl font-black text-info tabular-nums">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-destructive/5 border-destructive/10 shadow-card rounded-sm">
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <div className="p-2 bg-destructive/10 rounded-sm">
+                                    <ShieldAlert className="h-5 w-5 text-destructive" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-destructive font-black uppercase tracking-tight">Incidentes</p>
+                                    <p className="text-2xl font-black text-destructive tabular-nums">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}

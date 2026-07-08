@@ -5,12 +5,12 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Smartphone, Printer } from "lucide-react"
-import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
+import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalDevice } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -28,7 +28,7 @@ type DeviceFormValues = z.infer<typeof deviceSchema>
 interface DeviceDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    device?: any | null
+    device?: PaymentTerminalDevice | null
     providers?: PaymentTerminalProvider[]
     onSuccess?: () => void
     mode?: DrawerMode
@@ -110,11 +110,10 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Dispositivo${device?.id ? ` #${device.id}` : ""}`
-        : mode === 'create'
-            ? "Registrar Nuevo Hardware"
-            : "Editar Dispositivo"
+    const identity = useDrawerIdentity('treasury.terminaldevice', mode, device, {
+        overrideTitle: mode === 'create' ? "Registrar Nuevo Hardware" : undefined,
+        overrideSubtitle: "Vincule una terminal física con un proveedor de servicios.",
+    })
 
     return (
         <>
@@ -134,8 +133,10 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!device)}
                 mode={mode}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && device?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle="Vincule una terminal física con un proveedor de servicios."
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && device?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -154,59 +155,60 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                             <fieldset disabled={isView} className="contents">
                                 <FormSection title="Información General" icon={Smartphone} />
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <LabeledInput
-                                            label="Nombre descriptivo"
-                                            required
-                                            {...field}
-                                            placeholder="Ej: Maquinita TUU 01"
-                                        />
-                                    )}
-                                />
+                                <div className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Nombre descriptivo"
+                                                required
+                                                {...field}
+                                                placeholder="Ej: Maquinita TUU 01"
+                                            />
+                                        )}
+                                    />
 
-                                <FormField
-                                    control={form.control}
-                                    name="provider"
-                                    render={({ field }) => (
-                                        <LabeledSelect
-                                            label="Proveedor"
-                                            required
-                                            value={field.value || ""}
-                                            onChange={(v) => field.onChange(v)}
-                                            placeholder="Seleccione..."
-                                            options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
-                                        />
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="serial_number"
-                                    render={({ field }) => (
-                                        <LabeledInput
-                                            label="Número de Serie / TID"
-                                            required
-                                            {...field}
-                                            placeholder="Número serie físico"
-                                        />
-                                    )}
-                                />
+                                    <FormField
+                                        control={form.control}
+                                        name="provider"
+                                        render={({ field }) => (
+                                            <LabeledSelect
+                                                label="Proveedor"
+                                                required
+                                                value={field.value || ""}
+                                                onChange={(v) => field.onChange(v)}
+                                                placeholder="Seleccione..."
+                                                options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
+                                            />
+                                        )}
+                                    />
 
-                                <FormField
-                                    control={form.control}
-                                    name="model"
-                                    render={({ field }) => (
-                                        <LabeledInput
-                                            label="Modelo (Opcional)"
-                                            {...field}
-                                            placeholder="Ej: Pax A920"
-                                        />
-                                    )}
-                                />
+                                    <FormField
+                                        control={form.control}
+                                        name="serial_number"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Número de Serie / TID"
+                                                required
+                                                {...field}
+                                                placeholder="Número serie físico"
+                                            />
+                                        )}
+                                    />
 
-                                <div className="space-y-3 pt-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="model"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Modelo (opcional)"
+                                                {...field}
+                                                placeholder="Ej: Pax A920"
+                                            />
+                                        )}
+                                    />
+
                                     <Controller
                                         control={form.control}
                                         name="supported_payment_methods"

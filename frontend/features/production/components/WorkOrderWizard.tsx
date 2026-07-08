@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
+
 import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 
 import { ActionConfirmModal, BaseModal, Drawer, CancelButton, FormFooter, LabeledSelect, StatusBadge } from '@/components/shared'
 import { cn, formatPlainDate } from '@/lib/utils'
@@ -17,7 +16,7 @@ import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import { useWorkOrderMutations, productionApi } from '../hooks'
-import { completeTask } from '@/features/workflow/api/workflowApi'
+import { completeTask } from '@/features/workflow'
 
 import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
@@ -154,10 +153,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const { openHub } = useHubPanel()
   const { multiplier: vatMultiplier } = useVatRate()
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
-  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false)
-  const [templateName, setTemplateName] = useState('')
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false)
-
   // localOrderId: null = create mode, number = manage mode
   const [localOrderId, setLocalOrderId] = useState<number | null>(
     mode.kind === 'manage' ? mode.orderId : null
@@ -176,8 +171,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     showPOPreview, outsourcedPending,
     rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
     // Creation flow state
-    chosenOtType, selectedSaleOrder, selectedSaleLine, selectedProduct, mfgConfig,
-    selectedContact, quantity, uomId, startDate, dueDate, internalNotes,
+    chosenOtType,
     setOrder, setLoading, setViewingStepIndex, navigateToStep,
     setTaskNote, setTaskFile,
     setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
@@ -229,21 +223,22 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     setLoading(true)
     try {
       const orderData = await productionApi.getWorkOrder(localOrderId)
-      setOrder(orderData as any)
+      const orderRecord = orderData as unknown as Record<string, unknown>
+      setOrder(orderData as unknown as WorkOrder)
 
       // Infer order type from data so STAGES stays consistent
-      const inferredType = orderData.sale_order ? "LINKED" as const : "NONE" as const
+      const inferredType = orderRecord.sale_order ? "LINKED" as const : "NONE" as const
       setChosenOtType(inferredType)
 
       // Resolve index using the same STAGES the component uses
-      const stages = getUnifiedStages(inferredType, orderData as any)
+      const stages = getUnifiedStages(inferredType, orderData as unknown as WorkOrder)
       let resolvedIndex = -1
       const targetStage = mode.kind === 'manage' ? mode.targetStage : undefined
       if (targetStage) {
         resolvedIndex = stages.findIndex((s) => s.id === targetStage)
       }
       if (resolvedIndex === -1) {
-        resolvedIndex = stages.findIndex((s) => s.id === (orderData as any).current_stage)
+        resolvedIndex = stages.findIndex((s) => s.id === (orderData as unknown as WorkOrder).current_stage)
       }
       setViewingStepIndex(resolvedIndex >= 0 ? resolvedIndex : 1)
     } catch {
@@ -347,7 +342,10 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
       if (isMovingForward) {
         const toApprove = pendingTasks.filter(canUserCompleteTask)
         if (toApprove.length > 0) {
-          await Promise.all(toApprove.map((t) => completeTask(t.id as number, taskNotes[t.id], taskFiles[t.id] ? [taskFiles[t.id]!] : undefined)))
+          await Promise.all(toApprove.map((t) => {
+            const file = taskFiles[t.id]
+            return completeTask(t.id as number, taskNotes[t.id], file ? [file] : undefined)
+          }))
         }
       }
       await mutations.transition({ nextStageId, data })
@@ -373,7 +371,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         const blocked = pendingTasks.some((t) => !canUserCompleteTask(t)) ||
           (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
         if (!blocked) {
-          nextStage.id === 'FINISHED' ? finishConfirm.requestConfirm(nextStage.id) : handleTransition(nextStage.id)
+          if (nextStage.id === 'FINISHED') { finishConfirm.requestConfirm(nextStage.id) } else { handleTransition(nextStage.id) }
         }
       }
       if (e.key === 'ArrowLeft' && viewingStepIndex > 0) {
@@ -455,11 +453,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             : 'Crear Orden de Trabajo'
         }
         subtitle={
-          order
-            ? `${formatEntityDisplay('production.workorder', order)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
-            : 'Planificación de Producción • Nueva OT'
+          (order
+            ? `${formatEntityDisplay('production.workorder', order as unknown as Record<string, unknown>)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
+            : 'Planificación de Producción • Nueva OT')
+          + ` · ${STAGES[viewingStepIndex]?.label ?? ''}`
         }
-        description={STAGES[viewingStepIndex]?.label}
         headerActions={
           <div className="flex items-center gap-2">
             {order && (
@@ -481,15 +479,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     Centro de Comando
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setTemplateName(''); setIsSaveTemplateOpen(true) }}
-                  title="Guardar como plantilla"
-                  disabled={mutations.isDuplicating}
-                >
-                  Plantilla
-                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -618,15 +607,11 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                 />
               </div>
 
-              <AnimatePresence mode="wait">
-                <motion.div
+              <div
                   key={viewingStepIndex}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
                   className={cn(
                     'flex flex-col flex-1 min-h-0 overflow-y-auto space-y-6 pb-6',
+                    'animate-in fade-in slide-in-from-right-2 ease-premium duration-200 fill-mode-both',
                     // Lock creation steps (other than MFG_CONFIG which has its own summary)
                     // once the OT has been created — they become read-only history.
                     !isCreating && (
@@ -735,39 +720,39 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
-                      order={order!}
+                      order={order as WorkOrder}
                       isViewingCurrentStage={isViewingCurrentStage}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
                     />
                   )}
                   {currentStageId === 'MATERIAL_APPROVAL' && (
-                    <MaterialApprovalStep order={order!} {...taskCallbacks} />
+                    <MaterialApprovalStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'OUTSOURCING_ASSIGNMENT' && (
                     <OutsourcingAssignmentStep
-                      order={order!}
+                      order={order as WorkOrder}
                       isViewingCurrentStage={isViewingCurrentStage}
                       onMaterialSaved={fetchOrder}
                       onMaterialDeleted={fetchOrder}
                     />
                   )}
                   {currentStageId === 'PREPRESS' && (
-                    <PrepressStep order={order!} stageData={stageData} {...taskCallbacks} />
+                    <PrepressStep order={order as WorkOrder} stageData={stageData} {...taskCallbacks} />
                   )}
                   {currentStageId === 'PRESS' && (
-                    <PressStep order={order!} {...taskCallbacks} />
+                    <PressStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'POSTPRESS' && (
-                    <PostpressStep order={order!} {...taskCallbacks} />
+                    <PostpressStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'OUTSOURCING_VERIFICATION' && (
-                    <OutsourcingVerificationStep order={order!} {...taskCallbacks} />
+                    <OutsourcingVerificationStep order={order as WorkOrder} {...taskCallbacks} />
                   )}
                   {currentStageId === 'RECTIFICATION' && (
                     <div className="space-y-6">
                       <RectificationStep
-                        order={order!}
+                        order={order as WorkOrder}
                         onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
@@ -778,15 +763,14 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                   {currentStageId === 'FINISHED' && (
                     <FinishedStep
-                      order={order!}
+                      order={order as WorkOrder}
                       onUploadPhoto={mutations.uploadFinalPhoto}
                       isUploadingPhoto={mutations.isUploadingPhoto}
                       onPrintCopy={mutations.duplicateOrder}
                       isDuplicating={mutations.isDuplicating}
                     />
                   )}
-                </motion.div>
-              </AnimatePresence>
+                </div>
             </div>
           </div>
 
@@ -933,49 +917,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         confirmText="Finalizar"
       />
 
-      <BaseModal
-        open={isSaveTemplateOpen}
-        onOpenChange={setIsSaveTemplateOpen}
-        icon={FileText}
-        title="Guardar como plantilla"
-        description="Se guardará la configuración de esta OT como plantilla reutilizable."
-        size="sm"
-        footer={
-          <FormFooter
-            actions={
-              <>
-                <CancelButton onClick={() => setIsSaveTemplateOpen(false)} />
-                <Button
-                  disabled={!templateName.trim() || isSavingTemplate}
-                  onClick={async () => {
-                    setIsSavingTemplate(true)
-                    try {
-                      await productionApi.saveTemplate(localOrderId!, templateName.trim())
-                      toast.success('Plantilla guardada correctamente.')
-                      setIsSaveTemplateOpen(false)
-                    } catch {
-                      toast.error('Error al guardar la plantilla.')
-                    } finally {
-                      setIsSavingTemplate(false)
-                    }
-                  }}
-                >
-                  {isSavingTemplate ? 'Guardando…' : 'Guardar'}
-                </Button>
-              </>
-            }
-          />
-        }
-      >
-        <div className="space-y-4 py-2">
-          <Input
-            placeholder="Nombre de la plantilla…"
-            value={templateName}
-            onChange={e => setTemplateName(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
-          />
-        </div>
-      </BaseModal>
+
 
       <BaseModal
         open={showCheatsheet}

@@ -1,7 +1,8 @@
 "use client"
 
 import { CreditCard } from "lucide-react"
-import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
+import { StepHeader } from "@/components/shared"
 import { useEffect } from "react"
 
 interface Step3_PurchasePaymentProps {
@@ -20,17 +21,11 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col gap-1">
-                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                    Registro de Pago
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Ingrese la información relacionada al Pago de la Orden de Compra.
-                </p>
+            <div className="flex flex-col gap-1 mb-2">
+                <StepHeader title="Método de Pago" description="Seleccione cómo se pagará esta compra." icon={CreditCard} />
             </div>
 
-            <PaymentMethodCardSelector
+            <PaymentMethodSelector
                 operation="purchases"
                 total={total}
                 paymentData={paymentData as PaymentData}

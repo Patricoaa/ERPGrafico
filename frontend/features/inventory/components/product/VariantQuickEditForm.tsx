@@ -1,14 +1,16 @@
+/* eslint-disable react-hooks/incompatible-library */
+/* eslint-disable no-restricted-syntax */
 "use client"
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { Product } from "@/types/entities"
-import { useForm, UseFormReturn } from "react-hook-form"
+import { type Product } from "@/types/entities"
+import { useForm, type UseFormReturn, type Resolver } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TabBar, TabBarContent } from "@/components/shared"
 import { LabeledInput, LabeledSelect, ActionConfirmModal, SkeletonShell } from "@/components/shared"
 import { Factory, Barcode, AlertCircle, Copy, CheckCircle2, PlusCircle, Pencil, Trash2, DollarSign } from "lucide-react"
 import { Chip } from "@/components/shared"
@@ -16,8 +18,9 @@ import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
-import { BOMDrawer } from "@/features/production/components/BOMDrawer"
-import type { BOM, ProductMinimal } from "@/features/production/types"
+import { BOMDrawer } from "@/features/production"
+import type { BOM, ProductMinimal } from "@/features/production"
+import { useVatRate } from '@/hooks/useVatRate'
 import { useUoMs } from "../../hooks/useUoMs"
 import { useBOMs } from "@/features/production"
 import { useProductMutations } from "../../hooks/useProductMutations"
@@ -56,6 +59,7 @@ export function VariantQuickEditForm({
 }: VariantQuickEditFormProps) {
   const [mounted, setMounted] = useState(false)
   const { uoms, isUoMsLoading } = useUoMs()
+  const { rate, multiplier } = useVatRate()
   const { boms: availableBOMs, deleteBom, refetch: refetchVariantBOMs, isBOMsLoading } = useBOMs({ product_id: variant.id })
   const isFetchingInitialData = isUoMsLoading || isBOMsLoading
     const { updateProduct } = useProductMutations()
@@ -65,13 +69,13 @@ export function VariantQuickEditForm({
   const [bomModalOpen, setBomModalOpen] = useState(false)
   const [bomToEdit, setBomToEdit] = useState<BOM | undefined>(undefined)
 
-  const hasUomPrices = Array.isArray((templateData as any)?.uom_prices)
-    ? (templateData as any).uom_prices.length > 0
+  const hasUomPrices = Array.isArray(templateData?.uom_prices)
+    ? templateData?.uom_prices.length > 0
     : false
   const priceOptions = hasUomPrices ? INHERIT_ONLY_OPTION : ALL_PRICE_INHERITANCE_OPTIONS
 
   const form: UseFormReturn<QuickEditValues> = useForm<QuickEditValues>({
-    resolver: zodResolver(quickEditSchema) as any,
+    resolver: zodResolver(quickEditSchema) as unknown as Resolver<QuickEditValues>,
     defaultValues: {
       sale_price: Number(variant.sale_price) || 0,
       code: variant.code || "",
@@ -95,7 +99,7 @@ export function VariantQuickEditForm({
     // uoms y availableBOMs se mantienen reactivos vía useUoMs / useBOMs —
     // ya no hace falta refetchear manualmente al cambiar de variant porque
     // el queryKey del useBOMs incluye variant.id (se re-fetchea solo).
-  }, [variant])
+  }, [variant, form, hasUomPrices])
 
   const [pendingDeleteBomId, setPendingDeleteBomId] = useState<number | null>(null)
 
@@ -142,8 +146,8 @@ export function VariantQuickEditForm({
   else if (currentMode === 'SURCHARGE') effectiveNet = templateNet + currentSurcharge
   else effectiveNet = overrideNet
 
-  const currentIva = effectiveNet * 0.19
-  const currentGross = effectiveNet * 1.19
+  const currentIva = effectiveNet * (rate / 100)
+  const currentGross = effectiveNet * multiplier
 
   const handleOverrideNetChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
@@ -152,7 +156,7 @@ export function VariantQuickEditForm({
 
   const handleOverrideGrossChange = (value: string) => {
     if (currentMode !== 'OVERRIDE') return
-    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / 1.19), { shouldDirty: true, shouldValidate: true })
+    form.setValue("sale_price", Math.round((parseFloat(value) || 0) / multiplier), { shouldDirty: true, shouldValidate: true })
   }
 
   const handleCloneBOM = async () => {
@@ -200,34 +204,25 @@ export function VariantQuickEditForm({
       document.body
     )}
     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando editor rápido de variante" className="flex-1 flex flex-col">
-    <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-
-        {/* Tab navigation */}
-        <div className="px-5 pt-4 pb-1 bg-muted/5">
-          <TabsList className="w-full h-9 grid grid-cols-2 bg-muted/40 rounded-md">
-            <TabsTrigger value="precios" className="text-xs font-bold flex items-center gap-1.5">
-              <DollarSign className="h-3.5 w-3.5" />
-              Precios
-            </TabsTrigger>
-            <TabsTrigger value="ldm" className="text-xs font-bold flex items-center gap-1.5">
-              <Factory className="h-3.5 w-3.5" />
-              LDM
-              {availableBOMs.length > 0 && (
-                <span className="ml-1 bg-primary/20 text-primary text-[9px] font-black px-1.5 py-0.5 rounded-md">
-                  {availableBOMs.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
+    <div className="flex flex-col h-full bg-card rounded-md border shadow-card overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+      <TabBar
+          value={activeTab}
+          onValueChange={setActiveTab}
+          items={[
+            { value: 'precios', label: 'Precios', icon: DollarSign },
+            { value: 'ldm', label: 'LDM', icon: Factory, badge: availableBOMs.length > 0 ? availableBOMs.length : undefined },
+          ]}
+          className="flex-1"
+          contentClassName="flex flex-col p-0"
+        >
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
 
         {/* ── Tab: Precios ─────────────────────────────────── */}
-        <TabsContent value="precios" className="flex-1 overflow-y-auto p-6 scrollbar-thin mt-0">
+        <TabBarContent value="precios" className="mt-0">
           <Form {...form}>
             <div className="space-y-5">
 
-              <FormField<QuickEditValues>
+              <FormField
                 control={form.control}
                 name="price_inheritance_mode"
                 render={({ field }) => (
@@ -253,7 +248,7 @@ export function VariantQuickEditForm({
               />
 
               {form.watch('price_inheritance_mode') === 'SURCHARGE' && (
-                <FormField<QuickEditValues>
+                <FormField
                   control={form.control}
                   name="price_surcharge"
                   render={({ field, fieldState }) => (
@@ -281,7 +276,7 @@ export function VariantQuickEditForm({
                   className={cn("h-10 font-bold text-right", currentMode !== 'OVERRIDE' && "bg-muted/30 cursor-default")}
                 />
                 <LabeledInput
-                  label="IVA (19%)"
+                  label={`IVA (${rate}%)`}
                   type="number"
                   value={currentIva.toFixed(2)}
                   readOnly
@@ -298,7 +293,7 @@ export function VariantQuickEditForm({
                 />
               </div>
 
-              <FormField<QuickEditValues>
+              <FormField
                 control={form.control}
                 name="sale_uom"
                 render={({ field, fieldState }) => (
@@ -315,7 +310,7 @@ export function VariantQuickEditForm({
               />
 
               {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') &&
-                (templateData as any)?.discount_active && (
+                !!((templateData as unknown as Record<string, unknown>)?.discount_active) && (
                   <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-[11px] font-bold text-warning-foreground">
                     <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                     El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado de esta variante.
@@ -323,7 +318,7 @@ export function VariantQuickEditForm({
                 )}
 
               <div className="flex items-end gap-2">
-                <FormField<QuickEditValues>
+                <FormField
                   control={form.control}
                   name="code"
                   render={({ field, fieldState }) => (
@@ -341,7 +336,7 @@ export function VariantQuickEditForm({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="shrink-0 h-10 w-10 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all mb-1 self-end"
+                  className="shrink-0 h-10 w-10 rounded-md border-primary/10 hover:bg-primary/5 shadow-card transition-all mb-1 self-end"
                   onClick={() => setIsBarcodeModalOpen(true)}
                   title="Generador de Barras"
                 >
@@ -369,10 +364,10 @@ export function VariantQuickEditForm({
 
             </div>
           </Form>
-        </TabsContent>
+        </TabBarContent>
 
         {/* ── Tab: LDM ─────────────────────────────────────── */}
-        <TabsContent value="ldm" className="flex-1 overflow-y-auto p-6 scrollbar-thin mt-0">
+        <TabBarContent value="ldm" className="mt-0">
           <div className="space-y-5">
 
             {/* Header */}
@@ -398,7 +393,7 @@ export function VariantQuickEditForm({
                 {availableBOMs.map((bom) => (
                   <div
                     key={bom.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-muted/10 hover:bg-muted/20 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-md border bg-muted/10 hover:bg-muted/20 transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <CheckCircle2 className={cn("h-4 w-4 shrink-0", bom.active ? "text-success" : "text-muted-foreground")} />
@@ -410,6 +405,7 @@ export function VariantQuickEditForm({
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0 ml-2">
+                      { }
                       <Button
                         type="button"
                         variant="ghost"
@@ -420,6 +416,7 @@ export function VariantQuickEditForm({
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
+                      { }
                       <Button
                         type="button"
                         variant="ghost"
@@ -435,7 +432,7 @@ export function VariantQuickEditForm({
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed border-muted-foreground/30 p-6 text-center bg-muted/5">
+              <div className="rounded-md border border-dashed border-muted-foreground/30 p-6 text-center bg-muted/5">
                 <Factory className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground font-medium">Sin recetas de producción</p>
                 <p className="text-[10px] text-muted-foreground/70 mt-1">
@@ -469,7 +466,7 @@ export function VariantQuickEditForm({
 
             {/* Clone source selector */}
             {cloneSources.length <= 1 ? (
-              <div className="p-3 bg-muted/10 border rounded-lg text-center">
+              <div className="p-3 bg-muted/10 border rounded-md text-center">
                 <p className="text-[11px] text-muted-foreground">
                   No hay fuentes disponibles para clonar.
                   {!templateData?.has_active_bom && " El template padre tampoco tiene LDM configurada."}
@@ -498,8 +495,9 @@ export function VariantQuickEditForm({
             )}
 
           </div>
-        </TabsContent>
-      </Tabs>
+        </TabBarContent>
+          </div>
+        </TabBar>
 
       {/* BOM create / edit modal */}
       <BOMDrawer

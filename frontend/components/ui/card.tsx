@@ -8,8 +8,8 @@ const cardVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-card text-card-foreground rounded-md border py-6 shadow-sm",
-        dashed: "rounded-lg border border-dashed p-8 bg-muted/20 shadow-sm",
+        default: "bg-card text-card-foreground rounded-md border py-6 shadow-card",
+        dashed: "rounded-md border border-dashed p-8 bg-muted/20 shadow-card",
         transparent: "bg-transparent text-card-foreground rounded-md border py-6 shadow-none",
       },
     },

@@ -2,14 +2,14 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
+import { useForm, useFieldArray, useWatch, type Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { PurchaseOrderInitialData, PurchaseOrderLine } from "@/types/forms"
-import { ProductMinimal, UoM } from "@/types/entities"
+import { type PurchaseOrderInitialData, type PurchaseOrderLine } from "@/types/forms"
+import { type ProductMinimal, type UoM } from "@/types/entities"
 import * as z from "zod"
 import { Plus, DollarSign, ShoppingCart } from "lucide-react"
 import { BaseModal, ActionSlideButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton, SkeletonShell, FormSplitLayout } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit"
 import { Button } from "@/components/ui/button"
 import {
     Form,
@@ -23,6 +23,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { useVatRate } from '@/hooks/useVatRate'
 import { purchasingApi } from "../api/purchasingApi"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -53,6 +54,7 @@ interface PurchaseOrderModalProps {
 }
 
 const OrderTotals = ({ control }: { control: Control<PurchaseOrderModalValues> }) => {
+    const { rate } = useVatRate()
     const lines = useWatch({
         control,
         name: "lines",
@@ -72,7 +74,7 @@ const OrderTotals = ({ control }: { control: Control<PurchaseOrderModalValues> }
                 <MoneyDisplay amount={subtotal} inline />
             </div>
             <div className="text-sm text-muted-foreground flex gap-1">
-                <span>IVA (19%):</span>
+                <span>IVA ({rate}%):</span>
                 <MoneyDisplay amount={tax} inline />
             </div>
             <div className="text-lg font-bold flex gap-1">
@@ -88,6 +90,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
+    const { rate } = useVatRate()
     const [loading, setLoading] = useState(false)
     const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [products, setProducts] = useState<ProductMinimal[]>([])
@@ -107,12 +110,12 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                     quantity: typeof l.quantity === 'string' ? parseFloat(l.quantity) : (l.quantity || 0),
                     uom: l.uom?.toString() || "",
                     unit_cost: typeof l.unit_cost === 'string' ? parseFloat(l.unit_cost) : (l.unit_cost || 0),
-                    tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate || 19),
+                    tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate ?? rate),
                 }
             })
         } : {
             notes: "",
-            lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
+            lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate }],
         },
     })
 
@@ -129,8 +132,8 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                 purchasingApi.getUoms(),
             ])
 
-            setProducts(allProducts as any)
-            setUoMs(uomsData as any)
+            setProducts((allProducts ?? []) as unknown as ProductMinimal[])
+            setUoMs((uomsData ?? []) as unknown as UoM[])
         } catch (error) {
             console.error("Error fetching data:", error)
         } finally {
@@ -166,14 +169,14 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                             quantity: typeof l.quantity === 'string' ? parseFloat(l.quantity) : (l.quantity || 0),
                             uom: l.uom?.toString() || "",
                             unit_cost: typeof l.unit_cost === 'string' ? parseFloat(l.unit_cost) : (l.unit_cost || 0),
-                            tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate || 19),
+                            tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate ?? rate),
                         }
                     })
                 })
             } else {
                 form.reset({
                     notes: "",
-                    lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
+                    lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate }],
                 })
             }
             lastResetId.current = currentId
@@ -189,7 +192,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
 
         setLoading(true)
         try {
-            await purchasingApi.updateOrder(initialData.id!, data)
+            await purchasingApi.updateOrder(initialData.id as number, data)
             toast.success("Orden de Compra actualizada correctamente")
             form.reset()
             setOpen(false)
@@ -240,8 +243,8 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
-                                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
+                                                onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate })}
+                                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-card"
                                             >
                                                 <Plus className="mr-2 h-4 w-4" />
                                                 Agregar Producto
@@ -249,7 +252,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                         </div>
                                     </div>
 
-                                    <div className="rounded-lg border border-dashed">
+                                    <div className="rounded-md border border-dashed">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -313,75 +316,75 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                     const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1
 
                                                                     return (
-                                                                        <UoMSelector
-                                                                            product={(selectedProduct || null) as any}
-                                                                            context="purchase"
-                                                                            value={field.value || ""}
-                                                                            onChange={field.onChange}
-                                                                            uoms={uoms}
-                                                                            showConversionHint={true}
-                                                                            quantity={quantity}
-                                                                            label="Unidad"
-                                                                        />
-                                                                    )
-                                                                }}
-                                                            />
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <FormField
-                                                                control={form.control}
-                                                                name={`lines.${index}.unit_cost`}
-                                                                render={({ field }) => (
-                                                                    <LabeledInput
-                                                                        type="number"
-                                                                        step="1"
-                                                                        {...field}
-                                                                        onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
+                                                                    <UoMSelector
+                                                                        product={(selectedProduct || null) as unknown as { id: number; name: string; uom?: number | { id: number } } | null}
+                                                                        context="purchase"
+                                                                        value={field.value || ""}
+                                                                        onChange={field.onChange}
+                                                                        uoms={uoms}
+                                                                        showConversionHint={true}
+                                                                        quantity={quantity}
+                                                                        label="Unidad"
                                                                     />
-                                                                )}
-                                                            />
-                                                        </TableCell>
-                                                        <TableCell className="text-right font-medium">
-                                                            <MoneyDisplay amount={Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0} />
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <DataCell.ActionGroup>
-                                                                <DataCell.Action
-                                                                    action="delete"
-                                                                    onClick={() => remove(index)}
-                                                                    disabled={fields.length === 1}
+                                                                )
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`lines.${index}.unit_cost`}
+                                                            render={({ field }) => (
+                                                                <LabeledInput
+                                                                    type="number"
+                                                                    step="1"
+                                                                    {...field}
+                                                                    onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                                 />
-                                                            </DataCell.ActionGroup>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-medium">
+                                                        <MoneyDisplay amount={Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0} />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <DataCell.ActionGroup>
+                                                            <DataCell.Action
+                                                                action="delete"
+                                                                onClick={() => remove(index)}
+                                                                disabled={fields.length === 1}
+                                                            />
+                                                        </DataCell.ActionGroup>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </div>
+                            </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <FormField
-                                        control={form.control}
-                                        name="notes"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Notas / Observaciones"
-                                                as="textarea"
-                                                placeholder="Notas adicionales..."
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                    <div className="space-y-4">
-                                        <FormSection title="Resumen de Valores" icon={DollarSign} />
-                                        <OrderTotals control={form.control} />
-                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormField
+                                    control={form.control}
+                                    name="notes"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Notas / Observaciones"
+                                            as="textarea"
+                                            placeholder="Notas adicionales..."
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                    )}
+                                />
+                                <div className="space-y-4">
+                                    <FormSection title="Resumen de Valores" icon={DollarSign} />
+                                    <OrderTotals control={form.control} />
                                 </div>
-                            </form>
-                        </Form>
-                    </SkeletonShell>
+                            </div>
+                        </form>
+                    </Form>
+                </SkeletonShell>
                 </FormSplitLayout>
             ) : (
                 <FormSplitLayout>
@@ -397,8 +400,8 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
-                                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
+                                            onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: rate })}
+                                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-card"
                                         >
                                             <Plus className="mr-2 h-4 w-4" />
                                             Agregar Producto
@@ -406,7 +409,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                     </div>
                                 </div>
 
-                                <div className="rounded-lg border border-dashed">
+                                <div className="rounded-md border border-dashed">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -471,7 +474,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
 
                                                                 return (
                                                                     <UoMSelector
-                                                                        product={(selectedProduct || null) as any}
+                                                                        product={(selectedProduct || null) as unknown as { id: number; name: string; uom?: number | { id: number } } | null}
                                                                         context="purchase"
                                                                         value={field.value || ""}
                                                                         onChange={field.onChange}

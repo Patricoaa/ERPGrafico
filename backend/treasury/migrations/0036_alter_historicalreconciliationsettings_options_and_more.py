@@ -5,23 +5,37 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0035_remove_reconciliationrule_created_by_and_more'),
+        ("treasury", "0035_remove_reconciliationrule_created_by_and_more"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='historicalreconciliationsettings',
-            options={'get_latest_by': ('history_date', 'history_id'), 'ordering': ('-history_date', '-history_id'), 'verbose_name': 'historical Inteligencia de Conciliación', 'verbose_name_plural': 'historical Inteligencia de Conciliación'},
+            name="historicalreconciliationsettings",
+            options={
+                "get_latest_by": ("history_date", "history_id"),
+                "ordering": ("-history_date", "-history_id"),
+                "verbose_name": "historical Inteligencia de Conciliación",
+                "verbose_name_plural": "historical Inteligencia de Conciliación",
+            },
         ),
         migrations.AlterModelOptions(
-            name='reconciliationsettings',
-            options={'verbose_name': 'Inteligencia de Conciliación', 'verbose_name_plural': 'Inteligencia de Conciliación'},
+            name="reconciliationsettings",
+            options={
+                "verbose_name": "Inteligencia de Conciliación",
+                "verbose_name_plural": "Inteligencia de Conciliación",
+            },
         ),
         migrations.AlterField(
-            model_name='reconciliationsettings',
-            name='treasury_account',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='reconciliation_settings', to='treasury.treasuryaccount', verbose_name='Cuenta de Tesorería'),
+            model_name="reconciliationsettings",
+            name="treasury_account",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="reconciliation_settings",
+                to="treasury.treasuryaccount",
+                verbose_name="Cuenta de Tesorería",
+            ),
         ),
     ]

@@ -81,7 +81,6 @@ sync:
         - "backend/venv/"
         - "postgres_data/"
         - "redis_data/"
-        - "minio_data/"
         - ".vscode/"
         - ".idea/"
         - ".gemini/"

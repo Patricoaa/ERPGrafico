@@ -19,43 +19,47 @@ export const workflowKeys = {
 }
 
 export function useWorkflowRulesQuery() {
-    return useQuery({
+    const { data: rules, isLoading, isError } = useQuery({
         queryKey: workflowKeys.rules(),
         queryFn: async () => {
-            const res = await api.get<WorkflowRule[]>("/workflow/assignment-rules/")
-            return res.data
+            const res = await api.get<{ results: WorkflowRule[] }>("/workflow/assignment-rules/")
+            return res.data.results
         },
-        staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
+        staleTime: 10 * 60 * 1000,
     })
+    return { rules: rules ?? [], isLoading, isError }
 }
 
 export function useNotificationRulesQuery() {
-    return useQuery({
+    const { data: notificationRules, isLoading, isError } = useQuery({
         queryKey: workflowKeys.notificationRules(),
         queryFn: async () => {
-            const res = await api.get<NotificationRule[]>("/workflow/notification-rules/")
-            return res.data
+            const res = await api.get<{ results: NotificationRule[] }>("/workflow/notification-rules/")
+            return res.data.results
         },
-        staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
+        staleTime: 10 * 60 * 1000,
     })
+    return { notificationRules: notificationRules ?? [], isLoading, isError }
 }
 
 export function useWorkflowRecurrentSettingsQuery() {
-    return useQuery({
+    const { data: recurrentSettings, isLoading, isError } = useQuery({
         queryKey: workflowKeys.recurrentSettings(),
         queryFn: async () => {
             const res = await api.get("/workflow/settings/current/")
             return res.data as WorkflowRecurrentSettings
         },
-        staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
+        staleTime: 10 * 60 * 1000,
     })
+    return { recurrentSettings: recurrentSettings ?? undefined, isLoading, isError }
 }
 
 export function useTask(taskId: number | string) {
-    return useQuery({
+    const { data: task, isLoading, isError } = useQuery({
         queryKey: WORKFLOW_KEYS.taskDetail(taskId),
         queryFn: () => workflowApi.getTask(taskId),
         staleTime: 30 * 1000,
         enabled: !!taskId,
     })
+    return { task: task ?? null, isLoading, isError }
 }

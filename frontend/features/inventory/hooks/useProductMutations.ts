@@ -4,16 +4,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { inventoryApi } from '../api/inventoryApi'
 import { useRealtime } from '@/features/realtime'
+import { invalidateCrossFeature } from '@/lib/invalidation'
 import type { ProductUpdatePayload } from '../types'
-import { BOMS_QUERY_KEY, PRODUCTS_KEYS } from './queryKeys'
+import { BOMS_QUERY_KEY, PRODUCTS_KEYS, VARIANTS_QUERY_KEY } from './queryKeys'
 
 export function useProductMutations() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
-    const invalidateProductsAndBoms = () => {
-        queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
-        queryClient.invalidateQueries({ queryKey: BOMS_QUERY_KEY })
+    const invalidateProducts = () => {
+        invalidateCrossFeature(queryClient, [PRODUCTS_KEYS.all, BOMS_QUERY_KEY, VARIANTS_QUERY_KEY])
     }
 
     const updateProduct = useMutation({
@@ -21,7 +21,7 @@ export function useProductMutations() {
             inventoryApi.updateProduct(id, payload),
         onSuccess: () => {
             markLocalMutation()
-            invalidateProductsAndBoms()
+            invalidateProducts()
         },
     })
 
@@ -31,7 +31,7 @@ export function useProductMutations() {
         onSuccess: (_, vars) => {
             markLocalMutation()
             toast.success(vars.id === null ? 'Producto creado' : 'Producto actualizado')
-            invalidateProductsAndBoms()
+            invalidateProducts()
         },
     })
 
@@ -40,7 +40,7 @@ export function useProductMutations() {
         onSuccess: () => {
             markLocalMutation()
             toast.success('Producto eliminado')
-            invalidateProductsAndBoms()
+            invalidateProducts()
         },
         onError: (e: Error) => {
             toast.error(`Error al eliminar el producto: ${e.message}`)
@@ -54,8 +54,7 @@ export function useProductMutations() {
         }) => inventoryApi.generateVariants(templateId, selection),
         onSuccess: () => {
             markLocalMutation()
-            invalidateProductsAndBoms()
-            queryClient.invalidateQueries({ queryKey: ['inventory', 'variants'] })
+            invalidateProducts()
         },
     })
 

@@ -3,8 +3,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import {useRouter} from "next/navigation";
 import axios from "axios";
-import api from "@/lib/api";
+import { toast } from "sonner";
+import { AUTH_UNAUTHORIZED_EVENT } from "@/lib/api";
+import { authApi } from "@/features/auth/api/authApi";
 import { useTheme } from "next-themes";
+import { setClientToken, removeClientTokens, getClientToken } from "@/lib/client-token";
 
 interface User {
     id: number;
@@ -50,15 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // endpoint avoids the divergence that previously called a non-existent /core/me/.
     const fetchUser = useCallback(async () => {
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
+            const token = getClientToken();
             if (!token) {
                 setUser(null);
                 setIsAuthenticated(false);
                 return;
             }
 
-            const res = await api.get<User>('/core/auth/me/');
-            const userData = res.data;
+            const userData = await authApi.getCurrentUser();
             setUser(userData);
             setIsAuthenticated(true);
 
@@ -73,11 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Only discard credentials when the server explicitly rejects them.
             // A transient network failure or 5xx must not log the user out.
             const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-            if ((status === 401 || status === 403) && typeof window !== 'undefined') {
-                try {
-                    localStorage.removeItem("access_token");
-                    localStorage.removeItem("refresh_token");
-                } catch {}
+            if (status === 401 || status === 403) {
+                removeClientTokens();
             }
         } finally {
             setIsLoading(false);
@@ -91,15 +90,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         void fetchUser();
     }, [fetchUser]);
 
+    // Listen for forced logout from outside React (e.g., token refresh failure
+    // in the Axios interceptor). When the interceptor determines the session
+    // is unrecoverable it dispatches a window event to bridge the gap between
+    // its non-React scope and our React state.
+    useEffect(() => {
+        const handleUnauthorized = () => {
+            toast.error("Tu sesión ha expirado. Inicia sesión nuevamente.");
+            setUser(null);
+            setIsAuthenticated(false);
+            router.push("/login");
+        };
+        window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+        return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
+    }, [router]);
+
     const login = async (token: string) => {
-        localStorage.setItem("access_token", token);
+        setClientToken(token);
         setIsLoading(true);
         await fetchUser();
     };
 
     const logout = () => {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
+        // Clear backend HttpOnly cookie
+        authApi.logout().catch(() => {
+            // Best-effort: cookie also expires after max-age
+        });
+        removeClientTokens();
         setUser(null);
         setIsAuthenticated(false);
         router.push("/login");

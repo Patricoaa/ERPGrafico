@@ -24,20 +24,23 @@ interface SimulationResult {
 export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     const [results, setResults] = useState<SimulationResult[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(false)
 
     useEffect(() => {
         const simulate = async () => {
             setLoading(true)
+            setError(false)
             try {
-                // Prepare rule data for backend
+                const treasuryAccount = rule.treasury_account as Record<string, unknown> | undefined
                 const payload = {
-                    ...(rule as any),
-                    treasury_account_id: (rule as any).treasury_account?.id
+                    ...rule,
+                    treasury_account_id: treasuryAccount?.id
                 }
-                const response = await financeApi.simulateRule(payload)
-                setResults((response as any).results)
+                const response = await financeApi.simulateRule(payload) as Record<string, unknown>
+                setResults((response.results as SimulationResult[]))
             } catch (error) {
                 console.error("Simulation error", error)
+                setError(true)
             } finally {
                 setLoading(false)
             }
@@ -46,6 +49,10 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     }, [rule])
 
     if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
+
+    if (error) {
+        return <EmptyState context="finance" variant="compact" title="Error de simulación" description="No se pudieron simular las reglas." />
+    }
 
     if (results.length === 0) {
         return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />
@@ -102,13 +109,11 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     ]
 
     return (
-        <div className="border rounded-sm border-border/40">
-            <DataTable
-                columns={columns}
-                data={results}
-                variant="embedded"
-                hidePagination
-            />
-        </div>
+        <DataTable
+            columns={columns}
+            data={results}
+            variant="minimal"
+            hidePagination
+        />
     )
 }

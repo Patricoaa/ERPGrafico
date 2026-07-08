@@ -1,6 +1,5 @@
 import { useFormContext } from "react-hook-form"
-import Link from "next/link"
-import { FileText, User, ExternalLink, X } from "lucide-react"
+import { FileText, User, X } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 
 import { FormField } from "@/components/ui/form"
@@ -15,8 +14,9 @@ import { LabeledInput, LabeledContainer, LabeledSelect, PeriodValidationDateInpu
 import { cn, formatPlainDate } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
-import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
-import type { Contact } from "@/features/contacts/types"
+import type { SaleOrder, SaleOrderLine } from "@/features/sales"
+import type { Contact } from "@/features/contacts"
+import type { Contact as ContactEntity, Product } from "@/types/entities"
 import type { UoM, ProductMinimal } from "../../../types"
 
 interface WorkOrderBasicInfoProps {
@@ -37,7 +37,6 @@ interface WorkOrderBasicInfoProps {
 export function WorkOrderBasicInfo({
     initialData,
     isAutoCreated,
-    linkedSaleOrder,
     saleLines,
     loadingLines,
     uoms,
@@ -71,13 +70,6 @@ export function WorkOrderBasicInfo({
                                         </span>
                                     </div>
                                 </div>
-                                {linkedSaleOrder && (
-                                    <Link href={`/sales/command-center?id=${typeof linkedSaleOrder === 'object' ? linkedSaleOrder.id : linkedSaleOrder}`} target="_blank" passHref>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
-                                            <ExternalLink className="h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                )}
                             </div>
                         </div>
                     ) : otType === "LINKED" ? (
@@ -92,12 +84,12 @@ export function WorkOrderBasicInfo({
                                     label="Nota de Venta"
                                     error={fieldState.error?.message}
                                     icon={<FileText className="h-3.5 w-3.5 opacity-50" />}
-                                    customFilter={(order: any) =>
-                                        order.lines?.some((l: any) =>
+                                    customFilter={(order: { lines?: Array<{ product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }> }) =>
+                                        !!(order.lines?.some((l: { product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }) =>
                                             l.product_type === 'MANUFACTURABLE' &&
                                             l.requires_advanced_manufacturing &&
                                             !l.work_order_summary
-                                        )
+                                        ))
                                     }
                                 />
                             )}
@@ -107,7 +99,7 @@ export function WorkOrderBasicInfo({
             </div>
 
             {initialData ? (
-                <div className="p-4 bg-muted/20 border rounded-lg space-y-4">
+                <div className="p-4 bg-muted/20 border rounded-md space-y-4">
                     <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
                         <FileText className="h-3.5 w-3.5" /> Detalle de Producto {otType === "LINKED" ? "en Venta" : "en Stock"}
                     </Label>
@@ -148,7 +140,7 @@ export function WorkOrderBasicInfo({
             ) : (
                 <>
                     {otType === "LINKED" && (
-                        <div className="p-4 bg-muted/20 border rounded-lg space-y-4">
+                        <div className="p-4 bg-muted/20 border rounded-md space-y-4">
                             <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
                                 <FileText className="h-3.5 w-3.5" /> Detalle de Producto en Venta
                             </Label>
@@ -192,7 +184,7 @@ export function WorkOrderBasicInfo({
                                                             </div>
                                                             <div>
                                                                 <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
-                                                                <p className="text-sm font-bold text-primary">{formatCurrency(parseFloat(String((l as any).subtotal || 0)))}</p>
+                                                                <p className="text-sm font-bold text-primary">{formatCurrency(parseFloat(String((l as unknown as { subtotal?: number }).subtotal || 0)))}</p>
                                                             </div>
                                                         </>
                                                     )
@@ -215,11 +207,11 @@ export function WorkOrderBasicInfo({
                                         <ProductSelector
                                             value={field.value}
                                             onChange={field.onChange}
-                                            onSelect={handleManualProductSelect}
+                                            onSelect={(p: Product) => handleManualProductSelect(p as ProductMinimal)}
                                             productType="MANUFACTURABLE"
                                             label="Producto a Fabricar (Stock)"
                                             error={fieldState.error?.message}
-                                            customFilter={(p: ProductMinimal) =>
+                                            customFilter={(p: Product) =>
                                                 !p.requires_advanced_manufacturing &&
                                                 !p.mfg_auto_finalize
                                             }
@@ -334,8 +326,8 @@ export function WorkOrderBasicInfo({
                             </div>
                         ) : (
                             <AdvancedContactSelector
-                                onSelectContact={(c: any) => {
-                                    setSelectedContact(c)
+                                onSelectContact={(c: ContactEntity) => {
+                                    setSelectedContact(c as unknown as Contact)
                                     form.setValue('contact_id' as never, String(c.id) as never)
                                 }}
                                 onChange={() => { }}

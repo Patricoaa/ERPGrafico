@@ -5,56 +5,92 @@ from django.db import migrations, models
 
 
 def migrate_existing_entries(apps, schema_editor):
-    JournalEntry = apps.get_model('accounting', 'JournalEntry')
-    HistoricalJournalEntry = apps.get_model('accounting', 'HistoricalJournalEntry')
+    JournalEntry = apps.get_model("accounting", "JournalEntry")
+    HistoricalJournalEntry = apps.get_model("accounting", "HistoricalJournalEntry")
 
     # Mark posted entries in closed periods as CLOSED
-    closed_updated = JournalEntry.objects.filter(
-        period_closed=True, status='POSTED'
-    ).update(status='CLOSED')
+    closed_updated = JournalEntry.objects.filter(period_closed=True, status="POSTED").update(
+        status="CLOSED"
+    )
 
     if closed_updated:
-        HistoricalJournalEntry.objects.filter(
-            period_closed=True, status='POSTED'
-        ).update(status='CLOSED')
+        HistoricalJournalEntry.objects.filter(period_closed=True, status="POSTED").update(
+            status="CLOSED"
+        )
 
     # Mark existing reversal entries (reference starts with REV-)
     reversal_updated = JournalEntry.objects.filter(
-        reference__startswith='REV-', status='POSTED'
-    ).update(status='REVERSAL')
+        reference__startswith="REV-", status="POSTED"
+    ).update(status="REVERSAL")
 
     if reversal_updated:
-        HistoricalJournalEntry.objects.filter(
-            reference__startswith='REV-', status='POSTED'
-        ).update(status='REVERSAL')
+        HistoricalJournalEntry.objects.filter(reference__startswith="REV-", status="POSTED").update(
+            status="REVERSAL"
+        )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0016_fts_gin_index'),
+        ("accounting", "0016_fts_gin_index"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='historicaljournalentry',
-            name='reversal_of',
-            field=models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='accounting.journalentry', verbose_name='Asiento Original Revertido'),
+            model_name="historicaljournalentry",
+            name="reversal_of",
+            field=models.ForeignKey(
+                blank=True,
+                db_constraint=False,
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="+",
+                to="accounting.journalentry",
+                verbose_name="Asiento Original Revertido",
+            ),
         ),
         migrations.AddField(
-            model_name='journalentry',
-            name='reversal_of',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='reversals', to='accounting.journalentry', verbose_name='Asiento Original Revertido'),
+            model_name="journalentry",
+            name="reversal_of",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="reversals",
+                to="accounting.journalentry",
+                verbose_name="Asiento Original Revertido",
+            ),
         ),
         migrations.AlterField(
-            model_name='historicaljournalentry',
-            name='status',
-            field=models.CharField(choices=[('DRAFT', 'Borrador'), ('POSTED', 'Publicado'), ('CLOSED', 'Cerrado'), ('CANCELLED', 'Anulado'), ('REVERSAL', 'Reversión')], default='DRAFT', max_length=20, verbose_name='Estado'),
+            model_name="historicaljournalentry",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("DRAFT", "Borrador"),
+                    ("POSTED", "Publicado"),
+                    ("CLOSED", "Cerrado"),
+                    ("CANCELLED", "Anulado"),
+                    ("REVERSAL", "Reversión"),
+                ],
+                default="DRAFT",
+                max_length=20,
+                verbose_name="Estado",
+            ),
         ),
         migrations.AlterField(
-            model_name='journalentry',
-            name='status',
-            field=models.CharField(choices=[('DRAFT', 'Borrador'), ('POSTED', 'Publicado'), ('CLOSED', 'Cerrado'), ('CANCELLED', 'Anulado'), ('REVERSAL', 'Reversión')], default='DRAFT', max_length=20, verbose_name='Estado'),
+            model_name="journalentry",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("DRAFT", "Borrador"),
+                    ("POSTED", "Publicado"),
+                    ("CLOSED", "Cerrado"),
+                    ("CANCELLED", "Anulado"),
+                    ("REVERSAL", "Reversión"),
+                ],
+                default="DRAFT",
+                max_length=20,
+                verbose_name="Estado",
+            ),
         ),
         migrations.RunPython(migrate_existing_entries, migrations.RunPython.noop),
     ]

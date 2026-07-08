@@ -118,7 +118,7 @@ export function ManufacturingSpecsEditor({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      set({ design_files: [...value.design_files, ...Array.from(e.target.files!)] })
+      set({ design_files: [...value.design_files, ...Array.from(e.target.files)] })
     }
   }
 
@@ -131,7 +131,7 @@ export function ManufacturingSpecsEditor({
   const phaseCardClass = (enabled: boolean) => cn(
     "relative group p-6 rounded-md border transition-all duration-300",
     enabled
-      ? "bg-card shadow-sm border-primary/30 ring-1 ring-primary/5"
+      ? "bg-card shadow-card border-primary/30 ring-1 ring-primary/5"
       : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]",
     disabled && "pointer-events-none"
   )
@@ -308,7 +308,7 @@ export function ManufacturingSpecsEditor({
                       className={cn(
                         "h-7 text-[10px] uppercase font-black tracking-tight transition-all",
                         value.print_type === type
-                          ? "bg-primary text-primary-foreground shadow-sm"
+                          ? "bg-primary text-primary-foreground shadow-card"
                           : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
                       )}
                       onClick={() => set({ print_type: type })}
@@ -323,7 +323,7 @@ export function ManufacturingSpecsEditor({
         </div>
 
         {/* ── Post-Impresión ────────────────────────────────────────────── */}
-        <div className={cn(phaseCardClass(value.phases.postpress), "rounded-xl")}>
+        <div className={phaseCardClass(value.phases.postpress)}>
           <FormSection title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
 
           <div className="flex items-center justify-between mb-4 mt-1">

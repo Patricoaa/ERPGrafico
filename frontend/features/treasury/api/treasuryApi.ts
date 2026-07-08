@@ -23,18 +23,25 @@ import type {
     TransferPayload,
     MovementCreatePayload,
     TerminalBatchCreatePayload,
+    TerminalBatch,
     PaymentUpdatePayload,
     ContactBrief,
     PartnerCapitalInfo,
     TreasuryMovement,
+    POSSession,
     UpcomingInstallment,
+    PendingChargeRow,
+    UnbilledForecast,
 } from '../types'
+import type { BillChargesResponse } from '@/features/treasury/card-statements/types'
+import type { TcHubAnalyticsResponse } from '@/features/treasury/card-statements/analyticsTypes'
 
 export const treasuryApi = {
     // ========== Terminals ==========
 
     getTerminals: async (): Promise<Terminal[]> => {
         const response = await api.get<Terminal[]>('/treasury/pos-terminals/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return response.data
     },
 
@@ -56,6 +63,7 @@ export const treasuryApi = {
 
     getTerminalProviders: async (): Promise<PaymentTerminalProvider[]> => {
         const response = await api.get<PaymentTerminalProvider[]>('/treasury/terminal-providers/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return response.data
     },
 
@@ -77,6 +85,7 @@ export const treasuryApi = {
 
     getTerminalDevices: async (params?: Record<string, string>): Promise<PaymentTerminalDevice[]> => {
         const response = await api.get<PaymentTerminalDevice[]>('/treasury/terminal-devices/', { params })
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return response.data
     },
 
@@ -101,19 +110,19 @@ export const treasuryApi = {
 
     // ========== Terminal Batches ==========
 
-    getTerminalBatches: async (params?: Record<string, string>): Promise<any[]> => {
-        const response = await api.get<any[]>('/treasury/terminal-batches/', { params })
-        return response.data
+    getTerminalBatches: async (params?: Record<string, string>): Promise<TerminalBatch[]> => {
+        const response = await api.get<{ results: TerminalBatch[] }>('/treasury/terminal-batches/', { params })
+        return response.data.results
     },
 
-    createTerminalBatch: async (payload: TerminalBatchCreatePayload): Promise<any> => {
+    createTerminalBatch: async (payload: TerminalBatchCreatePayload): Promise<TerminalBatch> => {
         const { data } = await api.post('/treasury/terminal-batches/', payload)
         return data
     },
 
     // ========== Treasury Accounts ==========
 
-    getAccounts: async (filters?: { name?: string; account_type?: string }): Promise<TreasuryAccount[]> => {
+    getAccounts: async (filters?: { name?: string; account_type?: string; bank_id?: number }): Promise<TreasuryAccount[]> => {
         const { data } = await api.get<TreasuryAccount[]>('/treasury/accounts/', { params: filters })
         return data
     },
@@ -194,9 +203,9 @@ export const treasuryApi = {
         return data
     },
 
-    getBankOverview: async (id: number): Promise<any> => {
+    getBankOverview: async (id: number): Promise<Record<string, unknown>> => {
         const { data } = await api.get(`/treasury/banks/${id}/overview/`)
-        return data
+        return data as Record<string, unknown>
     },
 
     // ========== Movements ==========
@@ -211,25 +220,25 @@ export const treasuryApi = {
         return toPage<TreasuryMovement>(response.data, pageIndex, pageSize)
     },
 
-    createMovement: async (payload: MovementCreatePayload): Promise<any> => {
-        const { data } = await api.post('/treasury/movements/', payload)
+    createMovement: async (payload: MovementCreatePayload): Promise<TreasuryMovement> => {
+        const { data } = await api.post<TreasuryMovement>('/treasury/movements/', payload)
         return data
     },
 
     // ========== Transfers ==========
 
-    registerTransfer: async (payload: TransferPayload): Promise<any> => {
-        const { data } = await api.post('/treasury/dashboard/register_transfer/', payload)
+    registerTransfer: async (payload: TransferPayload): Promise<TreasuryMovement> => {
+        const { data } = await api.post<TreasuryMovement>('/treasury/dashboard/register_transfer/', payload)
         return data
     },
 
     // ========== Payments ==========
 
-    createPayment: async (payload: FormData): Promise<any> => {
+    createPayment: async (payload: FormData): Promise<Record<string, unknown>> => {
         const { data } = await api.post('/treasury/payments/', payload, {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
-        return data
+        return data as Record<string, unknown>
     },
 
     createCardPurchase: async (payload: {
@@ -244,30 +253,30 @@ export const treasuryApi = {
         purchase_order?: number
         client_reference?: string
         notes?: string
-    }): Promise<any> => {
+    }): Promise<Record<string, unknown>> => {
         const { data } = await api.post('/treasury/movements/card-purchase/', payload)
-        return data
+        return data as Record<string, unknown>
     },
 
-    updatePayment: async (id: number, payload: PaymentUpdatePayload): Promise<any> => {
+    updatePayment: async (id: number, payload: PaymentUpdatePayload): Promise<Record<string, unknown>> => {
         const { data } = await api.patch(`/treasury/payments/${id}/`, payload)
-        return data
+        return data as Record<string, unknown>
     },
 
     // ========== POS Sessions ==========
 
-    getPOSSession: async (id: number): Promise<any> => {
-        const response = await api.get(`/treasury/pos-sessions/${id}/`)
+    getPOSSession: async (id: number): Promise<POSSession> => {
+        const response = await api.get<POSSession>(`/treasury/pos-sessions/${id}/`)
         return response.data
     },
 
     // ========== Monthly Invoices ==========
 
-    generateInvoice: async (formData: FormData): Promise<any> => {
+    generateInvoice: async (formData: FormData): Promise<Record<string, unknown>> => {
         const { data } = await api.post('/treasury/terminal-batches/generate_invoice/', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
-        return data
+        return data as Record<string, unknown>
     },
 
     // ========== Contacts (cross-feature) ==========
@@ -278,20 +287,28 @@ export const treasuryApi = {
     },
 
     getSuppliers: async (params?: Record<string, string | boolean>): Promise<ContactBrief[]> => {
-        const response = await api.get<ContactBrief[]>('/contacts/', { params })
-        return response.data
+        const response = await api.get<{ results: ContactBrief[] }>('/contacts/', { params })
+        return response.data.results
     },
 
     // ========== Bank Statements ==========
 
-    getStatements: async (filters?: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    getStatements: async (filters?: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
         const response = await api.get('/treasury/statements/', { params: filters })
-        return response.data
+        return response.data.results
     },
 
     getStatement: async (id: number): Promise<Record<string, unknown>> => {
         const response = await api.get(`/treasury/statements/${id}/`)
         return response.data
+    },
+
+    unmatchStatementLine: async (lineId: number): Promise<void> => {
+        await api.post(`/treasury/statement-lines/${lineId}/unmatch/`)
+    },
+
+    confirmStatement: async (id: number): Promise<void> => {
+        await api.post(`/treasury/statements/${id}/confirm/`)
     },
 
     // ========== Unbilled Charges (Credit Card) ==========
@@ -300,15 +317,15 @@ export const treasuryApi = {
         cardAccountId: number,
         cutOffDate?: string,
     ): Promise<{
-        charges: TreasuryMovement[]
+        charges: PendingChargeRow[]
         upcoming_installments: UpcomingInstallment[]
         summary: {
             total: number
             count: number
-            purchases: number
             charges: number
             installments: number
         }
+        forecast: UnbilledForecast
     }> => {
         const params: Record<string, string | number> = {
             card_account: cardAccountId,
@@ -317,6 +334,7 @@ export const treasuryApi = {
             params.cut_off_date = cutOffDate
         }
         const response = await api.get('/treasury/card-statements/unbilled-charges/', { params })
+        // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
         return response.data
     },
 
@@ -326,9 +344,24 @@ export const treasuryApi = {
         charge_type?: string
         description?: string
         date?: string
-    }): Promise<TreasuryMovement> => {
+    }): Promise<PendingChargeRow> => {
         const { data } = await api.post('/treasury/card-statements/add-charge/', payload)
         return data
+    },
+
+    updateUnbilledCharge: async (payload: {
+        id: number
+        amount?: number | string
+        charge_type?: string
+        description?: string
+        date?: string
+    }): Promise<PendingChargeRow> => {
+        const { data } = await api.post('/treasury/card-statements/update-charge/', payload)
+        return data
+    },
+
+    deleteUnbilledCharge: async (id: number): Promise<void> => {
+        await api.post('/treasury/card-statements/delete-charge/', { id })
     },
 
     billUnbilledCharges: async (payload: {
@@ -339,8 +372,17 @@ export const treasuryApi = {
         due_date: string
         minimum_payment?: number | string
         notes?: string
-    }): Promise<import('@/features/treasury/card-statements/types').BillChargesResponse> => {
+    }): Promise<BillChargesResponse> => {
         const { data } = await api.post('/treasury/card-statements/bill-charges/', payload)
+        return data
+    },
+
+    // ========== Card Analytics (decision-oriented hub) ==========
+
+    getCardAnalytics: async (
+        params?: { card_account?: number; months?: number; granularity?: string },
+    ): Promise<TcHubAnalyticsResponse> => {
+        const { data } = await api.get('/treasury/card-statements/analytics/', { params })
         return data
     },
 }

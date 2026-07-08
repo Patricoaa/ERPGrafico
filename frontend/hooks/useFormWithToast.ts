@@ -1,18 +1,19 @@
 import { useMemo } from "react"
-import { FieldValues, UseFormProps, useForm, SubmitHandler, SubmitErrorHandler } from "react-hook-form"
+import { type FieldValues, type UseFormProps, useForm, type SubmitHandler, type SubmitErrorHandler, type UseFormReturn } from "react-hook-form"
 import { showWarningToast } from "@/lib/utils/toast-utils"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { type z } from "zod"
 
 interface UseFormWithToastProps<T extends FieldValues> extends Omit<UseFormProps<T>, 'resolver'> {
-    schema?: z.ZodType<T>
+    schema?: z.ZodType<T, T>
 }
 
 export function useFormWithToast<T extends FieldValues>({ schema, ...props }: UseFormWithToastProps<T>) {
+     
     const form = useForm<T>({
-        ...(schema && { resolver: zodResolver(schema as any) }),
+        ...(schema ? { resolver: zodResolver(schema as z.ZodType<T, T>) } : {}),
         ...props
-    } as any)
+    })
 
     const originalHandleSubmit = form.handleSubmit
 
@@ -44,6 +45,6 @@ export function useFormWithToast<T extends FieldValues>({ schema, ...props }: Us
         return {
             ...form,
             handleSubmit: wrappedHandleSubmit
-        } as any
+        } as unknown as UseFormReturn<T>
     }, [form, originalHandleSubmit])
 }

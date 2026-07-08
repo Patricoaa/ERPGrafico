@@ -18,7 +18,6 @@ DoD:
 import re
 from typing import Optional
 
-
 # ─── Prefijos a eliminar por banco ────────────────────────────────────────────
 # Cada entrada es una lista de patterns a stripear (orden importa: más específicos primero)
 
@@ -86,10 +85,28 @@ _GENERIC_PREFIXES: list[str] = [
 
 # Stop-words bancarias a eliminar después del prefijo
 _STOP_WORDS: set[str] = {
-    "DE", "LA", "EL", "LOS", "LAS", "DEL", "AL", "CON", "POR",
-    "SPA", "LTDA", "SA", "SRL", "EIRL", "S.A.", "LTDA.",
-    "CL", "RUT", "RUN",
-    "TEF", "TRF", "TRANS",
+    "DE",
+    "LA",
+    "EL",
+    "LOS",
+    "LAS",
+    "DEL",
+    "AL",
+    "CON",
+    "POR",
+    "SPA",
+    "LTDA",
+    "SA",
+    "SRL",
+    "EIRL",
+    "S.A.",
+    "LTDA.",
+    "CL",
+    "RUT",
+    "RUN",
+    "TEF",
+    "TRF",
+    "TRANS",
 }
 
 

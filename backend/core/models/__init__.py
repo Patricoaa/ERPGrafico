@@ -1,73 +1,91 @@
-from django.contrib.auth.models import AbstractUser
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
-from simple_history.models import HistoricalRecords
 import os
 import uuid
-from core.validators import validate_file_size, validate_file_extension, validate_image_extension
-from core.storages import PublicMediaStorage, PrivateMediaStorage
 
-from .abstracts import TimeStampedModel, AuditedModel, TransactionalDocument
-from .search import GlobalSearchIndex
+from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from simple_history.models import HistoricalRecords
+
+from core.storages import PrivateMediaStorage, PublicMediaStorage
+from core.validators import validate_file_extension, validate_file_size, validate_image_extension
+
+from .abstracts import AuditedModel, TimeStampedModel, TransactionalDocument
 from .idempotency import IdempotencyRecord
+from .period_reopen_log import PeriodReopenLog
+from .search import GlobalSearchIndex
+from .user_preference import UserPreference
+from .jobs import BackgroundJob
 
 __all__ = [
-    'User',
-    'CompanySettings',
-    'ActionLog',
-    'Attachment',
-    'attachment_upload_path',
-    'TimeStampedModel',
-    'AuditedModel',
-    'TransactionalDocument',
-    'GlobalSearchIndex',
-    'IdempotencyRecord',
+    "User",
+    "CompanySettings",
+    "ActionLog",
+    "Attachment",
+    "attachment_upload_path",
+    "TimeStampedModel",
+    "AuditedModel",
+    "TransactionalDocument",
+    "GlobalSearchIndex",
+    "IdempotencyRecord",
+    "PeriodReopenLog",
+    "UserPreference",
+    "BackgroundJob",
 ]
 
 
 class User(AbstractUser):
     pos_pin = models.CharField(
-        max_length=128,
-        blank=True,
-        null=True,
-        help_text=_("PIN para Punto de Venta (hasheado)")
+        max_length=128, blank=True, null=True, help_text=_("PIN para Punto de Venta (hasheado)")
     )
 
     def set_pos_pin(self, raw_pin):
         from django.contrib.auth.hashers import make_password
+
         self.pos_pin = make_password(raw_pin)
 
     def check_pos_pin(self, raw_pin):
         if not self.pos_pin:
             return False
         from django.contrib.auth.hashers import check_password
+
         return check_password(raw_pin, self.pos_pin)
+
     contact = models.OneToOneField(
-        'contacts.Contact',
+        "contacts.Contact",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='system_user',
-        help_text=_("Vínculo con la entidad física de Contacto")
+        related_name="system_user",
+        help_text=_("Vínculo con la entidad física de Contacto"),
     )
-    
+
     THEME_CHOICES = [
-        ('light', 'Claro'),
-        ('dark', 'Oscuro'),
-        ('system', 'Sistema'),
+        ("light", "Claro"),
+        ("dark", "Oscuro"),
+        ("system", "Sistema"),
     ]
     theme = models.CharField(
         max_length=10,
         choices=THEME_CHOICES,
-        default='system',
-        help_text=_("Preferencia de tema visual para el usuario")
+        default="system",
+        help_text=_("Preferencia de tema visual para el usuario"),
     )
     history = HistoricalRecords()
 
     class FormMeta:
-        exclude_fields = ['pos_pin', 'password', 'last_login', 'is_superuser', 'user_permissions', 'groups', 'theme']
+        exclude_fields = [
+            "pos_pin",
+            "password",
+            "last_login",
+            "is_superuser",
+            "user_permissions",
+            "groups",
+            "theme",
+        ]
+
+
 class CompanySettings(models.Model):
     name = models.CharField(_("Razón Social"), max_length=255)
     trade_name = models.CharField(_("Nombre de Fantasía"), max_length=255, blank=True)
@@ -79,25 +97,27 @@ class CompanySettings(models.Model):
     logo_url = models.URLField(_("URL del Logo"), blank=True)
     logo = models.ImageField(
         _("Logo"),
-        upload_to='company/logos/',
+        upload_to="company/logos/",
         storage=PublicMediaStorage(),
         null=True,
         blank=True,
-        validators=[validate_file_size, validate_image_extension]
+        validators=[validate_file_size, validate_image_extension],
     )
 
     # Association with Contact
     contact = models.ForeignKey(
-        'contacts.Contact',
+        "contacts.Contact",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='company_settings',
-        help_text=_("Vínculo con el contacto que representa a esta empresa")
+        related_name="company_settings",
+        help_text=_("Vínculo con el contacto que representa a esta empresa"),
     )
 
     # Corporate Identity
-    business_activity = models.CharField(_("Giro / Actividad Económica"), max_length=255, blank=True)
+    business_activity = models.CharField(
+        _("Giro / Actividad Económica"), max_length=255, blank=True
+    )
 
     history = HistoricalRecords()
 
@@ -127,25 +147,28 @@ class CompanySettings(models.Model):
         super().save(*args, **kwargs)
 
         # Invalidate Redis cache
-        from core.cache import invalidate_singleton, CACHE_KEY_COMPANY_SETTINGS
+        from core.cache import CACHE_KEY_COMPANY_SETTINGS, invalidate_singleton
+
         invalidate_singleton(CACHE_KEY_COMPANY_SETTINGS)
 
     @classmethod
     def get_solo(cls):
-        from core.cache import cached_singleton, CACHE_KEY_COMPANY_SETTINGS
+        from core.cache import CACHE_KEY_COMPANY_SETTINGS, cached_singleton
+
         return cached_singleton(cls, CACHE_KEY_COMPANY_SETTINGS)
+
 
 class ActionLog(models.Model):
     class Type(models.TextChoices):
-        LOGIN = 'LOGIN', _('Inicio de Sesión')
-        LOGOUT = 'LOGOUT', _('Cierre de Sesión')
-        EXPORT = 'EXPORT', _('Exportación de Datos')
-        PRINT = 'PRINT', _('Impresión de Documento')
-        SETTINGS_CHANGE = 'SETTINGS_CHANGE', _('Cambio de Configuración')
-        SECURITY = 'SECURITY', _('Seguridad/Permisos')
-        OTHER = 'OTHER', _('Otro')
+        LOGIN = "LOGIN", _("Inicio de Sesión")
+        LOGOUT = "LOGOUT", _("Cierre de Sesión")
+        EXPORT = "EXPORT", _("Exportación de Datos")
+        PRINT = "PRINT", _("Impresión de Documento")
+        SETTINGS_CHANGE = "SETTINGS_CHANGE", _("Cambio de Configuración")
+        SECURITY = "SECURITY", _("Seguridad/Permisos")
+        OTHER = "OTHER", _("Otro")
 
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='action_logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="action_logs")
     timestamp = models.DateTimeField(auto_now_add=True)
     action_type = models.CharField(max_length=30, choices=Type.choices, default=Type.OTHER)
     description = models.TextField()
@@ -155,42 +178,46 @@ class ActionLog(models.Model):
     class Meta:
         verbose_name = _("Log de Acción")
         verbose_name_plural = _("Logs de Acciones")
-        ordering = ['-timestamp']
+        ordering = ["-timestamp"]
 
     def __str__(self):
         user_str = self.user.username if self.user else "System"
         return f"{self.timestamp} - {user_str}: {self.action_type}"
 
+
 def attachment_upload_path(instance, filename):
-    ext = filename.split('.')[-1]
+    ext = filename.split(".")[-1]
     name = f"{uuid.uuid4()}.{ext}"
 
     # Try to organize by model name if available
     try:
         if instance.content_type:
             model_name = instance.content_type.model
-            return os.path.join('attachments', model_name, name)
-    except:
+            return os.path.join("attachments", model_name, name)
+    except Exception:
         pass
 
-    return os.path.join('attachments', 'general', name)
+    return os.path.join("attachments", "general", name)
+
 
 class Attachment(models.Model):
     file = models.FileField(
         _("Archivo"),
         upload_to=attachment_upload_path,
         storage=PrivateMediaStorage(),
-        validators=[validate_file_size, validate_file_extension]
+        validators=[validate_file_size, validate_file_extension],
     )
     original_filename = models.CharField(_("Nombre Original"), max_length=255)
 
     # Generic Relation
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    content_object = GenericForeignKey("content_type", "object_id")
 
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='attachments')
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="attachments"
+    )
 
     # Metadata
     file_size = models.PositiveIntegerField(_("Tamaño (Bytes)"), null=True, blank=True)
@@ -198,15 +225,13 @@ class Attachment(models.Model):
 
     class FormMeta:
         ui_layout = {
-            'tabs': [
-                {'id': 'main', 'label': 'General', 'fields': ['file', 'original_filename']}
-            ]
+            "tabs": [{"id": "main", "label": "General", "fields": ["file", "original_filename"]}]
         }
 
     class Meta:
         verbose_name = _("Adjunto")
         verbose_name_plural = _("Adjuntos")
-        ordering = ['-uploaded_at']
+        ordering = ["-uploaded_at"]
 
     def __str__(self):
         return f"{self.original_filename} ({self.content_type.model} #{self.object_id})"

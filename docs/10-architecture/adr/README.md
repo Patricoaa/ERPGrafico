@@ -108,6 +108,13 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0042](0042-credit-card-p0-accounting-close.md) | Cierre P0 contable de tarjeta de crédito propia — cargos reales, idempotencia, reversa transaccional | Accepted |
 | [0043](0043-credit-card-purchase-installments.md) | Compras en tarjeta en cuotas (3/6/12) con interés explícito — `CardPurchaseGroup` + schedule francés | Superseded by 0046 (D-1/D-6) |
 | [0044](0044-credit-card-partial-payments-and-punitory-interest.md) | Pagos parciales e interés punitorio de tarjeta de crédito propia — `PARTIALLY_PAID` + `card_punitory_monthly_rate` + task mensual | Accepted |
+| [0045](0045-loan-charges-penalty-commission-stamp-tax.md) | Cargos configurables de préstamos — mora, comisión de apertura, ITE | Accepted |
 | [0046](0046-credit-card-purchase-single-use-statement-installments.md) | Compra con TC propia — uso = 1 movimiento/asiento + cuotas vía cronograma facturado en statement | Accepted |
+| [0047](0047-delete-annul-refactor.md) | Refactor borrado → cancelación/anulación — tres patrones de eliminación | Accepted |
+| [0048](0048-cancelled-terminal-no-reset-to-draft.md) | CANCELLED es terminal — no se implementa Reset-to-Draft | Accepted |
+| [0049](0049-credit-line-model.md) | Modelo CreditLine (Línea de Crédito Rotativa) | Superseded by 0050 |
+| [0050](0050-credit-line-overdraft-treasury-account.md) | Refactor CreditLine — sobregiro como overdraft de TreasuryAccount | Accepted |
+| [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted |
+| [0052](0052-purchase-checkout-idempotency.md) | Purchase checkout endpoint in idempotency closed list | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

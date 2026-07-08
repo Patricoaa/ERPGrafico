@@ -6,6 +6,7 @@ import {
     BaseModal, FormFooter, CancelButton, MoneyDisplay, StatusBadge,
 } from '@/components/shared'
 import type { LoanInstallment, BankLoanCurrency } from './types'
+import { parseDateOnly } from '@/lib/utils'
 
 interface Props {
     installment: LoanInstallment
@@ -28,7 +29,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
                     <div className="flex flex-col">
                         <span>Cuota #{installment.number} · {installment.status_display}</span>
                         <span className="text-xs text-muted-foreground font-normal">
-                            {loanDisplayId} · Vence {new Date(installment.due_date).toLocaleDateString('es-CL')}
+                            {loanDisplayId} · Vence {installment.due_date ? parseDateOnly(installment.due_date).toLocaleDateString('es-CL') : '—'}
                         </span>
                     </div>
                 </div>
@@ -41,7 +42,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
         >
             <div className="space-y-4">
                 {/* Montos pagados */}
-                <div className="rounded-lg border border-border p-4 space-y-3">
+                <div className="rounded-md border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
                         Montos Pagados
@@ -74,7 +75,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
 
                 {/* Información del pago */}
                 {installment.paid_at && (
-                    <div className="rounded-lg border border-border p-4 space-y-3">
+                    <div className="rounded-md border border-border p-4 space-y-3">
                         <h3 className="text-sm font-semibold flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
                             Información del Pago
@@ -82,7 +83,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
                         <div className="grid grid-cols-2 gap-3 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Fecha de pago</span>
-                                <span>{new Date(installment.paid_at).toLocaleDateString('es-CL')}</span>
+                                <span>{parseDateOnly(installment.paid_at).toLocaleDateString('es-CL')}</span>
                             </div>
                             {installment.uf_value_used && (
                                 <div className="flex justify-between">
@@ -111,7 +112,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
                 )}
 
                 {installment.notes && (
-                    <div className="rounded-lg border border-border p-4">
+                    <div className="rounded-md border border-border p-4">
                         <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas</h4>
                         <p className="text-sm whitespace-pre-wrap">{installment.notes}</p>
                     </div>

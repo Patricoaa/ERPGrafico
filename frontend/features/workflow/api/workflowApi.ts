@@ -145,7 +145,7 @@ export interface NotificationRulePayload {
 // Tasks
 export const getTasks = async (params: TaskQueryParams = {}) => {
     const response = await api.get('workflow/tasks/', { params })
-    return response.data
+    return response.data.results
 }
 
 /**
@@ -175,7 +175,7 @@ export const updateTask = async (id: number, payload: Record<string, unknown>) =
 // Notifications
 export const getNotifications = async () => {
     const response = await api.get('workflow/notifications/')
-    return response.data
+    return response.data.results
 }
 
 export const getUnreadNotificationCount = async () => {
@@ -196,6 +196,7 @@ export const markAllNotificationsRead = async () => {
 // Notification Rules
 export const getNotificationRules = async () => {
     const response = await api.get('workflow/notification-rules/')
+    // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
     return response.data
 }
 
@@ -212,6 +213,7 @@ export const createNotificationRule = async (data: NotificationRulePayload) => {
 // Rules (Admin)
 export const getAssignmentRules = async () => {
     const response = await api.get('workflow/assignment-rules/')
+    // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
     return response.data
 }
 

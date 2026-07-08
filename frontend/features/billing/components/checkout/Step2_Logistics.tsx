@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import { FormSection, LabeledInput, LabeledContainer, LabeledSwitch, PeriodValidationDateInput, RadioCard, StepHeader } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {Truck, Package, Calendar, AlertTriangle, ShoppingBag} from "lucide-react"
+import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
 import { billingApi } from "../../api/billingApi"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -23,24 +23,27 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-function UoMSelector({ line: l, currentUom: cu, onUomChange }: { line: Record<string, unknown>, currentUom: Record<string, unknown>, onUomChange: (uomId: number) => void }) {
-    const line = l as any
-    const currentUom = cu as any
-    const [allowedUoms, setAllowedUoms] = useState<any[]>([])
+
+function UoMSelector({ line: l, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: number, onUomChange: (uomId: number) => void }) {
+    const [allowedUoms, setAllowedUoms] = useState<Record<string, unknown>[]>([])
+
+    const productId = l.productId ?? l.product_id;
+    const lineId = l.lineId ?? l.line_id;
+    const uomName = l.uomName ?? l.uom_name;
 
     useEffect(() => {
         const fetchAllowed = async () => {
             try {
-                const uoms = await billingApi.getAllowedUoms(line.product_id || line.product, 'sale')
+                const uoms = await billingApi.getAllowedUoms((productId as number) || (l.product as number), 'sale')
                 setAllowedUoms(uoms)
             } catch (err) {
                 console.error("Error fetching allowed UoMs", err)
             }
         }
         fetchAllowed()
-    }, [line.id, line.product_id])
+    }, [lineId, productId])
 
-    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{line.uom_name}</span>
+    if (allowedUoms.length <= 1) return <span className="text-xs text-muted-foreground">{uomName as string}</span>
 
     return (
         <Select value={currentUom?.toString()} onValueChange={(val) => onUomChange(parseInt(val))}>
@@ -48,9 +51,9 @@ function UoMSelector({ line: l, currentUom: cu, onUomChange }: { line: Record<st
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                {allowedUoms.map((u: any) => (
-                    <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
-                        {u.name}
+                {allowedUoms.map((u: Record<string, unknown>) => (
+                    <SelectItem key={u.id as number} value={(u.id as number).toString()} className="text-[10px]">
+                        {u.name as string}
                     </SelectItem>
                 ))}
             </SelectContent>
@@ -71,36 +74,18 @@ export function Step2_Logistics({
     setData,
     selectedItems
 }: Step2_LogisticsProps) {
-    const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
-    const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
     const { dateString } = useServerDate()
+    const [, setWarehouses] = useState<Record<string, unknown>[]>([])
+    const [, setFetchingWarehouses] = useState(true)
 
     // Check for "Manufacturable" products (Simple or Advanced) - ONLY block for Debit Notes
-    const restrictedItems = selectedItems.filter(item =>
-        (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
-        !item.mfg_auto_finalize
-    );
+    const restrictedItems = selectedItems.filter(item => {
+        const pType = item.productType ?? item.product_type;
+        const hasBom = item.hasBom ?? item.has_bom;
+        const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
+        return (pType === 'MANUFACTURABLE' || hasBom) && !auto;
+    });
     const hasRestrictedItems = !isCreditNote && restrictedItems.length > 0;
-
-    const fetchWarehouses = async () => {
-        try {
-            setFetchingWarehouses(true)
-            const list = await billingApi.getWarehouses()
-            setWarehouses(Array.isArray(list) ? list : [])
-
-            if (Array.isArray(list) && list.length > 0 && (!data || !data.warehouse_id)) {
-                setData({
-                    ...(data || { date: dateString || "", notes: "", delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE', line_data: [] }),
-                    warehouse_id: (list[0] as Record<string, unknown>).id as string
-                })
-            }
-        } catch (err) {
-            console.error("Error fetching warehouses", err)
-            // toast.error("Error al cargar almacenes")
-        } finally {
-            setFetchingWarehouses(false)
-        }
-    }
 
     // Initialize data if null or missing fields
     useEffect(() => {
@@ -134,9 +119,15 @@ export function Step2_Logistics({
         warehouse_id: "",
         date: dateString || "",
         delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE',
-        line_data: [],
+        line_data: [] as Record<string, unknown>[],
         notes: ""
-    }) as any
+    }) as unknown as {
+        warehouse_id: string
+        date: string
+        delivery_type: string
+        line_data: Record<string, unknown>[]
+        notes: string
+    }
 
     // Sync date when server date arrives if not already set
     useEffect(() => {
@@ -152,121 +143,89 @@ export function Step2_Logistics({
         }, 0);
     }
 
-    const moveTypeLabel = isCreditNote ? "Entrada de Stock" : "Salida de Stock"
-
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <ShoppingBag className="h-5 w-5 text-primary" />
-                    Opciones de Logística
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Configure cómo se procesará el movimiento de inventario.
-                </p>
+            <StepHeader title="Opciones de Logística" description="Configure cómo se procesará el movimiento de inventario." icon={ShoppingBag} />
 
-                {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mt-2">
+            {hasRestrictedItems && (
+                    <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive mt-2">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
                             <p className="text-xs font-medium">Hay {restrictedItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
                         </div>
                     </div>
-                )}
-            </div>
+            )}
 
             <LabeledContainer
-                label="Tipo de Movimiento"
-                icon={<Truck className="h-3.5 w-3.5 opacity-50" />}
-                className="mt-4"
+                label="Opciones de Procesamiento"
             >
                 <RadioGroup
-                    value={formData.delivery_type}
-                    onValueChange={(val) => {
-                        if (val === 'PARTIAL') {
-                            const initialLineData = selectedItems
-                                .filter(item => {
-                                    const isRestricted = !isCreditNote &&
-                                        (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
-                                        !item.mfg_auto_finalize;
-                                    return item.creates_stock_move && !isRestricted;
-                                })
-                                .map(item => ({
-                                    line_id: item.line_id,
-                                    product_id: item.product_id,
-                                    quantity: item.quantity,
-                                    uom_id: item.uom_id
-                                }));
-                            setData({ ...formData, delivery_type: val, line_data: initialLineData });
-                        } else {
-                            setData({ ...formData, delivery_type: val });
-                        }
-                    }}
-                    className="grid gap-3"
-                >
-                    <div
-                        className={cn(
-                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                            formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
-                            hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
-                        )}
-                        onClick={() => !hasRestrictedItems && setData({ ...formData, delivery_type: 'IMMEDIATE' })}
-                    >
-                        <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Package className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Movimiento Inmediato</span>
-                            <span className="text-[10px] text-muted-foreground">Rebajar/Aumentar stock ahora mismo.</span>
-                        </div>
-                    </div>
+                value={formData.delivery_type}
+                onValueChange={(val) => {
+                    if (val === 'PARTIAL') {
+                        const initialLineData = selectedItems
+                            .filter(item => {
+                                const pType = item.productType ?? item.product_type;
+                                const hasBom = item.hasBom ?? item.has_bom;
+                                const auto = item.mfgAutoFinalize ?? item.mfg_auto_finalize;
+                                const createsStockMove = item.createsStockMove ?? item.creates_stock_move;
+                                const isRestricted = !isCreditNote &&
+                                    (pType === 'MANUFACTURABLE' || hasBom) &&
+                                    !auto;
+                                return createsStockMove && !isRestricted;
+                            })
+                            .map(item => ({
+                                line_id: item.lineId ?? item.line_id,
+                                product_id: item.productId ?? item.product_id,
+                                quantity: item.noteQuantity ?? item.quantity,
+                                uom_id: item.uomId ?? item.uom_id
+                            }));
+                        setData({ ...formData, delivery_type: val, line_data: initialLineData });
+                    } else {
+                        setData({ ...formData, delivery_type: val });
+                    }
+                }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full mt-4"
+            >
+                <RadioCard
+                    id="del-immediate"
+                    value="IMMEDIATE"
+                    label="Inmediato"
+                    description="Procesar ahora"
+                    icon={<Package className="h-4 w-4" />}
+                    disabled={hasRestrictedItems}
+                    iconColor="text-primary"
+                />
 
-                    <div
-                        className={cn(
-                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                            formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
-                        )}
-                        onClick={() => setData({ ...formData, delivery_type: 'SCHEDULED' })}
-                    >
-                        <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Calendar className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Programar Movimiento</span>
-                            <span className="text-[10px] text-muted-foreground">Registrar para una fecha futura.</span>
-                        </div>
-                    </div>
+                <RadioCard
+                    id="del-scheduled"
+                    value="SCHEDULED"
+                    label="Programar"
+                    description="Fecha futura"
+                    icon={<Calendar className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
 
-                    <div
-                        className={cn(
-                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                            formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
-                        )}
-                        onClick={() => setData({ ...formData, delivery_type: 'PARTIAL' })}
-                    >
-                        <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                        <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Truck className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Carga Parcial</span>
-                            <span className="text-[10px] text-muted-foreground">Procesar solo algunos ítems ahora.</span>
-                        </div>
-                    </div>
+                <RadioCard
+                    id="del-partial"
+                    value="PARTIAL"
+                    label="Parcial"
+                    description="Procesar algunos"
+                    icon={<Truck className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
                 </RadioGroup>
             </LabeledContainer>
 
             <div className="space-y-4 animate-in fade-in duration-300">
                 {formData.delivery_type === 'PARTIAL' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                        <LabeledContainer label="Cantidades para Movimiento Inmediato" icon={<Package className="h-3.5 w-3.5 opacity-50" />}>
-                            <p className="text-[10px] text-muted-foreground mb-3">
-                                Especifique las cantidades que procesará ahora.
-                            </p>
-                        <div className="rounded-md border overflow-hidden">
+                        <LabeledContainer
+                            label="Cantidades para Movimiento Inmediato"
+                            tooltip="Especifique las cantidades que procesará ahora. El resto quedará pendiente para despacho futuro."
+                        >
+                            <div className="w-full overflow-hidden">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/50">
@@ -277,24 +236,35 @@ export function Step2_Logistics({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {selectedItems.map((i: any) => {
-                                        const item = i as any;
+                                    {selectedItems.map((i: Record<string, unknown>) => {
+                                        const item = i as unknown as { lineId?: number, line_id?: number; productId?: number, product_id?: number; productName?: string, product_name?: string; noteQuantity?: number; quantity?: number; uomId?: number, uom_id?: number; productType?: string, product_type?: string; hasBom?: boolean, has_bom?: boolean; mfgAutoFinalize?: boolean, mfg_auto_finalize?: boolean; createsStockMove?: boolean, creates_stock_move?: boolean };
+                                        
+                                        const lineId = (item.lineId ?? item.line_id) as number;
+                                        const productId = (item.productId ?? item.product_id) as number;
+                                        const productName = (item.productName ?? item.product_name) as string;
+                                        const uomId = (item.uomId ?? item.uom_id) as number;
+                                        const productType = (item.productType ?? item.product_type) as string;
+                                        const hasBom = (item.hasBom ?? item.has_bom) as boolean;
+                                        const mfgAutoFinalize = (item.mfgAutoFinalize ?? item.mfg_auto_finalize) as boolean;
+                                        const createsStockMove = (item.createsStockMove ?? item.creates_stock_move) as boolean;
+
+                                        const itemQty = (item.noteQuantity ?? item.quantity ?? 0) as number;
                                         const isRestricted = !isCreditNote &&
-                                            (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
-                                            !item.mfg_auto_finalize;
+                                            (productType === 'MANUFACTURABLE' || hasBom) &&
+                                            !mfgAutoFinalize;
 
-                                        const isEligible = (item.creates_stock_move ||
-                                            item.product_type === 'MANUFACTURABLE' ||
-                                            item.has_bom) && !isRestricted;
+                                        const isEligible = (createsStockMove ||
+                                            productType === 'MANUFACTURABLE' ||
+                                            hasBom) && !isRestricted;
 
-                                        const currentVal = (formData.line_data || [])
-                                            .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
+                                        const currentVal = ((formData.line_data || []) as Record<string, unknown>[])
+                                            .find((ld: Record<string, unknown>) => (ld.line_id as number) === lineId)?.quantity as number ?? 0;
 
                                         return (
-                                            <TableRow key={item.line_id} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
+                                            <TableRow key={lineId} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1 py-1">
-                                                        <span className="font-medium text-xs leading-tight">{item.product_name}</span>
+                                                        <span className="font-medium text-xs leading-tight">{productName}</span>
                                                         {!isEligible && (
                                                             <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">
                                                                 {isRestricted ? "Requiere Producción" : "Sin control de stock"}
@@ -303,24 +273,25 @@ export function Step2_Logistics({
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-semibold text-xs tabular-nums">
-                                                    {item.quantity.toLocaleString('es-CL')}
+                                                    {itemQty.toLocaleString('es-CL')}
                                                 </TableCell>
                                                 <TableCell>
                                                     <LabeledInput
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
-                                                        max={item.quantity}
+                                                        max={itemQty}
                                                         value={currentVal}
                                                         disabled={!isEligible}
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
-                                                            const lines = [...(formData.line_data as any[] || [])];
-                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                            const lineData = (formData.line_data || []) as Record<string, unknown>[];
+                                                            const lines = [...lineData];
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === lineId);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], quantity: val };
                                                             } else {
-                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: val, uom_id: item.uom_id });
+                                                                lines.push({ line_id: lineId, product_id: productId, quantity: val, uom_id: uomId });
                                                             }
                                                             setData({ ...formData, line_data: lines });
                                                         }}
@@ -329,15 +300,16 @@ export function Step2_Logistics({
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
                                                     <UoMSelector
-                                                        line={item}
-                                                        currentUom={(formData.line_data as any[] || []).find((ld: any) => ld.line_id === item.line_id)?.uom_id || item.uom_id}
-                                                        onUomChange={(uomId) => {
-                                                            const lines = [...(formData.line_data as any[] || [])];
-                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                        line={i}
+                                                        currentUom={((formData.line_data as Record<string, unknown>[]) || []).find((ld: Record<string, unknown>) => (ld.line_id as number) === lineId)?.uom_id as number || uomId}
+                                                        onUomChange={(uomIdVal) => {
+                                                            const lineData = (formData.line_data || []) as Record<string, unknown>[];
+                                                            const lines = [...lineData];
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => (ld.line_id as number) === lineId);
                                                             if (idx >= 0) {
-                                                                lines[idx] = { ...lines[idx], uom_id: uomId };
+                                                                lines[idx] = { ...lines[idx], uom_id: uomIdVal };
                                                             } else {
-                                                                lines.push({ line_id: item.line_id, product_id: item.product_id, quantity: 1, uom_id: uomId });
+                                                                lines.push({ line_id: lineId, product_id: productId, quantity: 1, uom_id: uomIdVal });
                                                             }
                                                             setData({ ...formData, line_data: lines });
                                                         }}
@@ -348,7 +320,7 @@ export function Step2_Logistics({
                                     })}
                                 </TableBody>
                             </Table>
-                        </div>
+                            </div>
                         </LabeledContainer>
                     </div>
                 )}
@@ -357,7 +329,6 @@ export function Step2_Logistics({
                     {(formData.delivery_type === 'PARTIAL' || formData.delivery_type === 'SCHEDULED') && (
                         <PeriodValidationDateInput
                             label={formData.delivery_type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha de Operación'}
-                            icon={<Calendar className="h-3.5 w-3.5" />}
                             date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
                             onDateChange={(d) => {
                                 if (!d) {

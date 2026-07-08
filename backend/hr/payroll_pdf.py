@@ -1,13 +1,14 @@
 """
 Payroll PDF generation. Returns a BytesIO ready for HTTP response.
 """
+
 from io import BytesIO
 
 
 def generate_payroll_pdf(payroll) -> BytesIO:
     try:
         from reportlab.lib import colors
-        from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+        from reportlab.lib.enums import TA_CENTER
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
         from reportlab.lib.units import cm
@@ -64,7 +65,12 @@ def generate_payroll_pdf(payroll) -> BytesIO:
         ["Empleado", contact.name, "Período", payroll.period_label],
         ["RUT", contact.tax_id or "-", "Folio", payroll.display_id],
         ["Cargo", emp.position or "-", "Departamento", emp.department or "-"],
-        ["Fecha Ingreso", str(emp.start_date or "-"), "Tipo Contrato", emp.get_contract_type_display()],
+        [
+            "Fecha Ingreso",
+            str(emp.start_date or "-"),
+            "Tipo Contrato",
+            emp.get_contract_type_display(),
+        ],
     ]
     info_table = Table(employee_info, colWidths=[80, 170, 80, 170])
     info_table.setStyle(
@@ -89,10 +95,14 @@ def generate_payroll_pdf(payroll) -> BytesIO:
     elements.append(Spacer(1, 8))
     days_data = [
         [
-            "Días Pactados", str(payroll.agreed_days),
-            "Ausencias", str(payroll.absent_days),
-            "Días Trabajados", str(payroll.worked_days),
-            "Sueldo Base", f"${payroll.base_salary:,.0f}",
+            "Días Pactados",
+            str(payroll.agreed_days),
+            "Ausencias",
+            str(payroll.absent_days),
+            "Días Trabajados",
+            str(payroll.worked_days),
+            "Sueldo Base",
+            f"${payroll.base_salary:,.0f}",
         ]
     ]
     days_table = Table(days_data, colWidths=[70, 50, 55, 50, 75, 55, 65, 80])
@@ -117,11 +127,15 @@ def generate_payroll_pdf(payroll) -> BytesIO:
     elements.append(days_table)
 
     # Items table
-    items = payroll.items.select_related("concept").exclude(
-        concept__category=PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR
-    ).all()
+    items = (
+        payroll.items.select_related("concept")
+        .exclude(concept__category=PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR)
+        .all()
+    )
     haberes = [i for i in items if i.concept.category in ["HABER_IMPONIBLE", "HABER_NO_IMPONIBLE"]]
-    descuentos = [i for i in items if i.concept.category in ["DESCUENTO_LEGAL_TRABAJADOR", "OTRO_DESCUENTO"]]
+    descuentos = [
+        i for i in items if i.concept.category in ["DESCUENTO_LEGAL_TRABAJADOR", "OTRO_DESCUENTO"]
+    ]
 
     elements.append(Paragraph("Detalle de Conceptos", section_style))
 
@@ -178,12 +192,26 @@ def generate_payroll_pdf(payroll) -> BytesIO:
             except Exception:
                 pass
         unified_payments.append(
-            {"date": str(adv.date), "type": "Anticipo", "amount": adv.amount, "method": method_name, "is_advance": True}
+            {
+                "date": str(adv.date),
+                "type": "Anticipo",
+                "amount": adv.amount,
+                "method": method_name,
+                "is_advance": True,
+            }
         )
 
-    for pay in PayrollPayment.objects.filter(payroll=payroll, payment_type=PayrollPayment.PaymentType.SALARIO):
+    for pay in PayrollPayment.objects.filter(
+        payroll=payroll, payment_type=PayrollPayment.PaymentType.SALARIO
+    ):
         unified_payments.append(
-            {"date": str(pay.date), "type": "Pago Sueldo", "amount": pay.amount, "method": pay.notes or "Transferencia", "is_advance": False}
+            {
+                "date": str(pay.date),
+                "type": "Pago Sueldo",
+                "amount": pay.amount,
+                "method": pay.notes or "Transferencia",
+                "is_advance": False,
+            }
         )
 
     unified_payments.sort(key=lambda x: x["date"])
@@ -195,7 +223,12 @@ def generate_payroll_pdf(payroll) -> BytesIO:
         pay_rows = [["Fecha", "Tipo", "Método", "Monto"]]
         for p in unified_payments:
             pay_rows.append(
-                [p["date"], p["type"], p["method"].split(" - ")[0].split(" (")[0], f"${p['amount']:,.0f}"]
+                [
+                    p["date"],
+                    p["type"],
+                    p["method"].split(" - ")[0].split(" (")[0],
+                    f"${p['amount']:,.0f}",
+                ]
             )
         pay_rows.append(["Total Pagado", "", "", f"${total_paid:,.0f}"])
 

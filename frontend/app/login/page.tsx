@@ -1,9 +1,10 @@
 "use client"
 
-import { motion } from "framer-motion"
+import Image from "next/image"
 import { LoginForm } from "@/features/auth"
 import { GuestGuard } from "@/components/auth"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { PrepressPanel } from "@/components/shared"
 import { getFrontendVersion } from "@/lib/version"
 
 export default function LoginPage() {
@@ -14,28 +15,28 @@ export default function LoginPage() {
     return (
         <GuestGuard>
             <div className="min-h-screen w-full flex items-center justify-center bg-background selection:bg-primary/20 relative overflow-hidden">
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full max-w-sm relative z-10 mx-6"
+                <div
+                    className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]"
                 >
-                    <div className="rounded-xl border bg-card shadow-sm p-8 canvas-prepress">
+                    <PrepressPanel className="rounded-xl border bg-card shadow-card p-8">
                         {/* Logo */}
                         <div className="mb-8 flex flex-col items-center">
                             {logo ? (
-                                <img
-                                    src={logo}
-                                    alt={companyName || "Logo"}
-                                    className="h-14 w-auto object-contain mb-3"
-                                />
+                                <div className="relative h-14 w-40 mb-3">
+                                    <Image
+                                        src={logo}
+                                        alt={companyName || "Logo"}
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
                             ) : (
-                                <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
+                                <div className="w-14 h-14 rounded-md flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
                                     {initials}
                                 </div>
                             )}
                             {companyName && (
-                                <h1 className="font-heading font-bold text-sm uppercase tracking-widest text-muted-foreground">
+                                <h1 className=" font-bold text-sm uppercase tracking-tighter text-muted-foreground">
                                     {companyName}
                                 </h1>
                             )}
@@ -50,8 +51,8 @@ export default function LoginPage() {
                                 v{getFrontendVersion()}
                             </p>
                         </div>
-                    </div>
-                </motion.div>
+                    </PrepressPanel>
+                </div>
             </div>
         </GuestGuard>
     )

@@ -16,6 +16,7 @@ import { purchasingApi } from "../api/purchasingApi"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useServerDate } from "@/hooks/useServerDate"
 
 interface PurchaseOrderLine {
@@ -88,14 +89,14 @@ export function ReceiptModal({
         setLoading(true)
         try {
             // Fetch order details
-            const orderData = await purchasingApi.getOrder(orderId)
-            setOrder(orderData as any)
+            const orderData = await purchasingApi.getOrder(orderId) as unknown as PurchaseOrder
+            setOrder(orderData)
 
             // Initialize quantities and costs
             const initialQuantities: { [lineId: number]: number } = {}
             const initialCosts: { [lineId: number]: number } = {}
 
-            ;(orderData as any).lines.forEach((line: PurchaseOrderLine) => {
+            orderData.lines.forEach((line: PurchaseOrderLine) => {
                 initialQuantities[line.id] = Math.ceil(line.quantity_pending)
                 initialCosts[line.id] = Math.ceil(line.unit_cost)
             })
@@ -104,12 +105,12 @@ export function ReceiptModal({
 
             // Fetch warehouses
             const warehousesData = await purchasingApi.getWarehouses()
-            const warehousesList = warehousesData as any[]
+            const warehousesList = warehousesData as unknown as Warehouse[]
             setWarehouses(warehousesList)
 
             // Default to order warehouse
-            if ((orderData as any).warehouse) {
-                setSelectedWarehouse((orderData as any).warehouse)
+            if (orderData.warehouse) {
+                setSelectedWarehouse(orderData.warehouse)
             } else if (warehousesList.length > 0) {
                 setSelectedWarehouse(warehousesList[0].id)
             }
@@ -224,7 +225,7 @@ export function ReceiptModal({
             onOpenChange={onOpenChange}
             size="xl"
             icon={Package}
-            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OCS-${order?.number || ""}`}
+            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} ${formatEntityDisplay('purchasing.purchaseorder', { number: order?.number || "" })}`}
             description={`Proveedor: ${order?.supplier_name || ""}`}
             footer={
                 <FormFooter

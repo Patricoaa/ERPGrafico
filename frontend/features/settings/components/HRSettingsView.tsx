@@ -3,16 +3,12 @@
 import { useState, useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import type * as z from "zod"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import {
-    Trash2,
-    Settings2,
-    AlertCircle
-} from "lucide-react"
+import { Settings2 } from "lucide-react"
 
 import { ActionConfirmModal, ActionSlideButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from '@/components/shared'
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
@@ -29,19 +25,19 @@ import {
     createPayrollConcept,
     updatePayrollConcept,
     deletePayrollConcept
-} from '@/features/hr/api/hrApi'
+} from '@/features/hr'
 import type {
     AFP,
     PayrollConcept
 } from "@/types/hr"
 
-import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
+import { FormulaBuilder } from "@/features/hr"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { DataTable } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 ;
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { payrollConceptActions, type PayrollConceptActionsCtx } from './payrollConceptActions'
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
@@ -49,6 +45,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
     const [loading, setLoading] = useState(true)
     const [concepts, setConcepts] = useState<PayrollConcept[]>([])
     const [afps, setAfps] = useState<AFP[]>([])
+    const [editingConcept, setEditingConcept] = useState<PayrollConcept | null>(null)
 
     // Global Settings Form
     const globalForm = useForm<z.infer<typeof globalSettingsSchema>>({
@@ -57,9 +54,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
             uf_current_value: "0",
             utm_current_value: "0",
             min_wage_value: "0",
-            account_remuneraciones_por_pagar: null,
-            account_previred_por_pagar: null,
-            account_anticipos: null,
         }
     })
 
@@ -75,9 +69,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 uf_current_value: settings.uf_current_value,
                 utm_current_value: settings.utm_current_value,
                 min_wage_value: settings.min_wage_value || "500000",
-                account_remuneraciones_por_pagar: settings.account_remuneraciones_por_pagar?.toString() || null,
-                account_previred_por_pagar: settings.account_previred_por_pagar?.toString() || null,
-                account_anticipos: settings.account_anticipos?.toString() || null,
             })
             setConcepts(conceptsData)
             setAfps(afpsData)
@@ -116,13 +107,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
     })
 
     const onSaveGlobal = useCallback(async (data: GlobalHRFormValues) => {
-        const convertedData = {
-            ...data,
-            account_remuneraciones_por_pagar: data.account_remuneraciones_por_pagar ? Number(data.account_remuneraciones_por_pagar) : null,
-            account_previred_por_pagar: data.account_previred_por_pagar ? Number(data.account_previred_por_pagar) : null,
-            account_anticipos: data.account_anticipos ? Number(data.account_anticipos) : null,
-        }
-        await updateGlobalHRSettings(convertedData)
+        await updateGlobalHRSettings(data)
     }, [])
 
     const { status: globalStatus, invalidReason: globalInvalidReason, lastSavedAt: globalLastSavedAt, retry: globalRetry } = useAutoSaveForm({
@@ -132,6 +117,11 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
     })
 
     useUnsavedChangesGuard(globalStatus)
+
+    const payrollConceptActionsCtx: PayrollConceptActionsCtx = {
+        onEdit: (concept) => setEditingConcept(concept),
+        onDelete: (id) => conceptDeleteConfirm.requestConfirm(id),
+    }
 
     const conceptColumns: ColumnDef<PayrollConcept>[] = [
         {
@@ -153,7 +143,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 const category = row.original.category
                 const isHaber = category.includes('HABER')
                 return (
-                    <Chip size="xs" intent={isHaber ? "success" : "destructive"} className="h-5 shadow-sm rounded-sm">
+                    <Chip size="xs" intent={isHaber ? "success" : "destructive"} className="h-5 shadow-card rounded-sm">
                         {row.getValue("category_display")}
                     </Chip>
                 )
@@ -177,21 +167,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 </div>
             )
         },
-        createActionsColumn<PayrollConcept>({
-            renderActions: (concept) => (
-                <>
-                    <ConceptDialog concept={concept} onSaved={fetchData} />
-                    {!concept.is_system && (
-                        <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar"
-                            className="text-destructive h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => conceptDeleteConfirm.requestConfirm(concept.id)}
-                        />
-                    )}
-                </>
-            )
-        })
+        payrollConceptActions.column(payrollConceptActionsCtx),
     ]
 
     if (loading) return <SkeletonShell isLoading={loading} ariaLabel="Cargando configuración de RRHH" />
@@ -212,10 +188,10 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         </div>
                         <Form {...globalForm}>
                             <div className="grid gap-6">
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Indicadores Económicos</CardTitle>
-                                        <CardDescription className="text-[10px] uppercase font-bold">Valores oficiales para el cálculo mensual</CardDescription>
+                                <Card variant="default">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg text-primary">Indicadores Económicos</CardTitle>
+                                        <CardDescription>Valores oficiales para el cálculo mensual</CardDescription>
                                     </CardHeader>
                                     <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <FormField
@@ -225,7 +201,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                                 <LabeledInput
                                                     label="Valor UF Actual ($)"
                                                     type="number"
-                                                    step="0.01"
+                                                    step="1"
                                                     className="font-mono"
                                                     error={fieldState.error?.message}
                                                     {...field}
@@ -252,7 +228,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                                 <LabeledInput
                                                     label="Valor UTM Actual ($)"
                                                     type="number"
-                                                    step="0.01"
+                                                    step="1"
                                                     className="font-mono"
                                                     error={fieldState.error?.message}
                                                     {...field}
@@ -262,53 +238,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                     </CardContent>
                                 </Card>
 
-                                <Card variant="transparent" className="border-2">
-                                    <CardHeader className="pb-4">
-                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
-                                            <AlertCircle className="h-4 w-4 opacity-50" />
-                                            Cuentas Consolidadas
-                                        </CardTitle>
-                                        <CardDescription className="text-[10px] uppercase font-bold">Cuentas contables de cierre de nómina centralizado</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <FormField
-                                            control={globalForm.control}
-                                            name="account_remuneraciones_por_pagar"
-                                            render={({ field }) => (
-                                                <AccountSelector
-                                                    label="Remuneraciones por Pagar (Líquido)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="LIABILITY"
-                                                />
-                                            )}
-                                        />
-                                        <FormField
-                                            control={globalForm.control}
-                                            name="account_previred_por_pagar"
-                                            render={({ field }) => (
-                                                <AccountSelector
-                                                    label="Obligaciones Previred (Pasivo)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="LIABILITY"
-                                                />
-                                            )}
-                                        />
-                                        <FormField
-                                            control={globalForm.control}
-                                            name="account_anticipos"
-                                            render={({ field }) => (
-                                                <AccountSelector
-                                                    label="Anticipos de Remuneraciones (Activo)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="ASSET"
-                                                />
-                                            )}
-                                        />
-                                    </CardContent>
-                                </Card>
+
                             </div>
                         </Form>
                     </div>
@@ -329,8 +259,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                             <DataTable
                                 columns={conceptColumns}
                                 data={concepts}
-                                filterColumn="name"
-                                searchPlaceholder="Buscar concepto..."
                                 isLoading={loading}
                                 variant="embedded"
                             />
@@ -351,13 +279,13 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {afps.map((afp) => (
-                                <Card key={afp.id} variant="transparent" className="relative overflow-hidden group hover:border-primary/50 transition-all border-2">
+                                <Card key={afp.id} variant="default" className="relative overflow-hidden group hover:border-primary/50 transition-all">
                                     <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <AFPDialog afp={afp} onSaved={fetchData} />
                                     </div>
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-xs font-black uppercase tracking-tight">{afp.name}</CardTitle>
-                                        <CardDescription className="text-2xl font-black text-primary font-heading">
+                                        <CardTitle className="text-lg text-primary">{afp.name}</CardTitle>
+                                        <CardDescription className="text-2xl font-black text-primary">
                                             {afp.percentage}%
                                         </CardDescription>
                                     </CardHeader>
@@ -377,6 +305,14 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                     </div>
                 )}
             </FadeIn>
+
+            <ConceptDialog
+                key={editingConcept?.id ?? 'new'}
+                concept={editingConcept || undefined}
+                onSaved={fetchData}
+                open={!!editingConcept}
+                onOpenChange={(open) => { if (!open) setEditingConcept(null) }}
+            />
 
             <ActionConfirmModal
                 open={conceptDeleteConfirm.isOpen}
@@ -401,9 +337,21 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
 // --- DIALOGS ---
 
-function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved: () => void }) {
-    const [open, setOpen] = useState(false)
+function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: setControlledOpen }: {
+    concept?: PayrollConcept
+    onSaved: () => void
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+}) {
+    const [internalOpen, setInternalOpen] = useState(false)
     const [saving, setSaving] = useState(false)
+
+    const isControlled = controlledOpen !== undefined
+    const isOpen = isControlled ? controlledOpen : internalOpen
+    const setOpen = (val: boolean) => {
+        if (isControlled) setControlledOpen?.(val)
+        else setInternalOpen(val)
+    }
 
     const form = useForm<ConceptFormValues>({
         resolver: zodResolver(conceptSchema),
@@ -449,14 +397,12 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
 
     return (
         <>
-            {concept ? (
-                <DataCell.Action icon={Settings2} title="Configurar" onClick={() => setOpen(true)} />
-            ) : (
+            {!isControlled && (
                 <ToolbarCreateButton onClick={() => setOpen(true)} label="Nuevo Concepto" />
             )}
 
             <BaseModal
-                open={open}
+                open={isOpen}
                 onOpenChange={setOpen}
                 size="md"
                 title={

@@ -1,6 +1,6 @@
 "use client"
 
-import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes } from "react"
+import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react"
 import { cn } from "@/lib/utils"
 
 // ─────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ export const LabeledInput = forwardRef<
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                        "px-1.5 text-[10px] font-black uppercase tracking-widest transition-colors duration-200",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
                         labelClassName
                     )}>

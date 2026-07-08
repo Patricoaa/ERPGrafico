@@ -9,7 +9,7 @@ export interface NotificationPayload {
     type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
     notification_type?: string;
     link: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     created_at: string;
     read: boolean;
 }
@@ -121,14 +121,14 @@ export function useNotifications(onNotification?: (notification: NotificationPay
         // Guard: WS disabled, no user, or SSR
         if (!WS_ENABLED || !user || typeof window === 'undefined') return;
 
-        const token = localStorage.getItem('access_token');
-        if (!token) return;
-
         const wsUrl = getWebSocketUrl();
         if (!wsUrl) return;
 
         const connect = () => {
             if (!mountedRef.current) return;
+
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
 
             // Append JWT token as query parameter
             const urlWithAuth = `${wsUrl}?token=${encodeURIComponent(token)}`;
@@ -163,7 +163,8 @@ export function useNotifications(onNotification?: (notification: NotificationPay
                 if (!mountedRef.current) return;
 
                 // Normal closure (e.g. user logged out, component unmounted)
-                if (event.code === 1000) {
+                // 4001 = auth rejection — stop retrying
+                if (event.code === 1000 || event.code === 4001) {
                     console.log('[Notifications] WebSocket closed normally');
                     return;
                 }

@@ -1,11 +1,13 @@
 "use client";
 
+import { Button } from "@/components/ui/button"
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Loader2, type LucideIcon } from "lucide-react";
 
 export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'destructive' | 'success';
+    variant?: 'primary' | 'destructive' | 'success' | 'cmyk';
+    size?: 'default' | 'sm' | 'lg' | 'icon' | 'icon-sm' | 'icon-lg';
     /** Show loading spinner and disable interaction */
     loading?: boolean;
     /** Leading icon (Lucide component or instance) */
@@ -26,52 +28,57 @@ export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLB
  * Supports `loading` (spinner + disabled) and `icon` (leading Lucide icon).
  */
 export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlideButtonProps>(
-    ({ className, variant = 'primary', loading = false, icon, disabled, children, ...props }, ref) => {
+    ({ className, variant = 'cmyk', size, loading = false, icon, disabled, children, ...props }, ref) => {
         const isPrimary = variant === 'primary';
         const isDestructive = variant === 'destructive';
         const isSuccess = variant === 'success';
+        const isCmyk = variant === 'cmyk';
         const isDisabled = disabled || loading;
 
         return (
-            <button
+            <Button
                 ref={ref}
                 disabled={isDisabled}
+                size={size}
                 className={cn(
-                    "relative inline-flex items-center justify-center overflow-hidden z-10 transition-all duration-300 ease-out",
-                    "h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-sm",
+                    "relative flex items-center justify-center overflow-hidden transition-all duration-300 ease-out cursor-pointer",
+                    "h-9 px-4 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
                     "border",
-                    isPrimary && "text-primary hover:text-primary-foreground bg-primary/5",
+                    isPrimary && "text-primary hover:text-primary-foreground bg-primary/5 border-primary",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",
                     isSuccess && "border-success text-success hover:text-success-foreground bg-success/5",
+                    isCmyk && "border-border/50 text-foreground hover:text-white bg-transparent",
                     isDisabled && "opacity-50 cursor-not-allowed pointer-events-none",
                     "group",
                     className
                 )}
                 {...props}
             >
-                {/* 
+                {/*
                   Slide background: Starts at -100% X offset, slides to 0% on hover.
                   Uses slightly more than 100% (-101%) to prevent subpixel bleeding lines.
                 */}
                 <div
                     className={cn(
-                        "absolute inset-0 -z-10 transition-transform duration-300 ease-out transform -translate-x-[100%]",
+                        "absolute inset-0 transition-transform duration-300 ease-out transform -translate-x-[100%]",
                         "group-hover:translate-x-0 group-focus-visible:translate-x-0 group-active:translate-x-0",
                         isPrimary && "bg-primary",
                         isDestructive && "bg-destructive",
                         isSuccess && "bg-success"
                     )}
+                    {...(isCmyk ? { style: { background: 'var(--gradient-cmyk)' } as React.CSSProperties } : {})}
                 />
 
                 {/* Content wrapper to ensure text stays above the animated background */}
-                <span className="flex items-center justify-center gap-2">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                     {loading ? (
+                        // eslint-disable-next-line no-restricted-syntax -- This IS the canonical loading implementation for ActionSlideButton
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                         (() => {
                             if (!icon) return null;
-                            if (typeof icon === 'function' || (typeof icon === 'object' && 'render' in (icon as any))) {
-                                const Icon = icon as any;
+                            if (typeof icon === 'function' || (typeof icon === 'object' && 'render' in icon)) {
+                                const Icon = icon as React.ComponentType<{ className?: string }>;
                                 return <Icon className="h-3.5 w-3.5" />;
                             }
                             return icon;
@@ -79,7 +86,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     )}
                     {children}
                 </span>
-            </button>
+            </Button>
         );
     }
 );

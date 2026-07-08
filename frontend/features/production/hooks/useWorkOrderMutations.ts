@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import api from '@/lib/api'
 import { showApiError } from '@/lib/errors'
+import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 import type { WorkOrderStageData } from '../schemas'
 
 export const WORK_ORDER_QUERY_KEY = 'work-order'
@@ -58,10 +60,10 @@ export function useWorkOrderMutations(
   { onSuccess }: { onSuccess?: () => void } = {}
 ) {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: [WORK_ORDER_QUERY_KEY, String(orderId)] })
-    queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+    invalidateCrossFeature(queryClient, [[WORK_ORDER_QUERY_KEY, String(orderId)], [WORK_ORDERS_LIST_KEY]])
     onSuccess?.()
   }
 
@@ -81,6 +83,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Etapa actualizada')
       invalidate()
     },
@@ -99,6 +102,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Rectificación aplicada')
       invalidate()
     },
@@ -123,6 +127,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Material agregado')
       invalidate()
     },
@@ -147,6 +152,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Material actualizado')
       invalidate()
     },
@@ -162,6 +168,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Material eliminado')
       invalidate()
     },
@@ -175,6 +182,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Orden de Trabajo anulada exitosamente')
       invalidate()
     },
@@ -187,6 +195,7 @@ export function useWorkOrderMutations(
       await api.delete(`/production/orders/${orderId}/`)
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Orden de Trabajo eliminada')
       invalidate()
     },
@@ -200,6 +209,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Orden de Trabajo duplicada exitosamente')
       invalidate()
     },
@@ -217,6 +227,7 @@ export function useWorkOrderMutations(
       return res.data
     },
     onSuccess: () => {
+      markLocalMutation()
       toast.success('Foto adjuntada correctamente')
       invalidate()
     },

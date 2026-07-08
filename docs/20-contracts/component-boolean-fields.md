@@ -24,7 +24,7 @@ This is the **required visual pattern** for all `LabeledSwitch` instances. It co
 | State | Border Style | Background | Shadow |
 | :--- | :--- | :--- | :--- |
 | **Off** | `border-dashed` | transparent | none |
-| **On** | `border-X/20` (solid, semantic color) | `bg-X/5` | `shadow-sm` |
+| **On** | `border-X/20` (solid, semantic color) | `bg-X/5` | `shadow-card` |
 
 The semantic color `X` should match the feature's purpose:
 - `primary` — general features (inventory tracking, BOM, price rules)
@@ -58,13 +58,13 @@ The semantic color `X` should match the feature's purpose:
   checked={field.value}
   onCheckedChange={field.onChange}
   icon={<Layers className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-  className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+   className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-card" : "border-dashed")}
 />
 ```
 
 **Rules:**
 - Icon color MUST be reactive: `field.value ? "text-X" : "text-muted-foreground/30"`
-- `className` MUST use `cn(field.value ? "bg-X/5 border-X/20 shadow-sm" : "border-dashed")` — never hardcode a fixed className
+- `className` MUST use `cn(field.value ? "bg-X/5 border-X/20 shadow-card" : "border-dashed")` — never hardcode a fixed className
 - Description MUST reflect state: use ternary text or omit when label is self-explanatory
 - Full row is clickable — do NOT wrap in an extra click handler div
 

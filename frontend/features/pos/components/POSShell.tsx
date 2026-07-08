@@ -6,7 +6,7 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { cn } from "@/lib/utils"
 
 export function POSShell({ children }: { children: React.ReactNode }) {
-    const { isHubOpen, isHubTemporarilyHidden, isDocked, isHubEffectivelyOpen: isHubGlobalVisible } = useHubPanel()
+    const { isHubEffectivelyOpen: isHubGlobalVisible } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
 
     // The shell should only repel if the Hub is open globally (fixed), 

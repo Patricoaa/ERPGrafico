@@ -1,132 +1,330 @@
-#docker compose exec backend python manage.py setup_demo_data --purge
+# docker compose exec backend python manage.py setup_demo_data --purge
 # SYNC_TRIGGER_20260207_0251
 
+import random
+from decimal import Decimal
+
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password
-from decimal import Decimal
-import random
-from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory, ISCategory
+
+from accounting.models import (
+    Account,
+    AccountingSettings,
+    AccountType,
+    BSCategory,
+    Budget,
+    BudgetItem,
+    FiscalYear,
+    JournalEntry,
+    JournalItem,
+)
 from accounting.services import AccountingService
-from inventory.models import (
-    ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, 
-    PricingRule, Subscription, ProductAttribute, ProductAttributeValue,
-    CustomFieldTemplate, ProductCustomField
-)
+from accounting.utils import get_default_vat_rate
+from billing.models import Invoice
+from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
-from contacts.partner_models import PartnerTransaction, PartnerEquityStake
-from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, SaleReturn, SaleReturnLine, DraftCart
-from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
-from treasury.models import (
-    TreasuryAccount, TreasuryMovement, BankStatement, BankStatementLine,
-    ReconciliationMatch, ReconciliationSettings,
-    POSTerminal, POSSession, POSSessionAudit,
-    Bank, PaymentMethod, TerminalBatch,
-    PaymentTerminalProvider, PaymentTerminalDevice,
+from contacts.partner_models import PartnerEquityStake, PartnerTransaction
+from core.models import Attachment, CompanySettings, GlobalSearchIndex, IdempotencyRecord, User
+from hr.models import (
+    AFP,
+    Absence,
+    Employee,
+    EmployeeConceptAmount,
+    GlobalHRSettings,
+    Payroll,
+    PayrollConcept,
+    PayrollItem,
+    PayrollPayment,
+    SalaryAdvance,
 )
-from billing.models import Invoice, NoteWorkflow
-from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
-from hr.models import GlobalHRSettings, AFP, PayrollConcept, Employee, EmployeeConceptAmount, Payroll, PayrollItem, Absence, SalaryAdvance, PayrollPayment
-from production.models import BillOfMaterials, BillOfMaterialsLine, WorkOrder, ProductionConsumption, WorkOrderMaterial, WorkOrderHistory
-from core.models import User, CompanySettings, Attachment
-from workflow.models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule
+from inventory.models import (
+    PricingRule,
+    Product,
+    ProductAttribute,
+    ProductAttributeValue,
+    ProductCategory,
+    StockMove,
+    Subscription,
+    UoM,
+    UoMCategory,
+    Warehouse,
+)
+from production.models import (
+    BillOfMaterials,
+    BillOfMaterialsLine,
+    ProductionConsumption,
+    WorkOrder,
+    WorkOrderHistory,
+    WorkOrderMaterial,
+)
+from purchasing.models import (
+    PurchaseLine,
+    PurchaseOrder,
+    PurchaseReceipt,
+    PurchaseReceiptLine,
+    PurchaseReturn,
+    PurchaseReturnLine,
+)
+from sales.models import (
+    DraftCart,
+    SaleDelivery,
+    SaleDeliveryLine,
+    SaleLine,
+    SaleOrder,
+    SaleReturn,
+    SaleReturnLine,
+)
+from tax.models import AccountingPeriod, F29Declaration, F29Payment, TaxPeriod
+from treasury.models import (
+    Bank,
+    BankLoan,
+    BankStatement,
+    BankStatementLine,
+    CardPendingCharge,
+    CardPurchaseGroup,
+    CardPurchaseInstallment,
+    Check,
+    Checkbook,
+    CreditCardStatement,
+    CreditLine,
+    LoanInstallment,
+    PaymentAllocation,
+    PaymentMethod,
+    PaymentTerminalDevice,
+    PaymentTerminalProvider,
+    POSSession,
+    POSSessionAudit,
+    POSTerminal,
+    ReconciliationMatch,
+    ReconciliationSettings,
+    TerminalBatch,
+    TreasuryAccount,
+    TreasuryMovement,
+)
+from workflow.models import (
+    Comment,
+    Notification,
+    NotificationRule,
+    Task,
+    TaskAssignmentRule,
+    Transition,
+    WorkflowSettings,
+)
+
+
+def compute_rut_dv(rut_body: str) -> str:
+    """
+    Compute the verification digit (DV) for a Chilean RUT.
+    Returns '0'-'9' or 'K'.
+    """
+    clean = rut_body.replace(".", "").replace("-", "").strip()
+    if not clean.isdigit():
+        raise ValueError(f"RUT body must be numeric, got: {rut_body}")
+    total = 0
+    multiplier = 2
+    for digit in reversed(clean):
+        total += int(digit) * multiplier
+        multiplier = 8 if multiplier == 7 else multiplier + 1
+    remainder = total % 11
+    dv = 11 - remainder
+    if dv == 11:
+        return "0"
+    elif dv == 10:
+        return "K"
+    return str(dv)
+
 
 class Command(BaseCommand):
-    help = 'Seeds database with comprehensive graphic industry data using IFRS CoA'
+    help = "Seeds database with comprehensive graphic industry data using IFRS CoA"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--purge',
-            action='store_true',
-            help='Delete all existing business data before seeding',
+            "--purge",
+            action="store_true",
+            help="Delete all existing business data before seeding",
         )
         parser.add_argument(
-            '--no-demo-flows',
-            action='store_true',
-            help='Skip creation of demo Sale/Purchase orders and invoices',
+            "--no-demo-flows",
+            action="store_true",
+            help="Skip creation of demo Sale/Purchase orders and invoices",
         )
         parser.add_argument(
-            '--only-infra',
-            action='store_true',
-            help='Seeds ONLY infrastructure (Users, Accounts, Treasury accounts). Forces --no-demo-flows',
+            "--only-infra",
+            action="store_true",
+            help="Seeds ONLY infrastructure (Users, Accounts, Treasury accounts). Forces --no-demo-flows",
         )
 
     def handle(self, *args, **options):
+        import time
+
+        seed_start = time.time()
+
         # NOTE: No @transaction.atomic on the outer handle().
         # The purge phase runs each model deletion in its own savepoint via _safe_delete().
         # Wrapping the whole handle in one transaction would cause PostgreSQL to mark the
         # entire connection as aborted if any single savepoint fails, breaking all subsequent
         # deletions with "current transaction is aborted".
-        if options['purge']:
-            self.stdout.write(self.style.WARNING('Purging existing data...'))
-            try:
-                self._purge_data()
-                self.stdout.write(self.style.SUCCESS('Data purged.'))
-            except Exception as e:
-                import traceback
-                self.stdout.write(self.style.ERROR(f'Error purging data: {str(e)}'))
-                self.stdout.write(traceback.format_exc())
-                return
+        if options["purge"]:
+            self._purge_data()
 
         # Wrap the seeding phase in its own atomic block so we get full rollback
         # if anything fails during data creation (separate from the purge phase above).
         with transaction.atomic():
-            self.stdout.write('Populating IFRS Chart of Accounts...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Populating IFRS Chart of Accounts...")
             result_msg = AccountingService.populate_ifrs_coa()
-            self.stdout.write(f"  {result_msg}")
+            n_accounts = Account.objects.count()
+            self.stdout.write(
+                f"  ✓ {result_msg} ({n_accounts} cuentas, {time.time() - section_start:.1f}s)"
+            )
 
-            self.stdout.write('Configuring Inventory Accounting Mappings...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Configuring Inventory Accounting Mappings...")
             self._configure_inventory_accounting()
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
-            self.stdout.write('Creating Demo Users...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Creating Demo Users and Partners...")
             self._create_all_users()
-            
-            # Get references to key accounts for further seeding
             accounts = self._get_account_references()
-            
-            self.stdout.write('Creating Partners...')
             partners = self._create_partners(accounts)
+            n_users = User.objects.count()
+            n_contacts = Contact.objects.count()
+            self.stdout.write(
+                f"  ✓ {n_users} usuarios, {n_contacts} contactos ({time.time() - section_start:.1f}s)"
+            )
 
-            self.stdout.write('Creating Units of Measure...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Units of Measure...")
             uoms = self._create_uoms()
+            n_uom = UoM.objects.count()
+            self.stdout.write(f"  ✓ {n_uom} UoMs ({time.time() - section_start:.1f}s)")
 
-            self.stdout.write('Creating Inventory & Manufacturing Data...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Inventory & Manufacturing Data...")
             inventory = self._create_inventory(accounts, uoms)
+            n_prods = Product.objects.count()
+            n_boms = BillOfMaterials.objects.count()
+            self.stdout.write(
+                f"  ✓ {n_prods} productos, {n_boms} BOMs ({time.time() - section_start:.1f}s)"
+            )
 
-            self.stdout.write('Creating Subscriptions...')
-            self._create_subscriptions(accounts, partners['suppliers'])
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Subscriptions...")
+            self._create_subscriptions(accounts, partners["suppliers"])
+            n_subs = Subscription.objects.count()
+            self.stdout.write(f"  ✓ {n_subs} suscripciones ({time.time() - section_start:.1f}s)")
 
-            # Add initial stock for all storable products first to calculate its value
-            self.stdout.write('Adding Initial Stock...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Initial Stock...")
             total_stock_value = self._add_initial_stock(accounts, partners)
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
-            self.stdout.write('Creating Opening Balance...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Opening Balance...")
             self._create_opening_balance(accounts, partners, total_stock_value)
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
-            self.stdout.write('Creating Treasury Infrastructure...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Treasury Infrastructure...")
             self._create_treasury_infrastructure(accounts, partners)
+            n_ta = TreasuryAccount.objects.count()
+            n_banks = Bank.objects.count()
+            n_pm = PaymentMethod.objects.count()
+            self.stdout.write(
+                f"  ✓ {n_ta} cuentas tesorería, {n_banks} bancos, {n_pm} métodos pago ({time.time() - section_start:.1f}s)"
+            )
 
-            self.stdout.write('Creating Accounting & Tax Periods...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Credit Lines (Overdraft)...")
+            self._create_credit_lines()
+            n_cl = CreditLine.objects.count()
+            self.stdout.write(f"  ✓ {n_cl} líneas de crédito ({time.time() - section_start:.1f}s)")
+
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Accounting & Tax Periods...")
             periods = self._create_periods()
+            n_tax = TaxPeriod.objects.count()
+            n_acc = AccountingPeriod.objects.count()
+            self.stdout.write(
+                f"  ✓ {n_tax} períodos tributarios, {n_acc} contables ({time.time() - section_start:.1f}s)"
+            )
 
-            if not options['no_demo_flows'] and not options['only_infra']:
-                self.stdout.write('Creating Sales & Purchasing Demo Flow...')
+            if not options["no_demo_flows"] and not options["only_infra"]:
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Sales & Purchasing Demo Flow...")
                 self._create_sales_purchasing_demo(accounts, partners, inventory, periods)
 
-            self.stdout.write('Initializing Company Settings...')
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Loans Demo...")
+                self._create_loans_demo(accounts, partners)
+
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Purchases Demo...")
+                self._create_purchases_demo(accounts, partners, inventory, uoms)
+
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Sales Demo...")
+                self._create_sales_demo(accounts, partners, inventory, uoms)
+                n_po = PurchaseOrder.objects.count()
+                n_so = SaleOrder.objects.count()
+                n_ot = WorkOrder.objects.count()
+                n_inv = Invoice.objects.count()
+                n_tm = TreasuryMovement.objects.count()
+                self.stdout.write(
+                    f"  ✓ {n_po} OC, {n_so} NV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería"
+                )
+
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Company Settings...")
             self._initialize_company_settings()
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
-            self.stdout.write('Seeding Chilean HR Data...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  HR Data...")
             self._create_hr_demo_data(accounts)
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
-            self.stdout.write('Initializing Workflow Settings...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Workflow Settings...")
             self._initialize_workflow_settings()
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
-            self.stdout.write('Creating Demo Budget...')
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Demo Budget...")
             self._create_demo_budget(accounts)
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
+        elapsed = time.time() - seed_start
+        self.stdout.write(f"\n{'═' * 50}")
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  Seed completado en {elapsed:.1f}s "
+                f"({n_accounts} cuentas, {n_users} usuarios, "
+                f"{n_prods} productos, {n_contacts} contactos)"
+            )
+        )
 
     def _configure_inventory_accounting(self):
         """
@@ -135,56 +333,61 @@ class Command(BaseCommand):
         """
         settings = AccountingSettings.get_solo()
         if not settings:
-            self.stdout.write(self.style.WARNING("  ⚠ No AccountingSettings found. Skipping additional configuration."))
+            self.stdout.write(
+                self.style.WARNING(
+                    "  ⚠ No AccountingSettings found. Skipping additional configuration."
+                )
+            )
             return
-        
+
         # The populate_ifrs_coa service already configured:
         # - All 60+ default accounts (receivable, payable, revenue, expense, inventory, COGS, etc.)
         # - All 11 POS control accounts (cash difference, theft, tips, errors, etc.)
         # - All 2 terminal bridge accounts (commission, IVA)
         # - All 6 treasury reconciliation accounts (bank commission, interest, exchange, rounding, error, misc)
         # - All tax accounts (VAT, withholding, PPM, second category, correction)
-        
+
         self.stdout.write("  ✓ All account mappings configured by populate_ifrs_coa service")
         self.stdout.write(f"  ✓ Total configured accounts: {Account.objects.count()}")
-        
+
         # Display key mappings for verification
         key_mappings = {
-            'Receivable': settings.default_receivable_account,
-            'Payable': settings.default_payable_account,
-            'Revenue': settings.default_revenue_account,
-            'Expense': settings.default_expense_account,
-            'Inventory (Storable)': settings.storable_inventory_account,
-            'Inventory (Manufacturable)': settings.manufacturable_inventory_account,
-            'COGS (Merchandise)': settings.merchandise_cogs_account,
-            'COGS (Manufactured)': settings.manufactured_cogs_account,
-            'POS Cash Difference (Gain)': settings.pos_cash_difference_gain_account,
-            'POS Cash Difference (Loss)': settings.pos_cash_difference_loss_account,
-            'Terminal Commission Bridge': settings.terminal_commission_bridge_account,
-            'Terminal Commission IVA Bridge': settings.terminal_iva_bridge_account,
-            'Bank Commission': settings.bank_commission_account,
-            'VAT Payable': settings.vat_payable_account,
-            'Loan Retention': settings.loan_retention_account,
-            'ILA Tax': settings.ila_tax_account,
-            'VAT Withholding (CS)': settings.vat_withholding_account,
-            
+            "Receivable": settings.default_receivable_account,
+            "Payable": settings.default_payable_account,
+            "Revenue": settings.default_revenue_account,
+            "Expense": settings.default_expense_account,
+            "Inventory (Storable)": settings.storable_inventory_account,
+            "Inventory (Manufacturable)": settings.manufacturable_inventory_account,
+            "COGS (Merchandise)": settings.merchandise_cogs_account,
+            "COGS (Manufactured)": settings.manufactured_cogs_account,
+            "POS Cash Difference (Gain)": settings.pos_cash_difference_gain_account,
+            "POS Cash Difference (Loss)": settings.pos_cash_difference_loss_account,
+            "Terminal Commission Bridge": settings.terminal_commission_bridge_account,
+            "Terminal Commission IVA Bridge": settings.terminal_iva_bridge_account,
+            "Bank Commission": settings.bank_commission_account,
+            "VAT Payable": settings.vat_payable_account,
+            "Loan Retention": settings.loan_retention_account,
+            "ILA Tax": settings.ila_tax_account,
+            "VAT Withholding (CS)": settings.vat_withholding_account,
             # Inventory Adjustment Verification
-            'Inv. Gain': settings.adjustment_income_account,
-            'Inv. Loss': settings.adjustment_expense_account,
-            'Revaluation': settings.revaluation_account,
-            
+            "Inv. Gain": settings.adjustment_income_account,
+            "Inv. Loss": settings.adjustment_expense_account,
+            "Revaluation": settings.revaluation_account,
             # Treasury Reconciliation Verification
-            'Interest Income': settings.interest_income_account,
-            'Exchange Diff': settings.exchange_difference_account,
-            'Rounding Adj': settings.rounding_adjustment_account,
-            'Error Adj': settings.error_adjustment_account,
-            'Misc Adj': settings.miscellaneous_adjustment_account,
-
+            "Interest Income": settings.interest_income_account,
+            "Exchange Diff": settings.exchange_difference_account,
+            "Rounding Adj": settings.rounding_adjustment_account,
+            "Error Adj": settings.error_adjustment_account,
+            "Misc Adj": settings.miscellaneous_adjustment_account,
             # Check Portfolio / Issued Checks (ADR-0038)
-            'Check Portfolio (Asset)': settings.check_portfolio_account,
-            'Issued Checks (Liability)': settings.issued_checks_account,
+            "Check Portfolio (Asset)": settings.check_portfolio_account,
+            "Issued Checks (Liability)": settings.issued_checks_account,
+            # HR / Payroll
+            "Remuneraciones por Pagar": settings.account_remuneraciones_por_pagar,
+            "Previred por Pagar": settings.account_previred_por_pagar,
+            "Anticipos Remuneraciones": settings.account_anticipos,
         }
-        
+
         self.stdout.write("\n  📊 Key Account Mappings:")
         for name, account in key_mappings.items():
             if account:
@@ -203,40 +406,67 @@ class Command(BaseCommand):
                 TreasuryAccount.Type.CHECK_PORTFOLIO,
                 TreasuryAccount.Type.ISSUED_CHECKS,
             ]
-        ).order_by('account_type'):
+        ).order_by("account_type"):
             gl = f"{ta.account.code} - {ta.account.name}" if ta.account_id else "—"
             self.stdout.write(f"     • {ta.code} ({ta.get_account_type_display()}): GL {gl}")
 
-
     def _purge_data(self):
+        import time
+
         from django.db import connection
+
         from core.models import ActionLog
-        
+
+        purge_start = time.time()
+        total_records = 0
+        section_records = 0
+
+        def _section_header(title):
+            nonlocal section_records
+            section_records = 0
+            self.stdout.write(f"\n  {'─' * 3} {title} {'─' * max(1, 40 - len(title))}")
+
         def _safe_delete(model_class, name):
-            self.stdout.write(f"  Purging {name} (Truncate)...")
+            nonlocal total_records, section_records
             try:
                 table_name = model_class._meta.db_table
                 with connection.cursor() as cursor:
-                    # RESTART IDENTITY resets the auto-increment sequences (PostgreSQL)
-                    # CASCADE handles foreign key dependencies
-                    cursor.execute(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
+                    cursor.execute(f'SELECT COUNT(*) FROM "{table_name}"')
+                    count = cursor.fetchone()[0]
+                    if count:
+                        cursor.execute(f'TRUNCATE TABLE "{table_name}" RESTART IDENTITY CASCADE;')
+                        total_records += count
+                        section_records += count
+                        self.stdout.write(f"  {name:<45} {count:>6} registros")
             except Exception as e:
-                # Fallback for non-PostgreSQL or if TRUNCATE fails
-                self.stdout.write(f"    - Truncate failed, falling back to delete() for {name}")
+                error_str = str(e).lower()
+                if "does not exist" in error_str:
+                    self.stdout.write(f"  {name:<45}    — (no existe)")
+                    return
+                self.stdout.write(f"  {name:<45}    — fallback delete")
                 try:
                     with transaction.atomic():
-                        model_class.objects.all().delete()
+                        deleted, _ = model_class.objects.all().delete()
+                        total_records += deleted
+                        section_records += deleted
+                        if deleted:
+                            self.stdout.write(f"  {name:<45} {deleted:>6} registros (fallback)")
                 except Exception as e2:
-                    error_str = str(e2).lower()
-                    if "does not exist" in error_str:
-                        return
-                    self.stdout.write(self.style.ERROR(f"    Failed to delete {name}: {str(e2)}"))
+                    self.stdout.write(self.style.WARNING(f"  {name:<45}    ✗ {str(e2)[:60]}"))
 
-        # 0. System & Logs
+        # ── 0. System & Logs ─────────────────────────────────
+        _section_header("0. System & Logs")
         _safe_delete(ActionLog, "ActionLog")
         _safe_delete(Attachment, "Attachment")
+        _safe_delete(GlobalSearchIndex, "GlobalSearchIndex")
+        _safe_delete(IdempotencyRecord, "IdempotencyRecord")
+        _safe_delete(Transition, "Transition")
+        _safe_delete(Comment, "Comment")
+        _safe_delete(WorkflowSettings, "WorkflowSettings")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 1. Workflows & Transients
+        # ── 1. Workflows & Transients ────────────────────────
+        _section_header("1. Workflows & Transients")
         _safe_delete(NoteWorkflow, "NoteWorkflow")
         _safe_delete(Subscription, "Subscription")
         _safe_delete(DraftCart, "DraftCart")
@@ -244,26 +474,34 @@ class Command(BaseCommand):
         _safe_delete(Notification, "Notification")
         _safe_delete(TaskAssignmentRule, "TaskAssignmentRule")
         _safe_delete(NotificationRule, "NotificationRule")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 2. Production
+        # ── 2. Production ────────────────────────────────────
+        _section_header("2. Production")
         _safe_delete(ProductionConsumption, "ProductionConsumption")
         _safe_delete(WorkOrderMaterial, "WorkOrderMaterial")
         _safe_delete(BillOfMaterialsLine, "BillOfMaterialsLine")
         _safe_delete(BillOfMaterials, "BillOfMaterials")
         _safe_delete(WorkOrderHistory, "WorkOrderHistory")
         _safe_delete(WorkOrder, "WorkOrder")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 3. Tax Module
+        # ── 3. Tax ───────────────────────────────────────────
+        _section_header("3. Tax")
         _safe_delete(F29Payment, "F29Payment")
         _safe_delete(F29Declaration, "F29Declaration")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 4. Logistics Detail
+        # ── 4. Logistics Detail ──────────────────────────────
+        _section_header("4. Logistics Detail")
         _safe_delete(SaleReturnLine, "SaleReturnLine")
         _safe_delete(SaleDeliveryLine, "SaleDeliveryLine")
         _safe_delete(PurchaseReturnLine, "PurchaseReturnLine")
         _safe_delete(PurchaseReceiptLine, "PurchaseReceiptLine")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 5. Transactional Documents
+        # ── 5. Transactional Documents ───────────────────────
+        _section_header("5. Transactional Documents")
         _safe_delete(SaleReturn, "SaleReturn")
         _safe_delete(SaleDelivery, "SaleDelivery")
         _safe_delete(PurchaseReturn, "PurchaseReturn")
@@ -271,14 +509,26 @@ class Command(BaseCommand):
         _safe_delete(Invoice, "Invoice")
         _safe_delete(TreasuryMovement, "TreasuryMovement")
         _safe_delete(StockMove, "StockMove")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 6. Orders
+        # ── 5.5. Credit Card / Payment Allocations ───────────
+        _section_header("5.5. Credit Card / Payment Allocations")
+        _safe_delete(PaymentAllocation, "PaymentAllocation")
+        _safe_delete(CardPendingCharge, "CardPendingCharge")
+        _safe_delete(CardPurchaseInstallment, "CardPurchaseInstallment")
+        _safe_delete(CreditCardStatement, "CreditCardStatement")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+
+        # ── 6. Orders ────────────────────────────────────────
+        _section_header("6. Orders")
         _safe_delete(SaleLine, "SaleLine")
         _safe_delete(SaleOrder, "SaleOrder")
         _safe_delete(PurchaseLine, "PurchaseLine")
         _safe_delete(PurchaseOrder, "PurchaseOrder")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 7. POS & Infrastructure
+        # ── 7. POS & Infrastructure ──────────────────────────
+        _section_header("7. POS & Infrastructure")
         _safe_delete(POSSessionAudit, "POSSessionAudit")
         _safe_delete(POSSession, "POSSession")
         _safe_delete(POSTerminal, "POSTerminal")
@@ -286,27 +536,38 @@ class Command(BaseCommand):
         _safe_delete(PaymentMethod, "PaymentMethod")
         _safe_delete(PaymentTerminalDevice, "PaymentTerminalDevice")
         _safe_delete(PaymentTerminalProvider, "PaymentTerminalProvider")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 8. Banking
+        # ── 7.5. Checks & Loans ─────────────────────────────
+        _section_header("7.5. Checks & Loans")
+        _safe_delete(Check, "Check")
+        _safe_delete(Checkbook, "Checkbook")
+        _safe_delete(LoanInstallment, "LoanInstallment")
+        _safe_delete(BankLoan, "BankLoan")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+
+        # ── 8. Banking ───────────────────────────────────────
+        _section_header("8. Banking")
         _safe_delete(BankStatementLine, "BankStatementLine")
         _safe_delete(BankStatement, "BankStatement")
         _safe_delete(ReconciliationMatch, "ReconciliationMatch")
         _safe_delete(ReconciliationSettings, "ReconciliationSettings")
         _safe_delete(TreasuryAccount, "TreasuryAccount")
         _safe_delete(Bank, "Bank")
+        _safe_delete(CardPurchaseGroup, "CardPurchaseGroup")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 9. Financial Core
+        # ── 9. Financial Core ────────────────────────────────
+        _section_header("9. Financial Core")
         _safe_delete(JournalEntry, "JournalEntry")
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
-
-        _safe_delete(ProductCustomField, "ProductCustomField")
-        _safe_delete(CustomFieldTemplate, "CustomFieldTemplate")
-
-        # 9.5 Partner Transactions
+        _safe_delete(FiscalYear, "FiscalYear")
         _safe_delete(PartnerTransaction, "PartnerTransaction")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 9.6 HR Module — MUST be before Contact (Employee.contact is PROTECT)
+        # ── 9.6. HR Module ──────────────────────────────────
+        _section_header("9.6. HR Module")
         _safe_delete(PayrollItem, "PayrollItem")
         _safe_delete(PayrollPayment, "PayrollPayment")
         _safe_delete(Payroll, "Payroll")
@@ -317,89 +578,127 @@ class Command(BaseCommand):
         _safe_delete(PayrollConcept, "PayrollConcept")
         _safe_delete(AFP, "AFP")
         _safe_delete(GlobalHRSettings, "GlobalHRSettings")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 10. Master Data & Basics
+        # ── 10. Master Data & Basics ─────────────────────────
+        _section_header("10. Master Data & Basics")
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
         _safe_delete(ProductAttribute, "ProductAttribute")
         _safe_delete(Product, "Product")
         _safe_delete(ProductCategory, "ProductCategory")
         _safe_delete(Warehouse, "Warehouse")
-        # Contact must come after Employee (Employee.contact is on_delete=PROTECT)
+        _safe_delete(PartnerEquityStake, "PartnerEquityStake")
         _safe_delete(Contact, "Contact")
         _safe_delete(UoM, "UoM")
         _safe_delete(UoMCategory, "UoMCategory")
         _safe_delete(Account, "Account")
         _safe_delete(AccountingPeriod, "AccountingPeriod")
         _safe_delete(TaxPeriod, "TaxPeriod")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # 11. Clear History (Comprehensive)
-        self.stdout.write("  Clearing ALL Historical Records...")
-        historical_models = [
-            Employee, Payroll,
-            Product, StockMove, SaleOrder, PurchaseOrder, Invoice, JournalEntry,
-            Contact, Warehouse, ProductCategory, UoM, POSSession, TreasuryMovement,
-            PartnerTransaction
-        ]
-        for model in historical_models:
-            if hasattr(model, 'history'):
+        # ── 11. Historical Records ───────────────────────────
+        hist_count = 0
+        self.stdout.write(f"\n  {'─' * 3} 11. Historical Records {'─' * max(1, 40 - 23)}")
+        for model in [
+            Employee,
+            Payroll,
+            Product,
+            StockMove,
+            SaleOrder,
+            PurchaseOrder,
+            Invoice,
+            JournalEntry,
+            Contact,
+            Warehouse,
+            ProductCategory,
+            UoM,
+            POSSession,
+            TreasuryMovement,
+            PartnerTransaction,
+        ]:
+            if hasattr(model, "history"):
                 try:
-                    model.history.model.objects.all().delete()
-                    self.stdout.write(f"    - {model.__name__} History cleared.")
+                    n, _ = model.history.model.objects.all().delete()
+                    hist_count += n
+                    if n:
+                        self.stdout.write(f"  {model.__name__ + ' History':<45} {n:>6} registros")
                 except Exception as e:
-                    self.stdout.write(f"    - Could not clear {model.__name__} history: {str(e)}")
+                    self.stdout.write(f"  {model.__name__ + ' History':<45}    ✗ {str(e)[:60]}")
+        self.stdout.write(f"  {' ':<45} {hist_count:>6} total")
 
-        self.stdout.write(self.style.SUCCESS("Purge completed successfully."))
+        purge_elapsed = time.time() - purge_start
+        self.stdout.write(f"\n  {'─' * 50}")
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  Purge completado: {total_records + hist_count:,} registros "
+                f"en {purge_elapsed:.1f}s"
+            )
+        )
 
     def _get_account_references(self):
         # We fetch accounts by code as defined in the modernize IFRS service
         return {
-            'cash': Account.objects.get(code='1.1.01.01'),
-            'bank': Account.objects.get(code='1.1.01.02'),
-            'receivable': Account.objects.get(code='1.1.02.01'),
-            'payable': Account.objects.get(code='2.1.01.01'),
-            'inventory_raw': Account.objects.get(code='1.1.03.02'),
-            'inventory_finished': Account.objects.get(code='1.1.03.01'),
-            'vat_credit': Account.objects.get(code='1.1.04.01'),
-            'vat_debit': Account.objects.get(code='2.1.02.01'),
-            'capital': Account.objects.get(code='3.1.01'),
-            'sales_product': Account.objects.get(code='4.1.01'),
-            'sales_service': Account.objects.get(code='4.1.02'),
-            'cogs_product': Account.objects.get(code='5.1.01'),
-            'cogs_manufactured': Account.objects.get(code='5.1.02'), # NEW
-            'cogs_service': Account.objects.get(code='5.1.03'), # Updated from 5.1.02
-            'expense_general': Account.objects.get(code='5.2.06'),
-            'expense_utilities': Account.objects.get(code='5.2.03'),
-            'expense_rent': Account.objects.get(code='5.2.02'),
-            'vat_carryforward': Account.objects.get(code='1.1.04.02'),
-            'vat_payable': Account.objects.get(code='2.1.02.02'),
-            'loan_retention': Account.objects.get(code='2.1.02.05'),
-            'ila_tax': Account.objects.get(code='2.1.02.06'),
-            'vat_withholding': Account.objects.get(code='2.1.02.07'),
-            'correction_income': Account.objects.get(code='4.2.07'),
-            'salary_payable': Account.objects.get(code='2.1.03.01'),
-            'previred_payable': Account.objects.get(code='2.1.03.02'),
-            'salary_advance': Account.objects.get(code='1.1.02.03'),
-            'expense_salary': Account.objects.get(code='5.2.01.01'),
-            'expense_prevision': Account.objects.get(code='5.2.01.02'),
-            'bank_commission': Account.objects.get(code='5.2.10'),
+            "cash": Account.objects.get(code="1.1.01.01"),
+            "bank": Account.objects.get(code="1.1.01.02"),
+            "receivable": Account.objects.get(code="1.1.02.01"),
+            "payable": Account.objects.get(code="2.1.01.01"),
+            "inventory_raw": Account.objects.get(code="1.1.03.02"),
+            "inventory_finished": Account.objects.get(code="1.1.03.01"),
+            "vat_credit": Account.objects.get(code="1.1.04.01"),
+            "vat_debit": Account.objects.get(code="2.1.02.01"),
+            "capital": Account.objects.get(code="3.1.01"),
+            "partner_receivable": Account.objects.get(code="1.1.05.01"),
+            "sales_product": Account.objects.get(code="4.1.01"),
+            "sales_service": Account.objects.get(code="4.1.02"),
+            "cogs_product": Account.objects.get(code="5.1.01"),
+            "cogs_manufactured": Account.objects.get(code="5.1.02"),  # NEW
+            "cogs_service": Account.objects.get(code="5.1.03"),  # Updated from 5.1.02
+            "expense_general": Account.objects.get(code="5.2.06"),
+            "expense_utilities": Account.objects.get(code="5.2.03"),
+            "expense_rent": Account.objects.get(code="5.2.02"),
+            "vat_carryforward": Account.objects.get(code="1.1.04.02"),
+            "vat_payable": Account.objects.get(code="2.1.02.02"),
+            "loan_retention": Account.objects.get(code="2.1.02.05"),
+            "ila_tax": Account.objects.get(code="2.1.02.06"),
+            "vat_withholding": Account.objects.get(code="2.1.02.07"),
+            "correction_income": Account.objects.get(code="4.2.07"),
+            "salary_payable": Account.objects.get(code="2.1.03.01"),
+            "previred_payable": Account.objects.get(code="2.1.03.02"),
+            "salary_advance": Account.objects.get(code="1.1.02.03"),
+            "expense_salary": Account.objects.get(code="5.2.01.01"),
+            "expense_prevision": Account.objects.get(code="5.2.01.02"),
+            "bank_commission": Account.objects.get(code="5.2.10"),
             # F5.1 — Financial expense accounts (ADR-0036)
-            'interest_expense': Account.objects.get(code='5.3.01'),
-            'insurance_expense': Account.objects.get(code='5.2.09'),
-            'interest_payable': Account.objects.get(code='2.1.04.01'),
-            'credit_card_payable': Account.objects.get(code='2.1.04.02'),
+            "interest_expense": Account.objects.get(code="5.3.01"),
+            "insurance_expense": Account.objects.get(code="5.2.09"),
+            "interest_payable": Account.objects.get(code="2.1.04.01"),
+            "credit_card_payable": Account.objects.get(code="2.1.04.02"),
+            # Nuevas cuentas Fase 1
+            "inventory_fabricables": Account.objects.get(code="1.1.03.03"),
+            "subscription_income": Account.objects.get(code="4.1.03"),
+            "revaluation": Account.objects.get(code="4.2.08"),
+            "pos_other_inflow": Account.objects.get(code="4.2.09"),
+            "subscription_expense": Account.objects.get(code="5.1.04"),
+            "loan_penalty": Account.objects.get(code="5.2.20"),
+            "loan_commission": Account.objects.get(code="5.2.21"),
+            "loan_stamp_tax": Account.objects.get(code="5.2.22"),
+            "pos_other_outflow": Account.objects.get(code="5.2.23"),
+            "pos_cashback_error": Account.objects.get(code="5.2.24"),
+            "pos_system_error": Account.objects.get(code="5.2.25"),
+            "uncollectible_expense": Account.objects.get(code="5.2.26"),
+            "tax_withholding": Account.objects.get(code="2.1.02.08"),
         }
 
     def _create_partners(self, accounts):
         # 1. Default customer
         c_default, _ = Contact.objects.get_or_create(
-            tax_id="66000000-0",
+            tax_id="66000000-3",
             defaults={
-                'name': "Cliente Ocasional",
-                'email': "contacto@clienteocasional.cl",
-                'account_receivable': accounts['receivable'],
-                'is_default_customer': True,
-            }
+                "name": "Cliente Ocasional",
+                "email": "contacto@clienteocasional.cl",
+                "is_default_customer": True,
+            },
         )
         if not c_default.is_default_customer:
             c_default.is_default_customer = True
@@ -414,257 +713,433 @@ class Command(BaseCommand):
             acc, _ = Account.objects.get_or_create(
                 code=code,
                 defaults={
-                    'name': name,
-                    'account_type': parent.account_type,
-                    'parent': parent,
-                    'is_reconcilable': True,
-                    'bs_category': parent.bs_category, # Inherit BS category for reports
-                    'is_category': parent.is_category,
-                    'cf_category': parent.cf_category,
-                }
+                    "name": name,
+                    "account_type": parent.account_type,
+                    "parent": parent,
+                    "is_reconcilable": True,
+                    "bs_category": parent.bs_category,  # Inherit BS category for reports
+                    "is_category": parent.is_category,
+                    "cf_category": parent.cf_category,
+                },
             )
             return acc
 
         # Socio A: Administrador
-        acc_cap_a = get_or_create_subaccount('3.1.01', "Socio A", "001")
-        acc_earn_a = get_or_create_subaccount('3.2.01', "Socio A", "001")
-        acc_recv_a = get_or_create_subaccount('1.1.05.01', "Socio A", "001")
-        acc_div_a = get_or_create_subaccount('2.1.07', "Socio A", "001")
-        
+        socio_a_capital = get_or_create_subaccount("3.1.01", "Socio A", "001")
+        get_or_create_subaccount("3.2.01", "Socio A", "001")
+        socio_a_receivable = get_or_create_subaccount("1.1.05.01", "Socio A", "001")
+        get_or_create_subaccount("2.1.07", "Socio A", "001")
+
         socio_a, _ = Contact.objects.get_or_create(
-            tax_id="11222333-4",
+            tax_id="11222333-9",
             defaults={
-                'name': "Socio Administrador (Socio A)",
-                'email': "socio.a@empresa.cl",
-                'is_partner': True,
-                'partner_contribution_account': acc_cap_a,
-                'partner_earnings_account': acc_earn_a,
-                'partner_receivable_account': acc_recv_a,
-                'partner_dividends_payable_account': acc_div_a,
-                'partner_equity_percentage': Decimal('50.00'),
-            }
+                "name": "Socio Administrador (Socio A)",
+                "email": "socio.a@empresa.cl",
+                "is_partner": True,
+                "partner_equity_percentage": Decimal("50.00"),
+            },
         )
         if not PartnerEquityStake.objects.filter(partner=socio_a).exists():
-            PartnerEquityStake.objects.create(partner=socio_a, percentage=Decimal('50.00'), effective_from=timezone.now().date())
+            PartnerEquityStake.objects.create(
+                partner=socio_a, percentage=Decimal("50.00"), effective_from=timezone.now().date()
+            )
 
         # Socio B: Capitalista
-        acc_cap_b = get_or_create_subaccount('3.1.01', "Socio B", "002")
-        acc_earn_b = get_or_create_subaccount('3.2.01', "Socio B", "002")
-        acc_recv_b = get_or_create_subaccount('1.1.05.01', "Socio B", "002")
-        acc_div_b = get_or_create_subaccount('2.1.07', "Socio B", "002")
-        
+        socio_b_capital = get_or_create_subaccount("3.1.01", "Socio B", "002")
+        get_or_create_subaccount("3.2.01", "Socio B", "002")
+        socio_b_receivable = get_or_create_subaccount("1.1.05.01", "Socio B", "002")
+        get_or_create_subaccount("2.1.07", "Socio B", "002")
+
         socio_b, _ = Contact.objects.get_or_create(
-            tax_id="22333444-5",
+            tax_id="22333444-K",
             defaults={
-                'name': "Socio Capitalista (Socio B)",
-                'email': "socio.b@empresa.cl",
-                'is_partner': True,
-                'partner_contribution_account': acc_cap_b,
-                'partner_earnings_account': acc_earn_b,
-                'partner_receivable_account': acc_recv_b,
-                'partner_dividends_payable_account': acc_div_b,
-                'partner_equity_percentage': Decimal('50.00'),
-            }
+                "name": "Socio Capitalista (Socio B)",
+                "email": "socio.b@empresa.cl",
+                "is_partner": True,
+                "partner_equity_percentage": Decimal("50.00"),
+            },
         )
         if not PartnerEquityStake.objects.filter(partner=socio_b).exists():
-            PartnerEquityStake.objects.create(partner=socio_b, percentage=Decimal('50.00'), effective_from=timezone.now().date())
+            PartnerEquityStake.objects.create(
+                partner=socio_b, percentage=Decimal("50.00"), effective_from=timezone.now().date()
+            )
+
+        owner_accounts = {
+            socio_a.id: {"capital": socio_a_capital, "receivable": socio_a_receivable},
+            socio_b.id: {"capital": socio_b_capital, "receivable": socio_b_receivable},
+        }
 
         # 3. Regular Customers and Suppliers
-        c1, _ = Contact.objects.get_or_create(tax_id="76111222-3", defaults={'name': "Editorial Amanecer S.A.", 'email': "contacto@amanecer.cl", 'account_receivable': accounts['receivable']})
-        c2, _ = Contact.objects.get_or_create(tax_id="77333444-5", defaults={'name': "Publicidad Creativa Ltda", 'email': "ventas@pubcreativa.cl", 'account_receivable': accounts['receivable']})
-        
-        s1, _ = Contact.objects.get_or_create(tax_id="88222333-k", defaults={'name': "Distribuidora de Papeles S.A.", 'email': "pedidos@papelessa.cl", 'account_payable': accounts['payable']})
-        s2, _ = Contact.objects.get_or_create(tax_id="99555666-0", defaults={'name': "Tintas Gráficas SpA", 'email': "tintas@graficas.cl", 'account_payable': accounts['payable']})
-        s3, _ = Contact.objects.get_or_create(tax_id="76444555-8", defaults={'name': "Servicios Eléctricos Enel", 'email': "factura@enel.cl", 'account_payable': accounts['payable']})
+        c1, _ = Contact.objects.get_or_create(
+            tax_id="76111222-8",
+            defaults={"name": "Editorial Amanecer S.A.", "email": "contacto@amanecer.cl"},
+        )
+        c2, _ = Contact.objects.get_or_create(
+            tax_id="77333444-7",
+            defaults={"name": "Publicidad Creativa Ltda", "email": "ventas@pubcreativa.cl"},
+        )
+
+        s1, _ = Contact.objects.get_or_create(
+            tax_id="88222333-7",
+            defaults={"name": "Distribuidora de Papeles S.A.", "email": "pedidos@papelessa.cl"},
+        )
+        s2, _ = Contact.objects.get_or_create(
+            tax_id="99555666-9",
+            defaults={"name": "Tintas Gráficas SpA", "email": "tintas@graficas.cl"},
+        )
+        s3, _ = Contact.objects.get_or_create(
+            tax_id="76444555-4",
+            defaults={"name": "Servicios Eléctricos Enel", "email": "factura@enel.cl"},
+        )
 
         return {
-            'default_customer': c_default,
-            'owners': [socio_a, socio_b],
-            'customers': [c1, c2],
-            'suppliers': [s1, s2, s3]
+            "default_customer": c_default,
+            "owners": [socio_a, socio_b],
+            "owner_accounts": owner_accounts,
+            "customers": [c1, c2],
+            "suppliers": [s1, s2, s3],
         }
 
     def _create_uoms(self):
         cat_units, _ = UoMCategory.objects.get_or_create(name="Unidades")
         cat_weight, _ = UoMCategory.objects.get_or_create(name="Peso")
         cat_graphic, _ = UoMCategory.objects.get_or_create(name="Medidas Gráficas")
-        
+
         # Basic
-        uom_un, _ = UoM.objects.get_or_create(name="Unidad", defaults={'category': cat_units, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
-        uom_kg, _ = UoM.objects.get_or_create(name="Kilogramo (kg)", defaults={'category': cat_weight, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
-        
+        uom_un, _ = UoM.objects.get_or_create(
+            name="Unidad",
+            defaults={"category": cat_units, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+        )
+        uom_kg, _ = UoM.objects.get_or_create(
+            name="Kilogramo (kg)",
+            defaults={"category": cat_weight, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+        )
+
         # Graphic specifics
-        uom_hoja, _ = UoM.objects.get_or_create(name="Hoja", defaults={'category': cat_graphic, 'ratio': 1.0, 'uom_type': UoM.Type.REFERENCE})
-        uom_millar, _ = UoM.objects.get_or_create(name="Millar (1000u)", defaults={'category': cat_units, 'ratio': 1000.0, 'uom_type': UoM.Type.BIGGER})
-        uom_resma, _ = UoM.objects.get_or_create(name="Resma (500 pl)", defaults={'category': cat_graphic, 'ratio': 500.0, 'uom_type': UoM.Type.BIGGER})
-        uom_paquete, _ = UoM.objects.get_or_create(name="Paquete (100u)", defaults={'category': cat_units, 'ratio': 100.0, 'uom_type': UoM.Type.BIGGER})
+        uom_hoja, _ = UoM.objects.get_or_create(
+            name="Hoja",
+            defaults={"category": cat_graphic, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+        )
+        uom_millar, _ = UoM.objects.get_or_create(
+            name="Millar (1000u)",
+            defaults={"category": cat_units, "ratio": 1000.0, "uom_type": UoM.Type.BIGGER},
+        )
+        uom_resma, _ = UoM.objects.get_or_create(
+            name="Resma (500 pl)",
+            defaults={"category": cat_graphic, "ratio": 500.0, "uom_type": UoM.Type.BIGGER},
+        )
+        uom_paquete, _ = UoM.objects.get_or_create(
+            name="Paquete (100u)",
+            defaults={"category": cat_units, "ratio": 100.0, "uom_type": UoM.Type.BIGGER},
+        )
 
         return {
-            'un': uom_un,
-            'kg': uom_kg,
-            'hoja': uom_hoja,
-            'millar': uom_millar,
-            'resma': uom_resma,
-            'paquete': uom_paquete
+            "un": uom_un,
+            "kg": uom_kg,
+            "hoja": uom_hoja,
+            "millar": uom_millar,
+            "resma": uom_resma,
+            "paquete": uom_paquete,
         }
 
     def _create_attributes(self):
         color, _ = ProductAttribute.objects.get_or_create(name="Color")
         material, _ = ProductAttribute.objects.get_or_create(name="Material")
         talla, _ = ProductAttribute.objects.get_or_create(name="Talla")
-        
+
         for val in ["Blanco", "Negro", "Rojo", "Azul"]:
             ProductAttributeValue.objects.get_or_create(attribute=color, value=val)
-            
+
         for val in ["Papel Couché 300g", "Papel Kraft", "PVC"]:
             ProductAttributeValue.objects.get_or_create(attribute=material, value=val)
-            
+
         for val in ["S", "M", "L", "XL"]:
             ProductAttributeValue.objects.get_or_create(attribute=talla, value=val)
-            
-        return {
-            'color': color,
-            'material': material,
-            'talla': talla
-        }
+
+        return {"color": color, "material": material, "talla": talla}
 
     def _create_inventory(self, accounts, uoms):
-        wh, _ = Warehouse.objects.get_or_create(code="WH-CITY", defaults={'name': "Bodega Taller Central"})
+        wh, _ = Warehouse.objects.get_or_create(
+            code="WH-CITY", defaults={"name": "Bodega Taller Central"}
+        )
 
-        cat_raw, _ = ProductCategory.objects.get_or_create(name="Materias Primas", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'MP'})
-        if cat_raw.asset_account: cat_raw.asset_account = None; cat_raw.save()
-        
-        cat_supplies, _ = ProductCategory.objects.get_or_create(name="Insumos", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_product'], 'prefix': 'INS'})
-        if cat_supplies.asset_account: cat_supplies.asset_account = None; cat_supplies.save()
-        
-        cat_finished, _ = ProductCategory.objects.get_or_create(name="Productos Terminados", defaults={'income_account': accounts['sales_product'], 'expense_account': accounts['cogs_manufactured'], 'prefix': 'PT'})
-        if cat_finished.asset_account: cat_finished.asset_account = None; cat_finished.save()
-        
-        cat_services, _ = ProductCategory.objects.get_or_create(name="Servicios Gráficos", defaults={'income_account': accounts['sales_service'], 'expense_account': accounts['cogs_service'], 'prefix': 'SRV'})
-        if cat_services.asset_account: cat_services.asset_account = None; cat_services.save()
+        cat_raw, _ = ProductCategory.objects.get_or_create(
+            name="Materias Primas",
+            defaults={
+                "income_account": accounts["sales_product"],
+                "expense_account": accounts["cogs_product"],
+                "prefix": "MP",
+            },
+        )
+        if cat_raw.asset_account:
+            cat_raw.asset_account = None
+            cat_raw.save()
+
+        cat_supplies, _ = ProductCategory.objects.get_or_create(
+            name="Insumos",
+            defaults={
+                "income_account": accounts["sales_product"],
+                "expense_account": accounts["cogs_product"],
+                "prefix": "INS",
+            },
+        )
+        if cat_supplies.asset_account:
+            cat_supplies.asset_account = None
+            cat_supplies.save()
+
+        cat_finished, _ = ProductCategory.objects.get_or_create(
+            name="Productos Terminados",
+            defaults={
+                "income_account": accounts["sales_product"],
+                "expense_account": accounts["cogs_manufactured"],
+                "prefix": "PT",
+            },
+        )
+        if cat_finished.asset_account:
+            cat_finished.asset_account = None
+            cat_finished.save()
+
+        cat_services, _ = ProductCategory.objects.get_or_create(
+            name="Servicios Gráficos",
+            defaults={
+                "income_account": accounts["sales_service"],
+                "expense_account": accounts["cogs_service"],
+                "prefix": "SRV",
+            },
+        )
+        if cat_services.asset_account:
+            cat_services.asset_account = None
+            cat_services.save()
 
         # RAW MATERIALS - use skip_history=True during creation to avoid $0 history entry
         # The first meaningful history entry will come from _add_initial_stock when cost_price is set
-        p_papel, _ = Product.objects.get_or_create(code="INS-0001", defaults={'name': "Resma de papel", 'category': cat_supplies, 'product_type': Product.Type.STORABLE, 'uom': uoms['resma'], 'purchase_uom': uoms['resma'], 'sale_price': 5000, 'receiving_warehouse': wh})
-        if _: p_papel.skip_history_when_saving = True; p_papel.save(); del p_papel.skip_history_when_saving
-        p_tinta_c, _ = Product.objects.get_or_create(code="MP-TIN-CYA", defaults={'name': "Tinta Offset Cyan 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
-        p_tinta_m, _ = Product.objects.get_or_create(code="MP-TIN-MAG", defaults={'name': "Tinta Offset Magenta 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
-        p_tinta_y, _ = Product.objects.get_or_create(code="MP-TIN-YEL", defaults={'name': "Tinta Offset Yellow 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 12000, 'receiving_warehouse': wh})
-        p_tinta_k, _ = Product.objects.get_or_create(code="MP-TIN-BLA", defaults={'name': "Tinta Offset Black 1kg", 'category': cat_raw, 'product_type': Product.Type.STORABLE, 'uom': uoms['kg'], 'purchase_uom': uoms['kg'], 'sale_price': 10000, 'receiving_warehouse': wh})
+        p_papel, _ = Product.objects.get_or_create(
+            code="INS-0001",
+            defaults={
+                "name": "Resma de papel",
+                "category": cat_supplies,
+                "product_type": Product.Type.STORABLE,
+                "uom": uoms["resma"],
+                "purchase_uom": uoms["resma"],
+                "sale_price": 5000,
+                "receiving_warehouse": wh,
+            },
+        )
+        if _:
+            p_papel.skip_history_when_saving = True
+            p_papel.save()
+            del p_papel.skip_history_when_saving
+        p_tinta_c, _ = Product.objects.get_or_create(
+            code="MP-TIN-CYA",
+            defaults={
+                "name": "Tinta Offset Cyan 1kg",
+                "category": cat_raw,
+                "product_type": Product.Type.STORABLE,
+                "uom": uoms["kg"],
+                "purchase_uom": uoms["kg"],
+                "sale_price": 12000,
+                "receiving_warehouse": wh,
+            },
+        )
+        p_tinta_m, _ = Product.objects.get_or_create(
+            code="MP-TIN-MAG",
+            defaults={
+                "name": "Tinta Offset Magenta 1kg",
+                "category": cat_raw,
+                "product_type": Product.Type.STORABLE,
+                "uom": uoms["kg"],
+                "purchase_uom": uoms["kg"],
+                "sale_price": 12000,
+                "receiving_warehouse": wh,
+            },
+        )
+        p_tinta_y, _ = Product.objects.get_or_create(
+            code="MP-TIN-YEL",
+            defaults={
+                "name": "Tinta Offset Yellow 1kg",
+                "category": cat_raw,
+                "product_type": Product.Type.STORABLE,
+                "uom": uoms["kg"],
+                "purchase_uom": uoms["kg"],
+                "sale_price": 12000,
+                "receiving_warehouse": wh,
+            },
+        )
+        p_tinta_k, _ = Product.objects.get_or_create(
+            code="MP-TIN-BLA",
+            defaults={
+                "name": "Tinta Offset Black 1kg",
+                "category": cat_raw,
+                "product_type": Product.Type.STORABLE,
+                "uom": uoms["kg"],
+                "purchase_uom": uoms["kg"],
+                "sale_price": 10000,
+                "receiving_warehouse": wh,
+            },
+        )
 
         # FINISHED PRODUCTS (Fabricables)
-        p_impresion_color, _ = Product.objects.get_or_create(code="PT-0001", defaults={
-            'name': "Impresion a color", 
-            'category': cat_finished, 
-            'product_type': Product.Type.MANUFACTURABLE, 
-            'uom': uoms['hoja'], 
-            'sale_uom': uoms['hoja'],
-            'sale_price': 150,
-            'track_inventory': False,
-            'mfg_enable_press': True,
-            'mfg_enable_postpress': True,
-            'mfg_auto_finalize': True
-        })
-        
-        p_tarjetas, _ = Product.objects.get_or_create(code="PT-TAR-STAN", defaults={
-            'name': "Tarjetas Personalizadas (Polimate)", 
-            'category': cat_finished, 
-            'product_type': Product.Type.MANUFACTURABLE, 
-            'uom': uoms['un'], 
-            'sale_uom': uoms['un'], 
-            'sale_price': 150,
-            'is_dynamic_pricing': True,
-            'track_inventory': True,
-            'receiving_warehouse': wh,
-            'requires_advanced_manufacturing': True
-        })
-        
+        p_impresion_color, _ = Product.objects.get_or_create(
+            code="PT-0001",
+            defaults={
+                "name": "Impresion a color",
+                "category": cat_finished,
+                "product_type": Product.Type.MANUFACTURABLE,
+                "uom": uoms["hoja"],
+                "sale_uom": uoms["hoja"],
+                "sale_price": 150,
+                "track_inventory": False,
+                "mfg_enable_press": True,
+                "mfg_enable_postpress": True,
+                "mfg_auto_finalize": True,
+            },
+        )
+
+        p_tarjetas, _ = Product.objects.get_or_create(
+            code="PT-TAR-STAN",
+            defaults={
+                "name": "Tarjetas Personalizadas (Polimate)",
+                "category": cat_finished,
+                "product_type": Product.Type.MANUFACTURABLE,
+                "uom": uoms["un"],
+                "sale_uom": uoms["un"],
+                "sale_price": 150,
+                "is_dynamic_pricing": True,
+                "track_inventory": True,
+                "receiving_warehouse": wh,
+                "requires_advanced_manufacturing": True,
+            },
+        )
+
         # ---------------------------------------------------------
         # PRODUCT VARIANTS DEMO
         # ---------------------------------------------------------
         attrs = self._create_attributes()
-        p_polera_base, _ = Product.objects.get_or_create(code="PT-POL-BASE", defaults={
-            'name': "Polera Corporativa",
-            'category': cat_finished,
-            'product_type': Product.Type.MANUFACTURABLE,
-            'uom': uoms['un'],
-            'sale_price': 8500,
-            'has_variants': True,
-            'mfg_auto_finalize': True, # Express
-            'requires_advanced_manufacturing': False
-        })
-        
+        p_polera_base, _ = Product.objects.get_or_create(
+            code="PT-POL-BASE",
+            defaults={
+                "name": "Polera Corporativa",
+                "category": cat_finished,
+                "product_type": Product.Type.MANUFACTURABLE,
+                "uom": uoms["un"],
+                "sale_price": 8500,
+                "has_variants": True,
+                "mfg_auto_finalize": True,  # Express
+                "requires_advanced_manufacturing": False,
+            },
+        )
+
         # Create some variants manually for the demo
         if p_polera_base:
             # Variant 1: Blanco - L
-            v_blanco = ProductAttributeValue.objects.get(attribute=attrs['color'], value="Blanco")
-            v_l = ProductAttributeValue.objects.get(attribute=attrs['talla'], value="L")
-            
+            v_blanco = ProductAttributeValue.objects.get(attribute=attrs["color"], value="Blanco")
+            v_l = ProductAttributeValue.objects.get(attribute=attrs["talla"], value="L")
+
             p_blanco_l, _ = Product.objects.get_or_create(
                 code="PT-POL-BLA-L",
                 defaults={
-                    'name': "Polera Corporativa",
-                    'variant_display_name': "Polera Corporativa (Blanco, L)",
-                    'category': cat_finished,
-                    'product_type': Product.Type.MANUFACTURABLE,
-                    'uom': uoms['un'],
-                    'sale_price': 8500,
-                    'parent_template': p_polera_base,
-                    'mfg_auto_finalize': True,
-                }
+                    "name": "Polera Corporativa",
+                    "variant_display_name": "Polera Corporativa (Blanco, L)",
+                    "category": cat_finished,
+                    "product_type": Product.Type.MANUFACTURABLE,
+                    "uom": uoms["un"],
+                    "sale_price": 8500,
+                    "parent_template": p_polera_base,
+                    "mfg_auto_finalize": True,
+                },
             )
             p_blanco_l.attribute_values.set([v_blanco, v_l])
-            
+
             # Variant 2: Negro - XL
-            v_negro = ProductAttributeValue.objects.get(attribute=attrs['color'], value="Negro")
-            v_xl = ProductAttributeValue.objects.get(attribute=attrs['talla'], value="XL")
-            
+            v_negro = ProductAttributeValue.objects.get(attribute=attrs["color"], value="Negro")
+            v_xl = ProductAttributeValue.objects.get(attribute=attrs["talla"], value="XL")
+
             p_negro_xl, _ = Product.objects.get_or_create(
                 code="PT-POL-NEG-XL",
                 defaults={
-                    'name': "Polera Corporativa",
-                    'variant_display_name': "Polera Corporativa (Negro, XL)",
-                    'category': cat_finished,
-                    'product_type': Product.Type.MANUFACTURABLE,
-                    'uom': uoms['un'],
-                    'sale_price': 9500, # Price override
-                    'parent_template': p_polera_base,
-                    'mfg_auto_finalize': True,
-                }
+                    "name": "Polera Corporativa",
+                    "variant_display_name": "Polera Corporativa (Negro, XL)",
+                    "category": cat_finished,
+                    "product_type": Product.Type.MANUFACTURABLE,
+                    "uom": uoms["un"],
+                    "sale_price": 9500,  # Price override
+                    "parent_template": p_polera_base,
+                    "mfg_auto_finalize": True,
+                },
             )
             p_negro_xl.attribute_values.set([v_negro, v_xl])
 
         # BOMs
         if not BillOfMaterials.objects.filter(product=p_impresion_color).exists():
-            bom_impresion_color = BillOfMaterials.objects.create(product=p_impresion_color, name="BOM Impresion a color", active=True)
+            bom_impresion_color = BillOfMaterials.objects.create(
+                product=p_impresion_color, name="BOM Impresion a color", active=True
+            )
             # Para 1 impresion a color.
-            BillOfMaterialsLine.objects.create(bom=bom_impresion_color, component=p_papel, quantity=Decimal('1'), uom=uoms['hoja'])
+            BillOfMaterialsLine.objects.create(
+                bom=bom_impresion_color, component=p_papel, quantity=Decimal("1"), uom=uoms["hoja"]
+            )
 
         # ---------------------------------------------------------
         # ADDITIONAL PRODUCTS LOOP (Increased Quantity)
         # ---------------------------------------------------------
-        self.stdout.write('  Creating additional products...')
+        self.stdout.write("  Creating additional products...")
         extra_products = [
-            ("Flyer Promocional A5", cat_finished, Product.Type.MANUFACTURABLE, 120, uoms['un']),
-            ("Tríptico Corporativo", cat_finished, Product.Type.MANUFACTURABLE, 350, uoms['un']),
-            ("Afiche Publicitario (Couché 170g)", cat_finished, Product.Type.MANUFACTURABLE, 1500, uoms['un']),
-            ("Etiqueta Adhesiva Premium", cat_finished, Product.Type.MANUFACTURABLE, 80, uoms['un']),
-            ("Carpeta Institucional", cat_finished, Product.Type.MANUFACTURABLE, 850, uoms['un']),
-            ("Libreta de Notas (Bond 80g)", cat_finished, Product.Type.MANUFACTURABLE, 2500, uoms['un']),
-            ("Sobre Americano Impreso", cat_finished, Product.Type.MANUFACTURABLE, 55, uoms['un']),
-            ("Banner Roller Up (80x200cm)", cat_finished, Product.Type.MANUFACTURABLE, 35000, uoms['un']),
-            ("Talonario de Facturas", cat_finished, Product.Type.MANUFACTURABLE, 4500, uoms['un']),
-            ("Calendario de Escritorio", cat_finished, Product.Type.MANUFACTURABLE, 2800, uoms['un']),
-            ("Papel Químico Duplicado", cat_raw, Product.Type.STORABLE, 15000, uoms['resma']),
-            ("Cartulina Sulfatada 300g", cat_raw, Product.Type.STORABLE, 22000, uoms['paquete']),
-            ("Barniz UV Brillo (L)", cat_supplies, Product.Type.STORABLE, 18500, uoms['un']),
-            ("Alambre para Espiral", cat_supplies, Product.Type.STORABLE, 12000, uoms['kg']),
-            ("Pegamento para Encuadernación", cat_supplies, Product.Type.STORABLE, 9500, uoms['un']),
-            ("Plancha Offset GTO", cat_supplies, Product.Type.STORABLE, 4500, uoms['un']),
-            ("Servicio Fotocopiado B/N", cat_services, Product.Type.SERVICE, 40, uoms['hoja']),
-            ("Servicio Encuadernación", cat_services, Product.Type.SERVICE, 1500, uoms['un']),
-            ("Servicio Plastificado A4", cat_services, Product.Type.SERVICE, 800, uoms['un']),
-            ("Corte por Guillotina", cat_services, Product.Type.SERVICE, 500, uoms['un']),
+            ("Flyer Promocional A5", cat_finished, Product.Type.MANUFACTURABLE, 120, uoms["un"]),
+            ("Tríptico Corporativo", cat_finished, Product.Type.MANUFACTURABLE, 350, uoms["un"]),
+            (
+                "Afiche Publicitario (Couché 170g)",
+                cat_finished,
+                Product.Type.MANUFACTURABLE,
+                1500,
+                uoms["un"],
+            ),
+            (
+                "Etiqueta Adhesiva Premium",
+                cat_finished,
+                Product.Type.MANUFACTURABLE,
+                80,
+                uoms["un"],
+            ),
+            ("Carpeta Institucional", cat_finished, Product.Type.MANUFACTURABLE, 850, uoms["un"]),
+            (
+                "Libreta de Notas (Bond 80g)",
+                cat_finished,
+                Product.Type.MANUFACTURABLE,
+                2500,
+                uoms["un"],
+            ),
+            ("Sobre Americano Impreso", cat_finished, Product.Type.MANUFACTURABLE, 55, uoms["un"]),
+            (
+                "Banner Roller Up (80x200cm)",
+                cat_finished,
+                Product.Type.MANUFACTURABLE,
+                35000,
+                uoms["un"],
+            ),
+            ("Talonario de Facturas", cat_finished, Product.Type.MANUFACTURABLE, 4500, uoms["un"]),
+            (
+                "Calendario de Escritorio",
+                cat_finished,
+                Product.Type.MANUFACTURABLE,
+                2800,
+                uoms["un"],
+            ),
+            ("Papel Químico Duplicado", cat_raw, Product.Type.STORABLE, 15000, uoms["resma"]),
+            ("Cartulina Sulfatada 300g", cat_raw, Product.Type.STORABLE, 22000, uoms["paquete"]),
+            ("Barniz UV Brillo (L)", cat_supplies, Product.Type.STORABLE, 18500, uoms["un"]),
+            ("Alambre para Espiral", cat_supplies, Product.Type.STORABLE, 12000, uoms["kg"]),
+            (
+                "Pegamento para Encuadernación",
+                cat_supplies,
+                Product.Type.STORABLE,
+                9500,
+                uoms["un"],
+            ),
+            ("Plancha Offset GTO", cat_supplies, Product.Type.STORABLE, 4500, uoms["un"]),
+            ("Servicio Fotocopiado B/N", cat_services, Product.Type.SERVICE, 40, uoms["hoja"]),
+            ("Servicio Encuadernación", cat_services, Product.Type.SERVICE, 1500, uoms["un"]),
+            ("Servicio Plastificado A4", cat_services, Product.Type.SERVICE, 800, uoms["un"]),
+            ("Corte por Guillotina", cat_services, Product.Type.SERVICE, 500, uoms["un"]),
         ]
 
         for i, (name, cat, type, price, uom) in enumerate(extra_products):
@@ -672,116 +1147,134 @@ class Command(BaseCommand):
             Product.objects.get_or_create(
                 code=f"{cat.prefix}-{100 + i}",
                 defaults={
-                    'name': name,
-                    'category': cat,
-                    'product_type': type,
-                    'uom': uom,
-                    'sale_price': price,
-                    'track_inventory': (type == Product.Type.STORABLE),
-                    'receiving_warehouse': wh if type != Product.Type.SERVICE else None
-                }
+                    "name": name,
+                    "category": cat,
+                    "product_type": type,
+                    "uom": uom,
+                    "sale_price": price,
+                    "track_inventory": (type == Product.Type.STORABLE),
+                    "receiving_warehouse": wh if type != Product.Type.SERVICE else None,
+                },
             )
-        
+
         # SERVICES
-        Product.objects.get_or_create(code="SRV-DIS-GRA", defaults={'name': "Servicio Diseño Gráfico", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 25000})
-        Product.objects.get_or_create(code="SRV-PRE-PRE", defaults={'name': "Pre-Prensa y Planchas", 'category': cat_services, 'product_type': Product.Type.SERVICE, 'uom': uoms['un'], 'sale_price': 15000})
+        Product.objects.get_or_create(
+            code="SRV-DIS-GRA",
+            defaults={
+                "name": "Servicio Diseño Gráfico",
+                "category": cat_services,
+                "product_type": Product.Type.SERVICE,
+                "uom": uoms["un"],
+                "sale_price": 25000,
+            },
+        )
+        Product.objects.get_or_create(
+            code="SRV-PRE-PRE",
+            defaults={
+                "name": "Pre-Prensa y Planchas",
+                "category": cat_services,
+                "product_type": Product.Type.SERVICE,
+                "uom": uoms["un"],
+                "sale_price": 15000,
+            },
+        )
 
         return {
-            'warehouse': wh,
-            'raw_materials': [p_papel, p_tinta_c, p_tinta_m, p_tinta_y, p_tinta_k]
+            "warehouse": wh,
+            "raw_materials": [p_papel, p_tinta_c, p_tinta_m, p_tinta_y, p_tinta_k],
         }
 
     def _create_subscriptions(self, accounts, suppliers):
         # Create Subscription Products
         # 1. Maintenance Category
         cat_maint, _ = ProductCategory.objects.get_or_create(
-            name="Servicios de Mantenimiento", 
+            name="Servicios de Mantenimiento",
             defaults={
-                'income_account': accounts['sales_service'], 
-                'expense_account': accounts['expense_general'], 
-                'prefix': 'MNT'
-            }
+                "income_account": accounts["sales_service"],
+                "expense_account": accounts["expense_general"],
+                "prefix": "MNT",
+            },
         )
 
         p_maint_offset, _ = Product.objects.get_or_create(
             code="SUB-MNT-OFF",
             defaults={
-                'name': "Mantención Preventiva Offset",
-                'category': cat_maint,
-                'product_type': Product.Type.SUBSCRIPTION,
-                'uom': UoM.objects.get(name="Unidad"),
-                'sale_price': 0, # Expense mostly
-                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
-                'renewal_notice_days': 7,
-                'can_be_sold': False,
-                'can_be_purchased': True
-            }
+                "name": "Mantención Preventiva Offset",
+                "category": cat_maint,
+                "product_type": Product.Type.SUBSCRIPTION,
+                "uom": UoM.objects.get(name="Unidad"),
+                "sale_price": 0,  # Expense mostly
+                "recurrence_period": Product.RecurrencePeriod.MONTHLY,
+                "renewal_notice_days": 7,
+                "can_be_sold": False,
+                "can_be_purchased": True,
+            },
         )
-        
+
         # 2. Utilities
         cat_utilities, _ = ProductCategory.objects.get_or_create(
-            name="Servicios Básicos", 
+            name="Servicios Básicos",
             defaults={
-                'income_account': accounts['sales_service'], 
-                'expense_account': accounts['expense_utilities'], 
-                'prefix': 'SB'
-            }
+                "income_account": accounts["sales_service"],
+                "expense_account": accounts["expense_utilities"],
+                "prefix": "SB",
+            },
         )
 
         p_electric, _ = Product.objects.get_or_create(
             code="SUB-ELEC",
             defaults={
-                'name': "Suministro Eléctrico Taller",
-                'category': cat_utilities,
-                'product_type': Product.Type.SUBSCRIPTION,
-                'uom': UoM.objects.get(name="Unidad"),
-                'sale_price': 0,
-                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
-                'is_variable_amount': True,
-                'renewal_notice_days': 5,
-                'can_be_sold': False,
-                'can_be_purchased': True
-            }
+                "name": "Suministro Eléctrico Taller",
+                "category": cat_utilities,
+                "product_type": Product.Type.SUBSCRIPTION,
+                "uom": UoM.objects.get(name="Unidad"),
+                "sale_price": 0,
+                "recurrence_period": Product.RecurrencePeriod.MONTHLY,
+                "is_variable_amount": True,
+                "renewal_notice_days": 5,
+                "can_be_sold": False,
+                "can_be_purchased": True,
+            },
         )
 
         # Create Active Subscriptions
-        
+
         # Contract for Machine maintenance
         # supplier[1] is Tintas Gráficas SpA (using as example provider)
         Subscription.objects.get_or_create(
             product=p_maint_offset,
             supplier=suppliers[1],
             defaults={
-                'start_date': timezone.now().date(),
-                'next_payment_date': timezone.now().date() + timezone.timedelta(days=5),
-                'amount': 250000,
-                'currency': "CLP",
-                'status': Subscription.Status.ACTIVE,
-                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
-                'notes': "Contrato anual de mantenimiento preventivo máquina Heidelberg."
-            }
+                "start_date": timezone.now().date(),
+                "next_payment_date": timezone.now().date() + timezone.timedelta(days=5),
+                "amount": 250000,
+                "currency": "CLP",
+                "status": Subscription.Status.ACTIVE,
+                "recurrence_period": Product.RecurrencePeriod.MONTHLY,
+                "notes": "Contrato anual de mantenimiento preventivo máquina Heidelberg.",
+            },
         )
-        
+
         # Contract for Electricity (Variable)
         # supplier[2] is Servicios Eléctricos Enel
         Subscription.objects.get_or_create(
             product=p_electric,
             supplier=suppliers[2],
             defaults={
-                'start_date': timezone.now().date(),
-                'next_payment_date': timezone.now().date() + timezone.timedelta(days=20),
-                'amount': 0, # Variable
-                'currency': "CLP",
-                'status': Subscription.Status.ACTIVE,
-                'recurrence_period': Product.RecurrencePeriod.MONTHLY,
-                'notes': "Suministro eléctrico principal. Monto varía según consumo."
-            }
+                "start_date": timezone.now().date(),
+                "next_payment_date": timezone.now().date() + timezone.timedelta(days=20),
+                "amount": 0,  # Variable
+                "currency": "CLP",
+                "status": Subscription.Status.ACTIVE,
+                "recurrence_period": Product.RecurrencePeriod.MONTHLY,
+                "notes": "Suministro eléctrico principal. Monto varía según consumo.",
+            },
         )
 
-    def _create_opening_balance(self, accounts, partners, total_stock_value=Decimal('0')):
+    def _create_opening_balance(self, accounts, partners, total_stock_value=Decimal("0")):
         if JournalEntry.objects.filter(reference="OPEN-2026").exists():
             return
-            
+
         entry = JournalEntry(
             date=timezone.now().date(),
             description="Asiento de Apertura 2026 (Suscripción y Pago de Capital)",
@@ -790,39 +1283,42 @@ class Command(BaseCommand):
         )
         entry._is_system_closing_entry = True
         entry.save()
-        
-        owners = partners.get('owners', [])
+
+        owners = partners.get("owners", [])
         num_owners = len(owners)
-        
+
         if num_owners > 0:
             # 1. Suscripción de Capital (Subscription) = Initial Cash + Initial Stock Value
-            total_bank = Decimal('50000000')
+            total_bank = Decimal("50000000")
             total_subscription = total_bank + total_stock_value
-            sub_per_owner = (total_subscription / num_owners).quantize(Decimal('1'))
-            
+            sub_per_owner = (total_subscription / num_owners).quantize(Decimal("1"))
+
+            owner_accounts = partners.get("owner_accounts", {})
+
             for owner in owners:
-                owner_capital_account = owner.partner_contribution_account or accounts['capital']
-                owner_recv_account = owner.partner_receivable_account or accounts['receivable']
-                
-                # Debit: Cuentas por Cobrar Socios
+                per_owner_accounts = owner_accounts.get(owner.id, {})
+                owner_capital_account = per_owner_accounts.get("capital", accounts["capital"])
+                owner_recv_account = per_owner_accounts.get("receivable", accounts["partner_receivable"])
+
+                # Debit: Capital por Cobrar Socios (per-partner sub-account 1.1.05.01.00X)
                 JournalItem.objects.create(
                     entry=entry,
                     account=owner_recv_account,
                     debit=sub_per_owner,
                     credit=0,
                     label=f"Suscripción de Capital - {owner.name}",
-                    partner=owner
+                    partner=owner,
                 )
-                # Credit: Capital Social
+                # Credit: Capital Social (per-partner sub-account 3.1.01.00X)
                 JournalItem.objects.create(
                     entry=entry,
                     account=owner_capital_account,
                     debit=0,
                     credit=sub_per_owner,
                     label=f"Suscripción de Capital - {owner.name}",
-                    partner=owner
+                    partner=owner,
                 )
-                
+
                 PartnerTransaction.objects.create(
                     partner=owner,
                     transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION,
@@ -831,30 +1327,37 @@ class Command(BaseCommand):
                     description=f"Suscripción Inicial de Capital ({total_subscription:,.0f} total)",
                     journal_entry=entry,
                 )
-        
+
             # 2. Pago de Capital en Efectivo/Banco (Cash Contribution)
-            JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Ingreso Aporte Inicial Banco", debit=total_bank, credit=0)
-            
-            val_per_owner = (total_bank / num_owners).quantize(Decimal('1'))
+            JournalItem.objects.create(
+                entry=entry,
+                account=accounts["bank"],
+                label="Ingreso Aporte Inicial Banco",
+                debit=total_bank,
+                credit=0,
+            )
+
+            val_per_owner = (total_bank / num_owners).quantize(Decimal("1"))
             total_distributed = val_per_owner * num_owners
             diff = total_bank - total_distributed
-            
+
             for i, owner in enumerate(owners):
-                owner_recv_account = owner.partner_receivable_account or accounts['receivable']
+                per_owner_accounts = owner_accounts.get(owner.id, {})
+                owner_recv_account = per_owner_accounts.get("receivable", accounts["partner_receivable"])
                 val = val_per_owner
                 if i == 0:
                     val += diff
-                    
-                # Credit: Cuentas por Cobrar Socios (reduces debt)
+
+                # Credit: Capital por Cobrar Socios (reduces debt, per-partner sub-account 1.1.05.01.00X)
                 JournalItem.objects.create(
                     entry=entry,
                     account=owner_recv_account,
                     debit=0,
                     credit=val,
                     label=f"Pago Capital (Banco) - {owner.name}",
-                    partner=owner
+                    partner=owner,
                 )
-                
+
                 PartnerTransaction.objects.create(
                     partner=owner,
                     transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,
@@ -864,75 +1367,95 @@ class Command(BaseCommand):
                     journal_entry=entry,
                 )
         else:
-            total_bank = Decimal('50000000')
-            JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Ingreso Aporte Inicial", debit=total_bank, credit=0)
-            JournalItem.objects.create(entry=entry, account=accounts['capital'], label="Capital Social Banco", debit=0, credit=total_bank)
+            total_bank = Decimal("50000000")
+            JournalItem.objects.create(
+                entry=entry,
+                account=accounts["bank"],
+                label="Ingreso Aporte Inicial",
+                debit=total_bank,
+                credit=0,
+            )
+            JournalItem.objects.create(
+                entry=entry,
+                account=accounts["capital"],
+                label="Capital Social Banco",
+                debit=0,
+                credit=total_bank,
+            )
 
     def _create_groups(self):
         """Creates standard functional groups (departments)."""
         from django.contrib.auth.models import Group
-        
+
         groups = [
-            'Supervisor',
-            'Administración',
-            'Bodega', 
-            'Ventas', 
-            'Diseño',
-            'Pre-Prensa', 
-            'Taller',
-            'Terminaciones',
-            'Despacho'
+            "Supervisor",
+            "Administración",
+            "Bodega",
+            "Ventas",
+            "Diseño",
+            "Pre-Prensa",
+            "Taller",
+            "Terminaciones",
+            "Despacho",
         ]
-        
+
         created_groups = []
         for name in groups:
             group, created = Group.objects.get_or_create(name=name)
             if created:
                 created_groups.append(name)
-        
+
         if created_groups:
             self.stdout.write(f"  Created groups: {', '.join(created_groups)}")
 
     def _create_all_users(self):
         """Creates a set of common users for the graphic industry demo."""
         from django.contrib.auth.models import Group
+
         from core.permissions import Roles
-        
+
         # Ensure functional groups exist
         self._create_groups()
-        
-        # User definitions: (username, role, first_name, last_name, email)
+
+        # User definitions: (username, role, rut_body, first_name, last_name, email)
         user_definitions = [
-            ('admin', Roles.ADMIN, 'Admin', 'Sistema', 'admin@erpgrafico.com'),
-            ('gerente', Roles.MANAGER, 'Gerente', 'General', 'gerente@erpgrafico.com'),
-            ('operador', Roles.OPERATOR, 'Operador', 'Producción', 'operador@erpgrafico.com'),
-            ('bodega', Roles.OPERATOR, 'Encargado', 'Bodega', 'bodega@erpgrafico.com'),
-            ('ventas', Roles.OPERATOR, 'Ejecutivo', 'Ventas', 'ventas@erpgrafico.com'),
-            ('diseno', Roles.OPERATOR, 'Diseñador', 'Gráfico', 'diseno@erpgrafico.com'), 
+            ("admin", Roles.ADMIN, "11111111", "Admin", "Sistema", "admin@erpgrafico.com"),
+            ("gerente", Roles.MANAGER, "22222222", "Gerente", "General", "gerente@erpgrafico.com"),
+            (
+                "operador",
+                Roles.OPERATOR,
+                "33333333",
+                "Operador",
+                "Producción",
+                "operador@erpgrafico.com",
+            ),
+            ("bodega", Roles.OPERATOR, "44444444", "Encargado", "Bodega", "bodega@erpgrafico.com"),
+            ("ventas", Roles.OPERATOR, "55555555", "Ejecutivo", "Ventas", "ventas@erpgrafico.com"),
+            ("diseno", Roles.OPERATOR, "66666666", "Diseñador", "Gráfico", "diseno@erpgrafico.com"),
         ]
 
-        for username, role_name, first, last, email in user_definitions:
+        for username, role_name, rut_body, first, last, email in user_definitions:
             # Create system contact for the user
             contact, _ = Contact.objects.get_or_create(
-                tax_id=f"USER-{username.upper()}",
+                tax_id=f"{rut_body}-{compute_rut_dv(rut_body)}",
                 defaults={
-                    'name': f"{first} {last}",
-                    'email': email,
-                    'contact_name': f"{first} {last}"
-                }
+                    "name": f"{first} {last}",
+                    "email": email,
+                    "contact_name": f"{first} {last}",
+                },
             )
 
             user, created = User.objects.get_or_create(
                 username=username,
                 defaults={
-                    'email': email,
-                    'first_name': first,
-                    'last_name': last,
-                    'contact': contact,
-                    'is_staff': True,
-                    'is_superuser': (role_name == Roles.ADMIN),
-                    'pos_pin': make_password('1234')
-                }
+                    "email": email,
+                    "first_name": first,
+                    "last_name": last,
+                    "contact": contact,
+                    "is_staff": True,
+                    "is_superuser": (role_name == Roles.ADMIN),
+                    "pos_pin": make_password("1234"),
+                },
             )
 
             # Ensure contact linkage
@@ -946,31 +1469,43 @@ class Command(BaseCommand):
                 user.groups.add(role_group)
 
             # Assign specific groups for workflow testing (Functional Teams)
-            if username == 'operador':
-                user.groups.add(Group.objects.get(name='Taller'))
-                user.groups.add(Group.objects.get(name='Terminaciones'))
-            elif username == 'bodega':
-                user.groups.add(Group.objects.get(name='Bodega'))
-                user.groups.add(Group.objects.get(name='Despacho'))
-            elif username == 'ventas':
-                user.groups.add(Group.objects.get(name='Ventas'))
-            elif username == 'diseno':
-                user.groups.add(Group.objects.get(name='Diseño'))
-                user.groups.add(Group.objects.get(name='Pre-Prensa'))
-            elif username == 'gerente':
-                user.groups.add(Group.objects.get(name='Administración'))
-            elif username == 'admin':
+            if username == "operador":
+                user.groups.add(Group.objects.get(name="Taller"))
+                user.groups.add(Group.objects.get(name="Terminaciones"))
+            elif username == "bodega":
+                user.groups.add(Group.objects.get(name="Bodega"))
+                user.groups.add(Group.objects.get(name="Despacho"))
+            elif username == "ventas":
+                user.groups.add(Group.objects.get(name="Ventas"))
+            elif username == "diseno":
+                user.groups.add(Group.objects.get(name="Diseño"))
+                user.groups.add(Group.objects.get(name="Pre-Prensa"))
+            elif username == "gerente":
+                user.groups.add(Group.objects.get(name="Administración"))
+            elif username == "admin":
                 # Admin belongs to everyone for demo purposes
-                for gname in ['Supervisor', 'Bodega', 'Ventas', 'Pre-Prensa', 'Taller', 'Terminaciones', 'Despacho', 'Diseño', 'Administración']:
+                for gname in [
+                    "Supervisor",
+                    "Bodega",
+                    "Ventas",
+                    "Pre-Prensa",
+                    "Taller",
+                    "Terminaciones",
+                    "Despacho",
+                    "Diseño",
+                    "Administración",
+                ]:
                     user.groups.add(Group.objects.get(name=gname))
 
             # Set static password and PIN
-            user.set_password('111111')
-            user.pos_pin = make_password('1234')
+            user.set_password("111111")
+            user.pos_pin = make_password("1234")
             user.save()
-            
+
             status = "created" if created else "updated"
-            self.stdout.write(f"  User '{username}' {status} with password '111111' (Role: {role_name})")
+            self.stdout.write(
+                f"  User '{username}' {status} with password '111111' (Role: {role_name})"
+            )
 
     def _add_initial_stock(self, accounts, partners):
         """
@@ -981,9 +1516,10 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("  No warehouse found to add initial stock."))
             return
 
-        settings = AccountingSettings.get_solo()
-        initial_inv_account = accounts['capital']  # Use capital account directly (initial_inventory_account was removed)
-        
+        initial_inv_account = accounts[
+            "capital"
+        ]  # Use capital account directly (initial_inventory_account was removed)
+
         if not initial_inv_account:
             self.stdout.write(self.style.ERROR("  No initial inventory account found."))
             return
@@ -999,26 +1535,27 @@ class Command(BaseCommand):
 
         # Filter products that should receive initial stock
         # Exclude: advanced manufacturing, services, subscriptions, and express manufacturing
-        products = Product.objects.filter(
-            track_inventory=True
-        ).exclude(
-            requires_advanced_manufacturing=True
-        ).exclude(
-            product_type__in=[Product.Type.SERVICE, Product.Type.SUBSCRIPTION]
-        ).exclude(
-            mfg_auto_finalize=True  # Exclude express manufacturing products
+        products = (
+            Product.objects.filter(track_inventory=True)
+            .exclude(requires_advanced_manufacturing=True)
+            .exclude(product_type__in=[Product.Type.SERVICE, Product.Type.SUBSCRIPTION])
+            .exclude(
+                mfg_auto_finalize=True  # Exclude express manufacturing products
+            )
         )
-        
-        total_value = Decimal('0')
+
+        total_value = Decimal("0")
         count = 0
 
         for product in products:
             # Random initial quantity between 50 and 500
             qty = Decimal(str(random.randint(50, 500)))
-            
+
             # Determine a realistic cost based on sale price (approx 40-70% of sale price)
             if product.sale_price > 0:
-                cost = (product.sale_price * Decimal(str(random.uniform(0.4, 0.7)))).quantize(Decimal('1'))
+                cost = (product.sale_price * Decimal(str(random.uniform(0.4, 0.7)))).quantize(
+                    Decimal("1")
+                )
             else:
                 # Default material costs
                 cost = Decimal(str(random.randint(500, 5000)))
@@ -1031,19 +1568,21 @@ class Command(BaseCommand):
                 quantity=qty,
                 move_type=StockMove.Type.IN,
                 description="Carga Inicial Demo Data",
-                unit_cost=cost  # Frozen at creation - will not change
+                unit_cost=cost,  # Frozen at creation - will not change
             )
             move._is_system_closing_entry = True
             move.save()
+            move.journal_entry = entry
+            move.save(update_fields=["journal_entry"])
 
             # Update product cost PMP - single save with update_fields to track only cost change
             # First, remove the $0 history entry created on product creation (before cost was set)
             product.history.filter(cost_price=0).delete()
             product.cost_price = cost
-            product.save(update_fields=['cost_price'])
-            
+            product.save(update_fields=["cost_price"])
+
             # 2. Create Journal Item (Debit Inventory)
-            inv_account = product.get_asset_account or accounts['inventory_raw']
+            inv_account = product.get_asset_account or accounts["inventory_raw"]
             line_val = qty * cost
             total_value += line_val
 
@@ -1052,33 +1591,35 @@ class Command(BaseCommand):
                 account=inv_account,
                 debit=line_val,
                 credit=0,
-                label=f"Carga Inicial: {product.name}"
+                label=f"Carga Inicial: {product.name}",
             )
             count += 1
 
         # 3. Create Balanced Equity Entry (Credit) - Split across partners
         if total_value > 0:
-            owners = partners.get('owners', [])
+            owners = partners.get("owners", [])
             if owners:
-                per_owner_value = (total_value / len(owners)).quantize(Decimal('1'))
-                allocated_value = Decimal('0')
-                
+                per_owner_value = (total_value / len(owners)).quantize(Decimal("1"))
+                allocated_value = Decimal("0")
+                owner_accounts = partners.get("owner_accounts", {})
+
                 for i, owner in enumerate(owners):
                     val = per_owner_value if i < len(owners) - 1 else total_value - allocated_value
                     allocated_value += val
-                    
-                    owner_recv_account = owner.partner_receivable_account or accounts['receivable']
-                    
-                    # Credit: Cuentas por Cobrar Socios (reduces debt)
+
+                    per_owner_accounts = owner_accounts.get(owner.id, {})
+                    owner_recv_account = per_owner_accounts.get("receivable", accounts["partner_receivable"])
+
+                    # Credit: Capital por Cobrar Socios (reduces debt, per-partner sub-account 1.1.05.01.00X)
                     JournalItem.objects.create(
                         entry=entry,
                         account=owner_recv_account,
                         debit=0,
                         credit=val,
                         label=f"Pago Capital (Inventario) - {owner.name}",
-                        partner=owner
+                        partner=owner,
                     )
-                    
+
                     PartnerTransaction.objects.create(
                         partner=owner,
                         transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY,
@@ -1093,71 +1634,81 @@ class Command(BaseCommand):
                     account=initial_inv_account,
                     debit=0,
                     credit=total_value,
-                    label="Contrapartida Carga Inicial Inventario"
+                    label="Contrapartida Carga Inicial Inventario",
                 )
 
-        self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
+        self.stdout.write(
+            f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}"
+        )
         return total_value
 
     def _create_treasury_infrastructure(self, accounts, partners):
-        self.stdout.write('  Creating POS Terminals and Treasury Physical Accounts...')
+        self.stdout.write("  Creating POS Terminals and Treasury Physical Accounts...")
 
         # 0. Create Banks
-        b_estado, _ = Bank.objects.get_or_create(code="ESTADO", defaults={'name': "Banco Estado", 'is_active': True})
-        b_chile, _ = Bank.objects.get_or_create(code="CHILE", defaults={'name': "Banco de Chile", 'is_active': True})
-        b_santander, _ = Bank.objects.get_or_create(code="SANTANDER", defaults={'name': "Banco Santander", 'is_active': True})
-        b_bci, _ = Bank.objects.get_or_create(code="BCI", defaults={'name': "Banco BCI", 'is_active': True})
+        b_estado, _ = Bank.objects.get_or_create(
+            code="ESTADO", defaults={"name": "Banco Estado", "is_active": True}
+        )
+        b_chile, _ = Bank.objects.get_or_create(
+            code="CHILE", defaults={"name": "Banco de Chile", "is_active": True}
+        )
+        b_santander, _ = Bank.objects.get_or_create(
+            code="SANTANDER", defaults={"name": "Banco Santander", "is_active": True}
+        )
+        b_bci, _ = Bank.objects.get_or_create(
+            code="BCI", defaults={"name": "Banco BCI", "is_active": True}
+        )
         # Banco de Ripley archivado de demo — usado para exhibir el patrón
         # "Archivo" del ADR-0037 (is_active=False, fuera de selectores, no se borra).
         b_ripley, _ = Bank.objects.get_or_create(
             code="RIPLEY",
-            defaults={'name': "Banco Ripley (Demo Archivo)", 'is_active': False},
+            defaults={"name": "Banco Ripley (Demo Archivo)", "is_active": False},
         )
 
         # 1. Create Physical Treasury Accounts with UNIQUE Accounting Accounts
 
         # Helper to get/create specific cash account
-        cash_parent = accounts['cash'].parent if accounts['cash'].parent else accounts['cash']
+        cash_parent = accounts["cash"].parent if accounts["cash"].parent else accounts["cash"]
 
         def get_create_cash_account(code, name):
             acc, _ = Account.objects.get_or_create(
                 code=code,
                 defaults={
-                    'name': name,
-                    'account_type': AccountType.ASSET,
-                    'parent': cash_parent,
-                    'is_reconcilable': True,
-                    'bs_category': BSCategory.CURRENT_ASSET # Explicitly for Liquidity Ratio
-                }
+                    "name": name,
+                    "account_type": AccountType.ASSET,
+                    "parent": cash_parent,
+                    "is_reconcilable": True,
+                    "bs_category": BSCategory.CURRENT_ASSET,  # Explicitly for Liquidity Ratio
+                },
             )
             return acc
 
         def get_create_liability_account(code, name):
             """Crea cuenta de pasivo bajo 2.1 (Pasivos Corrientes) para tarjetas de crédito."""
-            parent = Account.objects.get(code='2.1')
+            parent = Account.objects.get(code="2.1")
             acc, _ = Account.objects.get_or_create(
                 code=code,
                 defaults={
-                    'name': name,
-                    'account_type': AccountType.LIABILITY,
-                    'parent': parent,
-                    'is_reconcilable': True,
-                    'bs_category': BSCategory.CURRENT_LIABILITY,
-                }
+                    "name": name,
+                    "account_type": AccountType.LIABILITY,
+                    "parent": parent,
+                    "is_reconcilable": True,
+                    "bs_category": BSCategory.CURRENT_LIABILITY,
+                },
             )
             return acc
 
         # Safe Account (1.1.01.01 - reusing main cash or creating specific)
-        acc_safe = get_create_cash_account('1.1.01.11', "Efectivo Caja Fuerte")
+        acc_safe = get_create_cash_account("1.1.01.11", "Efectivo Caja Fuerte")
         safe, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-FUERTE",
             defaults={
-                'name': "Caja Fuerte (Tesorería Central)",
-                'currency': "CLP",
-                'account': acc_safe,
-                'account_type': TreasuryAccount.Type.CASH,
-                'allows_cash': True,
-            }
+                "name": "Caja Fuerte (Tesorería Central)",
+                "currency": "CLP",
+                "account": acc_safe,
+                "account_type": TreasuryAccount.Type.CASH,
+                "allows_cash": True,
+            },
         )
 
         # Default Payment Method for Safe
@@ -1165,23 +1716,23 @@ class Command(BaseCommand):
             name="Efectivo Tesorería Central",
             treasury_account=safe,
             defaults={
-                'method_type': PaymentMethod.Type.CASH,
-                'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.CASH,
+                "allow_for_sales": True,
+                "allow_for_purchases": True,
+            },
         )
 
         # Till 1 Account
-        acc_till1 = get_create_cash_account('1.1.01.12', "Efectivo Caja POS 01")
+        acc_till1 = get_create_cash_account("1.1.01.12", "Efectivo Caja POS 01")
         till1, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-POS-01",
             defaults={
-                'name': "Caja Física POS 01",
-                'currency': "CLP",
-                'account': acc_till1,
-                'account_type': TreasuryAccount.Type.CASH,
-                'allows_cash': True,
-            }
+                "name": "Caja Física POS 01",
+                "currency": "CLP",
+                "account": acc_till1,
+                "account_type": TreasuryAccount.Type.CASH,
+                "allows_cash": True,
+            },
         )
 
         # Default Payment Method for Till 1
@@ -1189,22 +1740,22 @@ class Command(BaseCommand):
             name="Efectivo (Recaudación POS 01)",
             treasury_account=till1,
             defaults={
-                'method_type': PaymentMethod.Type.CASH,
-                'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.CASH,
+                "allow_for_sales": True,
+                "allow_for_purchases": True,
+            },
         )
         # Petty Cash Account
-        acc_petty = get_create_cash_account('1.1.01.13', "Efectivo Caja Chica")
+        acc_petty = get_create_cash_account("1.1.01.13", "Efectivo Caja Chica")
         petty, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-CHICA",
             defaults={
-                'name': "Caja Chica (Fondo Fijo)",
-                'currency': "CLP",
-                'account': acc_petty,
-                'account_type': TreasuryAccount.Type.CASH,
-                'allows_cash': True,
-            }
+                "name": "Caja Chica (Fondo Fijo)",
+                "currency": "CLP",
+                "account": acc_petty,
+                "account_type": TreasuryAccount.Type.CASH,
+                "allows_cash": True,
+            },
         )
 
         # Default Payment Method for Petty Cash
@@ -1212,30 +1763,30 @@ class Command(BaseCommand):
             name="Efectivo Fondo Fijo Adm.",
             treasury_account=petty,
             defaults={
-                'method_type': PaymentMethod.Type.CASH,
-                'allow_for_sales': False,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.CASH,
+                "allow_for_sales": False,
+                "allow_for_purchases": True,
+            },
         )
 
         # 1.1 New Additional Accounts
         # Cada cuenta corriente debe tener su propia sub-cuenta contable
         # (regla del wizard F5.1 y del ADR-0037). Antes: ambos bancos
         # compartían 1.1.01.02 y 1.1.01.03 a nivel de sub-ledger.
-        acc_banco_estado = get_create_cash_account('1.1.01.20', "Banco Estado (Cta Corriente)")
+        acc_banco_estado = get_create_cash_account("1.1.01.20", "Banco Estado (Cta Corriente)")
         bco01, _ = TreasuryAccount.objects.get_or_create(
             code="BCO-ESTADO",
             defaults={
-                'name': "Banco Estado Empresa",
-                'currency': "CLP",
-                'account': acc_banco_estado,
-                'account_type': TreasuryAccount.Type.CHECKING,
-                'account_number': "123-45678-01",
-                'allows_cash': False,
-                'allows_card': True,
-                'allows_transfer': True,
-                'bank': b_estado
-            }
+                "name": "Banco Estado Empresa",
+                "currency": "CLP",
+                "account": acc_banco_estado,
+                "account_type": TreasuryAccount.Type.CHECKING,
+                "account_number": "123-45678-01",
+                "allows_cash": False,
+                "allows_card": True,
+                "allows_transfer": True,
+                "bank": b_estado,
+            },
         )
 
         # Payment Methods for Bank Account (Estado)
@@ -1243,23 +1794,23 @@ class Command(BaseCommand):
             name="Transferencia Estado",
             treasury_account=bco01,
             defaults={
-                'method_type': PaymentMethod.Type.TRANSFER,
-                'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.TRANSFER,
+                "allow_for_sales": True,
+                "allow_for_purchases": True,
+            },
         )
 
         # Workshop Till Account
-        acc_workshop = get_create_cash_account('1.1.01.14', "Efectivo Caja Taller")
+        acc_workshop = get_create_cash_account("1.1.01.14", "Efectivo Caja Taller")
         caja01, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-TALLER",
             defaults={
-                'name': "Caja Física Taller",
-                'currency': "CLP",
-                'account': acc_workshop,
-                'account_type': TreasuryAccount.Type.CASH,
-                'allows_cash': True,
-            }
+                "name": "Caja Física Taller",
+                "currency": "CLP",
+                "account": acc_workshop,
+                "account_type": TreasuryAccount.Type.CASH,
+                "allows_cash": True,
+            },
         )
 
         # Payment Method for Workshop
@@ -1267,26 +1818,26 @@ class Command(BaseCommand):
             name="Efectivo (Pagos Taller)",
             treasury_account=caja01,
             defaults={
-                'method_type': PaymentMethod.Type.CASH,
-                'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.CASH,
+                "allow_for_sales": True,
+                "allow_for_purchases": True,
+            },
         )
 
-        acc_banco_chile = get_create_cash_account('1.1.01.21', "Banco de Chile (Cta Corriente)")
+        acc_banco_chile = get_create_cash_account("1.1.01.21", "Banco de Chile (Cta Corriente)")
         bank_chile, _ = TreasuryAccount.objects.get_or_create(
             code="BCO-CHILE",
             defaults={
-                'name': "Banco de Chile (Cta Corriente)",
-                'currency': "CLP",
-                'account': acc_banco_chile,
-                'account_type': TreasuryAccount.Type.CHECKING,
-                'account_number': "987-65432-09",
-                'allows_cash': False,
-                'allows_card': True,
-                'allows_transfer': True,
-                'bank': b_chile
-            }
+                "name": "Banco de Chile (Cta Corriente)",
+                "currency": "CLP",
+                "account": acc_banco_chile,
+                "account_type": TreasuryAccount.Type.CHECKING,
+                "account_number": "987-65432-09",
+                "allows_cash": False,
+                "allows_card": True,
+                "allows_transfer": True,
+                "bank": b_chile,
+            },
         )
 
         # Payment Methods for Bank Account (Chile)
@@ -1294,77 +1845,79 @@ class Command(BaseCommand):
             name="Transferencia Bco Chile",
             treasury_account=bank_chile,
             defaults={
-                'method_type': PaymentMethod.Type.TRANSFER,
-                'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.TRANSFER,
+                "allow_for_sales": True,
+                "allow_for_purchases": True,
+            },
         )
 
         # Cta corriente BCI para exhibir más bancos y más cuentas
-        acc_banco_bci = get_create_cash_account('1.1.01.22', "Banco BCI (Cta Corriente)")
+        acc_banco_bci = get_create_cash_account("1.1.01.22", "Banco BCI (Cta Corriente)")
         bank_bci, _ = TreasuryAccount.objects.get_or_create(
             code="BCO-BCI",
             defaults={
-                'name': "Banco BCI (Cta Corriente)",
-                'currency': "CLP",
-                'account': acc_banco_bci,
-                'account_type': TreasuryAccount.Type.CHECKING,
-                'account_number': "111-22233-44",
-                'allows_cash': False,
-                'allows_card': True,
-                'allows_transfer': True,
-                'bank': b_bci
-            }
+                "name": "Banco BCI (Cta Corriente)",
+                "currency": "CLP",
+                "account": acc_banco_bci,
+                "account_type": TreasuryAccount.Type.CHECKING,
+                "account_number": "111-22233-44",
+                "allows_cash": False,
+                "allows_card": True,
+                "allows_transfer": True,
+                "bank": b_bci,
+            },
         )
         PaymentMethod.objects.get_or_create(
             name="Transferencia BCI",
             treasury_account=bank_bci,
             defaults={
-                'method_type': PaymentMethod.Type.TRANSFER,
-                'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.TRANSFER,
+                "allow_for_sales": True,
+                "allow_for_purchases": True,
+            },
         )
 
         # Tarjeta de crédito corporativa (CREDIT_CARD) — usa cuenta de pasivo
         # 2.1.04.02 creada en populate_ifrs_coa.
-        acc_cc_chile = get_create_liability_account('2.1.04.02.01', "Tarjeta de Crédito Visa Chile")
+        acc_cc_chile = get_create_liability_account("2.1.04.02.01", "Tarjeta de Crédito Visa Chile")
         card_chile, _ = TreasuryAccount.objects.get_or_create(
             code="TC-VISA-CHILE",
             defaults={
-                'name': "Visa Empresas Banco de Chile",
-                'currency': "CLP",
-                'account': acc_cc_chile,
-                'account_type': TreasuryAccount.Type.CREDIT_CARD,
-                'account_number': "4500-XXXX-XXXX-1234",
-                'allows_cash': False,
-                'allows_card': True,
-                'allows_transfer': False,
-                'bank': b_chile
-            }
+                "name": "Visa Empresas Banco de Chile",
+                "currency": "CLP",
+                "account": acc_cc_chile,
+                "account_type": TreasuryAccount.Type.CREDIT_CARD,
+                "account_number": "4500-XXXX-XXXX-1234",
+                "card_number": "4500 1234 5678 1234",
+                "credit_limit": Decimal("5000000"),
+                "allows_cash": False,
+                "allows_card": True,
+                "allows_transfer": False,
+                "bank": b_chile,
+            },
         )
         # Default payment method for corporate credit card
         PaymentMethod.objects.get_or_create(
             name="Tarjeta Crédito Visa Chile",
             treasury_account=card_chile,
             defaults={
-                'method_type': PaymentMethod.Type.CREDIT_CARD,
-                'allow_for_sales': False,
-                'allow_for_purchases': True,
-            }
+                "method_type": PaymentMethod.Type.CREDIT_CARD,
+                "allow_for_sales": False,
+                "allow_for_purchases": True,
+            },
         )
 
         # Reception Till Account
-        acc_reception = get_create_cash_account('1.1.01.15', "Efectivo Caja Recepción")
+        acc_reception = get_create_cash_account("1.1.01.15", "Efectivo Caja Recepción")
         recepcion, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-REC",
             defaults={
-                'name': "Caja Recepción Local",
-                'currency': "CLP",
-                'account': acc_reception,
-                'account_type': TreasuryAccount.Type.CASH,
-                'allows_cash': True,
-            }
+                "name": "Caja Recepción Local",
+                "currency": "CLP",
+                "account": acc_reception,
+                "account_type": TreasuryAccount.Type.CASH,
+                "allows_cash": True,
+            },
         )
 
         # Payment Methods for Reception
@@ -1372,38 +1925,37 @@ class Command(BaseCommand):
             name="Efectivo Recepción",
             treasury_account=recepcion,
             defaults={
-                'method_type': PaymentMethod.Type.CASH,
-                'allow_for_sales': True,
-                'allow_for_purchases': True
-            }
+                "method_type": PaymentMethod.Type.CASH,
+                "allow_for_sales": True,
+                "allow_for_purchases": True,
+            },
         )
         pm_webpay, _ = PaymentMethod.objects.get_or_create(
             name="Webpay / Transbank",
             treasury_account=bco01,
             defaults={
-                'method_type': PaymentMethod.Type.CARD,
-                'allow_for_sales': True,
-                'allow_for_purchases': False,
-            }
+                "method_type": PaymentMethod.Type.CARD,
+                "allow_for_sales": True,
+                "allow_for_purchases": False,
+            },
         )
 
         # 1.2 TUU Integration Infrastructure
         # Bridge account: clearing between card payment capture and bank settlement.
-        acc_tuu_bridge = get_create_cash_account('1.1.01.16', "Cuenta Puente Liquidación TUU")
+        acc_tuu_bridge = get_create_cash_account("1.1.01.16", "Cuenta Puente Liquidación TUU")
         tuu_bridge, _ = TreasuryAccount.objects.get_or_create(
             code="PUENTE-TUU",
             defaults={
-                'name': "Cuenta Puente Liquidación TUU",
-                'currency': "CLP",
-                'account': acc_tuu_bridge,
-                'account_type': TreasuryAccount.Type.BRIDGE,
-                'allows_cash': False,
-            }
+                "name": "Cuenta Puente Liquidación TUU",
+                "currency": "CLP",
+                "account": acc_tuu_bridge,
+                "account_type": TreasuryAccount.Type.BRIDGE,
+                "allows_cash": False,
+            },
         )
 
         tuu_contact, _ = Contact.objects.get_or_create(
-            tax_id="76.354.771-8",
-            defaults={'name': "TUU SpA", 'email': "soporte@tuu.cl", 'account_payable': accounts['payable']}
+            tax_id="76.354.771-K", defaults={"name": "TUU SpA", "email": "soporte@tuu.cl"}
         )
 
         # Service product for commissions
@@ -1412,28 +1964,29 @@ class Command(BaseCommand):
         p_commission, _ = Product.objects.get_or_create(
             code="SRV-COMM-TERM",
             defaults={
-                'name': "Comisión Terminal de Pago",
-                'category': cat_services,
-                'product_type': Product.Type.SERVICE,
-                'uom': uom_un,
-                'sale_price': 0,
-                'can_be_sold': False,
-                'can_be_purchased': True,
-            }
+                "name": "Comisión Terminal de Pago",
+                "category": cat_services,
+                "product_type": Product.Type.SERVICE,
+                "uom": uom_un,
+                "sale_price": 0,
+                "can_be_sold": False,
+                "can_be_purchased": True,
+            },
         )
 
         tuu_provider, _ = PaymentTerminalProvider.objects.update_or_create(
             name="TUU",
             defaults={
-                'provider_type': PaymentTerminalProvider.ProviderType.TUU,
-                'supplier': tuu_contact,
-                'receivable_account': acc_tuu_bridge,
-                'commission_expense_account': accounts['bank_commission'],
-                'commission_iva_account': accounts['vat_credit'],
-                'commission_product': p_commission,
-                'bank_treasury_account': tuu_bridge,
-                'is_active': True,
-            }
+                "provider_type": PaymentTerminalProvider.ProviderType.TUU,
+                "supplier": tuu_contact,
+                "receivable_account": acc_tuu_bridge,
+                "commission_expense_account": accounts["bank_commission"],
+                "commission_iva_account": accounts["vat_credit"],
+                "commission_product": p_commission,
+                "bank_treasury_account": tuu_bridge,
+                "default_deposit_account": bco01,
+                "is_active": True,
+            },
         )
 
         tuu_provider.refresh_from_db()
@@ -1459,23 +2012,25 @@ class Command(BaseCommand):
         tuu_device, _ = PaymentTerminalDevice.objects.get_or_create(
             serial_number="TUU-DEMO-001",
             defaults={
-                'name': "TUU POS-01",
-                'provider': tuu_provider,
-                'status': PaymentTerminalDevice.Status.ACTIVE,
-            }
+                "name": "TUU POS-01",
+                "provider": tuu_provider,
+                "status": PaymentTerminalDevice.Status.ACTIVE,
+            },
         )
 
         # 2. POS Terminals
 
         # Método CHECK vinculado a la cuenta puente CHEQUES-CARTERA (creado por ensure_portfolio_account).
         from treasury.models import TreasuryAccount as TA
+
         check_portfolio = TA.objects.filter(account_type=TA.Type.CHECK_PORTFOLIO).first()
         check_pm = (
             PaymentMethod.objects.filter(
                 method_type=PaymentMethod.Type.CHECK,
                 treasury_account=check_portfolio,
             ).first()
-            if check_portfolio else None
+            if check_portfolio
+            else None
         )
 
         # POS-01: Caja Central P1 — con device TUU integrado.
@@ -1483,12 +2038,12 @@ class Command(BaseCommand):
         t1, t1_created = POSTerminal.objects.get_or_create(
             code="POS-01",
             defaults={
-                'name': "Caja Central P1",
-                'location': "Planta 1 - Recepción",
-                'ip_address': '192.168.1.100',
-                'default_treasury_account': bco01,
-                'payment_terminal_device': tuu_device,
-            }
+                "name": "Caja Central P1",
+                "location": "Planta 1 - Recepción",
+                "ip_address": "192.168.1.100",
+                "default_treasury_account": bco01,
+                "payment_terminal_device": tuu_device,
+            },
         )
         if not t1_created and t1.payment_terminal_device != tuu_device:
             t1.payment_terminal_device = tuu_device
@@ -1503,11 +2058,11 @@ class Command(BaseCommand):
         t2, t2_created = POSTerminal.objects.get_or_create(
             code="POS-02",
             defaults={
-                'name': "Caja Taller P2",
-                'location': "Planta 2 - Taller",
-                'ip_address': '192.168.1.100',
-                'default_treasury_account': bco01,
-            }
+                "name": "Caja Taller P2",
+                "location": "Planta 2 - Taller",
+                "ip_address": "192.168.1.100",
+                "default_treasury_account": bco01,
+            },
         )
         # Association per screenshot: Efectivo Taller + Webpay / Transbank
         t2.allowed_payment_methods.set([pm_efectivo_taller, pm_webpay])
@@ -1515,7 +2070,31 @@ class Command(BaseCommand):
             t2.allowed_payment_methods.add(check_pm)
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
-        self.stdout.write("    ✓ Infrastructure created (Banks, Terminals, Safe, Tills, refined Payment Methods).")
+        self.stdout.write(
+            "    ✓ Infrastructure created (Banks, Terminals, Safe, Tills, refined Payment Methods)."
+        )
+
+    def _create_credit_lines(self):
+        """Crea líneas de crédito (sobregiro) para cuentas CHECKING del demo."""
+        from datetime import date
+
+        checking_accounts = TreasuryAccount.objects.filter(
+            account_type=TreasuryAccount.Type.CHECKING,
+        )
+        for ta in checking_accounts:
+            CreditLine.objects.get_or_create(
+                treasury_account=ta,
+                defaults={
+                    "code": f"CL-{ta.code}",
+                    "currency": ta.currency,
+                    "credit_limit": Decimal("20000000"),
+                    "interest_rate": Decimal("1.5"),
+                    "rate_basis": CreditLine.RateBasis.MONTHLY,
+                    "valid_from": date(2026, 1, 1),
+                    "valid_until": date(2028, 12, 31),
+                    "status": CreditLine.Status.ACTIVE,
+                },
+            )
 
     def _create_periods(self):
         """Creates tax and accounting periods for the current year."""
@@ -1527,57 +2106,60 @@ class Command(BaseCommand):
             status = TaxPeriod.Status.OPEN
             if month < current_month:
                 status = TaxPeriod.Status.CLOSED
-            
+
             tax_period, _ = TaxPeriod.objects.get_or_create(
-                year=current_year,
-                month=month,
-                defaults={'status': status}
+                year=current_year, month=month, defaults={"status": status}
             )
-            
+
             acc_period, _ = AccountingPeriod.objects.get_or_create(
                 year=current_year,
                 month=month,
-                defaults={'status': status, 'tax_period': tax_period}
+                defaults={"status": status, "tax_period": tax_period},
             )
-            
+
             # Close them if they are in the past
             if status == TaxPeriod.Status.CLOSED:
                 tax_period.closed_at = timezone.now()
                 tax_period.save()
                 acc_period.closed_at = timezone.now()
                 acc_period.save()
-            
-            periods.append({'tax': tax_period, 'acc': acc_period})
-            
+
+            periods.append({"tax": tax_period, "acc": acc_period})
+
         self.stdout.write(f"    ✓ {len(periods)} periods created/verified for {current_year}.")
         return periods
 
     def _create_sales_purchasing_demo(self, accounts, partners, inventory, periods):
         """Creates a sample document flow for sales and purchasing."""
-        from sales.services import SalesService
-        from purchasing.services import PurchasingService
         from billing.models import Invoice
-        
+        from sales.services import SalesService
+
         # 1. SAMPLE SALE: NV -> GD -> FACT
-        customer = partners['customers'][0]
-        warehouse = inventory['warehouse']
-        # Use a standard product to avoid manufacturing validation during seeding
-        product = Product.objects.filter(product_type='STANDARD').first()
-        
+        customer = partners["customers"][0]
+        warehouse = inventory["warehouse"]
+        # Use a storable product (no manufacturing validation)
+        product = (
+            Product.objects.filter(track_inventory=True, product_type=Product.Type.STORABLE)
+            .exclude(requires_advanced_manufacturing=True)
+            .first()
+        )
+
         if product:
             order = SaleOrder.objects.create(
                 customer=customer,
                 date=timezone.now().date(),
-                payment_method=SaleOrder.PaymentMethod.CREDIT
+                payment_method=SaleOrder.PaymentMethod.CREDIT,
             )
-            SaleLine.objects.create(order=order, product=product, quantity=100, unit_price=150)
-            order.save() # Triggers totals calculation
-            
+            SaleLine.objects.create(
+                order=order, product=product, uom=product.uom, quantity=10, unit_price=150
+            )
+            order.save()  # Triggers totals calculation
+
             # Confirm and Delivery
             SalesService.confirm_sale(order)
             delivery = SalesService.dispatch_order(order, warehouse)
             SalesService.confirm_delivery(delivery)
-            
+
             # Bill
             invoice = Invoice.objects.create(
                 dte_type=Invoice.DTEType.FACTURA,
@@ -1588,24 +2170,555 @@ class Command(BaseCommand):
                 total_tax=order.total_tax,
                 total=order.total,
                 status=Invoice.Status.POSTED,
-                date=timezone.now().date()
+                date=timezone.now().date(),
             )
-            self.stdout.write(f"    ✓ Demo Sale Flow: FACT-{invoice.number} created.")
+            self.stdout.write(
+                f"  ✓ NV-{order.number}: {customer.name} → {order.lines.first().quantity}u {product.name} (FACT-{invoice.number})"
+            )
+        else:
+            self.stdout.write("  — No se encontró producto storable para demo flow")
+
+    def _create_loans_demo(self, accounts, partners):
+        from treasury.loan_service import LoanService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        if BankLoan.objects.filter(loan_number="DEMO-LOAN-001").exists():
+            self.stdout.write("  ✓ Préstamo demo ya existe, saltando.")
+            return
+
+        self.stdout.write("  ─────────────────────────────────────────────")
+        bank_estado = Bank.objects.get(code="ESTADO")
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+
+        parent_liability = Account.objects.get(code="2.1.04")
+        acc_loan_liability, _ = Account.objects.get_or_create(
+            code="2.1.04.10",
+            defaults={
+                "name": "Préstamos Bancarios por Pagar",
+                "account_type": AccountType.LIABILITY,
+                "parent": parent_liability,
+                "is_reconcilable": True,
+                "bs_category": BSCategory.CURRENT_LIABILITY,
+            },
+        )
+        loan_liability_ta, _ = TreasuryAccount.objects.get_or_create(
+            code="PASIVO-PRESTAMO-001",
+            defaults={
+                "name": "Préstamo Bancario por Pagar (Demo)",
+                "currency": "CLP",
+                "account": acc_loan_liability,
+                "account_type": TreasuryAccount.Type.LOAN,
+            },
+        )
+
+        loan = BankLoan.objects.create(
+            lender=bank_estado,
+            loan_number="DEMO-LOAN-001",
+            currency=BankLoan.Currency.CLP,
+            principal=Decimal("10000000"),
+            interest_rate=Decimal("1.2"),
+            rate_basis=BankLoan.RateBasis.MONTHLY,
+            amortization_system=BankLoan.AmortizationSystem.FRENCH,
+            term_months=12,
+            start_date=timezone.now().date(),
+            first_due_date=timezone.now().date() + timezone.timedelta(days=30),
+            insurance_monthly=Decimal("5000"),
+            opening_fee=Decimal("50000"),
+            stamp_tax=Decimal("10000"),
+            penalty_rate=Decimal("1.5"),
+            disbursement_account=bco_estado,
+            liability_account=loan_liability_ta,
+            status=BankLoan.Status.DRAFT,
+        )
+        self.stdout.write(
+            f"  ✓ Préstamo {loan.display_id} creado: "
+            f"${loan.principal:,.0f} @ {loan.interest_rate}% / {loan.term_months} cuotas"
+        )
+
+        settings = AccountingSettings.get_solo()
+        loan = LoanService.disburse(
+            loan,
+            created_by=admin,
+            commission_expense_account=settings.loan_commission_expense_account,
+            stamp_tax_expense_account=settings.loan_stamp_tax_expense_account,
+        )
+        first_inst = loan.installments.filter(number=1).first()
+        n_inst = loan.installments.count()
+        self.stdout.write(
+            f"  ✓ Schedule generado: {n_inst} cuotas (cuota fija: ${first_inst.total_amount:,.0f})"
+        )
+        net_cash = loan.principal - loan.opening_fee - loan.stamp_tax
+        self.stdout.write(
+            f"  ✓ Desembolso → BCO-ESTADO: ${net_cash:,.0f} neto "
+            f"(capital ${loan.principal:,.0f} - com ${loan.opening_fee:,.0f} - ITE ${loan.stamp_tax:,.0f})"
+        )
+
+        LoanService.pay_installment(
+            loan,
+            first_inst,
+            payment_account=bco_estado,
+            interest_expense_account=accounts["interest_expense"],
+            insurance_expense_account=accounts["insurance_expense"],
+            created_by=admin,
+        )
+        first_inst.refresh_from_db()
+        self.stdout.write(
+            f"  ✓ Cuota #1 pagada: ${first_inst.total_amount:,.0f} "
+            f"(capital: ${first_inst.principal_amount:,.0f} + "
+            f"interés: ${first_inst.interest_amount:,.0f} + "
+            f"seguro: ${first_inst.insurance_amount:,.0f})"
+        )
+        self.stdout.write("  ── 1 préstamo, 1 desembolso, 1 cuota pagada")
+
+        # ── Segundo préstamo: Banco de Chile ───────────────────────────
+        if not BankLoan.objects.filter(loan_number="DEMO-LOAN-002").exists():
+            bank_chile = Bank.objects.get(code="CHILE")
+            bco_chile = TreasuryAccount.objects.get(code="BCO-CHILE")
+
+            acc_loan_liability2, _ = Account.objects.get_or_create(
+                code="2.1.04.11",
+                defaults={
+                    "name": "Préstamo Banco Chile por Pagar",
+                    "account_type": AccountType.LIABILITY,
+                    "parent": parent_liability,
+                    "is_reconcilable": True,
+                    "bs_category": BSCategory.CURRENT_LIABILITY,
+                },
+            )
+            loan_liability_ta2, _ = TreasuryAccount.objects.get_or_create(
+                code="PASIVO-PRESTAMO-002",
+                defaults={
+                    "name": "Préstamo Banco Chile por Pagar (Demo)",
+                    "currency": "CLP",
+                    "account": acc_loan_liability2,
+                    "account_type": TreasuryAccount.Type.LOAN,
+                },
+            )
+
+            loan2 = BankLoan.objects.create(
+                lender=bank_chile,
+                loan_number="DEMO-LOAN-002",
+                currency=BankLoan.Currency.CLP,
+                principal=Decimal("15000000"),
+                interest_rate=Decimal("1.0"),
+                rate_basis=BankLoan.RateBasis.MONTHLY,
+                amortization_system=BankLoan.AmortizationSystem.FRENCH,
+                term_months=6,
+                start_date=timezone.now().date(),
+                first_due_date=timezone.now().date() + timezone.timedelta(days=30),
+                insurance_monthly=Decimal("3000"),
+                opening_fee=Decimal("30000"),
+                stamp_tax=Decimal("5000"),
+                penalty_rate=Decimal("1.5"),
+                disbursement_account=bco_chile,
+                liability_account=loan_liability_ta2,
+                status=BankLoan.Status.DRAFT,
+            )
+            self.stdout.write(
+                f"  ✓ Préstamo {loan2.display_id} creado: "
+                f"${loan2.principal:,.0f} @ {loan2.interest_rate}% / {loan2.term_months} cuotas"
+            )
+
+            settings = AccountingSettings.get_solo()
+            loan2 = LoanService.disburse(
+                loan2,
+                created_by=admin,
+                commission_expense_account=settings.loan_commission_expense_account,
+                stamp_tax_expense_account=settings.loan_stamp_tax_expense_account,
+            )
+            first_inst2 = loan2.installments.filter(number=1).first()
+            n_inst2 = loan2.installments.count()
+            self.stdout.write(
+                f"  ✓ Schedule generado: {n_inst2} cuotas (cuota fija: ${first_inst2.total_amount:,.0f})"
+            )
+            net_cash2 = loan2.principal - loan2.opening_fee - loan2.stamp_tax
+            self.stdout.write(
+                f"  ✓ Desembolso → BCO-CHILE: ${net_cash2:,.0f} neto "
+                f"(capital ${loan2.principal:,.0f} - com ${loan2.opening_fee:,.0f} - ITE ${loan2.stamp_tax:,.0f})"
+            )
+
+        else:
+            self.stdout.write("  ✓ Préstamo DEMO-LOAN-002 ya existe, saltando.")
+
+    def _create_purchases_demo(self, accounts, partners, inventory, uoms):
+        from billing.services import BillingService
+        from purchasing.services import PurchaseOrderService, PurchasingService
+        from treasury.check_service import CheckService
+        from treasury.services import TreasuryService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        wh = inventory["warehouse"]
+        today = timezone.now().date()
+
+        s1 = partners["suppliers"][0]  # Distribuidora de Papeles
+        s2 = partners["suppliers"][1]  # Tintas Gráficas
+
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        bco_chile = TreasuryAccount.objects.get(code="BCO-CHILE")
+        card_chile = TreasuryAccount.objects.get(code="TC-VISA-CHILE")
+        self.stdout.write("  ─────────────────────────────────────────────")
+
+        # ── PO-01: Transfer (50 resmas papel) ─────────────────────────
+        papel = Product.objects.get(code="INS-0001")
+        if not PurchaseOrder.objects.filter(
+            supplier=s1, date=today, notes="Seed-Compra-Transfer"
+        ).exists():
+            po1 = PurchaseOrder.objects.create(
+                supplier=s1,
+                date=today,
+                payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
+                warehouse=wh,
+                notes="Seed-Compra-Transfer",
+            )
+            PurchaseLine.objects.create(
+                order=po1,
+                product=papel,
+                quantity=50,
+                uom=uoms["resma"],
+                unit_cost=5000,
+                tax_rate=get_default_vat_rate(),
+            )
+            po1.save()
+            PurchaseOrderService().confirm(po1, user=admin)
+            PurchasingService.receive_order(po1, wh)
+            BillingService.create_purchase_bill(
+                po1,
+                supplier_invoice_number="FAC-SUP-001",
+                date=today,
+            )
+            TreasuryService.create_movement(
+                amount=Decimal("297500"),
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=today,
+                created_by=admin,
+                from_account=bco_estado,
+                partner=s1,
+                purchase_order=po1,
+                reference="Pago OC Transfer",
+            )
+            self.stdout.write(
+                f"  ✓ OCS-{po1.number}: {po1.supplier.name} → 50 {papel.name} "
+                f"(${po1.total:,.0f}) — Transferencia BCO-ESTADO"
+            )
+        else:
+            po1 = PurchaseOrder.objects.get(supplier=s1, date=today, notes="Seed-Compra-Transfer")
+
+        # ── PO-02: Credit Card (10kg tinta cyan + 10kg tinta negra) ──
+        tinta_c = Product.objects.get(code="MP-TIN-CYA")
+        tinta_k = Product.objects.get(code="MP-TIN-BLA")
+        if not PurchaseOrder.objects.filter(
+            supplier=s2, date=today, notes="Seed-Compra-TC"
+        ).exists():
+            po2 = PurchaseOrder.objects.create(
+                supplier=s2,
+                date=today,
+                payment_method=PurchaseOrder.PaymentMethod.CARD,
+                warehouse=wh,
+                notes="Seed-Compra-TC",
+            )
+            PurchaseLine.objects.create(
+                order=po2,
+                product=tinta_c,
+                quantity=10,
+                uom=uoms["kg"],
+                unit_cost=12000,
+                tax_rate=get_default_vat_rate(),
+            )
+            PurchaseLine.objects.create(
+                order=po2,
+                product=tinta_k,
+                quantity=10,
+                uom=uoms["kg"],
+                unit_cost=10000,
+                tax_rate=get_default_vat_rate(),
+            )
+            po2.save()
+            PurchaseOrderService().confirm(po2, user=admin)
+            PurchasingService.receive_order(po2, wh)
+            BillingService.create_purchase_bill(
+                po2,
+                supplier_invoice_number="FAC-SUP-002",
+                date=today,
+            )
+            TreasuryService.create_card_purchase(
+                amount=po2.total,
+                card_account=card_chile,
+                installments=3,
+                date=today,
+                partner=s2,
+                purchase_order=po2,
+                notes="Compra insumos gráficos 3 cuotas",
+                created_by=admin,
+            )
+            from treasury.models import CreditCardStatement
+
+            CreditCardStatement.objects.get_or_create(
+                card_account=card_chile,
+                period_year=today.year,
+                period_month=today.month,
+                defaults={
+                    "cut_off_date": today,
+                    "due_date": today + timezone.timedelta(days=30),
+                    "billed_amount": po2.total,
+                    "minimum_payment": po2.total * Decimal("0.10"),
+                    "credit_limit": card_chile.credit_limit,
+                    "status": CreditCardStatement.Status.OPEN,
+                },
+            )
+            self.stdout.write(
+                f"  ✓ OCS-{po2.number}: {po2.supplier.name} → 10kg Cyan + 10kg Negra "
+                f"(${po2.total:,.0f}) — TC Visa Chile (3 cuotas, estado cuenta OPEN)"
+            )
+
+        # ── PO-03: Check (5 paq cartulina sulfatada) ──────────────────
+        cartulina = Product.objects.get(name="Cartulina Sulfatada 300g")
+        if not PurchaseOrder.objects.filter(
+            supplier=s1, date=today, notes="Seed-Compra-Cheque"
+        ).exists():
+            po3 = PurchaseOrder.objects.create(
+                supplier=s1,
+                date=today,
+                payment_method=PurchaseOrder.PaymentMethod.CHECK,
+                warehouse=wh,
+                notes="Seed-Compra-Cheque",
+            )
+            PurchaseLine.objects.create(
+                order=po3,
+                product=cartulina,
+                quantity=5,
+                uom=uoms["paquete"],
+                unit_cost=22000,
+                tax_rate=get_default_vat_rate(),
+            )
+            po3.save()
+            PurchaseOrderService().confirm(po3, user=admin)
+            PurchasingService.receive_order(po3, wh)
+            BillingService.create_purchase_bill(
+                po3,
+                supplier_invoice_number="FAC-SUP-003",
+                date=today,
+            )
+            chile_bank = Bank.objects.get(code="CHILE")
+            check = CheckService.issue(
+                bank_id=chile_bank.pk,
+                check_number="CHQ-1001",
+                amount=po3.total,
+                issue_date=today,
+                due_date=today + timezone.timedelta(days=30),
+                counterparty_id=s1.pk,
+                payment_account=bco_chile,
+                notes="Pago OC Cartulina",
+                created_by=admin,
+            )
+            self.stdout.write(
+                f"  ✓ OCS-{po3.number}: {po3.supplier.name} → 5 {cartulina.name} "
+                f"(${po3.total:,.0f}) — Cheque #{check.check_number} girado (ISSUED)"
+            )
+
+        self.stdout.write("  ── 3 órdenes de compra, 3 receipts, 3 facturas, 3 pagos")
+
+    def _create_sales_demo(self, accounts, partners, inventory, uoms):
+        from billing.services import BillingService
+        from production.services import WorkOrderService
+        from sales.services import SalesService
+        from treasury.check_service import CheckService
+        from treasury.services import TreasuryService
+
+        admin = User.objects.filter(is_superuser=True).first()
+        wh = inventory["warehouse"]
+        today = timezone.now().date()
+
+        c1 = partners["customers"][0]  # Editorial Amanecer
+        c2 = partners["customers"][1]  # Publicidad Creativa
+        c_default = partners["default_customer"]
+
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        caja_taller = TreasuryAccount.objects.get(code="CAJA-TALLER")
+        chile_bank = Bank.objects.get(code="CHILE")
+
+        self.stdout.write("  ─────────────────────────────────────────────")
+
+        # ── SO-01: Transfer + Manufacturable (500 impresión a color) ──
+        impresion = Product.objects.get(code="PT-0001")
+        if not SaleOrder.objects.filter(
+            customer=c1, date=today, notes="Seed-Venta-Transfer-MFG"
+        ).exists():
+            so1 = SaleOrder.objects.create(
+                customer=c1,
+                date=today,
+                payment_method=SaleOrder.PaymentMethod.TRANSFER,
+                notes="Seed-Venta-Transfer-MFG",
+            )
+            sl1 = SaleLine.objects.create(
+                order=so1,
+                product=impresion,
+                description="Impresión a color x 500",
+                quantity=500,
+                uom=uoms["hoja"],
+                unit_price=Decimal("150"),
+                tax_rate=get_default_vat_rate(),
+            )
+            so1.save()
+
+            SalesService.confirm_sale(so1)
+            sl1.refresh_from_db()
+
+            ot = WorkOrderService.create_from_sale_line(sl1)
+            WorkOrderService.finalize_production(ot, user=admin)
+            self.stdout.write(f"    ├ OT #{ot.id} finalizada ({impresion.name} x 500)")
+
+            delivery = SalesService.dispatch_order(so1, wh)
+            SalesService.confirm_delivery(delivery)
+            inv1 = BillingService.create_sale_invoice(
+                so1,
+                dte_type=Invoice.DTEType.FACTURA,
+                payment_method="TRANSFER",
+                date=today,
+                number="1002",
+            )
+            TreasuryService.create_movement(
+                amount=inv1.total,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=today,
+                created_by=admin,
+                to_account=bco_estado,
+                partner=c1,
+                sale_order=so1,
+                invoice=inv1,
+                reference="Cobro Venta Transfer",
+            )
+            self.stdout.write(
+                f"  ✓ NV-{so1.number}: {c1.name} → 500 {impresion.name} "
+                f"(${inv1.total:,.0f}) — Transferencia BCO-ESTADO"
+            )
+
+        # ── SO-02: Cash + Service + MFG auto-finalize ────────────────
+        diseno = Product.objects.get(code="SRV-DIS-GRA")
+        encuadernacion = Product.objects.get(name="Servicio Encuadernación")
+        impresion = Product.objects.get(code="PT-0001")
+        if not SaleOrder.objects.filter(
+            customer=c2, date=today, notes="Seed-Venta-Cash-SRV"
+        ).exists():
+            so2 = SaleOrder.objects.create(
+                customer=c2,
+                date=today,
+                payment_method=SaleOrder.PaymentMethod.CASH,
+                notes="Seed-Venta-Cash-SRV",
+            )
+            sl2b = SaleLine.objects.create(
+                order=so2,
+                product=diseno,
+                description="Servicio Diseño Gráfico x 3",
+                quantity=3,
+                uom=uoms["un"],
+                unit_price=Decimal("25000"),
+                tax_rate=get_default_vat_rate(),
+            )
+            SaleLine.objects.create(
+                order=so2,
+                product=encuadernacion,
+                description="Servicio Encuadernación x 10",
+                quantity=10,
+                uom=uoms["un"],
+                unit_price=Decimal("1500"),
+                tax_rate=get_default_vat_rate(),
+            )
+            so2.save()
+
+            SalesService.confirm_sale(so2)
+            sl2b.refresh_from_db()
+            delivery2 = SalesService.dispatch_order(so2, wh)
+            SalesService.confirm_delivery(delivery2)
+            inv2 = BillingService.create_sale_invoice(
+                so2,
+                dte_type=Invoice.DTEType.BOLETA,
+                payment_method="CASH",
+                date=today,
+            )
+            TreasuryService.create_movement(
+                amount=inv2.total,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.CASH,
+                date=today,
+                created_by=admin,
+                to_account=caja_taller,
+                partner=c2,
+                sale_order=so2,
+                invoice=inv2,
+                reference="Cobro Venta Efectivo",
+            )
+            self.stdout.write(
+                f"  ✓ NV-{so2.number}: {c2.name} → 3 Diseño + 10 Encuadernación "
+                f"(${inv2.total:,.0f}) — Efectivo CAJA-TALLER"
+            )
+
+        # ── SO-03: Check + Storable (10 resmas papel) ────────────────
+        papel = Product.objects.get(code="INS-0001")
+        if not SaleOrder.objects.filter(
+            customer=c_default, date=today, notes="Seed-Venta-Check"
+        ).exists():
+            so3 = SaleOrder.objects.create(
+                customer=c_default,
+                date=today,
+                payment_method=SaleOrder.PaymentMethod.CHECK,
+                notes="Seed-Venta-Check",
+            )
+            SaleLine.objects.create(
+                order=so3,
+                product=papel,
+                description="Resma de papel x 10",
+                quantity=10,
+                uom=uoms["resma"],
+                unit_price=Decimal("5000"),
+                tax_rate=get_default_vat_rate(),
+            )
+            so3.save()
+
+            SalesService.confirm_sale(so3)
+            delivery3 = SalesService.dispatch_order(so3, wh)
+            SalesService.confirm_delivery(delivery3)
+            inv3 = BillingService.create_sale_invoice(
+                so3,
+                dte_type=Invoice.DTEType.FACTURA,
+                payment_method="CHECK",
+                date=today,
+                number="1003",
+            )
+            CheckService.receive(
+                bank_id=chile_bank.pk,
+                check_number="2001",
+                amount=inv3.total,
+                issue_date=today,
+                due_date=today + timezone.timedelta(days=30),
+                counterparty_id=c_default.pk,
+                sale_order_id=so3.pk,
+                invoice_id=inv3.pk,
+                notes="Cheque cliente por venta resmas",
+                created_by=admin,
+            )
+            self.stdout.write(
+                f"  ✓ NV-{so3.number}: {c_default.name} → 10 {papel.name} "
+                f"(${inv3.total:,.0f}) — Cheque #2001 recibido (IN_PORTFOLIO)"
+            )
+
+        self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
 
     def _initialize_company_settings(self):
         """
-        Creates or updates the singleton CompanySettings and links it to 
+        Creates or updates the singleton CompanySettings and links it to
         the internal company contact.
         """
         # Create/Get Internal Company Contact
         contact, created = Contact.objects.get_or_create(
             tax_id="76.000.000-0",
             defaults={
-                'name': "Mi Empresa ERP",
-                'email': "administracion@miempresa.cl",
-                'phone': "+56 9 1234 5678",
-                'address': "Av. Principal 123, Santiago, Chile",
-            }
+                "name": "Mi Empresa ERP",
+                "email": "administracion@miempresa.cl",
+                "phone": "+56 9 1234 5678",
+                "address": "Av. Principal 123, Santiago, Chile",
+            },
         )
         if created:
             self.stdout.write(f"  ✓ Created internal company contact: {contact.name}")
@@ -1614,14 +2727,14 @@ class Command(BaseCommand):
         settings, _ = CompanySettings.objects.update_or_create(
             id=1,  # Ensure it's the singleton
             defaults={
-                'name': "Mi Empresa ERP",
-                'tax_id': "76.000.000-0",
-                'email': "administracion@miempresa.cl",
-                'phone': "+56 9 1234 5678",
-                'address': "Av. Principal 123, Santiago, Chile",
-                'business_activity': "Servicios de Impresión y Diseño",
-                'contact': contact,
-            }
+                "name": "Mi Empresa ERP",
+                "tax_id": "76.000.000-0",
+                "email": "administracion@miempresa.cl",
+                "phone": "+56 9 1234 5678",
+                "address": "Av. Principal 123, Santiago, Chile",
+                "business_activity": "Servicios de Impresión y Diseño",
+                "contact": contact,
+            },
         )
         self.stdout.write("  ✓ Initialized/Updated company settings singleton")
 
@@ -1629,14 +2742,14 @@ class Command(BaseCommand):
         ReconciliationSettings.objects.update_or_create(
             treasury_account=None,
             defaults={
-                'amount_weight': 100,
-                'date_weight': 0,
-                'reference_weight': 0,
-                'contact_weight': 0,
-                'confidence_threshold': 95,
-                'date_range_days': 30,
-                'auto_confirm': False
-            }
+                "amount_weight": 100,
+                "date_weight": 0,
+                "reference_weight": 0,
+                "contact_weight": 0,
+                "confidence_threshold": 95,
+                "date_range_days": 30,
+                "auto_confirm": False,
+            },
         )
         self.stdout.write("  ✓ Global Reconciliation Settings initialized (100% Amount Weight)")
 
@@ -1646,29 +2759,32 @@ class Command(BaseCommand):
         hr_settings, _ = GlobalHRSettings.objects.get_or_create(
             id=1,
             defaults={
-                'uf_current_value': Decimal('37000.00'),
-                'utm_current_value': Decimal('65000.00'),
-                'min_wage_value': Decimal('500000.00'),
-                'account_remuneraciones_por_pagar': accounts['salary_payable'],
-                'account_previred_por_pagar': accounts['previred_payable'],
-                'account_anticipos': accounts['salary_advance'],
-            }
+                "uf_current_value": Decimal("37000.00"),
+                "utm_current_value": Decimal("65000.00"),
+                "min_wage_value": Decimal("500000.00"),
+            },
         )
         self.stdout.write("    ✓ Global HR Settings initialized.")
 
+        # Also set HR accounts in AccountingSettings
+        from accounting.models import AccountingSettings
+
+        acct_settings = AccountingSettings.get_solo()
+        acct_settings.account_remuneraciones_por_pagar = accounts["salary_payable"]
+        acct_settings.account_previred_por_pagar = accounts["previred_payable"]
+        acct_settings.account_anticipos = accounts["salary_advance"]
+        acct_settings.save()
+        self.stdout.write("    ✓ HR accounts set in AccountingSettings.")
+
         # 2. AFPs
         afps_data = [
-            ('Habitat', Decimal('11.27')),
-            ('Provida', Decimal('11.45')),
-            ('Modelo', Decimal('10.58')),
+            ("Habitat", Decimal("11.27")),
+            ("Provida", Decimal("11.45")),
+            ("Modelo", Decimal("10.58")),
         ]
         for name, pct in afps_data:
             AFP.objects.get_or_create(
-                name=name,
-                defaults={
-                    'percentage': pct,
-                    'account': accounts['previred_payable']
-                }
+                name=name, defaults={"percentage": pct, "account": accounts["previred_payable"]}
             )
         self.stdout.write("    ✓ Standard AFPs created.")
 
@@ -1676,222 +2792,224 @@ class Command(BaseCommand):
         concepts_data = [
             # Haberes Imponibles
             {
-                'name': 'Sueldo Base',
-                'category': PayrollConcept.Category.HABER_IMPONIBLE,
-                'account': accounts['expense_salary'],
-                'formula_type': PayrollConcept.FormulaType.FIXED,
-                'is_system': True
+                "name": "Sueldo Base",
+                "category": PayrollConcept.Category.HABER_IMPONIBLE,
+                "account": accounts["expense_salary"],
+                "formula_type": PayrollConcept.FormulaType.FIXED,
+                "is_system": True,
             },
             {
-                'name': 'Gratificación Legal',
-                'category': PayrollConcept.Category.HABER_IMPONIBLE,
-                'account': accounts['expense_salary'],
-                'formula_type': PayrollConcept.FormulaType.FORMULA,
-                'formula': "min(IMPONIBLE * 0.25, (4.75 * MIN_WAGE) / 12)",
-                'is_system': True
+                "name": "Gratificación Legal",
+                "category": PayrollConcept.Category.HABER_IMPONIBLE,
+                "account": accounts["expense_salary"],
+                "formula_type": PayrollConcept.FormulaType.FORMULA,
+                "formula": "min(IMPONIBLE * 0.25, (4.75 * MIN_WAGE) / 12)",
+                "is_system": True,
             },
             # Haberes No Imponibles
             {
-                'name': 'Asignación de Colación',
-                'category': PayrollConcept.Category.HABER_NO_IMPONIBLE,
-                'account': Account.objects.get(code='5.2.18'),
-                'formula_type': PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC,
-                'is_system': True
+                "name": "Asignación de Colación",
+                "category": PayrollConcept.Category.HABER_NO_IMPONIBLE,
+                "account": Account.objects.get(code="5.2.18"),
+                "formula_type": PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC,
+                "is_system": True,
             },
             {
-                'name': 'Asignación de Movilización',
-                'category': PayrollConcept.Category.HABER_NO_IMPONIBLE,
-                'account': Account.objects.get(code='5.2.18'),
-                'formula_type': PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC,
-                'is_system': True
+                "name": "Asignación de Movilización",
+                "category": PayrollConcept.Category.HABER_NO_IMPONIBLE,
+                "account": Account.objects.get(code="5.2.18"),
+                "formula_type": PayrollConcept.FormulaType.EMPLOYEE_SPECIFIC,
+                "is_system": True,
             },
             {
-                'name': 'Seguro Cesantía (Aporte Trabajador)',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
-                'account': accounts['previred_payable'],
-                'formula_type': PayrollConcept.FormulaType.FORMULA,
-                'formula': "IMPONIBLE * 0.006 if (CONTRATO_INDEFINIDO and CONTRACT_YEARS <= 11) else 0",
-                'is_system': True
+                "name": "Seguro Cesantía (Aporte Trabajador)",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                "account": accounts["previred_payable"],
+                "formula_type": PayrollConcept.FormulaType.FORMULA,
+                "formula": "IMPONIBLE * 0.006 if (CONTRATO_INDEFINIDO and CONTRACT_YEARS <= 11) else 0",
+                "is_system": True,
             },
             # Descuentos Legales (Empleador)
             {
-                'name': 'AFP (Descuento)',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
-                'account': accounts['previred_payable'],
-                'formula_type': PayrollConcept.FormulaType.FORMULA,
-                'formula': "IMPONIBLE * AFP_PERCENT",
-                'is_system': True
+                "name": "AFP (Descuento)",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                "account": accounts["previred_payable"],
+                "formula_type": PayrollConcept.FormulaType.FORMULA,
+                "formula": "IMPONIBLE * AFP_PERCENT",
+                "is_system": True,
             },
             {
-                'name': 'Salud',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
-                'account': accounts['previred_payable'],
-                'formula_type': PayrollConcept.FormulaType.FORMULA,
-                'formula': "max(IMPONIBLE * 0.07, ISAPRE_UF * UF)",
-                'is_system': True
+                "name": "Salud",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                "account": accounts["previred_payable"],
+                "formula_type": PayrollConcept.FormulaType.FORMULA,
+                "formula": "max(IMPONIBLE * 0.07, ISAPRE_UF * UF)",
+                "is_system": True,
             },
             {
-                'name': 'AFP (Aporte Empleador)',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
-                'account': accounts['expense_prevision'],
-                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
-                'default_amount': Decimal('0.10'),
-                'is_system': True
+                "name": "AFP (Aporte Empleador)",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                "account": accounts["expense_prevision"],
+                "formula_type": PayrollConcept.FormulaType.PERCENTAGE,
+                "default_amount": Decimal("0.10"),
+                "is_system": True,
             },
             {
-                'name': 'Seguro Social (Cotización expectativa de vida)',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
-                'account': accounts['expense_prevision'],
-                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
-                'default_amount': Decimal('0.90'),
-                'is_system': True
+                "name": "Seguro Social (Cotización expectativa de vida)",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                "account": accounts["expense_prevision"],
+                "formula_type": PayrollConcept.FormulaType.PERCENTAGE,
+                "default_amount": Decimal("0.90"),
+                "is_system": True,
             },
             {
-                'name': 'SIS (Seguro Invalidez)',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
-                'account': accounts['expense_prevision'],
-                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
-                'default_amount': Decimal('1.54'),
-                'is_system': True
+                "name": "SIS (Seguro Invalidez)",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                "account": accounts["expense_prevision"],
+                "formula_type": PayrollConcept.FormulaType.PERCENTAGE,
+                "default_amount": Decimal("1.54"),
+                "is_system": True,
             },
             {
-                'name': 'Ley Accidente de trabajo',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
-                'account': accounts['expense_prevision'],
-                'formula_type': PayrollConcept.FormulaType.PERCENTAGE,
-                'default_amount': Decimal('0.93'),
-                'is_system': True
+                "name": "Ley Accidente de trabajo",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                "account": accounts["expense_prevision"],
+                "formula_type": PayrollConcept.FormulaType.PERCENTAGE,
+                "default_amount": Decimal("0.93"),
+                "is_system": True,
             },
             {
-                'name': 'Seguro Cesantía (Aporte Empleador)',
-                'category': PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
-                'account': accounts['expense_prevision'],
-                'formula_type': PayrollConcept.FormulaType.FORMULA,
-                'formula': "IMPONIBLE * 0.008 if (CONTRATO_INDEFINIDO and CONTRACT_YEARS > 11) else (IMPONIBLE * 0.024 if CONTRATO_INDEFINIDO else IMPONIBLE * 0.03)",
-                'is_system': True
+                "name": "Seguro Cesantía (Aporte Empleador)",
+                "category": PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                "account": accounts["expense_prevision"],
+                "formula_type": PayrollConcept.FormulaType.FORMULA,
+                "formula": "IMPONIBLE * 0.008 if (CONTRATO_INDEFINIDO and CONTRACT_YEARS > 11) else (IMPONIBLE * 0.024 if CONTRATO_INDEFINIDO else IMPONIBLE * 0.03)",
+                "is_system": True,
             },
             # Otros
             {
-                'name': 'Anticipo de Sueldo',
-                'category': PayrollConcept.Category.OTRO_DESCUENTO,
-                'account': accounts['salary_advance'],
-                'formula_type': PayrollConcept.FormulaType.FIXED,
-                'is_system': True
+                "name": "Anticipo de Sueldo",
+                "category": PayrollConcept.Category.OTRO_DESCUENTO,
+                "account": accounts["salary_advance"],
+                "formula_type": PayrollConcept.FormulaType.FIXED,
+                "is_system": True,
             },
         ]
-        
+
         for data in concepts_data:
-            name = data.pop('name')
-            PayrollConcept.objects.update_or_create(
-                name=name,
-                defaults=data
-            )
+            name = data.pop("name")
+            PayrollConcept.objects.update_or_create(name=name, defaults=data)
         self.stdout.write("    ✓ Payroll Concepts created.")
 
         # 4. Demo Employee
-        admin_contact = Contact.objects.filter(tax_id='USER-ADMIN').first()
+        admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
         if admin_contact:
             emp, created = Employee.objects.get_or_create(
                 contact=admin_contact,
                 defaults={
-                    'position': 'Gerente de Operaciones',
-                    'base_salary': Decimal('1200000'),
-                    'afp': AFP.objects.filter(name='Habitat').first(),
-                    'salud_type': Employee.SaludType.FONASA,
-                    'start_date': timezone.now().date().replace(month=1, day=1),
-                }
+                    "position": "Gerente de Operaciones",
+                    "base_salary": Decimal("1200000"),
+                    "afp": AFP.objects.filter(name="Habitat").first(),
+                    "salud_type": Employee.SaludType.FONASA,
+                    "start_date": timezone.now().date().replace(month=1, day=1),
+                },
             )
             if created:
                 # Add some specific amounts
-                colacion = PayrollConcept.objects.get(name='Asignación de Colación')
-                movilidad = PayrollConcept.objects.get(name='Asignación de Movilización')
-                EmployeeConceptAmount.objects.create(employee=emp, concept=colacion, amount=Decimal('60000'))
-                EmployeeConceptAmount.objects.create(employee=emp, concept=movilidad, amount=Decimal('40000'))
+                colacion = PayrollConcept.objects.get(name="Asignación de Colación")
+                movilidad = PayrollConcept.objects.get(name="Asignación de Movilización")
+                EmployeeConceptAmount.objects.create(
+                    employee=emp, concept=colacion, amount=Decimal("60000")
+                )
+                EmployeeConceptAmount.objects.create(
+                    employee=emp, concept=movilidad, amount=Decimal("40000")
+                )
             self.stdout.write(f"    ✓ Demo Employee '{admin_contact.name}' created.")
 
     def _initialize_workflow_settings(self):
         """Seeds the WorkflowSettings singleton and standard NotificationRules."""
-        from workflow.models import WorkflowSettings, NotificationRule
+        from workflow.models import NotificationRule, WorkflowSettings
 
         # 1. WorkflowSettings singleton
         ws, _ = WorkflowSettings.objects.update_or_create(
             pk=1,
             defaults={
-                'f29_creation_day': 12,
-                'f29_payment_day': 20,
-                'period_close_day': 5,
-                'low_margin_threshold_percent': Decimal('10.00'),
-            }
+                "f29_creation_day": 12,
+                "f29_payment_day": 20,
+                "period_close_day": 5,
+                "low_margin_threshold_percent": Decimal("10.00"),
+            },
         )
         self.stdout.write("    ✓ WorkflowSettings singleton initialized.")
 
         # 2. Standard Notification Rules
-        manager_user = User.objects.filter(username='gerente').first()
-        admin_user = User.objects.filter(username='admin').first()
+        manager_user = User.objects.filter(username="gerente").first()
+        admin_user = User.objects.filter(username="admin").first()
 
         notification_rules = [
             {
-                'notification_type': 'POS_CREDIT_APPROVAL',
-                'description': 'Aprobación de crédito en POS',
-                'notify_creator': True,
-                'assigned_user': manager_user,
+                "notification_type": "POS_CREDIT_APPROVAL",
+                "description": "Aprobación de crédito en POS",
+                "notify_creator": True,
+                "assigned_user": manager_user,
             },
             {
-                'notification_type': 'SUBSCRIPTION_OC_CREATED',
-                'description': 'Orden de compra automática por suscripción',
-                'notify_creator': False,
-                'assigned_user': manager_user,
+                "notification_type": "SUBSCRIPTION_OC_CREATED",
+                "description": "Orden de compra automática por suscripción",
+                "notify_creator": False,
+                "assigned_user": manager_user,
             },
             {
-                'notification_type': 'LOW_STOCK_ALERT',
-                'description': 'Alerta de stock bajo',
-                'notify_creator': False,
-                'assigned_user': manager_user,
+                "notification_type": "LOW_STOCK_ALERT",
+                "description": "Alerta de stock bajo",
+                "notify_creator": False,
+                "assigned_user": manager_user,
             },
             {
-                'notification_type': 'WORK_ORDER_APPROVAL',
-                'description': 'Aprobación de orden de trabajo',
-                'notify_creator': True,
-                'assigned_user': admin_user,
+                "notification_type": "WORK_ORDER_APPROVAL",
+                "description": "Aprobación de orden de trabajo",
+                "notify_creator": True,
+                "assigned_user": admin_user,
             },
             {
-                'notification_type': 'F29_CREATION_REMINDER',
-                'description': 'Recordatorio de creación de F29',
-                'notify_creator': False,
-                'assigned_user': admin_user,
+                "notification_type": "F29_CREATION_REMINDER",
+                "description": "Recordatorio de creación de F29",
+                "notify_creator": False,
+                "assigned_user": admin_user,
             },
             {
-                'notification_type': 'PERIOD_CLOSE_REMINDER',
-                'description': 'Recordatorio de cierre de período contable',
-                'notify_creator': False,
-                'assigned_user': admin_user,
+                "notification_type": "PERIOD_CLOSE_REMINDER",
+                "description": "Recordatorio de cierre de período contable",
+                "notify_creator": False,
+                "assigned_user": admin_user,
             },
         ]
 
         created_count = 0
         for rule_data in notification_rules:
-            notification_type = rule_data.pop('notification_type')
+            notification_type = rule_data.pop("notification_type")
             _, created = NotificationRule.objects.update_or_create(
-                notification_type=notification_type,
-                defaults=rule_data
+                notification_type=notification_type, defaults=rule_data
             )
             if created:
                 created_count += 1
-            rule_data['notification_type'] = notification_type  # restore for logging
+            rule_data["notification_type"] = notification_type  # restore for logging
 
-        self.stdout.write(f"    ✓ {len(notification_rules)} NotificationRules configured ({created_count} new).")
+        self.stdout.write(
+            f"    ✓ {len(notification_rules)} NotificationRules configured ({created_count} new)."
+        )
 
     def _create_demo_budget(self, accounts):
         """Creates a realistic operational budget for the current year."""
         current_year = timezone.now().year
-        
+
         budget, _ = Budget.objects.get_or_create(
             name=f"Presupuesto Operativo {current_year}",
             defaults={
-                'start_date': timezone.now().date().replace(month=1, day=1),
-                'end_date': timezone.now().date().replace(month=12, day=31),
-                'description': "Presupuesto base para la operación de la imprenta.",
-            }
+                "start_date": timezone.now().date().replace(month=1, day=1),
+                "end_date": timezone.now().date().replace(month=12, day=31),
+                "description": "Presupuesto base para la operación de la imprenta.",
+            },
         )
 
         # Budget targets (Monthly)
@@ -1900,38 +3018,38 @@ class Command(BaseCommand):
         # OPEX Salaries: 1.5M CLP monthly
         # OPEX Rent/Admin: 1.0M CLP monthly
         # Target EBITDA: 1.5M CLP monthly
-        
+
         targets = [
             # Revenue (4.1.01)
             {
-                'account': Account.objects.get(code='4.1.01'),
-                'monthly_amount': Decimal('7500000'),
-                'label': "Ventas Proyectadas Imprenta"
+                "account": Account.objects.get(code="4.1.01"),
+                "monthly_amount": Decimal("7500000"),
+                "label": "Ventas Proyectadas Imprenta",
             },
             # Cost of Sales (5.1.01)
             {
-                'account': Account.objects.get(code='5.1.01'),
-                'monthly_amount': Decimal('3500000'),
-                'label': "Insumos y Materiales Proyectados"
+                "account": Account.objects.get(code="5.1.01"),
+                "monthly_amount": Decimal("3500000"),
+                "label": "Insumos y Materiales Proyectados",
             },
             # Salaries (5.2.01.01)
             {
-                'account': Account.objects.get(code='5.2.01.01'),
-                'monthly_amount': Decimal('1500000'),
-                'label': "Planilla Mensual Proyectada"
+                "account": Account.objects.get(code="5.2.01.01"),
+                "monthly_amount": Decimal("1500000"),
+                "label": "Planilla Mensual Proyectada",
             },
             # Rent (5.2.02)
             {
-                'account': Account.objects.get(code='5.2.02'),
-                'monthly_amount': Decimal('800000'),
-                'label': "Arriendo Planta y Oficinas"
+                "account": Account.objects.get(code="5.2.02"),
+                "monthly_amount": Decimal("800000"),
+                "label": "Arriendo Planta y Oficinas",
             },
             # General Expense (5.2.06) - Admin/Misc
             {
-                'account': Account.objects.get(code='5.2.06'),
-                'monthly_amount': Decimal('200000'),
-                'label': "Gastos Varios Oficina"
-            }
+                "account": Account.objects.get(code="5.2.06"),
+                "monthly_amount": Decimal("200000"),
+                "label": "Gastos Varios Oficina",
+            },
         ]
 
         total_items = 0
@@ -1939,17 +3057,19 @@ class Command(BaseCommand):
             for month in range(1, 13):
                 # Add slight seasonal variation (+/- 10%)
                 variation = Decimal(str(random.uniform(0.9, 1.1)))
-                adjusted_amount = (target['monthly_amount'] * variation).quantize(Decimal('1'))
-                
+                adjusted_amount = (target["monthly_amount"] * variation).quantize(Decimal("1"))
+
                 BudgetItem.objects.update_or_create(
                     budget=budget,
-                    account=target['account'],
+                    account=target["account"],
                     year=current_year,
                     month=month,
                     defaults={
-                        'amount': adjusted_amount,
-                    }
+                        "amount": adjusted_amount,
+                    },
                 )
                 total_items += 1
 
-        self.stdout.write(f"    ✓ Budget '{budget.name}' created/updated with {total_items} monthly items.")
+        self.stdout.write(
+            f"    ✓ Budget '{budget.name}' created/updated with {total_items} monthly items."
+        )

@@ -4,16 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounting', '0014_t41_gfk_data_migration'),
-        ('contenttypes', '0002_remove_content_type_name'),
-        ('tax', '0001_initial'),
+        ("accounting", "0014_t41_gfk_data_migration"),
+        ("contenttypes", "0002_remove_content_type_name"),
+        ("tax", "0001_initial"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='journalentry',
-            index=models.Index(fields=['source_content_type', 'source_object_id'], name='accounting__source__1c8e9a_idx'),
+            model_name="journalentry",
+            index=models.Index(
+                fields=["source_content_type", "source_object_id"],
+                name="accounting__source__1c8e9a_idx",
+            ),
         ),
     ]

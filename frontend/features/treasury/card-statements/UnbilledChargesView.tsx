@@ -1,91 +1,229 @@
 "use client"
 
-import { useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Button } from "@/components/ui/button"
+import { useMemo, useState, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Receipt, CreditCard, ChevronDown, Calendar } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-} from '@/components/ui/dropdown-menu'
-import { ColumnDef } from '@tanstack/react-table'
+    Receipt, CreditCard,
+    Gauge,
+} from 'lucide-react'
+import type { ColumnDef } from '@tanstack/react-table'
 import {
     DataTableView,
     DataTableColumnHeader,
     DataCell,
     MoneyDisplay,
     EntityCard,
-    StatCard,
     StatusBadge,
+    SegmentationBar,
+    useSegmentation,
+    SmartSearchBar,
+    useClientSearch,
+    StatCard,
+    SummaryTable,
     Skeleton,
+    EmptyState,
+    ToolbarCreateButton,
+    type ToolbarActionItem,
 } from '@/components/shared'
-import { treasuryApi } from '../api/treasuryApi'
-import type { TreasuryMovement, UpcomingInstallment, UnbilledItemRow } from '../types'
+import type { SegmentationDefinition } from '@/types/segmentation'
+import type { SearchDefinition } from '@/types/search'
+import { useBankOverview } from '../hooks/useBankOverview'
+import type { BankOverviewData } from '../hooks/useBankOverview'
+import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
 import { mapToUnbilledItemRows } from './utils'
-import { AddChargeModal } from './AddChargeModal'
+import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
 import { BillChargesModal } from './BillChargesModal'
+import { PieChart } from "@/components/shared"
+import { useHubPanel } from '@/components/providers'
+import { useSearchParams, usePathname, useRouter } from 'next/navigation'
+import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
+import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
+import { invalidateCrossFeature } from '@/lib/invalidation'
+
+const unbilledSearchDef: SearchDefinition = {
+    fields: [
+        { key: 'contact', label: 'Contacto / OC', type: 'text', serverParam: 'contact', clientKey: ['partnerName', 'purchaseOrderDisplayId', 'reference'] },
+        { key: 'amount', label: 'Monto', type: 'text', serverParam: 'amount' },
+    ],
+}
 
 interface UnbilledChargesViewProps {
     bankId: number
-    cardAccountId: number
-    cardAccountName: string
-    currency?: string
+}
+
+const chargeTypeColorMap: Record<string, string> = {
+    COMMISSION: 'bg-warning text-warning-foreground',
+    TAX: 'bg-destructive text-destructive-foreground',
+    FEE: 'bg-info text-info-foreground',
+    INSURANCE: 'bg-accent text-accent-foreground',
+    INTEREST: 'bg-success text-success-foreground',
+    OTHER: 'bg-muted text-muted-foreground',
+}
+
+const CHARGE_TYPE_COLORS: Record<string, string> = {
+    COMMISSION: "#f59e0b",
+    TAX: "#ef4444",
+    FEE: "#3b82f6",
+    INSURANCE: "#8b5cf6",
+    INTEREST: "#10b981",
+    OTHER: "#6b7280",
 }
 
 interface UnbilledSummary {
     total: number
     count: number
-    purchases: number
     charges: number
     installments: number
 }
 
 export function UnbilledChargesView({
     bankId,
-    cardAccountId,
-    cardAccountName,
-    currency = 'CLP',
 }: UnbilledChargesViewProps) {
-    const [showAddCharge, setShowAddCharge] = useState(false)
+    const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
     const [showBillCharges, setShowBillCharges] = useState(false)
-    const [filterMode, setFilterMode] = useState<'month' | 'all'>('month')
     const queryClient = useQueryClient()
+    const { openHub } = useHubPanel()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+    const router = useRouter()
+    const { selectedId, openSelected, clearActions } = useEntityRouteActions()
+    const isNewModal = searchParams.get('modal') === 'new'
+
+    const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
+    const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null
+
+    const creditCardAccounts = useMemo(
+        () => (overviewData?.accounts?.filter(
+            (acc) => acc.account_type === 'CREDIT_CARD'
+        ).map(a => ({ id: a.id, name: a.name, currency: a.currency })) ?? []),
+        [overviewData],
+    )
+
+    const segDef: SegmentationDefinition = useMemo(() => ({
+        segments: [
+            {
+                key: 'scope',
+                label: 'Alcance',
+                type: 'tabs',
+                serverParam: 'scope',
+                defaultValue: 'month',
+                options: [
+                    { label: 'Cargos del mes', value: 'month' },
+                    { label: 'Todos los cargos', value: 'all' },
+                ],
+            },
+            {
+                key: 'card',
+                label: 'Tarjeta',
+                type: 'tabs',
+                serverParam: 'card',
+                variant: 'dropdown',
+                defaultValue: String(creditCardAccounts[0]?.id ?? ''),
+                options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
+            },
+            {
+                key: 'charge_date',
+                label: 'Fecha del cargo',
+                type: 'date',
+                serverParamDate: 'charge_date',
+                serverParamFrom: 'charge_date_from',
+                serverParamTo: 'charge_date_to',
+            },
+        ],
+    }), [creditCardAccounts])
+
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
+    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<UnbilledItemRow>(unbilledSearchDef)
+
+    const selectedCardAccount = segFilters.card ? Number(segFilters.card) : (creditCardAccounts[0]?.id ?? 0)
+    const currentAccount = creditCardAccounts.find(a => a.id === selectedCardAccount)
+    const cardAccountName = currentAccount?.name ?? ''
+    const currency = currentAccount?.currency ?? 'CLP'
 
     const today = new Date().toISOString().split('T')[0]
-    const cutOffDate = filterMode === 'month' ? today : undefined
+    const cutOffDate = segFilters.scope !== 'all' ? today : undefined
 
-    const { data: result, isLoading } = useQuery({
-        queryKey: ['unbilled-charges', cardAccountId, cutOffDate ?? 'all'],
-        queryFn: () => treasuryApi.getUnbilledCharges(cardAccountId, cutOffDate),
-        enabled: !!cardAccountId,
-    })
+    const { data: result, isLoading } = useUnbilledCharges(selectedCardAccount, cutOffDate)
 
-    const charges: TreasuryMovement[] = result?.charges ?? []
+    const charges: PendingChargeRow[] = result?.charges ?? []
+    // ── Derive chargeToEdit from URL param (selectedId) ───────────
+    const chargeToEdit = useMemo(
+        () => selectedId ? charges.find(c => String(c.id) === selectedId) ?? null : null,
+        [selectedId, charges],
+    )
     const upcomingInstallments: UpcomingInstallment[] = result?.upcoming_installments ?? []
     const summary: UnbilledSummary | undefined = result?.summary
+    const forecast = result?.forecast
 
     const mergedRows = useMemo(
         () => mapToUnbilledItemRows(charges, upcomingInstallments),
         [charges, upcomingInstallments],
     )
 
-    const handleAddChargeSuccess = () => {
-        setShowAddCharge(false)
-        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', cardAccountId] })
-        toast.success('Cargo agregado exitosamente')
+    const filteredRows = useMemo(() => {
+        let result = filterFn(mergedRows)
+        const { charge_date, charge_date_from, charge_date_to } = segFilters
+        if (charge_date) {
+            result = result.filter(r => r.date === charge_date)
+        }
+        if (charge_date_from) {
+            result = result.filter(r => r.date >= charge_date_from)
+        }
+        if (charge_date_to) {
+            result = result.filter(r => r.date <= charge_date_to)
+        }
+        return result
+    }, [mergedRows, filterFn, segFilters])
+
+    // ── Sync URL params with drawer state (adjust during render) ──
+    if (selectedId && chargeToEdit && !chargeDrawerOpen) {
+        setChargeDrawerOpen(true)
+    }
+    if (isNewModal && !chargeDrawerOpen) {
+        setChargeDrawerOpen(true)
+    }
+
+    // Side effect only: clear URL when selectedId points to a missing charge
+    useEffect(() => {
+        if (selectedId && !chargeToEdit) {
+            clearActions()
+        }
+    }, [selectedId, chargeToEdit, clearActions])
+
+    const handleChargeDrawerOpenChange = (open: boolean) => {
+        setChargeDrawerOpen(open)
+        if (!open) {
+            clearActions()
+            if (isNewModal) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete('modal')
+                const q = params.toString()
+                router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
+            }
+        }
+    }
+
+    const handleChargeDrawerSuccess = () => {
+        handleChargeDrawerOpenChange(false)
+        invalidateCrossFeature(queryClient, [['unbilled-charges', selectedCardAccount]])
+    }
+
+    const handleAddChargeClick = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('modal', 'new')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleBillChargesSuccess = () => {
         setShowBillCharges(false)
-        queryClient.invalidateQueries({ queryKey: ['unbilled-charges', cardAccountId] })
+        invalidateCrossFeature(queryClient, [['unbilled-charges', selectedCardAccount], ['card-statements']])
         toast.success('Cargos facturados exitosamente')
     }
 
-    const columns: ColumnDef<UnbilledItemRow, any>[] = [
+    const columns: ColumnDef<UnbilledItemRow, unknown>[] = [
         {
             accessorKey: 'date',
             header: ({ column }) => (
@@ -99,33 +237,19 @@ export function UnbilledChargesView({
             sortingFn: 'datetime',
         },
         {
-            id: 'referencia',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Referencia" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const item = row.original
-                return (
-                    <div className="flex flex-col items-start gap-0.5">
-                        <span className="text-xs font-medium text-foreground">
-                            {item.reference || (item.source === 'charge' ? `Movimiento #${item.id}` : item.notes) || '-'}
-                        </span>
-                        {item.source === 'charge' && item.notes && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                                {item.notes}
-                            </span>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
             id: 'cuota',
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Cuota" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const item = row.original
+                if (item.source === 'pending') {
+                    return (
+                        <div className="flex justify-center w-full">
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                        </div>
+                    )
+                }
                 if (!item.installmentNumber || !item.totalInstallments) return null
                 return (
                     <div className="flex justify-center w-full">
@@ -140,24 +264,35 @@ export function UnbilledChargesView({
         {
             id: 'compra',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Compra" className="justify-center" />
+                <DataTableColumnHeader column={column} title="Compra asociada" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const item = row.original
-                const group = item.purchaseGroupDetail
-                if (!group) return null
+                if (item.source !== 'installment' || !item.originalInstallment) return null
+                const inst = item.originalInstallment
                 return (
-                    <div className="flex justify-center w-full">
-                        <div className="flex flex-col items-start gap-0.5">
-                            <span className="text-[11px] font-medium text-foreground truncate max-w-[180px]">
-                                {group.client_reference || `Compra #${group.id}`}
+                    <div className="flex flex-col items-center gap-0.5 w-full">
+                        {inst.partner_name && (
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[140px] leading-tight">
+                                {inst.partner_name}
                             </span>
-                            {group.partner_name && (
-                                <span className="text-[10px] text-muted-foreground truncate max-w-[180px]">
-                                    {group.partner_name}
-                                </span>
-                            )}
-                        </div>
+                        )}
+                        <Button
+                            variant="ghost"
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                if (inst.purchase_order_id) {
+                                    openHub({ orderId: inst.purchase_order_id, type: 'purchase' })
+                                }
+                            }}
+                            className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none"
+                        >
+                            <StatusBadge
+                                status={inst.purchase_order_display_id ? 'info' : 'muted'}
+                                label={inst.purchase_order_display_id || 'Sin OC'}
+                            />
+                        </Button>
                     </div>
                 )
             },
@@ -186,11 +321,15 @@ export function UnbilledChargesView({
             ),
             cell: ({ row }) => {
                 const item = row.original
+                const colorClass = item.source === 'pending'
+                    ? (chargeTypeColorMap[item.chargeType ?? ''] || 'bg-muted text-muted-foreground')
+                    : 'bg-info text-info-foreground'
+                const label = item.chargeTypeDisplay || item.chargeType || (item.source === 'installment' ? 'Cuota' : '')
                 return (
                     <div className="flex justify-center w-full">
                         <StatusBadge
-                            status={item.movementType || ''}
-                            label={item.movementTypeDisplay || ''}
+                            status={item.chargeType || item.source}
+                            label={label}
                         />
                     </div>
                 )
@@ -198,102 +337,202 @@ export function UnbilledChargesView({
         },
     ]
 
-    const filterDropdown = (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
-                    <Calendar className="h-3.5 w-3.5 mr-2 opacity-50" />
-                    {filterMode === 'month' ? 'Cargos del mes' : 'Todos los cargos'}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup value={filterMode} onValueChange={(v) => setFilterMode(v as 'month' | 'all')}>
-                    <DropdownMenuRadioItem value="month">Cargos del mes</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="all">Todos los cargos</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
+    const toolbarActions: ToolbarActionItem[] = [
+        ...(summary && summary.count > 0 ? [{
+            key: 'bill',
+            label: 'Facturar Cargos',
+            icon: Receipt,
+            onClick: () => setShowBillCharges(true),
+        }] : []),
+    ]
 
-    const actionButtons = (
-        <div className="flex items-center gap-2">
-            <Button
-                variant="outline"
-                size="sm"
-                disabled={!summary || summary.count === 0}
-                onClick={() => setShowBillCharges(true)}
-            >
-                <Receipt className="mr-2 h-4 w-4" />
-                Facturar Cargos
-            </Button>
-            <Button size="sm" onClick={() => setShowAddCharge(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar Cargo
-            </Button>
-        </div>
-    )
+    const fmt = (n: number) => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(n)
 
-    if (isLoading) {
+    // ── Charge type helpers for hub ──
+    const chargeTypeDistribution = useMemo(() => {
+        const groups: Record<string, { count: number; amount: number; display: string }> = {}
+        for (const c of charges) {
+            const t = c.charge_type || 'OTHER'
+            if (!groups[t]) groups[t] = { count: 0, amount: 0, display: c.charge_type_display || t }
+            groups[t].count++
+            groups[t].amount += Number(c.amount)
+        }
+        return Object.entries(groups)
+            .map(([id, v]) => ({ id, display: v.display, count: v.count, amount: v.amount, color: CHARGE_TYPE_COLORS[id] ?? CHARGE_TYPE_COLORS.OTHER }))
+            .sort((a, b) => b.amount - a.amount)
+    }, [charges])
+
+    const totalInstAmount = useMemo(
+        () => upcomingInstallments.reduce((s, i) => s + Number(i.principal_amount), 0),
+        [upcomingInstallments],
+    )
+    const totalInstCount = upcomingInstallments.length
+
+    const usedPercent = forecast?.credit_limit ? (parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit)) * 100 : 0
+
+    if (overviewLoading) {
         return (
-            <div className="flex flex-col flex-1 min-h-0 space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                        <Skeleton key={i} className="h-24" />
-                    ))}
+            <div className="h-full flex items-center justify-center">
+                <div className="space-y-3 w-full max-w-md">
+                    <Skeleton className="h-8 w-48 mx-auto" />
+                    <Skeleton className="h-64 w-full" />
                 </div>
-                <Skeleton className="h-64" />
+            </div>
+        )
+    }
+
+    if (creditCardAccounts.length === 0) {
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <EmptyState
+                    title="No hay tarjetas de crédito"
+                    description="Cree una cuenta de tipo Tarjeta de Crédito."
+                    icon={CreditCard}
+                />
             </div>
         )
     }
 
     return (
-        <div className="flex flex-col flex-1 min-h-0 space-y-4">
-            {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <StatCard
-                        label="Total"
-                        value={<MoneyDisplay amount={summary.total} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="primary"
-                    />
-                    <StatCard
-                        label="Compras"
-                        value={<MoneyDisplay amount={summary.purchases} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="info"
-                    />
-                    <StatCard
-                        label="Cuotas"
-                        value={<MoneyDisplay amount={summary.installments} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="info"
-                    />
-                    <StatCard
-                        label="Cargos Financieros"
-                        value={<MoneyDisplay amount={summary.charges} currency={currency} inline />}
-                        icon={CreditCard}
-                        accent="warning"
-                    />
-                    <StatCard
-                        label="Cantidad"
-                        value={summary.count.toString()}
-                        icon={CreditCard}
-                        accent="muted"
-                    />
-                </div>
-            )}
-
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.unbilled-charge"
                     columns={columns}
-                    data={mergedRows}
+                    data={filteredRows}
                     isLoading={isLoading}
                     variant="embedded"
-                    rightButtonGroupAction={filterDropdown}
-                    createAction={actionButtons}
-                    filterColumn="reference"
-                    searchPlaceholder="Buscar por referencia..."
+                    smartSearch={<SmartSearchBar searchDef={unbilledSearchDef} placeholder="Buscar por contacto, OC o monto..." className="w-full" />}
+                    showReset={isTextFiltered || isSegFiltered}
+                    isFiltered={isTextFiltered || isSegFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
+                    onRowClick={(row: UnbilledItemRow) => {
+                        if (row.source === 'pending' && row.originalPendingCharge) {
+                            openSelected(row.originalPendingCharge.id)
+                        }
+                    }}
+                    analyticsPanel={{
+                        screen: {
+                            entityName: "Gestión TC",
+                            tabs: [
+                                {
+                                    value: 'cupo',
+                                    label: 'Cupo y Cargos',
+                                    icon: Gauge,
+                                    columns: [
+                                        {
+                                            id: 'cupo-col',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'cupo-unified',
+                                                    content: {
+                                                        type: 'custom',
+                                                         render: forecast?.credit_limit ? (
+                                                            <StatCard
+                                                                label="Cupo"
+                                                                variant="chart"
+                                                                className="flex-1"
+                                                                chart={
+                                                                    <div className="flex flex-col gap-4">
+                                                                        <div className="flex flex-col gap-1.5">
+                                                                            <div className="flex justify-between items-center text-xs">
+                                                                                <span className="font-bold text-foreground">
+                                                                                    <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> usado
+                                                                                </span>
+                                                                                <span className="font-bold text-muted-foreground">
+                                                                                    <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> disp.
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className="h-full rounded-full bg-warning transition-all"
+                                                                                    style={{ width: `${Math.min(usedPercent, 100)}%` }}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                        <SummaryTable
+                                                                            rows={[
+                                                                                { label: 'Límite de Crédito', value: <MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline /> },
+                                                                                { label: 'Total Usado', value: <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> },
+                                                                                { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> },
+                                                                                { label: '% Usado', value: `${usedPercent.toFixed(1)}%` },
+                                                                            ]}
+                                                                        />
+                                                                    </div>
+                                                                }
+                                                            />
+                                                        ) : (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'cargos-col',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'charge-types-pie',
+                                                    content: chargeTypeDistribution.length > 0 || totalInstCount > 0 ? {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <StatCard label="Distribución de Cargos" variant="chart" className="flex-1" chart={
+                                                                <div className="flex flex-col gap-3">
+                                                                    <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
+                                                                        <PieChart
+                                                                            data={[...chargeTypeDistribution.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
+                                                                            legends={[{
+                                                                                anchor: "bottom",
+                                                                                direction: "row",
+                                                                                translateY: 28,
+                                                                                itemWidth: 100,
+                                                                                itemHeight: 14,
+                                                                                itemsSpacing: 8,
+                                                                                symbolSize: 8,
+                                                                            }]}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="shrink-0">
+                                                                        <SummaryTable
+                                                                            rows={[
+                                                                                ...chargeTypeDistribution.map(ct => ({
+                                                                                    label: ct.display,
+                                                                                    value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
+                                                                                })),
+                                                                                ...(totalInstCount > 0 ? [{
+                                                                                    label: 'Cuotas',
+                                                                                    value: <span className="text-xs font-bold">${fmt(totalInstAmount)} ({totalInstCount} cuotas)</span>,
+                                                                                }] : []),
+                                                                            ]}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            } />
+                                                        ),
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos ni cuotas</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                            cardAccounts: creditCardAccounts,
+                            cardAccountId: selectedCardAccount,
+                            onCardAccountChange: (id) => apply('card', String(id)),
+                            scope: segFilters.scope as 'month' | 'all',
+                            onScopeChange: (v) => apply('scope', v),
+                        },
+                    }}
+                    segmentation={<SegmentationBar def={segDef} basePeriod={basePeriod} />}
+                    createAction={<ToolbarCreateButton label="Agregar Cargo" onClick={handleAddChargeClick} />}
+                    toolbarActions={toolbarActions}
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,
@@ -303,57 +542,18 @@ export function UnbilledChargesView({
                     renderCard={(item: UnbilledItemRow) => (
                         <EntityCard>
                             <EntityCard.Header
-                                title={item.reference || (item.source === 'charge' ? `Movimiento #${item.id}` : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
+                                title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
                                 subtitle={item.date}
                                 trailing={
                                     <StatusBadge
-                                        status={item.movementType || ''}
-                                        label={item.movementTypeDisplay || ''}
+                                        status={item.chargeType || item.source}
+                                        label={item.chargeTypeDisplay || item.source}
                                     />
                                 }
                             />
                             <EntityCard.Body>
-                                {item.source === 'charge' && item.notes && (
+                                {item.source === 'pending' && item.notes && (
                                     <EntityCard.Field label="Descripción" value={item.notes} full />
-                                )}
-                                {item.purchaseGroupDetail && (
-                                    <EntityCard.Field
-                                        label="Detalle de Compra"
-                                        value={(() => {
-                                            const group = item.purchaseGroupDetail!
-                                            return (
-                                                <div className="flex flex-col gap-2 text-xs">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">Cuota:</span>
-                                                        <span className="font-medium tabular-nums">
-                                                            {item.installmentNumber || '—'}/{group.installments}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">Compra:</span>
-                                                        <span className="font-medium">
-                                                            {group.client_reference || `Compra #${group.id}`}
-                                                        </span>
-                                                    </div>
-                                                    {group.partner_name && (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-muted-foreground">Proveedor:</span>
-                                                            <span className="font-medium">{group.partner_name}</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">Total:</span>
-                                                        <MoneyDisplay amount={Number(group.total_amount)} currency={currency} inline />
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-muted-foreground">1ra cuota:</span>
-                                                        <span className="font-medium">{group.first_installment_date}</span>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })()}
-                                        full
-                                    />
                                 )}
                             </EntityCard.Body>
                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
@@ -368,22 +568,23 @@ export function UnbilledChargesView({
                             </EntityCard.Footer>
                         </EntityCard>
                     )}
+                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 
-            {showAddCharge && (
-                <AddChargeModal
-                    cardAccountId={cardAccountId}
-                    cardAccountName={cardAccountName}
-                    currency={currency}
-                    onSuccess={handleAddChargeSuccess}
-                    onCancel={() => setShowAddCharge(false)}
-                />
-            )}
+            <CardPendingChargeDrawer
+                open={chargeDrawerOpen}
+                onOpenChange={handleChargeDrawerOpenChange}
+                cardAccountId={selectedCardAccount}
+                cardAccountName={cardAccountName}
+                currency={currency}
+                charge={chargeToEdit}
+                onSuccess={handleChargeDrawerSuccess}
+            />
 
             {showBillCharges && (
                 <BillChargesModal
-                    cardAccountId={cardAccountId}
+                    cardAccountId={selectedCardAccount}
                     cardAccountName={cardAccountName}
                     total={summary?.total || 0}
                     charges={charges}
@@ -393,6 +594,7 @@ export function UnbilledChargesView({
                     onCancel={() => setShowBillCharges(false)}
                 />
             )}
+
         </div>
     )
 }

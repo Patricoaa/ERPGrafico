@@ -197,9 +197,13 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 ## TreasuryMovement
 
-No explicit status field. Edit restrictions based on journal_entry status:
-- If `journal_entry.status == 'POSTED'` → deletion blocked (must annul via service).
-- Created in any AccountingPeriod; blocked if period is closed.
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `POSTED`, `CANCELLED` |
+| `POSTED` | `success` | `CANCELLED` (vía annul: reverso contable) |
+| `CANCELLED` | `destructive` | — |
+
+**Edit restrictions:** If `is_reconciled == True` → bloquea cancelación. Si tiene `journal_entry.status == POSTED` → solo annul vía reverso. Movimientos en período contable cerrado se bloquean.
 
 ## POSSession
 
@@ -236,7 +240,7 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 > **ADR-0039** removió el endoso de cheques recibidos (estado `ENDORSED`,
 > campos `endorsed_to` / `endorsement_movement`, servicio `endorse()`).
 > Ver `docs/10-architecture/adr/0039-removal-of-check-endorsement.md`
-> para el rationale. La parte de cheques girados de ADR-0035 sigue
+> para el fundamento técnico. La parte de cheques girados de ADR-0035 sigue
 > vigente (cheques propios, F4.1).
 
 > **ADR-0040** define la democión de factura/orden al protestar o anular un
@@ -271,6 +275,24 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 **Edit restrictions:** Cheque inmutable salvo `notes` y campos de auditoría
 (`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente
 por `CheckService`.
+
+## CreditLine (Línea de Crédito — Sobregiro)
+
+Backend: `treasury.CreditLine`. Sobregiro asociado a una cuenta corriente
+(`TreasuryAccount` con `account_type=CHECKING`). Independiente de `BankLoan`.
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `ACTIVE` | `success` | `EXPIRED`, `SUSPENDED`, `CANCELED` |
+| `EXPIRED` | `warning` | `ACTIVE` (si se renueva) |
+| `SUSPENDED` | `neutral` | `ACTIVE` |
+| `CANCELED` | `neutral` | — (terminal) |
+
+**Propiedades calculadas (no campos DB) — ver ADR-0050:**
+- `used_amount` = `SUM(CREDIT_LINE_DRAW) - SUM(CREDIT_LINE_REPAY)` vía TreasuryMovement.
+- `available_amount` = `max(credit_limit - used_amount, 0)`.
+- `utilization_rate` = `(used_amount / credit_limit) * 100` (None si credit_limit = 0).
+- `TreasuryAccount.available_liquidity` = `balance + credit_line.available_amount`.
 
 ## BankLoan (Crédito Bancario)
 
@@ -420,7 +442,7 @@ These entities do not have lifecycle states. They use `is_active` (archive patte
 
 | Entity | Pattern | Notes |
 |--------|---------|-------|
-| Product | Archive (`active`) | `is_active=False` for archived products |
+| Product | Archive (`is_active`) | `is_active=False` for archived products |
 | Contact | Archive (`is_active`) | Roles are dynamic, not states |
 | Account | Archive (`is_active`) | Leaf accounts only |
 | UoM / UoMCategory | Archive | — |
@@ -437,7 +459,7 @@ These entities do not have lifecycle states. They use `is_active` (archive patte
 ## Workflow transition invariants
 
 - Transitions forbidden outside table above are rejected with HTTP 400.
-- Every transition emits a `workflow.Transition` row (audit).
+- Every state change is automatically audited via `django-simple-history` (`HistoricalRecords`), capturing the user, timestamp, and field deltas. This immutable audit log is exposed via `/api/core/audit/global/` and consumed by the `ActivitySidebar` and `AuditPage` in the frontend.
 - Some transitions require permission (e.g. fiscal year close requires `can_close_fiscal_year`).
 
 ## Frontend enforcement

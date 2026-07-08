@@ -1,12 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { FormSection, LabeledInput, PeriodValidationDateInput } from "@/components/shared"
+import { StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, RadioCard } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAllowedUoMs } from "@/features/inventory/hooks/useUoMs"
+import { useAllowedUoMs } from "@/features/inventory"
 import {
     Select,
     SelectContent,
@@ -22,10 +22,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { NumpadModal } from "@/features/pos/components/NumpadModal"
+import { NumpadModal } from "@/features/pos"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
-import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
+import { type CheckoutDeliveryData, type SaleOrderLine } from "../../types"
 
 function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
     const prodId = line.product && typeof line.product === 'object' ? line.product.id : line.product
@@ -62,7 +62,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     // Determine mode
     const isServiceMode = isOnlyService
     const isMixedMode = !isOnlyService && hasPhysical && orderLines.some(line => line.product_type === 'SERVICE')
-    const isPhysicalMode = !isOnlyService && !orderLines.some(line => line.product_type === 'SERVICE')
+
 
     // Physical-only items for the table (exclude services in mixed mode)
     const physicalLines = isMixedMode
@@ -77,7 +77,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isServiceMode) {
         return (
             <div className="space-y-6">
-                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-md shadow-card shadow-black/5">
                     <Calendar className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
                     <div className="space-y-1">
                         <p className="text-xs font-bold uppercase tracking-wider">Cumplimiento de Servicios</p>
@@ -129,74 +129,43 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     return (
         <div className="space-y-6">
-            <RadioGroup
-                value={deliveryData.type}
-                onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as any }))}
-                className="grid grid-cols-3 gap-3"
+            <LabeledContainer
+                label="Opciones de Despacho"
             >
-                <Label
-                    htmlFor="del-immediate"
-                    className={cn(
-                        "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        deliveryData.type === 'IMMEDIATE' && "border-primary bg-primary/5",
-                        hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
-                    )}
+                <RadioGroup
+                    value={deliveryData.type}
+                    onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
                 >
-                    <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                    <div className={cn(
-                        "p-2 rounded-lg bg-background border transition-colors",
-                        deliveryData.type === 'IMMEDIATE' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                    )}>
-                        <Package className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                        <span className="text-sm font-bold block">{isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}</span>
-                        <span className="text-[10px] text-muted-foreground">Rebajar stock y entregar ahora mismo.</span>
-                    </div>
-                </Label>
+                <RadioCard
+                    id="del-immediate"
+                    value="IMMEDIATE"
+                    label={isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}
+                    description="Rebajar stock y entregar ahora mismo."
+                    icon={<Package className="h-4 w-4" />}
+                    disabled={hasRestrictedItems}
+                    iconColor="text-primary"
+                />
 
-                <Label
-                    htmlFor="del-scheduled"
-                    className={cn(
-                        "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        deliveryData.type === 'SCHEDULED' && "border-primary bg-primary/5"
-                    )}
-                >
-                    <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                    <div className={cn(
-                        "p-2 rounded-lg bg-background border transition-colors",
-                        deliveryData.type === 'SCHEDULED' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                    )}>
-                        <Calendar className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                        <span className="text-sm font-bold block leading-tight">
-                            {isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">Reservar para fecha futura.</span>
-                    </div>
-                </Label>
+                <RadioCard
+                    id="del-scheduled"
+                    value="SCHEDULED"
+                    label={isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
+                    description="Reservar para fecha futura."
+                    icon={<Calendar className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
 
-                <Label
-                    htmlFor="del-partial"
-                    className={cn(
-                        "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                        deliveryData.type === 'PARTIAL' && "border-primary bg-primary/5"
-                    )}
-                >
-                    <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                    <div className={cn(
-                        "p-2 rounded-lg bg-background border transition-colors",
-                        deliveryData.type === 'PARTIAL' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                    )}>
-                        <Truck className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                        <span className="text-sm font-bold block leading-tight">Despacho Parcial</span>
-                        <span className="text-[10px] text-muted-foreground">Entregar disponibles hoy.</span>
-                    </div>
-                </Label>
-            </RadioGroup>
+                <RadioCard
+                    id="del-partial"
+                    value="PARTIAL"
+                    label="Despacho Parcial"
+                    description="Entregar disponibles hoy."
+                    icon={<Truck className="h-4 w-4" />}
+                    iconColor="text-primary"
+                />
+                </RadioGroup>
+            </LabeledContainer>
 
             {deliveryData.type === 'PARTIAL' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -207,7 +176,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                             {isMixedMode && " Los servicios se cumplen en su totalidad según la fecha."}
                         </p>
                     </div>
-                    <div className="max-h-80 overflow-y-auto rounded-md border">
+                    <div className="max-h-80 overflow-y-auto rounded-md border border-border/50 shadow-card shadow-black/5">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -218,7 +187,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {physicalLines.map((line, idx) => {
+                                {physicalLines.map((line) => {
                                     const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
                                         !line.requires_advanced_manufacturing &&
                                         ((line.qty_available || 0) + (line.manufacturable_quantity || 0)) >= (line.qty || line.quantity || 0);
@@ -254,7 +223,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                     readOnly={isTouchMode}
                                                     onClick={() => {
                                                         if (isTouchMode && isEligible) {
-                                                            setNumpadTarget({ lineId: Number(line.id), productId: Number(line.product), uom: line.uom!, pendingQty })
+                                                            setNumpadTarget({ lineId: Number(line.id), productId: Number(line.product), uom: line.uom ?? '', pendingQty })
                                                             setNumpadValue(currentVal.toString())
                                                             setNumpadOpen(true)
                                                         }
@@ -267,7 +236,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                             if (existingIdx >= 0) {
                                                                 pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
                                                             } else {
-                                                                pqs.push({ lineId: line.id!, productId: Number(line.product)!, dispatchedQty: val, uom: line.uom! });
+                                                                pqs.push({ lineId: line.id ?? 0, productId: Number(line.product) ?? 0, dispatchedQty: val, uom: line.uom ?? '' });
                                                             }
                                                             return { ...prev, partialQuantities: pqs };
                                                         });
@@ -286,7 +255,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                             if (existingIdx >= 0) {
                                                                 pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
                                                             } else {
-                                                                pqs.push({ lineId: line.id!, productId: Number(line.product)!, dispatchedQty: 1, uom: uomId });
+                                                                pqs.push({ lineId: line.id ?? 0, productId: Number(line.product) ?? 0, dispatchedQty: 1, uom: uomId });
                                                             }
                                                             return { ...prev, partialQuantities: pqs };
                                                         });
@@ -302,9 +271,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 </div>
             )}
 
-            {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
-                <FormSection title="Fecha" icon={Calendar} />
-            )}
 
             {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
                 <PeriodValidationDateInput
@@ -322,14 +288,14 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
             )}
 
             {hasRestrictedItems && (
-                <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive [&>svg]:text-destructive">
+                <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-md text-destructive [&>svg]:text-destructive">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                     <p className="text-xs font-medium">Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
                 </div>
             )}
 
             {isMixedMode && (
-                <div className="flex items-start gap-3 p-4 bg-info/10 border border-info/30 rounded-lg text-info [&>svg]:text-info">
+                <div className="flex items-start gap-3 p-4 bg-info/10 border border-info/30 rounded-md text-info [&>svg]:text-info">
                     <Info className="h-4 w-4 shrink-0 mt-0.5" />
                     <p className="text-xs font-medium">Los servicios se cumplen según la fecha programada. Solo los productos físicos aparecen en el detalle de despacho.</p>
                 </div>

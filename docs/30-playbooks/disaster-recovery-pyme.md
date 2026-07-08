@@ -184,7 +184,7 @@ docker compose logs --tail=50 nginx
 | Recurso | Dónde está | Verificar trimestralmente |
 |---------|-----------|----------------------------|
 | Credenciales R2 backups | Bitwarden / Keepass | Que el token siga válido |
-| `.env.dev` de prod | Bitwarden / Keepass (cifrado) | Idem |
+| `.env.prod` de producción | Bitwarden / Keepass (cifrado) | Idem |
 | SSH key del host | Bitwarden + máquina secundaria | Que se puede entrar desde 2 máquinas distintas |
 | Acceso a Cloudflare DNS | Cuenta Cloudflare con MFA | Que el MFA funciona |
 | Último backup downloadeable de R2 | aws s3 ls — verificar TS reciente | Trimestral test de descarga |
@@ -209,7 +209,7 @@ docker compose logs --tail=50 nginx
 - **HA / réplicas calientes.** Ver [system-diagram.md](../10-architecture/system-diagram.md#deployment-units).
 - **Point-in-time recovery (PITR).** WAL archiving no está configurado — el último backup diario es lo que hay. Activar PITR cuando el volumen lo justifique.
 - **DR de Redis.** Es cache + broker; reconstruir desde cero está OK. Cualquier task Celery en vuelo al momento del crash se pierde (idempotencia de las tareas críticas mitiga esto — ver [idempotency.md](../20-contracts/idempotency.md)).
-- **DR de MinIO local.** Media crítica vive en Cloudflare R2 (managed HA). MinIO local guarda derivados (exports temporales, miniaturas) — re-generables.
+- **DR de archivos locales.** Media crítica vive en Cloudflare R2 (managed HA). Archivos locales (exports temporales, miniaturas) son re-generables.
 
 ## Referencias
 

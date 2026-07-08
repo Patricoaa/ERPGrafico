@@ -4,30 +4,53 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treasury', '0018_alter_historicalpaymentmethod_method_type_and_more'),
+        ("treasury", "0018_alter_historicalpaymentmethod_method_type_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bankstatementline',
-            name='exclusion_notes',
-            field=models.TextField(blank=True, null=True, verbose_name='Notas de Exclusión'),
+            model_name="bankstatementline",
+            name="exclusion_notes",
+            field=models.TextField(blank=True, null=True, verbose_name="Notas de Exclusión"),
         ),
         migrations.AddField(
-            model_name='bankstatementline',
-            name='exclusion_reason',
-            field=models.CharField(blank=True, choices=[('DUPLICATE', 'Transacción Duplicada'), ('INTERNAL', 'Traspaso Interno no Conciliable'), ('ADJUSTMENT', 'Ajuste de Saldo'), ('ERROR', 'Error de Importación / Datos Corruptos'), ('OTHER', 'Otro (Especificar en notas)')], max_length=50, null=True, verbose_name='Razón de Exclusión'),
+            model_name="bankstatementline",
+            name="exclusion_reason",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("DUPLICATE", "Transacción Duplicada"),
+                    ("INTERNAL", "Traspaso Interno no Conciliable"),
+                    ("ADJUSTMENT", "Ajuste de Saldo"),
+                    ("ERROR", "Error de Importación / Datos Corruptos"),
+                    ("OTHER", "Otro (Especificar en notas)"),
+                ],
+                max_length=50,
+                null=True,
+                verbose_name="Razón de Exclusión",
+            ),
         ),
         migrations.AddField(
-            model_name='historicalbankstatementline',
-            name='exclusion_notes',
-            field=models.TextField(blank=True, null=True, verbose_name='Notas de Exclusión'),
+            model_name="historicalbankstatementline",
+            name="exclusion_notes",
+            field=models.TextField(blank=True, null=True, verbose_name="Notas de Exclusión"),
         ),
         migrations.AddField(
-            model_name='historicalbankstatementline',
-            name='exclusion_reason',
-            field=models.CharField(blank=True, choices=[('DUPLICATE', 'Transacción Duplicada'), ('INTERNAL', 'Traspaso Interno no Conciliable'), ('ADJUSTMENT', 'Ajuste de Saldo'), ('ERROR', 'Error de Importación / Datos Corruptos'), ('OTHER', 'Otro (Especificar en notas)')], max_length=50, null=True, verbose_name='Razón de Exclusión'),
+            model_name="historicalbankstatementline",
+            name="exclusion_reason",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("DUPLICATE", "Transacción Duplicada"),
+                    ("INTERNAL", "Traspaso Interno no Conciliable"),
+                    ("ADJUSTMENT", "Ajuste de Saldo"),
+                    ("ERROR", "Error de Importación / Datos Corruptos"),
+                    ("OTHER", "Otro (Especificar en notas)"),
+                ],
+                max_length=50,
+                null=True,
+                verbose_name="Razón de Exclusión",
+            ),
         ),
     ]

@@ -3,7 +3,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { ActionFoldButton, DynamicIcon } from '@/components/shared'
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import Link from "next/link"
@@ -63,8 +63,7 @@ export function PageHeader({
     titleActions, 
     isLoading,
     status,
-    children, 
-    className,
+    children,
     navigation 
 }: PageHeaderProps) {
     const { setHeader, clearHeader } = useHeader()
@@ -134,7 +133,7 @@ export function PageHeaderButton({ icon: Icon, iconName, label, circular, href, 
     const button = (
         <Button
             className={cn(
-                "transition-all duration-300 rounded-none px-4",
+                "transition-all duration-300 rounded-md px-4",
                 className
             )}
             title={title}

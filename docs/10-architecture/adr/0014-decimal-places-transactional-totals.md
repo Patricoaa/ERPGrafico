@@ -1,8 +1,11 @@
 ---
 layer: 10-architecture
 doc: adr-0014
+id: 0014
+title: "Estandarización de decimal_places en totales de documentos transaccionales"
 status: Accepted
 date: 2026-05-07
+author: core-team
 deciders: [AdminImprenta]
 relates-to: [F2-T07, docs/50-audit/Arquitectura Django/20-task-list.md]
 ---

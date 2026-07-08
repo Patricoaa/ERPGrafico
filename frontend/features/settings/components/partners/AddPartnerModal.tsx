@@ -7,10 +7,10 @@ import React, { useEffect, useState, useMemo } from "react"
 import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
 
 import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { Partner } from "@/features/contacts/types/partner"
+import { partnersApi } from "@/features/contacts"
+import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
-import {UserPlus, Info, TrendingDown} from "lucide-react"
+import {UserPlus, TrendingDown} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -101,7 +101,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
         >
             <div className="space-y-6">
                 {/* Selector de nuevo socio */}
-                <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
+                <div className="grid gap-4 p-4 border rounded-md bg-muted/30">
                     <LabeledContainer label="Seleccionar Persona / Empresa">
                         <AdvancedContactSelector
                             value={formData.contact_id}
@@ -153,9 +153,8 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                     />
                 </div>
 
-                <Alert className="bg-primary/5 border-primary/20">
-                    <Info className="h-4 w-4 text-primary" />
-                    <AlertDescription className="text-xs text-primary">
+                <Alert variant="primary">
+                    <AlertDescription className="text-xs">
                         Esta acción registrará la suscripción formal de capital. Los aportes reales (efectivo/activos) deben cargarse a través del Libro Auxiliar o Tesorería.
                     </AlertDescription>
                 </Alert>

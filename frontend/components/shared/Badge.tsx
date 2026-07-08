@@ -22,7 +22,7 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { LucideIcon } from 'lucide-react'
+import { type LucideIcon } from 'lucide-react'
 import {
     Tooltip,
     TooltipContent,
@@ -126,6 +126,8 @@ export interface BadgeHubProps
     /** Tooltip shown on hover */
     tooltip?: string
     size?: 'sm' | 'md'
+    /** Progress percentage (0-100). When set, renders an SVG ring overlay */
+    progress?: number
 }
 
 // ─── Main Badge component ──────────────────────────────────────────────────────
@@ -193,7 +195,7 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
  * @example
  * <Badge.Hub intent="success" icon={CheckCircle} tooltip="Pagado" />
  */
-Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 'sm', className }: BadgeHubProps) {
+Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 'sm', progress, className }: BadgeHubProps) {
     const colorMap: Record<string, string> = {
         neutral:     'text-muted-foreground bg-muted border-muted-foreground/20',
         info:        'text-info bg-info/10 border-info/20',
@@ -203,14 +205,59 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
         primary:     'text-primary bg-primary/10 border-primary/20',
     }
 
+    const ringColor: Record<string, string> = {
+        neutral:     'text-muted-foreground',
+        info:        'text-info',
+        success:     'text-success',
+        warning:     'text-warning',
+        destructive: 'text-destructive',
+        primary:     'text-primary',
+    }
+
+    const hasProgress = progress !== undefined
+    const containerSize = size === 'sm' ? 24 : 32
+    const strokeWidth = size === 'sm' ? 2.5 : 3
+    const radius = (containerSize - strokeWidth) / 2
+    const circumference = 2 * Math.PI * radius
+    const clamped = Math.min(100, Math.max(0, progress ?? 0))
+    const offset = circumference * (1 - clamped / 100)
+
+    const bgStyles = hasProgress
+        ? 'text-muted-foreground bg-muted border-muted-foreground/20'
+        : colorMap[intent ?? 'neutral']
+
     const hubEl = (
         <div className={cn(
-            'flex items-center justify-center rounded-full border transition-all duration-200',
-            colorMap[intent ?? 'neutral'],
+            'relative inline-flex items-center justify-center rounded-full border transition-all duration-200',
+            bgStyles,
             size === 'sm' ? 'w-6 h-6' : 'w-8 h-8',
             className,
         )}>
             <Icon className={size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'} />
+            {hasProgress && (
+                <svg
+                    className="absolute inset-0 w-full h-full -rotate-90"
+                    viewBox={`0 0 ${containerSize} ${containerSize}`}
+                    aria-hidden="true"
+                >
+                    <circle
+                        cx={containerSize / 2}
+                        cy={containerSize / 2}
+                        r={radius}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        className={cn(
+                            'transition-all duration-300',
+                            ringColor[intent ?? 'neutral'],
+                            clamped === 0 && 'opacity-0',
+                        )}
+                    />
+                </svg>
+            )}
         </div>
     )
 
@@ -222,7 +269,7 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
                 <TooltipTrigger asChild>{hubEl}</TooltipTrigger>
                 <TooltipContent
                     side="top"
-                    className="font-heading font-extrabold uppercase text-[10px] tracking-tighter"
+                    className=" font-extrabold uppercase text-[10px] tracking-tighter"
                 >
                     {tooltip}
                 </TooltipContent>

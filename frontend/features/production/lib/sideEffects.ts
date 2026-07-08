@@ -1,5 +1,4 @@
 import type { WorkOrder, WorkOrderSideEffects } from '../types'
-import type { StageId } from '../constants/stages'
 
 export interface SideEffectsCheck {
     blocked: boolean
@@ -12,7 +11,7 @@ export interface SideEffectsCheck {
  * Prefers the `side_effects` field from the backend serializer (Phase 4) when present;
  * otherwise falls back to client-visible order data.
  */
-export function hasSideEffects(order: WorkOrder, _targetStage: StageId): SideEffectsCheck {
+export function hasSideEffects(order: WorkOrder): SideEffectsCheck {
     if (order.side_effects) {
         return fromBackendSideEffects(order.side_effects)
     }

@@ -12,12 +12,12 @@ import type { Absence, Employee } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
-import { CalendarX2, Printer } from "lucide-react"
+import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 export const absenceSchema = z.object({
@@ -108,11 +108,10 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         }
     }
 
-    const drawerTitle = isView
-        ? `Ficha de Inasistencia${absence?.id ? ` #${absence.id}` : ""}`
-        : mode === 'create'
-            ? "Registrar Inasistencia"
-            : "Editar Inasistencia"
+    const identity = useDrawerIdentity('hr.absence', mode, absence, {
+        overrideTitle: mode === 'create' ? 'Registrar Inasistencia' : undefined,
+        overrideSubtitle: "Ingrese los detalles de la ausencia del empleado.",
+    })
 
     const footer = isView ? undefined : (
         <FormFooter
@@ -144,9 +143,10 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={width}
-                icon={CalendarX2}
-                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && absence?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle="Ingrese los detalles de la ausencia del empleado."
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={(mode === 'view' || mode === 'edit') && absence?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
                 mode={mode}
                 footer={footer}
             >
@@ -164,6 +164,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Empleado"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -177,6 +178,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Tipo de Inasistencia"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -191,6 +193,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="days" render={({ field, fieldState }) => (
                                                 <LabeledInput
                                                     label="Días Totales"
+                                                    required
                                                     type="number"
                                                     step="0.5"
                                                     min="0"
@@ -203,6 +206,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Inicio"
+                                                    required
                                                     date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                     onDateChange={(d) => {
                                                         if (!d) {
@@ -218,6 +222,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Fin"
+                                                    required
                                                     date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                     onDateChange={(d) => {
                                                         if (!d) {
@@ -255,6 +260,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Empleado"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -268,6 +274,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
                                                 <LabeledSelect
                                                     label="Tipo de Inasistencia"
+                                                    required
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={fieldState.error?.message}
@@ -282,6 +289,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="days" render={({ field, fieldState }) => (
                                                 <LabeledInput
                                                     label="Días Totales"
+                                                    required
                                                     type="number"
                                                     step="0.5"
                                                     min="0"
@@ -294,6 +302,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Inicio"
+                                                    required
                                                     date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                     onDateChange={(d) => {
                                                         if (!d) {
@@ -309,6 +318,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                             <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Fin"
+                                                    required
                                                     date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
                                                     onDateChange={(d) => {
                                                         if (!d) {

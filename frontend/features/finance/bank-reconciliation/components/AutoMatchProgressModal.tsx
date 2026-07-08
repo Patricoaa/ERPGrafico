@@ -65,10 +65,10 @@ export function AutoMatchProgressModal({
         stopPolling()
         pollRef.current = setInterval(async () => {
             try {
-                const data: ProgressData = await financeApi.getAutoMatchStatus(
+                const data = await financeApi.getAutoMatchStatus(
                     statementId,
                     { task_id: id }
-                )
+                ) as ProgressData
                 setProgress(data)
 
                 if (data.status === 'SUCCESS') {
@@ -104,7 +104,7 @@ export function AutoMatchProgressModal({
                 const autoMatchResult = await financeApi.autoMatch(statementId, {
                     confidence_threshold: confidenceThreshold,
                 })
-                const id: string = (autoMatchResult as any).task_id
+                const id: string = (autoMatchResult as Record<string, unknown>).task_id as string
                 setTaskId(id)
                 startPolling(id)
             } catch (err) {
@@ -134,6 +134,11 @@ export function AutoMatchProgressModal({
 
     const isDone = progress.status === 'SUCCESS' || progress.status === 'FAILURE'
     const isRunning = progress.status === 'PENDING' || progress.status === 'PROGRESS'
+    const isSuccess = progress.status === 'SUCCESS'
+    const isProgressOrSuccess = progress.status === 'PROGRESS' || progress.status === 'SUCCESS'
+    const chipIntent = isSuccess ? 'success' :
+        progress.status === 'FAILURE' ? 'destructive' :
+        isRunning ? 'primary' : 'neutral' as const
 
     return (
         <BaseModal
@@ -183,13 +188,7 @@ export function AutoMatchProgressModal({
                     )}
 
                     {/* Status Badge */}
-                    <Chip
-                        intent={
-                            progress.status === 'SUCCESS' ? 'success' :
-                            progress.status === 'FAILURE' ? 'destructive' :
-                            isRunning ? 'primary' : 'neutral'
-                        }
-                    >
+                    <Chip intent={chipIntent}>
                         {progress.status === 'idle' && "Iniciando..."}
                         {progress.status === 'PENDING' && "En Cola..."}
                         {progress.status === 'PROGRESS' && "Procesando..."}
@@ -215,15 +214,14 @@ export function AutoMatchProgressModal({
                 </div>
 
                 {/* Stats Grid */}
-                {(progress.status === 'PROGRESS' || progress.status === 'SUCCESS') && (
+                {isProgressOrSuccess && (
                     <div className="grid grid-cols-3 gap-3">
                         <StatCard
                             label="Procesadas"
-                            value={progress.status === 'SUCCESS' ? (progress.total_unreconciled ?? progress.total) : progress.processed}
+                            value={isSuccess ? (progress.total_unreconciled ?? progress.total) : progress.processed}
                             subtext={`de ${progress.total_unreconciled ?? progress.total}`}
                             variant="minimal"
                             accent="muted"
-                            className="text-center"
                         />
                         <StatCard
                             label="Conciliadas"
@@ -231,7 +229,6 @@ export function AutoMatchProgressModal({
                             subtext="matches"
                             variant="minimal"
                             accent="success"
-                            className="text-center"
                         />
                         <StatCard
                             label="Sin Conciliar"
@@ -239,14 +236,13 @@ export function AutoMatchProgressModal({
                             subtext="sin match"
                             variant="minimal"
                             accent="warning"
-                            className="text-center"
                         />
                     </div>
                 )}
 
                 {/* Error message */}
                 {progress.status === 'FAILURE' && progress.error && (
-                    <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-3">
+                    <div className="rounded-md bg-destructive/5 border border-destructive/20 p-3">
                         <p className="text-xs font-medium text-destructive">{progress.error}</p>
                     </div>
                 )}

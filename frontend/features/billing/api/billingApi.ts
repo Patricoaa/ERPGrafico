@@ -31,11 +31,15 @@ export const billingApi = {
         if (filters?.dte_type)     params.append('dte_type', filters.dte_type)
         if (filters?.date_from)    params.append('date_from', filters.date_from)
         if (filters?.date_to)      params.append('date_to', filters.date_to)
+        if (filters?.total_min)    params.append('total_min', filters.total_min)
+        if (filters?.total_max)    params.append('total_max', filters.total_max)
+        if (filters?.number)       params.append('number', filters.number)
         // partner_name no tiene campo directo en filterset → usar search=
         if (filters?.partner_name) params.append('search', filters.partner_name)
+        if (filters?.search) params.append('search', filters.search)
 
-        const { data } = await api.get<Invoice[]>('/billing/invoices/', { params })
-        return data
+        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
+        return data.results
     },
 
     /**
@@ -80,10 +84,12 @@ export const billingApi = {
      * Genérico en el response porque la respuesta del backend incluye
      * referencias a múltiples entidades creadas (invoice, order, payment, etc).
      */
-    posCheckout: async <T = unknown>(payload: FormData): Promise<T> => {
-        const { data } = await api.post<T>('/billing/invoices/pos_checkout/', payload, {
-            headers: { 'Content-Type': 'multipart/form-data' as const },
-        })
+    posCheckout: async <T = unknown>(payload: FormData, idempotencyKey?: string): Promise<T> => {
+        const headers: Record<string, string> = { 'Content-Type': 'multipart/form-data' as const }
+        if (idempotencyKey) {
+            headers['Idempotency-Key'] = idempotencyKey
+        }
+        const { data } = await api.post<T>('/billing/invoices/pos_checkout/', payload, { headers })
         return data
     },
 
@@ -102,6 +108,10 @@ export const billingApi = {
         await api.delete(`/billing/invoices/${id}/`)
     },
 
+    cancelInvoice: async (id: number, reason: string = ''): Promise<void> => {
+        await api.post(`/billing/invoices/${id}/cancel/`, { reason })
+    },
+
     createPayment: async (formData: FormData): Promise<void> => {
         await api.post('/treasury/payments/', formData)
     },
@@ -117,11 +127,13 @@ export const billingApi = {
 
     getWarehouses: async (): Promise<Record<string, unknown>[]> => {
         const res = await api.get<Record<string, unknown>[]>('/inventory/warehouses/')
+        // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
         return res.data
     },
 
     getAllowedUoms: async (productId: string | number, context: string): Promise<Record<string, unknown>[]> => {
         const res = await api.get(`/inventory/uoms/allowed/?product_id=${productId}&context=${context}`)
+        // eslint-disable-next-line pagination/no-raw-response-data -- custom @action, not paginated
         return res.data
     },
 }

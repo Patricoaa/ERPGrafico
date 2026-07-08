@@ -5,41 +5,42 @@ import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
 import { ActionConfirmModal, DomainHubStatus, Drawer, StatCard, StatusBadge } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
-
 } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
+import { RadioGroup } from "@/components/ui/radio-group"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
-import { Contact, InsightsData } from "../types"
+import { type Contact, type ContactPayload, type InsightsData } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
 
-import { ActivitySidebar } from "@/features/audit/components"
+import { ActivitySidebar } from "@/features/audit"
 
 import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Printer} from "lucide-react"
 import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
-import type { DrawerMode } from "@/features/_shared/drawer/types"
+import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { createDomainCardView } from "@/lib/view-helpers"
-import { DataCell, createActionsColumn, EmptyState, Chip } from '@/components/shared'
-import { Separator } from "@/components/ui/separator"
+import { DataCell, EmptyState, Chip } from '@/components/shared'
+import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
+
 import { DataTable } from '@/components/shared'
 
-import { ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
+import { type LucideIcon } from "lucide-react"
 
-import { getHubStatuses } from '@/features/orders/utils/status'
-import { LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { getHubStatuses } from '@/features/orders'
+import { LabeledInput, LabeledContainer, RadioCard, DynamicIcon, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
+import { resolveCategory } from "@/lib/badge-resolvers"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -52,7 +53,6 @@ const contactSchema = z.object({
     is_default_customer: z.boolean(),
     is_default_vendor: z.boolean(),
     payment_terms: z.string().optional(),
-    roles: z.array(z.string()).default([]),
 })
 
 interface ContactDrawerProps {
@@ -77,21 +77,20 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     const c = contact
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
-    const ins = insightsData as InsightsData | undefined
+    const ins = insightsData
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
         defaultValues: c ? {
-            name: (c.name || "") as string,
-            tax_id: (c.tax_id || "") as string,
-            email: (c.email || "") as string,
-            phone: (c.phone || "") as string,
-            address: (c.address || "") as string,
-            city: (c.city || "") as string,
-            payment_terms: (c.payment_terms || "CONTADO") as string,
+            name: c.name || "",
+            tax_id: c.tax_id || "",
+            email: c.email || "",
+            phone: c.phone || "",
+            address: c.address || "",
+            city: c.city || "",
+            payment_terms: c.payment_terms || "CONTADO",
             is_default_customer: !!c.is_default_customer,
             is_default_vendor: !!c.is_default_vendor,
-            roles: (c as any).roles || [],
         } : {
             name: "",
             tax_id: "",
@@ -101,12 +100,11 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             city: "",
             is_default_customer: false,
             is_default_vendor: false,
-            roles: [],
         },
     })
 
-    const { data: defaultCustomer } = useDefaultCustomer(open)
-    const { data: defaultVendor } = useDefaultVendor(open)
+    const { defaultCustomer } = useDefaultCustomer(open)
+    const { defaultVendor } = useDefaultVendor(open)
 
     const { data: contactDetails, isLoading: isLoadingContact } = useContact(c?.id && !c.name ? c.id : undefined)
 
@@ -115,16 +113,15 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     useEffect(() => {
         if (contactDetails) {
             form.reset({
-                name: (contactDetails as any).name || "",
-                tax_id: (contactDetails as any).tax_id || "",
-                email: (contactDetails as any).email || "",
-                phone: (contactDetails as any).phone || "",
-                address: (contactDetails as any).address || "",
-                city: (contactDetails as any).city || "",
-                payment_terms: (contactDetails as any).payment_terms || "CONTADO",
-                is_default_customer: !!(contactDetails as any).is_default_customer,
-                is_default_vendor: !!(contactDetails as any).is_default_vendor,
-                roles: (contactDetails as any).roles || [],
+                name: contactDetails.name || "",
+                tax_id: contactDetails.tax_id || "",
+                email: contactDetails.email || "",
+                phone: contactDetails.phone || "",
+                address: contactDetails.address || "",
+                city: contactDetails.city || "",
+                payment_terms: contactDetails.payment_terms || "CONTADO",
+                is_default_customer: !!contactDetails.is_default_customer,
+                is_default_vendor: !!contactDetails.is_default_vendor,
             })
         }
     }, [contactDetails, form])
@@ -146,16 +143,15 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         requestAnimationFrame(() => {
             if (c && c.name) {
                 form.reset({
-                    name: c.name as string,
-                    tax_id: (c.tax_id || "") as string,
-                    email: (c.email || "") as string,
-                    phone: (c.phone || "") as string,
-                    address: (c.address || "") as string,
-                    city: (c.city || "") as string,
-                    payment_terms: (c.payment_terms || "CONTADO") as string,
+                    name: c.name,
+                    tax_id: c.tax_id || "",
+                    email: c.email || "",
+                    phone: c.phone || "",
+                    address: c.address || "",
+                    city: c.city || "",
+                    payment_terms: c.payment_terms || "CONTADO",
                     is_default_customer: !!c.is_default_customer,
                     is_default_vendor: !!c.is_default_vendor,
-                    roles: (c as any).roles || [],
                 })
             } else if (!c?.id) {
                 form.reset({
@@ -168,7 +164,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                     payment_terms: "CONTADO",
                     is_default_customer: false,
                     is_default_vendor: false,
-                    roles: [],
                 })
             }
         })
@@ -176,13 +171,13 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
     const saveContact = async (values: z.infer<typeof contactSchema>) => {
         try {
-            let savedContact;
+            let savedContact: Contact | undefined;
             if (c?.id) {
-                savedContact = await updateContact({ id: c.id as number, payload: values as any })
+                savedContact = await updateContact({ id: c.id, payload: values as ContactPayload })
             } else {
-                savedContact = await createContact(values as any)
+                savedContact = await createContact(values as ContactPayload)
             }
-            onSuccess(savedContact as Contact)
+            onSuccess(savedContact)
             onOpenChange(false)
         } catch {
             // Error handled by hook
@@ -190,16 +185,16 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     }
 
     const onSubmit = async (values: z.infer<typeof contactSchema>) => {
-        if (values.is_default_customer && defaultCustomer && (defaultCustomer as any).id !== c?.id) {
+        if (values.is_default_customer && defaultCustomer && defaultCustomer.id !== c?.id) {
             setPendingValues(values)
-            setConfirmReplacement({ type: 'customer', name: (defaultCustomer as any).name })
+            setConfirmReplacement({ type: 'customer', name: defaultCustomer.name })
             setIsConfirmModalOpen(true)
             return
         }
 
-        if (values.is_default_vendor && defaultVendor && (defaultVendor as any).id !== c?.id) {
+        if (values.is_default_vendor && defaultVendor && defaultVendor.id !== c?.id) {
             setPendingValues(values)
-            setConfirmReplacement({ type: 'vendor', name: (defaultVendor as any).name })
+            setConfirmReplacement({ type: 'vendor', name: defaultVendor.name })
             setIsConfirmModalOpen(true)
             return
         }
@@ -207,7 +202,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         await saveContact(values)
     }
 
-    const tabItems: FormTabItem[] = [
+    const tabItems: TabItem[] = [
         {
             value: "profile",
             label: "Perfil",
@@ -239,11 +234,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         },
     ]
 
-    const drawerTitle = isView
-        ? `Ficha de Contacto${contact?.id ? ` #${contact.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Contacto"
-            : "Editar Contacto"
+    const identity = useDrawerIdentity('contacts.contact', mode, contact, {
+        printable: !!contact?.id && (mode === 'view' || mode === 'edit'),
+        onPrint: handlePrint,
+    })
 
     return (
         <>
@@ -272,9 +266,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             <Drawer
                 open={open}
                 onOpenChange={onOpenChange}
-                icon={User}
-                title={<><span>{drawerTitle}</span>{contact?.id && (mode === 'view' || mode === 'edit') && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
-                subtitle="Ficha Maestra • CRM & Finanzas"
+                icon={identity.icon}
+                title={identity.title}
+                headerActions={identity.headerActions}
+                subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!c)}
                 className="h-[90vh]"
                 contentClassName="p-0"
@@ -305,7 +300,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                             ) : undefined}
                             className="min-w-0 h-full overflow-hidden p-0"
                         >
-                            <FormTabs
+                            <TabBar
                                 items={tabItems}
                                 value={activeTab}
                                 onValueChange={setActiveTab}
@@ -314,130 +309,73 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                 className="flex-1"
                                 contentClassName="bg-transparent"
                             >
-                                <FormTabsContent
+                                <TabBarContent
                                     value="profile"
                                     className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
                                 >
                                     <div className="space-y-6">
                                         <div className="space-y-4">
-                                            <FormSection title="Estado y Roles" icon={Scale} />
+                                            <FormSection title="Roles" icon={Scale} />
 
-                                            {/* Defaults Section */}
-                                            <div className="flex items-center gap-8 p-4 bg-muted/5 rounded-md border border-primary/5">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="is_default_customer"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                            <FormControl>
-                                                                <Checkbox
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
+                                            {(() => {
+                                                const isDefaultCustomer = form.watch('is_default_customer')
+                                                const isDefaultVendor = form.watch('is_default_vendor')
+                                                const commercialValue = isDefaultCustomer ? "customer" : isDefaultVendor ? "vendor" : "none"
+                                                return (
+                                                    <LabeledContainer label="Preferencias Comerciales">
+                                                        <RadioGroup
+                                                            value={commercialValue}
+                                                            onValueChange={(val) => {
+                                                                form.setValue('is_default_customer', val === 'customer', { shouldDirty: true })
+                                                                form.setValue('is_default_vendor', val === 'vendor', { shouldDirty: true })
+                                                            }}
+                                                            className="grid grid-cols-2 gap-3 w-full"
+                                                        >
+                                                            <RadioCard
+                                                                id="pref-customer"
+                                                                value="customer"
+                                                                label="Cliente por defecto"
+                                                                description={
+                                                                    defaultCustomer && defaultCustomer.id !== c?.id
+                                                                        ? `Actual: ${defaultCustomer.name}`
+                                                                        : "Se selecciona automáticamente en nuevas NV"
+                                                                }
+                                                                icon={<ShoppingCart className="h-4 w-4" />}
+                                                            />
+                                                            <RadioCard
+                                                                id="pref-vendor"
+                                                                value="vendor"
+                                                                label="Proveedor por defecto"
+                                                                description={
+                                                                    defaultVendor && defaultVendor.id !== c?.id
+                                                                        ? `Actual: ${defaultVendor.name}`
+                                                                        : "Se selecciona automáticamente en nuevas OC"
+                                                                }
+                                                                icon={<Package className="h-4 w-4" />}
+                                                            />
+                                                        </RadioGroup>
+                                                    </LabeledContainer>
+                                                )
+                                            })()}
+
+                                            <LabeledContainer label="Roles del Contacto">
+                                                <div className="grid grid-cols-3 gap-2 w-full">
+                                                    {(["CUSTOMER", "SUPPLIER", "RELATED", "PARTNER", "EMPLOYEE", "USER"] as const).map(value => {
+                                                        const resolved = resolveCategory('contact_type', value)
+                                                        return (
+                                                            <RadioGroup key={value} value={c?.active_roles?.includes(value) ? "on" : "off"} disabled>
+                                                                <RadioCard
+                                                                    id={`role-${value}`}
+                                                                    value="on"
+                                                                    label={resolved.label}
+                                                                    icon={resolved.icon ? <DynamicIcon name={resolved.icon} className="h-4 w-4" /> : undefined}
+                                                                    disabled
                                                                 />
-                                                            </FormControl>
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                    Cliente por defecto
-                                                                </FormLabel>
-                                                            </div>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <Separator orientation="vertical" className="h-8" />
-                                                <FormField
-                                                    control={form.control}
-                                                    name="is_default_vendor"
-                                                    render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                            <FormControl>
-                                                                <Checkbox
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
-                                                                />
-                                                            </FormControl>
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                    Proveedor por defecto
-                                                                </FormLabel>
-                                                            </div>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
-
-                                            {/* Manual Roles Selection */}
-                                            <FormField
-                                                control={form.control}
-                                                name="roles"
-                                                render={({ field }) => (
-                                                    <FormItem className="space-y-2">
-                                                        <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                                                            Roles Manuales Asignados
-                                                        </FormLabel>
-                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                                            {[
-                                                                { id: "CUSTOMER", label: "Cliente", desc: "Permite emitir notas de venta y facturas" },
-                                                                { id: "SUPPLIER", label: "Proveedor", desc: "Permite emitir órdenes de compra" },
-                                                                { id: "RELATED", label: "Relacionado", desc: "Contacto para órdenes de trabajo" },
-                                                                { id: "PARTNER", label: "Socio", desc: "Socio aportador de capital" },
-                                                                { id: "CARRIER", label: "Transportista", desc: "Empresa de transportes o despacho" },
-                                                            ].map((role) => {
-                                                                const checked = field.value?.includes(role.id)
-                                                                return (
-                                                                    <div
-                                                                        key={role.id}
-                                                                        className={`flex items-start space-x-3 p-3 rounded-lg border transition-all cursor-pointer select-none ${checked
-                                                                                ? "border-primary bg-primary/5 shadow-sm"
-                                                                                : "border-muted hover:border-muted-foreground/30 bg-card"
-                                                                            }`}
-                                                                        onClick={() => {
-                                                                            const nextValue = checked
-                                                                                ? field.value.filter((v: string) => v !== role.id)
-                                                                                : [...(field.value || []), role.id]
-                                                                            field.onChange(nextValue)
-                                                                        }}
-                                                                    >
-                                                                        <Checkbox
-                                                                            id={`role-${role.id}`}
-                                                                            checked={checked}
-                                                                            onCheckedChange={(isChecked) => {
-                                                                                const nextValue = isChecked
-                                                                                    ? [...(field.value || []), role.id]
-                                                                                    : field.value.filter((v: string) => v !== role.id)
-                                                                                field.onChange(nextValue)
-                                                                            }}
-                                                                        />
-                                                                        <div className="space-y-1 leading-none">
-                                                                            <label
-                                                                                htmlFor={`role-${role.id}`}
-                                                                                className="text-sm font-semibold cursor-pointer"
-                                                                            >
-                                                                                {role.label}
-                                                                            </label>
-                                                                            <p className="text-[11px] text-muted-foreground">
-                                                                                {role.desc}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            {/* System/Dynamic Active Roles (Read-Only) */}
-                                            {c?.active_roles && c.active_roles.some(r => r === 'USER' || r === 'EMPLOYEE') && (
-                                                <div className="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-muted/20 border border-muted/50 mt-2">
-                                                    <span className="text-xs text-muted-foreground font-semibold">Roles del sistema (automáticos):</span>
-                                                    {c.active_roles.includes('USER') && (
-                                                        <Chip.Category domain="contact_type" value="USER" size="xs" />
-                                                    )}
-                                                    {c.active_roles.includes('EMPLOYEE') && (
-                                                        <Chip.Category domain="contact_type" value="EMPLOYEE" size="xs" />
-                                                    )}
+                                                            </RadioGroup>
+                                                        )
+                                                    })}
                                                 </div>
-                                            )}
+                                            </LabeledContainer>
                                         </div>
 
                                         <div className="space-y-4">
@@ -492,7 +430,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-2">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Email"
+                                                                    label="Email (opcional)"
                                                                     type="email"
                                                                     placeholder="ejemplo@correo.com"
                                                                     error={fieldState.error?.message}
@@ -510,7 +448,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-2">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Teléfono"
+                                                                    label="Teléfono (opcional)"
                                                                     placeholder="+56 9 ..."
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -532,7 +470,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-3">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Dirección"
+                                                                    label="Dirección (opcional)"
                                                                     placeholder="Calle, Número, Depto"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -549,7 +487,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                         <FormItem className="col-span-1">
                                                             <FormControl>
                                                                 <LabeledInput
-                                                                    label="Ciudad / Comuna"
+                                                                    label="Ciudad / Comuna (opcional)"
                                                                     placeholder="Santiago"
                                                                     error={fieldState.error?.message}
                                                                     {...field}
@@ -561,9 +499,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                             </div>
                                         </div>
                                     </div>
-                                </FormTabsContent>
+                                </TabBarContent>
 
-                                <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <TabBarContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
@@ -571,9 +509,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         icon={ShoppingCart}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </FormTabsContent>
+                                </TabBarContent>
 
-                                <FormTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <TabBarContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.purchases?.orders || []}
                                         type="purchase"
@@ -581,9 +519,9 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         icon={Package}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </FormTabsContent>
+                                </TabBarContent>
 
-                                <FormTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <TabBarContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.work_orders?.orders || []}
                                         type="work_order"
@@ -591,11 +529,11 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         icon={Wand2}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </FormTabsContent>
-                                <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                </TabBarContent>
+                                <TabBarContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
-                                </FormTabsContent>
-                            </FormTabs>
+                                </TabBarContent>
+                            </TabBar>
                         </FormSplitLayout>
                     </fieldset>
                     </form>
@@ -605,7 +543,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             <ActionConfirmModal
                 open={isConfirmModalOpen}
                 onOpenChange={setIsConfirmModalOpen}
-                title="Cambiar contacto por defecto"
+                title="Cambiar preferencia comercial"
                 variant="warning"
                 onConfirm={() => {
                     if (pendingValues) saveContact(pendingValues)
@@ -615,10 +553,13 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 description={
                     <div className="space-y-2">
                         <p>
-                            El contacto <strong>{confirmReplacement.name}</strong> es actualmente el {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} por defecto.
+                            <strong>{confirmReplacement.name}</strong> es actualmente el {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} predeterminado.
                         </p>
                         <p>
-                            Si continúa, el nuevo contacto pasará a ser el predeterminado y el anterior dejará de serlo.
+                            Al guardar, <strong>{c?.name || 'este contacto'}</strong> lo reemplazará como {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} predeterminado.
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Esta preferencia controla qué contacto se selecciona automáticamente al crear nuevas {confirmReplacement.type === 'customer' ? 'notas de venta' : 'órdenes de compra'}.
                         </p>
                     </div>
                 }
@@ -629,10 +570,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 }
 
 interface InsightsTableProps {
-    data: any[]
+    data: Record<string, unknown>[]
     type: 'sale' | 'purchase' | 'work_order'
     title: string
-    icon: any
+    icon: LucideIcon
     onActionSuccess?: () => void
 }
 
@@ -646,13 +587,13 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         const total = data.length
 
         // Financial (Pending Payment)
-        const pendingPaymentItems = data.filter(item => parseFloat((item as any).pending_amount || "0") > 0)
-        const totalPendingMoney = pendingPaymentItems.reduce((acc, item) => acc + parseFloat((item as any).pending_amount || "0"), 0)
+        const pendingPaymentItems = data.filter(item => parseFloat(String((item as Record<string, unknown>).pending_amount ?? "0")) > 0)
+        const totalPendingMoney = pendingPaymentItems.reduce((acc, item) => acc + parseFloat(String((item as Record<string, unknown>).pending_amount ?? "0")), 0)
 
         // Logistics (Pending Delivery/Receipt)
         // Uses simplified check: not fully delivered/received if items exist
         const pendingLogisticsItems = data.filter(item => {
-            const status = getHubStatuses(item as any)
+            const status = getHubStatuses(item)
             return status.logistics === 'active' || status.logistics === 'neutral'
         })
 
@@ -663,7 +604,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         })
 
         // Work Orders (Pending Completion)
-        const pendingWorkOrders = data.filter(item => (item as any).status !== 'COMPLETED')
+        const pendingWorkOrders = data.filter(item => String((item as Record<string, unknown>).status) !== 'COMPLETED')
 
         return {
             total,
@@ -679,7 +620,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     const filteredData = useMemo(() => {
         switch (activeFilter) {
             case 'financial':
-                return data.filter(item => parseFloat((item as any).pending_amount || "0") > 0)
+                return data.filter(item => parseFloat(String((item as Record<string, unknown>).pending_amount ?? "0")) > 0)
             case 'logistics':
                 return data.filter(item => {
                     const status = getHubStatuses(item)
@@ -691,7 +632,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     return status.billing !== 'success'
                 })
             case 'pending': // For Work Orders
-                return data.filter(item => (item as any).status !== 'COMPLETED')
+                return data.filter(item => String((item as Record<string, unknown>).status) !== 'COMPLETED')
             case 'all':
             default:
                 return data
@@ -701,21 +642,31 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     const cardView = useMemo(() => {
         const label = type === 'sale' ? 'sales.saleorder' : type === 'purchase' ? 'purchasing.purchaseorder' : 'production.workorder'
         return createDomainCardView(label, {
-            onRowClick: (data: any) => {
+            onRowClick: (data: Record<string, unknown>) => {
                 if (type === 'work_order') {
-                    openEntity('production.workorder', data.id)
+                    openEntity('production.workorder', data.id as number)
                 } else {
-                    openHub({ orderId: data.id, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
+                    openHub({ orderId: data.id as number, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
                 }
             },
         })
     }, [type, openEntity, openHub, onActionSuccess])
 
+    const contactDocumentActionsCtx: ContactDocumentActionsCtx = {
+        onHub: (item) => {
+            if (type === 'work_order') {
+                openEntity('production.workorder', item.id as number)
+            } else {
+                openHub({ orderId: item.id as number, type: type === 'purchase' ? 'purchase' : 'sale' })
+            }
+        },
+    }
+
     const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
             header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={(row.original as any).date} />,
+            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
         },
         {
             accessorKey: "display_id",
@@ -732,37 +683,22 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             {
                 accessorKey: "total",
                 header: "Total",
-                cell: ({ row }: { row: { original: any } }) => <DataCell.Currency value={row.original.total} className="text-left font-bold" />,
+                cell: ({ row }: { row: { original: Record<string, unknown> } }) => <DataCell.Currency value={row.original.total as number} className="text-left font-bold" />,
             }
         ] : []),
         {
             id: "status",
             header: "Estados",
             cell: ({ row }) => {
-                const item = row.original as any
                 if (type === 'work_order') {
                     return (
-                        <StatusBadge status={item.status} size="sm" />
+                        <StatusBadge status={row.original.status as string} size="sm" />
                     )
                 }
-                return <DomainHubStatus data={item} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
+                return <DomainHubStatus data={row.original} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
             }
         },
-        createActionsColumn<Record<string, unknown>>({
-            renderActions: (item) => (
-                <DataCell.Action
-                    action="hub"
-                    onClick={() => {
-                        const i = item as any
-                        if (type === 'work_order') {
-                            openEntity('production.workorder', i.id)
-                        } else {
-                            openHub({ orderId: i.id, type: type === 'purchase' ? 'purchase' : 'sale' })
-                        }
-                    }}
-                />
-            )
-        })
+        contactDocumentActions.column(contactDocumentActionsCtx)
     ]
 
     return (
@@ -821,25 +757,24 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
             <FormSection title={title} icon={Icon} className="pb-6" />
             <div className="flex-1 overflow-hidden p-0">
-                <DataTable
-                    columns={columns}
-                    data={filteredData}
-                    variant="embedded"
-                    defaultPageSize={10}
-                    globalFilterFields={["display_id", "number"]}
-                    showToolbarSort={true}
-                    renderCustomView={cardView}
-                />
+                    <DataTable
+                        columns={columns}
+                        data={filteredData}
+                        variant="embedded"
+                        defaultPageSize={10}
+                        currentView="card"
+                        renderCustomView={cardView}
+                    />
             </div>
         </div>
     )
 }
 
-function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], loading: boolean, onActionSuccess?: () => void }) {
+function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<string, unknown>[], loading: boolean, onActionSuccess?: () => void }) {
     const { openHub } = useHubPanel()
 
     // Placeholder tipado para el ledger - sigue el patrón del contrato
-    const LEDGER_SKELETON: any[] = Array.from({ length: 5 }, (_, i) => ({
+    const LEDGER_SKELETON: Record<string, unknown>[] = Array.from({ length: 5 }, (_, i) => ({
         id: i + 1,
         display_id: "————————————",
         number: "————————————",
@@ -854,7 +789,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
         supplier_name: "————————————",
         customer_id: 0,
         supplier_id: 0,
-        lines: [],
+        lines: [] as unknown[],
         related_documents: {
             invoices: [],
             payments: [],
@@ -877,21 +812,21 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
         )
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
             header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
+            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
         },
         {
             accessorKey: "number",
             header: "Número",
-            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original} />,
+            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
         },
         {
             accessorKey: "balance",
             header: "Saldo",
-            cell: ({ row }) => <DataCell.Currency value={row.original.balance} className="text-left font-bold text-destructive" />,
+            cell: ({ row }) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
         },
         {
             id: "status",
@@ -909,10 +844,9 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
                         data={loading ? LEDGER_SKELETON : data}
                         variant="embedded"
                         defaultPageSize={10}
-                        globalFilterFields={["display_id", "number"]}
-                        showToolbarSort={true}
+                        currentView="card"
                         renderCustomView={createDomainCardView('sales.saleorder', {
-                            onRowClick: (data: any) => openHub({ orderId: data.id, type: 'sale', onActionSuccess }),
+                            onRowClick: (data: Record<string, unknown>) => openHub({ orderId: data.id as number, type: 'sale', onActionSuccess }),
                         })}
                     />
                 </div>

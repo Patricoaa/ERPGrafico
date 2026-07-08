@@ -5,7 +5,7 @@ status: active
 owner: frontend-team
 last_review: 2026-04-25
 changelog:
-  - 2026-05-26: §4/§6/§7 corregido: padding y anti-patrón ahora mencionan Drawer además de BaseModal. §5 ActivitySidebar: regla "Dentro de BaseDrawer" reemplazada por "Drawer de solo lectura". Sección §6/§7: "BaseModal" generalizado a "Drawer o BaseModal". Ver [component-drawer.md](./component-drawer.md) para API de Drawer.
+  - 2026-05-26: §4/§6/§7 corregido: padding y anti-patrón ahora mencionan Drawer además de BaseModal. §5 ActivitySidebar: regla “Dentro de BaseDrawer” reemplazada por “Drawer de solo lectura”. Sección §6/§7: “BaseModal” generalizado a “Drawer o BaseModal”. Ver [component-drawer.md](./component-drawer.md) para API de Drawer.
   - 2026-05-26: §8 reescrito. API por string (`FORM_WIDTHS.X.Y`) reemplazada por helpers tipados `formDrawerWidth()` / `formModalSize()`. Migrados 15 callers; eliminados ~24 accesos rotos por casing. Tier `special` renombrado a `micro`; añadido tier `master`. Drawer y BaseModal usan ahora helpers distintos (no se puede pasar `%` a BaseModal).
   - 2026-04-25: Agregado contrato completo de ActivitySidebar (§5). Reglas de cuándo usar, posición, separadores, entityType válidos. Corrección de padding §4 (px-1→px-4). FormFooter obligatorio en §7.
 stability: contract-changes-require-ADR
@@ -55,19 +55,19 @@ Los campos deben tener un ancho proporcional a los datos que contienen y su impo
 
 Seguir este orden dentro del flujo vertical del formulario para mejorar la cognición del usuario:
 
-### Layer 1: Scope & Context (The "What")
+### Layer 1: Scope & Context (The “What”)
 - **Components**: Name, Code, Product, Category, Customer.
 - **Goal**: Identify the entity being created/edited.
 
-### Layer 2: Configuration & Parameters (The "How")
+### Layer 2: Configuration & Parameters (The “How”)
 - **Components**: Quantities, Rules, Filters, Types, Methods.
 - **Goal**: Define the logic of the action.
 
-### Layer 3: Results & Impacts (The "Outcome")
+### Layer 3: Results & Impacts (The “Outcome”)
 - **Components**: Price (Net/Gross), Discounts, Totals, Taxes.
 - **Goal**: Show the immediate effect of the configuration.
 
-### Layer 4: Lifecycle & Metadata (The "When/Status")
+### Layer 4: Lifecycle & Metadata (The “When/Status”)
 - **Components**: Validity dates, Active/Inactive status, Internal notes.
 - **Goal**: Manage state and history.
 
@@ -81,7 +81,7 @@ Seguir este orden dentro del flujo vertical del formulario para mejorar la cogni
 - **Internal Padding (con FormSplitLayout en Drawer)**: Pasar `contentClassName="p-0"` al `Drawer`. El padding lo inyecta `FormSplitLayout` en su área principal.
 - **Internal Padding (con FormSplitLayout en BaseModal)**: Pasar `contentClassName="p-0"` **y** `hideScrollArea={true}` al `BaseModal`. El padding lo inyecta `FormSplitLayout`.
 
-> **Anti-patrón "double padding"**: Nunca dejar el padding por defecto del surface (Drawer: `px-8 pb-8`; BaseModal: `p-6`) activo cuando `FormSplitLayout` es el hijo directo. Obtendrás padding duplicado y dos barras de scroll. Ver [§6](#6-split-layouts-formspitlayout).
+> **Anti-patrón “double padding”**: Nunca dejar el padding por defecto del surface (Drawer: `px-8 pb-8`; BaseModal: `p-6`) activo cuando `FormSplitLayout` es el hijo directo. Obtendrás padding duplicado y dos barras de scroll. Ver [§6](#6-split-layouts-formspitlayout).
 
 ---
 
@@ -271,7 +271,7 @@ Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="
 </BaseModal>
 ```
 
-> El sidebar **solo aparece en el primer tab** (o en el tab de "General"). Los tabs secundarios no lo repiten.
+> El sidebar **solo aparece en el primer tab** (o en el tab de “General”). Los tabs secundarios no lo repiten.
 
 ---
 
@@ -307,7 +307,7 @@ Layout estandarizado para el footer de formularios y modales.
 
 ## 6. Split Layouts (FormSplitLayout)
 
-Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente en modo "Edit"), usar el componente `FormSplitLayout`.
+Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente en modo “Edit”), usar el componente `FormSplitLayout`.
 
 ### Standard Configuration
 - **Sidebar Width**: `w-72` fixed.
@@ -490,7 +490,7 @@ export function PurchaseOrderForm({ open, onOpenChange, initialData }: Props) {
 
 - **Drawer usa `%`** porque los paneles laterales escalan proporcionalmente al viewport (estándar en Linear/Notion/Figma).
 - **Modal usa tokens CVA en px** porque los overlays centrados tienen líneas de lectura óptimas en valores absolutos (50–75 ch).
-- **Helper functions** (no nested objects) hacen imposible el bug "key mal escrito" (`COMPLEX` vs `complex`) que generó ~24 callers rotos en la primera iteración del sistema.
+- **Helper functions** (no nested objects) hacen imposible el bug “key mal escrito” (`COMPLEX` vs `complex`) que generó ~24 callers rotos en la primera iteración del sistema.
 
 ### Verification Checklist
 

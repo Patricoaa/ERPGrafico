@@ -1,22 +1,26 @@
+"use client"
+
 import { formatCurrency } from "@/lib/money"
 import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
-import { Banknote, Hash, Trash2, AlertCircle, Gavel } from "lucide-react"
-import { formatEntity } from '@/features/orders/utils/status'
+import { Banknote, Trash2, Ban, Gavel } from "lucide-react"
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { useDeletePayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
-import { ActionConfirmModal } from '@/components/shared'
-import { TransactionNumberDrawer } from "@/features/finance/components/TransactionNumberDrawer"
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, PhaseDocument, Payment } from "../../types"
+import { useCancelPayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
+import { ActionConfirmModal, BaseModal, CancelButton } from '@/components/shared'
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
+import { type Order, type PhaseDocument, type Payment } from "../../types"
 
 interface TreasuryPhaseProps {
     isNoteMode: boolean
-    noteStatuses: Record<string, string>
+    noteStatuses: Record<string, string | boolean | number>
     activeDoc: Order
     payments: Payment[]
     userPermissions: string[]
@@ -46,16 +50,17 @@ export function TreasuryPhase({
 }: TreasuryPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
 
-    const deletePayment = useDeletePayment()
-    const annulPayment = useAnnulPayment()
+    const { cancelPayment } = useCancelPayment()
+    const { annulPayment } = useAnnulPayment()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -63,66 +68,60 @@ export function TreasuryPhase({
         onConfirm: () => { }
     })
 
-    const [trForm, setTrForm] = useState<{ open: boolean, id: number | null, initialValue: string }>({
-        open: false,
-        id: null,
-        initialValue: ""
+    const [annulPaymentState, setAnnulPaymentState] = useState<{
+        open: boolean
+        paymentId: number
+        paymentAmount: number
+    }>({ open: false, paymentId: 0, paymentAmount: 0 })
+
+    const [annulPaymentData, setAnnulPaymentData] = useState<PaymentData>({
+        method: null,
+        amount: 0,
+        treasuryAccountId: null,
+        paymentMethodId: null,
     })
 
-    const hasPendingTransactions = payments.some((pay: Payment) => {
-        const requiresTR = (
-            (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
-            (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
-        )
-        return requiresTR && !pay.transaction_number
-    })
+    const [annulReason, setAnnulReason] = useState("")
+    const [isAnnuling, setIsAnnuling] = useState(false)
 
-    const handleDeletePayment = async (id: number, isConfirmed = false) => {
-        if (!isConfirmed) {
+    const canCancelPayment = userPermissions.includes('treasury.delete_treasurymovement')
+
+    const handleDeletePayment = (id: number) => {
+        const isPosted = payments.find(p => Number(p.id) === id)?.status === 'POSTED'
+        if (isPosted) {
+            const payment = payments.find(p => Number(p.id) === id)
+            setAnnulPaymentState({
+                open: true,
+                paymentId: id,
+                paymentAmount: Number(payment?.amount || 0),
+            })
+            setAnnulPaymentData({
+                method: null,
+                amount: Number(payment?.amount || 0),
+                treasuryAccountId: null,
+                paymentMethodId: null,
+            })
+            setAnnulReason("")
+            setIsAnnuling(false)
+        } else {
             setConfirmModal({
                 open: true,
-                title: "Eliminar/Anular Pago",
+                title: "Cancelar Pago",
                 variant: "destructive",
-                confirmText: "Eliminar",
-                onConfirm: () => handleDeletePayment(id, true),
-                description: "¿Está seguro de que desea eliminar este pago?"
+                confirmText: "Cancelar",
+                requireReason: false,
+                onConfirm: async (reason?: string) => {
+                    try {
+                        await cancelPayment({ id, reason })
+                        setConfirmModal(prev => ({ ...prev, open: false }))
+                        onActionSuccess?.()
+                    } catch (error: unknown) {
+                        toast.error(getErrorMessage(error) || "Error al cancelar el pago")
+                        throw error
+                    }
+                },
+                description: "¿Está seguro de que desea cancelar este pago?"
             })
-            return
-        }
-
-        try {
-            await deletePayment.mutateAsync(id)
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || ""
-            // Identify if error is due to POSTED status (standardize backend to return this specific code/msg)
-            if (errorMessage.includes("publicado") || (error as { response?: { status?: number } })?.response?.status === 400) {
-                // Close previous modal
-                setConfirmModal(prev => ({ ...prev, open: false }))
-
-                // Open new modal for Annulment
-                setTimeout(() => {
-                    setConfirmModal({
-                        open: true,
-                        title: "Anular Pago Confirmado",
-                        variant: "warning",
-                        confirmText: "Anular Pago",
-                        onConfirm: async () => {
-                            try {
-                                await annulPayment.mutateAsync(id)
-                                setConfirmModal(prev => ({ ...prev, open: false }))
-                                onActionSuccess?.()
-                            } catch (err: unknown) {
-                                toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Error al anular pago")
-                            }
-                        },
-                        description: "No se puede eliminar un pago ya contabilizado. ¿Desea ANULARLO en su lugar? Esto creará un contra-asiento contable."
-                    })
-                }, 100)
-            } else {
-                toast.error(errorMessage || "Error al eliminar el pago")
-            }
         }
     }
 
@@ -133,14 +132,22 @@ export function TreasuryPhase({
                 icon={Banknote}
                 variant={
                     (isNoteMode ? noteStatuses.treasury :
-                        ((parseFloat(String(activeDoc.pending_amount || '0')) <= 0 && !hasPendingTransactions) ? 'success' :
-                            (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))) as any
+                        (parseFloat(String(activeDoc.pending_amount || '0')) <= 0 ? 'success' :
+                            (payments.length > 0 ? 'active' : 'neutral'))) as 'success' | 'active' | 'neutral' | 'destructive'
+                }
+                progress={
+                    isNoteMode ? undefined :
+                    (() => {
+                        const total = parseFloat(String(activeDoc.total || '0'))
+                        const pending = parseFloat(String(activeDoc.pending_amount || '0'))
+                        return total > 0 ? Math.round(((total - pending) / total) * 100) : 0
+                    })()
                 }
                 documents={payments.map((p: Payment) => {
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
                     return {
                         type: isWriteOff ? 'Castigo' : (p.payment_method_display || 'Pago'),
-                        number: formatEntity(isWriteOff ? 'CAS' : (p.payment_type === 'INBOUND' ? 'ING' : 'EGR'), p.id, p.display_id),
+                        number: p.display_id || formatEntityDisplay('treasury.treasurymovement', { id: p.id }),
                         icon: isWriteOff ? Gavel : Banknote,
                         isWarning: isWriteOff,
                         id: p.id,
@@ -149,29 +156,29 @@ export function TreasuryPhase({
                         amount: p.amount,
                         documentReference: p.reference,
                         actions: [
-                            ...((((p.payment_type === 'OUTBOUND' && (p.payment_method === 'CARD' || p.payment_method === 'TRANSFER')) || (p.payment_type === 'INBOUND' && p.payment_method === 'TRANSFER'))) && !p.transaction_number ? [{
-                                icon: Hash,
-                                title: 'Ingresar N° Transacción',
-                                color: 'text-warning hover:bg-warning/10',
-                                onClick: () => p.id && setTrForm({ open: true, id: Number(p.id), initialValue: "" })
-                            }] : []),
-                            ...((p.status !== 'CANCELLED') ? [{
+                            ...(canCancelPayment && p.status !== 'CANCELLED' && p.status !== 'POSTED' ? [{
                                 icon: Trash2,
-                                title: 'Eliminar/Anular Pago',
+                                title: 'Cancelar Pago',
                                 color: 'text-destructive hover:bg-destructive/10',
+                                onClick: () => p.id && handleDeletePayment(Number(p.id))
+                            }] : []),
+                            ...(canCancelPayment && p.status === 'POSTED' ? [{
+                                icon: Ban,
+                                title: 'Anular Pago',
+                                color: 'text-warning hover:bg-warning/10',
                                 onClick: () => p.id && handleDeletePayment(Number(p.id))
                             }] : [])
                         ]
                     }
                 }) as PhaseDocument[]}
                 onViewDetail={openDetails}
-                actions={(registry.payments?.actions || []).filter((a: { id: string }) => !a.id.includes('view-'))}
+                actions={(registry.payments?.actions || []).filter((a: { id: string }) => !a.id.includes('view-') && a.id !== 'payment-history')}
                 emptyMessage="Sin pagos registrados"
                 order={activeDoc}
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
                 stageId="treasury"
-                isComplete={parseFloat(String(activeDoc.pending_amount || '0')) <= 0 && !hasPendingTransactions}
+                isComplete={parseFloat(String(activeDoc.pending_amount || '0')) <= 0}
                 posSessionId={posSessionId}
                 collapsible={collapsible}
                 isOpen={isOpen}
@@ -180,7 +187,7 @@ export function TreasuryPhase({
                 <div className="flex items-center justify-between py-2 px-2 border-y border-border/10 my-2">
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pagado</span>
-                        <span className="text-[14px] font-heading font-black text-success tracking-tight">
+                        <span className="text-[14px]  font-black text-success tracking-tight">
                             {formatCurrency(Number(activeDoc.total || 0) - Number(activeDoc.pending_amount || 0))}
                         </span>
                     </div>
@@ -190,30 +197,15 @@ export function TreasuryPhase({
                     <div className="flex flex-col gap-0.5 text-right">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pendiente</span>
                         <span className={cn(
-                            "text-[14px] font-heading font-black tracking-tight",
+                            "text-[14px]  font-black tracking-tight",
                             parseFloat(String(activeDoc.pending_amount || '0')) > 0 ? "text-warning" : "text-muted-foreground/30"
                         )}>
                             {formatCurrency(Number(activeDoc.pending_amount || 0))}
                         </span>
                     </div>
                 </div>
-                {hasPendingTransactions && (
-                    <div className="flex items-center justify-center gap-1.5 py-1 text-[9px] text-warning/80 animate-pulse font-black uppercase tracking-widest">
-                        <AlertCircle className="size-3" />
-                        Falta N° TRX
-                    </div>
-                )}
+                
             </PhaseCard>
-
-            <TransactionNumberDrawer
-                open={trForm.open}
-                onOpenChange={(open) => setTrForm({ ...trForm, open })}
-                paymentId={trForm.id}
-                initialValue={trForm.initialValue}
-                onSuccess={() => {
-                    onActionSuccess?.()
-                }}
-            />
 
             <ActionConfirmModal
                 open={confirmModal.open}
@@ -223,7 +215,89 @@ export function TreasuryPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
+
+            {/* Anular pago POSTED — modal con selector de cuenta + motivo */}
+            <BaseModal
+                open={annulPaymentState.open}
+                onOpenChange={(open) => setAnnulPaymentState(prev => ({ ...prev, open }))}
+                title={
+                    <span className="flex items-center gap-2">
+                        <Ban className="h-5 w-5 text-warning" />
+                        Anular Pago
+                    </span>
+                }
+                size="lg"
+                footer={
+                    <div className="flex w-full gap-2">
+                        <CancelButton onClick={() => setAnnulPaymentState(prev => ({ ...prev, open: false }))} className="flex-1" />
+                        <Button
+                            className="flex-[2] bg-warning hover:bg-warning/90 h-12 text-lg font-bold"
+                            onClick={async () => {
+                                setIsAnnuling(true)
+                                try {
+                                    await annulPayment({
+                                        id: annulPaymentState.paymentId,
+                                        reason: annulReason,
+                                        treasuryAccountId: annulPaymentData.treasuryAccountId
+                                            ? Number(annulPaymentData.treasuryAccountId) : undefined,
+                                        amount: annulPaymentData.amount || undefined,
+                                    })
+                                    setAnnulPaymentState(prev => ({ ...prev, open: false }))
+                                    onActionSuccess?.()
+                                } catch (error: unknown) {
+                                    toast.error(getErrorMessage(error) || "Error al anular el pago")
+                                } finally {
+                                    setIsAnnuling(false)
+                                }
+                            }}
+                            disabled={
+                                isAnnuling ||
+                                !annulReason.trim() ||
+                                (annulPaymentData.amount > 0 && !annulPaymentData.treasuryAccountId)
+                            }
+                        >
+                            {isAnnuling ? 'Anulando...' : 'Anular con Devolución'}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="py-2 space-y-6">
+                    <PaymentMethodSelector
+                        operation={isSale ? 'sales' : 'purchases'}
+                        total={annulPaymentState.paymentAmount}
+                        paymentData={annulPaymentData}
+                        onPaymentDataChange={setAnnulPaymentData}
+                        labels={{
+                            totalLabel: 'Total del Pago',
+                            amountLabel: 'Monto a Devolver',
+                            differencePositiveLabel: 'Diferencia',
+                            differenceNegativeLabel: 'Deuda Pendiente',
+                            amountModalTitle: 'Monto a devolver',
+                            amountModalDescription: 'Ingrese el monto a devolver en esta anulación.',
+                        }}
+                        methodTitle={
+                            <p className="text-xs text-muted-foreground font-medium mb-1">
+                                Seleccione el método y la cuenta donde se registrará la devolución.
+                            </p>
+                        }
+                    />
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-medium text-foreground">
+                            Motivo de la anulación <span className="text-destructive">*</span>
+                        </label>
+                        <Textarea
+                            value={annulReason}
+                            onChange={(e) => setAnnulReason(e.target.value)}
+                            placeholder="Indique el motivo de la anulación y devolución..."
+                            rows={3}
+                            disabled={isAnnuling}
+                        />
+                    </div>
+                </div>
+            </BaseModal>
         </>
     )
 }

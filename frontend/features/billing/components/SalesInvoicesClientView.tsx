@@ -1,29 +1,31 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState } from "react"
+import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
-import {IconButton, SmartSearchBar, useSmartSearch} from "@/components/shared"
+import { ActionConfirmModal, DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
+import { type ColumnDef } from "@tanstack/react-table"
+import {IconButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from "@/components/shared"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
+import { invoiceSegDef } from "@/features/billing/segmentationDef"
 import { ArrowRight, ArrowLeft } from "lucide-react"
-import { treasuryApi } from "@/features/treasury/api/treasuryApi"
+import { treasuryApi } from "@/features/treasury"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
-import { Invoice } from "@/features/billing/types"
+import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
 import { toast } from "sonner"
-import { SaleNoteModal } from "@/features/sales"
-import { PaymentModal } from "@/features/treasury/components/PaymentModal"
+import { UnifiedNoteWizard } from "@/features/notes"
+import { PaymentModal } from "@/features/treasury"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
-    const { filters, isFiltered } = useSmartSearch(invoiceSearchDef)
-    const { invoices, isLoading, refetch, annulInvoice } = useInvoices({ filters: { ...filters, mode: 'sale' } })
+    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(invoiceSearchDef)
+    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
+    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(invoiceSegDef, basePeriod)
+    const isFiltered = isTextFiltered || isSegFiltered
+    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...(textFilters as InvoiceFilters), ...(segFilters as Record<string, string>), mode: 'sale' } })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
@@ -43,9 +45,12 @@ export function SalesInvoicesClientView() {
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
+    // El motivo se captura en el modal de anulación y se reutiliza en el force-retry
+    const annulReasonRef = useRef('')
+
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await annulInvoice({ id, force: true })
+            await annulInvoice({ id, force: true, reason: annulReasonRef.current })
         } catch (error: unknown) {
             toast.error(getErrorMessage(error) || "Error al anular el documento.")
         }
@@ -53,11 +58,11 @@ export function SalesInvoicesClientView() {
 
     const annulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await annulInvoice({ id, force: false })
+            await annulInvoice({ id, force: false, reason: annulReasonRef.current })
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             const errorMessage = getErrorMessage(error) || ""
-            if (errorMessage.includes("Debe anular los pagos asociados")) {
+            if (errorMessage.includes("pagos")) {
                 forceAnnulConfirm.requestConfirm(id)
                 return
             }
@@ -71,7 +76,7 @@ export function SalesInvoicesClientView() {
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingInv) return
-        const d = data as any
+        const d = data as unknown as { amount: number; paymentMethod: string; transaction_number?: string; is_pending_registration?: boolean; treasury_account_id?: string | number; dteType?: string; documentReference?: string; documentDate?: string; documentAttachment?: File | Blob }
         try {
             const formData = new FormData()
             formData.append('amount', d.amount.toString())
@@ -85,7 +90,7 @@ export function SalesInvoicesClientView() {
             formData.append('payment_method', d.paymentMethod)
             if (d.transaction_number) formData.append('transaction_number', d.transaction_number)
             if (d.is_pending_registration !== undefined) formData.append('is_pending_registration', d.is_pending_registration.toString())
-            if (d.treasury_account_id) formData.append('treasury_account_id', d.treasury_account_id)
+            if (d.treasury_account_id) formData.append('treasury_account_id', String(d.treasury_account_id))
             if (d.dteType) formData.append('dte_type', d.dteType)
             if (d.documentReference) formData.append('document_reference', d.documentReference)
             if (d.documentDate) formData.append('document_date', d.documentDate)
@@ -102,31 +107,13 @@ export function SalesInvoicesClientView() {
     }
 
     const columns: ColumnDef<Invoice>[] = [
-        {
-            accessorKey: "number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />
-        },
-        {
-            accessorKey: "dte_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("dte_type_display")}</DataCell.Secondary>
-        },
-        {
-            accessorKey: "partner_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer as number || (row.original as any).partner as number}>{row.getValue("partner_name")}</DataCell.ContactLink>
-        },
-        {
-            accessorKey: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />
-        },
+        createCodeColumn<Invoice>("number", "Folio", {
+            render: (row) => <>{row.display_id ?? row.number}</>,
+        }),
+        createDateColumn<Invoice>("date", "Fecha"),
+        createSecondaryColumn<Invoice>("dte_type_display", "Tipo"),
+        createContactColumn<Invoice>("partner_name", "Cliente", "partner"),
+        createCurrencyColumn<Invoice>("total", "Total"),
         {
             id: "hub_trigger",
             header: () => null,
@@ -153,7 +140,7 @@ export function SalesInvoicesClientView() {
     ]
 
     return (
-        <div className="px-1 h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
 
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -161,9 +148,13 @@ export function SalesInvoicesClientView() {
                     columns={columns}
                     data={invoices}
                     isLoading={isLoading}
+                    isRefetching={isRefetching}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
+                    smartSearch={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
+                    segmentation={<SegmentationBar def={invoiceSegDef} basePeriod={basePeriod} />}
+                    showReset={isFiltered}
+                    onReset={() => { clearText(); clearSeg() }}
                     defaultPageSize={20}
                     isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
                     isHubOpen={isHubOpen}
@@ -173,16 +164,69 @@ export function SalesInvoicesClientView() {
                         title: "Aún no hay documentos de venta",
                         description: "Las boletas y facturas que emitas aparecerán aquí.",
                     }}
+                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
             </div>
 
             {notingInvoice && (
-                <SaleNoteModal
+                <UnifiedNoteWizard
                     open={!!notingInvoice}
                     onOpenChange={(open) => !open && setNotingInvoice(null)}
-                    orderId={notingInvoice.sale_order || undefined}
-                    orderNumber={notingInvoice.sale_order_number || undefined}
-                    invoiceId={notingInvoice.id}
+                    mode="sales"
+                    initialType="NOTA_CREDITO"
+                    features={{ logistics: true, manufacturing: true }}
+                    referenceLabel={notingInvoice.number as string | undefined}
+                    fetchSource={async () => {
+                        const invoiceId = notingInvoice.id;
+                        const { billingApi } = await import('@/features/billing/api/billingApi')
+                        const inv = (await billingApi.getInvoice(invoiceId) as unknown) as Record<string, unknown>
+                        const invLines = ((inv.lines as Record<string, unknown>[]) || []).map((l: Record<string, unknown>) => ({
+                            lineId: l.id as number,
+                            productId: l.product as number,
+                            productName: l.product_name as string,
+                            productCode: l.product_code as string | undefined,
+                            productType: l.product_type as string | undefined,
+                            trackInventory: l.track_inventory as boolean | undefined,
+                            hasBom: l.has_bom as boolean | undefined,
+                            requiresAdvancedManufacturing: l.requires_advanced_manufacturing as boolean | undefined,
+                            mfgAutoFinalize: l.mfg_auto_finalize as boolean | undefined,
+                            createsStockMove: (l.track_inventory as boolean) && (l.product_type as string) !== 'MANUFACTURABLE',
+                            uomName: l.uom_name as string | undefined,
+                            originalQuantity: (l.quantity_delivered as number) || (l.quantity as number),
+                            noteQuantity: 0,
+                            noteUnitPrice: (l.unit_price as number) || 0,
+                            taxAmountPerUnit: ((l.unit_price as number) || 0) * (((l.tax_rate as number) ?? 19) / 100),
+                            reason: '',
+                        }))
+                        return {
+                            label: `${inv.dte_type_display as string} ${inv.number as string}`,
+                            isExempt: (inv.dte_type as string) === 'FACTURA_EXENTA' || (inv.dte_type as string) === 'BOLETA_EXENTA',
+                            originalTotal: inv.total as number,
+                            lines: invLines,
+                        }
+                    }}
+                    onSubmit={async (payload) => {
+                        const invoiceId = notingInvoice.id;
+                        const { billingApi } = await import('@/features/billing/api/billingApi')
+                        const formData = new FormData()
+                        formData.append('original_invoice_id', invoiceId.toString())
+                        formData.append('note_type', payload.noteType)
+                        formData.append('selected_items', JSON.stringify(payload.lines.map(l => ({
+                            line_id: l.lineId,
+                            product_id: l.productId,
+                            quantity: l.noteQuantity,
+                            unit_price: l.noteUnitPrice,
+                            tax_amount: l.taxAmountPerUnit ?? 0,
+                            reason: l.reason ?? '',
+                            manufacturing_data: l.manufacturingData ?? null,
+                        }))))
+                        if (payload.logistics) formData.append('logistics_data', JSON.stringify(payload.logistics))
+                        const reg = payload.registration
+                        formData.append('registration_data', JSON.stringify({ document_number: reg.documentNumber, document_date: reg.documentDate, is_pending: reg.isPending }))
+                        if (reg.attachment) formData.append('document_attachment', reg.attachment)
+                        if (payload.payment.method) formData.append('payment_data', JSON.stringify(payload.payment))
+                        await billingApi.noteWorkflowCheckout(formData)
+                    }}
                     onSuccess={refetch}
                 />
             )}
@@ -204,10 +248,12 @@ export function SalesInvoicesClientView() {
             <ActionConfirmModal
                 open={annulConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) annulConfirm.cancel() }}
-                onConfirm={annulConfirm.confirm}
+                onConfirm={(reason) => { annulReasonRef.current = reason ?? ''; return annulConfirm.confirm() }}
                 title="Anular Documento"
                 description="¿Está seguro de que desea ANULAR este documento? Esta acción generará reversos contables y no se puede deshacer."
                 variant="destructive"
+                requireReason
+                reasonLabel="Motivo de la anulación"
             />
 
             <ActionConfirmModal

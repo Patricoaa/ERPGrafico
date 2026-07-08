@@ -1,17 +1,18 @@
+"use client"
+
 import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
-import { FileText, Trash2, X } from "lucide-react"
-import { formatEntity } from '@/features/orders/utils/status'
-import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
+import { FileText, Trash2, Ban } from "lucide-react"
+import { formatEntityDisplay, getDteLabel } from '@/lib/entity-registry'
 import { toast } from "sonner"
-import { useAnnulInvoice, useDeleteInvoice } from "../../hooks/useOrdersMutations"
+import { useAnnulInvoice, useCancelInvoice } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from '@/components/shared'
-import { saleOrderActions } from '@/features/sales/actions'
-import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { Order, PhaseDocument } from "../../types"
-import { LucideIcon } from "lucide-react"
+import { saleOrderActions } from '@/features/sales'
+import { purchaseOrderActions } from '@/features/purchasing'
+import { type Order, type PhaseDocument } from "../../types"
+import { type LucideIcon } from "lucide-react"
 
 interface BillingPhaseProps {
     isNoteMode: boolean
@@ -49,16 +50,17 @@ export function BillingPhase({
     onOpenChange,
 }: BillingPhaseProps) {
     const registry = isSale ? saleOrderActions : purchaseOrderActions
-    const annulInvoice = useAnnulInvoice()
-    const deleteInvoice = useDeleteInvoice()
+    const { annulInvoice } = useAnnulInvoice()
+    const { cancelInvoice } = useCancelInvoice()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
         description: React.ReactNode,
-        onConfirm: () => Promise<void> | void,
+        onConfirm: (reason?: string) => Promise<void> | void,
         variant?: 'destructive' | 'warning',
-        confirmText?: string
+        confirmText?: string,
+        requireReason?: boolean
     }>({
         open: false,
         title: "",
@@ -66,49 +68,66 @@ export function BillingPhase({
         onConfirm: () => { }
     })
 
-    const handleDeleteDraft = async (id: number, isConfirmed = false) => {
-        if (!isConfirmed) {
-            setConfirmModal({
-                open: true,
-                title: "Eliminar Borrador",
-                variant: "destructive",
-                confirmText: "Eliminar Borrador",
-                onConfirm: () => handleDeleteDraft(id, true),
-                description: "¿Estás seguro de que deseas eliminar este borrador de factura? Esta acción no se puede deshacer."
-            })
-            return
-        }
+    const canCancelInvoice = userPermissions.includes('billing.delete_invoice')
 
-        try {
-            await deleteInvoice.mutateAsync(id)
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            console.error("Error deleting draft:", error)
-            toast.error("No se pudo eliminar el borrador")
-        }
+    const handleCancelDraft = (id: number) => {
+        setConfirmModal({
+            open: true,
+            title: "Cancelar Borrador",
+            variant: "destructive",
+            confirmText: "Cancelar Borrador",
+            onConfirm: async (reason?: string) => {
+                try {
+                    await cancelInvoice({ id, reason })
+                    setConfirmModal(prev => ({ ...prev, open: false }))
+                    onActionSuccess?.()
+                } catch (error: unknown) {
+                    console.error("Error cancelando borrador:", error)
+                    toast.error("No se pudo cancelar el borrador")
+                    throw error
+                }
+            },
+            description: "¿Estás seguro de que deseas cancelar este borrador de factura?"
+        })
     }
 
-    const handleAnnulDocument = async (id: number, force: boolean = false) => {
-        try {
-            await annulInvoice.mutateAsync({ id, force })
-            setConfirmModal(prev => ({ ...prev, open: false }))
-            onActionSuccess?.()
-        } catch (error: unknown) {
-            const errorMessage = getErrorMessage(error) || "Error al anular documento"
-            if (errorMessage.includes("pagos asociados") && !force) {
-                setConfirmModal({
-                    open: true,
-                    title: "Anular Documento con Pagos",
-                    variant: "warning",
-                    confirmText: "Anular Todo",
-                    onConfirm: () => handleAnnulDocument(id, true),
-                    description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos vinculados? Esta acción es irreversible."
-                })
-            } else {
-                toast.error(errorMessage)
+    const handleAnnulDocument = (id: number) => {
+        const executeAnnul = async (force: boolean, reason?: string) => {
+            try {
+                await annulInvoice({ id, force, reason })
+                setConfirmModal(prev => ({ ...prev, open: false }))
+                onActionSuccess?.()
+            } catch (error: unknown) {
+                const errorMessage = getErrorMessage(error) || "Error al anular documento"
+                if (errorMessage.includes("pagos") && !force) {
+                    // Reemplaza el contenido del modal abierto por la variante force;
+                    // el throw evita que ActionConfirmModal lo cierre.
+                    setConfirmModal({
+                        open: true,
+                        title: "Anular Documento con Pagos",
+                        variant: "warning",
+                        confirmText: "Anular Todo",
+                        requireReason: true,
+                        onConfirm: (r?: string) => executeAnnul(true, r),
+                        description: "El documento tiene pagos asociados. ¿Deseas anular el documento y todos sus pagos vinculados? Esta acción es irreversible."
+                    })
+                    throw error
+                } else {
+                    toast.error(errorMessage)
+                    throw error
+                }
             }
         }
+
+        setConfirmModal({
+            open: true,
+            title: "Anular Documento",
+            variant: "warning",
+            confirmText: "Anular",
+            requireReason: true,
+            onConfirm: (reason?: string) => executeAnnul(false, reason),
+            description: "Se revertirá el asiento contable del documento. Esta acción es irreversible."
+        })
     }
 
     return (
@@ -116,15 +135,12 @@ export function BillingPhase({
             <PhaseCard
                 title="Facturación"
                 icon={FileText}
-                variant={(isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))) as any}
+                variant={(isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))) as 'success' | 'active' | 'neutral' | 'destructive'}
+                progress={isNoteMode ? undefined : (billingIsComplete ? 100 : 0)}
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',
-                        number: activeDoc.display_id || formatEntity(
-                            getDtePrefix(activeDoc.dte_type),
-                            activeDoc.number || '---',
-                            activeDoc.display_id
-                        ),
+                        number: activeDoc.display_id || formatEntityDisplay('billing.invoice', { number: activeDoc.number || '---', dte_type: activeDoc.dte_type }),
                         icon: FileText,
                         color: 'text-warning',
                         id: activeDoc.id,
@@ -137,25 +153,21 @@ export function BillingPhase({
                         .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id)
                         .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
-                            number: inv.display_id || formatEntity(
-                                getDtePrefix(inv.dte_type),
-                                inv.number || '---',
-                                inv.display_id
-                            ),
+                            number: inv.display_id || formatEntityDisplay('billing.invoice', { number: inv.number || '---', dte_type: inv.dte_type }),
                             icon: FileText,
                             color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-warning' : 'text-primary',
                             id: Number(inv.id),
                             docType: 'invoice',
                             status: inv.status,
                             actions: [
-                                ...((inv.status === 'DRAFT') ? [{
+                                ...(canCancelInvoice && inv.status === 'DRAFT' ? [{
                                     icon: Trash2,
-                                    title: 'Eliminar Borrador',
+                                    title: 'Cancelar Borrador',
                                     color: 'text-destructive hover:bg-destructive/10',
-                                    onClick: () => handleDeleteDraft(Number(inv.id))
+                                    onClick: () => handleCancelDraft(Number(inv.id))
                                 }] : []),
-                                ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
-                                    icon: X,
+                                ...(canCancelInvoice && inv.status !== 'CANCELLED' && inv.status !== 'DRAFT' && (!inv.number || inv.number === 'Draft') ? [{
+                                    icon: Ban,
                                     title: 'Anular Documento',
                                     color: 'text-warning hover:bg-warning/10',
                                     onClick: () => handleAnnulDocument(Number(inv.id))
@@ -204,6 +216,8 @@ export function BillingPhase({
                 onConfirm={confirmModal.onConfirm}
                 variant={confirmModal.variant}
                 confirmText={confirmModal.confirmText}
+                requireReason={confirmModal.requireReason}
+                reasonLabel="Motivo de la anulación"
             />
         </>
     )

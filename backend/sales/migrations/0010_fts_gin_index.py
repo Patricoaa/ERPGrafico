@@ -2,7 +2,7 @@ from django.db import migrations
 
 
 def create_saleorder_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("""
         CREATE INDEX CONCURRENTLY IF NOT EXISTS sales_saleorder_fts_gin
@@ -12,7 +12,7 @@ def create_saleorder_gin_index(apps, schema_editor):
 
 
 def create_saledelivery_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("""
         CREATE INDEX CONCURRENTLY IF NOT EXISTS sales_saledelivery_fts_gin
@@ -22,7 +22,7 @@ def create_saledelivery_gin_index(apps, schema_editor):
 
 
 def create_salereturn_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("""
         CREATE INDEX CONCURRENTLY IF NOT EXISTS sales_salereturn_fts_gin
@@ -32,19 +32,19 @@ def create_salereturn_gin_index(apps, schema_editor):
 
 
 def drop_saleorder_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("DROP INDEX IF EXISTS sales_saleorder_fts_gin;")
 
 
 def drop_saledelivery_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("DROP INDEX IF EXISTS sales_saledelivery_fts_gin;")
 
 
 def drop_salereturn_gin_index(apps, schema_editor):
-    if schema_editor.connection.vendor != 'postgresql':
+    if schema_editor.connection.vendor != "postgresql":
         return
     schema_editor.execute("DROP INDEX IF EXISTS sales_salereturn_fts_gin;")
 
@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
-        ('sales', '0009_alter_saledelivery_options_alter_saleorder_options_and_more'),
+        ("sales", "0009_alter_saledelivery_options_alter_saleorder_options_and_more"),
     ]
 
     operations = [

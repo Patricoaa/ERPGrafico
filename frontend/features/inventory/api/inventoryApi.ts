@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
+import { toPage, type Page } from '@/lib/pagination'
 
 /**
  * Resolves a media URL from the backend.
@@ -29,25 +30,28 @@ export const inventoryApi = {
     /**
      * Fetch products with optional filtering
      */
-    getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Product[]> => {
+    getProducts: async (filters?: ProductFilters & { page_size?: number, fields?: string }): Promise<Page<Product>> => {
         const params = new URLSearchParams()
-        if (filters?.active !== undefined) {
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.is_active !== undefined) {
             // Send 'all' literally so the backend enters the correct branch.
-            // An empty string '' would fall through to the default (active=True only).
-            const val = filters.active === 'all' ? 'all' : String(filters.active)
-            params.append('active', val)
+            // An empty string '' would fall through to the default (is_active=True only).
+            const val = filters.is_active === 'all' ? 'all' : String(filters.is_active)
+            params.append('is_active', val)
         }
         if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
         if (filters?.can_be_purchased !== undefined) params.append('can_be_purchased', String(filters.can_be_purchased))
+        if (filters?.has_variants !== undefined) params.append('has_variants', String(filters.has_variants))
         if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
         if (filters?.search) params.append('search', filters.search)
         if (filters?.product_type) params.append('product_type', filters.product_type)
+        if (filters?.category !== undefined) params.append('category', String(filters.category))
         if (filters?.track_inventory !== undefined) params.append('track_inventory', String(filters.track_inventory))
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.fields) params.append('fields', filters.fields)
 
-        const { data } = await api.get<Product[]>('inventory/products/', { params })
-        return data
+        const { data } = await api.get<{ count: number; results: Product[] }>('inventory/products/', { params })
+        return toPage<Product>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     },
 
     /**
@@ -114,7 +118,7 @@ export const inventoryApi = {
         templateId: number,
         selection: Array<{ attribute: number, values: number[] }>,
     ): Promise<unknown> => {
-        const { data } = await api.post(`inventory/products/${templateId}/generate_variants/`, { selection })
+        const { data } = await api.post<unknown>(`inventory/products/${templateId}/generate_variants/`, { selection })
         return data
     },
 

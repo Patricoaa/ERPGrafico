@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label"
 import {
     FileText,
     Receipt,
-    AlertCircle,
 } from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
@@ -13,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { DocumentAttachmentDropzone, FolioValidationInput, FormSection, LabeledContainer, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
+import { DocumentAttachmentDropzone, FolioValidationInput, StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, RadioCard } from "@/components/shared"
 
 import type { CheckoutDTEData } from "../../types"
 
@@ -73,42 +72,27 @@ export function Step2_DTE({
 
     return (
         <div className="space-y-6">
-            <FormSection title="Documento Tributario" icon={FileText} />
+            <StepHeader title="Documento Tributario" description="Seleccione el tipo de documento a emitir para esta venta." icon={FileText} />
 
-            <RadioGroup
-                value={dteData.type}
-                onValueChange={(val) => setDteData({ ...dteData, type: val })}
-                className="grid grid-cols-1 gap-2"
-            >
+            <LabeledContainer label="Tipo de Documento">
+                <RadioGroup
+                    value={dteData.type}
+                    onValueChange={(val) => setDteData({ ...dteData, type: val })}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
+                >
                 {filteredOptions.map((opt) => (
-                    <Label
+                    <RadioCard
                         key={opt.id}
-                        htmlFor={`type-${opt.id.toLowerCase().replace("_", "-")}`}
-                        className={cn(
-                            "flex items-center gap-4 rounded-md border-2 border-muted bg-popover py-4 px-5 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer",
-                            dteData.type === opt.id ? "border-primary" : ""
-                        )}
-                    >
-                        <RadioGroupItem
-                            value={opt.id}
-                            id={`type-${opt.id.toLowerCase().replace("_", "-")}`}
-                            className="sr-only"
-                        />
-                        <div className={cn(
-                            "flex items-center justify-center h-9 w-9 rounded-md shrink-0",
-                            dteData.type === opt.id ? "bg-primary/10" : "bg-muted"
-                        )}>
-                            <opt.icon className={cn("h-5 w-5", opt.color)} />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-sm font-medium">{opt.label}</span>
-                            <span className="text-xs text-muted-foreground mt-0.5">
-                                Código SII: {opt.code}
-                            </span>
-                        </div>
-                    </Label>
+                        id={`type-${opt.id.toLowerCase().replace("_", "-")}`}
+                        value={opt.id}
+                        label={opt.label}
+                        description={`Código SII: ${opt.code}`}
+                        icon={<opt.icon className="h-4 w-4" />}
+                        iconColor={opt.color}
+                    />
                 ))}
-            </RadioGroup>
+                </RadioGroup>
+            </LabeledContainer>
 
             {(dteData.type === "FACTURA" || dteData.type === "FACTURA_EXENTA") && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -132,7 +116,7 @@ export function Step2_DTE({
                             }
                         }}
                         icon={<FileText className={cn("h-4 w-4 transition-colors", dteData.isPending ? "text-warning" : "text-muted-foreground/30")} />}
-                        className={cn(dteData.isPending ? "bg-warning/5 border-warning/20 shadow-sm" : "border-dashed")}
+                        className={cn(dteData.isPending ? "bg-warning/5 border-warning/20 shadow-card" : "border-dashed")}
                     />
 
                     {!dteData.isPending && (
@@ -188,8 +172,7 @@ export function Step2_DTE({
             )}
 
             {isDefaultCustomer && (
-                <Alert className="bg-warning/10 border-warning/30 text-warning [&>svg]:text-warning">
-                    <AlertCircle className="h-4 w-4" />
+                <Alert variant="info">
                     <AlertDescription className="text-xs font-medium">
                         El cliente por defecto solo permite emisión de{" "}
                         <strong>Boleta Electrónica</strong>.
@@ -198,8 +181,7 @@ export function Step2_DTE({
             )}
 
             {dteData.type !== "BOLETA" && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <Alert className="bg-warning/10 border-warning/30 text-warning [&>svg]:text-warning">
-                    <AlertCircle className="h-4 w-4" />
+                <Alert variant="warning">
                     <AlertDescription className="text-xs font-medium">
                         El folio y el adjunto son requeridos para registrar este tipo de documento.
                     </AlertDescription>
@@ -207,8 +189,7 @@ export function Step2_DTE({
             )}
 
             {dteData.type === "BOLETA" && (
-                <Alert className="bg-info/10 border-info/30 text-info [&>svg]:text-info">
-                    <AlertCircle className="h-4 w-4" />
+                <Alert variant="info">
                     <AlertDescription className="text-xs font-medium">
                         El sistema asignará el siguiente folio disponible automáticamente al
                         finalizar la venta.

@@ -168,7 +168,21 @@ def write_csv(rows, fieldnames) -> bytes:
 
 ---
 
-## Storage async (MinIO)
+## Storage async (R2 / MinIO)
+
+> **SDK:** El object storage de producción es **Cloudflare R2 (S3-compatible)**. El cliente se configura con `boto3` apuntando al endpoint R2:
+> ```python
+> # backend/core/storage.py
+> import boto3
+> storage_client = boto3.client(
+>     "s3",
+>     endpoint_url=settings.R2_ENDPOINT_URL,       # e.g. https://<account>.r2.cloudflarestorage.com
+>     aws_access_key_id=settings.R2_ACCESS_KEY_ID,
+>     aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY,
+>     region_name="auto",
+> )
+> ```
+> En dev local se puede usar MinIO como sustituto S3-compatible con la misma interfaz boto3. Los snippets de este doc usan `storage_client` como alias del cliente configurado.
 
 Generados async se suben a MinIO y se sirven via signed URL:
 
@@ -184,12 +198,17 @@ Cron de cleanup:
 
 ```python
 # backend/core/tasks.py
+# Nota: storage_client es boto3 configurado contra R2 (ver §Storage async R2/MinIO)
+from core.storage import storage_client
+
 @shared_task
 def purge_old_exports():
     cutoff = timezone.now() - timedelta(days=7)
-    for obj in minio_client.list_objects("exports", recursive=True):
-        if obj.last_modified < cutoff:
-            minio_client.remove_object("exports", obj.object_name)
+    paginator = storage_client.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket="exports"):
+        for obj in page.get("Contents", []):
+            if obj["LastModified"].replace(tzinfo=None) < cutoff.replace(tzinfo=None):
+                storage_client.delete_object(Bucket="exports", Key=obj["Key"])
 ```
 
 ---

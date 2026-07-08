@@ -4,15 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('production', '0008_productionsettings'),
+        ("production", "0008_productionsettings"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='workordermaterial',
-            name='unit_cost_snapshot',
-            field=models.DecimalField(decimal_places=4, default=0, help_text='Costo planificado del material en el momento de crear la OT', max_digits=12, verbose_name='Costo Unitario (Snapshot)'),
+            model_name="workordermaterial",
+            name="unit_cost_snapshot",
+            field=models.DecimalField(
+                decimal_places=4,
+                default=0,
+                help_text="Costo planificado del material en el momento de crear la OT",
+                max_digits=12,
+                verbose_name="Costo Unitario (Snapshot)",
+            ),
         ),
     ]

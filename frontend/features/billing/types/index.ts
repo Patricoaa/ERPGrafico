@@ -48,15 +48,20 @@ export interface Invoice {
 
 export interface InvoiceFilters {
     partner_name?: string
+    search?: string
     status?: string
     dte_type?: string
     mode?: 'sale' | 'purchase'
     date_from?: string
     date_to?: string
+    total_min?: string
+    total_max?: string
+    number?: string
 }
 
 export interface AnnulInvoicePayload {
     force: boolean
+    reason?: string
 }
 
 export interface PaymentPayload {

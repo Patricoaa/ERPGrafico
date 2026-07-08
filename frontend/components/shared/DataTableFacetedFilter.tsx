@@ -7,7 +7,7 @@
  * for non-table use cases.
  */
 import * as React from "react"
-import { Column } from "@tanstack/react-table"
+import { type Column } from "@tanstack/react-table"
 import { FacetedFilter } from '@/components/shared'
 
 interface DataTableFacetedFilterProps<TData, TValue> {

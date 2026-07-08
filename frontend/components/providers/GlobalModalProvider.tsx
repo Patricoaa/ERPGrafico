@@ -1,13 +1,14 @@
 "use client"
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from "react"
+import React, { createContext, useContext, useState, type ReactNode, useCallback, useMemo, useEffect } from "react"
 import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
+import { ErrorBoundary } from "@/components/shared"
 
 interface OpenEntityState {
     label: string
     id: number
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?: any
+    data?: unknown
+    segmenter?: React.ReactNode
 }
 
 interface GlobalModalActionsContextType {
@@ -16,14 +17,8 @@ interface GlobalModalActionsContextType {
      * Throws if no drawer is registered for the label — check `hasEntityDrawer(label)` first
      * or rely on EntityBadge's automatic fallback to navigation.
      */
-    openEntity: (label: string, id: number, data?: unknown) => void
+    openEntity: (label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => void
     closeEntity: () => void
-    /** @deprecated Use `openEntity('production.workorder', id)` */
-    openWorkOrder: (id: number) => void
-    /** @deprecated Use `openEntity('contacts.contact', id, contact)` */
-    openContact: (id: number, contact?: unknown) => void
-    /** @deprecated Use `openEntity('treasury.treasuryaccount', id)` */
-    openTreasuryAccount: (id: number | null) => void
     registerSheet: (id: string, fullWidth: number, priority: number, forceCollapse?: boolean) => void
     unregisterSheet: (id: string) => void
 }
@@ -56,21 +51,13 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     const closeEntity = useCallback(() => setOpenedEntity(null), [])
 
-    const openEntity = useCallback((label: string, id: number, data?: unknown) => {
+    const openEntity = useCallback((label: string, id: number, data?: unknown, segmenter?: React.ReactNode) => {
         if (!hasEntityDrawer(label)) {
             console.warn(`[GlobalModalProvider] No drawer registered for entity "${label}". Register it in lib/entity-drawers.tsx.`)
             return
         }
-        setOpenedEntity({ label, id, data })
+        setOpenedEntity({ label, id, data, segmenter })
     }, [])
-
-    // Backward-compatible specific openers — delegate to the generic one.
-    const openWorkOrder = useCallback((id: number) => openEntity('production.workorder', id), [openEntity])
-    const openContact = useCallback((id: number, contact?: unknown) => openEntity('contacts.contact', id, contact), [openEntity])
-    const openTreasuryAccount = useCallback((id: number | null) => {
-        if (id === null) { closeEntity(); return }
-        openEntity('treasury.treasuryaccount', id)
-    }, [openEntity, closeEntity])
 
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
@@ -148,12 +135,9 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const actionsValue = useMemo(() => ({
         openEntity,
         closeEntity,
-        openWorkOrder,
-        openContact,
-        openTreasuryAccount,
         registerSheet,
         unregisterSheet,
-    }), [openEntity, closeEntity, openWorkOrder, openContact, openTreasuryAccount, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, registerSheet, unregisterSheet])
 
     const stateValue = useMemo(() => ({
         isSubModalActive: openedEntity !== null,
@@ -174,6 +158,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             open: true,
             onOpenChange: (open) => { if (!open) setOpenedEntity(null) },
             onSuccess: () => setOpenedEntity(null),
+            segmenter: openedEntity.segmenter,
         })
     }
 
@@ -181,7 +166,9 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         <GlobalModalActionsContext.Provider value={actionsValue}>
         <GlobalModalStateContext.Provider value={stateValue}>
             {children}
-            {renderEntityDrawer()}
+            <ErrorBoundary variant="inline">
+                {renderEntityDrawer()}
+            </ErrorBoundary>
         </GlobalModalStateContext.Provider>
         </GlobalModalActionsContext.Provider>
     )

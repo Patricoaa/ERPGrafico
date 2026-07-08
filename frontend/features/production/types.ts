@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import type { WorkOrderStageData } from './schemas'
 import type { StageId } from './constants/stages'
 export type { StageId }
@@ -194,7 +194,7 @@ export interface ProductMinimal {
     variant_display_name?: string
     product_type?: string
     uom?: UoM | number | string | { name: string }
-    purchase_uom?: number | string
+    purchase_uom?: number | string | { id: number; name: string }
     uom_name?: string
     uom_category?: number
     last_purchase_price?: string | number

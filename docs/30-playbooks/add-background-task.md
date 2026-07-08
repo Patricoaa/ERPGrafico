@@ -28,7 +28,7 @@ last_review: 2026-04-21
 
 ## Steps
 
-### 1. Place task in `apps/[app]/tasks.py`
+### 1. Place task in `backend/[app]/tasks.py`
 
 ```python
 from celery import shared_task
@@ -61,7 +61,7 @@ def generate_invoice_pdf(self, invoice_id: str) -> None:
 ### 3. Enqueue from service (never from view)
 
 ```python
-# apps/billing/services/invoice_service.py
+# backend/billing/services/invoice_service.py
 def issue(...):
     invoice = Invoice.objects.create(...)
     generate_invoice_pdf.delay(str(invoice.id))
@@ -71,16 +71,16 @@ def issue(...):
 ### 4. Scheduled task (beat)
 
 ```python
-# config/celery.py
-app.conf.beat_schedule = {
+# backend/config/settings.py
+CELERY_BEAT_SCHEDULE = {
     'close-fiscal-period-nightly': {
-        'task': 'apps.accounting.tasks.close_period_if_due',
+        'task': 'accounting.tasks.close_period_if_due',
         'schedule': crontab(hour=2, minute=0),
     },
 }
 ```
 
-DB-backed scheduler already configured (`django_celery_beat`).
+**Nota sobre BEAT:** El proyecto usa `PersistentScheduler` (code-first, versionado), NO el scheduler de base de datos de `django_celery_beat`. Toda tarea periódica debe registrarse explícitamente en el diccionario `CELERY_BEAT_SCHEDULE` dentro de `backend/config/settings.py`.
 
 ### 5. Logging and metrics
 
@@ -113,7 +113,7 @@ Use `CELERY_TASK_ALWAYS_EAGER = True` in test settings for sync execution.
 ## Validation
 
 ```bash
-pytest apps/[app]/tests/test_tasks.py
+pytest backend/[app]/tests/test_tasks.py
 celery -A config worker --loglevel=info   # local smoke
 celery -A config beat --loglevel=info     # if scheduled
 ```

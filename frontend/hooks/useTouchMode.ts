@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 
-const EVENT_NAME = "pos_touch_mode_changed"
+const EVENT_NAME = 'pos_touch_mode_changed' as const
 
 function getInitialTouchMode(): boolean {
     if (typeof window === "undefined") return true

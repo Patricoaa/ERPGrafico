@@ -1,6 +1,8 @@
 "use client"
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { invalidateCrossFeature } from '@/lib/invalidation'
+import { useRealtime } from '@/features/realtime'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { treasuryApi } from '../api/treasuryApi'
@@ -9,11 +11,13 @@ import type { TerminalBatchCreatePayload } from '../types'
 
 export function useTerminalBatchMutations() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const createBatch = useMutation({
         mutationFn: (payload: TerminalBatchCreatePayload) => treasuryApi.createTerminalBatch(payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: BATCHES_KEYS.all })
+            markLocalMutation()
+            invalidateCrossFeature(queryClient, [BATCHES_KEYS.all])
             toast.success('Liquidación registrada exitosamente')
         },
         onError: (err) => showApiError(err, 'Error al registrar liquidación'),

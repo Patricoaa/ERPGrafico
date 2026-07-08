@@ -1,12 +1,11 @@
 
-import { cn, translateStatus, formatPlainDate } from "@/lib/utils"
-import { resolveLegacyEntityType } from "@/lib/entity-registry"
-import { ExternalLink, LucideIcon, MoreVertical } from "lucide-react"
+import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
+import { ExternalLink, type LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
-import { ReactNode, HTMLAttributes } from "react"
+import { type ReactNode, type HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
-import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent } from "@/components/shared"
+import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent, DataTableColumnHeader } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,6 +31,44 @@ interface ValueCellProps<T> extends BaseCellProps {
     value: T | null | undefined
 }
 
+/** Maps snake_case type identifiers to ENTITY_REGISTRY labels. */
+const TYPE_TO_LABEL: Record<string, string> = {
+  sale_order: 'sales.saleorder',
+  purchase_order: 'purchasing.purchaseorder',
+  invoice: 'billing.invoice',
+  sale_delivery: 'sales.saledelivery',
+  sale_return: 'sales.salereturn',
+  purchase_receipt: 'purchasing.purchasereceipt',
+  purchase_return: 'purchasing.purchasereturn',
+  stock_move: 'inventory.stockmove',
+  inventory: 'inventory.stockmove',
+  cash_movement: 'treasury.treasurymovement',
+  bank_statement: 'treasury.bankstatement',
+  bank_loan: 'treasury.bankloan',
+  credit_line: 'treasury.creditline',
+  check: 'treasury.check',
+  credit_card_statement: 'treasury.creditcardstatement',
+  terminal_batch: 'treasury.terminalbatch',
+  treasury_account: 'treasury.treasuryaccount',
+  terminal: 'treasury.terminal',
+  terminal_provider: 'treasury.terminalprovider',
+  terminal_device: 'treasury.terminaldevice',
+  work_order: 'production.workorder',
+  payment: 'treasury.treasurymovement',
+  journal_entry: 'accounting.journalentry',
+  pos_session: 'pos.session',
+  f29_declaration: 'tax.f29declaration',
+  accounting_period: 'tax.accountingperiod',
+  category: 'inventory.category',
+  uom: 'inventory.uom',
+  pricing_rule: 'inventory.pricingrule',
+  partner_transaction: 'contacts.partnertransaction',
+};
+
+function findEntityLabel(type: string): string | undefined {
+  return TYPE_TO_LABEL[type];
+}
+
 // --- Text Cells ---
 
 export const DataCell = {
@@ -40,7 +77,7 @@ export const DataCell = {
      * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
      */
     Text: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-[13px] font-medium text-foreground", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-foreground", className)} {...props}>{children}</div>
     ),
 
     /**
@@ -59,11 +96,11 @@ export const DataCell = {
     ),
 
     /** Standardized Entity ID with prefix and padding (Uses EntityBadge, matches Status badge typography/size) */
-    Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
+    Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: object, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
         // Resolve label: prefer entityLabel > label > legacy type mapping (see entity-registry.ts)
-        const resolvedLabel = entityLabel || label || (type ? resolveLegacyEntityType(type) : undefined);
+        const resolvedLabel = entityLabel || label || (type ? findEntityLabel(type) : undefined);
 
-        const finalData = data || { id: number, number, display_id: number };
+        const finalData: Record<string, unknown> = (data as Record<string, unknown>) || { id: number, number, display_id: number };
 
         return (
             <div className={cn("flex justify-center items-center w-full", className)} {...props}>
@@ -77,18 +114,19 @@ export const DataCell = {
         const { openEntity } = useGlobalModals();
         return (
             <div className={cn("flex justify-center items-center w-full group", className)}>
-                <button
+                <Button
+                    variant="ghost"
                     onClick={(e) => {
                         e.stopPropagation();
                         if (onClick) onClick(e);
                         else if (contactId) openEntity('contacts.contact', Number(contactId));
                     }}
-                    className={cn("flex justify-center items-center gap-1.5 text-[13px] font-bold hover:underline hover:text-primary/80 transition-colors text-foreground")}
+                    className={cn("flex justify-center items-center gap-1.5 text-sm font-bold hover:underline hover:text-primary/80 transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
                     {...props}
                 >
                     <span className="truncate">{children}</span>
                     <ExternalLink className="h-3 w-3 text-primary/50 group-hover:text-primary transition-colors flex-shrink-0" />
-                </button>
+                </Button>
             </div>
         )
     },
@@ -112,13 +150,14 @@ export const DataCell = {
         }
         return (
             <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
-                <button
+                <Button
+                    variant="ghost"
                     onClick={onClick}
-                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 text-center w-fit")}
+                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
                     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                 >
                     {children}
-                </button>
+                </Button>
             </div>
         )
     },
@@ -131,6 +170,7 @@ export const DataCell = {
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
             <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>
+                {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
                 {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-xs font-medium text-foreground flex justify-center items-center">{suffix}</span>}
             </div>
         )
@@ -175,6 +215,7 @@ export const DataCell = {
                     "text-xs font-medium tabular-nums flex justify-center items-center",
                     colorClass
                 )}>
+                    {/* eslint-disable-next-line no-restricted-syntax -- flow/polarity quantity format, not currency */}
                     {sign}{Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 {unit && (
@@ -213,10 +254,12 @@ export const DataCell = {
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
         if (!value) return <div className={cn("flex justify-center items-center w-full text-[12px] text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-[13px] font-medium text-foreground whitespace-nowrap", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-sm font-medium text-foreground whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
-                    const date = new Date(value)
+                    const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+                        ? parseDateOnly(value)
+                        : new Date(value)
                     return <span className="text-[11px] text-muted-foreground/60 ml-1.5">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
                 })()}
             </div>
@@ -255,10 +298,10 @@ export const DataCell = {
 
     /**
      * Standardized Row Action
-     * Incorporates CropFrame and a Ghost Button.
-     * - hover:bg-transparent overrides ghost default accent fill; CropFrame is the sole hover feedback.
+     * Ghost Button with hover feedback.
+     * - hover:bg-transparent overrides ghost default accent fill.
      * - Tooltip uses the dark sidebar palette for visual consistency.
-     * Enforces rounded-none for design system compliance.
+     * Tooltip uses rounded-sm (atomic), DropdownMenuContent uses rounded-lg (overlay).
      *
      * Two forms:
      * - Registry form (preferred): <DataCell.Action action="edit" onClick={...} />
@@ -317,7 +360,7 @@ export const DataCell = {
                         </div>
                     </TooltipTrigger>
                     {title && (
-                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-none animate-in fade-in zoom-in-95 duration-200">
+                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                             {title}
                         </TooltipContent>
                     )}
@@ -377,7 +420,7 @@ export const DataCell = {
                     </TooltipTrigger>
                     <DropdownMenuContent
                         align={align}
-                        className="rounded-none border-sidebar-border min-w-[10rem]"
+                        className="rounded-lg border-sidebar-border min-w-[10rem]"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {items.map((item, idx) => {
@@ -400,7 +443,7 @@ export const DataCell = {
                                         e.stopPropagation()
                                         if ('onClick' in item && item.onClick) item.onClick(e as unknown as React.MouseEvent)
                                     }}
-                                    className="text-[11px] font-black uppercase tracking-widest rounded-none cursor-pointer"
+                                    className="text-[11px] font-black uppercase tracking-widest rounded-sm cursor-pointer"
                                 >
                                     <Icon className="h-3.5 w-3.5" />
                                     {label}
@@ -409,7 +452,7 @@ export const DataCell = {
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-none animate-in fade-in zoom-in-95 duration-200">
+                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                     {title}
                 </TooltipContent>
             </Tooltip>
@@ -487,5 +530,137 @@ export function createActionsColumn<TData>({
         ),
         enableSorting: false,
         enableHiding: false,
+    }
+}
+
+// ─── Standard Column Factories ─────────────────────────────────────────────────
+// Eliminate the 5-line `header: ({column}) => <DataTableColumnHeader ...>` + cell
+// boilerplate that repeats identically across every DataTable definition.
+// ───────────────────────────────────────────────────────────────────────────────
+
+interface ColOpts<TData> {
+    /** Override the default cell renderer */
+    cell?: (row: TData) => ReactNode
+    /** Additional class for the header wrapper */
+    headerClassName?: string
+    /** Disable column sorting (default: true) */
+    enableSorting?: boolean
+}
+
+/** Cell content renderer — returns only the inner content, not the DataCell.* wrapper. */
+type CellContent<TData> = (row: TData) => ReactNode
+
+/**
+ * Creates a Code/identifier column.
+ * Default cell: `<DataCell.Code>{row.getValue(accessorKey)}</DataCell.Code>`
+ * Pass `render` to provide custom inner content while keeping the DataCell.Code wrapper.
+ */
+export function createCodeColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { render?: CellContent<TData> }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => (
+            <DataCell.Code>
+                {opts?.render ? opts.render(row.original) : ((row.getValue(accessorKey) as string) ?? "-")}
+            </DataCell.Code>
+        ),
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Date column.
+ * Default cell: `<DataCell.Date value={row.getValue(accessorKey)} />`
+ * Pass `{ showTime: true }` to display hours/minutes.
+ */
+export function createDateColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { showTime?: boolean }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Date value={row.getValue(accessorKey) as string | Date} showTime={opts?.showTime} />,
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Currency column.
+ * Default cell: `<DataCell.Currency value={row.getValue(accessorKey)} />`
+ */
+export function createCurrencyColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { digits?: number }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Currency value={row.getValue(accessorKey) as number | string} digits={opts?.digits} />,
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Secondary text column.
+ * Default cell: `<DataCell.Secondary>{row.getValue(accessorKey)}</DataCell.Secondary>`
+ */
+export function createSecondaryColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData>
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Secondary>{(row.getValue(accessorKey) as string) ?? "-"}</DataCell.Secondary>,
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Contact link column.
+ * Default cell: `<DataCell.ContactLink contactId={row.original[contactIdAccessor]}>{row.getValue(accessorKey)}</DataCell.ContactLink>`
+ * @param contactIdAccessor — field on the row data that holds the contact ID (default: "partner")
+ */
+export function createContactColumn<TData>(
+    accessorKey: string,
+    title: string,
+    contactIdAccessor?: string,
+    opts?: ColOpts<TData>
+): ColumnDef<TData> {
+    const idField = contactIdAccessor ?? "partner"
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => {
+            const original = row.original as Record<string, unknown>
+            return <DataCell.ContactLink contactId={original[idField] as number | undefined}>{row.getValue(accessorKey) as string}</DataCell.ContactLink>
+        },
+        enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates a Status badge column.
+ * Default cell: `<DataCell.Status status={row.getValue(accessorKey)} />`
+ * Use `opts.variant` for dot/hub variants, `opts.label` to override display text.
+ */
+export function createStatusColumn<TData>(
+    accessorKey: string,
+    title: string,
+    opts?: ColOpts<TData> & { variant?: "default" | "hub" | "dot"; label?: string }
+): ColumnDef<TData> {
+    return {
+        accessorKey,
+        header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
+        cell: ({ row }) => <DataCell.Status status={row.getValue(accessorKey) as string} variant={opts?.variant} label={opts?.label} />,
+        enableSorting: opts?.enableSorting ?? true,
     }
 }

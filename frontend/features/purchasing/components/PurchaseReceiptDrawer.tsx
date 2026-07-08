@@ -1,25 +1,54 @@
 "use client"
 
 import React, { useRef } from "react"
-import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
+import { Chip, Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
+import { useMemo } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
+import { useDrawerIdentity } from "@/features/_shared"
 import { Button } from "@/components/ui/button"
-import { Printer, PackageCheck } from "lucide-react"
+import { Printer } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
-import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { PrintableLayout } from "@/features/_shared"
 import { usePurchaseReceipt } from "../hooks/usePurchasing"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 interface PurchaseReceiptDrawerProps {
-    receiptId: number | null
+    receiptId?: number | null
+    id?: number | null
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
 }
 
-export function PurchaseReceiptDrawer({ receiptId, open, onOpenChange }: PurchaseReceiptDrawerProps) {
-    const { receipt, isLoading } = usePurchaseReceipt(receiptId, open)
+export function PurchaseReceiptDrawer({ receiptId, id, open, onOpenChange }: PurchaseReceiptDrawerProps) {
+    const entityId = receiptId ?? id ?? null
+    const { receipt, isLoading } = usePurchaseReceipt(entityId, open)
+    const identity = useDrawerIdentity('purchasing.purchasereceipt', 'view', receipt as Record<string, unknown> | undefined, {
+        overrideTitle: receipt ? `Recepción ${String((receipt as Record<string, unknown>).number)}` : "Recepción de Compra",
+    })
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
+
+    const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => [
+        {
+            id: "product",
+            header: "Producto",
+            cell: ({ row }) => String(row.original.product_name)
+        },
+        {
+            id: "quantity",
+            header: "Cantidad",
+            cell: ({ row }) => String(row.original.quantity_received),
+            meta: { align: "right" }
+        },
+        {
+            id: "cost",
+            header: "Costo",
+            cell: ({ row }) => formatCurrency(Number(row.original.unit_cost || 0)),
+            meta: { align: "right" }
+        }
+    ], [])
 
     return (
         <>
@@ -66,63 +95,68 @@ export function PurchaseReceiptDrawer({ receiptId, open, onOpenChange }: Purchas
                 onOpenChange={onOpenChange}
                 side="left"
                 boundary="embedded"
-                defaultSize="50%"
-                title={<><span>{receipt ? `Recepción ${(receipt as any).number}` : "Recepción de Compra"}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
-                subtitle={(receipt as any)?.supplier_name}
-                icon={PackageCheck}
+                defaultSize={formDrawerWidth("master", false)}
+                title={identity.title}
+                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                subtitle={identity.subtitle}
+                icon={identity.icon}
 
             >
                 {isLoading ? (
                     <SkeletonShell isLoading={true} ariaLabel="Cargando recepción" />
                 ) : receipt ? (
                     (() => {
-                        const r = receipt as any
+                        const r = receipt as Record<string, unknown>
+                        const lines = r.lines as Array<Record<string, unknown>> | undefined
+                        const receiptType = r.receipt_type as string | undefined
+                        const relatedNote = r.related_note_display as string | undefined
                         return (
                             <div className="p-4 space-y-4">
+                                {receiptType === 'debit_note' && (
+                                    <div className="flex items-center gap-2">
+                                        <Chip intent="warning" size="sm">Nota Débito</Chip>
+                                        {relatedNote && (
+                                            <span className="text-sm text-muted-foreground">ND: {relatedNote}</span>
+                                        )}
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span className="text-muted-foreground">Número</span>
-                                        <p className="font-medium">{r.number}</p>
+                                        <p className="font-medium">{String(r.number)}</p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Estado</span>
-                                        <p><StatusBadge status={r.status} /></p>
+                                        <p><StatusBadge status={String(r.status)} /></p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Proveedor</span>
-                                        <p className="font-medium">{r.supplier_name}</p>
+                                        <p className="font-medium">{String(r.supplier_name)}</p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Bodega</span>
-                                        <p className="font-medium">{r.warehouse_name}</p>
+                                        <p className="font-medium">{String(r.warehouse_name)}</p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Orden de Compra</span>
-                                        <p className="font-medium">{r.purchase_order_number}</p>
+                                        <p className="font-medium">{String(r.purchase_order_number)}</p>
                                     </div>
                                 </div>
-                                {r.lines?.length > 0 && (
+                                {lines && lines.length > 0 && (
                                     <div>
                                         <h4 className="text-sm font-medium mb-2">Líneas</h4>
-                                        <div className="border rounded-lg overflow-hidden">
-                                            <table className="w-full text-sm">
-                                                <thead className="bg-muted">
-                                                    <tr>
-                                                        <th className="p-2 text-left">Producto</th>
-                                                        <th className="p-2 text-right">Cantidad</th>
-                                                        <th className="p-2 text-right">Costo</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {r.lines.map((line: any, idx: number) => (
-                                                        <tr key={idx} className="border-t">
-                                                            <td className="p-2">{String(line.product_name)}</td>
-                                                            <td className="p-2 text-right">{String(line.quantity_received)}</td>
-                                                            <td className="p-2 text-right">{formatCurrency(Number(line.unit_cost || 0))}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                        <div className="border rounded-md overflow-hidden">
+                                            <DataTable
+                                                columns={columns}
+                                                data={lines}
+                                                variant="minimal"
+                                                hidePagination
+                                                noBorder
+                                                emptyState={{
+                                                    title: "No hay líneas",
+                                                    description: "No se encontraron líneas."
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                 )}

@@ -55,12 +55,13 @@ export function DatePicker({
 
   return (
     <>
-      <button
+      <Button
+        variant="ghost"
         type="button"
         disabled={disabled}
         onClick={() => handleOpenChange(true)}
         className={cn(
-          "flex items-center gap-1 justify-start text-left",
+          "flex items-center gap-1 justify-start text-left text-sm text-foreground",
           "cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
           !date && "text-muted-foreground",
           className
@@ -68,7 +69,7 @@ export function DatePicker({
       >
         <CalendarIcon className="h-4 w-4 shrink-0" />
         {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
-      </button>
+      </Button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent size="sm" className="p-4 sm:p-5">
@@ -98,12 +99,13 @@ export function DatePicker({
               const val = preset.getValue()
               const key = formatDateKey(val)
               return (
-                <button
+                <Button
                   key={preset.label}
+                  variant={selectedKey === key ? "default" : "outline"}
                   type="button"
                   onClick={() => setTempDate(val)}
                   className={cn(
-                    "px-3 py-1.5 rounded-md text-xs font-medium transition-all border cursor-pointer",
+                    "px-3 py-1.5 rounded-md text-xs font-medium transition-all border cursor-pointer shadow-none",
                     "hover:bg-accent hover:border-primary/30 active:scale-95",
                     selectedKey === key
                       ? "bg-primary/10 border-primary text-primary"
@@ -111,7 +113,7 @@ export function DatePicker({
                   )}
                 >
                   {preset.label}
-                </button>
+                </Button>
               )
             })}
           </div>

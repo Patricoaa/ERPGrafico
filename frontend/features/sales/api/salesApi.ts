@@ -1,6 +1,9 @@
 import api from '@/lib/api'
 import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
-import { Invoice } from '@/features/billing/types'
+import type { SaleNoteFilters } from '../hooks/useSalesOrders'
+import { type Invoice } from '@/features/billing'
+import { toPage } from '@/lib/pagination'
+import type { Page, PageParams } from '@/lib/pagination'
 
 /**
  * Centralized API service for sales operations
@@ -9,16 +12,27 @@ export const salesApi = {
     /**
      * Fetch all sales orders
      */
-    getOrders: async (filters?: SaleOrderFilters): Promise<SaleOrder[]> => {
+    getOrders: async (filters?: SaleOrderFilters): Promise<Page<SaleOrder>> => {
         const params = new URLSearchParams()
-        if (filters?.status) params.append('status', filters.status)
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.customer_name) params.append('customer_name', filters.customer_name)
         if (filters?.date_after) params.append('date_after', filters.date_after)
         if (filters?.date_before) params.append('date_before', filters.date_before)
+        if (filters?.total_min) params.append('total_min', filters.total_min)
+        if (filters?.total_max) params.append('total_max', filters.total_max)
+        if (filters?.number) params.append('number', filters.number)
+        if (filters?.product_name) params.append('product_name', filters.product_name)
+        if (filters?.delivery_status) params.append('delivery_status', filters.delivery_status)
+        if (filters?.origin_status) params.append('origin_status', filters.origin_status)
+        if (filters?.billing_status) params.append('billing_status', filters.billing_status)
+        if (filters?.payment_status) params.append('payment_status', filters.payment_status)
+        if (filters?.production_status) params.append('production_status', filters.production_status)
         if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
+        if (filters?.search) params.append('search', filters.search)
 
-        const { data } = await api.get<SaleOrder[]>('/sales/orders/', { params })
-        return data
+        const { data } = await api.get('/sales/orders/', { params })
+        return toPage<SaleOrder>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     },
 
     /**
@@ -82,51 +96,53 @@ export const salesApi = {
     },
 
     /**
+     * Fetch deliveries (paginated, standalone list)
+     */
+    getDeliveriesPaginated: async (filters?: Record<string, unknown>): Promise<Page<Record<string, unknown>>> => {
+        const params = new URLSearchParams()
+        const page = Number(filters?.page ?? 1)
+        const page_size = Number(filters?.page_size ?? 50)
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.status) params.append('status', String(filters.status))
+        if (filters?.date_after) params.append('date_after', String(filters.date_after))
+        if (filters?.date_before) params.append('date_before', String(filters.date_before))
+        if (filters?.customer_name) params.append('customer_name', String(filters.customer_name))
+        if (filters?.sale_order_number) params.append('sale_order_number', String(filters.sale_order_number))
+        if (filters?.warehouse_id) params.append('warehouse_id', String(filters.warehouse_id))
+        if (filters?.search) params.append('search', String(filters.search))
+        if (filters?.note_type) params.append('note_type', String(filters.note_type))
+        const { data } = await api.get('/sales/deliveries/', { params })
+        return toPage<Record<string, unknown>>(data, page, page_size)
+    },
+
+    /**
+     * Fetch a single delivery by id
+     */
+    getDelivery: async (id: number): Promise<Record<string, unknown>> => {
+        const { data } = await api.get(`/sales/deliveries/${id}/`)
+        return data
+    },
+
+    /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
-    getSalesNotes: async (filters?: { date_after?: string, date_before?: string, customer_name?: string }): Promise<SaleNote[]> => {
+    getSalesNotes: async (filters?: SaleNoteFilters): Promise<Page<SaleNote>> => {
         const params = new URLSearchParams()
-        params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
-        params.append('sale_order__isnull', 'true') // Actually false in logic: sale_order__isnull=false means it HAS a sale order. In Django filter: sale_order__isnull=false. 
-        // Wait, the original code used params object: { sale_order__isnull: false }
-        // api.get handles boolean to string conversion usually? Or maybe I should send 'false'.
-        // Let's verify original code.
-
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.customer_name) params.append('customer_name', filters.customer_name)
         if (filters?.date_after) params.append('date_after', filters.date_after)
         if (filters?.date_before) params.append('date_before', filters.date_before)
+        if (filters?.total_min) params.append('total_min', filters.total_min)
+        if (filters?.total_max) params.append('total_max', filters.total_max)
+        if (filters?.number) params.append('number', filters.number)
+        if (filters?.status) params.append('status', filters.status)
+        params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
+        params.append('sale_order__isnull', 'false')
 
-        // We need to pass sale_order__isnull=false. 
-        // If I use params.append('sale_order__isnull', 'false'), it might work depending on backend.
-        // Original code:
-        /*
-            const response = await api.get('/billing/invoices/', {
-                params: {
-                    dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                    sale_order__isnull: false
-                }
-            })
-        */
-        // I will replicate this.
+        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
 
-        const { data } = await api.get<Invoice[]>('/billing/invoices/', {
-            params: {
-                dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                sale_order__isnull: false,
-                ...filters
-            }
-        })
-
-        const results = data
-        // Client-side filtering was also done in original code:
-        /*
-             const salesNotes = results.filter((inv: Invoice) =>
-                 ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.sale_order
-             )
-        */
-        // The server filter `sale_order__isnull=false` should handle `inv.sale_order`.
-        // `dte_type__in` handles the type.
-        // So results should be correct.
-
-        return results
+        return toPage<SaleNote>(data, filters?.page ?? 1, filters?.page_size ?? 50)
     }
 }

@@ -6,9 +6,11 @@ import {
     BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect,
     MoneyDisplay, LabeledInput,
 } from '@/components/shared'
+import { useServerDate } from '@/hooks/useServerDate'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
-import { useLoanMutations } from './hooks'
+import { useLoanMutations } from '../hooks/useLoans'
 import type { BankLoanCurrency, LoanInstallment } from './types'
+import { parseDateOnly } from '@/lib/utils'
 
 interface Props {
     installment: LoanInstallment
@@ -21,25 +23,15 @@ interface Props {
 export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate, open, onOpenChange }: Props) {
     const { accounts } = useTreasuryAccounts()
     const { payInstallment, isPaying } = useLoanMutations()
+    const { dateString } = useServerDate()
 
     const [paymentAccount, setPaymentAccount] = useState('')
-    const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10))
+    const [payDate, setPayDate] = useState(dateString || new Date().toISOString().slice(0, 10))
     const [principalAmount, setPrincipalAmount] = useState(installment.principal_amount)
     const [interestAmount, setInterestAmount] = useState(installment.interest_amount)
     const [insuranceAmount, setInsuranceAmount] = useState(installment.insurance_amount)
     const [taxAmount, setTaxAmount] = useState('0')
-    const [penaltyAmount, setPenaltyAmount] = useState(
-        installment.status === 'OVERDUE' && parseFloat(penaltyRate || '0') > 0
-            ? (() => {
-                const days = Math.max(0, Math.floor(
-                    (new Date().getTime() - new Date(installment.due_date).getTime()) / 86_400_000,
-                ))
-                return days > 0
-                    ? (parseFloat(installment.total_amount) * (parseFloat(penaltyRate || '0') / 100) * (days / 30)).toFixed(2)
-                    : '0'
-            })()
-            : '0'
-    )
+    const [penaltyAmount, setPenaltyAmount] = useState('0')
 
     const disbursementAccounts = (accounts ?? []).filter(
         (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
@@ -59,7 +51,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
     // cuota_total × tasa/100 × días_atraso/30.
     const penaltyRateNum = parseFloat(penaltyRate || '0')
     const daysLate = Math.max(0, Math.floor(
-        (new Date(payDate).getTime() - new Date(installment.due_date).getTime()) / 86_400_000,
+        (parseDateOnly(payDate).getTime() - parseDateOnly(installment.due_date).getTime()) / 86_400_000,
     ))
     const estimatedPenalty = installment.status === 'OVERDUE' && penaltyRateNum > 0 && daysLate > 0
         ? parseFloat(installment.total_amount) * (penaltyRateNum / 100) * (daysLate / 30)
@@ -97,7 +89,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     <span>Pagar Cuota #{installment.number}</span>
                 </div>
             }
-            subtitle={`${installment.loan_display_id} · Vence ${new Date(installment.due_date).toLocaleDateString('es-CL')}`}
+            subtitle={`${installment.loan_display_id} · Vence ${installment.due_date ? parseDateOnly(installment.due_date).toLocaleDateString('es-CL') : '—'}`}
             footer={
                 <FormFooter
                     actions={
@@ -117,7 +109,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
         >
             <div className="space-y-5">
                 {/* Desglose editable de la cuota */}
-                <div className="rounded-lg border border-border p-4 space-y-3">
+                <div className="rounded-md border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
                         Desglose de la cuota
@@ -164,7 +156,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
 
                 {/* Mora estimada (cuota vencida) */}
                 {estimatedPenalty > 0 && penaltyEdit === 0 && (
-                    <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 space-y-2">
+                    <div className="rounded-md border border-warning/30 bg-warning/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-warning">
                             <AlertTriangle className="h-4 w-4" />
                             Mora por atraso ({daysLate} {daysLate === 1 ? 'día' : 'días'})
@@ -188,7 +180,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
 
                 {/* Conversión UF → CLP */}
                 {isUF && (
-                    <div className="rounded-lg border border-info/30 bg-info/5 p-4 space-y-2">
+                    <div className="rounded-md border border-info/30 bg-info/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-info">
                             <ArrowRight className="h-4 w-4" />
                             Conversión UF → CLP

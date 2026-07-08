@@ -31,8 +31,8 @@ export function useContactSearch(params: ContactSearchParams = {}, enabled: bool
             if (isVendor !== undefined && isVendor) q.append("is_vendor", "true")
             if (isPartnerOnly) q.append("is_partner", "true")
             
-            const res = await api.get<Contact[]>(`/contacts/?${q.toString()}`, { signal })
-            return res.data
+            const res = await api.get<{ results: Contact[] }>(`/contacts/?${q.toString()}`, { signal })
+            return res.data.results
         },
         enabled,
         staleTime: 5 * 60 * 1000, // 5 min
@@ -47,7 +47,7 @@ export function useContactSearch(params: ContactSearchParams = {}, enabled: bool
 
 export function useSingleContact(id: string | number | null) {
     const query = useQuery({
-        queryKey: CONTACT_KEYS.detail(id!),
+        queryKey: id ? CONTACT_KEYS.detail(id) : ['contacts', 'detail', 'noop'],
         queryFn: async ({ signal }) => {
             const res = await api.get(`/contacts/${id}/`, { signal })
             return res.data as Contact

@@ -1,5 +1,5 @@
 import type { VariantProps } from "class-variance-authority"
-import { dialogContentVariants } from "@/components/ui/dialog"
+import { type dialogContentVariants } from "@/components/ui/dialog"
 
 export type BaseModalSize = NonNullable<VariantProps<typeof dialogContentVariants>["size"]>
 

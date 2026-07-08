@@ -157,22 +157,12 @@ export function useDownloadInvoice() {
 
 ## B. Async (reporte grande)
 
-### Step 1 — Modelo ExportJob (compartido)
+### Step 1 — Modelo BackgroundJob (compartido)
 
-Si no existe aún, crearlo en `backend/core/models/jobs.py` (1 sola vez, reusable):
+El modelo `BackgroundJob` ya existe en `backend/core/models/jobs.py` (compartido entre exports e imports). No necesitas crear uno nuevo.
 
 ```python
-class ExportJob(models.Model):
-    JOB_STATUS = [("pending","pending"),("running","running"),("done","done"),("error","error")]
-    user             = models.ForeignKey("core.User", on_delete=models.PROTECT)
-    entity           = models.CharField(max_length=64)
-    format           = models.CharField(max_length=8)
-    filters          = models.JSONField(default=dict)
-    status           = models.CharField(max_length=16, choices=JOB_STATUS, default="pending")
-    storage_key      = models.CharField(max_length=256, blank=True)
-    error_message    = models.TextField(blank=True)
-    created_at       = models.DateTimeField(auto_now_add=True, db_index=True)
-    completed_at     = models.DateTimeField(null=True)
+# El modelo ya tiene los campos: user, job_type, status, title, progress_percent, result_file_url, error_message, completed_at
 ```
 
 ### Step 2 — Service que genera el xlsx
@@ -208,30 +198,27 @@ def build_sales_book(period_start, period_end) -> bytes:
 ```python
 # backend/billing/tasks.py
 from celery import shared_task
-from core.models.jobs import ExportJob
-from core.storage import upload_to_exports_bucket  # helper que sube y devuelve key
+from core.models.jobs import BackgroundJob
+from core.storage import upload_to_exports_bucket
+from core.tasks import start_job, finish_job_success, finish_job_error
 from .services.sales_book_export import build_sales_book
 
 @shared_task(bind=True, max_retries=2)
 def export_sales_book_task(self, job_id: int, period_start: str, period_end: str):
-    job = ExportJob.objects.get(pk=job_id)
-    job.status = "running"; job.save(update_fields=["status"])
+    start_job(job_id)
     try:
         blob = build_sales_book(period_start, period_end)
         key = upload_to_exports_bucket(
-            user_id=job.user_id,
-            job_id=job.id,
+            job_id=job_id,
             ext="xlsx",
             blob=blob,
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
-        job.storage_key = key
-        job.status = "done"
-        job.completed_at = timezone.now()
-        job.save(update_fields=["storage_key", "status", "completed_at"])
+        # El bucket manager podría retornar la URL directa, o tú armarla.
+        file_url = f"/storage/{key}"
+        finish_job_success(job_id, file_url=file_url)
     except Exception as e:
-        job.status = "error"; job.error_message = str(e)
-        job.save(update_fields=["status", "error_message"])
+        finish_job_error(job_id, str(e))
         raise
 ```
 
@@ -244,34 +231,18 @@ class SalesBookExportView(APIView):
     def get(self, request):
         period_start = request.query_params["period_start"]
         period_end = request.query_params["period_end"]
-        job = ExportJob.objects.create(
+        job = BackgroundJob.objects.create(
             user=request.user,
-            entity="billing.sales_book",
-            format="xlsx",
-            filters={"period_start": period_start, "period_end": period_end},
+            job_type="EXPORT",
+            title=f"Libro de Ventas {period_start}",
         )
         export_sales_book_task.delay(job.id, period_start, period_end)
-        return Response({"job_id": job.id, "poll_url": f"/api/jobs/{job.id}/"}, status=202)
+        return Response({"job_id": job.id, "status": "PENDING"}, status=202)
 ```
 
-### Step 5 — Endpoint `/api/jobs/{id}/` (compartido)
+### Step 5 — Endpoint `/api/core/jobs/` (compartido)
 
-Si no existe aún, crear vista `JobStatusView` que devuelve estado + signed URL cuando `done`. Sirve también para imports (ver [add-bulk-import.md](add-bulk-import.md)).
-
-```python
-class JobStatusView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
-        job = get_object_or_404(ExportJob.objects.filter(user=request.user), pk=pk)
-        data = {"id": job.id, "status": job.status}
-        if job.status == "done":
-            data["download_url"] = signed_url_for_object(job.storage_key, expires=900)
-            data["expires_at"] = (timezone.now() + timedelta(seconds=900)).isoformat()
-        if job.status == "error":
-            data["error"] = job.error_message
-        return Response(data)
-```
+El API de jobs ya existe en `/api/core/jobs/`. Devuelve la lista y detalle de los jobs del usuario autenticado. No tienes que programar este endpoint.
 
 ### Step 6 — Hook frontend con polling
 

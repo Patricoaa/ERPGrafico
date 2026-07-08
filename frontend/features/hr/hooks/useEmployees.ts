@@ -5,8 +5,8 @@ import type { FilterState } from '@/components/shared'
 
 export const EMPLOYEES_QUERY_KEY = ['hr', 'employees'] as const
 
-export function useEmployees(filters?: FilterState) {
-    const { data, isLoading, refetch } = useQuery({
+export function useEmployees(filters?: FilterState, initialData?: Employee[]) {
+    const query = useQuery({
         queryKey: [...EMPLOYEES_QUERY_KEY, filters],
         queryFn: (): Promise<Employee[]> => {
             const params: Record<string, string> = {}
@@ -15,25 +15,35 @@ export function useEmployees(filters?: FilterState) {
             return getEmployees(Object.keys(params).length ? params : undefined)
         },
         staleTime: 2 * 60 * 1000,
+        initialData,
+        placeholderData: (prev) => prev,
     })
 
+    const employees = query.data ?? []
+    const showSkeleton = query.isLoading && !employees.length
+    const refetch = query.refetch
+    const isRefetching = query.isFetching && !showSkeleton
+
     return {
-        employees: data ?? [],
-        isLoading,
+        employees,
+        isLoading: showSkeleton,
         refetch,
+        isRefetching,
     }
 }
 
 export function useEmployee(id: number | string | undefined) {
-    return useQuery({
+    const { data: employee, isLoading, isError } = useQuery({
         queryKey: [...EMPLOYEES_QUERY_KEY, 'detail', id],
         queryFn: () => getEmployee(Number(id)),
+        staleTime: 5 * 60 * 1000,
         enabled: !!id,
     })
+    return { employee: employee ?? null, isLoading, isError }
 }
 
 export function useEmployeeFormDeps(enabled: boolean) {
-    return useQuery({
+    const { data: employeeFormDeps, isLoading, isError } = useQuery({
         queryKey: ['hr', 'employee-form-deps'],
         queryFn: async () => {
             const [afpsData, conceptsData] = await Promise.all([
@@ -45,6 +55,8 @@ export function useEmployeeFormDeps(enabled: boolean) {
                 concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC')
             }
         },
+        staleTime: 10 * 60 * 1000,
         enabled
     })
+    return { employeeFormDeps: employeeFormDeps ?? null, isLoading, isError }
 }

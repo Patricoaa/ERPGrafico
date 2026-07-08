@@ -14,12 +14,13 @@ import {
     FileText,
     Receipt
 } from "lucide-react"
-import { LazyDrawer } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
-import { OrderHubIntegrated } from "./OrderHubIntegrated"
+import { OrderHubView, type OrderHubData } from "./OrderHubView"
+import type { Order, Payment } from "../types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-    StatusBadge, PanelHeader
+    PanelHeader
 } from "@/components/shared"
 
 export interface OrderHubPanelProps {
@@ -29,6 +30,7 @@ export interface OrderHubPanelProps {
     onClose?: () => void
     onActionSuccess?: () => void
     onEdit?: (orderId: number) => void
+    onOpenDetail?: (docType: string, docId: number | string) => void
     posSessionId?: number | null
     showHeader?: boolean
 }
@@ -40,13 +42,14 @@ export function OrderHubPanel({
     onClose,
     onActionSuccess,
     onEdit,
+    onOpenDetail,
     posSessionId = null,
     showHeader = false,
 }: OrderHubPanelProps) {
     const hubData = useOrderHubData({ orderId, invoiceId, type, enabled: true })
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
 
-    const { setHubTemporarilyHidden } = useHubPanel()
+    useHubPanel()
     const { openEntity } = useGlobalModals()
 
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: string, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
@@ -54,6 +57,10 @@ export function OrderHubPanel({
     const openDetails = (docType: string, docId: number | string) => {
         if (docType === 'work_order') {
             openEntity('production.workorder', Number(docId))
+            return
+        }
+        if (onOpenDetail) {
+            onOpenDetail(docType, docId)
             return
         }
         setDetailsModal({ open: true, type: docType, id: docId })
@@ -108,7 +115,7 @@ export function OrderHubPanel({
                 {/* Phase cards skeleton */}
                 <div className="flex-1 overflow-y-auto px-4 pt-5 pb-4 space-y-2.5">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                        <div key={i} className="p-4 rounded-md border border-border bg-card/50 space-y-4">
                             <div className="flex justify-between items-center">
                                 <div className="h-5 w-40 rounded bg-muted animate-pulse" />
                                 <div className="h-5 w-5 rounded-full bg-muted animate-pulse" />
@@ -127,7 +134,6 @@ export function OrderHubPanel({
         )
     }
 
-    const StatusIcon = globalStatus.icon
     const TopLeftIcon = (() => {
         if (activeDoc?.dte_type === 'NOTA_CREDITO' || activeDoc?.dte_type === 'NOTA_DEBITO') return Receipt
         if (activeInvoice || type === 'purchase' || type === 'obligation') return FileText
@@ -153,8 +159,23 @@ export function OrderHubPanel({
                 {/* ── Scrollable Phase Content ──────────────────────── */}
                 <ScrollArea className="flex-1 w-full ">
                     <div className="px-4 pt-5 pb-4">
-                        <OrderHubIntegrated
-                            data={{ ...hubData, globalStatus } as any}
+                        <OrderHubView
+                            data={{
+                                order: hubData.order,
+                                activeInvoice: hubData.activeInvoice,
+                                activeDoc: hubData.activeDoc,
+                                userPermissions: hubData.userPermissions,
+                                isNoteMode: hubData.isNoteMode,
+                                noteStatuses: hubData.noteStatuses,
+                                showProduction: hubData.showProduction,
+                                showLogistics: hubData.showLogistics,
+                                invoices: hubData.invoices as unknown as Order[],
+                                billingIsComplete: hubData.billingIsComplete,
+                                payments: hubData.payments as unknown as Payment[],
+                                logisticsProgress: hubData.logisticsProgress,
+                                fetchOrderDetails: hubData.fetchOrderDetails,
+                                globalStatus,
+                            } as OrderHubData}
                             type={type}
                             onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                             openDetails={openDetails}
@@ -166,12 +187,15 @@ export function OrderHubPanel({
                 </ScrollArea>
 
                 {/* Shared Modal for viewing Details */}
-                <LazyDrawer
-                    type={detailsModal.type}
-                    id={Number(detailsModal.id)}
-                    open={detailsModal.open}
-                    onOpenChange={(open) => !open && closeDetails()}
-                />
+                {!onOpenDetail && (
+                    <LazyDrawer
+                        type={detailsModal.type}
+                        id={Number(detailsModal.id)}
+                        open={detailsModal.open}
+                        onOpenChange={(open) => !open && closeDetails()}
+                        saleOrderId={detailsModal.type === 'sale_delivery' ? activeDoc?.id : undefined}
+                    />
+                )}
             </div>
         </TooltipProvider>
     )

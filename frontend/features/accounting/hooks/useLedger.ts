@@ -8,12 +8,14 @@ export { LEDGER_QUERY_KEY }
 
 export function useLedger(
     accountId: number,
-    startDate: string,
-    endDate: string
+    startDate?: string,
+    endDate?: string
 ) {
+    const sd = startDate ?? ''
+    const ed = endDate ?? ''
     return useQuery<LedgerData>({
-        queryKey: [LEDGER_QUERY_KEY, accountId, startDate, endDate],
-        queryFn: () => accountingApi.getLedger(accountId, startDate, endDate),
+        queryKey: [LEDGER_QUERY_KEY, accountId, sd, ed],
+        queryFn: () => accountingApi.getLedger(accountId, sd, ed),
         staleTime: 2 * 60 * 1000, // 2 min
     })
 }

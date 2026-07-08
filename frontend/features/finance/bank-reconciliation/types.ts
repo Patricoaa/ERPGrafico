@@ -3,6 +3,7 @@
 export interface BankStatement {
     id: number
     display_id: string
+    treasury_account: number
     treasury_account_name: string
     statement_date: string
     opening_balance: string
@@ -14,6 +15,21 @@ export interface BankStatement {
     state_display: string
     imported_by_name: string
     imported_at: string
+}
+
+export interface ReconciliationMovement {
+    id: number
+    movement_type_display?: string
+    notes?: string
+    reference?: string
+    amount: string
+}
+
+export interface ReconciliationBatch {
+    id: number
+    terminal_name?: string
+    display_id?: string
+    net_amount: string
 }
 
 export interface BankStatementLine {
@@ -31,8 +47,8 @@ export interface BankStatementLine {
     reconciliation_status: string // Legacy or alias for state
     reconciliation_group_data?: {
         id: number
-        movements: any[]
-        batches: any[]
+        movements: ReconciliationMovement[]
+        batches: ReconciliationBatch[]
         difference_amount: number
         difference_type: string
         difference_type_display: string
@@ -85,57 +101,6 @@ export interface TreasuryAccount {
     reconciliation_settings?: ReconciliationSettings
 }
 
-export interface DashboardPendingItem {
-    id: number
-    date: string
-    account: string
-    description: string
-    amount: number
-    is_credit: boolean
-    days_pending: number
-    is_overdue: boolean
-    statement_id: number
-}
-
-export interface DashboardKPIData {
-    lines: {
-        total: number
-        reconciled: number
-        pending: number
-    }
-    reconciliation_rate: number
-    differences: {
-        count: number
-        total_amount: number
-        by_type: Record<string, { label: string; count: number }>
-    }
-    statements: {
-        total: number
-        confirmed: number
-        draft: number
-    }
-}
-
-export interface TrendItem {
-    month: string
-    total_lines: number
-    reconciled_lines: number
-}
-
-export interface RecentActivity {
-    id: number
-    type: 'MATCH' | 'IMPORT' | 'CONFIRM' | 'EXCLUDE'
-    description: string
-    timestamp: string
-    user_name: string
-}
-
-export interface ReconciliationDashboardStats {
-    total_unreconciled_lines: number
-    total_unreconciled_amount: number
-    oldest_unreconciled_date: string | null
-    recent_activity: RecentActivity[]
-}
 
 export interface PaginatedResponse<T> {
     results: T[]
@@ -181,4 +146,15 @@ export interface PaymentAllocationPayload {
     sale_order?: number
     purchase_order?: number
     bank_statement_line?: number
+}
+
+export interface PaymentSuggestion {
+    is_batch?: boolean
+    payment_data?: { id: number, contact_name: string }
+    batch_data?: { id: number, name: string, display_id?: string }
+    difference: string
+}
+
+export interface LineSuggestion {
+    line_data: { id: number, description: string }
 }

@@ -5,6 +5,7 @@ from simple_history.models import HistoricalRecords
 
 class TimeStampedModel(models.Model):
     """Cualquier entidad que necesite saber cuándo se creó/modificó."""
+
     created_at = models.DateTimeField(_("Creado el"), auto_now_add=True)
     updated_at = models.DateTimeField(_("Actualizado el"), auto_now=True)
 
@@ -14,6 +15,7 @@ class TimeStampedModel(models.Model):
 
 class AuditedModel(TimeStampedModel):
     """Entidad con historial completo (simple_history). Hereda timestamps."""
+
     history = HistoricalRecords(inherit=True)
 
     class Meta:
@@ -32,15 +34,16 @@ class TransactionalDocument(AuditedModel):
     - journal_entry: usa related_name='+' para evitar colisiones; redeclarar si se necesita reverso.
     - decimal_places=0: CLP no tiene centavos (ADR-0014).
     """
+
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
     status = models.CharField(_("Estado"), max_length=20)
     notes = models.TextField(_("Notas"), blank=True)
     journal_entry = models.OneToOneField(
-        'accounting.JournalEntry',
+        "accounting.JournalEntry",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name='+',
+        related_name="+",
     )
     total_net = models.DecimalField(_("Neto"), max_digits=14, decimal_places=0, default=0)
     total_tax = models.DecimalField(_("Impuesto"), max_digits=14, decimal_places=0, default=0)
@@ -48,4 +51,4 @@ class TransactionalDocument(AuditedModel):
 
     class Meta:
         abstract = True
-        ordering = ['-id']
+        ordering = ["-id"]

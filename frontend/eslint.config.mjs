@@ -7,11 +7,13 @@ import nextTs from "eslint-config-next/typescript";
 import boundaries from "eslint-plugin-boundaries";
 import fsdNoApiInComponent from "./eslint-rules/fsd-no-api-in-component.mjs";
 import paginationNoEnvelopeDiscard from "./eslint-rules/pagination-no-envelope-discard.mjs";
+import paginationNoRawResponseData from "./eslint-rules/pagination-no-raw-response-data.mjs";
 import paginationDatatableNeedsRowcount from "./eslint-rules/pagination-datatable-needs-rowcount.mjs";
 import noRawTailwindColors from "./eslint-rules/no-raw-tailwind-colors.mjs";
 import formsMustUseHook from "./eslint-rules/forms-must-use-hook.mjs";
 import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
+import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -39,21 +41,29 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       rules: [
         // app/ must not import feature internals — use barrel
         {
-          from: ["app"],
-          disallow: ["feature-internal"],
+          from: { type: "app" },
+          disallow: [{ to: { type: "feature-internal" } }],
           message: "app/ must import from features/[name]/index.ts barrel, not internals.",
         },
         // ui base stays generic — no app-specific imports
         {
-          from: ["ui"],
-          disallow: ["feature-internal", "feature-barrel", "app"],
+          from: { type: "ui" },
+          disallow: [
+            { to: { type: "feature-internal" } },
+            { to: { type: "feature-barrel" } },
+            { to: { type: "app" } },
+          ],
           message: "components/ui/ is Shadcn base — no app-specific imports.",
         },
-        // shared components cannot touch lib/api
+        // shared components cannot touch lib/api — allow pure utils
         {
-          from: ["shared"],
-          disallow: ["lib"],
+          from: { type: "shared" },
+          disallow: [{ to: { type: "lib" } }],
           message: "Shared components must not import @/lib/api. Wrap in a hook.",
+        },
+        {
+          from: { type: "shared" },
+          allow: [{ to: { type: "lib", path: ["**/lib/utils/**", "**/lib/money.ts", "**/lib/errors.ts", "**/lib/form-widths.ts"] } }],
         },
       ],
     }],
@@ -65,7 +75,9 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   files: ["**/*.ts", "**/*.tsx"],
   languageOptions: {
     parserOptions: {
-      projectService: true,
+      projectService: {
+        allowDefaultProject: [".storybook/*.ts"],
+      },
     },
   },
   rules: {
@@ -80,6 +92,23 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       "fixStyle": "inline-type-imports",
       "disallowTypeAnnotations": true,
     }],
+  },
+}, // Feature zero-any enforcement (error for clean features, warn for pending migration)
+{
+  files: ["features/**/*.ts", "features/**/*.tsx"],
+  rules: {
+    "@typescript-eslint/no-explicit-any": "error",
+  },
+},
+{
+  files: [
+    "features/inventory/**/*.ts", "features/inventory/**/*.tsx",
+    "features/contacts/**/*.ts", "features/contacts/**/*.tsx",
+    "features/orders/**/*.ts", "features/orders/**/*.tsx",
+    "features/_shared/transaction-drawer/drawerRegistry.tsx",
+  ],
+  rules: {
+    "@typescript-eslint/no-explicit-any": "warn",
   },
 }, // Test exceptions — override rules that would be too strict in test files
 {
@@ -117,8 +146,11 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       ]
     }]
   }
-}, {
-  files: ["features/**/*.ts", "features/**/*.tsx"],
+}, // Cross-feature internal import guard for hooks/ and shared/
+// This block applies to hooks/ and shared/ where the features block below doesn't reach
+// (the features block takes precedence for features/ files since it comes later).
+{
+  files: ["hooks/**/*.ts", "hooks/**/*.tsx", "components/shared/**/*.ts", "components/shared/**/*.tsx"],
   rules: {
     "no-restricted-imports": ["error", {
       patterns: [
@@ -138,11 +170,21 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
           group: ["@/features/*/types/*", "@/features/*/types/**"],
           message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
         },
+        {
+          group: ["@/features/*/utils/*", "@/features/*/utils/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
+        },
+        {
+          group: ["@/features/*/actions", "@/features/*/actions/*",
+                   "@/features/*/contexts/*", "@/features/*/contexts/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internal file.",
+        },
       ],
     }],
   },
-}, // Block direct @/components/ui/skeleton imports outside of components/shared (where it's implemented)
-// Excludes **/skeletons/** — those files ARE skeleton implementations and may use the primitive.
+}, // Cross-feature internal import guard + skeleton restriction for features/ and app/
+// NOTE: this block OVERRIDES the previous block for features/ files (flat config last-wins).
+// That's intentional — the previous block only applies to hooks/ and shared/.
 {
   files: ["features/**/*.ts", "features/**/*.tsx", "app/**/*.ts", "app/**/*.tsx"],
   ignores: ["features/**/skeletons/**"],
@@ -152,6 +194,33 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
         name: "@/components/ui/skeleton",
         message: "Import skeleton components from @/components/shared barrel, not @/components/ui/skeleton directly.",
       }],
+      patterns: [
+        {
+          group: ["@/features/*/components/*", "@/features/*/components/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/hooks/*", "@/features/*/hooks/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/api/*", "@/features/*/api/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/types/*", "@/features/*/types/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+        },
+        {
+          group: ["@/features/*/utils/*", "@/features/*/utils/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not utils/ subpath.",
+        },
+        {
+          group: ["@/features/*/actions", "@/features/*/actions/*",
+                   "@/features/*/contexts/*", "@/features/*/contexts/**"],
+          message: "Cross-feature: import from barrel (features/[name]/index.ts), not internal file.",
+        },
+      ],
     }],
   },
 }, // FSD invariant #5 — components must not import @/lib/api directly.
@@ -177,10 +246,16 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
 {
   files: ["features/*/api/**/*.ts", "features/*/hooks/**/*.ts"],
   plugins: {
-    pagination: { rules: { "no-envelope-discard": paginationNoEnvelopeDiscard } },
+    pagination: {
+      rules: {
+        "no-envelope-discard": paginationNoEnvelopeDiscard,
+        "no-raw-response-data": paginationNoRawResponseData,
+      },
+    },
   },
   rules: {
     "pagination/no-envelope-discard": "error",
+    "pagination/no-raw-response-data": "error",
   },
 },
 // 2. datatable-needs-rowcount: any <DataTable manualPagination /> without
@@ -197,7 +272,8 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
 },
 // UI component data fetching and formatting restrictions
 {
-  files: ["components/**/*.tsx", "features/*/components/**/*.tsx"],
+  files: ["components/**/*.tsx", "features/**/*.tsx"],
+  ignores: ["features/**/hooks/**", "features/**/api/**", "features/**/__tests__/**"],
   rules: {
     "no-restricted-imports": ["error", {
       paths: [{
@@ -279,6 +355,15 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   },
   rules: {
     "status/must-use-statusbadge": "warn",
+  },
+}, // Mutation hooks must call markLocalMutation() — docs/20-contracts/hook-contracts.md Rule 2
+{
+  files: ["features/*/hooks/**/*.ts"],
+  plugins: {
+    mutation: { rules: { "must-mark-local": mutationMustMarkLocal } },
+  },
+  rules: {
+    "mutation/must-mark-local": "warn",
   },
 }, ...storybook.configs["flat/recommended"]]);
 
