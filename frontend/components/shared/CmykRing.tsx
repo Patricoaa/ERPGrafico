@@ -3,7 +3,7 @@
 import React from "react"
 import { cn } from "@/lib/utils"
 
-type RingSize = "sm" | "md" | "lg"
+type RingSize = "xs" | "sm" | "md" | "lg"
 
 interface CmykRingProps {
   size?: RingSize
@@ -11,6 +11,7 @@ interface CmykRingProps {
 }
 
 const SIZE_MAP: Record<RingSize, string> = {
+  xs: "h-2 w-2",
   sm: "h-4 w-4",
   md: "h-6 w-6",
   lg: "h-8 w-8",
@@ -26,7 +27,7 @@ const CMYK_WHEEL =
  * References the circular process‑colour control patches found on
  * prepress proofing bars and colour‑density measurement targets.
  *
- * Sizes: sm (16px), md (24px), lg (32px). Pass className to add rings,
+ * Sizes: xs (8px), sm (16px), md (24px), lg (32px). Pass className to add rings,
  * shadows, or other adornments.
  */
 export function CmykRing({ size = "md", className }: CmykRingProps) {
