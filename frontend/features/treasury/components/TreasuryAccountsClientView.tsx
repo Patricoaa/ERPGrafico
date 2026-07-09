@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
-import { EntityCard, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from '@/components/shared'
-import { treasuryAccountSearchDef } from "../searchDef"
-import { treasuryAccountSegDef } from "../segmentationDef"
+import { EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { treasuryAccountUnifiedSearchDef } from "../unifiedSearchDef"
 import {
     type ColumnDef,
     type Row,
@@ -33,11 +32,8 @@ interface TreasuryAccountsClientViewProps {
 
 export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProps> = ({ activeTab, externalOpen, createAction }) => {
     const { openEntity } = useGlobalModalActions()
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryAccountSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryAccountSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const accountsFilters = { ...textFilters, ...segFilters }
-    const { accounts, isLoading, deleteAccount, refetch } = useTreasuryAccounts({ filters: accountsFilters })
+    const search = useUnifiedSearch(treasuryAccountUnifiedSearchDef)
+    const { accounts, isLoading, deleteAccount, refetch } = useTreasuryAccounts({ filters: search.filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
@@ -263,11 +259,25 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                             isLoading={isLoading}
                             variant="embedded"
                             createAction={activeTab === "accounts" ? createAction : undefined}
-                            smartSearch={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
-                            segmentation={<SegmentationBar def={treasuryAccountSegDef} />}
-                            showReset={isFiltered}
-                            onReset={() => { clearText(); clearSeg() }}
-                            isFiltered={isFiltered}
+                            unifiedSearch={<UnifiedSearchBar
+                                config={treasuryAccountUnifiedSearchDef}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                                placeholder="Buscar cuenta..."
+                            />}
+                            unifiedSearchConfig={treasuryAccountUnifiedSearchDef}
+                            currentGroupBy={search.groupBy}
+                            showReset={search.isFiltered}
+                            onReset={search.clearAll}
+                            isFiltered={search.isFiltered}
                             emptyState={{
                                 context: "treasury",
                                 title: "Aún no hay cuentas de tesorería",

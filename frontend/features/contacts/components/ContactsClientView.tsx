@@ -12,9 +12,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DataCell, Chip, EntityCard } from '@/components/shared'
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback, SmartSearchBar, SegmentationBar, useSmartSearch, useSegmentation } from "@/components/shared"
-import { contactSearchDef } from "@/features/contacts/searchDef"
-import { contactSegDef } from "@/features/contacts/segmentationDef"
+import { LoadingFallback, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -31,12 +30,9 @@ interface ContactsClientViewProps {
 }
 
 export function ContactsClientView({ isNewModalOpen = false, createAction, initialContacts }: ContactsClientViewProps) {
-    const { filters: smartFilters, isFiltered: isTextFiltered } = useSmartSearch(contactSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered } = useSegmentation(contactSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...smartFilters, ...segFilters }
+    const search = useUnifiedSearch(contactsUnifiedSearchDef)
     const { contacts, isLoading, isRefetching, deleteContact } = useContacts({
-        filters: allFilters as ContactFilters,
+        filters: search.filters as ContactFilters,
         initialData: initialContacts,
     })
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -220,11 +216,27 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                         isLoading={isLoading}
                         isRefetching={isRefetching}
                         variant="embedded"
-                        smartSearch={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o email..." className="w-full" />}
-                        segmentation={<SegmentationBar def={contactSegDef} />}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={contactsUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            placeholder="Buscar por nombre, RUT o email..."
+                        />}
+                        unifiedSearchConfig={contactsUnifiedSearchDef}
+                        currentGroupBy={search.groupBy}
+                        showReset={search.isFiltered}
+                        onReset={search.clearAll}
                         defaultPageSize={20}
                         createAction={createAction}
-                        isFiltered={isFiltered}
+                        isFiltered={search.isFiltered}
                         emptyState={{
                             context: "users",
                             title: "Aún no hay contactos",

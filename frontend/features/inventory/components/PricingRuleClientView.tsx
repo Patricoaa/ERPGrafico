@@ -48,16 +48,12 @@ interface PricingRuleClientViewProps {
 }
 
 import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
-import { Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
-import { pricingRuleSearchDef } from "@/features/inventory/searchDef"
-import { pricingRuleSegDef } from "@/features/inventory/segmentationDef"
+import { Chip, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { pricingRuleUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 
 export function PricingRuleClientView({ externalOpen, onExternalOpenChange, createAction }: PricingRuleClientViewProps) {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(pricingRuleSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(pricingRuleSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
-    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(allFilters)
+    const search = useUnifiedSearch(pricingRuleUnifiedSearchDef)
+    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(search.filters)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -239,12 +235,26 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                     isLoading={isLoading}
                     entityLabel="inventory.pricingrule"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
-                    segmentation={<SegmentationBar def={pricingRuleSegDef} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={pricingRuleUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar reglas de precio..."
+                    />}
+                    unifiedSearchConfig={pricingRuleUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay reglas de precio",

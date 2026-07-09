@@ -9,11 +9,10 @@ import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
-import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
+import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr"
-import { employeeSearchDef } from "../searchDef"
-import { employeeSegDef } from "../segmentationDef"
+import { employeeUnifiedSearchDef } from "../unifiedSearchDef"
 
 interface EmployeeClientViewProps {
     initialEmployees?: Employee[]
@@ -24,10 +23,8 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(employeeSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(employeeSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees } = useEmployees({ ...textFilters, ...segFilters }, initialEmployees)
+    const search = useUnifiedSearch(employeeUnifiedSearchDef)
+    const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees } = useEmployees(search.filters, initialEmployees)
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
     })
@@ -146,13 +143,27 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                     isLoading={loading}
                     isRefetching={isRefetching}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
-                    segmentation={<SegmentationBar def={employeeSegDef} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={employeeUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por nombre o RUT..."
+                    />}
+                    unifiedSearchConfig={employeeUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "users",
                         title: "Aún no hay empleados",
