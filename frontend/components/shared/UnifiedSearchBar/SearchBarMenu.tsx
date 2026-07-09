@@ -44,7 +44,7 @@ export function SearchBarMenu({
           <Filter className="h-3 w-3" />
           Filtrar por
         </div>
-        <ScrollArea className="max-h-[40vh]">
+        <ScrollArea className="max-h-[80vh]">
           <div className="p-1.5">
             <FilterSection
               filters={filters}
@@ -63,7 +63,7 @@ export function SearchBarMenu({
           <Layers className="h-3 w-3" />
           Agrupar por
         </div>
-        <ScrollArea className="max-h-[40vh]">
+        <ScrollArea className="max-h-[80vh]">
           <div className="p-1.5">
             {hasGroupBy && groupBy && (
               <GroupBySection
