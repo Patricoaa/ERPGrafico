@@ -73,7 +73,7 @@ function getChipVariant(source: FlatParamDef['source']): UnifiedChip['variant'] 
   switch (source) {
     case 'search':
     case 'searchField':
-      return 'search'
+      return 'filter'
     case 'toggle':
     case 'multi':
       return 'filter'

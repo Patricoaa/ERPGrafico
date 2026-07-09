@@ -85,6 +85,14 @@ export function UnifiedSearchBar({
     [inputValue, chips, onApply, onInputChange],
   )
 
+  const handleSuggestionSelect = useCallback(
+    async (param: string, value: string) => {
+      await onApply(param, value)
+      onInputChange('')
+    },
+    [onApply, onInputChange],
+  )
+
   const handleClose = useCallback(() => {
     setMenuOpen(false)
   }, [])
@@ -170,7 +178,7 @@ export function UnifiedSearchBar({
             <SearchSuggestions
               inputValue={inputValue}
               searchFields={config.searchFields}
-              onSelect={onApply}
+              onSelect={handleSuggestionSelect}
               onClose={handleClose}
             />
           ) : (
