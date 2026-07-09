@@ -7,9 +7,11 @@ import type {
   ToggleFilterDef,
   RangeFilterDef,
   MultiSelectFilterDef,
+  SingleSelectFilterDef,
   CustomFilterDef,
 } from '@/types/unified-search'
 import { ToggleFilterItem } from './filters/ToggleFilterItem'
+import { SingleSelectFilterItem } from './filters/SingleSelectFilterItem'
 import { MultiSelectFilterItem } from './filters/MultiSelectFilterItem'
 import { DateFilterAccordion } from './filters/DateFilterAccordion'
 import { RangeFilterAccordion } from './filters/RangeFilterAccordion'
@@ -70,6 +72,19 @@ export function FilterSection({
               key={mf.key}
               def={mf}
               selectedValues={selectedValues}
+              activeParams={activeParams}
+              onApply={onApply}
+              onRemove={onRemove}
+            />
+          )
+        }
+        if (filter.type === 'single') {
+          const sf = filter as SingleSelectFilterDef
+          return (
+            <SingleSelectFilterItem
+              key={sf.key}
+              def={sf}
+              selectedValue={(paramValues[sf.serverParam] as string) ?? ''}
               activeParams={activeParams}
               onApply={onApply}
               onRemove={onRemove}

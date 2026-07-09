@@ -9,13 +9,14 @@ import type {
   ToggleFilterDef,
   RangeFilterDef,
   MultiSelectFilterDef,
+  SingleSelectFilterDef,
 } from '@/types/unified-search'
 
 const PRESERVED_PARAMS = new Set(['selected'])
 
 type FlatParamDef = {
   param: string
-  source: 'search' | 'searchField' | 'toggle' | 'multi' | 'rangeFrom' | 'rangeTo' | 'dateFrom' | 'dateTo' | 'basePeriodFrom' | 'basePeriodTo'
+  source: 'search' | 'searchField' | 'toggle' | 'multi' | 'single' | 'rangeFrom' | 'rangeTo' | 'dateFrom' | 'dateTo' | 'basePeriodFrom' | 'basePeriodTo'
   label: string
 }
 
@@ -37,6 +38,9 @@ function collectParamDefs(config: UnifiedSearchConfig): FlatParamDef[] {
     } else if (filter.type === 'multi') {
       const f = filter as MultiSelectFilterDef
       defs.push({ param: f.serverParam, source: 'multi', label: f.label })
+    } else if (filter.type === 'single') {
+      const f = filter as SingleSelectFilterDef
+      defs.push({ param: f.serverParam, source: 'single', label: f.label })
     } else if (filter.type === 'range') {
       const f = filter as RangeFilterDef
       defs.push({ param: f.serverParamFrom, source: 'rangeFrom', label: `${f.label} (desde)` })
@@ -76,6 +80,7 @@ function getChipVariant(source: FlatParamDef['source']): UnifiedChip['variant'] 
       return 'filter'
     case 'toggle':
     case 'multi':
+    case 'single':
       return 'filter'
     case 'rangeFrom':
     case 'rangeTo':
@@ -153,8 +158,11 @@ export function useUnifiedSearch(config: UnifiedSearchConfig): UseUnifiedSearchR
         if (!paramDef) continue
 
         let valueLabel = value
-        // For multi-select, show count or single label
-        if (paramDef.source === 'multi') {
+        if (paramDef.source === 'single') {
+          const filterDef = config.filters?.find(f => f.type === 'single' && f.serverParam === param) as SingleSelectFilterDef | undefined
+          const opt = filterDef?.options.find(o => o.value === value)
+          valueLabel = opt?.label ?? value
+        } else if (paramDef.source === 'multi') {
           const parts = value.split(',').filter(Boolean)
           if (parts.length === 1) {
             const filterDef = config.filters?.find(f => f.type === 'multi' && f.serverParam === param) as MultiSelectFilterDef | undefined
@@ -209,6 +217,41 @@ export function useUnifiedSearch(config: UnifiedSearchConfig): UseUnifiedSearchR
     [setCursor, setParamValues],
   )
 
+  const filterFn = useCallback(
+    <T>(data: T[]): T[] => {
+      if (Object.keys(filters).length === 0) return data
+
+      return data.filter((row) => {
+        const r = row as Record<string, unknown>
+        if (filters.search) {
+          const searchVal = filters.search.toLowerCase()
+          const matchesGlobal = Object.values(r).some((val) =>
+            String(val ?? '').toLowerCase().includes(searchVal)
+          )
+          if (!matchesGlobal) return false
+        }
+
+        for (const field of config.searchFields) {
+          if (field.serverParam === 'search') continue
+          const filterVal = filters[field.serverParam]
+          if (!filterVal) continue
+
+          const clientKeys = field.clientKey
+            ? (Array.isArray(field.clientKey) ? field.clientKey : [field.clientKey])
+            : [field.key]
+
+          const matches = clientKeys.some((k) =>
+            String(r[k] ?? '').toLowerCase().includes(filterVal.toLowerCase())
+          )
+          if (!matches) return false
+        }
+
+        return true
+      })
+    },
+    [filters, config.searchFields],
+  )
+
   return {
     filters,
     paramValues: paramValues as Record<string, string | null>,
@@ -221,5 +264,6 @@ export function useUnifiedSearch(config: UnifiedSearchConfig): UseUnifiedSearchR
     clearAll,
     inputValue,
     setInputValue,
+    filterFn,
   }
 }

@@ -1,4 +1,5 @@
 export { SegmentationBar } from './SegmentationBar'
 export { useSegmentation } from './useSegmentation'
+export { useSegmentationTable } from './context'
 export type { UseSegmentationReturn, SegmentationFilterState } from './types'
 export * from './styles'

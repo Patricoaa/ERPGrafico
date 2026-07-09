@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { Search, ChevronDown, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 import { SearchBarMenu } from './SearchBarMenu'
@@ -26,6 +27,7 @@ interface UnifiedSearchBarProps {
   paramValues: Record<string, string | null>
   placeholder?: string
   className?: string
+  prefix?: React.ReactNode
 }
 
 function formatChipLabel(chip: UnifiedChip): string {
@@ -37,17 +39,16 @@ function formatChipLabel(chip: UnifiedChip): string {
 export function UnifiedSearchBar({
   config,
   chips,
-  isFiltered,
   inputValue,
   onInputChange,
   onApply,
   onRemove,
-  onClearAll,
   groupBy,
   onGroupBySelect,
   paramValues,
   placeholder = 'Buscar...',
   className,
+  prefix,
 }: UnifiedSearchBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [forceFilters, setForceFilters] = useState(false)
@@ -115,6 +116,8 @@ export function UnifiedSearchBar({
                 "cursor-pointer",
               )}
             >
+              {prefix}
+
               <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 
               <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
@@ -127,9 +130,9 @@ export function UnifiedSearchBar({
                           "inline-flex items-center gap-1 h-5 px-1.5 rounded-sm text-[11px] font-medium whitespace-nowrap shrink-0 max-w-[180px]",
                           chip.variant === 'search' && "bg-muted text-muted-foreground",
                           chip.variant === 'filter' && "bg-primary/10 text-primary",
-                          chip.variant === 'date' && "bg-blue-500/10 text-blue-600",
-                          chip.variant === 'range' && "bg-amber-500/10 text-amber-600",
-                          chip.variant === 'group' && "bg-purple-500/10 text-purple-600",
+                          chip.variant === 'date' && "bg-info/10 text-info",
+                          chip.variant === 'range' && "bg-warning/10 text-warning",
+                          chip.variant === 'group' && "bg-pantone-violet/10 text-pantone-violet",
                         )}
                       >
                         <span className="truncate">{formatChipLabel(chip)}</span>

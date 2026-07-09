@@ -33,17 +33,6 @@ export const subscriptionSearchDef: SearchDefinition = {
   ],
 }
 
-export const uomSearchDef: SearchDefinition = {
-  fields: [
-    {
-      key: 'search',
-      label: 'Nombre / Abreviación',
-      type: 'text',
-      serverParam: 'search',
-    },
-  ],
-}
-
 export const attributeSearchDef: SearchDefinition = {
   fields: [
     {
@@ -55,18 +44,6 @@ export const attributeSearchDef: SearchDefinition = {
   ],
 }
 
-export const categorySearchDef: SearchDefinition = {
-  fields: [
-    {
-      key: 'name',
-      label: 'Nombre',
-      type: 'text',
-      serverParam: 'name',
-      clientKey: ['name', 'parent_name'],
-    },
-  ],
-}
-
 export const uomCategorySearchDef: SearchDefinition = {
   fields: [
     {
@@ -74,18 +51,6 @@ export const uomCategorySearchDef: SearchDefinition = {
       label: 'Nombre',
       type: 'text',
       serverParam: 'name',
-    },
-  ],
-}
-
-export const warehouseSearchDef: SearchDefinition = {
-  fields: [
-    {
-      key: 'name',
-      label: 'Nombre / Código',
-      type: 'text',
-      serverParam: 'name',
-      clientKey: ['name', 'code', 'address'],
     },
   ],
 }
