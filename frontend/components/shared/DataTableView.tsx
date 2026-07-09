@@ -5,10 +5,11 @@ import { type Row, type Table as ReactTable } from "@tanstack/react-table"
 import { useViewMode } from "@/hooks/useViewMode"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView, createCardGroupLoadingView } from "@/lib/view-helpers"
-import { type AggregatorDef } from "@/lib/group-utils"
 import { DataTable, type DataTableProps } from "./DataTable"
 import { DomainCard } from "./DomainCard"
 import type { EntityCardSkeletonProps } from "./EntityCard"
+import type { AggregatorDef } from "@/lib/group-utils"
+import type { UnifiedSearchConfig } from "@/types/unified-search"
 
 interface DataTableViewProps<TData, TValue>
   extends Omit<DataTableProps<TData, TValue>,
@@ -20,6 +21,7 @@ interface DataTableViewProps<TData, TValue>
   renderCard?: (data: TData, row: Row<TData>, table?: ReactTable<TData>) => React.ReactNode
   isSelected?: (data: TData) => boolean
   isHubOpen?: boolean
+  /** @deprecated Migrate to unifiedSearchConfig + currentGroupBy */
   cardGroupBy?: {
     field: string
     sort?: 'asc' | 'desc'
@@ -27,6 +29,8 @@ interface DataTableViewProps<TData, TValue>
     defaultLabel?: string
     aggregators?: AggregatorDef[]
   }
+  unifiedSearchConfig?: UnifiedSearchConfig
+  currentGroupBy?: string | null
   cardSkeleton?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
 }
 
@@ -38,6 +42,8 @@ export function DataTableView<TData, TValue>({
   isSelected,
   isHubOpen,
   cardGroupBy,
+  unifiedSearchConfig,
+  currentGroupBy,
   cardSkeleton,
   ...dataTableProps
 }: DataTableViewProps<TData, TValue>) {
@@ -46,23 +52,38 @@ export function DataTableView<TData, TValue>({
   const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel)
   const hasBulkActions = !!(dataTableProps.bulkActions?.length || dataTableProps.bulkDock)
 
+  const derivedCardGroupBy = useMemo(() => {
+    // Prefer unified search group-by when available
+    if (unifiedSearchConfig?.groupBy?.length && currentGroupBy) {
+      const option = unifiedSearchConfig.groupBy.find(g => g.key === currentGroupBy)
+      if (option) {
+        return {
+          field: option.field,
+          sort: 'desc' as const,
+          aggregators: option.aggregators,
+        }
+      }
+    }
+    // Fall back to deprecated cardGroupBy prop
+    if (cardGroupBy) {
+      return cardGroupBy as {
+        field: string
+        sort?: 'asc' | 'desc'
+        aggregators?: AggregatorDef[]
+      }
+    }
+    return undefined
+  }, [unifiedSearchConfig, currentGroupBy, cardGroupBy])
+
   const internalCustomView = useMemo((): ((table: ReactTable<TData>) => React.ReactNode) | undefined => {
     if (!isCustomView) return undefined
     if (!policy && !externalRenderCustomView) return undefined
     if (externalRenderCustomView) return externalRenderCustomView
     if (!policy) return undefined
 
-    const cardGroupByAsRecord = cardGroupBy as unknown as {
-      field: string
-      sort?: 'asc' | 'desc'
-      labelFn?: (key: string, rawKey: unknown, items: Record<string, unknown>[]) => { label: string; sublabel?: string }
-      defaultLabel?: string
-      aggregators?: AggregatorDef[]
-    } | undefined
-
     switch (policy.cardComponent) {
       case "domain":
-        if (cardGroupByAsRecord) {
+        if (derivedCardGroupBy) {
           return createCardGroupView({
             renderCard: (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => {
               const isAnySelected = table ? table.getSelectedRowModel().rows.length > 0 : false
@@ -84,7 +105,7 @@ export function DataTableView<TData, TValue>({
                 isAnySelected,
               })
             },
-            cardGroupBy: cardGroupByAsRecord,
+            cardGroupBy: derivedCardGroupBy,
             gridLayout: policy.gridLayout,
             emptyState: dataTableProps.emptyState,
             isFiltered: dataTableProps.isFiltered,
@@ -100,10 +121,10 @@ export function DataTableView<TData, TValue>({
         }) as unknown as (table: ReactTable<TData>) => React.ReactNode
       case "entity":
         if (!renderCard) return undefined
-        if (cardGroupByAsRecord) {
+        if (derivedCardGroupBy) {
           return createCardGroupView({
             renderCard: renderCard as (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode,
-            cardGroupBy: cardGroupByAsRecord,
+            cardGroupBy: derivedCardGroupBy,
             gridLayout: policy.gridLayout,
             emptyState: dataTableProps.emptyState,
             isFiltered: dataTableProps.isFiltered,
@@ -120,13 +141,13 @@ export function DataTableView<TData, TValue>({
       default:
         return undefined
     }
-  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, cardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered, hasBulkActions, dataTableProps.bulkActions, dataTableProps.bulkDock])
+  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, derivedCardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered, hasBulkActions, dataTableProps.bulkActions, dataTableProps.bulkDock])
 
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView
     if (!isCustomView) return undefined
     if (policy?.cardComponent === "domain" || policy?.cardComponent === "entity" || externalRenderCustomView) {
-      if (cardGroupBy) {
+      if (derivedCardGroupBy) {
         return createCardGroupLoadingView({
           gridLayout: policy?.gridLayout,
           skeletonProps: cardSkeleton,
@@ -135,7 +156,7 @@ export function DataTableView<TData, TValue>({
       return createCardLoadingView(policy?.gridLayout ?? "single-column", undefined, cardSkeleton)
     }
     return undefined
-  }, [externalLoadingView, externalRenderCustomView, isCustomView, policy, cardSkeleton, cardGroupBy])
+  }, [externalLoadingView, externalRenderCustomView, isCustomView, policy, cardSkeleton, derivedCardGroupBy])
 
   return (
     <DataTable

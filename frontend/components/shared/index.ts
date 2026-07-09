@@ -94,6 +94,21 @@ export { SegmentationBar, useSegmentation } from './SegmentationBar';
 export type { UseSegmentationReturn, SegmentationFilterState } from './SegmentationBar';
 export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX, SEG_INPUT, TOOLBAR_ICON_BTN, TOOLBAR_MENU_ITEM, TAB_TOOLBAR_TRIGGER } from './SegmentationBar';
 
+// Unified Search (reemplaza SmartSearch + Segmentation + GroupBy)
+export { UnifiedSearchBar, useUnifiedSearch } from './UnifiedSearchBar';
+export type {
+  UnifiedSearchConfig,
+  UnifiedChip,
+  UseUnifiedSearchReturn,
+  TextFieldDef,
+  ToggleFilterDef,
+  DateFilterDef,
+  RangeFilterDef,
+  GroupByOptionDef,
+  DropdownFilterDef,
+  AggregatorDef,
+} from '@/types/unified-search';
+
 // Filters & Inputs
 export * from './DatePicker';
 export * from './DateRangeFilter';
