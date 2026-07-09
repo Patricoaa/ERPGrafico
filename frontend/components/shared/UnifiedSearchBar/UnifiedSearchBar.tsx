@@ -140,7 +140,6 @@ export function UnifiedSearchBar({
                 value={inputValue}
                 onChange={(e) => onInputChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onClick={(e) => e.stopPropagation()}
                 placeholder={chips.length === 0 ? placeholder : ''}
                 className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground/60 h-full"
               />
