@@ -528,7 +528,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                 ? "Crea una orden de compra para registrar tus adquisiciones a proveedores."
                                 : "Las notas asociadas a tus documentos de compra aparecerán aquí.",
                         }}
-                        cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
+                        cardGroupBy={{ field: 'date', sort: 'desc' }}
                     />
                 </div>
             </Tabs>

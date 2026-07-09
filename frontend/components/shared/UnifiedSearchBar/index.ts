@@ -11,6 +11,6 @@ export type {
   MultiSelectFilterDef,
   GroupByOptionDef,
   DropdownFilterDef,
-  AggregatorDef,
+
   CustomFilterDef,
 } from '@/types/unified-search'

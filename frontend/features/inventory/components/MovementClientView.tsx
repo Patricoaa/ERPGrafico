@@ -201,7 +201,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                         title: "Aún no hay movimientos de stock",
                         description: "Los movimientos se registran al recibir, despachar o ajustar inventario.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'quantity', fn: 'sum', format: 'number' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
+                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(move: StockMove) => {
                         const typeConfig = MOVE_TYPE_MAP[move.move_type] || { intent: 'neutral' as const, label: move.move_type }
                         return (

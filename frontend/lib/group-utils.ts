@@ -1,21 +1,9 @@
-export type AggregateFn = 'sum' | 'count' | 'avg' | 'min' | 'max'
-export type AggregateFormat = 'money' | 'number' | 'integer'
-
-export interface AggregatorDef {
-  key: string
-  label: string
-  field?: string
-  fn: AggregateFn
-  format?: AggregateFormat
-}
-
 export interface Group<T> {
   key: string
   rawKey: unknown
   label: string
   sublabel?: string
   items: T[]
-  aggregates: Record<string, number>
 }
 
 function parseSafeDate(value: unknown): Date | null {
@@ -30,7 +18,7 @@ function parseSafeDate(value: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d
 }
 
-function normalizeDateKey(d: Date): string {
+export function normalizeDateKey(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, "0")
   const day = String(d.getDate()).padStart(2, "0")
@@ -75,22 +63,6 @@ function getFieldValue<T>(item: T, field: string): unknown {
   return (item as Record<string, unknown>)[field]
 }
 
-function computeAggregate(values: number[], fn: AggregateFn): number {
-  if (values.length === 0) return 0
-  switch (fn) {
-    case 'sum':
-      return values.reduce((a, b) => a + b, 0)
-    case 'count':
-      return values.length
-    case 'avg':
-      return values.reduce((a, b) => a + b, 0) / values.length
-    case 'min':
-      return Math.min(...values)
-    case 'max':
-      return Math.max(...values)
-  }
-}
-
 export function groupItems<T>(
   items: T[],
   field: string,
@@ -100,7 +72,6 @@ export function groupItems<T>(
     defaultLabel?: string
     parseValue?: (value: unknown) => string | null
   },
-  aggregators?: AggregatorDef[],
 ): Group<T>[] {
   const { sort = 'desc', defaultLabel = 'Sin categoría' } = options ?? {}
 
@@ -148,25 +119,7 @@ export function groupItems<T>(
       label = String(rawKey)
     }
 
-    const aggregates: Record<string, number> = {}
-    if (aggregators) {
-      for (const agg of aggregators) {
-        if (agg.fn === 'count' && !agg.field) {
-          aggregates[agg.key] = groupItems.length
-          continue
-        }
-        const aggField = agg.field
-        if (aggField) {
-          const values = groupItems.map((item) => {
-            const val = getFieldValue(item, aggField)
-            return typeof val === 'number' ? val : Number(val) || 0
-          })
-          aggregates[agg.key] = computeAggregate(values, agg.fn)
-        }
-      }
-    }
-
-    return { key, rawKey, label, sublabel, items: groupItems, aggregates }
+    return { key, rawKey, label, sublabel, items: groupItems }
   })
 
   if (noKeyItems.length > 0) {
@@ -176,7 +129,6 @@ export function groupItems<T>(
       label: defaultLabel,
       sublabel: undefined,
       items: noKeyItems,
-      aggregates: {},
     })
   }
 
@@ -186,7 +138,6 @@ export function groupItems<T>(
 export function groupByDate<T>(
   items: T[],
   dateField: string,
-  aggregators?: AggregatorDef[],
 ): Group<T>[] {
   const now = new Date()
   const nowKey = normalizeDateKey(now)
@@ -207,6 +158,5 @@ export function groupByDate<T>(
       },
       labelFn: (key: string) => getDateLabelAndSublabel(key, nowKey, yesterdayKey),
     },
-    aggregators,
   )
 }

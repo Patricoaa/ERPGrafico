@@ -231,9 +231,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     cardGroupBy={{
                         field: 'date',
                         sort: 'desc',
-                        aggregators: [
-                            { key: 'count', label: 'Asientos', fn: 'count', format: 'integer' },
-                        ],
                     }}
                     onRowClick={(m) => openDetail(m.id)}
                     renderCard={(m) => {

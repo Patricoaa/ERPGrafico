@@ -398,7 +398,7 @@ export default function PurchasesPageClient() {
                         }} />
                     }
                     defaultPageSize={20}
-                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
+                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                 />
             </div>
 
