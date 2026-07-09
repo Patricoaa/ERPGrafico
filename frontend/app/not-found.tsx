@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { PrepressPanel, CmykRing } from "@/components/shared"
+import { PrepressPanel } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Home } from "lucide-react"
 
@@ -48,7 +48,6 @@ export default function NotFound() {
                     </div>
 
                     <div className="flex flex-col items-center gap-4 text-center">
-                        <CmykRing size="lg" className="opacity-60" />
                         <h2 className="text-7xl font-black tracking-tighter leading-none">404</h2>
                         <p className="text-sm text-muted-foreground">Página no encontrada</p>
                     </div>
