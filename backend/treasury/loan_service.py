@@ -888,7 +888,7 @@ def _build_disbursement_entry(
         entry=entry,
         account=liability_account,
         debit=Decimal("0"),
-        credit=principal,
+        credit=_peso(principal),
         label=GlosaBuilder.item(Roles.PASIVO_PRESTAMO, doc_ref=movement.reference),
     )
     # Debe: gastos de apertura (comisión, ITE).
@@ -897,7 +897,7 @@ def _build_disbursement_entry(
         JournalItem.objects.create(
             entry=entry,
             account=fee_account,
-            debit=fee_amount,
+            debit=_peso(fee_amount),
             credit=Decimal("0"),
             label=GlosaBuilder.item(Roles.GASTO, "Comisión/Impuesto", movement.reference),
         )
@@ -988,7 +988,7 @@ def _build_installment_entry(
     JournalItem.objects.create(
         entry=entry,
         account=liability_account,
-        debit=liability_debit,
+        debit=_peso(liability_debit),
         credit=Decimal("0"),
         label=GlosaBuilder.item(Roles.PASIVO_PRESTAMO, doc_ref=movement.reference),
     )
@@ -998,7 +998,7 @@ def _build_installment_entry(
         JournalItem.objects.create(
             entry=entry,
             account=interest_expense_account,
-            debit=interest_clp,
+            debit=_peso(interest_clp),
             credit=Decimal("0"),
             label=GlosaBuilder.item(Roles.INTERES, doc_ref=movement.reference),
         )
@@ -1008,7 +1008,7 @@ def _build_installment_entry(
         JournalItem.objects.create(
             entry=entry,
             account=insurance_expense_account,
-            debit=insurance_clp,
+            debit=_peso(insurance_clp),
             credit=Decimal("0"),
             label=GlosaBuilder.item(Roles.SEGURO, doc_ref=movement.reference),
         )
@@ -1018,7 +1018,7 @@ def _build_installment_entry(
         JournalItem.objects.create(
             entry=entry,
             account=penalty_expense_account,
-            debit=penalty_clp,
+            debit=_peso(penalty_clp),
             credit=Decimal("0"),
             label=GlosaBuilder.item(Roles.PENALIZACION, doc_ref=movement.reference),
         )

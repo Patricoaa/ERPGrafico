@@ -582,7 +582,7 @@ class SalesService:
             status=InventoryDocument.Status.DRAFT,
             date=delivery.delivery_date,
             reference=f"Despacho {EntityPrefix.SALE_ORDER}-{delivery.sale_order.number}",
-            partner=delivery.sale_order.client
+            partner=delivery.sale_order.customer
         )
         details_to_create = []
 
@@ -734,6 +734,7 @@ class SalesService:
                 # Link all created stock moves to this entry
                 for move in created_moves:
                     move.journal_entry = entry
+                    move._allow_update = True
                     move.save()
 
         # 4. Confirm delivery
@@ -931,7 +932,7 @@ class SalesService:
             status=InventoryDocument.Status.DRAFT,
             date=timezone.now().date(),
             reference=f"Anulación Despacho {delivery.number}",
-            partner=delivery.sale_order.client
+            partner=delivery.sale_order.customer
         )
         details_to_create = []
 
@@ -1203,7 +1204,7 @@ class SalesService:
                 status=InventoryDocument.Status.DRAFT,
                 date=date or timezone.now().date(),
                 reference=f"Devolución NC {document_number} - NV {order.number}",
-                partner=order.client
+                partner=order.customer
             )
             details_to_create = []
 

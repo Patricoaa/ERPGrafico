@@ -741,6 +741,7 @@ class PurchasingService:
         for line in receipt.lines.all():
             if line.stock_move:
                 line.stock_move.journal_entry = entry
+                line.stock_move._allow_update = True
                 line.stock_move.save()
 
         # Finalize
