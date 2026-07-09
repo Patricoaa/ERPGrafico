@@ -22,7 +22,7 @@ export function MultiSelectFilterItem({
   onRemove,
 }: MultiSelectFilterItemProps) {
   const [expanded, setExpanded] = useState(false)
-  const isActive = activeParams.has(def.serverParam)
+  const isActive = activeParams?.has(def.serverParam) ?? false
 
   const handleToggle = (optValue: string, checked: boolean | 'indeterminate') => {
     if (checked === true) {
