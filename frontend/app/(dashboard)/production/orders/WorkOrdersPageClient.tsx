@@ -9,7 +9,7 @@ import { DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import type { Page } from '@/lib/pagination'
-import { Printer, User, Check, X } from "lucide-react"
+import { User, Check } from "lucide-react"
 import { useViewMode } from "@/hooks/useViewMode"
 import {
     WorkOrderWizard,
@@ -19,8 +19,7 @@ import {
     useWorkOrderListActions,
 } from "@/features/production"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { ActionDock, Chip, CmykRing, FadeIn } from "@/components/shared"
+import { Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
 import { cn, translateProductionStage } from "@/lib/utils"
@@ -359,37 +358,11 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                     undefined
                         }
                         createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
-                        bulkDock={(items, clear) => (
-                            <ActionDock isVisible>
-                                <div className="flex items-center gap-2">
-                                    <CmykRing className="h-2.5 w-2.5 animate-pulse" />
-                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
-                                        {`${items.length} ${items.length === 1 ? "seleccionado" : "seleccionados"}`}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        disabled={isBulkPrinting}
-                                        className="h-8 rounded-full px-4 text-xs"
-                                        onClick={() => bulkPrint({ ids: items.map(o => o.id) })}
-                                    >
-                                        <Printer className="h-3.5 w-3.5 mr-1.5" />
-                                        {isBulkPrinting ? 'Generando…' : 'Imprimir todas'}
-                                    </Button>
-                                </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={clear}
-                                    className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
-                                >
-                                    <X className="h-3 w-3 mr-1.5" />
-                                    Limpiar
-                                </Button>
-                            </ActionDock>
-                        )}
+                        bulkActions={[
+                            { key: 'print', label: 'Imprimir todas', intent: 'default' as const,
+                                disabled: () => isBulkPrinting,
+                                onClick: async (items: Array<{ id: number }>) => { await bulkPrint({ ids: items.map(o => o.id) }) } },
+                        ]}
                     />
                 </FadeIn>
             </div>

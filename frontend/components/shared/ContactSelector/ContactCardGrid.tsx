@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
 import { useDeviceContext } from "@/hooks/useDeviceContext"
-import { CmykRing, EmptyState, CardSkeleton, SearchBar } from "@/components/shared"
+import { EmptyState, CardSkeleton, SearchBar } from "@/components/shared"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Building2, User } from "lucide-react"
 import { formatRUT } from "@/lib/utils/format"
 import { formatCurrency } from "@/lib/money"
@@ -93,12 +94,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
                                         </div>
                                     </div>
                                     <div className="flex shrink-0 items-center justify-center">
-                                        <div className={cn(
-                                            "flex h-4 w-4 items-center justify-center rounded-full border-2 transition-colors",
-                                            isSelected ? "border-primary bg-background" : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
-                                        )}>
-                                            {isSelected && <CmykRing size="sm" />}
-                                        </div>
+                                        <Checkbox variant="circle" checked={isSelected} readOnly />
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1.5 px-2.5 pb-2 pt-1.5 border-t border-border/30 text-[10px] text-muted-foreground mt-auto">
