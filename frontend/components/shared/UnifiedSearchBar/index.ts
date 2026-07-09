@@ -9,6 +9,7 @@ export type {
   DateFilterDef,
   RangeFilterDef,
   MultiSelectFilterDef,
+  SingleSelectFilterDef,
   GroupByOptionDef,
   DropdownFilterDef,
 

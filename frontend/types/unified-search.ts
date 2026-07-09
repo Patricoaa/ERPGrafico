@@ -3,6 +3,7 @@ export interface TextFieldDef {
   label: string
   serverParam: string
   suggestionsUrl?: string
+  clientKey?: string | string[]
 }
 
 export interface ToggleFilterDef {
@@ -49,6 +50,17 @@ export interface MultiSelectFilterDef {
   label: string
   serverParam: string
   options: MultiSelectOption[]
+  dynamic?: boolean
+  columnId?: string
+}
+
+export interface SingleSelectFilterDef {
+  type: 'single'
+  key: string
+  label: string
+  serverParam: string
+  options: MultiSelectOption[]
+  defaultValue?: string
 }
 
 export interface CustomFilterDef {
@@ -63,7 +75,7 @@ export interface CustomFilterDef {
   }) => React.ReactNode
 }
 
-export type DropdownFilterDef = ToggleFilterDef | RangeFilterDef | MultiSelectFilterDef | CustomFilterDef
+export type DropdownFilterDef = ToggleFilterDef | RangeFilterDef | MultiSelectFilterDef | SingleSelectFilterDef | CustomFilterDef
 
 export interface GroupByOptionDef {
   key: string
@@ -103,4 +115,5 @@ export interface UseUnifiedSearchReturn {
   clearAll: () => Promise<void>
   inputValue: string
   setInputValue: (val: string) => void
+  filterFn: <T>(data: T[]) => T[]
 }

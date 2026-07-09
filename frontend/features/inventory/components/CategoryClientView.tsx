@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
-import { DataCell, SmartSearchBar, useClientSearch } from '@/components/shared'
+import { DataCell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
@@ -14,7 +14,7 @@ import { toast } from "sonner"
 import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
-import { categorySearchDef } from "@/features/inventory/searchDef"
+import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import * as LucideIcons from "lucide-react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
@@ -26,7 +26,7 @@ interface CategoryClientViewProps {
 
 export function CategoryClientView({ externalOpen, onExternalOpenChange, createAction }: CategoryClientViewProps) {
     const { categories, isLoading, refetch, deleteCategory } = useCategories()
-    const { filterFn, isFiltered } = useClientSearch<Category>(categorySearchDef)
+    const search = useUnifiedSearch(categoryUnifiedSearchDef)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)  // create modal
     const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
@@ -154,13 +154,30 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             <div className="flex-1 min-h-0">
                 <DataTableView
                     columns={columns}
-                    data={filterFn(categories)}
+                    data={search.filterFn(categories)}
                     isLoading={isLoading}
                     entityLabel="inventory.category"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={categoryUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar categoría..."
+                    />}
+                    unifiedSearchConfig={categoryUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay categorías",

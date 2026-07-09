@@ -19,8 +19,8 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { uomSearchDef } from "@/features/inventory/searchDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { uomUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 
 const UOM_TYPE_CONFIG: Record<UoM['uom_type'], { status: string; label: string }> = {
     REFERENCE: { status: 'INFO',    label: 'Referencia' },
@@ -35,8 +35,8 @@ interface UoMClientViewProps {
 }
 
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(uomSearchDef)
-    const { uoms, isLoading, refetch, deleteUoM } = useUoMs(filters)
+    const search = useUnifiedSearch(uomUnifiedSearchDef)
+    const { uoms, isLoading, refetch, deleteUoM } = useUoMs(search.filters)
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -162,10 +162,27 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     isLoading={isLoading}
                     entityLabel="inventory.uom"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={uomUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar unidad..."
+                    />}
+                    unifiedSearchConfig={uomUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     bulkActions={bulkActions}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay unidades de medida",
