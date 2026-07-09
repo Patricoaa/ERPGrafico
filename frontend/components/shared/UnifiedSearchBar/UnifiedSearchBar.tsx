@@ -50,6 +50,7 @@ export function UnifiedSearchBar({
   className,
 }: UnifiedSearchBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [forceFilters, setForceFilters] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [triggerWidth, setTriggerWidth] = useState(0)
@@ -61,6 +62,7 @@ export function UnifiedSearchBar({
   }, [])
 
   const handleBarClick = useCallback(() => {
+    setForceFilters(false)
     setMenuOpen(true)
     inputRef.current?.focus()
   }, [])
@@ -101,63 +103,65 @@ export function UnifiedSearchBar({
 
   return (
     <div className={cn("flex items-center w-full", className)}>
-      <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+      <Popover open={menuOpen} onOpenChange={(open) => { setMenuOpen(open); if (!open) setForceFilters(false) }}>
         <PopoverTrigger asChild>
-          <div
-            ref={containerRef}
-            onClick={handleBarClick}
-            className={cn(
-              "flex items-center flex-1 h-9 bg-background border border-border/60 rounded-sm px-2 gap-1",
-              "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all",
-              "cursor-pointer",
-            )}
-          >
-            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-
-            <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
-              {chips.length > 0 && (
-                <div className="flex items-center gap-1 shrink-0">
-                  {chips.map((chip) => (
-                    <span
-                      key={chip.id}
-                      className={cn(
-                        "inline-flex items-center gap-1 h-5 px-1.5 rounded-sm text-[11px] font-medium whitespace-nowrap shrink-0 max-w-[180px]",
-                        chip.variant === 'search' && "bg-muted text-muted-foreground",
-                        chip.variant === 'filter' && "bg-primary/10 text-primary",
-                        chip.variant === 'date' && "bg-blue-500/10 text-blue-600",
-                        chip.variant === 'range' && "bg-amber-500/10 text-amber-600",
-                        chip.variant === 'group' && "bg-purple-500/10 text-purple-600",
-                      )}
-                    >
-                      <span className="truncate">{formatChipLabel(chip)}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); chip.onRemove() }}
-                        className="hover:bg-background/50 rounded-sm p-[1px] shrink-0"
-                      >
-                        <X className="h-2.5 w-2.5" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
+          <div className="flex items-center w-full">
+            <div
+              ref={containerRef}
+              onClick={handleBarClick}
+              className={cn(
+                "flex items-center flex-1 h-9 bg-background border border-border/60 rounded-l-sm px-2 gap-1",
+                "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all",
+                "cursor-pointer",
               )}
+            >
+              <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => onInputChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={chips.length === 0 ? placeholder : ''}
-                className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground/60 h-full"
-              />
+              <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
+                {chips.length > 0 && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    {chips.map((chip) => (
+                      <span
+                        key={chip.id}
+                        className={cn(
+                          "inline-flex items-center gap-1 h-5 px-1.5 rounded-sm text-[11px] font-medium whitespace-nowrap shrink-0 max-w-[180px]",
+                          chip.variant === 'search' && "bg-muted text-muted-foreground",
+                          chip.variant === 'filter' && "bg-primary/10 text-primary",
+                          chip.variant === 'date' && "bg-blue-500/10 text-blue-600",
+                          chip.variant === 'range' && "bg-amber-500/10 text-amber-600",
+                          chip.variant === 'group' && "bg-purple-500/10 text-purple-600",
+                        )}
+                      >
+                        <span className="truncate">{formatChipLabel(chip)}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); chip.onRemove() }}
+                          className="hover:bg-background/50 rounded-sm p-[1px] shrink-0"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => { setForceFilters(false); onInputChange(e.target.value) }}
+                  onKeyDown={handleKeyDown}
+                  placeholder={chips.length === 0 ? placeholder : ''}
+                  className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground/60 h-full"
+                />
+              </div>
             </div>
 
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
+              onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
               className={cn(
-                "h-6 w-6 flex items-center justify-center rounded-sm shrink-0",
+                "h-9 w-7 flex items-center justify-center bg-background border border-l-0 border-border/60 rounded-r-sm shrink-0",
                 "hover:bg-accent/50 transition-colors",
               )}
             >
@@ -174,7 +178,7 @@ export function UnifiedSearchBar({
           className="p-0 border-border/80 shadow-floating"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          {hasSearchText ? (
+          {hasSearchText && !forceFilters ? (
             <SearchSuggestions
               inputValue={inputValue}
               searchFields={config.searchFields}
