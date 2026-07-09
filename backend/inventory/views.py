@@ -46,7 +46,6 @@ from .serializers import (
     WarehouseSerializer,
     InventoryDocumentSerializer,
 )
-)
 from .services import StockService, UoMService, ProductService, PricingService
 
 

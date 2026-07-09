@@ -543,6 +543,7 @@ class StockService:
         JournalEntryService.post_entry(entry)
 
         move.journal_entry = entry
+        move._allow_update = True
         move.save()
 
         # Create PartnerTransaction if this is a partner-related adjustment

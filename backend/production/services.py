@@ -1166,6 +1166,7 @@ class WorkOrderService:
                 for consumption in ProductionConsumption.objects.filter(work_order=work_order):
                     if consumption.stock_move:
                         consumption.stock_move.journal_entry = entry
+                        consumption.stock_move._allow_update = True
                         consumption.stock_move.save()
 
                 # If track_inventory, also link the entry to the entry move
@@ -1175,6 +1176,7 @@ class WorkOrderService:
                     ).first()
                     if entry_move:
                         entry_move.journal_entry = entry
+                        entry_move._allow_update = True
                         entry_move.save()
 
         # Record production discrepancy in audit trail when quantity differs from sale line
