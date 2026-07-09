@@ -21,6 +21,26 @@ export const categoryUnifiedSearchDef: UnifiedSearchConfig = {
   ],
 }
 
+export const uomCategoryUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'name',
+      label: 'Nombre',
+      serverParam: 'search',
+    },
+  ],
+}
+
+export const attributeUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Nombre',
+      serverParam: 'search',
+    },
+  ],
+}
+
 export const warehouseUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
     {
