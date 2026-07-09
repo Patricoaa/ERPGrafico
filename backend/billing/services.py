@@ -394,6 +394,7 @@ class BillingService:
                 move.unit_cost = (
                     move.unit_cost * (Decimal("1") + (tax_rate / Decimal("100.0")))
                 ).quantize(Decimal("1"))
+                move._allow_update = True
                 move.save(update_fields=["unit_cost"])
 
                 # Sync back to Receipt Line so UI (Kardex) reflects gross value

@@ -25,7 +25,6 @@ export { purchaseOrderActions } from './actions'
 export { purchaseOrderSearchDef } from './searchDef'
 export { purchaseOrderSegDef } from './segmentationDef'
 
-export { PurchaseReceiptClientView } from './components/PurchaseReceiptClientView'
 
 export {
   DocumentRegistrationModal,

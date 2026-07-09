@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { Product, ProductFilters, ProductUpdatePayload } from '../types'
+import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters } from '../types'
 import { toPage, type Page } from '@/lib/pagination'
 
 /**
@@ -127,6 +127,47 @@ export const inventoryApi = {
      */
     getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {
         const { data } = await api.get<Array<{ id: number; name: string; icon?: string | null }>>('inventory/categories/', { params: { page_size: 9999 } })
+        return data
+    },
+
+    /**
+     * Fetch inventory documents with filtering
+     */
+    getInventoryDocuments: async (filters?: InventoryDocumentFilters): Promise<Page<InventoryDocument>> => {
+        const params = new URLSearchParams()
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.document_type) params.append('document_type', filters.document_type)
+        if (filters?.status) params.append('status', filters.status)
+        if (filters?.search) params.append('search', filters.search)
+        if (filters?.date_from) params.append('date_from', filters.date_from)
+        if (filters?.date_to) params.append('date_to', filters.date_to)
+
+        const { data } = await api.get<{ count: number; results: InventoryDocument[] }>('inventory/documents/', { params })
+        return toPage<InventoryDocument>(data, filters?.page ?? 1, filters?.page_size ?? 50)
+    },
+
+    /**
+     * Fetch a single inventory document by ID
+     */
+    getInventoryDocument: async (id: number | string): Promise<InventoryDocument> => {
+        const { data } = await api.get<InventoryDocument>(`inventory/documents/${id}/`)
+        return data
+    },
+
+    /**
+     * Confirm a draft inventory document (posts movements and stock)
+     */
+    confirmInventoryDocument: async (id: number | string): Promise<InventoryDocument> => {
+        const { data } = await api.post<InventoryDocument>(`inventory/documents/${id}/confirm/`)
+        return data
+    },
+
+    /**
+     * Annul/cancel a confirmed inventory document (reverses movements and stock)
+     */
+    annulInventoryDocument: async (id: number | string): Promise<InventoryDocument> => {
+        const { data } = await api.post<InventoryDocument>(`inventory/documents/${id}/annul/`)
         return data
     },
 }

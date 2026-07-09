@@ -9,8 +9,8 @@ export const DRAWER_MAP: Record<string, React.LazyExoticComponent<AnyDrawerCompo
   service_obligation: React.lazy(() => import('@/features/purchasing/components/PurchaseOrderDrawer').then(m => ({ default: m.PurchaseOrderDrawer as unknown as AnyDrawerComponent }))),
   invoice: React.lazy(() => import('@/features/billing/components/InvoiceDrawer').then(m => ({ default: m.InvoiceDrawer as unknown as AnyDrawerComponent }))),
   work_order: React.lazy(() => import('@/features/production/components/WorkOrderWizard').then(m => ({ default: m.WorkOrderWizard as unknown as AnyDrawerComponent }))),
-  sale_delivery: React.lazy(() => import('@/features/sales/components/SaleDeliveryDrawer').then(m => ({ default: m.SaleDeliveryDrawer as unknown as AnyDrawerComponent }))),
-  purchase_receipt: React.lazy(() => import('@/features/purchasing/components/PurchaseReceiptDrawer').then(m => ({ default: m.PurchaseReceiptDrawer as unknown as AnyDrawerComponent }))),
+  sale_delivery: React.lazy(() => import('@/features/inventory/components/InventoryDocumentDrawer').then(m => ({ default: m.InventoryDocumentDrawer as unknown as AnyDrawerComponent }))),
+  purchase_receipt: React.lazy(() => import('@/features/inventory/components/InventoryDocumentDrawer').then(m => ({ default: m.InventoryDocumentDrawer as unknown as AnyDrawerComponent }))),
   purchase_return: React.lazy(() => import('@/features/purchasing/components/PurchaseReturnDrawer').then(m => ({ default: m.PurchaseReturnDrawer as unknown as AnyDrawerComponent }))),
   payment: React.lazy(() => import('@/features/treasury/components/PaymentDrawer').then(m => ({ default: m.PaymentDrawer as unknown as AnyDrawerComponent }))),
   journal_entry: React.lazy(() => import('@/features/accounting/components/JournalEntryDrawer').then(m => ({ default: m.JournalEntryDrawer as unknown as AnyDrawerComponent }))),
@@ -18,7 +18,10 @@ export const DRAWER_MAP: Record<string, React.LazyExoticComponent<AnyDrawerCompo
   terminal_batch: React.lazy(() => import('@/features/treasury/components/TerminalBatchDrawer').then(m => ({ default: m.TerminalBatchDrawer as unknown as AnyDrawerComponent }))),
   profit_distribution: React.lazy(() => import('@/features/settings/components/ProfitDistributionDrawer').then(m => ({ default: m.ProfitDistributionDrawer as unknown as AnyDrawerComponent }))),
   stock_move: React.lazy(() => import('@/features/inventory/components/StockMoveDrawer').then(m => ({ default: m.StockMoveDrawer as unknown as AnyDrawerComponent }))),
+  inventory_document: React.lazy(() => import('@/features/inventory/components/InventoryDocumentDrawer').then(m => ({ default: m.InventoryDocumentDrawer as unknown as AnyDrawerComponent }))),
 }
+
+
 
 export function LazyDrawer({ type, open, onOpenChange, ...props }: {
   type: string

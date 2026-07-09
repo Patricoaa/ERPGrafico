@@ -23,5 +23,4 @@ export { SALES_KEYS } from './hooks/queryKeys'
 export { SalesCheckoutWizardView, type CheckoutWizardState } from './components/checkout/SalesCheckoutWizardView'
 export type { SalesCheckoutWizardViewHandle } from './components/checkout/SalesCheckoutWizardView'
 export { Step2_ManufacturingDetails } from './components/checkout/Step2_ManufacturingDetails'
-export { SaleDeliveryClientView } from './components/SaleDeliveryClientView'
-export type { SaleDelivery } from './api/salesApi'
+

@@ -47,6 +47,6 @@ def test_stock_recalculation_and_update():
     assert stock.quantity == Decimal('7.5')
     
     # Test delete
-    move.delete()
-    stock.refresh_from_db()
-    assert stock.quantity == Decimal('-3.0')
+    from django.core.exceptions import ValidationError
+    with pytest.raises(ValidationError):
+        move.delete()

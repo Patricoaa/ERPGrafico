@@ -155,7 +155,13 @@ class NoteWorkflow(models.Model):
                 )
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        update_fields = kwargs.get("update_fields")
+        # When doing a partial save that doesn't touch invoice, skip invoice FK validation
+        # (e.g. when cancelling: we save before deleting the draft invoice)
+        exclude = []
+        if update_fields and "invoice" not in update_fields:
+            exclude = ["invoice"]
+        self.full_clean(exclude=exclude or None)
         super().save(*args, **kwargs)
 
     @property
