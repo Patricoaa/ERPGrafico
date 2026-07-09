@@ -93,11 +93,14 @@ export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
     {
-      type: 'toggle',
+      type: 'multi',
       key: 'billing_status',
-      label: 'Facturado',
+      label: 'Facturación',
       serverParam: 'billing_status',
-      activeValue: 'success',
+      options: [
+        { label: 'Facturado', value: 'success' },
+        { label: 'No Facturado', value: 'pending' },
+      ],
     },
     {
       type: 'multi',
