@@ -311,6 +311,7 @@ class StockService:
         quantity_orig = quantity
 
         from accounting.models import AccountingSettings
+        from .models import StockMove, InventoryDocument, InventoryDocumentDetail
 
         settings = AccountingSettings.get_solo()
         if not settings:
@@ -390,7 +391,6 @@ class StockService:
                 product.save()
 
         # 2. Create Inventory Document (ADJUSTMENT)
-        from .models import InventoryDocument, InventoryDocumentDetail
         doc = InventoryDocument.objects.create(
             document_type=InventoryDocument.Type.ADJUSTMENT,
             status=InventoryDocument.Status.DRAFT,
@@ -415,7 +415,6 @@ class StockService:
         move = generated_moves[0] if generated_moves else None
         
         if not move: # Fallback if move_type was something else
-            from .models import StockMove
             move = StockMove.objects.filter(product=product, warehouse=warehouse).order_by('-id').first()
 
         # 3. Accounting Logic
