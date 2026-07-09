@@ -47,6 +47,7 @@ export interface DataTableProps<TData, TValue> {
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
     smartSearch?: React.ReactNode
     segmentation?: React.ReactNode
+    unifiedSearch?: React.ReactNode
     showReset?: boolean
     sortOptions?: boolean
     analyticsPanel?: AnalyticsPanelConfig
@@ -165,6 +166,7 @@ export function DataTable<TData, TValue>({
     renderCustomView,
     smartSearch,
     segmentation,
+    unifiedSearch,
     showReset,
     sortOptions,
     analyticsPanel,
@@ -402,12 +404,13 @@ export function DataTable<TData, TValue>({
                         columnToggle={columnToggle}
                         smartSearch={smartSearch}
                         segmentation={segmentation}
+                        unifiedSearch={unifiedSearch}
                         showReset={showReset}
                         analyticsPanel={analyticsPanel}
                         createAction={createAction}
                     />
                 )}
-
+                
                 {renderLoadingView ? (
                     renderLoadingView()
                 ) : (
@@ -718,6 +721,7 @@ export function DataTable<TData, TValue>({
                             columnToggle={columnToggle}
                             smartSearch={smartSearch}
                             segmentation={segmentation}
+                            unifiedSearch={unifiedSearch}
                             showReset={showReset}
                             analyticsPanel={analyticsPanel}
                             createAction={createAction}
@@ -804,6 +808,7 @@ export function DataTable<TData, TValue>({
                         columnToggle={columnToggle}
                         smartSearch={smartSearch}
                         segmentation={segmentation}
+                        unifiedSearch={unifiedSearch}
                         showReset={showReset}
                         analyticsPanel={analyticsPanel}
                         createAction={createAction}
