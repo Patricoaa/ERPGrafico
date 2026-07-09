@@ -51,3 +51,25 @@ export const warehouseUnifiedSearchDef: UnifiedSearchConfig = {
     },
   ],
 }
+
+export const pricingRuleUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Nombre',
+      serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'active',
+      label: 'Estado',
+      serverParam: 'active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Inactivo', value: 'false' },
+      ],
+    },
+  ],
+}

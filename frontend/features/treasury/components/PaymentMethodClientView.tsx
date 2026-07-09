@@ -19,10 +19,9 @@ import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
     BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar, Chip
+    UnifiedSearchBar, useUnifiedSearch, Chip
 } from "@/components/shared"
-import { paymentMethodSearchDef } from "@/features/treasury/searchDef"
-import { paymentMethodSegDef } from "@/features/treasury/segmentationDef"
+import { paymentMethodUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { type Column } from "@tanstack/react-table"
 import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
@@ -59,8 +58,7 @@ interface PaymentMethodClientViewProps {
 
 export function PaymentMethodClientView({ externalOpen, onOpenChange, createAction }: PaymentMethodClientViewProps) {
     const { methods, refetch, deleteMethod } = usePaymentMethods()
-    const { filterFn: filterMethods, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<PaymentMethod>(paymentMethodSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(paymentMethodSegDef)
+    const search = useUnifiedSearch(paymentMethodUnifiedSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
     const [usageFilter, setUsageFilter] = useState<string[]>([])
@@ -200,14 +198,14 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
         paymentMethodActions.column(paymentMethodActionsCtx)
     ]
 
-    const isFiltered = isTextFiltered || isSegFiltered || usageFilter.length > 0
+    const isFiltered = search.isFiltered || usageFilter.length > 0
     const filteredMethods = React.useMemo(() => {
         let result = methods
-        if (segFilters.method_type) result = result.filter(m => m.method_type === segFilters.method_type)
+        if (search.filters.method_type) result = result.filter(m => m.method_type === search.filters.method_type)
         if (usageFilter.includes('sales')) result = result.filter(m => m.allow_for_sales)
         if (usageFilter.includes('purchases')) result = result.filter(m => m.allow_for_purchases)
-        return filterMethods(result)
-    }, [methods, segFilters.method_type, usageFilter, filterMethods])
+        return search.filterFn(result)
+    }, [methods, search.filters.method_type, usageFilter, search.filterFn, search])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -217,51 +215,63 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                     columns={columns}
                     data={filteredMethods}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." className="w-full" />}
-                    segmentation={
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className={cn(
-                                                'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
-                                                usageFilter.length > 0
-                                                    ? 'bg-accent/50 text-foreground'
-                                                    : 'text-muted-foreground hover:text-foreground',
-                                            )}
-                                        >
-                                            <span>{usageFilter.length > 0 ? `Disponible (${usageFilter.length})` : 'Disponible'}</span>
-                                            <ChevronDown className="h-3 w-3" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-44">
-                                        <DropdownMenuCheckboxItem
-                                            checked={usageFilter.includes('sales')}
-                                            onCheckedChange={(checked) => {
-                                                setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
-                                            }}
-                                        >
-                                            Ventas
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem
-                                            checked={usageFilter.includes('purchases')}
-                                            onCheckedChange={(checked) => {
-                                                setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
-                                            }}
-                                        >
-                                            Compras
-                                        </DropdownMenuCheckboxItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            <SegmentationBar def={paymentMethodSegDef} />
+                    unifiedSearch={<div className="flex items-center gap-2 w-full">
+                        <div className="flex-1 min-w-0">
+                            <UnifiedSearchBar
+                                config={paymentMethodUnifiedSearchDef}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                                placeholder="Buscar método de pago..."
+                            />
                         </div>
-                    }
+                        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={cn(
+                                            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                                            usageFilter.length > 0
+                                                ? 'bg-accent/50 text-foreground'
+                                                : 'text-muted-foreground hover:text-foreground',
+                                        )}
+                                    >
+                                        <span>{usageFilter.length > 0 ? `Disponible (${usageFilter.length})` : 'Disponible'}</span>
+                                        <ChevronDown className="h-3 w-3" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-44">
+                                    <DropdownMenuCheckboxItem
+                                        checked={usageFilter.includes('sales')}
+                                        onCheckedChange={(checked) => {
+                                            setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
+                                        }}
+                                    >
+                                        Ventas
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        checked={usageFilter.includes('purchases')}
+                                        onCheckedChange={(checked) => {
+                                            setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
+                                        }}
+                                    >
+                                        Compras
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>}
                     showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg(); setUsageFilter([]) }}
+                    onReset={() => { search.clearAll(); setUsageFilter([]) }}
                     createAction={createAction}
                     renderCard={renderMethodCard}
                 />
