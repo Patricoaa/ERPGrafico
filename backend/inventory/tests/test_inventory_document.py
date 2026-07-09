@@ -31,7 +31,7 @@ def test_document_confirmation_and_cancellation(base_inventory_setup):
     assert stock is None or stock.quantity == Decimal('0')
     
     # Confirm
-    InventoryService.confirmar_documento(doc)
+    doc, generated_moves = InventoryService.confirmar_documento(doc)
     
     stock = Stock.objects.get(product=product, warehouse=warehouse)
     assert stock.quantity == Decimal('50.0')
@@ -72,7 +72,7 @@ def test_transfer_document(base_inventory_setup):
         quantity=Decimal('20.0')
     )
     
-    InventoryService.confirmar_documento(doc)
+    doc, generated_moves = InventoryService.confirmar_documento(doc)
     
     stock_src = Stock.objects.get(product=product, warehouse=warehouse_src)
     stock_dest = Stock.objects.get(product=product, warehouse=warehouse_dest)

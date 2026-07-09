@@ -40,20 +40,35 @@ class ReturnService:
             )
 
         # 2. Reverse Stock Moves (Create opposite moves)
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.services import InventoryService
+
+        doc_inv = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.DELIVERY,
+            status=InventoryDocument.Status.DRAFT,
+            date=timezone.now().date(),
+            reference=f"Anulación {doc.display_id}",
+            partner=doc.sale_order.client
+        )
+        details_to_create = []
+
         for line in doc.lines.all():
             if line.stock_move:
-                # Original was IN, so we create OUT
-                StockMove.objects.create(
-                    date=timezone.now().date(),
-                    product=line.product,
-                    warehouse=doc.warehouse,
-                    uom=line.stock_move.uom,
-                    quantity=abs(line.stock_move.quantity) * -1,  # Negative for OUT
-                    move_type=StockMove.Type.OUT,
-                    description=f"Anulación {doc.display_id}",
-                    source_uom=line.stock_move.source_uom,
-                    source_quantity=line.stock_move.source_quantity,
+                details_to_create.append(
+                    InventoryDocumentDetail(
+                        document=doc_inv,
+                        product=line.product,
+                        warehouse=doc.warehouse,
+                        quantity=abs(line.stock_move.quantity),  # Delivery expects positive
+                        unit_cost=line.stock_move.unit_cost
+                    )
                 )
+
+        if details_to_create:
+            InventoryDocumentDetail.objects.bulk_create(details_to_create)
+            InventoryService.confirmar_documento(doc_inv)
+        else:
+            doc_inv.delete()
 
         doc.status = SaleReturn.Status.CANCELLED
         doc.save()
@@ -215,6 +230,18 @@ class ReturnService:
         total_cogs_reversal = Decimal("0")
 
         # 1. Stock Moves
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.services import InventoryService
+
+        doc_inv = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.RECEIPT,
+            status=InventoryDocument.Status.DRAFT,
+            date=return_doc.date,
+            reference=f"Devolución {EntityPrefix.SALE_ORDER}-{return_doc.sale_order.number}",
+            partner=return_doc.sale_order.customer
+        )
+        details_to_create = []
+
         for line in return_doc.lines.all():
             product = line.product
             if product.track_inventory and not product.requires_advanced_manufacturing:
@@ -223,25 +250,32 @@ class ReturnService:
                     line.quantity, from_uom=line.uom or product.uom, to_uom=product.uom
                 )
 
-                # Create Stock Move (IN)
-                move = StockMove.objects.create(
-                    date=return_doc.date,
-                    product=product,
-                    warehouse=return_doc.warehouse,
-                    uom=product.uom,
-                    quantity=qty_base,
-                    move_type=StockMove.Type.IN,
-                    description=f"Devolución {EntityPrefix.SALE_ORDER}-{return_doc.sale_order.number}",
-                    source_uom=line.uom or product.uom,
-                    source_quantity=line.quantity,
+                details_to_create.append(
+                    InventoryDocumentDetail(
+                        document=doc_inv,
+                        product=product,
+                        warehouse=return_doc.warehouse,
+                        quantity=qty_base,
+                        unit_cost=line.unit_cost
+                    )
                 )
-                line.stock_move = move
-                line.save()
-                created_moves.append(move)
 
                 # COGS Reversal amount for this line (Using original unit_cost from the return line)
                 line_cogs = qty_base * line.unit_cost
                 total_cogs_reversal += line_cogs
+
+        if details_to_create:
+            InventoryDocumentDetail.objects.bulk_create(details_to_create)
+            doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
+            
+            # Map lines to generated moves
+            inventory_lines = [l for l in return_doc.lines.all() if l.product.track_inventory and not l.product.requires_advanced_manufacturing]
+            for line, move in zip(inventory_lines, generated_moves):
+                line.stock_move = move
+                line.save()
+                created_moves.append(move)
+        else:
+            doc_inv.delete()
 
         # 2. Accounting Entry (COGS Reversal)
         if total_cogs_reversal > 0 and settings:
@@ -289,10 +323,11 @@ class ReturnService:
                 JournalEntryService.post_entry(entry)
                 return_doc.journal_entry = entry
 
-                # Link moves
+                # Link moves to journal entry — requires internal flag since StockMoves are immutable post-creation
                 for m in created_moves:
                     m.journal_entry = entry
-                    m.save()
+                    m._allow_update = True
+                    m.save(update_fields=["journal_entry"])
 
         return_doc.status = SaleReturn.Status.CONFIRMED
         return_doc.save()

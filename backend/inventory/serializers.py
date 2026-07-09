@@ -20,6 +20,8 @@ from .models import (
     UoM,
     UoMCategory,
     Warehouse,
+    InventoryDocument,
+    InventoryDocumentDetail,
 )
 from .services import ProductService
 
@@ -552,3 +554,60 @@ class StockMoveSerializer(serializers.ModelSerializer):
             return delivery.notes if delivery else None
 
         return None
+
+
+class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_code = serializers.CharField(source="product.code", read_only=True)
+    product_internal_code = serializers.CharField(source="product.internal_code", read_only=True)
+    uom_name = serializers.CharField(source="product.uom.name", read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    source_warehouse_name = serializers.CharField(source="source_warehouse.name", read_only=True, allow_null=True)
+
+    class Meta:
+        model = InventoryDocumentDetail
+        fields = [
+            "id",
+            "product",
+            "product_name",
+            "product_code",
+            "product_internal_code",
+            "uom_name",
+            "warehouse",
+            "warehouse_name",
+            "source_warehouse",
+            "source_warehouse_name",
+            "quantity",
+            "unit_cost",
+        ]
+
+
+class InventoryDocumentSerializer(serializers.ModelSerializer):
+    details = InventoryDocumentDetailSerializer(many=True, read_only=True)
+    partner_name = serializers.CharField(source="partner.name", read_only=True)
+    created_by_name = serializers.CharField(source="created_by.name", read_only=True)
+    confirmed_by_name = serializers.CharField(source="confirmed_by.name", read_only=True)
+    document_type_display = serializers.CharField(source="get_document_type_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = InventoryDocument
+        fields = [
+            "id",
+            "document_type",
+            "document_type_display",
+            "status",
+            "status_display",
+            "date",
+            "partner",
+            "partner_name",
+            "reference",
+            "notes",
+            "created_by",
+            "created_by_name",
+            "confirmed_by",
+            "confirmed_by_name",
+            "created_at",
+            "updated_at",
+            "details",
+        ]

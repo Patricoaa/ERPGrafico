@@ -10,8 +10,21 @@ from billing.note_checkout_service import NoteCheckoutService
 from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
 from core.models import User
-from inventory.models import Product, StockMove, UoM, Warehouse
+from django.core.files.uploadedfile import SimpleUploadedFile
+from inventory.models import Product, StockMove, UoM, Warehouse, UoMCategory
 from sales.models import SaleLine, SaleOrder
+
+
+@pytest.fixture(autouse=True)
+def clear_django_cache():
+    from django.core.cache import cache
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def mock_private_storage(monkeypatch):
+    from core.storages import PrivateMediaStorage
+    monkeypatch.setattr(PrivateMediaStorage, "_save", lambda self, name, content: name)
 
 
 @pytest.fixture
@@ -41,27 +54,27 @@ def comprehensive_setup(db):
         code="1.1.02", name="IVA por Recuperar", account_type=AccountType.ASSET
     )
 
-    settings = AccountingSettings.objects.create(
-        default_receivable_account=acc_receivable,
-        default_payable_account=acc_payable,
-        default_revenue_account=acc_revenue,
-        default_expense_account=acc_expense,
-        storable_inventory_account=acc_inventory,
-        default_tax_payable_account=acc_tax_payable,
-        default_tax_receivable_account=acc_tax_receivable,
-    )
+    settings = AccountingSettings.get_solo()
+    settings.default_receivable_account = acc_receivable
+    settings.default_payable_account = acc_payable
+    settings.default_revenue_account = acc_revenue
+    settings.default_expense_account = acc_expense
+    settings.storable_inventory_account = acc_inventory
+    settings.default_tax_payable_account = acc_tax_payable
+    settings.default_tax_receivable_account = acc_tax_receivable
+    settings.save()
 
     # UoM
-    uom = UoM.objects.create(name="Unit")
+    uom_cat, _ = UoMCategory.objects.get_or_create(name="Unit Category")
+    uom = UoM.objects.create(name="Unit", category=uom_cat)
 
     # Contacts
     customer = Contact.objects.create(tax_id="1-9", 
         name="Test Customer",
         
     )
-    supplier = Contact.objects.create(tax_id="1-9", 
-        name="Test Supplier",
-        is_supplier=True,
+    supplier = Contact.objects.create(tax_id="2-7", 
+        name="Test Supplier"
     )
 
     # Warehouse
@@ -70,6 +83,13 @@ def comprehensive_setup(db):
     # User
     user = User.objects.create_user(username="testuser", email="test@test.com")
 
+    from inventory.models import ProductCategory
+    category = ProductCategory.objects.create(
+        name="Test Category",
+        income_account=acc_revenue,
+        expense_account=acc_expense
+    )
+
     # Products
     service = Product.objects.create(
         name="Service Product",
@@ -77,7 +97,7 @@ def comprehensive_setup(db):
         product_type=Product.Type.SERVICE,
         uom=uom,
         track_inventory=False,
-        income_account=acc_revenue,
+        category=category,
     )
 
     consumable = Product.objects.create(
@@ -86,7 +106,7 @@ def comprehensive_setup(db):
         product_type=Product.Type.CONSUMABLE,
         uom=uom,
         track_inventory=False,
-        expense_account=acc_expense,
+        category=category,
     )
 
     stockable = Product.objects.create(
@@ -96,6 +116,7 @@ def comprehensive_setup(db):
         uom=uom,
         track_inventory=True,
         cost_price=Decimal("500"),
+        category=category,
     )
 
     manufacturable_with_bom = Product.objects.create(
@@ -106,6 +127,7 @@ def comprehensive_setup(db):
         track_inventory=True,
         requires_advanced_manufacturing=False,
         has_bom=True,
+        category=category,
     )
 
     manufacturable_advanced = Product.objects.create(
@@ -116,6 +138,7 @@ def comprehensive_setup(db):
         track_inventory=False,
         requires_advanced_manufacturing=True,
         has_bom=False,
+        category=category,
     )
 
     return {
@@ -501,14 +524,9 @@ def test_skip_logistics_for_services(comprehensive_setup):
         ],
     )
 
-    # Should not require logistics
+    # Should not require logistics — select_items auto-advances to LOGISTICS_COMPLETED when no stockable
     workflow.refresh_from_db()
     assert workflow.requires_logistics is False
-
-    # Skip logistics
-    workflow = NoteCheckoutService.skip_logistics(workflow_id=workflow.id)
-    workflow.refresh_from_db()
-
     assert workflow.current_stage == NoteWorkflow.Stage.LOGISTICS_COMPLETED
 
 
@@ -539,16 +557,19 @@ def test_register_document_creates_accounting_entry(posted_sale_invoice):
         ],
     )
 
-    workflow = NoteCheckoutService.skip_logistics(workflow_id=workflow.id)
+    # select_items auto-advances to LOGISTICS_COMPLETED for service-only selections
+    workflow.refresh_from_db()
+    assert workflow.current_stage == NoteWorkflow.Stage.LOGISTICS_COMPLETED
 
     # Register document
+    dummy_pdf = SimpleUploadedFile("dummy.pdf", b"test content", content_type="application/pdf")
     workflow = NoteCheckoutService.register_document(
-        workflow_id=workflow.id, document_number="NC-TEST-001", is_pending=False
+        workflow_id=workflow.id, document_number="NC-TEST-001", is_pending=False, document_attachment=dummy_pdf
     )
 
     workflow.refresh_from_db()
 
-    assert workflow.current_stage == NoteWorkflow.Stage.REGISTRATION_PENDING
+    assert workflow.current_stage == NoteWorkflow.Stage.PAYMENT_PENDING
     assert workflow.invoice.number == "NC-TEST-001"
     assert workflow.invoice.status == Invoice.Status.POSTED
     assert workflow.invoice.journal_entry is not None
@@ -569,14 +590,14 @@ def test_register_document_creates_accounting_entry(posted_sale_invoice):
     # Check revenue (Debit for credit note in sales)
     revenue_item = items.filter(account=setup["accounts"]["revenue"]).first()
     assert revenue_item is not None
-    assert revenue_item.debit == Decimal("0")
-    assert revenue_item.credit == Decimal("1000")
+    assert revenue_item.debit == Decimal("1000")
+    assert revenue_item.credit == Decimal("0")
 
     # Check tax (Debit for credit note in sales)
     tax_item = items.filter(account=setup["accounts"]["tax_payable"]).first()
     assert tax_item is not None
-    assert tax_item.debit == Decimal("0")
-    assert tax_item.credit == Decimal("190")
+    assert tax_item.debit == Decimal("190")
+    assert tax_item.credit == Decimal("0")
 
 
 @pytest.mark.django_db
@@ -606,18 +627,21 @@ def test_stockable_uses_inventory_account(posted_sale_invoice):
         workflow_id=workflow.id, warehouse_id=setup["warehouse"].id, date=timezone.now().date()
     )
 
+    dummy_pdf = SimpleUploadedFile("dummy.pdf", b"test content", content_type="application/pdf")
     workflow = NoteCheckoutService.register_document(
-        workflow_id=workflow.id, document_number="NC-STK-001", is_pending=False
+        workflow_id=workflow.id, document_number="NC-STK-001", is_pending=False, document_attachment=dummy_pdf
     )
 
     workflow.refresh_from_db()
 
-    # Check that inventory account was used
-    entry = workflow.invoice.journal_entry
+    # Check that inventory account was used (in the SaleReturn's journal entry)
+    from sales.models import SaleReturn
+    return_doc = SaleReturn.objects.get(sale_order=workflow.sale_order)
+    entry = return_doc.journal_entry
     inventory_item = entry.items.filter(account=setup["accounts"]["inventory"]).first()
 
     assert inventory_item is not None
-    assert inventory_item.credit == Decimal("4000")  # 5 * 800
+    assert inventory_item.debit == Decimal("2500")  # 5 * 500 (debit to inventory for return at cost price)
 
 
 # ==================== COMPLETE WORKFLOW TESTS ====================
@@ -662,10 +686,11 @@ def test_complete_workflow_end_to_end(posted_sale_invoice):
     assert workflow.current_stage == NoteWorkflow.Stage.LOGISTICS_COMPLETED
 
     # Stage 4: Register document
+    dummy_pdf = SimpleUploadedFile("dummy.pdf", b"test content", content_type="application/pdf")
     workflow = NoteCheckoutService.register_document(
-        workflow_id=workflow.id, document_number="NC-E2E-001", is_pending=False
+        workflow_id=workflow.id, document_number="NC-E2E-001", is_pending=False, document_attachment=dummy_pdf
     )
-    assert workflow.current_stage == NoteWorkflow.Stage.REGISTRATION_PENDING
+    assert workflow.current_stage == NoteWorkflow.Stage.PAYMENT_PENDING
     assert workflow.invoice.status == Invoice.Status.POSTED
 
     # Stage 5: Complete

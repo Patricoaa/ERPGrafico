@@ -19,3 +19,6 @@ export * from './CategoryDrawer';
 export * from './UoMDrawer';
 export * from './UoMCategoryDrawer';
 export * from './WarehouseDrawer';
+export * from './DocumentsClientView';
+export * from './InventoryDocumentDrawer';
+

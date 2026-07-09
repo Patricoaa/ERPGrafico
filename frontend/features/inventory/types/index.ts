@@ -145,3 +145,51 @@ export interface ProductUpdatePayload {
     price_inheritance_mode?: string;
     price_surcharge?: string | number | null;
 }
+
+// ─── Inventory Document types ──────────────────────────────────────────────────
+
+export interface InventoryDocumentDetail {
+    id: number
+    product: number
+    product_name: string
+    product_code: string
+    product_internal_code?: string
+    uom_name: string
+    warehouse: number
+    warehouse_name: string
+    source_warehouse?: number | null
+    source_warehouse_name?: string | null
+    quantity: string
+    unit_cost: string
+}
+
+export interface InventoryDocument {
+    id: number
+    document_type: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
+    document_type_display: string
+    status: 'DRAFT' | 'APPROVED' | 'CONFIRMED' | 'CANCELLED'
+    status_display: string
+    date: string
+    partner?: number | null
+    partner_name?: string | null
+    reference: string
+    notes: string
+    created_by?: number | null
+    created_by_name?: string | null
+    confirmed_by?: number | null
+    confirmed_by_name?: string | null
+    created_at: string
+    updated_at: string
+    details: InventoryDocumentDetail[]
+}
+
+export interface InventoryDocumentFilters {
+    page?: number
+    page_size?: number
+    document_type?: string
+    status?: string
+    search?: string
+    date_from?: string
+    date_to?: string
+}
+

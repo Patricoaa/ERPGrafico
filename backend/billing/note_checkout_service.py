@@ -286,8 +286,10 @@ class NoteCheckoutService:
                         f"({sale_line.quantity_delivered}) para {product.name}"
                     )
 
-            # Stock movement needed: tracked inventory OR manufacturable (non-tracked needs BOM explosion)
-            creates_stock_move = bool(product.track_inventory) or product.strategy.requires_manufacturing_profile
+            # Stock movement needed: tracked inventory OR simple manufacturable (non-advanced with BOM)
+            # Advanced manufacturables have their own production flow, not direct returns
+            is_advanced_mfg = product.product_type == "MANUFACTURABLE" and getattr(product, "requires_advanced_manufacturing", False)
+            creates_stock_move = (bool(product.track_inventory) or product.strategy.requires_manufacturing_profile) and not is_advanced_mfg
 
             if creates_stock_move:
                 has_stockable = True
@@ -825,17 +827,17 @@ class NoteCheckoutService:
                 debit_amount = 0 if is_sale else line_amount
                 credit_amount = line_amount if is_sale else 0
 
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=product_account,
-                    debit=debit_amount,
-                    credit=credit_amount,
-                    label=GlosaBuilder.item(
-                        Roles.GASTO if not is_sale else Roles.INGRESO,
-                        item.get("reason") or product.name,
-                        doc_ref,
-                    ),
-                )
+            JournalItem.objects.create(
+                entry=entry,
+                account=product_account,
+                debit=debit_amount,
+                credit=credit_amount,
+                label=GlosaBuilder.item(
+                    Roles.GASTO if not is_sale else Roles.INGRESO,
+                    item.get("reason") or product.name,
+                    doc_ref,
+                ),
+            )
 
         # Tax entry
         is_purchase_boleta = (
@@ -982,19 +984,22 @@ class NoteCheckoutService:
         if workflow.current_stage == NoteWorkflow.Stage.COMPLETED:
             raise ValidationError("No se puede cancelar un workflow completado.")
 
+        workflow.current_stage = NoteWorkflow.Stage.CANCELLED
+        workflow.notes = (
+            f"{workflow.notes}\nCANCELADO: {reason}" if workflow.notes else f"CANCELADO: {reason}"
+        )
+
         # Delete draft invoice if not posted
         if workflow.invoice.status == Invoice.Status.DRAFT:
             # Delete associated journal entry if exists
             if workflow.invoice.journal_entry:
                 workflow.invoice.journal_entry.delete()
 
+            # Save workflow state before deleting the invoice to avoid FK validation errors
+            workflow.save(update_fields=["current_stage", "notes"])
             workflow.invoice.delete()
-
-        workflow.current_stage = NoteWorkflow.Stage.CANCELLED
-        workflow.notes = (
-            f"{workflow.notes}\nCANCELADO: {reason}" if workflow.notes else f"CANCELADO: {reason}"
-        )
-        workflow.save()
+        else:
+            workflow.save()
 
         return workflow
 
