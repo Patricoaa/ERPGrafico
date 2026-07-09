@@ -1360,7 +1360,7 @@ class CardService:
         from django.contrib.contenttypes.models import ContentType
 
         from accounting.glosa_builder import GlosaBuilder, Roles
-from accounting.models import AccountingSettings, JournalEntry, JournalItem
+        from accounting.models import AccountingSettings, JournalEntry, JournalItem
         from accounting.services import JournalEntryService
 
         p_rows = pending_rows or []
