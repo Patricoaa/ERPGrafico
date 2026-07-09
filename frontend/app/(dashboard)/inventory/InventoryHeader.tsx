@@ -43,6 +43,7 @@ export function InventoryHeader() {
             href: "/inventory/stock",
             subTabs: [
                 { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory/stock/report" },
+                { value: "documents", label: "Documentos", iconName: "file-text", href: "/inventory/stock/documents" },
                 { value: "movements", label: "Movimientos", iconName: getEntityIconName('inventory.stockmove'), href: getViewModeUrl('inventory.stockmove', "/inventory/stock/movements") },
                 { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: getViewModeUrl('inventory.warehouse', "/inventory/stock/warehouses") },
             ]
@@ -85,6 +86,7 @@ export function InventoryHeader() {
             return { title: "Unidades de Medida", description: "Configuración de métricas y factores de conversión estándar.", iconName: getEntityIconName('inventory.uom') }
         }
         if (activeValue === 'stock') {
+            if (subActiveValue === 'documents') return { title: "Documentos de Inventario", description: "Historial de recepciones, entregas, transferencias y ajustes físicos.", iconName: "file-text" as const }
             if (subActiveValue === 'movements') return { title: "Movimientos de Stock", description: "Histórico de entradas, salidas y transferencias entre ubicaciones.", iconName: getEntityIconName('inventory.stockmove') }
             if (subActiveValue === 'warehouses') return { title: "Almacenes y Ubicaciones", description: "Estructura física y lógica para el almacenamiento de mercadería.", iconName: getEntityIconName('inventory.warehouse') }
             return { title: "Reporte de Existencias", description: "Estado actual del inventario por almacén, valorizado en tiempo real.", iconName: "file-text" as const }

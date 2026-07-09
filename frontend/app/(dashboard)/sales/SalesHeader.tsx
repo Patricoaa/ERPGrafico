@@ -43,7 +43,6 @@ export function SalesHeader() {
             href: getViewModeUrl('sales.saleorder', "/sales/orders"),
             subTabs: [
                 { value: "orders", label: "Notas de Venta", href: getViewModeUrl('sales.saleorder', "/sales/orders") },
-                { value: "deliveries", label: "Despachos", href: "/sales/deliveries" },
                 { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders/notes" },
             ]
         },
