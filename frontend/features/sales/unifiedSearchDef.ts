@@ -1,4 +1,43 @@
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import type { UnifiedSearchConfig, DateFilterDef } from '@/types/unified-search'
+
+const createdDateFilter: DateFilterDef = {
+  type: 'date',
+  key: 'created_at',
+  label: 'Fecha de creación',
+  options: [
+    {
+      label: 'Hoy',
+      serverParamFrom: 'date_after',
+      serverParamTo: 'date_before',
+      getValue: () => {
+        const today = new Date().toISOString().split('T')[0]
+        return { from: today, to: today }
+      },
+    },
+    {
+      label: 'Este mes',
+      serverParamFrom: 'date_after',
+      serverParamTo: 'date_before',
+      getValue: () => {
+        const now = new Date()
+        const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+        const to = now.toISOString().split('T')[0]
+        return { from, to }
+      },
+    },
+    {
+      label: 'Este año',
+      serverParamFrom: 'date_after',
+      serverParamTo: 'date_before',
+      getValue: () => {
+        const now = new Date()
+        const from = `${now.getFullYear()}-01-01`
+        const to = now.toISOString().split('T')[0]
+        return { from, to }
+      },
+    },
+  ],
+}
 
 export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -81,6 +120,7 @@ export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
       placeholderTo: 'Hasta',
     },
   ],
+  dateFilters: [createdDateFilter],
   groupBy: [
     {
       key: 'date',
@@ -141,6 +181,7 @@ export const salesNoteUnifiedSearchDef: UnifiedSearchConfig = {
       placeholderTo: 'Hasta',
     },
   ],
+  dateFilters: [createdDateFilter],
   groupBy: [
     {
       key: 'date',
