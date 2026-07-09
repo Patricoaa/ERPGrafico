@@ -15,6 +15,20 @@ const createdDateFilter: DateFilterDef = {
       },
     },
     {
+      label: 'Esta semana',
+      serverParamFrom: 'date_after',
+      serverParamTo: 'date_before',
+      getValue: () => {
+        const now = new Date()
+        const diff = now.getDay() === 0 ? 6 : now.getDay() - 1
+        const monday = new Date(now)
+        monday.setDate(now.getDate() - diff)
+        const from = monday.toISOString().split('T')[0]
+        const to = now.toISOString().split('T')[0]
+        return { from, to }
+      },
+    },
+    {
       label: 'Este mes',
       serverParamFrom: 'date_after',
       serverParamTo: 'date_before',
