@@ -94,20 +94,18 @@ class SaleOrderFilterSet(django_filters.FilterSet):
         return queryset
 
     def filter_billing_status(self, queryset, name, value):
-        if value == "success":
-            return (
-                queryset.filter(invoices__status__in=["POSTED", "PAID"])
-                .exclude(invoices__number="")
-                .distinct()
-            )
-        elif value == "neutral":
-            return queryset.exclude(
-                id__in=queryset.filter(
-                    invoices__status__in=["POSTED", "PAID"],
-                )
-                .exclude(invoices__number="")
-                .values("id")
-            ).distinct()
+        values = value.split(",") if value else []
+        invoiced = queryset.filter(
+            invoices__status__in=["POSTED", "PAID"],
+        ).exclude(invoices__number="").distinct()
+        not_invoiced = queryset.exclude(
+            id__in=invoiced.values("id")
+        ).distinct()
+
+        if "success" in values and "pending" not in values:
+            return invoiced
+        if "pending" in values and "success" not in values:
+            return not_invoiced
         return queryset
 
     def filter_payment_status(self, queryset, name, value):
