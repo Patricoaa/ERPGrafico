@@ -13,10 +13,6 @@ export function GroupBySection({ options, currentGroupBy, onSelect }: GroupBySec
 
   return (
     <div className="space-y-0.5">
-      <div className="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-        Agrupar por
-      </div>
-
       <button
         type="button"
         onClick={() => onSelect(null)}
