@@ -37,11 +37,11 @@ interface AttributesClientViewProps {
 }
 
 import { useAttributes } from "@/features/inventory/hooks/useAttributes"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { attributeSearchDef } from "../searchDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 
 export function AttributesClientView({ externalOpen, createAction }: AttributesClientViewProps) {
-    const { filters, isFiltered } = useSmartSearch(attributeSearchDef)
+    const search = useUnifiedSearch(attributeUnifiedSearchDef)
     const {
         attributes,
         isLoading,
@@ -50,7 +50,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
         deleteAttribute,
         createAttributeValue,
         deleteAttributeValue,
-    } = useAttributes({ filters })
+    } = useAttributes({ filters: search.filters })
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
     const [isValueModalOpen, setIsValueModalOpen] = useState(false)
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
@@ -278,8 +278,25 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                     variant="embedded"
                     bulkActions={bulkActions}
                     createAction={createAction}
-                    smartSearch={<SmartSearchBar searchDef={attributeSearchDef} placeholder="Buscar atributo..." className="w-full" />}
-                    isFiltered={isFiltered}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={attributeUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar atributo..."
+                    />}
+                    unifiedSearchConfig={attributeUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay atributos",

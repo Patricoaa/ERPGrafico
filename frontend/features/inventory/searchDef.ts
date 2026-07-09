@@ -33,28 +33,6 @@ export const subscriptionSearchDef: SearchDefinition = {
   ],
 }
 
-export const attributeSearchDef: SearchDefinition = {
-  fields: [
-    {
-      key: 'search',
-      label: 'Nombre',
-      type: 'text',
-      serverParam: 'search',
-    },
-  ],
-}
-
-export const uomCategorySearchDef: SearchDefinition = {
-  fields: [
-    {
-      key: 'name',
-      label: 'Nombre',
-      type: 'text',
-      serverParam: 'name',
-    },
-  ],
-}
-
 export const productSearchDef: SearchDefinition = {
   fields: [
     {
