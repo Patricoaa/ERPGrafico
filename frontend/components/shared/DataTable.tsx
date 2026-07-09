@@ -327,7 +327,26 @@ export function DataTable<TData, TValue>({
 
     const dockNode = (() => {
         if (selectedRows.length === 0) return null
-        if (bulkDock) return bulkDock(selectedItems, clearSelection)
+        if (bulkDock) return (
+            <ActionDock isVisible>
+                <div className="flex items-center gap-2">
+                    <CmykRing className="h-2.5 w-2.5 animate-pulse" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
+                        {`${selectedRows.length} ${selectedRows.length === 1 ? "seleccionado" : "seleccionados"}`}
+                    </span>
+                </div>
+                {bulkDock(selectedItems, clearSelection)}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
+                >
+                    <X className="h-3 w-3 mr-1.5" />
+                    Limpiar
+                </Button>
+            </ActionDock>
+        )
         if (bulkActions && bulkActions.length > 0) {
             return (
                 <ActionDock isVisible>
