@@ -26,10 +26,10 @@ export function PrepressPanel({ children, className, id }: PrepressPanelProps) {
   return (
     <div id={id} className={cn("canvas-prepress", className)}>
       <div className="absolute inset-4 pointer-events-none z-[1]">
-        <CmykRing size="2xs" className="absolute top-0 left-0 opacity-80" />
-        <CmykRing size="2xs" className="absolute top-0 right-0 opacity-80" />
-        <CmykRing size="2xs" className="absolute bottom-0 left-0 opacity-80" />
-        <CmykRing size="2xs" className="absolute bottom-0 right-0 opacity-80" />
+        <CmykRing size="xs" className="absolute top-0 left-0 opacity-80" />
+        <CmykRing size="xs" className="absolute top-0 right-0 opacity-80" />
+        <CmykRing size="xs" className="absolute bottom-0 left-0 opacity-80" />
+        <CmykRing size="xs" className="absolute bottom-0 right-0 opacity-80" />
       </div>
       {children}
     </div>
