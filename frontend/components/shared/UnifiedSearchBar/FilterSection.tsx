@@ -70,6 +70,7 @@ export function FilterSection({
               key={mf.key}
               def={mf}
               selectedValues={selectedValues}
+              activeParams={activeParams}
               onApply={onApply}
               onRemove={onRemove}
             />
