@@ -37,14 +37,14 @@ export function SearchBarMenu({
   if (!hasFilters && !hasGroupBy) return null
 
   return (
-    <div className="grid grid-cols-2 gap-0 min-h-[200px]">
+    <div className="grid grid-cols-2 gap-0">
       {/* Left column: Filtrar por */}
       <div className="border-r border-border/60">
         <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
           <Filter className="h-3 w-3" />
           Filtrar por
         </div>
-        <ScrollArea className="max-h-[320px]">
+        <ScrollArea className="max-h-[40vh]">
           <div className="p-1.5">
             <FilterSection
               filters={filters}
@@ -63,7 +63,7 @@ export function SearchBarMenu({
           <Layers className="h-3 w-3" />
           Agrupar por
         </div>
-        <ScrollArea className="max-h-[320px]">
+        <ScrollArea className="max-h-[40vh]">
           <div className="p-1.5">
             {hasGroupBy && groupBy && (
               <GroupBySection
