@@ -17,9 +17,9 @@ export function PurchasingHeader() {
 
     const tabs = [
         { value: "orders", label: "Órdenes", iconName: getEntityIconName('purchasing.purchaseorder'), href: getViewModeUrl('purchasing.purchaseorder', "/purchasing/orders") },
-        { value: "receipts", label: "Recepciones", iconName: getEntityIconName('purchasing.purchasereceipt'), href: "/purchasing/receipts" },
         { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: getViewModeUrl('billing.invoice', "/purchasing/notes") },
     ]
+
 
     const navigation = {
         moduleName: "Compras",
