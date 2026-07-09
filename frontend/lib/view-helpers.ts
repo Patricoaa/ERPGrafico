@@ -2,9 +2,9 @@
 
 import React, { useState, useCallback } from "react"
 import type { Table as ReactTable, Row, VisibilityState } from "@tanstack/react-table"
-import { DomainCard, EntityCard, EmptyState, MoneyDisplay, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
+import { DomainCard, EntityCard, EmptyState, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
 import { Skeleton } from "@/components/ui/skeleton"
-import { groupByDate, groupItems, type AggregatorDef, type AggregateFormat, type Group } from "@/lib/group-utils"
+import { groupByDate, groupItems, type Group } from "@/lib/group-utils"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -184,7 +184,6 @@ export function createCardGroupView<TData>(
       sort?: 'asc' | 'desc'
       labelFn?: (key: string, rawKey: unknown, items: TData[]) => { label: string; sublabel?: string }
       defaultLabel?: string
-      aggregators?: AggregatorDef[]
     }
     gridLayout?: "single-column" | "multi-column"
     emptyState?: DataTableEmptyState
@@ -233,14 +232,14 @@ export function createCardGroupView<TData>(
         sort: cardGroupBy.sort,
         defaultLabel: cardGroupBy.defaultLabel,
         labelFn: cardGroupBy.labelFn as (key: string, rawKey: unknown, items: TData[]) => { label: string; sublabel?: string },
-      }, cardGroupBy.aggregators)
+      })
     } else if (hasDateField) {
-      groups = groupByDate(data, cardGroupBy.field, cardGroupBy.aggregators)
+      groups = groupByDate(data, cardGroupBy.field)
     } else {
       groups = groupItems(data, cardGroupBy.field, {
         sort: cardGroupBy.sort,
         defaultLabel: cardGroupBy.defaultLabel,
-      }, cardGroupBy.aggregators)
+      })
     }
 
     const isAnySelected = table.getSelectedRowModel().rows.length > 0
@@ -273,7 +272,6 @@ export function createCardGroupView<TData>(
                   { className: "hidden sm:inline text-xs text-muted-foreground/50 truncate" },
                   group.sublabel,
                 ),
-              renderAggregates(group.aggregates, cardGroupBy.aggregators ?? []),
             ),
           ),
           React.createElement(
@@ -314,63 +312,6 @@ export function createCardGroupView<TData>(
   }
   GroupedCardView.displayName = "GroupedCardView"
   return GroupedCardView
-}
-
-function formatAggregateValue(value: number, format?: AggregateFormat): string {
-  switch (format) {
-    case 'integer':
-      return value.toLocaleString('es-CL', { maximumFractionDigits: 0 })
-    case 'number':
-      return value.toLocaleString('es-CL')
-    default:
-      return value.toLocaleString('es-CL')
-  }
-}
-
-function renderAggregates(
-  aggregates: Record<string, number>,
-  defs: AggregatorDef[],
-): React.ReactNode {
-  const children: React.ReactNode[] = []
-
-  defs.forEach((def) => {
-    const value = aggregates[def.key]
-    if (value == null) return
-
-    children.push(
-      React.createElement("span", { key: `sep-${def.key}`, className: "text-muted-foreground/20" }, "\u00B7"),
-    )
-    children.push(
-      React.createElement(
-        "span",
-        { key: `label-${def.key}`, className: "text-[10px] font-black uppercase tracking-widest text-muted-foreground/40" },
-        def.label,
-      ),
-    )
-
-    if (def.format === 'money') {
-      children.push(
-        React.createElement(MoneyDisplay, {
-          key: `val-${def.key}`,
-          amount: value,
-          showColor: false,
-          className: "text-xs font-bold",
-        }),
-      )
-    } else {
-      children.push(
-        React.createElement(
-          "span",
-          { key: `val-${def.key}`, className: "text-xs font-bold tabular-nums" },
-          formatAggregateValue(value, def.format),
-        ),
-      )
-    }
-  })
-
-  if (children.length === 0) return null
-
-  return React.createElement("span", { className: "ml-auto flex items-center gap-2 pr-4.5" }, ...children)
 }
 
 /**

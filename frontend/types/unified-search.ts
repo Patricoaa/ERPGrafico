@@ -1,14 +1,3 @@
-export type AggregateFn = 'sum' | 'count' | 'avg' | 'min' | 'max'
-export type AggregateFormat = 'money' | 'number' | 'integer'
-
-export interface AggregatorDef {
-  key: string
-  label: string
-  field?: string
-  fn: AggregateFn
-  format?: AggregateFormat
-}
-
 export interface TextFieldDef {
   key: string
   label: string
@@ -80,7 +69,6 @@ export interface GroupByOptionDef {
   key: string
   label: string
   field: string
-  aggregators?: AggregatorDef[]
   default?: boolean
 }
 

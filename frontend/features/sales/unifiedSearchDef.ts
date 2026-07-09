@@ -144,10 +144,6 @@ export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Fecha de creación',
       field: 'date',
       default: true,
-      aggregators: [
-        { key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' },
-        { key: 'count', label: 'Items', fn: 'count', format: 'integer' },
-      ],
     },
     {
       key: 'customer',
@@ -205,10 +201,6 @@ export const salesNoteUnifiedSearchDef: UnifiedSearchConfig = {
       label: 'Fecha de creación',
       field: 'date',
       default: true,
-      aggregators: [
-        { key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' },
-        { key: 'count', label: 'Items', fn: 'count', format: 'integer' },
-      ],
     },
     {
       key: 'customer',
@@ -216,8 +208,4 @@ export const salesNoteUnifiedSearchDef: UnifiedSearchConfig = {
       field: 'customer_name',
     },
   ],
-  basePeriod: {
-    serverParamFrom: 'date_after',
-    serverParamTo: 'date_before',
-  },
 }
