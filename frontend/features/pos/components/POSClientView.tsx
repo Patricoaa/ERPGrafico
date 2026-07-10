@@ -9,10 +9,10 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { PrintableReceipt, BaseModal } from '@/components/shared'
+import { ActionConfirmModal, PrintableReceipt, BaseModal } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
+import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, Wallet, Check, Printer } from 'lucide-react'
 
 import {
     DropdownMenu,
@@ -728,59 +728,38 @@ export function POSClientView() {
             </BaseModal>
 
             {/* Partner Withdrawal Confirmation */}
-            <BaseModal
+            <ActionConfirmModal
                 open={withdrawDialogOpen}
-                onOpenChange={setWithdrawDialogOpen}
-                size="sm"
-                title={
-                    <div className="flex flex-col items-center w-full">
-                        <div className="mx-auto bg-warning/10 text-warning p-4 rounded-full mb-4 border border-warning/20">
-                            <ShoppingCart className="h-8 w-8" />
-                        </div>
-                        <span className="text-xl font-black tracking-tight text-center text-warning">Confirmar Retiro de Socio</span>
-                    </div>
-                }
+                onOpenChange={(open) => {
+                    setWithdrawDialogOpen(open)
+                    if (!open) {
+                        setSelectedPartnerId(null)
+                        setSelectedPartnerName("")
+                    }
+                }}
+                onConfirm={handleWithdraw}
+                title="Confirmar Retiro de Socio"
+                variant="warning"
+                confirmText="Confirmar Retiro"
                 description={
-                    <div className="text-center text-warning-foreground/60 font-medium pt-2 text-sm leading-relaxed">
-                        Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
-                        <br />
-                        Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
-                    </div>
+                    <>
+                        <p className="mb-4">
+                            Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
+                            Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
+                        </p>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-foreground">Seleccionar Socio <span className="text-destructive">*</span></Label>
+                            <AdvancedContactSelector
+                                value={selectedPartnerId}
+                                onChange={setSelectedPartnerId}
+                                onSelectContact={(c) => setSelectedPartnerName(c.name)}
+                                isPartnerOnly={true}
+                                placeholder="Buscar socio..."
+                            />
+                        </div>
+                    </>
                 }
-                footer={
-                    <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
-                        <Button
-                            className="flex-1 h-12 rounded-sm text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-card disabled:opacity-50"
-                            onClick={handleWithdraw}
-                            disabled={isWithdrawing || !selectedPartnerId}
-                        >
-                            {isWithdrawing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                            Confirmar Retiro
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-sm text-sm font-bold"
-                            onClick={() => setWithdrawDialogOpen(false)}
-                            disabled={isWithdrawing}
-                        >
-                            Cancelar
-                        </Button>
-                    </div>
-                }
-            >
-                <div className="space-y-4 my-2">
-                    <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
-                        <AdvancedContactSelector
-                            value={selectedPartnerId}
-                            onChange={setSelectedPartnerId}
-                            onSelectContact={(c) => setSelectedPartnerName(c.name)}
-                            isPartnerOnly={true}
-                            placeholder="Buscar socio..."
-                        />
-                    </div>
-                </div>
-            </BaseModal>
+            />
         </div>
     )
 }
