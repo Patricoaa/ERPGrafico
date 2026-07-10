@@ -1253,28 +1253,16 @@ class StockMove(models.Model):
 
     date = models.DateField(_("Fecha"), default=get_current_date)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="stock_moves")
-    warehouse = models.ForeignKey(
-        Warehouse, on_delete=models.PROTECT, related_name="warehouse_moves"
-    )
     uom = models.ForeignKey(
         UoM, on_delete=models.PROTECT, related_name="stock_moves_uom", null=True, blank=True
     )
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
-    move_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
     
-    # Phase 3: Location tracking (Dual-write mode, temporarily nullable)
     source_location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="moves_out", null=True, blank=True
+        Location, on_delete=models.PROTECT, related_name="moves_out"
     )
     destination_location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="moves_in", null=True, blank=True
-    )
-    adjustment_reason = models.CharField(
-        _("Motivo de Ajuste"),
-        max_length=20,
-        choices=AdjustmentReason.choices,
-        null=True,
-        blank=True,
+        Location, on_delete=models.PROTECT, related_name="moves_in"
     )
 
     description = models.CharField(_("Descripción"), max_length=255, blank=True)
@@ -1423,26 +1411,14 @@ class InventoryDocument(TimeStampedModel):
 class InventoryDocumentDetail(models.Model):
     document = models.ForeignKey(InventoryDocument, on_delete=models.CASCADE, related_name="details")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="document_details")
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name="document_details")
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
     unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=2, default=0)
     
-    # Optional Source Warehouse for Transfers
-    source_warehouse = models.ForeignKey(
-        Warehouse, 
-        on_delete=models.PROTECT, 
-        related_name="document_source_details", 
-        null=True, 
-        blank=True,
-        help_text=_("Solo aplicable para transferencias. Bodega de origen.")
-    )
-
-    # Phase 3: Location tracking (Dual-write mode, temporarily nullable)
     source_location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="doc_moves_out", null=True, blank=True
+        Location, on_delete=models.PROTECT, related_name="doc_moves_out"
     )
     destination_location = models.ForeignKey(
-        Location, on_delete=models.PROTECT, related_name="doc_moves_in", null=True, blank=True
+        Location, on_delete=models.PROTECT, related_name="doc_moves_in"
     )
 
     class Meta:

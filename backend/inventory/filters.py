@@ -27,11 +27,12 @@ class UoMFilter(filters.FilterSet):
 
 class StockMoveFilter(filters.FilterSet):
     product_id = filters.NumberFilter(field_name="product__id")
-    warehouse_id = filters.NumberFilter(field_name="warehouse__id")
+    source_location_id = filters.NumberFilter(field_name="source_location__id")
+    destination_location_id = filters.NumberFilter(field_name="destination_location__id")
     product_name = filters.CharFilter(field_name="product__name", lookup_expr="icontains")
     date_from = filters.DateFilter(field_name="date", lookup_expr="gte")
     date_to = filters.DateFilter(field_name="date", lookup_expr="lte")
 
     class Meta:
         model = StockMove
-        fields = ["product_id", "warehouse_id", "move_type", "product_name", "date_from", "date_to"]
+        fields = ["product_id", "source_location_id", "destination_location_id", "product_name", "date_from", "date_to"]
