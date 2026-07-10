@@ -2,7 +2,6 @@
 
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useQueryState, parseAsString } from 'nuqs'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import {
@@ -10,12 +9,12 @@ import {
     StatusBadge, MoneyDisplay, Skeleton, EntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useChecks, useCheckMutations } from '../hooks/useChecks'
 import { CheckDepositModal } from './CheckDepositModal'
 import { checkActions, type CheckActionsCtx } from './checkActions'
-import { BankFilter } from './BankFilter'
+import { useBanks } from '@/features/treasury'
 import type { Check, CheckDirection } from './types'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
@@ -38,11 +37,18 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
 
     const { openEntity } = useGlobalModals()
 
+    const { banks } = useBanks()
+
+    const filterOptions: Record<string, MultiSelectOption[]> = useMemo(() => ({
+        bank: banks.map((b) => ({ label: b.name, value: String(b.id) })),
+    }), [banks])
+
     const config: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
             { key: 'search', label: 'N° Cheque / Girador / Monto', serverParam: 'search' },
         ],
         filters: [
+            { key: 'bank', label: 'Banco', type: 'single', serverParam: 'bank', dynamic: true },
             { key: 'status', label: 'Estado', type: 'single', serverParam: 'status', options: [
                 { label: 'En Cartera', value: 'IN_PORTFOLIO' },
                 { label: 'Depositado', value: 'DEPOSITED' },
@@ -60,17 +66,14 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
             ],
         }],
     }), [])
-    const search = useUnifiedSearch(config)
-    const [bankParam, setBankParam] = useQueryState('bank', parseAsString)
-
-    const effectiveBank = bankParam ?? (bankId ? String(bankId) : undefined)
+    const search = useUnifiedSearch(config, filterOptions)
 
     const queryParams = useMemo(() => {
         const p: Record<string, string> = { ...search.filters }
-        if (effectiveBank) p.bank = effectiveBank
+        if (bankId && !p.bank) p.bank = String(bankId)
         if (direction) p.direction = direction
         return Object.keys(p).length ? p : undefined
-    }, [effectiveBank, direction, search.filters])
+    }, [search.filters, bankId, direction])
 
     const { checks = [], isLoading } = useChecks(queryParams)
 
@@ -96,7 +99,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
         }
     }, [router, pathname, searchParams])
 
-    const isFiltered = search.isFiltered || !!bankParam
+    const isFiltered = search.isFiltered
 
     const handleViewDetail = useCallback(
         (id: number) => {
@@ -108,8 +111,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
 
     const handleReset = useCallback(() => {
         search.clearAll()
-        setBankParam(null)
-    }, [search.clearAll, setBankParam])
+    }, [search.clearAll])
 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
@@ -227,8 +229,8 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                         groupBy={search.groupBy}
                         onGroupBySelect={search.setGroupBy}
                         paramValues={search.paramValues}
+                        filterOptions={search.filterOptions}
                         placeholder="Buscar por N° cheque, girador o monto..."
-                        prefix={<BankFilter />}
                     />}
                     isFiltered={isFiltered}
                     showReset={isFiltered}

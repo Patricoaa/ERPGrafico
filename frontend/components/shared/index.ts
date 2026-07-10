@@ -106,6 +106,8 @@ export type {
   RangeFilterDef,
   GroupByOptionDef,
   DropdownFilterDef,
+  SingleSelectFilterDef,
+  MultiSelectOption,
 } from '@/types/unified-search';
 
 // Filters & Inputs

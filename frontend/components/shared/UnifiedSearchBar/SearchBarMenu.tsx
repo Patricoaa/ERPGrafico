@@ -6,6 +6,7 @@ import type {
   DropdownFilterDef,
   DateFilterDef,
   GroupByOptionDef,
+  MultiSelectOption,
 } from '@/types/unified-search'
 import { FilterSection } from './FilterSection'
 import { GroupBySection } from './GroupBySection'
@@ -16,6 +17,7 @@ interface SearchBarMenuProps {
   groupBy?: GroupByOptionDef[]
   paramValues: Record<string, string | null>
   currentGroupBy: string | null
+  filterOptions?: Record<string, MultiSelectOption[]>
   onApply: (param: string, value: string) => Promise<void>
   onRemove: (param: string) => Promise<void>
   onGroupBySelect: (key: string | null) => Promise<void>
@@ -27,6 +29,7 @@ export function SearchBarMenu({
   groupBy,
   paramValues,
   currentGroupBy,
+  filterOptions,
   onApply,
   onRemove,
   onGroupBySelect,
@@ -50,6 +53,7 @@ export function SearchBarMenu({
               filters={filters}
               dateFilters={dateFilters}
               paramValues={paramValues}
+              filterOptions={filterOptions}
               onApply={onApply}
               onRemove={onRemove}
             />

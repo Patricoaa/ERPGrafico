@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { SingleSelectFilterDef } from '@/types/unified-search'
+import type { SingleSelectFilterDef, MultiSelectOption } from '@/types/unified-search'
 
 interface SingleSelectFilterItemProps {
   def: SingleSelectFilterDef
   selectedValue: string
   activeParams: Set<string>
+  filterOptions?: Record<string, MultiSelectOption[]>
   onApply: (param: string, value: string) => Promise<void>
   onRemove: (param: string) => Promise<void>
 }
@@ -17,11 +18,18 @@ export function SingleSelectFilterItem({
   def,
   selectedValue,
   activeParams,
+  filterOptions,
   onApply,
   onRemove,
 }: SingleSelectFilterItemProps) {
   const [expanded, setExpanded] = useState(false)
   const isActive = activeParams?.has(def.serverParam) ?? false
+
+  const options = def.dynamic && filterOptions?.[def.key]
+    ? filterOptions[def.key]
+    : (def.options ?? [])
+
+  const currentLabel = options.find(o => o.value === selectedValue)?.label ?? selectedValue
 
   const handleSelect = (optValue: string) => {
     if (optValue === selectedValue) {
@@ -45,14 +53,20 @@ export function SingleSelectFilterItem({
         <span>{def.label}</span>
         {selectedValue && (
           <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[100px]">
-            {def.options.find(o => o.value === selectedValue)?.label ?? selectedValue}
+            {currentLabel}
           </span>
         )}
       </button>
 
       {expanded && (
         <div className="ml-4 border-l border-border/40 pl-2 py-1 space-y-0.5">
-          {def.options.map((opt) => (
+          {options.length === 0 && def.dynamic && (
+            <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Cargando...
+            </div>
+          )}
+          {options.map((opt) => (
             <button
               key={opt.value}
               type="button"

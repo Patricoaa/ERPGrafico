@@ -1194,6 +1194,35 @@ class Warehouse(models.Model):
         return self.name
 
 
+class Location(models.Model):
+    class Type(models.TextChoices):
+        VENDOR = "VENDOR", "Proveedor"
+        CUSTOMER = "CUSTOMER", "Cliente"
+        INTERNAL = "INTERNAL", "Interna (Bodega)"
+        VIRTUAL = "VIRTUAL", "Virtual (Ajustes, Socios, Producción)"
+
+    name = models.CharField(_("Nombre"), max_length=255)
+    location_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
+    partner = models.ForeignKey("contacts.Contact", on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
+    account = models.ForeignKey(
+        "accounting.Account", 
+        on_delete=models.RESTRICT, 
+        null=True, blank=True,
+        help_text="Cuenta contable de contrapartida para ubicaciones virtuales."
+    )
+    is_active = models.BooleanField(_("Activa"), default=True)
+
+    class Meta:
+        verbose_name = _("Ubicación")
+        verbose_name_plural = _("Ubicaciones")
+
+    def __str__(self):
+        if self.warehouse:
+            return f"{self.warehouse.name} - {self.name}"
+        return self.name
+
+
 class Stock(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stocks")
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="stocks")
@@ -1230,20 +1259,16 @@ class StockMove(models.Model):
 
     date = models.DateField(_("Fecha"), default=get_current_date)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="stock_moves")
-    warehouse = models.ForeignKey(
-        Warehouse, on_delete=models.PROTECT, related_name="warehouse_moves"
-    )
     uom = models.ForeignKey(
         UoM, on_delete=models.PROTECT, related_name="stock_moves_uom", null=True, blank=True
     )
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
-    move_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
-    adjustment_reason = models.CharField(
-        _("Motivo de Ajuste"),
-        max_length=20,
-        choices=AdjustmentReason.choices,
-        null=True,
-        blank=True,
+    
+    source_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="moves_out"
+    )
+    destination_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="moves_in"
     )
 
     description = models.CharField(_("Descripción"), max_length=255, blank=True)
@@ -1392,23 +1417,28 @@ class InventoryDocument(TimeStampedModel):
 class InventoryDocumentDetail(models.Model):
     document = models.ForeignKey(InventoryDocument, on_delete=models.CASCADE, related_name="details")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="document_details")
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name="document_details")
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
     unit_cost = models.DecimalField(_("Costo Unitario"), max_digits=12, decimal_places=2, default=0)
     
-    # Optional Source Warehouse for Transfers
-    source_warehouse = models.ForeignKey(
-        Warehouse, 
-        on_delete=models.PROTECT, 
-        related_name="document_source_details", 
-        null=True, 
-        blank=True,
-        help_text=_("Solo aplicable para transferencias. Bodega de origen.")
+    source_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="doc_moves_out"
+    )
+    destination_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="doc_moves_in"
     )
 
     class Meta:
         verbose_name = _("Detalle de Documento")
         verbose_name_plural = _("Detalles de Documento")
+
+    def __init__(self, *args, **kwargs):
+        # Allow legacy kwarg 'warehouse' and 'source_warehouse' during object instantiation (e.g. from tests or legacy services)
+        _warehouse = kwargs.pop('warehouse', None)
+        _source_warehouse = kwargs.pop('source_warehouse', None)
+        super().__init__(*args, **kwargs)
+        # Store them in private attributes in case they need to be resolved before save
+        self._legacy_warehouse = _warehouse
+        self._legacy_source_warehouse = _source_warehouse
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"

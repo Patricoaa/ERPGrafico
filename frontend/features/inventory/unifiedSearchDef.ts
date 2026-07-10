@@ -83,19 +83,7 @@ export const stockMoveUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'product_name',
     },
   ],
-  filters: [
-    {
-      type: 'single',
-      key: 'move_type',
-      label: 'Tipo',
-      serverParam: 'move_type',
-      options: [
-        { label: 'Entrada', value: 'IN' },
-        { label: 'Salida', value: 'OUT' },
-        { label: 'Ajuste', value: 'ADJ' },
-      ],
-    },
-  ],
+  filters: [],
   dateFilters: [{
     type: 'date',
     key: 'date',

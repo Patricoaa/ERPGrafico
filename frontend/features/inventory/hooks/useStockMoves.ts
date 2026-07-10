@@ -12,10 +12,12 @@ export interface StockMove {
     product_name: string
     product_internal_code?: string
     product_code?: string
-    warehouse_name: string
+    source_location: number
+    source_location_name: string
+    destination_location: number
+    destination_location_name: string
     quantity: string
     uom_name: string
-    move_type: string
     description: string
     related_documents: Array<{
         type: string
@@ -28,8 +30,8 @@ export interface StockMoveFilters {
     page?: number
     page_size?: number
     product?: string | number
-    warehouse?: string | number
-    move_type?: string
+    source_location_id?: string | number
+    destination_location_id?: string | number
     date_from?: string
     date_to?: string
 }

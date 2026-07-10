@@ -60,25 +60,22 @@ class InventoryService:
         from .models import Stock, StockMove
         
         # Calculate in memory to avoid N+1 and complex DB locks
+        # In the new Location model: Stock is sum of moves WHERE destination_location is an INTERNAL location of this warehouse
+        # MINUS sum of moves WHERE source_location is an INTERNAL location of this warehouse
+        
         in_qty = StockMove.objects.filter(
             product_id=product_id, 
-            warehouse_id=warehouse_id, 
-            move_type=StockMove.Type.IN
+            destination_location__warehouse_id=warehouse_id,
+            destination_location__location_type="INTERNAL"
         ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
         
         out_qty = StockMove.objects.filter(
             product_id=product_id, 
-            warehouse_id=warehouse_id, 
-            move_type=StockMove.Type.OUT
+            source_location__warehouse_id=warehouse_id,
+            source_location__location_type="INTERNAL"
         ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
         
-        adj_qty = StockMove.objects.filter(
-            product_id=product_id, 
-            warehouse_id=warehouse_id, 
-            move_type=StockMove.Type.ADJUSTMENT
-        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
-
-        total_qty = in_qty - out_qty + adj_qty
+        total_qty = in_qty - out_qty
 
         stock, _ = Stock.objects.get_or_create(
             product_id=product_id,
@@ -113,60 +110,123 @@ class InventoryService:
 
     @staticmethod
     @transaction.atomic
-    def confirmar_documento(document, user=None, journal_entry=None):
-        from .models import InventoryDocument, StockMove
+    def confirmar_documento(document, user=None, journal_entry=None, generate_accounting=False):
+        from .models import InventoryDocument, StockMove, Location
+        from accounting.models import JournalEntry, JournalItem
+        from accounting.services import JournalEntryService
+        from accounting.glosa_builder import GlosaBuilder, Roles
         
         if document.status not in [InventoryDocument.Status.DRAFT, InventoryDocument.Status.APPROVED]:
             raise ValidationError("Solo se pueden confirmar documentos en estado borrador o aprobado.")
             
         generated_moves = []
-        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse'):
-            if document.document_type == InventoryDocument.Type.TRANSFER:
-                if not detail.source_warehouse:
-                    raise ValidationError("Las transferencias requieren una bodega de origen.")
-                # Source OUT
-                out_move = StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.source_warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.OUT,
-                    description=f"Transferencia Salida Doc: {document.reference or document.id}",
-                    journal_entry=journal_entry
-                )
-                # Dest IN
-                in_move = StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.IN,
-                    description=f"Transferencia Entrada Doc: {document.reference or document.id}",
-                    journal_entry=journal_entry
-                )
-                generated_moves.extend([out_move, in_move])
-            else:
-                if document.document_type == InventoryDocument.Type.RECEIPT:
-                    move_type = StockMove.Type.IN
-                    qty = detail.quantity
+        for detail in document.details.select_related('product', 'source_location', 'destination_location'):
+            
+            # Infer Locations if they are missing (Dual-Write Support)
+            src_loc = detail.source_location
+            dst_loc = detail.destination_location
+            
+            if not src_loc or not dst_loc:
+                internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse=detail.warehouse).first()
+                if document.document_type == InventoryDocument.Type.TRANSFER:
+                    src_internal = Location.objects.filter(location_type="INTERNAL", warehouse=detail.source_warehouse).first()
+                    src_loc = src_internal
+                    dst_loc = internal_loc
+                elif document.document_type == InventoryDocument.Type.RECEIPT:
+                    src_loc = Location.objects.filter(location_type="VENDOR").first()
+                    dst_loc = internal_loc
                 elif document.document_type == InventoryDocument.Type.DELIVERY:
-                    move_type = StockMove.Type.OUT
-                    qty = detail.quantity
-                else: # ADJUSTMENT, PRODUCTION
-                    if document.document_type == InventoryDocument.Type.PRODUCTION:
-                        move_type = StockMove.Type.IN if detail.quantity >= 0 else StockMove.Type.OUT
+                    src_loc = internal_loc
+                    dst_loc = Location.objects.filter(location_type="CUSTOMER").first()
+                elif document.document_type == InventoryDocument.Type.PARTNER_CONTRIBUTION:
+                    src_loc = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
+                    dst_loc = internal_loc
+                elif document.document_type == InventoryDocument.Type.PARTNER_WITHDRAWAL:
+                    src_loc = internal_loc
+                    dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
+                elif document.document_type == InventoryDocument.Type.PRODUCTION:
+                    src_loc = Location.objects.filter(location_type="VIRTUAL").first() # Simplification
+                    dst_loc = internal_loc
+                else: # ADJUSTMENT
+                    if detail.quantity > 0:
+                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first()
+                        dst_loc = internal_loc
                     else:
-                        move_type = StockMove.Type.ADJUSTMENT
-                    qty = detail.quantity
+                        src_loc = internal_loc
+                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first()
+
+            if document.document_type == InventoryDocument.Type.TRANSFER:
+                if not src_loc:
+                    raise ValidationError("Las transferencias requieren una ubicación de origen.")
+                qty = detail.quantity
+            else:
+                qty = detail.quantity
+
+            move = StockMove.objects.create(
+                product=detail.product,
+                quantity=abs(qty),
+                source_location=src_loc,
+                destination_location=dst_loc,
+                unit_cost=detail.unit_cost,
+                description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}",
+                journal_entry=journal_entry
+            )
+            generated_moves.append(move)
+            
+        # Accounting Generation
+        if generate_accounting and not journal_entry:
+            items = []
+            total_value = 0
+            
+            for move in generated_moves:
+                src = move.source_location
+                dst = move.destination_location
+                
+                value = abs(move.quantity * (move.unit_cost or move.product.cost_price))
+                if value == 0:
+                    continue
                     
-                move = StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.warehouse,
-                    quantity=qty,
-                    move_type=move_type,
-                    unit_cost=detail.unit_cost,
-                    description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}",
-                    journal_entry=journal_entry
+                total_value += value
+                
+                # Determine Accounts
+                credit_account = move.product.get_asset_account if src.location_type == 'INTERNAL' else src.account
+                debit_account = move.product.get_asset_account if dst.location_type == 'INTERNAL' else dst.account
+                
+                if not credit_account or not debit_account:
+                    raise ValidationError(f"No se pudieron resolver las cuentas contables para el movimiento del producto {move.product.name}")
+                    
+                if credit_account != debit_account:
+                    items.append(JournalItem(
+                        account=debit_account,
+                        debit=value,
+                        credit=0,
+                        label=f"{document.get_document_type_display()} {move.product.name}"
+                    ))
+                    items.append(JournalItem(
+                        account=credit_account,
+                        debit=0,
+                        credit=value,
+                        label=f"{document.get_document_type_display()} {move.product.name}"
+                    ))
+            
+            if items:
+                entry = JournalEntry.objects.create(
+                    date=timezone.now().date(),
+                    description=GlosaBuilder.build(
+                        GlosaBuilder.AJUSTE_STOCK, document.reference or str(document.id), document.notes, total_value
+                    ),
+                    status=JournalEntry.State.POSTED,
+                    is_manual=False
                 )
-                generated_moves.append(move)
+                for item in items:
+                    item.entry = entry
+                JournalItem.objects.bulk_create(items)
+                
+                # Update moves with the generated entry
+                for move in generated_moves:
+                    move.journal_entry = entry
+                    move._allow_update = True
+                    move.save(update_fields=['journal_entry'])
                 
         document.status = InventoryDocument.Status.CONFIRMED
         if user:
@@ -182,41 +242,15 @@ class InventoryService:
         if document.status != InventoryDocument.Status.CONFIRMED:
             raise ValidationError("Solo se pueden anular documentos confirmados.")
             
-        # To reverse the document, we create reverse StockMoves
-        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse'):
-            if document.document_type == InventoryDocument.Type.TRANSFER:
-                # Reverse Dest IN -> OUT
-                StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.OUT,
-                    description=f"Anulación Transferencia Entrada Doc: {document.reference or document.id}"
-                )
-                # Reverse Source OUT -> IN
-                StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.source_warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.IN,
-                    description=f"Anulación Transferencia Salida Doc: {document.reference or document.id}"
-                )
-            else:
-                if document.document_type == InventoryDocument.Type.RECEIPT:
-                    move_type = StockMove.Type.OUT
-                elif document.document_type == InventoryDocument.Type.DELIVERY:
-                    move_type = StockMove.Type.IN
-                else:
-                    move_type = StockMove.Type.ADJUSTMENT # Needs negative qty in payload if adjustment
-                    
-                StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.warehouse,
-                    quantity=-detail.quantity if move_type == StockMove.Type.ADJUSTMENT else detail.quantity,
-                    move_type=move_type,
-                    unit_cost=detail.unit_cost,
-                    description=f"Anulación {document.get_document_type_display()} Doc: {document.reference or document.id}"
-                )
+        for detail in document.details.select_related('product', 'source_location', 'destination_location'):
+            StockMove.objects.create(
+                product=detail.product,
+                quantity=detail.quantity,
+                source_location=detail.destination_location,
+                destination_location=detail.source_location,
+                unit_cost=detail.unit_cost,
+                description=f"Anulación {document.get_document_type_display()} Doc: {document.reference or document.id}"
+            )
                 
         document.status = InventoryDocument.Status.CANCELLED
         document.save(update_fields=['status'])
@@ -412,107 +446,14 @@ class StockService:
         )
         
         # We confirm the document which creates the StockMove natively
-        doc, generated_moves = InventoryService.confirmar_documento(doc)
+        # and generates accounting automatically via the Universal Accounting Engine
+        doc, generated_moves = InventoryService.confirmar_documento(doc, generate_accounting=True)
         
-        # Get the generated move for accounting linking (temporarily to not break external things that expect a StockMove returned)
+        # Get the generated move for returning
         move = generated_moves[0] if generated_moves else None
         
         if not move: # Fallback if move_type was something else
             move = StockMove.objects.filter(product=product, warehouse=warehouse).order_by('-id').first()
-
-        # 3. Accounting Logic
-        asset_account = product.get_asset_account
-        if not asset_account:
-            raise ValidationError(
-                f"El producto {product.name} (o su categoría) no tiene configurada una Cuenta de Activo."
-            )
-
-        # Determine Counterpart Account based on reason
-        contra_account = None
-
-        if adjustment_reason == "REVALUATION":
-            contra_account = settings.revaluation_account
-        elif quantity > 0:
-            # Gain/Sobrante
-            contra_account = (
-                settings.adjustment_income_account
-                or Account.objects.filter(account_type=AccountType.INCOME).first()
-            )
-        else:
-            # Loss/Merma
-            contra_account = (
-                settings.adjustment_expense_account
-                or Account.objects.filter(account_type=AccountType.EXPENSE).first()
-            )
-
-        if not contra_account:
-            raise ValidationError(
-                f"No se encontró una cuenta de contrapartida configurada para el motivo: {adjustment_reason or 'Ajuste Genérico'}."
-            )
-
-        total_value = abs(quantity * unit_cost)
-
-        doc_ref = product.internal_code
-        entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
-            description=GlosaBuilder.build(
-                GlosaBuilder.AJUSTE_STOCK, doc_ref, description, total_value,
-                extra=[adjustment_reason or "Manual"],
-            ),
-            reference=f"{EntityPrefix.STOCK_MOVE}-{move.id}",
-            status=JournalEntry.State.DRAFT,
-            source_content_type=ContentType.objects.get_for_model(StockMove),
-            source_object_id=move.id,
-        )
-
-        # Determine counterpart role for the item label
-        if quantity > 0:
-            contra_role = Roles.INGRESO
-        else:
-            contra_role = Roles.GASTO
-
-        if quantity > 0:
-            # Entry: Debit Asset, Credit Counterpart
-            JournalItem.objects.create(
-                entry=entry,
-                account=asset_account,
-                debit=total_value,
-                credit=0,
-                label=GlosaBuilder.item(Roles.INVENTARIO, description, doc_ref),
-                partner=partner_contact,
-            )
-            JournalItem.objects.create(
-                entry=entry,
-                account=contra_account,
-                debit=0,
-                credit=total_value,
-                label=GlosaBuilder.item(contra_role, description, doc_ref),
-                partner=partner_contact,
-            )
-        else:
-            # Exit: Debit Counterpart, Credit Asset
-            JournalItem.objects.create(
-                entry=entry,
-                account=contra_account,
-                debit=total_value,
-                credit=0,
-                label=GlosaBuilder.item(contra_role, description, doc_ref),
-                partner=partner_contact,
-            )
-            JournalItem.objects.create(
-                entry=entry,
-                account=asset_account,
-                debit=0,
-                credit=total_value,
-                label=GlosaBuilder.item(Roles.INVENTARIO, description, doc_ref),
-                partner=partner_contact,
-            )
-
-        JournalEntryService.post_entry(entry)
-
-        move.journal_entry = entry
-        move._allow_update = True
-        move.save()
 
         return move
 
@@ -535,7 +476,7 @@ class StockService:
         from decimal import Decimal
         from django.core.exceptions import ValidationError
         from accounting.models import AccountingSettings, JournalEntry, JournalItem, Account, AccountType
-        from accounting.utils import GlosaBuilder, Roles
+        from accounting.glosa_builder import GlosaBuilder, Roles
         from accounting.services import JournalEntryService
         from contacts.partner_models import PartnerTransaction
         from .models import InventoryDocument, InventoryDocumentDetail, StockMove
@@ -570,99 +511,32 @@ class StockService:
             unit_cost=unit_cost
         )
 
-        # 2. Confirm Document
-        doc, generated_moves = InventoryService.confirmar_documento(doc, user=user)
+        # 2. Confirm Document and Generate Accounting
+        doc, generated_moves = InventoryService.confirmar_documento(doc, user=user, generate_accounting=True)
         move = generated_moves[0] if generated_moves else None
 
         if not move:
             raise ValidationError("No se pudo generar el movimiento de inventario.")
 
-        # 3. Accounting Logic
-        asset_account = product.get_asset_account
-        if not asset_account:
-            raise ValidationError(f"El producto {product.name} no tiene configurada una Cuenta de Activo.")
+        entry = move.journal_entry
 
-        contra_account = None
         target_tx_type = PartnerTransaction.Type.OTHER
 
         if is_contribution:
             # Smart Contribution: Priority Capital Receivable > Equity
             if partner_contact.partner_pending_capital > 0:
-                contra_account = settings.partner_capital_receivable_account
-            else:
-                contra_account = settings.partner_capital_contribution_account
-            
-            if not contra_account:
-                contra_account = settings.partner_capital_contribution_account
-                
-            if contra_account == settings.partner_capital_receivable_account:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
             else:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
-            
-            contra_role = Roles.CAPITAL_SOCIAL
         else:
             # Smart Withdrawal: Priority Dividends Payable > Provisional Withdrawal
             if partner_contact.partner_dividends_payable_balance > 0:
-                contra_account = settings.partner_dividends_payable_account
-            else:
-                contra_account = settings.partner_provisional_withdrawal_account
-
-            if not contra_account:
-                contra_account = settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
-
-            if contra_account == settings.partner_dividends_payable_account:
                 target_tx_type = PartnerTransaction.Type.DIVIDEND_PAYMENT
             else:
                 target_tx_type = PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL
-            
-            contra_role = Roles.RETIRO_PROVISORIO
-
-        if not contra_account:
-            raise ValidationError("No se encontró cuenta de contrapartida para la operación de socio.")
 
         total_value = abs(quantity * unit_cost)
-        doc_ref = product.internal_code
-
-        entry = JournalEntry.objects.create(
-            date=timezone.now().date(),
-            description=GlosaBuilder.build(
-                GlosaBuilder.AJUSTE_STOCK, doc_ref, description, total_value,
-                extra=["Aporte Socio" if is_contribution else "Retiro Socio"],
-            ),
-            reference=f"{doc.get_document_type_display()}-{doc.id}",
-            status=JournalEntry.State.DRAFT,
-            source_content_type=ContentType.objects.get_for_model(InventoryDocument),
-            source_object_id=doc.id,
-        )
-
-        if is_contribution:
-            # Entry: Debit Asset, Credit Counterpart
-            JournalItem.objects.create(
-                entry=entry, account=asset_account, debit=total_value, credit=0,
-                label=GlosaBuilder.item(Roles.INVENTARIO, description, doc_ref), partner=partner_contact,
-            )
-            JournalItem.objects.create(
-                entry=entry, account=contra_account, debit=0, credit=total_value,
-                label=GlosaBuilder.item(contra_role, description, doc_ref), partner=partner_contact,
-            )
-        else:
-            # Exit: Debit Counterpart, Credit Asset
-            JournalItem.objects.create(
-                entry=entry, account=contra_account, debit=total_value, credit=0,
-                label=GlosaBuilder.item(contra_role, description, doc_ref), partner=partner_contact,
-            )
-            JournalItem.objects.create(
-                entry=entry, account=asset_account, debit=0, credit=total_value,
-                label=GlosaBuilder.item(Roles.INVENTARIO, description, doc_ref), partner=partner_contact,
-            )
-
-        JournalEntryService.post_entry(entry)
-
-        move.journal_entry = entry
-        move._allow_update = True
-        move.save(update_fields=['journal_entry'])
-
+        
         # 4. Create PartnerTransaction
         PartnerTransaction.objects.create(
             partner=partner_contact,
