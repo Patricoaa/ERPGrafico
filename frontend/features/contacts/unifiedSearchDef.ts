@@ -24,4 +24,8 @@ export const contactsUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'contact_type', label: 'Tipo', field: 'contact_type' },
+    { key: 'credit_risk_level', label: 'Riesgo', field: 'credit_risk_level' },
+  ],
 }

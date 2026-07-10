@@ -74,6 +74,9 @@ export const treasuryAccountUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'account_type', label: 'Tipo cuenta', field: 'account_type' },
+  ],
 }
 
 export const terminalBatchUnifiedSearchDef: UnifiedSearchConfig = {
@@ -117,6 +120,10 @@ export const terminalBatchUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'sales_date' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
 
@@ -187,5 +194,10 @@ export const treasuryMovementsUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'movement_type', label: 'Tipo movimiento', field: 'movement_type' },
+    { key: 'payment_method', label: 'Método de pago', field: 'payment_method' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }

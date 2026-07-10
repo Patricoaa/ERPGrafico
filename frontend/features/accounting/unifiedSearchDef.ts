@@ -23,6 +23,9 @@ export const accountUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'account_type', label: 'Tipo de cuenta', field: 'account_type' },
+  ],
 }
 
 export const journalEntryUnifiedSearchDef: UnifiedSearchConfig = {
@@ -43,6 +46,10 @@ export const journalEntryUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Anulado', value: 'CANCELLED' },
       ],
     },
+  ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'is_manual', label: 'Origen', field: 'is_manual' },
   ],
   basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
 }
@@ -68,5 +75,8 @@ export const fiscalYearUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Cerrado', value: 'CLOSED' },
       ],
     },
+  ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
   ],
 }

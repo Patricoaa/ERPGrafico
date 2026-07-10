@@ -21,6 +21,11 @@ export const employeeUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'contract_type', label: 'Tipo contrato', field: 'contract_type' },
+    { key: 'department', label: 'Departamento', field: 'department' },
+  ],
 }
 
 export const absenceUnifiedSearchDef: UnifiedSearchConfig = {
@@ -58,6 +63,9 @@ export const absenceUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'start_date_after', serverParamTo: 'start_date_before', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'absence_type', label: 'Tipo ausencia', field: 'absence_type' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
 
@@ -98,6 +106,9 @@ export const payrollUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
 

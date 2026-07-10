@@ -64,6 +64,11 @@ export const invoiceUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'dte_type', label: 'Tipo documento', field: 'dte_type' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
 
@@ -115,5 +120,9 @@ export const purchaseInvoiceUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }

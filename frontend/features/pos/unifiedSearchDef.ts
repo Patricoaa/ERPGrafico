@@ -28,6 +28,9 @@ export const posSessionUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }
 

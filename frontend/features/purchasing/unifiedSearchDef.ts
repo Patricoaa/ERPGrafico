@@ -73,5 +73,10 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'receiving_status', label: 'Estado recepción', field: 'receiving_status' },
+  ],
   basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
 }
