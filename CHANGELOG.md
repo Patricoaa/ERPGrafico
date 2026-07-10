@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/Patricoaa/ERPGrafico/compare/v0.2.2...v0.2.3) (2026-07-10)
+
+
+### 🚀 Maintenance
+
+* **inventory:** backfill locations for all legacy moves (Phase 3.3) ([11db07f](https://github.com/Patricoaa/ERPGrafico/commit/11db07f20edb51148db38e8af247934555184be3))
+
+
+### ✨ Features
+
+* **inventory:** add Location model and dual-write fields (Phase 3.1 & 3.2) ([fe7c0e9](https://github.com/Patricoaa/ERPGrafico/commit/fe7c0e94a2bdd0545589dd83eff66414b60b3826))
+* **inventory:** drop legacy move_type/warehouse fields, enforce Location model (Phase 3.5) ([8e9b880](https://github.com/Patricoaa/ERPGrafico/commit/8e9b88087c749c6a2d7e0ead16c27a0101f497aa))
+* **inventory:** Phase 4 - Universal Accounting Engine via Location.account ([fbd4808](https://github.com/Patricoaa/ERPGrafico/commit/fbd48084c829f2be60ac859876680e899e54c928))
+* **inventory:** refactor stock calculations to use locations (Phase 3.4) ([8d9907e](https://github.com/Patricoaa/ERPGrafico/commit/8d9907ee4a07fd69ef3da3080ff1b942ceb6336a))
+* **inventory:** update frontend/serializers for Location model — Origen/Destino UI (Phase 3.6) ([1b4fafd](https://github.com/Patricoaa/ERPGrafico/commit/1b4fafd48dd22266cc799991af7930098e1d3b3c))
+* **ui:** add dynamic option support to SingleSelectFilterDef ([422dd7b](https://github.com/Patricoaa/ERPGrafico/commit/422dd7bff630440a6ae445ac1ef24974b23dfcda))
+* **ui:** migrate remaining prefix filters to dynamic single select ([17718a8](https://github.com/Patricoaa/ERPGrafico/commit/17718a8ad68c6bb309feb6162d79af46f5cc9310))
+
+
+### 🐛 Bug Fixes
+
+* **core:** update setup_demo_data to use InventoryDocument + confirmar_documento ([0063a92](https://github.com/Patricoaa/ERPGrafico/commit/0063a9284b1696e7b3da7ae0e8a211a5f75aabfc))
+* **inventory:** purge legacy move_type and warehouse from services, tests, and models (Phase 3.5 cleanup) ([7cd85d1](https://github.com/Patricoaa/ERPGrafico/commit/7cd85d17082b4019017915dac5fc5b7ad7d59330))
+
 ### [0.2.2](https://github.com/Patricoaa/ERPGrafico/compare/v0.2.1...v0.2.2) (2026-07-10)
 
 
