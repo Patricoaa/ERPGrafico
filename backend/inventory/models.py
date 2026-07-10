@@ -1443,6 +1443,14 @@ class InventoryDocumentDetailManager(models.Manager):
                 customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
             return customer_loc
 
+        def get_virtual(name=None):
+            from inventory.models import Location
+            if name:
+                loc, _ = Location.objects.get_or_create(location_type="VIRTUAL", name=name)
+                return loc
+            loc, _ = Location.objects.get_or_create(location_type="VIRTUAL", defaults={"name": "Virtual Default"})
+            return loc
+
         for obj in objs:
             if getattr(obj, "source_location_id", None) and getattr(obj, "destination_location_id", None):
                 continue
@@ -1473,6 +1481,26 @@ class InventoryDocumentDetailManager(models.Manager):
                 if src_warehouse:
                     obj.source_location = get_internal(src_warehouse)
                 obj.destination_location = get_internal(warehouse)
+            elif doc_type == InventoryDocument.Type.PARTNER_CONTRIBUTION:
+                obj.source_location = get_virtual("Capital de Socios")
+                obj.destination_location = get_internal(warehouse)
+            elif doc_type == InventoryDocument.Type.PARTNER_WITHDRAWAL:
+                obj.source_location = get_internal(warehouse)
+                obj.destination_location = get_virtual("Capital de Socios")
+            elif doc_type == InventoryDocument.Type.PRODUCTION:
+                if getattr(obj, "quantity", 0) > 0: # Finished product
+                    obj.source_location = get_virtual("Producción")
+                    obj.destination_location = get_internal(warehouse)
+                else: # Consumption
+                    obj.source_location = get_internal(warehouse)
+                    obj.destination_location = get_virtual("Producción")
+            elif doc_type == InventoryDocument.Type.ADJUSTMENT:
+                if getattr(obj, "quantity", 0) > 0: # Gain
+                    obj.source_location = get_virtual("Ajuste por Sobrante/Ganancia")
+                    obj.destination_location = get_internal(warehouse)
+                else: # Loss
+                    obj.source_location = get_internal(warehouse)
+                    obj.destination_location = get_virtual("Ajuste por Merma/Pérdida")
                 
         return super().bulk_create(objs, **kwargs)
 
@@ -1522,6 +1550,10 @@ class InventoryDocumentDetail(models.Model):
                 vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
                 customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
                 
+                def get_virtual(name):
+                    loc, _ = Location.objects.get_or_create(location_type="VIRTUAL", name=name)
+                    return loc
+
                 if doc_type == InventoryDocument.Type.RECEIPT:
                     self.source_location = customer_loc if is_return_or_annul else vendor_loc
                     self.destination_location = internal_loc
@@ -1533,6 +1565,26 @@ class InventoryDocumentDetail(models.Model):
                     if src_warehouse:
                         self.source_location = Location.objects.filter(location_type="INTERNAL", warehouse_id=src_warehouse.id).first()
                     self.destination_location = internal_loc
+                elif doc_type == InventoryDocument.Type.PARTNER_CONTRIBUTION:
+                    self.source_location = get_virtual("Capital de Socios")
+                    self.destination_location = internal_loc
+                elif doc_type == InventoryDocument.Type.PARTNER_WITHDRAWAL:
+                    self.source_location = internal_loc
+                    self.destination_location = get_virtual("Capital de Socios")
+                elif doc_type == InventoryDocument.Type.PRODUCTION:
+                    if getattr(self, "quantity", 0) > 0:
+                        self.source_location = get_virtual("Producción")
+                        self.destination_location = internal_loc
+                    else:
+                        self.source_location = internal_loc
+                        self.destination_location = get_virtual("Producción")
+                elif doc_type == InventoryDocument.Type.ADJUSTMENT:
+                    if getattr(self, "quantity", 0) > 0:
+                        self.source_location = get_virtual("Ajuste por Sobrante/Ganancia")
+                        self.destination_location = internal_loc
+                    else:
+                        self.source_location = internal_loc
+                        self.destination_location = get_virtual("Ajuste por Merma/Pérdida")
                     
         super().save(*args, **kwargs)
 

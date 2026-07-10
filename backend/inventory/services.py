@@ -145,15 +145,19 @@ class InventoryService:
                     src_loc = internal_loc
                     dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
                 elif document.document_type == InventoryDocument.Type.PRODUCTION:
-                    src_loc = Location.objects.filter(location_type="VIRTUAL").first() # Simplification
-                    dst_loc = internal_loc
-                else: # ADJUSTMENT
                     if detail.quantity > 0:
-                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first()
+                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Producción").first() or Location.objects.filter(location_type="VIRTUAL").first()
                         dst_loc = internal_loc
                     else:
                         src_loc = internal_loc
-                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first()
+                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Producción").first() or Location.objects.filter(location_type="VIRTUAL").first()
+                else: # ADJUSTMENT
+                    if detail.quantity > 0:
+                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first() or Location.objects.filter(location_type="VIRTUAL").first()
+                        dst_loc = internal_loc
+                    else:
+                        src_loc = internal_loc
+                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first() or Location.objects.filter(location_type="VIRTUAL").first()
 
             if document.document_type == InventoryDocument.Type.TRANSFER:
                 if not src_loc:
