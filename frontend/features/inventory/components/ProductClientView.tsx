@@ -89,14 +89,25 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
     }, [search.filters])
 
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
 
     const { page, products, isLoading, refetch, updateProduct } = useProducts({
         filters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
         initialData: initialProducts ? { results: initialProducts, count: initialProducts.length } as Page<Product> : undefined,
     })
+
+    const totalCount = page?.count ?? 0
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -479,11 +490,11 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={page?.count ?? 0}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     unifiedSearch={<UnifiedSearchBar
                         config={config}
                         chips={search.chips}
@@ -499,6 +510,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         placeholder="Buscar producto..."
                     />}
                     unifiedSearchConfig={config}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     initialColumnVisibility={initialColumnVisibility}
                     showReset={search.isFiltered}
                     isFiltered={search.isFiltered}

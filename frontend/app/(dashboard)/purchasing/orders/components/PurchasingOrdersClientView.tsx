@@ -49,11 +49,22 @@ interface PurchasingOrdersClientViewProps {
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction, initialOrders, initialNotes }: PurchasingOrdersClientViewProps) {
     const search = useUnifiedSearch(purchaseOrderUnifiedSearchDef)
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
-    const allFilters = { ...search.filters, page: pageState.pageIndex + 1, page_size: pageState.pageSize } as unknown as Record<string, string> & { page: number; page_size: number }
+    const allFilters = { ...search.filters, page: isGrouping ? 1 : pageState.pageIndex + 1, page_size: isGrouping ? 5000 : pageState.pageSize } as unknown as Record<string, string> & { page: number; page_size: number }
     const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder, annulOrder } = usePurchasingOrders(allFilters, initialOrders ? { results: initialOrders, count: initialOrders.length } as Page<PurchaseOrderAPI> : undefined)
     // TODO: migrate purchasing notes to Page<T>
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
+
+    const totalCount = page?.count ?? 0
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
 
     const { rate } = useVatRate()
     const searchParams = useSearchParams()
@@ -516,11 +527,11 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         />}
                         showReset={search.isFiltered}
                         onReset={search.clearAll}
-                        manualPagination={viewMode === 'orders'}
-                        pageCount={viewMode === 'orders' ? (page ? Math.ceil(page.count / page.pageSize) : 0) : undefined}
+                        manualPagination={effectiveGrouping ? false : viewMode === 'orders'}
+                        pageCount={effectiveGrouping ? 1 : viewMode === 'orders' ? (page ? Math.ceil(page.count / page.pageSize) : 0) : undefined}
                         rowCount={viewMode === 'orders' ? (page?.count ?? 0) : undefined}
-                        pagination={viewMode === 'orders' ? pageState : undefined}
-                        onPaginationChange={viewMode === 'orders' ? setPageState : undefined}
+                        pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : viewMode === 'orders' ? pageState : undefined}
+                        onPaginationChange={effectiveGrouping ? undefined : viewMode === 'orders' ? setPageState : undefined}
                         createAction={createAction}
                         isSelected={(data: Record<string, unknown>) => viewMode === 'orders'
                             ? hubConfig?.orderId === data.id
@@ -529,6 +540,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         isHubOpen={isHubOpen}
                         isFiltered={search.isFiltered}
                         analyticsPanel={viewMode === 'orders' ? analyticsPanel : undefined}
+                        currentGroupBy={effectiveGrouping ? search.groupBy : null}
                         emptyState={{
                             context: "purchase",
                             title: viewMode === 'orders' ? "Aún no hay órdenes de compra" : "Aún no hay notas de compra",
@@ -536,7 +548,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                 ? "Crea una orden de compra para registrar tus adquisiciones a proveedores."
                                 : "Las notas asociadas a tus documentos de compra aparecerán aquí.",
                         }}
-                        cardGroupBy={{ field: 'date', sort: 'desc' }}
                     />
                 </div>
             </Tabs>

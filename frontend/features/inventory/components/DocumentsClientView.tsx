@@ -11,6 +11,7 @@ import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useInventoryDocuments } from "../hooks/useInventoryDocuments"
 import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
 import type { InventoryDocument } from "../types"
+import { toast } from "sonner"
 import React from "react"
 
 interface DocumentsClientViewProps {
@@ -43,12 +44,22 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
         ...(documentTypeFilter ? { document_type: documentTypeFilter } : {})
     }), [search.filters, documentTypeFilter])
 
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, documents, totalCount, isLoading, refetch } = useInventoryDocuments({
         ...allFilters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     })
+
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
 
     const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null)
 
@@ -160,11 +171,11 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                     data={documents}
                     isLoading={isLoading}
                     variant="embedded"
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={totalCount}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     unifiedSearch={<UnifiedSearchBar
                         config={documentUnifiedSearchDef}
                         chips={search.chips}
@@ -180,7 +191,7 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                         placeholder="Buscar documentos..."
                     />}
                     unifiedSearchConfig={documentUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
                     isFiltered={search.isFiltered}

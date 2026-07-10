@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTableView, DataCell, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -11,6 +11,7 @@ import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/
 import { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface SalesOrdersViewProps {
     viewMode: 'orders' | 'notes'
@@ -49,6 +50,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     const unifiedSearchDef = viewMode === 'orders' ? salesOrderUnifiedSearchDef : salesNoteUnifiedSearchDef
     const search = useUnifiedSearch(unifiedSearchDef)
     const isFiltered = search.isFiltered
+    const isGrouping = search.groupBy !== null
 
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const [pageStateNotes, setPageStateNotes] = useState({ pageIndex: 0, pageSize: 20 })
@@ -57,17 +59,27 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
         filters: {
             ...(search.filters as SaleOrderFilters),
             pos_session: posSessionId || undefined,
-            page: pageState.pageIndex + 1,
-            page_size: pageState.pageSize,
+            page: isGrouping ? 1 : pageState.pageIndex + 1,
+            page_size: isGrouping ? 5000 : pageState.pageSize,
         },
     })
     const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes } = useSalesNotes({
         filters: {
             ...(search.filters as Record<string, string>),
-            page: pageStateNotes.pageIndex + 1,
-            page_size: pageStateNotes.pageSize,
+            page: isGrouping ? 1 : pageStateNotes.pageIndex + 1,
+            page_size: isGrouping ? 5000 : pageStateNotes.pageSize,
         }
     })
+
+    const totalCount = viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
 
     const columns: ColumnDef<SaleOrder>[] = [
         createCodeColumn<SaleOrder>("number", "Folio", {
@@ -188,14 +200,14 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     isRefetching={viewMode === 'orders' ? isRefetching : isRefetchingNotes}
-                    manualPagination
-                    pageCount={viewMode === 'orders'
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : viewMode === 'orders'
                         ? (page ? Math.ceil(page.count / page.pageSize) : 0)
                         : (pageNotes ? Math.ceil(pageNotes.count / pageNotes.pageSize) : 0)
                     }
                     rowCount={viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)}
-                    pagination={viewMode === 'orders' ? pageState : pageStateNotes}
-                    onPaginationChange={(viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : viewMode === 'orders' ? pageState : pageStateNotes}
+                    onPaginationChange={effectiveGrouping ? undefined : (viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
                     unifiedSearch={<UnifiedSearchBar
                         config={unifiedSearchDef}
                         chips={search.chips}
@@ -211,7 +223,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         placeholder={viewMode === 'orders' ? 'Buscar órdenes...' : 'Buscar notas...'}
                     />}
                     unifiedSearchConfig={unifiedSearchDef}
-                    currentGroupBy={search.groupBy}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={isFiltered}
                     onReset={search.clearAll}
                     defaultPageSize={20}
