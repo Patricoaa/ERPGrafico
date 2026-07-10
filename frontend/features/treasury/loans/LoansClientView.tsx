@@ -39,6 +39,9 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 { label: 'Finalizados', value: 'completed' },
             ]},
         ],
+        groupBy: [
+            { key: 'status', label: 'Estado', field: 'status' },
+        ],
     }), [])
     const search = useUnifiedSearch(config)
     const isFiltered = search.isFiltered

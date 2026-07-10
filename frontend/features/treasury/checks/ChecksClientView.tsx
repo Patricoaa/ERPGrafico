@@ -65,6 +65,10 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                 { label: 'Personalizado', value: 'custom', serverParamFrom: 'due_date_after', serverParamTo: 'due_date_before' },
             ],
         }],
+        groupBy: [
+            { key: 'status', label: 'Estado', field: 'status' },
+            { key: 'direction', label: 'Dirección', field: 'direction' },
+        ],
     }), [])
     const search = useUnifiedSearch(config, filterOptions)
 

@@ -73,6 +73,10 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
             },
         ],
         basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
+        groupBy: [
+            { key: 'status', label: 'Estado', field: 'status' },
+            { key: 'period_month', label: 'Mes', field: 'period_month' },
+        ],
     }), [creditCardAccounts])
 
     const search = useUnifiedSearch(unifiedConfig)
