@@ -17,13 +17,13 @@ import { ReceiptModal } from "@/features/purchasing"
 import { UnifiedNoteWizard } from "@/features/notes"
 
 import { Progress } from "@/components/ui/progress"
-import { DataTableView, DataCell, DataTableColumnHeader, SegmentationBar } from '@/components/shared'
+import { DataTableView, DataCell, DataTableColumnHeader } from '@/components/shared'
 import { formatPlainDate } from "@/lib/utils"
-import { useSmartSearch, SmartSearchBar, StatusBadge } from "@/components/shared"
+import { StatusBadge, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { usePurchaseInvoices, purchaseInvoiceSearchDef } from "@/features/billing"
+import { usePurchaseInvoices, purchaseInvoiceUnifiedSearchDef } from "@/features/billing"
 
 interface PurchaseDocument {
     id: number
@@ -64,10 +64,10 @@ interface PurchasePaymentData {
 }
 
 export default function PurchasesPageClient() {
-    const { filters, clearAll, isFiltered } = useSmartSearch(purchaseInvoiceSearchDef)
+    const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
 
     const { invoices, isLoading: isDataLoading, isRefetching, refetch, annulInvoice, confirmInvoice, makePayment, deleteInvoice } = usePurchaseInvoices({
-        filters,
+        filters: { ...search.filters },
     })
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
@@ -367,19 +367,27 @@ export default function PurchasesPageClient() {
                     isLoading={isDataLoading}
                     isRefetching={isRefetching}
                     entityLabel="billing.invoice"
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "purchase",
                         title: "Aún no hay documentos de compra",
                         description: "Las facturas y boletas de proveedores que registres aparecerán aquí.",
                     }}
-                    smartSearch={
-                        <SmartSearchBar
-                            searchDef={purchaseInvoiceSearchDef}
-                            placeholder="Buscar por proveedor, folio o fecha..."
-                        />
-                    }
-                    onReset={clearAll}
+                    onReset={search.clearAll}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={purchaseInvoiceUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por proveedor, folio o fecha..."
+                    />}
                     isHubOpen={isHubOpen}
                     isSelected={(doc: PurchaseDocument) => selectedId === String(doc.id)}
                     onRowClick={(doc: PurchaseDocument) => {
@@ -390,13 +398,6 @@ export default function PurchasesPageClient() {
                             onActionSuccess: refetch,
                         })
                     }}
-                    segmentation={
-                        <SegmentationBar def={{
-                            segments: [
-                                { key: 'status', label: 'Estado', type: 'multiselect', serverParam: 'status', columnId: 'status', dynamic: true, options: [] },
-                            ],
-                        }} />
-                    }
                     defaultPageSize={20}
                     cardGroupBy={{ field: 'date', sort: 'desc' }}
                 />

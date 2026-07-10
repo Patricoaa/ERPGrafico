@@ -10,10 +10,9 @@ import { Layers } from "lucide-react"
 import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
 import { bomActions, type BOMActionsCtx } from "./bomActions"
 
-import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
+import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { bomSearchDef } from "@/features/production/searchDef"
-import { bomSegDef } from "@/features/production/segmentationDef"
+import { bomUnifiedSearchDef } from "@/features/production"
 
 import type { BOM, ProductMinimal } from "@/features/production/types"
 
@@ -39,10 +38,8 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
 
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(bomSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(bomSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...textFilters, ...segFilters }
+    const search = useUnifiedSearch(bomUnifiedSearchDef)
+    const allFilters = { ...search.filters }
     const { boms, isLoading: loading, isRefetching, refetch: refetchBoms } = useAllBOMs(allFilters, initialBoms)
 
     useEffect(() => {
@@ -177,12 +174,26 @@ export default function BOMsPageClient({ initialBoms }: BOMsPageClientProps) {
                     entityLabel="production.bom"
                     variant="embedded"
                     defaultPageSize={20}
-                    smartSearch={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}
-                    segmentation={<SegmentationBar def={bomSegDef} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={bomUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por producto..."
+                    />}
+                    unifiedSearchConfig={bomUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "bom",
                         title: "Aún no hay listas de materiales",

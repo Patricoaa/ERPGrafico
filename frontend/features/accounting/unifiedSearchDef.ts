@@ -25,6 +25,28 @@ export const accountUnifiedSearchDef: UnifiedSearchConfig = {
   ],
 }
 
+export const journalEntryUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    { key: 'search', label: 'Descripción', serverParam: 'search' },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Publicado', value: 'POSTED' },
+        { label: 'Cerrado', value: 'CLOSED' },
+        { label: 'Reversión', value: 'REVERSAL' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  basePeriod: { serverParamFrom: 'date_after', serverParamTo: 'date_before' },
+}
+
 export const fiscalYearUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
     {

@@ -3,15 +3,14 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, type FilterState } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft, BarChart3, Building2 } from "lucide-react"
-import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
+import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderUnifiedSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { billingApi } from "@/features/billing"
-import { purchaseOrderSegDef } from "@/features/purchasing/segmentationDef"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
 import type { Page } from '@/lib/pagination'
 import type { PurchaseOrderInitialData } from "@/types/forms"
@@ -49,12 +48,9 @@ interface PurchasingOrdersClientViewProps {
 }
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction, initialOrders, initialNotes }: PurchasingOrdersClientViewProps) {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(purchaseOrderSearchDef)
-    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseOrderSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
+    const search = useUnifiedSearch(purchaseOrderUnifiedSearchDef)
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
-    const allFilters = { ...textFilters, ...segFilters, page: pageState.pageIndex + 1, page_size: pageState.pageSize } as unknown as FilterState & { page: number; page_size: number }
+    const allFilters = { ...search.filters, page: pageState.pageIndex + 1, page_size: pageState.pageSize } as unknown as Record<string, string> & { page: number; page_size: number }
     const { page, orders, isLoading: isLoadingOrders, isRefetching, refetch: fetchOrders, deleteOrder, annulOrder } = usePurchasingOrders(allFilters, initialOrders ? { results: initialOrders, count: initialOrders.length } as Page<PurchaseOrderAPI> : undefined)
     // TODO: migrate purchasing notes to Page<T>
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes(initialNotes)
@@ -504,10 +500,22 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         variant="embedded"
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                         isRefetching={viewMode === 'orders' ? isRefetching : undefined}
-                        smartSearch={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
-                        segmentation={<SegmentationBar def={purchaseOrderSegDef} basePeriod={basePeriod} />}
-                        showReset={isFiltered}
-                        onReset={() => { clearText(); clearSeg() }}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={purchaseOrderUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            placeholder="Buscar por proveedor..."
+                        />}
+                        showReset={search.isFiltered}
+                        onReset={search.clearAll}
                         manualPagination={viewMode === 'orders'}
                         pageCount={viewMode === 'orders' ? (page ? Math.ceil(page.count / page.pageSize) : 0) : undefined}
                         rowCount={viewMode === 'orders' ? (page?.count ?? 0) : undefined}
@@ -519,7 +527,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                             : hubConfig?.invoiceId === data.id
                         }
                         isHubOpen={isHubOpen}
-                        isFiltered={isFiltered}
+                        isFiltered={search.isFiltered}
                         analyticsPanel={viewMode === 'orders' ? analyticsPanel : undefined}
                         emptyState={{
                             context: "purchase",
