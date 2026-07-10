@@ -586,6 +586,10 @@ class SalesService:
         )
         details_to_create = []
 
+        from inventory.models import Location
+        internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse=delivery.warehouse).first()
+        customer_loc = Location.objects.filter(location_type="CUSTOMER").first()
+
         for line in delivery.lines.all():
             product = line.product
 
@@ -600,7 +604,8 @@ class SalesService:
                     InventoryDocumentDetail(
                         document=doc_inv,
                         product=product,
-                        warehouse=delivery.warehouse,
+                        source_location=internal_loc,
+                        destination_location=customer_loc,
                         quantity=base_qty,
                         unit_cost=product.cost_price
                     )
@@ -650,7 +655,8 @@ class SalesService:
                                     InventoryDocumentDetail(
                                         document=doc_inv,
                                         product=bom_line.component,
-                                        warehouse=delivery.warehouse,
+                                        source_location=internal_loc,
+                                        destination_location=customer_loc,
                                         quantity=base_comp_qty,
                                         unit_cost=bom_line.component.cost_price
                                     )
