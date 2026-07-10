@@ -1,4 +1,3 @@
-export * from './AdjustmentForm';
 export * from './ArchivingRestrictionsModal';
 export * from './AttributesClientView';
 export * from './BarcodeModal';

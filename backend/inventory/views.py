@@ -347,27 +347,6 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             )
         return Response({"stock_level": StockMoveSelector.stock_level(int(product_id), int(warehouse_id))})
 
-    @idempotent_endpoint(scope="inventory.move.create")
-    @action(detail=False, methods=["post"])
-    def adjust(self, request):
-        """
-        [DEPRECATED] Custom endpoint to perform manual stock adjustment.
-        Please use the InventoryDocument endpoints (create document -> confirm document).
-        """
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.warning("DEPRECATED: /inventory/moves/adjust/ called. Migrate to POST /inventory/documents/")
-        
-        from django.core.exceptions import ValidationError
-
-        try:
-            move = StockService.adjust_stock_from_payload(request.data)
-            return Response(StockMoveSerializer(move).data, status=status.HTTP_201_CREATED)
-        except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class PricingRuleViewSet(NoDestroyModelMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
