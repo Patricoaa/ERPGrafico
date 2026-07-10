@@ -6,11 +6,11 @@ import { Chip, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useInventoryDocuments } from "../hooks/useInventoryDocuments"
 import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
 import type { InventoryDocument } from "../types"
-import type { SegmentDef } from "@/types/segmentation"
 import React from "react"
 
 interface DocumentsClientViewProps {
@@ -32,65 +32,16 @@ const STATUS_MAP: Record<string, { intent: "neutral" | "success" | "destructive"
     'CANCELLED': { intent: 'destructive', label: 'Anulado' }
 }
 
-const documentSearchDef = {
-    fields: [
-        { key: 'search', label: 'Buscar por Folio, referencia, contacto...', type: 'text' as const, serverParam: 'search' as const },
-    ],
-}
-
 export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewProps) {
     const searchParams = useSearchParams()
     const pathname = usePathname()
     const router = useRouter()
 
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(documentSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-
-    // Dynamic segmentation depending on whether we filter by type or show all
-    const documentSegDef = useMemo(() => {
-        const segments: SegmentDef[] = [
-            {
-                key: 'status',
-                label: 'Estado',
-                type: 'tabs',
-                serverParam: 'status',
-                options: [
-                    { value: '', label: 'Todos' },
-                    { value: 'DRAFT', label: 'Borrador' },
-                    { value: 'APPROVED', label: 'Aprobado' },
-                    { value: 'CONFIRMED', label: 'Confirmado' },
-                    { value: 'CANCELLED', label: 'Anulado' },
-                ],
-            }
-        ]
-
-        if (!documentTypeFilter) {
-            segments.push({
-                key: 'document_type',
-                label: 'Tipo',
-                type: 'tabs',
-                serverParam: 'document_type',
-                options: [
-                    { value: '', label: 'Todos' },
-                    { value: 'RECEIPT', label: 'Recepción' },
-                    { value: 'DELIVERY', label: 'Entrega' },
-                    { value: 'TRANSFER', label: 'Transferencia' },
-                    { value: 'ADJUSTMENT', label: 'Ajuste' },
-                    { value: 'PRODUCTION', label: 'Producción' },
-                ],
-            })
-        }
-
-        return { segments }
-    }, [documentTypeFilter])
-
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(documentSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
+    const search = useUnifiedSearch(documentUnifiedSearchDef)
     const allFilters = useMemo(() => ({ 
-        ...textFilters, 
-        ...segFilters,
+        ...search.filters,
         ...(documentTypeFilter ? { document_type: documentTypeFilter } : {})
-    }), [textFilters, segFilters, documentTypeFilter])
+    }), [search.filters, documentTypeFilter])
 
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, documents, totalCount, isLoading, refetch } = useInventoryDocuments({
@@ -214,11 +165,25 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    smartSearch={<SmartSearchBar searchDef={documentSearchDef} placeholder="Buscar documentos..." className="w-full" />}
-                    segmentation={<SegmentationBar def={documentSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
-                    isFiltered={isFiltered}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={documentUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar documentos..."
+                    />}
+                    unifiedSearchConfig={documentUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "No se encontraron documentos",

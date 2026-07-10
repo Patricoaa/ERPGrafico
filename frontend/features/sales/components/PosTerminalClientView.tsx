@@ -7,13 +7,13 @@ import type { Terminal } from "@/features/treasury"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { ActionConfirmModal, DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { Badge } from "@/components/ui/badge"
 
 import { DataTableColumnHeader } from '@/components/shared'
 import {DataCell} from '@/components/shared'
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
-import { terminalPosSegDef } from "@/features/pos"
+import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
@@ -78,7 +78,7 @@ interface PosTerminalClientViewProps {
 
 export function PosTerminalClientView({ externalOpen, onExternalOpenChange, createAction }: PosTerminalClientViewProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = usePosTerminals()
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalPosSegDef)
+    const search = useUnifiedSearch(terminalPosUnifiedSearchDef)
     const searchParams = useSearchParams()
     const pathname = usePathname()
     const router = useRouter()
@@ -119,11 +119,11 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     }
 
     const filteredTerminals = useMemo(() => {
-        if (!segFilters.status) return terminals
+        if (!search.filters.status) return terminals
         return terminals.filter(t =>
-            segFilters.status === "ACTIVE" ? t.is_active : !t.is_active
+            search.filters.status === "ACTIVE" ? t.is_active : !t.is_active
         )
-    }, [terminals, segFilters.status])
+    }, [terminals, search.filters.status])
 
     const actionsCtx: PosTerminalActionsCtx = {
         onEdit: (terminal) => openSelected(terminal.id),
@@ -167,9 +167,23 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                     isLoading={isLoading}
                     variant="embedded"
                     defaultPageSize={20}
-                    segmentation={<SegmentationBar def={terminalPosSegDef} />}
-                    showReset={isSegFiltered}
-                    onReset={clearSeg}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={terminalPosUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                    />}
+                    unifiedSearchConfig={terminalPosUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     createAction={createAction || (
                         <Button onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())

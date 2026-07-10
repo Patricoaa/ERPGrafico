@@ -13,7 +13,7 @@ import type { BulkAction } from "@/components/shared"
 import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
-import { ChevronDown, Plus, AlertTriangle, Layers, ChevronDown as ChevronDownIcon } from "lucide-react"
+import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
@@ -32,17 +32,9 @@ import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, SEG_ACTIVE, SEG_INACTIVE, SEG_WRAPPER, Chip, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
-import { productSearchDef } from "@/features/inventory/searchDef"
-import { productSegDef } from "@/features/inventory/segmentationDef"
-import { useQueryState, parseAsString } from "nuqs"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu"
+import { Chip, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { Button } from "@/components/ui/button"
 
 interface ProductClientViewProps {
@@ -60,33 +52,42 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         for (const cat of (categoryOptions ?? [])) map.set(cat.id, cat.icon)
         return map
     }, [categoryOptions])
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(productSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(productSegDef)
-    const [categoryValue, setCategoryValue] = useQueryState('category', parseAsString)
-    const isCategoryFiltered = categoryValue !== null
-    const isFiltered = isTextFiltered || isSegFiltered || isCategoryFiltered
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        ...productUnifiedSearchDef,
+        filters: [
+            ...(productUnifiedSearchDef.filters ?? []),
+            {
+                type: 'single',
+                key: 'category',
+                label: 'Categoría',
+                serverParam: 'category',
+                options: (categoryOptions ?? []).map(c => ({ label: c.name, value: String(c.id) })),
+            },
+        ],
+    }), [categoryOptions])
+
+    const search = useUnifiedSearch(config)
     const filters = useMemo<ProductFilters>(() => {
-        const segs = { ...segFilters } as Record<string, string>
+        const raw = { ...search.filters } as Record<string, string>
 
         // Parse availability multi-select into can_be_sold / can_be_purchased
-        const availability = segs['availability']
+        const availability = raw['availability']
         if (availability) {
             const values = availability.split(',').filter(Boolean)
-            if (values.includes('sale')) segs.can_be_sold = 'true'
-            if (values.includes('purchase')) segs.can_be_purchased = 'true'
+            if (values.includes('sale')) raw.can_be_sold = 'true'
+            if (values.includes('purchase')) raw.can_be_purchased = 'true'
         } else {
-            delete segs.can_be_sold
-            delete segs.can_be_purchased
+            delete raw.can_be_sold
+            delete raw.can_be_purchased
         }
-        delete segs['availability']
+        delete raw['availability']
+        delete raw['group_by']
 
         return {
             parent_template__isnull: true,
-            ...textFilters as Partial<ProductFilters>,
-            ...segs as unknown as Partial<ProductFilters>,
-            ...(categoryValue ? { category: Number(categoryValue) } as Partial<ProductFilters> : {}),
+            ...raw as Partial<ProductFilters>,
         }
-    }, [textFilters, segFilters, categoryValue])
+    }, [search.filters])
 
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
 
@@ -483,25 +484,25 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     rowCount={page?.count ?? 0}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    smartSearch={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
-                    segmentation={
-                        <SegmentationBar def={{
-                            ...productSegDef,
-                            segments: [
-                                ...productSegDef.segments,
-                                { key: 'category', label: 'Categoría', type: 'custom', render: () => (
-                                    <CategoryFilter
-                                        categories={categoryOptions}
-                                        value={categoryValue}
-                                        onChange={setCategoryValue}
-                                    />
-                                )},
-                            ],
-                        }} />
-                    }
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg(); setCategoryValue(null) }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={config}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar producto..."
+                    />}
+                    unifiedSearchConfig={config}
                     initialColumnVisibility={initialColumnVisibility}
+                    showReset={search.isFiltered}
+                    isFiltered={search.isFiltered}
+                    onReset={search.clearAll}
                     renderCard={(product: Product) => {
                         const iconName = categoryIconMap.get(product.category_id)
                         const fallbackIcon = iconName
@@ -553,7 +554,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     bulkActions={bulkActions}
                     defaultPageSize={500}
                     createAction={createAction}
-                    isFiltered={isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay productos",
@@ -617,63 +617,5 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 }
             />
         </div >
-    )
-}
-
-/* ─── CategoryFilter ─── */
-
-interface CategoryFilterProps {
-    categories: { id: number; name: string }[]
-    value: string | null
-    onChange: (value: string | null) => Promise<unknown>
-}
-
-function CategoryFilter({ categories, value, onChange }: CategoryFilterProps) {
-    const currentLabel = value
-        ? categories.find((c) => String(c.id) === value)?.name
-        : null
-
-    return (
-        <div className={SEG_WRAPPER}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                            SEG_TRIGGER,
-                            value ? SEG_ACTIVE : SEG_INACTIVE,
-                        )}
-                    >
-                        {currentLabel ?? 'Categoría'}
-                        <ChevronDownIcon className="h-3 w-3" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[200px] p-1">
-                    <DropdownMenuRadioGroup
-                        value={value ?? ''}
-                        onValueChange={(v) => onChange(v === '' ? null : v)}
-                    >
-                        <DropdownMenuRadioItem value="" className={SEG_DROPDOWN_ITEM}>
-                            Todas
-                        </DropdownMenuRadioItem>
-                        {categories.map((cat) => (
-                            <DropdownMenuRadioItem
-                                key={cat.id}
-                                value={String(cat.id)}
-                                className={SEG_DROPDOWN_ITEM}
-                            >
-                                {cat.name}
-                            </DropdownMenuRadioItem>
-                        ))}
-                        {categories.length === 0 && (
-                            <DropdownMenuRadioItem value="" disabled className={`${SEG_DROPDOWN_ITEM} text-muted-foreground/40`}>
-                                Sin categorías
-                            </DropdownMenuRadioItem>
-                        )}
-                    </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
     )
 }

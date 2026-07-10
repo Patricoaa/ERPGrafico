@@ -8,47 +8,19 @@ import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
-import { DataTableView, StatusBadge, SmartSearchBar, SegmentationBar, useClientSearch, useSegmentation, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal } from '@/components/shared'
+import { DataTableView, StatusBadge, UnifiedSearchBar, useUnifiedSearch, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import { Progress } from "@/components/ui/progress"
-import type { SearchDefinition } from '@/types/search'
-import type { SegmentationDefinition } from '@/types/segmentation'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { cn } from "@/lib/utils"
+import { useQueryState, parseAsString } from 'nuqs'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-
-const statementsSearchDef: SearchDefinition = {
-    fields: [
-        {
-            key: 'display_id',
-            label: 'Cartola',
-            type: 'text',
-            serverParam: 'search',
-            clientKey: ['display_id', 'treasury_account_name'],
-        },
-    ],
-}
-
-const statementsSegDef: SegmentationDefinition = {
-    segments: [
-        {
-            key: 'state',
-            label: 'Estado',
-            type: 'tabs',
-            serverParam: 'state',
-            options: [
-                { label: 'Borrador', value: 'DRAFT' },
-                { label: 'Confirmado', value: 'CONFIRMED' },
-                { label: 'Anulado', value: 'CANCELLED' },
-            ],
-        },
-    ],
-}
 
 interface StatementsClientViewProps {
     externalOpen?: boolean
@@ -68,29 +40,55 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const [expandedStmtId, setExpandedStmtId] = useState<number | null>(null)
     const [workbenchStatementId, setWorkbenchStatementId] = useState<number | null>(null)
 
-    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<BankStatement>(statementsSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(statementsSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
+    const [bankAccountParam, setBankAccountParam] = useQueryState('bank_account_id', parseAsString)
+
+    const statementsUnifiedConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [
+            {
+                key: 'display_id',
+                label: 'Cartola',
+                serverParam: 'search',
+                clientKey: ['display_id', 'treasury_account_name'],
+            },
+        ],
+        filters: [
+            {
+                type: 'single',
+                key: 'state',
+                label: 'Estado',
+                serverParam: 'state',
+                options: [
+                    { label: 'Borrador', value: 'DRAFT' },
+                    { label: 'Confirmado', value: 'CONFIRMED' },
+                    { label: 'Anulado', value: 'CANCELLED' },
+                ],
+            },
+        ],
+    }), [])
+
+    const search = useUnifiedSearch(statementsUnifiedConfig)
+
+    const isFiltered = search.isFiltered || !!bankAccountParam
     const handleReset = useCallback(() => {
-        clearText()
-        clearSeg()
-    }, [clearText, clearSeg])
+        search.clearAll()
+        setBankAccountParam(null)
+    }, [search, setBankAccountParam])
 
     const { data: statements = [], isLoading, refetch } = useStatementsQuery(
-        segFilters.account && segFilters.account !== 'all'
-            ? { treasury_account: segFilters.account }
+        bankAccountParam && bankAccountParam !== 'all'
+            ? { treasury_account: bankAccountParam }
             : bankId
             ? { bank: String(bankId) }
             : undefined,
     )
 
     const filteredStatements = useMemo(() => {
-        let result = filterFn(statements)
-        if (segFilters.state) {
-            result = result.filter((s) => s.state === segFilters.state)
+        let result = search.filterFn(statements)
+        if (search.filters.state) {
+            result = result.filter((s) => s.state === search.filters.state)
         }
         return result
-    }, [filterFn, statements, segFilters])
+    }, [statements, search.filterFn, search.filters])
 
     // Open import dialog when triggered via URL (?modal=import)
     useEffect(() => {
@@ -399,27 +397,34 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                         description: 'Importa una cartola bancaria para comenzar la conciliación.',
                     }}
                     onReset={handleReset}
-                    smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar cartola..." />}
-                    segmentation={
-                        <SegmentationBar def={{
-                            ...statementsSegDef,
-                            segments: [
-                                ...statementsSegDef.segments,
-                                ...(accounts ? [{
-                                    key: 'account',
-                                    label: 'Cuenta',
-                                    type: 'tabs' as const,
-                                    variant: 'dropdown' as const,
-                                    serverParam: 'account',
-                                    defaultValue: 'all',
-                                    options: [
-                                        { label: 'Todas las cuentas', value: 'all' },
-                                        ...accounts.map(a => ({ label: a.name, value: String(a.id) })),
-                                    ],
-                                }] : []),
-                            ],
-                        }} />
-                    }
+                    unifiedSearch={<UnifiedSearchBar
+                        config={statementsUnifiedConfig}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar cartola..."
+                        prefix={accounts ? (
+                            <div className="flex items-center gap-1 shrink-0">
+                                <select
+                                    value={bankAccountParam ?? 'all'}
+                                    onChange={(e) => setBankAccountParam(e.target.value === 'all' ? null : e.target.value)}
+                                    className="h-7 text-[11px] bg-background border border-border/60 rounded px-1.5 text-foreground cursor-pointer"
+                                >
+                                    <option value="all">Todas las cuentas</option>
+                                    {accounts.map(a => (
+                                        <option key={a.id} value={String(a.id)}>{a.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : null}
+                    />}
                     createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
                     renderLoadingView={renderLoadingView}
@@ -432,7 +437,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 open={importModalOpen}
                 onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
-                defaultAccountId={segFilters.account && segFilters.account !== 'all' ? Number(segFilters.account) : undefined}
+                defaultAccountId={bankAccountParam && bankAccountParam !== 'all' ? Number(bankAccountParam) : undefined}
                 allowedAccountIds={accounts?.map(a => a.id)}
             />
 
