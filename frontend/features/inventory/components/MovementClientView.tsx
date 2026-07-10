@@ -2,17 +2,15 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { BaseModal, Chip, DataTableView } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { type ColumnDef } from "@tanstack/react-table"
 
-import {ArrowRightLeft} from "lucide-react"
+import { ArrowRightLeft } from "lucide-react"
 
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
-import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
-import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 
 export interface StockMove {
     id: number
@@ -35,8 +33,6 @@ export interface StockMove {
     }>
 }
 interface MovementClientViewProps {
-    externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
@@ -48,12 +44,11 @@ import React from "react"
 
 
 
-export function MovementClientView({ externalOpen, onExternalOpenChange, createAction: externalCreateAction }: MovementClientViewProps) {
-    const createAction = externalCreateAction
+export function MovementClientView({ createAction }: MovementClientViewProps) {
     const search = useUnifiedSearch(stockMoveUnifiedSearchDef)
     const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const { page, moves, totalCount, isLoading, refetch } = useStockMoves({
+    const { page, moves, totalCount, isLoading } = useStockMoves({
         ...search.filters,
         page: isGrouping ? 1 : pageState.pageIndex + 1,
         page_size: isGrouping ? 5000 : pageState.pageSize,
@@ -67,9 +62,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
     }, [isOverLimit, totalCount])
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
-    const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
-    const [isFormLoading, setIsFormLoading] = useState(false)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string } | null>(null)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -90,17 +83,6 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
         params.delete('selected')
         const query = params.toString()
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
-
-    const handleCloseModal = () => {
-        setShowAdjustmentModal(false)
-        onExternalOpenChange?.(false)
-
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
     }
 
     const actionsCtx: StockMoveActionsCtx = {
@@ -234,49 +216,6 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     }}
                 />
             )}
-
-            <BaseModal
-                open={showAdjustmentModal || !!externalOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setShowAdjustmentModal(true)
-                    }
-                }}
-                size="lg"
-                hideScrollArea={true}
-                contentClassName="p-0"
-                icon={ArrowRightLeft}
-                title="Nuevo Ajuste de Inventario"
-                description="Procedimiento táctico de rectificación de stock físico."
-                footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={handleCloseModal} />
-                                <SubmitButton
-                                    form="adjustment-form"
-                                    loading={isFormLoading}
-                                    variant="primary"
-                                    className="px-8"
-                                >
-                                    Confirmar Ajuste
-                                </SubmitButton>
-                            </>
-                        }
-                    />
-                }
-            >
-                <AdjustmentForm
-                    onLoadingChange={setIsFormLoading}
-                    onSuccess={() => {
-                        handleCloseModal();
-                        refetch();
-                    }}
-                    onCancel={handleCloseModal}
-                />
-            </BaseModal>
         </div>
     )
 }
