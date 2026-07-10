@@ -4,5 +4,4 @@ export { usePurchaseInvoices, PURCHASE_INVOICES_QUERY_KEY } from './hooks/usePur
 export type { Invoice, InvoiceFilters, AnnulInvoicePayload } from './types'
 export { useNoteCheckout } from './hooks/useNoteCheckout'
 export { billingApi } from './api/billingApi'
-export { invoiceSearchDef, purchaseInvoiceSearchDef } from './searchDef'
 export { purchaseInvoiceUnifiedSearchDef, invoiceUnifiedSearchDef } from './unifiedSearchDef'

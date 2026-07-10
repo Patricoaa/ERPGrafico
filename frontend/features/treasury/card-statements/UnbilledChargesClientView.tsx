@@ -40,7 +40,7 @@ import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
 
-interface UnbilledChargesViewProps {
+interface UnbilledChargesClientViewProps {
     bankId: number
 }
 
@@ -69,9 +69,9 @@ interface UnbilledSummary {
     installments: number
 }
 
-export function UnbilledChargesView({
+export function UnbilledChargesClientView({
     bankId,
-}: UnbilledChargesViewProps) {
+}: UnbilledChargesClientViewProps) {
     const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
     const [showBillCharges, setShowBillCharges] = useState(false)
     const queryClient = useQueryClient()

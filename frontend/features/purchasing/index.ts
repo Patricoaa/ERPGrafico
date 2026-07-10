@@ -22,7 +22,6 @@ export type {
 } from './types'
 
 export { purchaseOrderActions } from './actions'
-export { purchaseOrderSearchDef } from './searchDef'
 export { purchaseOrderUnifiedSearchDef } from './unifiedSearchDef'
 
 

@@ -18,7 +18,7 @@ import { GroupsClientView } from "@/features/settings/components/GroupsClientVie
 import { type AppUser } from "@/types/entities"
 
 
-interface UsersSettingsViewProps {
+interface UsersSettingsClientViewProps {
     activeTab: string
 }
 
@@ -26,7 +26,7 @@ import { useUsers } from "@/features/users"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
-export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
+export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewProps) {
     const config: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
             { key: 'search', label: 'Nombre / Email / Usuario', serverParam: 'search' },

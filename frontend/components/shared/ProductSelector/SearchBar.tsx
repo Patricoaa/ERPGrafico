@@ -1,8 +1,7 @@
 "use client"
 
 // ProductSelector/SearchBar
-// Generic product search input matching SmartSearchBar visual style,
-// with touch optimization for POS devices.
+// Generic product search input with touch optimization for POS devices.
 
 import { Button } from "@/components/ui/button"
 import { useRef } from 'react'

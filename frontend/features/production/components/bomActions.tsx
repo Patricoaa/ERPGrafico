@@ -1,5 +1,5 @@
 import { DataCell, createEntityActions } from '@/components/shared'
-import type { BOMListItem } from './BOMsPageClient'
+import type { BOMListItem } from './BOMClientView'
 
 export interface BOMActionsCtx {
     onEdit: (id: number) => void
