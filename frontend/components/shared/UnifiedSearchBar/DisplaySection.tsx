@@ -2,6 +2,7 @@
 
 import { ArrowUp, ArrowDown, ArrowUpDown, List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, Columns3 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { translateColumnId } from '../DataTableColumnToggle'
 import type { Column } from '@tanstack/react-table'
@@ -44,26 +45,28 @@ function ViewModeSection({
   return (
     <div>
       <SectionHeader icon={LayoutDashboard} label="Vista" />
-      <div className="p-1.5 space-y-0.5">
-        {viewOptions.map((option) => {
-          const Icon = VIEW_ICON_MAP[option.value] ?? option.icon
-          const isActive = currentView === option.value
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onViewChange?.(option.value)}
-              className={cn(
-                "w-full text-left flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 transition-colors",
-                isActive ? "text-primary font-semibold" : "text-muted-foreground",
-              )}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              <span>{option.label}</span>
-            </button>
-          )
-        })}
-      </div>
+      <ScrollArea className="max-h-[80vh]">
+        <div className="grid grid-cols-3 gap-1 p-1.5">
+          {viewOptions.map((option) => {
+            const Icon = VIEW_ICON_MAP[option.value] ?? option.icon
+            const isActive = currentView === option.value
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onViewChange?.(option.value)}
+                className={cn(
+                  "w-full text-left flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 transition-colors min-w-0",
+                  isActive ? "text-primary font-semibold" : "text-muted-foreground",
+                )}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{option.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
@@ -74,34 +77,36 @@ function SortSection({ columns }: { columns: Column<unknown>[] }) {
   return (
     <div>
       <SectionHeader icon={ArrowUpDown} label="Ordenar por" />
-      <div className="p-1.5 space-y-0.5">
-        {columns.map((column) => {
-          const isSorted = column.getIsSorted()
-          const title = (column.columnDef.meta as { title?: string })?.title || translateColumnId(column.id)
-          return (
-            <button
-              key={column.id}
-              type="button"
-              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              className={cn(
-                "w-full text-left flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 transition-colors",
-                isSorted ? "text-primary font-semibold" : "text-muted-foreground",
-              )}
-            >
-              <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
-                {isSorted === 'desc' ? (
-                  <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                ) : isSorted === 'asc' ? (
-                  <ArrowUp className="h-3.5 w-3.5 text-primary" />
-                ) : (
-                  <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
+      <ScrollArea className="max-h-[80vh]">
+        <div className="grid grid-cols-3 gap-1 p-1.5">
+          {columns.map((column) => {
+            const isSorted = column.getIsSorted()
+            const title = (column.columnDef.meta as { title?: string })?.title || translateColumnId(column.id)
+            return (
+              <button
+                key={column.id}
+                type="button"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                className={cn(
+                  "w-full text-left flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 transition-colors min-w-0",
+                  isSorted ? "text-primary font-semibold" : "text-muted-foreground",
                 )}
-              </div>
-              <span>{title}</span>
-            </button>
-          )
-        })}
-      </div>
+              >
+                <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                  {isSorted === 'desc' ? (
+                    <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                  ) : isSorted === 'asc' ? (
+                    <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
+                  )}
+                </div>
+                <span className="truncate">{title}</span>
+              </button>
+            )
+          })}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
@@ -112,25 +117,27 @@ function ColumnVisibilitySection({ columns }: { columns: Column<unknown>[] }) {
   return (
     <div>
       <SectionHeader icon={Columns3} label="Columnas" />
-      <div className="p-1.5 space-y-0.5">
-        {columns.map((column) => {
-          const isVisible = column.getIsVisible()
-          const title = (column.columnDef.meta as { title?: string })?.title || translateColumnId(column.id)
-          return (
-            <label
-              key={column.id}
-              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-accent/50 rounded-sm text-xs font-medium transition-colors"
-            >
-              <Checkbox
-                variant="circle"
-                checked={isVisible}
-                onCheckedChange={(checked) => column.toggleVisibility(!!checked)}
-              />
-              <span className={cn(isVisible ? "text-foreground" : "text-muted-foreground")}>{title}</span>
-            </label>
-          )
-        })}
-      </div>
+      <ScrollArea className="max-h-[80vh]">
+        <div className="grid grid-cols-3 gap-1 p-1.5">
+          {columns.map((column) => {
+            const isVisible = column.getIsVisible()
+            const title = (column.columnDef.meta as { title?: string })?.title || translateColumnId(column.id)
+            return (
+              <label
+                key={column.id}
+                className="flex items-center gap-1.5 px-2 py-1.5 cursor-pointer hover:bg-accent/50 rounded-sm text-xs font-medium transition-colors min-w-0"
+              >
+                <Checkbox
+                  variant="circle"
+                  checked={isVisible}
+                  onCheckedChange={(checked) => column.toggleVisibility(!!checked)}
+                />
+                <span className={cn("truncate", isVisible ? "text-foreground" : "text-muted-foreground")}>{title}</span>
+              </label>
+            )
+          })}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
@@ -155,29 +162,27 @@ export function DisplaySection({
   if (!hasViewOptions && !hasSortOptions && !hasColumnToggle) return null
 
   return (
-    <div>
+    <div className="grid grid-cols-3 gap-0">
       {hasViewOptions && viewOptions && (
-        <ViewModeSection
-          viewOptions={viewOptions}
-          currentView={currentView}
-          onViewChange={onViewChange}
-        />
-      )}
-
-      {hasViewOptions && (hasSortOptions || hasColumnToggle) && (
-        <div className="border-b border-border/60" />
+        <div className={cn(hasSortOptions || hasColumnToggle && "border-r border-border/60")}>
+          <ViewModeSection
+            viewOptions={viewOptions}
+            currentView={currentView}
+            onViewChange={onViewChange}
+          />
+        </div>
       )}
 
       {hasSortOptions && (
-        <SortSection columns={sortableColumns} />
-      )}
-
-      {hasSortOptions && hasColumnToggle && (
-        <div className="border-b border-border/60" />
+        <div className={cn(hasColumnToggle && "border-r border-border/60")}>
+          <SortSection columns={sortableColumns} />
+        </div>
       )}
 
       {hasColumnToggle && (
-        <ColumnVisibilitySection columns={hideableColumns} />
+        <div>
+          <ColumnVisibilitySection columns={hideableColumns} />
+        </div>
       )}
     </div>
   )
