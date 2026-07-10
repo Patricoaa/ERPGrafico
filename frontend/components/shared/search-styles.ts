@@ -1,4 +1,4 @@
-// ─── Shared typography & layout tokens for DataTable toolbar / segmentation ───
+// ─── Shared typography & layout tokens for DataTable toolbar / search / filters ───
 // All consumers (shared + route-specific) MUST import from here.
 // This is the single source of truth — never inline these values.
 

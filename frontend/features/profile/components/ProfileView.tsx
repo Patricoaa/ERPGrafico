@@ -1,7 +1,7 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
 import { toast } from "sonner"
 import { useForm } from "react-hook-form"
@@ -26,7 +26,8 @@ import {
     Download, Clock, FileText,
     ChevronDown, ChevronRight, Sun, Moon, Monitor
 } from "lucide-react"
-import { EmptyState, LabeledInput, SegmentationBar } from "@/components/shared"
+import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import type { UnifiedSearchConfig } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell } from '@/components/shared'
@@ -372,6 +373,14 @@ function PersonalTab({
         )
     }
 
+    const payrollSearchConfig: UnifiedSearchConfig = useMemo(() => ({
+        filters: [
+            { key: 'period_label', label: 'Período', type: 'multi', serverParam: 'period_label', columnId: 'period_label', dynamic: true, options: [] },
+        ],
+        searchFields: [],
+    }), [])
+    const payrollSearch = useUnifiedSearch(payrollSearchConfig)
+
     // Payroll columns
     const payrollColumns: ColumnDef<Payroll>[] = [
         {
@@ -605,13 +614,7 @@ function PersonalTab({
                                         variant="standalone"
                                         noBorder={true}
                                         toolbarClassName="px-6 pt-6 pb-2 pl-14"
-                                        segmentation={
-                                            <SegmentationBar def={{
-                                                segments: [
-                                                    { key: 'period_label', label: 'Período', type: 'multiselect', serverParam: 'period_label', columnId: 'period_label', dynamic: true, options: [] },
-                                                ],
-                                            }} />
-                                        }
+                                        unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
                                         renderSubComponent={(row) => {
                                             const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
                                             return (
