@@ -11,6 +11,7 @@ import { SearchSuggestions } from './SearchSuggestions'
 import type {
   UnifiedSearchConfig,
   UnifiedChip,
+  MultiSelectOption,
 } from '@/types/unified-search'
 
 interface UnifiedSearchBarProps {
@@ -25,6 +26,7 @@ interface UnifiedSearchBarProps {
   groupBy: string | null
   onGroupBySelect: (key: string | null) => Promise<void>
   paramValues: Record<string, string | null>
+  filterOptions?: Record<string, MultiSelectOption[]>
   placeholder?: string
   className?: string
   prefix?: React.ReactNode
@@ -46,6 +48,7 @@ export function UnifiedSearchBar({
   groupBy,
   onGroupBySelect,
   paramValues,
+  filterOptions,
   placeholder = 'Buscar...',
   className,
   prefix,
@@ -195,6 +198,7 @@ export function UnifiedSearchBar({
               groupBy={config.groupBy}
               paramValues={paramValues}
               currentGroupBy={groupBy}
+              filterOptions={filterOptions}
               onApply={onApply}
               onRemove={onRemove}
               onGroupBySelect={onGroupBySelect}
