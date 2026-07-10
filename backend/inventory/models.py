@@ -1412,9 +1412,63 @@ class InventoryDocument(TimeStampedModel):
 
     def __str__(self):
         return f"{self.get_document_type_display()} {self.id}"
+class InventoryDocumentDetailManager(models.Manager):
+    def bulk_create(self, objs, **kwargs):
+        # Resolve legacy warehouse arguments to proper locations before bulk creating
+        if not objs:
+            return super().bulk_create(objs, **kwargs)
+            
+        vendor_loc = None
+        customer_loc = None
+        internal_locs = {}
+        
+        def get_internal(warehouse):
+            if not warehouse: return None
+            if warehouse.id not in internal_locs:
+                loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
+                internal_locs[warehouse.id] = loc
+            return internal_locs[warehouse.id]
+            
+        def get_vendor():
+            nonlocal vendor_loc
+            if not vendor_loc:
+                vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
+            return vendor_loc
+            
+        def get_customer():
+            nonlocal customer_loc
+            if not customer_loc:
+                customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
+            return customer_loc
+
+        for obj in objs:
+            if getattr(obj, "source_location_id", None) and getattr(obj, "destination_location_id", None):
+                continue
+                
+            warehouse = getattr(obj, "_legacy_warehouse", None)
+            if not warehouse:
+                continue
+                
+            doc_type = obj.document.document_type if getattr(obj, "document", None) else None
+            
+            if doc_type in [InventoryDocument.Type.RECEIPT, InventoryDocument.Type.RETURN_RECEIPT]:
+                obj.source_location = get_vendor() if doc_type == InventoryDocument.Type.RECEIPT else get_customer()
+                obj.destination_location = get_internal(warehouse)
+            elif doc_type in [InventoryDocument.Type.DELIVERY, InventoryDocument.Type.RETURN_DELIVERY]:
+                obj.source_location = get_internal(warehouse)
+                obj.destination_location = get_customer() if doc_type == InventoryDocument.Type.DELIVERY else get_vendor()
+            elif doc_type == InventoryDocument.Type.INTERNAL_TRANSFER:
+                src_warehouse = getattr(obj, "_legacy_source_warehouse", None)
+                if src_warehouse:
+                    obj.source_location = get_internal(src_warehouse)
+                obj.destination_location = get_internal(warehouse)
+                
+        return super().bulk_create(objs, **kwargs)
 
 
 class InventoryDocumentDetail(models.Model):
+    objects = InventoryDocumentDetailManager()
+
     document = models.ForeignKey(InventoryDocument, on_delete=models.CASCADE, related_name="details")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="document_details")
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
@@ -1439,6 +1493,30 @@ class InventoryDocumentDetail(models.Model):
         # Store them in private attributes in case they need to be resolved before save
         self._legacy_warehouse = _warehouse
         self._legacy_source_warehouse = _source_warehouse
+
+    def save(self, *args, **kwargs):
+        if not getattr(self, "source_location_id", None) or not getattr(self, "destination_location_id", None):
+            warehouse = getattr(self, "_legacy_warehouse", None)
+            if warehouse:
+                doc_type = self.document.document_type if getattr(self, "document", None) else None
+                
+                internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
+                vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
+                customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
+                
+                if doc_type in [InventoryDocument.Type.RECEIPT, InventoryDocument.Type.RETURN_RECEIPT]:
+                    self.source_location = vendor_loc if doc_type == InventoryDocument.Type.RECEIPT else customer_loc
+                    self.destination_location = internal_loc
+                elif doc_type in [InventoryDocument.Type.DELIVERY, InventoryDocument.Type.RETURN_DELIVERY]:
+                    self.source_location = internal_loc
+                    self.destination_location = customer_loc if doc_type == InventoryDocument.Type.DELIVERY else vendor_loc
+                elif doc_type == InventoryDocument.Type.INTERNAL_TRANSFER:
+                    src_warehouse = getattr(self, "_legacy_source_warehouse", None)
+                    if src_warehouse:
+                        self.source_location = Location.objects.filter(location_type="INTERNAL", warehouse_id=src_warehouse.id).first()
+                    self.destination_location = internal_loc
+                    
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
