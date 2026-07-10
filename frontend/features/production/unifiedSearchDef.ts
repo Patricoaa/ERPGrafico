@@ -17,6 +17,9 @@ export const bomUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'active', label: 'Estado', field: 'active' },
+  ],
 }
 
 export const workOrderUnifiedSearchDef: UnifiedSearchConfig = {
@@ -56,5 +59,9 @@ export const workOrderUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'due_date_after', serverParamTo: 'due_date_before', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'current_stage', label: 'Etapa', field: 'current_stage' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }

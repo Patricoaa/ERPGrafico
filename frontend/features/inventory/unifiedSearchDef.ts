@@ -84,6 +84,9 @@ export const stockMoveUnifiedSearchDef: UnifiedSearchConfig = {
     },
   ],
   filters: [],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+  ],
   dateFilters: [{
     type: 'date',
     key: 'date',
@@ -119,6 +122,10 @@ export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Cancelado', value: 'CANCELLED' },
       ],
     },
+  ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'recurrence_period', label: 'Período', field: 'recurrence_period' },
   ],
   dateFilters: [{
     type: 'date',
@@ -189,6 +196,10 @@ export const productUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'product_type', label: 'Tipo producto', field: 'product_type' },
+    { key: 'category_name', label: 'Categoría', field: 'category_name' },
+  ],
 }
 
 export const documentUnifiedSearchDef: UnifiedSearchConfig = {
@@ -227,6 +238,11 @@ export const documentUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Producción', value: 'PRODUCTION' },
       ],
     },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'document_type', label: 'Tipo documento', field: 'document_type' },
+    { key: 'status', label: 'Estado', field: 'status' },
   ],
   dateFilters: [{
     type: 'date',
