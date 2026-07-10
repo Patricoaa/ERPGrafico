@@ -59,9 +59,9 @@ export function SingleSelectFilterItem({
       </button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 py-1 space-y-0.5">
+        <div className="ml-4 border-l border-border/40 pl-2 py-1 grid grid-cols-3 gap-1">
           {options.length === 0 && def.dynamic && (
-            <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground col-span-3">
               <Loader2 className="h-3 w-3 animate-spin" />
               Cargando...
             </div>
@@ -72,7 +72,7 @@ export function SingleSelectFilterItem({
               type="button"
               onClick={() => handleSelect(opt.value)}
               className={cn(
-                "block w-full text-left px-2 py-1 text-xs rounded-sm hover:bg-accent/50",
+                "w-full text-left px-2 py-1 text-xs rounded-sm hover:bg-accent/50 truncate min-w-0",
                 selectedValue === opt.value
                   ? "text-primary font-semibold"
                   : "text-muted-foreground",

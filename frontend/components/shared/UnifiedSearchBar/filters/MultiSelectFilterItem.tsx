@@ -80,11 +80,11 @@ export function MultiSelectFilterItem({
       </button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 py-1 space-y-0.5 max-h-[200px] overflow-y-auto">
+        <div className="ml-4 border-l border-border/40 pl-2 py-1 grid grid-cols-3 gap-1 max-h-[200px] overflow-y-auto">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className="flex items-center gap-2 px-1 py-1 cursor-pointer hover:bg-accent/50 rounded-sm text-xs"
+              className="flex items-center gap-1.5 px-1 py-1 cursor-pointer hover:bg-accent/50 rounded-sm text-xs min-w-0"
             >
               <Checkbox
                 variant="circle"
