@@ -327,7 +327,8 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             "product__uom",
             "product__category",
             "uom",
-            "warehouse",
+            "source_location",
+            "destination_location",
             "journal_entry",
         ).all()
     serializer_class = StockMoveSerializer
@@ -389,7 +390,12 @@ class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
 class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = InventoryDocument.objects.select_related(
         "partner", "created_by", "confirmed_by"
-    ).prefetch_related("details", "details__product", "details__warehouse").all()
+    ).prefetch_related(
+        "details",
+        "details__product",
+        "details__source_location",
+        "details__destination_location",
+    ).all()
     serializer_class = InventoryDocumentSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
