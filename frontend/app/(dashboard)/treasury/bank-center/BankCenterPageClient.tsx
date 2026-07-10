@@ -5,14 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { BankCenterClientView } from "@/features/treasury"
 import { ToolbarCreateButton } from "@/components/shared"
 
-export function BankCenterPageClientView() {
+export default function BankCenterPageClient() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const bank = searchParams.get("bank")
     const modal = searchParams.get("modal")
     const [modalOpen, setModalOpen] = useState(false)
 
-    // Redirect legacy ?bank=X query param to new URL segment
     useEffect(() => {
         const bankId = Number(bank)
         if (bankId) {

@@ -1,4 +1,5 @@
 export * from './BOMDrawer';
+export * from './BOMClientView';
 export * from './BOMManager';
 export * from './MaterialAssignmentTabs';
 export * from './WizardProcessSidebar';
