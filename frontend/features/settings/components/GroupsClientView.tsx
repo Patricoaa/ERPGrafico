@@ -10,8 +10,8 @@ import { GroupDrawer } from "@/features/users"
 import { groupActions, type GroupActionsCtx } from './groupActions'
 import type { Group } from "../api/types"
 
-import { SmartSearchBar, useClientSearch } from "@/components/shared"
-import { groupSearchDef } from "@/features/settings/searchDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { groupUnifiedSearchDef } from "@/features/settings/unifiedSearchDef"
 
 interface GroupsClientViewProps {
     externalOpen?: boolean
@@ -21,7 +21,7 @@ interface GroupsClientViewProps {
 
 export function GroupsClientView({ externalOpen, onExternalOpenChange, createAction }: GroupsClientViewProps) {
     const { groups, loading, fetchGroups, deleteGroup } = useGroups()
-    const { filterFn } = useClientSearch<Group>(groupSearchDef)
+    const search = useUnifiedSearch(groupUnifiedSearchDef)
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [editingGroup, setEditingGroup] = useState<Group | null>(null)
@@ -67,10 +67,27 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                 <DataTableView
                     entityLabel="settings.group"
                     columns={columns}
-                    data={filterFn(groups)}
+                    data={search.filterFn(groups)}
                     isLoading={loading}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={groupUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar grupo..."
+                    />}
+                    unifiedSearchConfig={groupUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     createAction={createAction}
                     renderCard={(group: Group) => (
                         <EntityCard key={group.id}>

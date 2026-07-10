@@ -12,9 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, SEG_TRIGGER, SEG_WRAPPER } from '@/components/shared'
-import { reconciliationSearchDef } from "../searchDef"
-import { reconciliationSegDef } from "../segmentationDef"
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER } from '@/components/shared'
+import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
@@ -160,14 +159,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
-    const { filters: textFilters } = useSmartSearch(reconciliationSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters } = useSegmentation(reconciliationSegDef, basePeriod)
-    const allFilters = { ...textFilters, ...segFilters }
+    const search = useUnifiedSearch(reconciliationUnifiedSearchDef)
 
-    // Synchronize smart search filters to query parameters
+    // Synchronize unified search filters to query parameters
     useEffect(() => {
-        const f = allFilters
+        const f = search.filters
         requestAnimationFrame(() => {
             setBankParams(prev => ({
                 ...prev,
@@ -186,7 +182,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 date_to: f.date_to || "",
             }))
         })
-    }, [allFilters])
+    }, [search.filters])
 
     const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: string } | null>(null)
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -709,14 +705,23 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
                 {/* ─── Unified Workbench Toolbar ─── */}
                 <div className="flex items-center justify-between gap-4 w-full mb-3 h-9">
-                    {/* Left: Smart Search Bar + Segmentation (Unified Filtering for Both Tables) */}
+                    {/* Left: Unified Search Bar (Search + Filters) */}
                     <div className="flex items-center gap-2 flex-1 min-w-0 h-9">
-                        <SmartSearchBar
-                            searchDef={reconciliationSearchDef}
+                        <UnifiedSearchBar
+                            config={reconciliationUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
                             placeholder="Buscar movimientos y pagos por descripción, monto..."
                             className="flex-1"
                         />
-                        <SegmentationBar def={reconciliationSegDef} basePeriod={basePeriod} />
                     </div>
 
                     {/* Right: Actions & Navigation Group */}

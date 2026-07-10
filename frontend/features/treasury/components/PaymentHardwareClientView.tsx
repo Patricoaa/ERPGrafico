@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, EntityCard, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch } from '@/components/shared'
-import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
+import { ActionConfirmModal, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import {
     Building2,
     Smartphone,
@@ -49,10 +49,20 @@ export function PaymentHardwareClientView({
         }
     }, [externalActiveTab])
 
-    const { filters: deviceTextFilters, isFiltered: isDevicesTextFiltered } = useSmartSearch(deviceSearchDef)
-    const isDevicesFiltered = isDevicesTextFiltered
-    const deviceFilters = { ...deviceTextFilters }
-    const { filterFn: filterProviders, isFiltered: isProvidersFiltered } = useClientSearch<PaymentTerminalProvider>(providerSearchDef)
+    const deviceConfig: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'search', label: 'Nombre', serverParam: 'search' },
+        ],
+    }), [])
+    const deviceSearch = useUnifiedSearch(deviceConfig)
+    const deviceFilters = { ...deviceSearch.filters }
+
+    const providerConfig: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'name', label: 'Nombre', serverParam: 'name', clientKey: ['name'] },
+        ],
+    }), [])
+    const providerSearch = useUnifiedSearch(providerConfig)
     const { providers, isLoading: isLoadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
     const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
 
@@ -187,12 +197,25 @@ export function PaymentHardwareClientView({
                     <DataTableView
                         entityLabel="treasury.terminalprovider"
                         columns={providerColumns}
-                        data={filterProviders(providers)}
+                        data={providerSearch.filterFn(providers)}
                         isLoading={isLoadingProviders}
                         variant="embedded"
-                        smartSearch={<SmartSearchBar searchDef={providerSearchDef} placeholder="Buscar proveedor..." className="w-full" />}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={providerConfig}
+                            chips={providerSearch.chips}
+                            isFiltered={providerSearch.isFiltered}
+                            inputValue={providerSearch.inputValue}
+                            onInputChange={providerSearch.setInputValue}
+                            onApply={providerSearch.applyFilter}
+                            onRemove={providerSearch.removeFilter}
+                            onClearAll={providerSearch.clearAll}
+                            groupBy={providerSearch.groupBy}
+                            onGroupBySelect={providerSearch.setGroupBy}
+                            paramValues={providerSearch.paramValues}
+                            placeholder="Buscar proveedor..."
+                        />}
                         defaultPageSize={20}
-                        isFiltered={isProvidersFiltered}
+                        isFiltered={providerSearch.isFiltered}
                         emptyState={{
                             context: "treasury",
                             title: "Aún no hay proveedores de terminal",
@@ -244,9 +267,22 @@ export function PaymentHardwareClientView({
                         data={devices}
                         isLoading={isLoadingDevices}
                         variant="embedded"
-                        smartSearch={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-full" />}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={deviceConfig}
+                            chips={deviceSearch.chips}
+                            isFiltered={deviceSearch.isFiltered}
+                            inputValue={deviceSearch.inputValue}
+                            onInputChange={deviceSearch.setInputValue}
+                            onApply={deviceSearch.applyFilter}
+                            onRemove={deviceSearch.removeFilter}
+                            onClearAll={deviceSearch.clearAll}
+                            groupBy={deviceSearch.groupBy}
+                            onGroupBySelect={deviceSearch.setGroupBy}
+                            paramValues={deviceSearch.paramValues}
+                            placeholder="Buscar dispositivo..."
+                        />}
                         defaultPageSize={20}
-                        isFiltered={isDevicesFiltered}
+                        isFiltered={deviceSearch.isFiltered}
                         emptyState={{
                             context: "treasury",
                             title: "Aún no hay dispositivos",

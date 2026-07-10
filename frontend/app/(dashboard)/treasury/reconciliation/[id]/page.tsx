@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/money"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { showApiError } from "@/lib/errors"
-import { useState, use } from "react"
+import { useState, use, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,8 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { ActionConfirmModal, PageHeader, SkeletonShell, SegmentationBar } from '@/components/shared'
+import { ActionConfirmModal, PageHeader, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import type { UnifiedSearchConfig } from '@/components/shared'
 
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -110,6 +111,20 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             setConfirming(false)
         }
     })
+
+    const statementSearchConfig: UnifiedSearchConfig = useMemo(() => ({
+        filters: [
+            { key: 'reconciliation_state', label: 'Estado Reconciliación', type: 'multi', serverParam: 'reconciliation_state', columnId: 'reconciliation_state', options: [
+                { label: "Sin Conciliar", value: "UNRECONCILED" },
+                { label: "Conciliado", value: "RECONCILED" },
+                { label: "Sugerencia (Match)", value: "MATCHED" },
+                { label: "Excluido", value: "EXCLUDED" },
+                { label: "En Disputa", value: "DISPUTED" },
+            ] },
+        ],
+        searchFields: [],
+    }), [])
+    const statementSearch = useUnifiedSearch(statementSearchConfig)
 
     const columns: ColumnDef<BankStatementLine>[] = [
         {
@@ -362,19 +377,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     columns={columns}
                     data={statement.lines}
                     variant="embedded"
-                    segmentation={
-                        <SegmentationBar def={{
-                            segments: [
-                                { key: 'reconciliation_state', label: 'Estado Reconciliación', type: 'multiselect', serverParam: 'reconciliation_state', columnId: 'reconciliation_state', options: [
-                                    { label: "Sin Conciliar", value: "UNRECONCILED" },
-                                    { label: "Conciliado", value: "RECONCILED" },
-                                    { label: "Sugerencia (Match)", value: "MATCHED" },
-                                    { label: "Excluido", value: "EXCLUDED" },
-                                    { label: "En Disputa", value: "DISPUTED" },
-                                ] },
-                            ],
-                        }} />
-                    }
+                    unifiedSearch={<UnifiedSearchBar config={statementSearchConfig} chips={statementSearch.chips} isFiltered={statementSearch.isFiltered} inputValue={statementSearch.inputValue} onInputChange={statementSearch.setInputValue} onApply={statementSearch.applyFilter} onRemove={statementSearch.removeFilter} onClearAll={statementSearch.clearAll} groupBy={statementSearch.groupBy} onGroupBySelect={statementSearch.setGroupBy} paramValues={statementSearch.paramValues} />}
                     defaultPageSize={20}
                     createAction={
                         statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 ? (

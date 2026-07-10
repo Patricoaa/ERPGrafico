@@ -574,6 +574,18 @@ class SalesService:
                         print(f"DEBUG: No OT created for {product.internal_code} (not express)")
 
         # 2. Process lines for stock moves and quantity updates
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.services import InventoryService
+
+        doc_inv = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.DELIVERY,
+            status=InventoryDocument.Status.DRAFT,
+            date=delivery.delivery_date,
+            reference=f"Despacho {EntityPrefix.SALE_ORDER}-{delivery.sale_order.number}",
+            partner=delivery.sale_order.customer
+        )
+        details_to_create = []
+
         for line in delivery.lines.all():
             product = line.product
 
@@ -584,25 +596,16 @@ class SalesService:
                     line.quantity, from_uom=line.uom or line.sale_line.uom, to_uom=line.product.uom
                 )
 
-                # Create stock move (OUT)
-                print(
-                    f"DEBUG: Creating StockMove for product {product.internal_code}, qty {-base_qty}, warehouse {delivery.warehouse.name}"
+                details_to_create.append(
+                    InventoryDocumentDetail(
+                        document=doc_inv,
+                        product=product,
+                        warehouse=delivery.warehouse,
+                        quantity=base_qty,
+                        unit_cost=product.cost_price
+                    )
                 )
-                stock_move = StockMove.objects.create(
-                    date=delivery.delivery_date,
-                    product=product,
-                    warehouse=delivery.warehouse,
-                    uom=product.uom,
-                    quantity=-base_qty,  # Negative for OUT move
-                    move_type=StockMove.Type.OUT,
-                    description=f"Despacho {EntityPrefix.SALE_ORDER}-{delivery.sale_order.number}",
-                    source_uom=line.uom or line.sale_line.uom,
-                    source_quantity=line.quantity,
-                )
-                created_moves.append(stock_move)
 
-                # Link stock move to delivery line
-                line.stock_move = stock_move
                 # Ensure unit_cost is the product's current cost
                 line.unit_cost = product.cost_price
                 line.save()
@@ -630,10 +633,6 @@ class SalesService:
                             # BOM Explosion: Consume components instead of the product
                             line_total_cost = Decimal("0.00")
                             for bom_line in active_bom.lines.all():
-                                # 1. First, calculate total requirement in the BOM line's UoM
-                                # Requirement = (Sale Qty in Sale UoM) * (BOM Qty per Unit)
-                                # NOTE: This assumes BOM quantity is per "Base Unit" of the product.
-                                # If sold in a different UoM, we must convert Sale Qty to Base UoM first.
                                 base_sale_qty = UoMService.convert_quantity(
                                     line.quantity, from_uom=line.sale_line.uom, to_uom=product.uom
                                 )
@@ -647,17 +646,15 @@ class SalesService:
                                     to_uom=bom_line.component.uom,
                                 )
 
-                                # Create stock move (OUT) for the COMPONENT
-                                comp_move = StockMove.objects.create(
-                                    date=delivery.delivery_date,
-                                    product=bom_line.component,
-                                    warehouse=delivery.warehouse,
-                                    uom=bom_line.component.uom,
-                                    quantity=-base_comp_qty,
-                                    move_type=StockMove.Type.OUT,
-                                    description=f"Consumo BOM p/Despacho {delivery.number} ({product.name})",
+                                details_to_create.append(
+                                    InventoryDocumentDetail(
+                                        document=doc_inv,
+                                        product=bom_line.component,
+                                        warehouse=delivery.warehouse,
+                                        quantity=base_comp_qty,
+                                        unit_cost=bom_line.component.cost_price
+                                    )
                                 )
-                                created_moves.append(comp_move)
 
                                 # Calculate component cost contribution
                                 line_total_cost += base_comp_qty * bom_line.component.cost_price
@@ -678,6 +675,27 @@ class SalesService:
                     # Service or other non-tracked product
                     line.unit_cost = 0
                     line.save()
+
+        if details_to_create:
+            InventoryDocumentDetail.objects.bulk_create(details_to_create)
+            doc_inv, generated_moves = InventoryService.confirmar_documento(doc_inv)
+            
+            # Map lines to generated moves for PATH A
+            tracked_lines = [l for l in delivery.lines.all() if l.product.track_inventory]
+            # Since generated_moves has details in the same order as details_to_create, we can find the matching moves.
+            # But the generated_moves include PATH B components too. We just match the first len(tracked_lines) moves
+            # Wait, `details_to_create` appends PATH A details first, then PATH B details. But PATH A details are added per line.
+            # Actually, let's just match them by finding the corresponding move.
+            for l in tracked_lines:
+                for move in generated_moves:
+                    if move.product_id == l.product_id and move.quantity == -UoMService.convert_quantity(l.quantity, from_uom=l.uom or l.sale_line.uom, to_uom=l.product.uom):
+                        l.stock_move = move
+                        l.save()
+                        break
+                        
+            created_moves.extend(generated_moves)
+        else:
+            doc_inv.delete()
 
             # Update sale line delivered quantity
             line.sale_line.quantity_delivered += line.quantity
@@ -716,6 +734,7 @@ class SalesService:
                 # Link all created stock moves to this entry
                 for move in created_moves:
                     move.journal_entry = entry
+                    move._allow_update = True
                     move.save()
 
         # 4. Confirm delivery
@@ -905,22 +924,42 @@ class SalesService:
             )
 
         # 2. Reverse Stock Moves & Update Sale Lines
+        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.services import InventoryService
+
+        doc_inv = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.RECEIPT,
+            status=InventoryDocument.Status.DRAFT,
+            date=timezone.now().date(),
+            reference=f"Anulación Despacho {delivery.number}",
+            partner=delivery.sale_order.customer
+        )
+        details_to_create = []
+
         for line in delivery.lines.all():
             # Create Reversal Move (IN)
             if line.stock_move:
-                StockMove.objects.create(
-                    date=timezone.now().date(),
-                    product=line.product,
-                    warehouse=delivery.warehouse,
-                    quantity=abs(line.stock_move.quantity),  # Positive IN
-                    move_type=StockMove.Type.IN,
-                    description=f"Anulación Despacho {delivery.number} ({line.product.code})",
-                    journal_entry=rev_entry,
+                details_to_create.append(
+                    InventoryDocumentDetail(
+                        document=doc_inv,
+                        product=line.product,
+                        warehouse=delivery.warehouse,
+                        quantity=abs(line.stock_move.quantity),  # Positive IN
+                        unit_cost=line.stock_move.unit_cost
+                    )
                 )
 
             # Revert delivered quantity
             line.sale_line.quantity_delivered -= line.quantity
             line.sale_line.save()
+
+        if details_to_create:
+            InventoryDocumentDetail.objects.bulk_create(details_to_create)
+            InventoryService.confirmar_documento(doc_inv, journal_entry=rev_entry)
+        else:
+            doc_inv.delete()
+
+
 
         # 3. Update Delivery Status
         delivery.status = SaleDelivery.Status.CANCELLED
@@ -1158,6 +1197,17 @@ class SalesService:
             if not default_warehouse:
                 print("WARNING: No warehouse found for return moves")
 
+            from inventory.models import InventoryDocument, InventoryDocumentDetail
+            from inventory.services import InventoryService
+            doc_inv = InventoryDocument.objects.create(
+                document_type=InventoryDocument.Type.RECEIPT,
+                status=InventoryDocument.Status.DRAFT,
+                date=date or timezone.now().date(),
+                reference=f"Devolución NC {document_number} - NV {order.number}",
+                partner=order.customer
+            )
+            details_to_create = []
+
             for item in return_items:
                 product_id = item.get("product_id")
                 if not product_id:
@@ -1184,18 +1234,22 @@ class SalesService:
 
                 # Check if we should track inventory for this move
                 if product.track_inventory:
-                    # Create Stock Move (IN) - Returning to stock
-                    StockMove.objects.create(
-                        date=date or timezone.now().date(),
-                        product=product,
-                        warehouse=default_warehouse,
-                        uom=product.uom,
-                        quantity=quantity,
-                        move_type=StockMove.Type.IN,
-                        description=f"Devolución NC {document_number} - NV {order.number}",
-                        journal_entry=entry,
+                    details_to_create.append(
+                        InventoryDocumentDetail(
+                            document=doc_inv,
+                            product=product,
+                            warehouse=default_warehouse,
+                            quantity=quantity,
+                            unit_cost=product.cost_price
+                        )
                     )
-                    print(f"DEBUG: Created StockMove (IN) for {product.internal_code}")
+                    print(f"DEBUG: Created InventoryDocumentDetail for {product.internal_code}")
+
+            if details_to_create:
+                InventoryDocumentDetail.objects.bulk_create(details_to_create)
+                InventoryService.confirmar_documento(doc_inv, journal_entry=entry)
+            else:
+                doc_inv.delete()
 
                 # REVERSE COGS
                 # Logic: We use the Original Unit Cost from deliveries if possible, then product.cost_price

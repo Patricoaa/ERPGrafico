@@ -5,13 +5,12 @@ import React, { useState, useMemo } from "react"
 import { ArrowRightLeft } from "lucide-react"
 import { useQueryState, parseAsString } from 'nuqs'
 
-import { BaseModal, DataCell, DataTableView, EntityCard, DataTableColumnHeader, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
+import { BaseModal, DataCell, DataTableView, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
-import { stockReportSearchDef } from "@/features/inventory/searchDef"
-import { stockReportSegDef } from "@/features/inventory/segmentationDef"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
@@ -37,8 +36,20 @@ export function StockReport() {
     const [warehouseId, setWarehouseId] = useQueryState('warehouse_id', parseAsString)
 
     const { report, isLoading, refetch } = useStockReport(warehouseId)
-    const { filters: smartFilters, isFiltered: smartIsFiltered, clearAll: smartClearAll } = useSmartSearch(stockReportSearchDef)
-    const { filters: segFilters, isFiltered: segIsFiltered, clearAll: segClearAll } = useSegmentation(stockReportSegDef)
+
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'search', label: 'Producto / SKU', serverParam: 'search', clientKey: ['name', 'code', 'internal_code'] },
+        ],
+        filters: [
+            { key: 'stock_qty', label: 'Stock (Físico)', type: 'range', serverParamFrom: 'stock_qty_from', serverParamTo: 'stock_qty_to' },
+            { key: 'qty_available', label: 'Disponible', type: 'range', serverParamFrom: 'qty_available_from', serverParamTo: 'qty_available_to' },
+            { key: 'qty_reserved', label: 'Reservado', type: 'range', serverParamFrom: 'qty_reserved_from', serverParamTo: 'qty_reserved_to' },
+            { key: 'total_value', label: 'Valorización', type: 'range', serverParamFrom: 'total_value_from', serverParamTo: 'total_value_to' },
+        ],
+    }), [])
+    const search = useUnifiedSearch(config)
+
     const [adjustingProduct, setAdjustingProduct] = useState<StockReportItem | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -48,27 +59,26 @@ export function StockReport() {
         onHistory: (product) => setInsightsProduct(product as StockReportItem | null),
     }
 
-    const isFiltered = smartIsFiltered || segIsFiltered || categoryValue !== null || warehouseId !== null
+    const isFiltered = search.isFiltered || categoryValue !== null || warehouseId !== null
 
     const clearAll = async () => {
-        await smartClearAll()
-        await segClearAll()
+        await search.clearAll()
         await setCategoryValue(null)
         await setWarehouseId(null)
     }
 
-    const filteredReport = (() => {
+    const filteredReport = useMemo(() => {
         const items = report as unknown as StockReportItem[]
         if (!isFiltered) return items;
 
         return items.filter((item: StockReportItem) => {
             // Text search (Product/SKU)
-            if (smartFilters.search) {
-                const search = String(smartFilters.search).toLowerCase();
+            if (search.filters.search) {
+                const searchVal = String(search.filters.search).toLowerCase();
                 const matchesSearch =
-                    item.name?.toLowerCase().includes(search) ||
-                    item.code?.toLowerCase().includes(search) ||
-                    item.internal_code?.toLowerCase().includes(search);
+                    item.name?.toLowerCase().includes(searchVal) ||
+                    item.code?.toLowerCase().includes(searchVal) ||
+                    item.internal_code?.toLowerCase().includes(searchVal);
                 if (!matchesSearch) return false;
             }
 
@@ -78,40 +88,40 @@ export function StockReport() {
             }
 
             // Stock qty range
-            if (segFilters.stock_qty_from) {
-                if (Number(item.stock_qty) < Number(segFilters.stock_qty_from)) return false;
+            if (search.filters.stock_qty_from) {
+                if (Number(item.stock_qty) < Number(search.filters.stock_qty_from)) return false;
             }
-            if (segFilters.stock_qty_to) {
-                if (Number(item.stock_qty) > Number(segFilters.stock_qty_to)) return false;
+            if (search.filters.stock_qty_to) {
+                if (Number(item.stock_qty) > Number(search.filters.stock_qty_to)) return false;
             }
 
             // Available qty range
-            if (segFilters.qty_available_from) {
-                if (Number(item.qty_available) < Number(segFilters.qty_available_from)) return false;
+            if (search.filters.qty_available_from) {
+                if (Number(item.qty_available) < Number(search.filters.qty_available_from)) return false;
             }
-            if (segFilters.qty_available_to) {
-                if (Number(item.qty_available) > Number(segFilters.qty_available_to)) return false;
+            if (search.filters.qty_available_to) {
+                if (Number(item.qty_available) > Number(search.filters.qty_available_to)) return false;
             }
 
             // Reserved qty range
-            if (segFilters.qty_reserved_from) {
-                if (Number(item.qty_reserved) < Number(segFilters.qty_reserved_from)) return false;
+            if (search.filters.qty_reserved_from) {
+                if (Number(item.qty_reserved) < Number(search.filters.qty_reserved_from)) return false;
             }
-            if (segFilters.qty_reserved_to) {
-                if (Number(item.qty_reserved) > Number(segFilters.qty_reserved_to)) return false;
+            if (search.filters.qty_reserved_to) {
+                if (Number(item.qty_reserved) > Number(search.filters.qty_reserved_to)) return false;
             }
 
             // Valuation range
-            if (segFilters.total_value_from) {
-                if (Number(item.total_value) < Number(segFilters.total_value_from)) return false;
+            if (search.filters.total_value_from) {
+                if (Number(item.total_value) < Number(search.filters.total_value_from)) return false;
             }
-            if (segFilters.total_value_to) {
-                if (Number(item.total_value) > Number(segFilters.total_value_to)) return false;
+            if (search.filters.total_value_to) {
+                if (Number(item.total_value) > Number(search.filters.total_value_to)) return false;
             }
 
             return true;
         });
-    })();
+    }, [search.filters, report, categoryValue, warehouseId, isFiltered])
 
     const columns = useMemo<ColumnDef<StockReportItem>[]>(() => [
         {
@@ -226,17 +236,26 @@ export function StockReport() {
                     data={filteredReport}
                     isLoading={isLoading}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto o SKU..." className="w-full" />}
-                    segmentation={
-                        <SegmentationBar def={{
-                            ...stockReportSegDef,
-                            segments: [
-                                ...stockReportSegDef.segments,
-                                { key: 'category', label: 'Categoría', type: 'custom' as const, render: () => <StockReportCategoryFilter /> },
-                                { key: 'warehouse', label: 'Bodega', type: 'custom' as const, render: () => <StockReportWarehouseFilter /> },
-                            ],
-                        }} />
-                    }
+                    unifiedSearch={<UnifiedSearchBar
+                        config={config}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por producto o SKU..."
+                        prefix={
+                            <div className="flex items-center gap-0">
+                                <StockReportCategoryFilter />
+                                <StockReportWarehouseFilter />
+                            </div>
+                        }
+                    />}
                     showReset={isFiltered}
                     onReset={clearAll}
                     defaultPageSize={50}

@@ -95,7 +95,6 @@ def test_check_side_effects_stock_movement(draft_order):
     from inventory.models import UoM, Warehouse
     from production.models import ProductionConsumption
 
-    uom = UoM.objects.get(name="unidad")
     warehouse, _ = Warehouse.objects.get_or_create(name="Bodega Test", defaults={"code": "WH-TST"})
     from inventory.models import Product
 

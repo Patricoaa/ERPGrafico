@@ -272,7 +272,24 @@ export const settingsApi = {
      // ========== Inventory Moves ==========
 
      createInventoryAdjustment: async (payload: Record<string, unknown>): Promise<unknown> => {
-         const { data } = await api.post('/inventory/moves/adjust/', payload)
+         // Map old payload to InventoryDocument format
+         const docPayload = {
+             document_type: payload.adjustment_reason === 'PARTNER_CONTRIBUTION' ? 'PARTNER_CONTRIBUTION' :
+                            payload.adjustment_reason === 'PARTNER_WITHDRAWAL' ? 'PARTNER_WITHDRAWAL' : 'ADJUSTMENT',
+             date: new Date().toISOString().split('T')[0],
+             reference: payload.adjustment_reason || "Ajuste Manual",
+             notes: payload.description,
+             partner: payload.partner_contact_id,
+             details: [{
+                 product: payload.product_id,
+                 warehouse: payload.warehouse_id,
+                 quantity: payload.quantity,
+                 unit_cost: payload.unit_cost
+             }]
+         }
+
+         const docRes = await api.post<{id: number}>('/inventory/documents/', docPayload)
+         const { data } = await api.post(`/inventory/documents/${docRes.data.id}/confirm/`)
          return data
      },
 

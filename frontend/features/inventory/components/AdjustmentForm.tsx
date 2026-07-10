@@ -27,7 +27,6 @@ import { useWarehouses } from "../hooks/useWarehouses"
 import { useUoMs } from "../hooks/useUoMs"
 import { useProduct } from "../hooks/useProducts"
 import { useStockAdjustment } from "../hooks/useStockMoves"
-import { usePartners } from "@/features/contacts"
 import { useServerDate } from '@/hooks/useServerDate'
 import { usePeriodValidation } from '@/hooks/usePeriodValidation'
 import { FormSection, TabBar, LabeledInput, LabeledSelect, SkeletonShell, type TabItem } from '@/components/shared'
@@ -42,15 +41,6 @@ const adjustmentSchema = z.object({
     total_cost: z.string().optional(),
     adjustment_reason: z.string().min(1, "Seleccione un motivo"),
     description: z.string().optional(),
-    partner_contact_id: z.string().optional(),
-}).refine((data) => {
-    if ((data.adjustment_reason === 'PARTNER_CONTRIBUTION' || data.adjustment_reason === 'PARTNER_WITHDRAWAL') && !data.partner_contact_id) {
-        return false;
-    }
-    return true;
-}, {
-    message: "El socio es obligatorio para este motivo",
-    path: ["partner_contact_id"]
 })
 
 interface AdjustmentFormProps {
@@ -69,7 +59,6 @@ interface StockMovePayload {
     unit_cost: number;
     adjustment_reason: string;
     description?: string;
-    partner_contact_id?: string;
 }
 
 export function AdjustmentForm({
@@ -89,8 +78,6 @@ export function AdjustmentForm({
     }, [dateString, validatePeriodImmediate])
 
     const { warehouses, isLoading: isWarehousesLoading } = useWarehouses()
-    const { data: partnersData, isLoading: isPartnersLoading } = usePartners()
-    const partners = (partnersData ?? []) as { id: number, name: string }[]
 
     const { adjustStock } = useStockAdjustment()
 
@@ -111,8 +98,7 @@ export function AdjustmentForm({
             adjustment_reason: "CORRECTION",
             product_id: preSelectedProduct || "",
             warehouse_id: preSelectedWarehouse || "",
-            uom_id: "",
-            partner_contact_id: ""
+            uom_id: ""
         }
     })
 
@@ -123,8 +109,6 @@ export function AdjustmentForm({
     const adjustmentReason = watch("adjustment_reason")
     const quantity = Number(watch("quantity") || 0)
     const unitCost = Number(watch("unit_cost") || 0)
-
-    const isPartnerReason = adjustmentReason === 'PARTNER_CONTRIBUTION' || adjustmentReason === 'PARTNER_WITHDRAWAL'
 
     // warehouses + partners se reciben reactivamente de useWarehouses / usePartners
     // (declarados al inicio del componente). Cero fetch imperativo aquí.
@@ -139,7 +123,7 @@ export function AdjustmentForm({
     // UoMs filtradas por categoría del producto.
     const { uoms: productUoMs, isUoMsLoading } = useUoMs({ category: productDetails?.uom_category } as never)
 
-    const isFetchingInitialData = isWarehousesLoading || isPartnersLoading || (!!numericProductId && (isProductLoading || isUoMsLoading))
+    const isFetchingInitialData = isWarehousesLoading || (!!numericProductId && (isProductLoading || isUoMsLoading))
 
     // Cuando llega productDetails: cargar unit_cost en el form (efecto side-channel
     // controlado, dispara una sola vez por producto).
@@ -190,11 +174,6 @@ export function AdjustmentForm({
                 unit_cost: Number(values.unit_cost),
                 adjustment_reason: values.adjustment_reason,
                 description: values.description || "Ajuste Manual"
-            }
-
-            // Include partner_contact_id for partner-related reasons
-            if (values.partner_contact_id && (values.adjustment_reason === 'PARTNER_CONTRIBUTION' || values.adjustment_reason === 'PARTNER_WITHDRAWAL')) {
-                payload.partner_contact_id = values.partner_contact_id
             }
 
             // adjustStock invalida STOCK_MOVES + PRODUCTS_KEYS.all → lista de
@@ -293,11 +272,6 @@ export function AdjustmentForm({
                                                 value={field.value}
                                                 onChange={(val) => {
                                                     field.onChange(val)
-                                                    if (val !== 'PARTNER_CONTRIBUTION' && val !== 'PARTNER_WITHDRAWAL') {
-                                                        form.setValue('partner_contact_id', '')
-                                                    }
-                                                    if (val === 'PARTNER_CONTRIBUTION') form.setValue('type', 'IN')
-                                                    if (val === 'PARTNER_WITHDRAWAL') form.setValue('type', 'OUT')
                                                 }}
                                                 error={fieldState.error?.message}
                                                 options={[
@@ -305,8 +279,6 @@ export function AdjustmentForm({
                                                     ...(moveType === 'OUT' ? [{ value: "LOSS", label: "Merma / Pérdida" }] : []),
                                                     ...(moveType === 'IN' ? [{ value: "GAIN", label: "Sobrante / Ganancia" }] : []),
                                                     { value: "REVALUATION", label: "Revalorización" },
-                                                    ...(moveType === 'IN' ? [{ value: "PARTNER_CONTRIBUTION", label: "Aporte de Socio" }] : []),
-                                                    ...(moveType === 'OUT' ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" }] : []),
                                                 ]}
                                             />
                                         )}
@@ -314,59 +286,20 @@ export function AdjustmentForm({
                                 </div>
 
                                 <div className="col-span-2">
-                                    {isPartnerReason ? (
-                                        <FormField
-                                            control={form.control}
-                                            name="partner_contact_id"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Socio del Movimiento"
-                                                    required
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    placeholder="Seleccione un socio..."
-                                                    className="border-warning/20 bg-warning/5"
-                                                    error={fieldState.error?.message}
-                                                    options={partners.map(p => ({
-                                                        value: p.id.toString(),
-                                                        label: p.name
-                                                    }))}
-                                                />
-                                            )}
-                                        />
-                                    ) : (
-                                        <FormField
-                                            control={form.control}
-                                            name="description"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Notas / Referencia Interna"
-                                                    placeholder="Ej: Ajuste mensual detectado en conteo..."
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    )}
+                                    <FormField
+                                        control={form.control}
+                                        name="description"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Notas / Referencia Interna"
+                                                placeholder="Ej: Ajuste mensual detectado en conteo..."
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
                                 </div>
-
-                                {isPartnerReason && (
-                                    <div className="col-span-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="description"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Referencia"
-                                                    placeholder="Notas del socio..."
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                                </div>
 
                             <FormSection title="Detalles del Movimiento" icon={WarehouseIcon} />
 

@@ -1,15 +1,15 @@
 "use client"
 
 import React, { useEffect, useCallback } from "react"
-import { DataTable, ActionDock, Chip, CmykRing, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
+import { DataTable, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 
-import { SlidersHorizontal, AlertCircle, Tag, X } from "lucide-react"
+import { SlidersHorizontal, AlertCircle, Tag } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+
 import { useAccountMappings, type MappingType } from "@/features/finance/hooks/useAccountMappings"
 import {
     IS_CATEGORIES,
@@ -268,39 +268,22 @@ export function MappingConfigDrawer({
                     isLoading={isLoading}
                     variant="embedded"
                     bulkDock={(items, clear) => (
-                        <ActionDock isVisible>
-                            <div className="flex items-center gap-2">
-                                <CmykRing className="h-2.5 w-2.5 animate-pulse" />
-                                <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
-                                    {`${items.length} ${items.length === 1 ? "seleccionado" : "seleccionados"}`}
-                                </span>
-                            </div>
-                            <ActionDock.Actions>
-                                <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
-                                    <SelectTrigger className="h-9 rounded-sm border-border/40 bg-muted/30 text-xs font-bold uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
-                                        <Tag className="mr-2 h-3.5 w-3.5" />
-                                        <SelectValue placeholder="Asignar Categoría" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                        <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
-                                        {getCategories().map(cat => (
-                                            <SelectItem key={cat.value} value={cat.value}>
-                                                {cat.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </ActionDock.Actions>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={clear}
-                                className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
-                            >
-                                <X className="h-3 w-3 mr-1.5" />
-                                Limpiar
-                            </Button>
-                        </ActionDock>
+                        <ActionDock.Actions>
+                            <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
+                                <SelectTrigger className="h-9 rounded-sm border-border/40 bg-muted/30 text-xs font-bold uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
+                                    <Tag className="mr-2 h-3.5 w-3.5" />
+                                    <SelectValue placeholder="Asignar Categoría" />
+                                </SelectTrigger>
+                                <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                                    <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
+                                    {getCategories().map(cat => (
+                                        <SelectItem key={cat.value} value={cat.value}>
+                                            {cat.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </ActionDock.Actions>
                     )}
                 />
             </div>

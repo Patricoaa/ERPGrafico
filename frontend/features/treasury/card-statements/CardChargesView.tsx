@@ -1,6 +1,6 @@
 "use client"
 
-import { UnbilledChargesView } from './UnbilledChargesView'
+import { UnbilledChargesClientView } from './UnbilledChargesClientView'
 import { StatementsClientView } from './StatementsClientView'
 
 interface CardChargesViewProps {
@@ -15,7 +15,7 @@ export function CardChargesView({ bankId, subtab }: CardChargesViewProps) {
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0 flex flex-col">
                 {activeSubTab === 'unbilled' && (
-                    <UnbilledChargesView bankId={bankId} />
+                    <UnbilledChargesClientView bankId={bankId} />
                 )}
                 {activeSubTab === 'statements' && (
                     <StatementsClientView bankId={bankId} />

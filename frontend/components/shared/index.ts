@@ -85,14 +85,28 @@ export * from './FadeIn';
 export { SearchablePopover } from './SearchablePopover';
 export type { SearchablePopoverProps } from './SearchablePopover';
 
-// Smart Search
-export { SmartSearchBar, useSmartSearch, useClientSearch } from './SmartSearchBar';
-export type { FilterState } from './SmartSearchBar';
+/** Active filter params derived from a search definition, ready to send to the API. */
+export type FilterState = Record<string, string>
 
-// Segmentation
-export { SegmentationBar, useSegmentation } from './SegmentationBar';
-export type { UseSegmentationReturn, SegmentationFilterState } from './SegmentationBar';
-export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX, SEG_INPUT, TOOLBAR_ICON_BTN, TOOLBAR_MENU_ITEM, TAB_TOOLBAR_TRIGGER } from './SegmentationBar';
+// Toolbar styles (shared typography & layout tokens)
+export { SEG_TEXT, SEG_WRAPPER, SEG_TRIGGER, SEG_ACTIVE, SEG_INACTIVE, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX, SEG_INPUT, TOOLBAR_ICON_BTN, TOOLBAR_MENU_ITEM, TAB_TOOLBAR_TRIGGER } from './search-styles';
+
+// Segmentation table context (for dynamic multi-select filters in UnifiedSearchBar)
+export { useSegmentationTable } from './SegmentationTableContext';
+
+// Unified Search (reemplaza SmartSearch + Segmentation + GroupBy)
+export { UnifiedSearchBar, useUnifiedSearch } from './UnifiedSearchBar';
+export type {
+  UnifiedSearchConfig,
+  UnifiedChip,
+  UseUnifiedSearchReturn,
+  TextFieldDef,
+  ToggleFilterDef,
+  DateFilterDef,
+  RangeFilterDef,
+  GroupByOptionDef,
+  DropdownFilterDef,
+} from '@/types/unified-search';
 
 // Filters & Inputs
 export * from './DatePicker';

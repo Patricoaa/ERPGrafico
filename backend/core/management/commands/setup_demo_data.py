@@ -50,6 +50,8 @@ from inventory.models import (
     UoM,
     UoMCategory,
     Warehouse,
+    InventoryDocument,
+    InventoryDocumentDetail,
 )
 from production.models import (
     BillOfMaterials,
@@ -508,6 +510,8 @@ class Command(BaseCommand):
         _safe_delete(PurchaseReceipt, "PurchaseReceipt")
         _safe_delete(Invoice, "Invoice")
         _safe_delete(TreasuryMovement, "TreasuryMovement")
+        _safe_delete(InventoryDocumentDetail, "InventoryDocumentDetail")
+        _safe_delete(InventoryDocument, "InventoryDocument")
         _safe_delete(StockMove, "StockMove")
         self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
@@ -1569,11 +1573,10 @@ class Command(BaseCommand):
                 move_type=StockMove.Type.IN,
                 description="Carga Inicial Demo Data",
                 unit_cost=cost,  # Frozen at creation - will not change
+                journal_entry=entry,
             )
             move._is_system_closing_entry = True
             move.save()
-            move.journal_entry = entry
-            move.save(update_fields=["journal_entry"])
 
             # Update product cost PMP - single save with update_fields to track only cost change
             # First, remove the $0 history entry created on product creation (before cost was set)

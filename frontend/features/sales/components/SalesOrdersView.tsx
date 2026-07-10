@@ -2,14 +2,13 @@
 
 import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
-import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"
-import { salesOrderSegDef, salesNoteSegDef } from "@/features/sales/segmentationDef"
+import { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
 
@@ -47,20 +46,16 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
-    const searchDef = viewMode === 'orders' ? salesOrderSearchDef : salesNoteSearchDef
-    const segDef = viewMode === 'orders' ? salesOrderSegDef : salesNoteSegDef
-    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(searchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
+    const unifiedSearchDef = viewMode === 'orders' ? salesOrderUnifiedSearchDef : salesNoteUnifiedSearchDef
+    const search = useUnifiedSearch(unifiedSearchDef)
+    const isFiltered = search.isFiltered
 
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const [pageStateNotes, setPageStateNotes] = useState({ pageIndex: 0, pageSize: 20 })
 
     const { page, orders, isLoading: isLoadingOrders, isRefetching } = useSalesOrders({
         filters: {
-            ...(textFilters as SaleOrderFilters),
-            ...(segFilters as Record<string, string>),
+            ...(search.filters as SaleOrderFilters),
             pos_session: posSessionId || undefined,
             page: pageState.pageIndex + 1,
             page_size: pageState.pageSize,
@@ -68,8 +63,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     })
     const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes } = useSalesNotes({
         filters: {
-            ...(textFilters as Record<string, string>),
-            ...(segFilters as Record<string, string>),
+            ...(search.filters as Record<string, string>),
             page: pageStateNotes.pageIndex + 1,
             page_size: pageStateNotes.pageSize,
         }
@@ -202,16 +196,24 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                     rowCount={viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)}
                     pagination={viewMode === 'orders' ? pageState : pageStateNotes}
                     onPaginationChange={(viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
-                    smartSearch={viewMode === 'orders'
-                        ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
-                        : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
-                    }
-                    segmentation={viewMode === 'orders'
-                        ? <SegmentationBar def={salesOrderSegDef} basePeriod={basePeriod} />
-                        : <SegmentationBar def={salesNoteSegDef} basePeriod={basePeriod} />
-                    }
+                    unifiedSearch={<UnifiedSearchBar
+                        config={unifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder={viewMode === 'orders' ? 'Buscar órdenes...' : 'Buscar notas...'}
+                    />}
+                    unifiedSearchConfig={unifiedSearchDef}
+                    currentGroupBy={search.groupBy}
                     showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     isSelected={(data: SaleOrder | SaleNote) => !!getSelectionId(data)}
                     isHubOpen={onSelectOrder ? !!selectedId : isHubOpen}
@@ -223,7 +225,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                             ? "Crea una orden de venta o regístrala desde el punto de venta."
                             : "Las notas de crédito y débito asociadas a tus ventas aparecerán aquí.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
                 />
             </div>
         </div>

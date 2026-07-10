@@ -22,6 +22,7 @@ from .models import (
     UoM,
     UoMCategory,
     Warehouse,
+    InventoryDocument,
 )
 from .selectors import (
     ProductSelector,
@@ -43,6 +44,7 @@ from .serializers import (
     UoMCategorySerializer,
     UoMSerializer,
     WarehouseSerializer,
+    InventoryDocumentSerializer,
 )
 from .services import StockService, UoMService, ProductService, PricingService
 
@@ -348,9 +350,13 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     @action(detail=False, methods=["post"])
     def adjust(self, request):
         """
-        Custom endpoint to perform manual stock adjustment.
-        Supports partner_contact_id for PARTNER_CONTRIBUTION/PARTNER_WITHDRAWAL reasons.
+        [DEPRECATED] Custom endpoint to perform manual stock adjustment.
+        Please use the InventoryDocument endpoints (create document -> confirm document).
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning("DEPRECATED: /inventory/moves/adjust/ called. Migrate to POST /inventory/documents/")
+        
         from django.core.exceptions import ValidationError
 
         try:
@@ -378,3 +384,42 @@ class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ProductUoMPrice.objects.select_related("uom").filter(product__is_active=True)
+
+
+class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
+    queryset = InventoryDocument.objects.select_related(
+        "partner", "created_by", "confirmed_by"
+    ).prefetch_related("details", "details__product", "details__warehouse").all()
+    serializer_class = InventoryDocumentSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["document_type", "status"]
+
+    @action(detail=True, methods=["post"])
+    def confirm(self, request, pk=None):
+        from django.core.exceptions import ValidationError
+        from .services import InventoryService
+
+        doc = self.get_object()
+        try:
+            doc, _ = InventoryService.confirmar_documento(doc)
+            return Response(self.get_serializer(doc).data)
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["post"])
+    def annul(self, request, pk=None):
+        from django.core.exceptions import ValidationError
+        from .services import InventoryService
+
+        doc = self.get_object()
+        try:
+            doc = InventoryService.anular_documento(doc)
+            return Response(self.get_serializer(doc).data)
+        except ValidationError as e:
+            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+

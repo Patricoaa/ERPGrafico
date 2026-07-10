@@ -63,12 +63,25 @@ def handle_stock_move_updates(sender, instance, created, **kwargs):
     Handles side effects of stock movements:
     1. Resets unit cost to 0 if stock is zero (requested by business rule).
     2. Invalidates report cache (T-24).
+    3. Actualiza el stock en la nueva tabla Stock.
     """
     from core.cache import invalidate_report_cache
+    from .services import InventoryService
+    from decimal import Decimal
 
     invalidate_report_cache("inventory")
 
     product = instance.product
+    
+    if created:
+        quantity_change = instance.quantity
+        if instance.move_type == StockMove.Type.OUT:
+            quantity_change = -abs(instance.quantity)
+        elif instance.move_type == StockMove.Type.IN:
+            quantity_change = abs(instance.quantity)
+        
+        InventoryService.actualizar_stock(product.id, instance.warehouse_id, quantity_change)
+
     if not product.track_inventory:
         return
 
@@ -85,8 +98,18 @@ from django.db.models.signals import post_delete
 @receiver(post_delete, sender=StockMove)
 def handle_stock_move_delete(sender, instance, **kwargs):
     from core.cache import invalidate_report_cache
+    from .services import InventoryService
 
     invalidate_report_cache("inventory")
+
+    # Reverse the quantity
+    quantity_change = -instance.quantity
+    if instance.move_type == StockMove.Type.OUT:
+        quantity_change = abs(instance.quantity)
+    elif instance.move_type == StockMove.Type.IN:
+        quantity_change = -abs(instance.quantity)
+
+    InventoryService.actualizar_stock(instance.product.id, instance.warehouse_id, quantity_change)
 
 
 @receiver(post_save, sender=Product)

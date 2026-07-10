@@ -18,12 +18,11 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
+import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr"
 import { useServerDate } from "@/hooks/useServerDate"
-import { payrollSearchDef } from "../searchDef"
-import { payrollSegDef } from "../segmentationDef"
+import { payrollUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 
 interface PayrollClientViewProps {
     initialPayrolls?: Payroll[]
@@ -58,11 +57,8 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(payrollSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(payrollSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const { payrolls, isLoading: loading, isRefetching, refetch: fetchPayrolls } = usePayrolls({ ...textFilters, ...segFilters }, initialPayrolls)
+    const search = useUnifiedSearch(payrollUnifiedSearchDef)
+    const { payrolls, isLoading: loading, isRefetching, refetch: fetchPayrolls } = usePayrolls(search.filters, initialPayrolls)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
         endpoint: '/hr/payrolls'
@@ -265,14 +261,28 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                     isRefetching={isRefetching}
                     entityLabel="hr.payroll"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-full" />}
-                    segmentation={<SegmentationBar def={payrollSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={payrollUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por empleado o período..."
+                    />}
+                    unifiedSearchConfig={payrollUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     onRowClick={(row: Payroll) => openDetail(row.id)}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "finance",
                         title: "Aún no hay nóminas",

@@ -14,36 +14,28 @@ import {
     DataTableView, 
     DataTableColumnHeader, 
     DataCell, 
-    SmartSearchBar, 
-    useClientSearch, 
-    SegmentationBar, 
-    useSegmentation, 
+    UnifiedSearchBar,
+    useUnifiedSearch,
     StatusBadge 
 } from "@/components/shared"
-import { useBackgroundJobs, type BackgroundJob, jobSearchDef, jobSegDef } from "@/features/settings"
+import { useBackgroundJobs, type BackgroundJob, jobUnifiedSearchDef } from "@/features/settings"
 
 export default function JobsView() {
     const { jobs, isLoading, isError, refetch } = useBackgroundJobs()
 
-    // Client-side text search
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText, filterFn } = useClientSearch<BackgroundJob>(jobSearchDef)
-    
-    // Client-side segmentation (status / job_type)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(jobSegDef)
-    
-    const isFiltered = isTextFiltered || isSegFiltered
+    const search = useUnifiedSearch(jobUnifiedSearchDef)
 
     // Filter jobs client-side based on both search input and status tabs
     const filteredJobs = useMemo(() => {
-        let result = filterFn(jobs)
-        if (segFilters.status) {
-            result = result.filter(j => j.status === segFilters.status)
+        let result = search.filterFn(jobs)
+        if (search.filters.status) {
+            result = result.filter(j => j.status === search.filters.status)
         }
-        if (segFilters.job_type) {
-            result = result.filter(j => j.job_type === segFilters.job_type)
+        if (search.filters.job_type) {
+            result = result.filter(j => j.job_type === search.filters.job_type)
         }
         return result
-    }, [jobs, filterFn, segFilters])
+    }, [jobs, search])
 
     // Table Columns definition for List view
     const columns = useMemo((): ColumnDef<BackgroundJob>[] => [
@@ -172,20 +164,23 @@ export default function JobsView() {
                 entityLabel="core.backgroundjob"
                 variant="embedded"
                 defaultPageSize={20}
-                smartSearch={
-                    <SmartSearchBar 
-                        searchDef={jobSearchDef} 
-                        placeholder="Buscar por título, tipo o error..." 
-                        className="w-full" 
-                    />
-                }
-                segmentation={<SegmentationBar def={jobSegDef} />}
-                showReset={isFiltered}
-                onReset={() => {
-                    clearText()
-                    clearSeg()
-                }}
-                isFiltered={isFiltered}
+                unifiedSearch={<UnifiedSearchBar
+                    config={jobUnifiedSearchDef}
+                    chips={search.chips}
+                    isFiltered={search.isFiltered}
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                    placeholder="Buscar por título, tipo o error..."
+                />}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
+                isFiltered={search.isFiltered}
                 toolbarActions={toolbarActions}
                 emptyState={{
                     context: "generic",

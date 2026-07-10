@@ -14,10 +14,9 @@ import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput,
     BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    SmartSearchBar, useClientSearch, SegmentationBar, useSegmentation
+    UnifiedSearchBar, useUnifiedSearch
 } from "@/components/shared"
-import { bankSearchDef } from "@/features/treasury/searchDef"
-import { bankSegDef } from "@/features/treasury/segmentationDef"
+import { bankUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank } from "@/features/treasury/types"
@@ -45,8 +44,7 @@ interface BankCenterClientViewProps {
 export function BankCenterClientView({ externalOpen, onOpenChange, createAction }: BankCenterClientViewProps) {
     const { banks, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
-    const { filterFn: filterBanks, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Bank>(bankSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(bankSegDef)
+    const search = useUnifiedSearch(bankUnifiedSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [wizardOpen, setWizardOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
@@ -80,8 +78,6 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
         onRestore: (id) => restoreConfirm.requestConfirm(id),
     }
 
-    const isFiltered = isTextFiltered || isSegFiltered
-
     const columns = [
         {
             accessorKey: "name",
@@ -106,10 +102,10 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
 
     const filteredBanks = React.useMemo(() => {
         let result = banks
-        if (segFilters.is_active === 'true') result = result.filter(b => b.is_active)
-        else if (segFilters.is_active === 'false') result = result.filter(b => !b.is_active)
-        return filterBanks(result)
-    }, [banks, segFilters.is_active, filterBanks])
+        if (search.filters.is_active === 'true') result = result.filter(b => b.is_active)
+        else if (search.filters.is_active === 'false') result = result.filter(b => !b.is_active)
+        return search.filterFn(result)
+    }, [banks, search.filters.is_active, search.filterFn, search])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -118,10 +114,24 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                 columns={columns}
                 data={filteredBanks}
                 variant="embedded"
-                smartSearch={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="w-full" />}
-                segmentation={<SegmentationBar def={bankSegDef} />}
-                showReset={isFiltered}
-                onReset={() => { clearText(); clearSeg() }}
+                unifiedSearch={<UnifiedSearchBar
+                    config={bankUnifiedSearchDef}
+                    chips={search.chips}
+                    isFiltered={search.isFiltered}
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                    placeholder="Buscar banco..."
+                />}
+                unifiedSearchConfig={bankUnifiedSearchDef}
+                currentGroupBy={search.groupBy}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
                 createAction={createAction}
                 emptyState={{
                     context: "treasury",

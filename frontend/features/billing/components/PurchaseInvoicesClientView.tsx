@@ -3,9 +3,8 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
-import {ActionConfirmModal, DocumentCompletionModal, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from '@/components/shared'
-import { purchaseInvoiceSearchDef } from '../searchDef'
-import { purchaseInvoiceSegDef } from "@/features/billing/segmentationDef"
+import {ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
+import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { FileBadge } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatCurrency } from "@/lib/money"
@@ -25,11 +24,8 @@ import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
 import { getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
 
 export function PurchaseInvoicesClientView() {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(purchaseInvoiceSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(purchaseInvoiceSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...(textFilters as Omit<InvoiceFilters, 'mode'>), ...(segFilters as Record<string, string>) } })
+    const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
+    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...search.filters } as InvoiceFilters })
     const [payingDoc, setPayingDoc] = useState<Invoice | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<Invoice | null>(null)
     const [notingDoc, setNotingDoc] = useState<Invoice | null>(null)
@@ -214,20 +210,34 @@ export function PurchaseInvoicesClientView() {
                         }
                     }}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-full" />}
-                    segmentation={<SegmentationBar def={purchaseInvoiceSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={purchaseInvoiceUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar facturas de compra..."
+                    />}
+                    unifiedSearchConfig={purchaseInvoiceUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     isSelected={(inv: Invoice) => hubConfig?.invoiceId === inv.id}
                     isHubOpen={isHubOpen}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "purchase",
                         title: "Aún no hay documentos de compra",
                         description: "Los documentos de compra registrados aparecerán aquí.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'total', fn: 'sum', format: 'money' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
+                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                 />
             </div>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number ?? '', document_attachment: null }} />}

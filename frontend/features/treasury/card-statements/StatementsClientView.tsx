@@ -7,10 +7,9 @@ import { CreditCard, AlertTriangle, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
-    SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch,
+    UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
-import type { SegmentationDefinition } from '@/types/segmentation'
-import type { SearchDefinition } from '@/types/search'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCardStatements } from '../hooks/useCardStatements'
 import { useBankOverview } from '../hooks/useBankOverview'
 import type { BankOverviewData } from '../hooks/useBankOverview'
@@ -20,16 +19,10 @@ import { statementActions, type StatementActionsCtx } from './statementActions'
 import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
 import { parseDateOnly } from '@/lib/utils'
+import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
 
 interface StatementsClientViewProps {
     bankId: number
-}
-
-const statementsSearchDef: SearchDefinition = {
-    fields: [
-        { key: 'display_id', label: 'N° Estado', type: 'text', serverParam: 'display_id' },
-        { key: 'billed_amount', label: 'Monto facturado', type: 'text', serverParam: 'billed_amount' },
-    ],
 }
 
 export function StatementsClientView({ bankId }: StatementsClientViewProps) {
@@ -50,33 +43,41 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     const isDetailOpen = !!selectedId && (action === "detail" || !action)
     const isPayOpen = !!selectedId && action === "pay"
 
-    const segDef: SegmentationDefinition = useMemo(() => ({
-        segments: [
+    const unifiedConfig: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'display_id', label: 'N° Estado', type: 'text', serverParam: 'search', clientKey: 'display_id' },
+            { key: 'billed_amount', label: 'Monto facturado', type: 'text', serverParam: 'search' },
+        ],
+        filters: [
             {
+                type: 'single',
                 key: 'card',
                 label: 'Tarjeta',
-                type: 'tabs',
                 serverParam: 'card',
-                variant: 'dropdown',
                 defaultValue: String(creditCardAccounts[0]?.id ?? ''),
                 options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
             },
+        ],
+        dateFilters: [
             {
+                type: 'date',
                 key: 'cutoff_date',
                 label: 'Fecha de corte',
-                type: 'date',
-                serverParamDate: 'cutoff_date',
-                serverParamFrom: 'cutoff_from',
-                serverParamTo: 'cutoff_to',
+                options: [
+                    { label: 'Hoy', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: today },
+                    { label: 'Esta semana', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisWeek },
+                    { label: 'Este mes', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisMonth },
+                    { label: 'Este trimestre', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisQuarter },
+                    { label: 'Este año', serverParamFrom: 'cutoff_from', serverParamTo: 'cutoff_to', getValue: thisYear },
+                ],
             },
         ],
+        basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
     }), [creditCardAccounts])
 
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
-    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<CreditCardStatement>(statementsSearchDef)
+    const search = useUnifiedSearch(unifiedConfig)
 
-    const cardAccountId = segFilters.card ? Number(segFilters.card) : (creditCardAccounts[0]?.id ?? null)
+    const cardAccountId = search.filters.card ? Number(search.filters.card) : (creditCardAccounts[0]?.id ?? null)
 
     const params: Record<string, string> = {}
     if (bankId) params.bank = String(bankId)
@@ -96,11 +97,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     )
 
     const filteredStatements = useMemo(() => {
-        let result = filterFn(statements)
-        const { cutoff_date, cutoff_from, cutoff_to } = segFilters
-        if (cutoff_date) {
-            result = result.filter(s => s.cut_off_date === cutoff_date)
-        }
+        let result = search.filterFn(statements)
+        const { cutoff_from, cutoff_to } = search.filters
         if (cutoff_from) {
             result = result.filter(s => s.cut_off_date >= cutoff_from)
         }
@@ -108,7 +106,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
             result = result.filter(s => s.cut_off_date <= cutoff_to)
         }
         return result
-    }, [statements, filterFn, segFilters])
+    }, [statements, search.filterFn, search.filters])
 
     const clearAll = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
@@ -206,10 +204,24 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                     columns={columns}
                     data={filteredStatements}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={statementsSearchDef} placeholder="Buscar por N° de estado o monto..." className="w-full" />}
-                    showReset={isTextFiltered || isSegFiltered}
-                    isFiltered={isTextFiltered || isSegFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={unifiedConfig}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por N° de estado o monto..."
+                    />}
+                    unifiedSearchConfig={unifiedConfig}
+                    showReset={search.isFiltered}
+                    isFiltered={search.isFiltered}
+                    onReset={search.clearAll}
                     analyticsPanel={{
                         screen: {
                             entityName: "Gestión TC",
@@ -285,14 +297,13 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             ],
                             cardAccounts: creditCardAccounts,
                             cardAccountId: cardAccountId,
-                            onCardAccountChange: (id) => apply('card', String(id)),
+                            onCardAccountChange: (id) => search.applyFilter('card', String(id)),
                             granularity,
                             onGranularityChange: setGranularity,
                             dateRange,
                             onDateRangeChange: setDateRange,
                         },
                     }}
-                    segmentation={<SegmentationBar def={segDef} basePeriod={basePeriod} />}
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,

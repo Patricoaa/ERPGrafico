@@ -31,12 +31,12 @@ interface UoMCategoryClientViewProps {
 }
 
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
-import { SmartSearchBar, useClientSearch } from "@/components/shared"
-import { uomCategorySearchDef } from "@/features/inventory/searchDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { uomCategoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 
 export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryClientViewProps) {
     const { categories, isLoading, refetch, deleteUoMCategory } = useUoMs()
-    const { filterFn, isFiltered } = useClientSearch<UoMCategory>(uomCategorySearchDef)
+    const search = useUnifiedSearch(uomCategoryUnifiedSearchDef)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -148,15 +148,32 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
             <div className="flex-1 min-h-0">
                 <DataTableView
                     columns={columns}
-                    data={filterFn(categories)}
+                    data={search.filterFn(categories)}
                     isLoading={isLoading}
                     entityLabel="inventory.uomcategory"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={uomCategoryUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar categoría..."
+                    />}
+                    unifiedSearchConfig={uomCategoryUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     pageSizeOptions={[10, 20]}
                     bulkActions={bulkActions}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay categorías de medida",

@@ -7,11 +7,10 @@ import { FileText, AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
-    SegmentationBar, ToolbarCreateButton,
-    SmartSearchBar, useClientSearch,
+    ToolbarCreateButton,
+    UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
-import { loanStatusSegDef } from './segmentationDef'
-import { loanSearchDef } from './searchDef'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useLoans } from '../hooks/useLoans'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
 import { LoanViewDrawer } from './LoanViewDrawer'
@@ -30,20 +29,29 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         bankId ? { lender: String(bankId) } : undefined,
     )
 
-    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<BankLoan>(loanSearchDef)
-
-    const loanStatusParam = searchParams.get("loan_status")
-    const isFiltered = isTextFiltered || !!loanStatusParam
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'search', label: 'ID / N° Préstamo / Banco', serverParam: 'search', clientKey: ['display_id', 'loan_number', 'lender_name'] },
+        ],
+        filters: [
+            { key: 'loan_status', label: 'Estado', type: 'single', serverParam: 'loan_status', options: [
+                { label: 'Activos', value: 'active' },
+                { label: 'Finalizados', value: 'completed' },
+            ]},
+        ],
+    }), [])
+    const search = useUnifiedSearch(config)
+    const isFiltered = search.isFiltered
     const filteredLoans = useMemo(() => {
-        const statusFilter = loanStatusParam ?? "active"
+        const statusFilter = search.filters.loan_status ?? "active"
         let result = loans
         if (statusFilter === "completed") {
             result = loans.filter(l => l.status === "PAID" || l.status === "DEFAULTED")
         } else {
             result = loans.filter(l => l.status === "ACTIVE")
         }
-        return filterFn(result)
-    }, [loans, filterFn, loanStatusParam])
+        return search.filterFn(result)
+    }, [loans, search.filterFn, search.filters.loan_status])
 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
@@ -71,8 +79,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     }, [router, pathname, searchParams])
 
     const handleReset = useCallback(() => {
-        clearText()
-    }, [clearText])
+        search.clearAll()
+    }, [search.clearAll])
 
     const openLoan = useCallback((id: number, actionType: string) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -196,8 +204,20 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                     isFiltered={isFiltered}
                     showReset={isFiltered}
                     onReset={handleReset}
-                    smartSearch={<SmartSearchBar searchDef={loanSearchDef} placeholder="Buscar por ID, N° préstamo o banco..." />}
-                    segmentation={<SegmentationBar def={loanStatusSegDef} />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={config}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por ID, N° préstamo o banco..."
+                    />}
                     emptyState={{
                         context: 'treasury',
                         icon: FileText,
