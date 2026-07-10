@@ -741,6 +741,7 @@ export function POSClientView() {
                 title="Confirmar Retiro de Socio"
                 variant="warning"
                 confirmText="Confirmar Retiro"
+                disabled={!selectedPartnerId}
                 description={
                     <>
                         <p className="mb-4">
