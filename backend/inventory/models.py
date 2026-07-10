@@ -1194,6 +1194,29 @@ class Warehouse(models.Model):
         return self.name
 
 
+class Location(models.Model):
+    class Type(models.TextChoices):
+        VENDOR = "VENDOR", "Proveedor"
+        CUSTOMER = "CUSTOMER", "Cliente"
+        INTERNAL = "INTERNAL", "Interna (Bodega)"
+        VIRTUAL = "VIRTUAL", "Virtual (Ajustes, Socios, Producción)"
+
+    name = models.CharField(_("Nombre"), max_length=255)
+    location_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
+    partner = models.ForeignKey("contacts.Contact", on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
+    is_active = models.BooleanField(_("Activa"), default=True)
+
+    class Meta:
+        verbose_name = _("Ubicación")
+        verbose_name_plural = _("Ubicaciones")
+
+    def __str__(self):
+        if self.warehouse:
+            return f"{self.warehouse.name} - {self.name}"
+        return self.name
+
+
 class Stock(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stocks")
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="stocks")
@@ -1238,6 +1261,14 @@ class StockMove(models.Model):
     )
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
     move_type = models.CharField(_("Tipo"), max_length=10, choices=Type.choices)
+    
+    # Phase 3: Location tracking (Dual-write mode, temporarily nullable)
+    source_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="moves_out", null=True, blank=True
+    )
+    destination_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="moves_in", null=True, blank=True
+    )
     adjustment_reason = models.CharField(
         _("Motivo de Ajuste"),
         max_length=20,
@@ -1404,6 +1435,14 @@ class InventoryDocumentDetail(models.Model):
         null=True, 
         blank=True,
         help_text=_("Solo aplicable para transferencias. Bodega de origen.")
+    )
+
+    # Phase 3: Location tracking (Dual-write mode, temporarily nullable)
+    source_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="doc_moves_out", null=True, blank=True
+    )
+    destination_location = models.ForeignKey(
+        Location, on_delete=models.PROTECT, related_name="doc_moves_in", null=True, blank=True
     )
 
     class Meta:
