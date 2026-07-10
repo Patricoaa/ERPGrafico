@@ -63,7 +63,7 @@ def handle_stock_move_updates(sender, instance, created, **kwargs):
     Handles side effects of stock movements:
     1. Resets unit cost to 0 if stock is zero (requested by business rule).
     2. Invalidates report cache (T-24).
-    3. Actualiza el stock en la nueva tabla Stock.
+    3. Actualiza el stock en la nueva tabla Stock usando las ubicaciones.
     """
     from core.cache import invalidate_report_cache
     from .services import InventoryService
@@ -74,13 +74,14 @@ def handle_stock_move_updates(sender, instance, created, **kwargs):
     product = instance.product
     
     if created:
-        quantity_change = instance.quantity
-        if instance.move_type == StockMove.Type.OUT:
-            quantity_change = -abs(instance.quantity)
-        elif instance.move_type == StockMove.Type.IN:
-            quantity_change = abs(instance.quantity)
-        
-        InventoryService.actualizar_stock(product.id, instance.warehouse_id, quantity_change)
+        # Phase 3: Update based on Location
+        # Add to destination if internal
+        if instance.destination_location and instance.destination_location.location_type == "INTERNAL":
+            InventoryService.actualizar_stock(product.id, instance.destination_location.warehouse_id, instance.quantity)
+            
+        # Subtract from source if internal
+        if instance.source_location and instance.source_location.location_type == "INTERNAL":
+            InventoryService.actualizar_stock(product.id, instance.source_location.warehouse_id, -instance.quantity)
 
     if not product.track_inventory:
         return
@@ -102,14 +103,12 @@ def handle_stock_move_delete(sender, instance, **kwargs):
 
     invalidate_report_cache("inventory")
 
-    # Reverse the quantity
-    quantity_change = -instance.quantity
-    if instance.move_type == StockMove.Type.OUT:
-        quantity_change = abs(instance.quantity)
-    elif instance.move_type == StockMove.Type.IN:
-        quantity_change = -abs(instance.quantity)
-
-    InventoryService.actualizar_stock(instance.product.id, instance.warehouse_id, quantity_change)
+    # Reverse the quantity changes
+    if instance.destination_location and instance.destination_location.location_type == "INTERNAL":
+        InventoryService.actualizar_stock(instance.product.id, instance.destination_location.warehouse_id, -instance.quantity)
+        
+    if instance.source_location and instance.source_location.location_type == "INTERNAL":
+        InventoryService.actualizar_stock(instance.product.id, instance.source_location.warehouse_id, instance.quantity)
 
 
 @receiver(post_save, sender=Product)
