@@ -162,9 +162,9 @@ export function DisplaySection({
   if (!hasViewOptions && !hasSortOptions && !hasColumnToggle) return null
 
   return (
-    <div className="grid grid-cols-3 gap-0">
+    <div>
       {hasViewOptions && viewOptions && (
-        <div className={cn(hasSortOptions || hasColumnToggle && "border-r border-border/60")}>
+        <div>
           <ViewModeSection
             viewOptions={viewOptions}
             currentView={currentView}
@@ -173,10 +173,18 @@ export function DisplaySection({
         </div>
       )}
 
+      {hasViewOptions && (hasSortOptions || hasColumnToggle) && (
+        <div className="border-t border-border/60" />
+      )}
+
       {hasSortOptions && (
-        <div className={cn(hasColumnToggle && "border-r border-border/60")}>
+        <div>
           <SortSection columns={sortableColumns} />
         </div>
+      )}
+
+      {hasSortOptions && hasColumnToggle && (
+        <div className="border-t border-border/60" />
       )}
 
       {hasColumnToggle && (
