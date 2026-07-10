@@ -1567,9 +1567,18 @@ class Command(BaseCommand):
                 cost = Decimal(str(random.randint(500, 5000)))
 
             # 1. Create InventoryDocument + confirm via Motor Documental
-            # This generates a proper StockMove with source/destination locations
-            vendor_loc = Location.objects.filter(location_type="VENDOR").first()
-            internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse=warehouse).first()
+            # This generates a proper StockMove with source/destination locations.
+            # Use get_or_create so this works on fresh databases where seed migrations
+            # may not have populated Location objects yet.
+            vendor_loc, _ = Location.objects.get_or_create(
+                location_type="VENDOR",
+                defaults={"name": "Proveedor (Virtual)"}
+            )
+            internal_loc, _ = Location.objects.get_or_create(
+                location_type="INTERNAL",
+                warehouse=warehouse,
+                defaults={"name": warehouse.name}
+            )
 
             doc = InventoryDocument.objects.create(
                 document_type=InventoryDocument.Type.RECEIPT,
@@ -1581,7 +1590,6 @@ class Command(BaseCommand):
             InventoryDocumentDetail.objects.create(
                 document=doc,
                 product=product,
-                warehouse=warehouse,
                 source_location=vendor_loc,
                 destination_location=internal_loc,
                 quantity=qty,
