@@ -1414,7 +1414,6 @@ class InventoryDocument(TimeStampedModel):
         return f"{self.get_document_type_display()} {self.id}"
 class InventoryDocumentDetailManager(models.Manager):
     def bulk_create(self, objs, **kwargs):
-        # Resolve legacy warehouse arguments to proper locations before bulk creating
         if not objs:
             return super().bulk_create(objs, **kwargs)
             
@@ -1425,6 +1424,7 @@ class InventoryDocumentDetailManager(models.Manager):
         def get_internal(warehouse):
             if not warehouse: return None
             if warehouse.id not in internal_locs:
+                from inventory.models import Location
                 loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
                 internal_locs[warehouse.id] = loc
             return internal_locs[warehouse.id]
@@ -1432,12 +1432,14 @@ class InventoryDocumentDetailManager(models.Manager):
         def get_vendor():
             nonlocal vendor_loc
             if not vendor_loc:
+                from inventory.models import Location
                 vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
             return vendor_loc
             
         def get_customer():
             nonlocal customer_loc
             if not customer_loc:
+                from inventory.models import Location
                 customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
             return customer_loc
 
@@ -1449,15 +1451,24 @@ class InventoryDocumentDetailManager(models.Manager):
             if not warehouse:
                 continue
                 
-            doc_type = obj.document.document_type if getattr(obj, "document", None) else None
+            doc = getattr(obj, "document", None)
+            doc_type = doc.document_type if doc else None
             
-            if doc_type in [InventoryDocument.Type.RECEIPT, InventoryDocument.Type.RETURN_RECEIPT]:
-                obj.source_location = get_vendor() if doc_type == InventoryDocument.Type.RECEIPT else get_customer()
+            is_return_or_annul = False
+            if doc and doc.reference:
+                ref = doc.reference.lower()
+                if "devoluci" in ref or "anulaci" in ref:
+                    is_return_or_annul = True
+            
+            from inventory.models import InventoryDocument
+            
+            if doc_type == InventoryDocument.Type.RECEIPT:
+                obj.source_location = get_customer() if is_return_or_annul else get_vendor()
                 obj.destination_location = get_internal(warehouse)
-            elif doc_type in [InventoryDocument.Type.DELIVERY, InventoryDocument.Type.RETURN_DELIVERY]:
+            elif doc_type == InventoryDocument.Type.DELIVERY:
                 obj.source_location = get_internal(warehouse)
-                obj.destination_location = get_customer() if doc_type == InventoryDocument.Type.DELIVERY else get_vendor()
-            elif doc_type == InventoryDocument.Type.INTERNAL_TRANSFER:
+                obj.destination_location = get_vendor() if is_return_or_annul else get_customer()
+            elif doc_type == InventoryDocument.Type.TRANSFER:
                 src_warehouse = getattr(obj, "_legacy_source_warehouse", None)
                 if src_warehouse:
                     obj.source_location = get_internal(src_warehouse)
@@ -1468,7 +1479,6 @@ class InventoryDocumentDetailManager(models.Manager):
 
 class InventoryDocumentDetail(models.Model):
     objects = InventoryDocumentDetailManager()
-
     document = models.ForeignKey(InventoryDocument, on_delete=models.CASCADE, related_name="details")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="document_details")
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
@@ -1498,19 +1508,27 @@ class InventoryDocumentDetail(models.Model):
         if not getattr(self, "source_location_id", None) or not getattr(self, "destination_location_id", None):
             warehouse = getattr(self, "_legacy_warehouse", None)
             if warehouse:
-                doc_type = self.document.document_type if getattr(self, "document", None) else None
+                doc = getattr(self, "document", None)
+                doc_type = doc.document_type if doc else None
                 
+                is_return_or_annul = False
+                if doc and doc.reference:
+                    ref = doc.reference.lower()
+                    if "devoluci" in ref or "anulaci" in ref:
+                        is_return_or_annul = True
+                
+                from inventory.models import Location, InventoryDocument
                 internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
                 vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
                 customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
                 
-                if doc_type in [InventoryDocument.Type.RECEIPT, InventoryDocument.Type.RETURN_RECEIPT]:
-                    self.source_location = vendor_loc if doc_type == InventoryDocument.Type.RECEIPT else customer_loc
+                if doc_type == InventoryDocument.Type.RECEIPT:
+                    self.source_location = customer_loc if is_return_or_annul else vendor_loc
                     self.destination_location = internal_loc
-                elif doc_type in [InventoryDocument.Type.DELIVERY, InventoryDocument.Type.RETURN_DELIVERY]:
+                elif doc_type == InventoryDocument.Type.DELIVERY:
                     self.source_location = internal_loc
-                    self.destination_location = customer_loc if doc_type == InventoryDocument.Type.DELIVERY else vendor_loc
-                elif doc_type == InventoryDocument.Type.INTERNAL_TRANSFER:
+                    self.destination_location = vendor_loc if is_return_or_annul else customer_loc
+                elif doc_type == InventoryDocument.Type.TRANSFER:
                     src_warehouse = getattr(self, "_legacy_source_warehouse", None)
                     if src_warehouse:
                         self.source_location = Location.objects.filter(location_type="INTERNAL", warehouse_id=src_warehouse.id).first()
