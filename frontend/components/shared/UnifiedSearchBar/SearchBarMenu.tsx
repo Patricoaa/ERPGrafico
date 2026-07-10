@@ -119,15 +119,13 @@ export function SearchBarMenu({
       {/* Column 3: Visualización (vista, sort, columnas) */}
       {hasDisplaySection && (
         <div>
-          <ScrollArea className="max-h-[80vh]">
-            <DisplaySection
-              viewOptions={viewOptions}
-              currentView={currentView}
-              onViewChange={onViewChange}
-              sortableColumns={sortableColumns}
-              hideableColumns={hideableColumns}
-            />
-          </ScrollArea>
+          <DisplaySection
+            viewOptions={viewOptions}
+            currentView={currentView}
+            onViewChange={onViewChange}
+            sortableColumns={sortableColumns}
+            hideableColumns={hideableColumns}
+          />
         </div>
       )}
     </div>
