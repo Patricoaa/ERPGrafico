@@ -10,6 +10,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuPortal,
     DropdownMenuTrigger,
     DropdownMenuSub,
     DropdownMenuSubTrigger,
@@ -228,13 +229,15 @@ function NavDropdownItems({
                                     {item.label}
                                 </span>
                             </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent className="min-w-[176px] rounded-lg border-border/40 shadow-floating p-1">
-                                <NavDropdownItems
-                                    items={item.subTabs}
-                                    activeValues={childActiveValues}
-                                    enableSubMenus
-                                />
-                            </DropdownMenuSubContent>
+                            <DropdownMenuPortal>
+                                <DropdownMenuSubContent className="min-w-[176px] rounded-lg border-border/40 shadow-floating p-1">
+                                    <NavDropdownItems
+                                        items={item.subTabs}
+                                        activeValues={childActiveValues}
+                                        enableSubMenus
+                                    />
+                                </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
                         </DropdownMenuSub>
                     )
                 }
