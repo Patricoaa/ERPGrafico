@@ -1205,6 +1205,12 @@ class Location(models.Model):
     location_type = models.CharField(_("Tipo"), max_length=20, choices=Type.choices)
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
     partner = models.ForeignKey("contacts.Contact", on_delete=models.CASCADE, null=True, blank=True, related_name="locations")
+    account = models.ForeignKey(
+        "accounting.Account", 
+        on_delete=models.RESTRICT, 
+        null=True, blank=True,
+        help_text="Cuenta contable de contrapartida para ubicaciones virtuales."
+    )
     is_active = models.BooleanField(_("Activa"), default=True)
 
     class Meta:
