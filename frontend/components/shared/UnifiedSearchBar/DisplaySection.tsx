@@ -22,6 +22,7 @@ interface DisplaySectionProps {
   onViewChange?: (view: string) => void
   sortableColumns: Column<unknown>[]
   hideableColumns: Column<unknown>[]
+  showColumnToggle?: boolean
 }
 
 function SectionHeader({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
@@ -154,10 +155,11 @@ export function DisplaySection({
   onViewChange,
   sortableColumns,
   hideableColumns,
+  showColumnToggle = true,
 }: DisplaySectionProps) {
   const hasViewOptions = (viewOptions?.length ?? 0) > 1
   const hasSortOptions = sortableColumns.length > 0
-  const hasColumnToggle = hideableColumns.length > 0
+  const hasColumnToggle = showColumnToggle && hideableColumns.length > 0
 
   if (!hasViewOptions && !hasSortOptions && !hasColumnToggle) return null
 

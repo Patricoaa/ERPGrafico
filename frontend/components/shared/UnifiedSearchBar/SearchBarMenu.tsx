@@ -63,7 +63,9 @@ export function SearchBarMenu({
     )
   }, [table])
 
-  const hasDisplaySection = (viewOptions?.length ?? 0) > 1 || sortableColumns.length > 0 || hideableColumns.length > 0
+  const showColumnToggle = currentView === 'list' || !currentView
+
+  const hasDisplaySection = (viewOptions?.length ?? 0) > 1 || sortableColumns.length > 0 || (showColumnToggle && hideableColumns.length > 0)
 
   const hasAnyContent = hasFilters || hasGroupBy || hasDisplaySection
   if (!hasAnyContent) return null
@@ -125,6 +127,7 @@ export function SearchBarMenu({
             onViewChange={onViewChange}
             sortableColumns={sortableColumns}
             hideableColumns={hideableColumns}
+            showColumnToggle={showColumnToggle}
           />
         </div>
       )}
