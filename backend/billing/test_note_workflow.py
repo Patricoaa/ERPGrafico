@@ -473,12 +473,12 @@ def test_process_logistics_creates_stock_moves(posted_sale_invoice):
 
     # Check stock move was created
     stock_moves = StockMove.objects.filter(
-        product=setup["products"]["stockable"], warehouse=setup["warehouse"]
+        product=setup["products"]["stockable"], destination_location__warehouse=setup["warehouse"]
     )
 
     assert stock_moves.exists()
     move = stock_moves.first()
-    assert move.move_type == StockMove.Type.IN  # Credit note = IN
+    assert move.source_location.location_type == 'CUSTOMER'  # Credit note = IN
     assert move.quantity == Decimal("5")
 
 

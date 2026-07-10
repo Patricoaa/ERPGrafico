@@ -958,7 +958,7 @@ class WorkOrderService:
                 total_material_cost += mat.quantity_planned * service_cost
                 continue
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(

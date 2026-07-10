@@ -1,6 +1,6 @@
 import pytest
 from decimal import Decimal
-from inventory.models import Stock, StockMove, Product, Warehouse, ProductCategory
+from inventory.models import Stock, StockMove, Product, ProductCategory, Warehouse, Location
 from inventory.services import InventoryService
 
 @pytest.mark.django_db
@@ -16,12 +16,16 @@ def test_stock_recalculation_and_update():
     stock = Stock.objects.filter(product=product, warehouse=warehouse).first()
     assert stock is None or stock.quantity == Decimal('0')
 
-    # Create a StockMove manually (simulate legacy behavior)
+    internal_loc = Location.objects.get_or_create(location_type='INTERNAL', warehouse=warehouse, defaults={'name': 'Interno'})[0]
+    vendor_loc = Location.objects.get_or_create(location_type='VENDOR', defaults={'name': 'Proveedor'})[0]
+    customer_loc = Location.objects.get_or_create(location_type='CUSTOMER', defaults={'name': 'Cliente'})[0]
+
+    # Create a StockMove manually
     move = StockMove.objects.create(
         product=product,
-        warehouse=warehouse,
+        source_location=vendor_loc,
+        destination_location=internal_loc,
         quantity=Decimal('10.5'),
-        move_type=StockMove.Type.IN,
         description='Test move IN'
     )
     
@@ -32,9 +36,9 @@ def test_stock_recalculation_and_update():
     # Create an OUT move
     StockMove.objects.create(
         product=product,
-        warehouse=warehouse,
+        source_location=internal_loc,
+        destination_location=customer_loc,
         quantity=Decimal('3.0'),
-        move_type=StockMove.Type.OUT,
         description='Test move OUT'
     )
     
