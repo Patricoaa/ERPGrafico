@@ -45,7 +45,6 @@ export interface DataTableProps<TData, TValue> {
     hiddenColumns?: string[]
     onReset?: () => void
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
-    smartSearch?: React.ReactNode
     segmentation?: React.ReactNode
     unifiedSearch?: React.ReactNode
     showReset?: boolean
@@ -104,7 +103,7 @@ export interface DataTableProps<TData, TValue> {
      *  - `true`      → "No se encontraron resultados" (filtered)
      *  - `false`     → entity-specific "sin registros" (no records at all)
      *  - `undefined` → legacy single empty-state (back-compat, no distinction)
-     * Wire it from `useSmartSearch().isFiltered`.
+     * Wire it from `useUnifiedSearch().isFiltered`.
      */
     isFiltered?: boolean
     renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
@@ -164,7 +163,6 @@ export function DataTable<TData, TValue>({
     hiddenColumns = EMPTY_ARRAY,
     onReset,
     renderCustomView,
-    smartSearch,
     segmentation,
     unifiedSearch,
     showReset,
@@ -313,7 +311,6 @@ export function DataTable<TData, TValue>({
     }, [internalRowSelection, onRowSelectionChange])
 
     const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
-        smartSearch ||
         segmentation ||
         (toolbarActions && toolbarActions.length > 0) ||
         createAction ||
@@ -402,7 +399,6 @@ export function DataTable<TData, TValue>({
                         currentView={currentView}
                         onViewChange={onViewChange}
                         columnToggle={columnToggle}
-                        smartSearch={smartSearch}
                         segmentation={segmentation}
                         unifiedSearch={unifiedSearch}
                         showReset={showReset}
@@ -719,7 +715,6 @@ export function DataTable<TData, TValue>({
                             currentView={currentView}
                             onViewChange={onViewChange}
                             columnToggle={columnToggle}
-                            smartSearch={smartSearch}
                             segmentation={segmentation}
                             unifiedSearch={unifiedSearch}
                             showReset={showReset}
@@ -806,7 +801,6 @@ export function DataTable<TData, TValue>({
                         currentView={currentView}
                         onViewChange={onViewChange}
                         columnToggle={columnToggle}
-                        smartSearch={smartSearch}
                         segmentation={segmentation}
                         unifiedSearch={unifiedSearch}
                         showReset={showReset}

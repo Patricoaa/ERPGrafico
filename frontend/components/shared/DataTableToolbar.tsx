@@ -38,7 +38,6 @@ interface DataTableToolbarProps<TData> {
     currentView?: string
     onViewChange?: (view: string) => void
     columnToggle?: boolean
-    smartSearch?: React.ReactNode
     segmentation?: React.ReactNode
     unifiedSearch?: React.ReactNode
     showReset?: boolean
@@ -75,7 +74,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         currentView,
         onViewChange,
         columnToggle,
-        smartSearch,
         segmentation,
         unifiedSearch,
         showReset,
@@ -296,7 +294,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                         {/* ── ROW 2: SmartSearch + Utilidades (legacy) ── */}
                         <div className="flex items-center gap-2 h-9 w-full">
-                            {smartSearch && <div className="flex-1 min-w-0 h-9">{smartSearch}</div>}
 
                             <div className="flex items-center gap-1 shrink-0">
                                 {analyticsPanel && (
