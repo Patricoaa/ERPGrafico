@@ -45,7 +45,6 @@ export interface DataTableProps<TData, TValue> {
     hiddenColumns?: string[]
     onReset?: () => void
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
-    segmentation?: React.ReactNode
     unifiedSearch?: React.ReactNode
     showReset?: boolean
     sortOptions?: boolean
@@ -163,7 +162,6 @@ export function DataTable<TData, TValue>({
     hiddenColumns = EMPTY_ARRAY,
     onReset,
     renderCustomView,
-    segmentation,
     unifiedSearch,
     showReset,
     sortOptions,
@@ -311,7 +309,6 @@ export function DataTable<TData, TValue>({
     }, [internalRowSelection, onRowSelectionChange])
 
     const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
-        segmentation ||
         (toolbarActions && toolbarActions.length > 0) ||
         createAction ||
         (viewOptions && viewOptions.length > 0) ||
@@ -399,7 +396,6 @@ export function DataTable<TData, TValue>({
                         currentView={currentView}
                         onViewChange={onViewChange}
                         columnToggle={columnToggle}
-                        segmentation={segmentation}
                         unifiedSearch={unifiedSearch}
                         showReset={showReset}
                         analyticsPanel={analyticsPanel}
@@ -715,7 +711,6 @@ export function DataTable<TData, TValue>({
                             currentView={currentView}
                             onViewChange={onViewChange}
                             columnToggle={columnToggle}
-                            segmentation={segmentation}
                             unifiedSearch={unifiedSearch}
                             showReset={showReset}
                             analyticsPanel={analyticsPanel}
@@ -801,7 +796,6 @@ export function DataTable<TData, TValue>({
                         currentView={currentView}
                         onViewChange={onViewChange}
                         columnToggle={columnToggle}
-                        segmentation={segmentation}
                         unifiedSearch={unifiedSearch}
                         showReset={showReset}
                         analyticsPanel={analyticsPanel}

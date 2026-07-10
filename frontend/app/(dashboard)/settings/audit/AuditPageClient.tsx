@@ -1,6 +1,8 @@
 "use client";
 
-import { DataTable, SegmentationBar } from '@/components/shared';
+import { useMemo } from "react";
+import { DataTable, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
+import type { UnifiedSearchConfig } from '@/components/shared';
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -172,10 +174,15 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
         value: val as string
     }));
 
-    const entityOptions = Array.from(new Set(logs.map(l => l.entity_label))).filter(Boolean).map(label => ({
-        label: label as string,
-        value: label as string
-    }));
+    const auditSearchConfig: UnifiedSearchConfig = useMemo(() => ({
+        filters: [
+            { key: 'source', label: 'Origen', type: 'multi', serverParam: 'source', options: [{ label: "Sistema", value: "action_log" }, { label: "Datos", value: "history" }] },
+            { key: 'entity_label', label: 'Entidad', type: 'multi', serverParam: 'entity_label', columnId: 'entity_label', dynamic: true, options: [] },
+            { key: 'action_type_label', label: 'Acción', type: 'multi', serverParam: 'action_type_label', options: actionTypeOptions },
+        ],
+        searchFields: [],
+    }), [actionTypeOptions])
+    const auditSearch = useUnifiedSearch(auditSearchConfig)
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -185,15 +192,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                     data={logs}
                     isLoading={loading}
                     variant="embedded"
-                    segmentation={
-                        <SegmentationBar def={{
-                            segments: [
-                                { key: 'source', label: 'Origen', type: 'multiselect', serverParam: 'source', columnId: 'source', options: [{ label: "Sistema", value: "action_log" }, { label: "Datos", value: "history" }] },
-                                { key: 'entity_label', label: 'Entidad', type: 'multiselect', serverParam: 'entity_label', columnId: 'entity_label', dynamic: true, options: entityOptions },
-                                { key: 'action_type_label', label: 'Acción', type: 'multiselect', serverParam: 'action_type_label', columnId: 'action_type_label', options: actionTypeOptions },
-                            ],
-                        }} />
-                    }
+                    unifiedSearch={<UnifiedSearchBar config={auditSearchConfig} chips={auditSearch.chips} isFiltered={auditSearch.isFiltered} inputValue={auditSearch.inputValue} onInputChange={auditSearch.setInputValue} onApply={auditSearch.applyFilter} onRemove={auditSearch.removeFilter} onClearAll={auditSearch.clearAll} groupBy={auditSearch.groupBy} onGroupBySelect={auditSearch.setGroupBy} paramValues={auditSearch.paramValues} />}
                     hiddenColumns={["source"]}
                     defaultPageSize={50}
                 />

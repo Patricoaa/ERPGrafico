@@ -5,7 +5,7 @@ import { DateRangeFilter } from "@/components/shared"
 import type { DateRange } from "react-day-picker"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal, ChevronDown, GitCompare } from "lucide-react"
-import { SEG_TRIGGER, SEG_DROPDOWN_ITEM } from './SegmentationBar/styles'
+import { SEG_TRIGGER, SEG_DROPDOWN_ITEM } from './search-styles'
 import { cn } from "@/lib/utils"
 import {
     DropdownMenu,

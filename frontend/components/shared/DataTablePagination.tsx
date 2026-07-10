@@ -12,7 +12,7 @@ import {
     DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { SEG_WRAPPER, SEG_TRIGGER, SEG_INACTIVE, SEG_DROPDOWN_ITEM } from './SegmentationBar/styles'
+import { SEG_WRAPPER, SEG_TRIGGER, SEG_INACTIVE, SEG_DROPDOWN_ITEM } from './search-styles'
 
 interface DataTablePaginationProps<TData> {
     table: Table<TData>

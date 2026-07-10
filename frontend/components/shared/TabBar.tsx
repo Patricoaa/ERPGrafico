@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { type LucideIcon } from "lucide-react"
-import { SEG_TEXT, TAB_TOOLBAR_TRIGGER } from './SegmentationBar/styles'
+import { SEG_TEXT, TAB_TOOLBAR_TRIGGER } from './search-styles'
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 

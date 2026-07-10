@@ -4,7 +4,7 @@ import React from "react"
 import { Check, Columns3 } from "lucide-react"
 import { type Table } from "@tanstack/react-table"
 
-import { TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN, SEG_CHECKBOX } from './SegmentationBar/styles'
+import { TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN, SEG_CHECKBOX } from './search-styles'
 import { Button } from "@/components/ui/button"
 import { cn, translateFieldName } from "@/lib/utils"
 import {
