@@ -52,3 +52,4 @@ export type {
 export type { WorkOrder, BOM, ProductMinimal } from './types'
 
 export { workOrderSegDef, bomSegDef } from './segmentationDef'
+export { bomUnifiedSearchDef, workOrderUnifiedSearchDef } from './unifiedSearchDef'

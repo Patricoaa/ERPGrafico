@@ -3,6 +3,7 @@ export { AccountingClosuresClientView, AccountsClientView, ClosuresSkeleton, Jou
 export type { Account, AccountFilters, AccountPayload, AccountingPeriod, FiscalYear } from './types'
 export { IS_CATEGORIES, CF_CATEGORIES, BS_CATEGORIES } from './types'
 export { accountSegDef, fiscalYearSegDef, journalEntrySegDef } from './segmentationDef'
+export { accountUnifiedSearchDef, fiscalYearUnifiedSearchDef, journalEntryUnifiedSearchDef } from './unifiedSearchDef'
 export { useAccountingSettings, ACCOUNTING_SETTINGS_QUERY_KEY } from './hooks/useAccountingSettings'
 export { useFiscalYears } from './hooks/useFiscalYears'
 export { useAccountMutations } from './hooks/useAccountMutations'
