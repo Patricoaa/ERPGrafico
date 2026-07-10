@@ -52,7 +52,9 @@ from inventory.models import (
     Warehouse,
     InventoryDocument,
     InventoryDocumentDetail,
+    Location,
 )
+from inventory.services import InventoryService
 from production.models import (
     BillOfMaterials,
     BillOfMaterialsLine,
@@ -1564,19 +1566,29 @@ class Command(BaseCommand):
                 # Default material costs
                 cost = Decimal(str(random.randint(500, 5000)))
 
-            # 1. Create Stock Move with unit_cost frozen at time of seeding
-            move = StockMove(
+            # 1. Create InventoryDocument + confirm via Motor Documental
+            # This generates a proper StockMove with source/destination locations
+            vendor_loc = Location.objects.filter(location_type="VENDOR").first()
+            internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse=warehouse).first()
+
+            doc = InventoryDocument.objects.create(
+                document_type=InventoryDocument.Type.RECEIPT,
+                status=InventoryDocument.Status.DRAFT,
                 date=timezone.now().date(),
+                reference="INIT-STOCK",
+                notes="Carga Inicial Demo Data",
+            )
+            InventoryDocumentDetail.objects.create(
+                document=doc,
                 product=product,
                 warehouse=warehouse,
+                source_location=vendor_loc,
+                destination_location=internal_loc,
                 quantity=qty,
-                move_type=StockMove.Type.IN,
-                description="Carga Inicial Demo Data",
-                unit_cost=cost,  # Frozen at creation - will not change
-                journal_entry=entry,
+                unit_cost=cost,
             )
-            move._is_system_closing_entry = True
-            move.save()
+            _, generated_moves = InventoryService.confirmar_documento(doc, journal_entry=entry)
+            move = generated_moves[0] if generated_moves else None
 
             # Update product cost PMP - single save with update_fields to track only cost change
             # First, remove the $0 history entry created on product creation (before cost was set)
