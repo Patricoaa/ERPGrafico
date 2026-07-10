@@ -6,6 +6,12 @@ class InventoryConfig(AppConfig):
     name = "inventory"
 
     def ready(self):
+        # Register signals
+        try:
+            import inventory.signals
+        except ImportError:
+            pass
+
         try:
             from core.permissions import PermissionRegistry
 

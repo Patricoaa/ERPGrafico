@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react"
 import { ChevronDown } from "lucide-react"
-import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, SEG_ACTIVE, SEG_INACTIVE } from '../SegmentationBar/styles'
+import { SEG_TRIGGER, SEG_DROPDOWN_ITEM, SEG_ACTIVE, SEG_INACTIVE } from '../search-styles'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {

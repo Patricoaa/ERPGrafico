@@ -9,7 +9,7 @@ import { DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import type { Page } from '@/lib/pagination'
-import { Printer, User, Check, X } from "lucide-react"
+
 import { useViewMode } from "@/hooks/useViewMode"
 import {
     WorkOrderWizard,
@@ -19,14 +19,12 @@ import {
     useWorkOrderListActions,
 } from "@/features/production"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { ActionDock, Chip, CmykRing, FadeIn } from "@/components/shared"
+import { Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
-import { ToolbarCreateButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
-import { cn, translateProductionStage } from "@/lib/utils"
+import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { workOrderSearchDef } from "@/features/production/searchDef"
-import { workOrderSegDef } from "@/features/production/segmentationDef"
+import { workOrderUnifiedSearchDef } from "@/features/production"
 
 import type { WorkOrder, WizardMode, StageId } from "@/features/production/types"
 
@@ -40,28 +38,11 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     const router = useRouter()
     const pathname = usePathname()
 
-    const [myTasks, setMyTasks] = useState(searchParams.get('my_tasks') === 'true')
-
-    const handleMyTasksChange = (checked: boolean) => {
-        setMyTasks(checked)
-        const params = new URLSearchParams(searchParams.toString())
-        if (checked) {
-            params.set('my_tasks', 'true')
-        } else {
-            params.delete('my_tasks')
-        }
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
-
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(workOrderSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(workOrderSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...textFilters, ...segFilters }
+    const search = useUnifiedSearch(workOrderUnifiedSearchDef)
+    const allFilters = { ...search.filters }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
         ...allFilters,
-        my_tasks: myTasks,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined)
@@ -313,43 +294,28 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         rowCount={page?.count ?? 0}
                         pagination={pageState}
                         onPaginationChange={setPageState}
-                        isFiltered={isFiltered || myTasks}
+                        isFiltered={search.isFiltered}
                         emptyState={{
                             context: "production",
                             title: "Aún no hay órdenes de trabajo",
                             description: "Crea una orden de trabajo para planificar y seguir la fabricación.",
                         }}
-                        smartSearch={
-                            <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
-                        }
-                        segmentation={
-                            <SegmentationBar def={{
-                                ...workOrderSegDef,
-                                segments: [
-                                    ...workOrderSegDef.segments,
-                                    { key: 'my_tasks', label: 'Mis OTs', type: 'custom', render: () => (
-                                        <div
-                                            className={cn(
-                                                "relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs uppercase font-bold  tracking-wider outline-none transition-colors",
-                                                myTasks ? "bg-primary/10 text-primary" : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
-                                            )}
-                                            onClick={() => handleMyTasksChange(!myTasks)}
-                                        >
-                                            <div className={cn(
-                                                "mr-3 flex h-3.5 w-3.5 items-center justify-center rounded-sm border border-primary/50 transition-all",
-                                                myTasks ? "bg-primary text-primary-foreground border-primary" : "opacity-50 [&_svg]:invisible"
-                                            )}>
-                                                <Check className="h-3 w-3" />
-                                            </div>
-                                            <User className={cn("h-3.5 w-3.5 mr-2", myTasks ? "text-primary" : "opacity-60")} />
-                                            Mis OTs
-                                        </div>
-                                    )},
-                                ],
-                            }} basePeriod={basePeriod} />
-                        }
-                        showReset={isFiltered}
-                        onReset={() => { clearText(); clearSeg() }}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={workOrderUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            placeholder="Buscar OTs..."
+                        />}
+                        showReset={search.isFiltered}
+                        onReset={search.clearAll}
                         viewOptions={viewOptions}
                         currentView={currentView}
                         onViewChange={handleViewChange}
@@ -359,37 +325,11 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                                     undefined
                         }
                         createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
-                        bulkDock={(items, clear) => (
-                            <ActionDock isVisible>
-                                <div className="flex items-center gap-2">
-                                    <CmykRing className="h-2.5 w-2.5 animate-pulse" />
-                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground whitespace-nowrap">
-                                        {`${items.length} ${items.length === 1 ? "seleccionado" : "seleccionados"}`}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        disabled={isBulkPrinting}
-                                        className="h-8 rounded-full px-4 text-xs"
-                                        onClick={() => bulkPrint({ ids: items.map(o => o.id) })}
-                                    >
-                                        <Printer className="h-3.5 w-3.5 mr-1.5" />
-                                        {isBulkPrinting ? 'Generando…' : 'Imprimir todas'}
-                                    </Button>
-                                </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={clear}
-                                    className="h-9 rounded-full px-4 text-xs text-muted-foreground hover:bg-muted"
-                                >
-                                    <X className="h-3 w-3 mr-1.5" />
-                                    Limpiar
-                                </Button>
-                            </ActionDock>
-                        )}
+                        bulkActions={[
+                            { key: 'print', label: 'Imprimir todas', intent: 'default' as const,
+                                disabled: () => isBulkPrinting,
+                                onClick: async (items: Array<{ id: number }>) => { await bulkPrint({ ids: items.map(o => o.id) }) } },
+                        ]}
                     />
                 </FadeIn>
             </div>

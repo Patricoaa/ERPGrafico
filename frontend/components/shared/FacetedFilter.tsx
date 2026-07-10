@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Check, PlusCircle } from "lucide-react"
 
-import { SEG_TEXT, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX } from './SegmentationBar/styles'
+import { SEG_TEXT, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX } from './search-styles'
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

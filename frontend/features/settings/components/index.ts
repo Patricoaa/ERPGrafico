@@ -6,7 +6,7 @@ export * from './InitialCapitalModal';
 export * from './PartnerEditDrawer';
 export * from './SalesSettingsView';
 export * from './TerminalDrawer';
-export * from './UsersSettingsView';
+export * from './UsersSettingsClientView';
 export * from './PartnersSettingsView';
 export * from './UnifiedAccountsView';
 export * from './VatRatesView';

@@ -456,16 +456,15 @@ class DraftCartService:
                     # El motivo es PARTNER_WITHDRAWAL
                     description = f"Retiro de utilidades POS - {draft.name}"
 
-                    move = StockService.adjust_stock(
+                    doc = StockService.process_partner_capital(
                         product=product,
                         warehouse=warehouse,
-                        quantity=-qty,  # Cantidad negativa para salida
-                        unit_cost=product.cost_price,
-                        description=description,
-                        adjustment_reason=StockMove.AdjustmentReason.PARTNER_WITHDRAWAL,
                         partner_contact=customer,
+                        quantity=qty,
+                        is_contribution=False,
+                        description=description,
                     )
-                    processed_moves.append(move.id)
+                    processed_moves.append(doc.id)
 
                 # Si todo fue exitoso, eliminar el borrador
                 draft.delete()

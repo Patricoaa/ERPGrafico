@@ -39,9 +39,8 @@ interface MovementClientViewProps {
 }
 
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
-import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
-import { stockMoveSearchDef } from "@/features/inventory/searchDef"
-import { stockMoveSegDef } from "@/features/inventory/segmentationDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import React from "react"
 
 const MOVE_TYPE_MAP: Record<string, { intent: "success" | "destructive" | "warning" | "neutral", label: string }> = {
@@ -52,14 +51,10 @@ const MOVE_TYPE_MAP: Record<string, { intent: "success" | "destructive" | "warni
 
 export function MovementClientView({ externalOpen, onExternalOpenChange, createAction: externalCreateAction }: MovementClientViewProps) {
     const createAction = externalCreateAction
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(stockMoveSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(stockMoveSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
+    const search = useUnifiedSearch(stockMoveUnifiedSearchDef)
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, moves, totalCount, isLoading, refetch } = useStockMoves({
-        ...allFilters,
+        ...search.filters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
@@ -190,18 +185,32 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    smartSearch={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
-                    segmentation={<SegmentationBar def={stockMoveSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={stockMoveUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar movimientos..."
+                    />}
+                    unifiedSearchConfig={stockMoveUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay movimientos de stock",
                         description: "Los movimientos se registran al recibir, despachar o ajustar inventario.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc', aggregators: [{ key: 'total', label: 'Total', field: 'quantity', fn: 'sum', format: 'number' }, { key: 'count', label: 'Items', fn: 'count', format: 'integer' }] }}
+                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(move: StockMove) => {
                         const typeConfig = MOVE_TYPE_MAP[move.move_type] || { intent: 'neutral' as const, label: move.move_type }
                         return (

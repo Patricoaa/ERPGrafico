@@ -500,10 +500,12 @@ export function POSClientView() {
                             <TooltipTrigger asChild>
                                 <DropdownMenuTrigger asChild>
                                     <Button
-                                        className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 bg-transparent border border-border/60"
+                                        size="icon"
+                                        variant="outline"
+                                        className="relative rounded-md hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                                     >
                                         <Avatar className="h-full w-full rounded-md bg-transparent">
-                                            <AvatarFallback className="bg-transparent text-current  font-black text-[10px] rounded-md">
+                                            <AvatarFallback className="bg-transparent text-current font-black text-[10px] rounded-md">
                                                 {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                             </AvatarFallback>
                                         </Avatar>

@@ -13,6 +13,7 @@ from .views import (
     UoMCategoryViewSet,
     UoMViewSet,
     WarehouseViewSet,
+    InventoryDocumentViewSet,
 )
 
 router = DefaultRouter()
@@ -27,6 +28,7 @@ router.register(r"subscriptions", SubscriptionViewSet, basename="subscription")
 router.register(r"attributes", ProductAttributeViewSet, basename="productattribute")
 router.register(r"attribute-values", ProductAttributeValueViewSet, basename="productattributevalue")
 router.register(r"uom-prices", ProductUoMPriceViewSet, basename="uom-prices")
+router.register(r"documents", InventoryDocumentViewSet, basename="inventorydocument")
 
 urlpatterns = [
     path("", include(router.urls)),

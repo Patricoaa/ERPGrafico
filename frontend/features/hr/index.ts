@@ -15,5 +15,3 @@ export {
 export { useAbsences } from './hooks/useAbsences'
 export { useSalaryAdvances } from './hooks/useSalaryAdvances'
 export { useEmployees } from './hooks/useEmployees'
-export { absenceSearchDef, employeeSearchDef, payrollSearchDef, salaryAdvanceSearchDef } from './searchDef'
-export { absenceSegDef, employeeSegDef, payrollSegDef, salaryAdvanceSegDef } from './segmentationDef'

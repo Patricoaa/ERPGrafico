@@ -38,6 +38,7 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 | `Card` | Tarjeta visual de datos | Presentacional | `PayrollCard`, `DomainCard` |
 | `Selector` | Input de selección de entidad | Input especializado | `AccountSelector`, `ProductSelector` |
 | `Provider` | React Context Provider | Infraestructura de estado | `RealtimeProvider`, `GlobalModalProvider` |
+| `PageClient` | Sin surface — ocupa su contenedor padre | Componente `"use client"` de página que orquesta URL state (modals, hub panel, legacy redirects) y server hydration, delegando a `*ClientView` o `*View` de features. Siempre en `app/(dashboard)/**/`. | `ContactsPageClient`, `SalesOrdersPageClient` |
 
 ### 1.2 Reglas de derivación
 
@@ -72,6 +73,11 @@ Este documento es la fuente de verdad sobre **cómo nombrar** todos los artefact
 8. **`List` no es sufijo autorizado para vistas de página.**  
    Los archivos `*List` deben ser listas reutilizables inline (sub-componentes), no vistas de página.  
    Para vistas de página con tabla, usar `ClientView`.
+
+9. **`PageClient` no contiene DataTableView ni lógica de negocio directa.**  
+   Su responsabilidad es leer/escribir URL search params y delegar al `*ClientView` o `*View` de features.  
+   Excepción: cuando no existe un Feature ClientView correspondiente (ej: `DashboardPageClient`, `SettingsPageClient`).  
+   Siempre en `app/(dashboard)/**/`, nunca en `features/`.
 
 ### 1.3 Árbol de decisión rápida
 
@@ -254,6 +260,7 @@ Antes de abrir un PR que agrega o renombra artefactos:
 - [ ] El sufijo del componente coincide con la surface que renderiza.
 - [ ] El nombre del archivo coincide con el export principal.
 - [ ] Vistas de listado de entidad usan sufijo `ClientView` (no `List`, `Management` ni `View` solos).
+- [ ] `PageClient` solo se usa en `app/(dashboard)/**/`, no en `features/`.
 - [ ] Hooks siguen el patrón `use[Entity][Calificador]`.
 - [ ] Tipos son `PascalCase` sin `I` prefix ni `Type` suffix.
 - [ ] No se usó `FormModal` ni `FormDrawer`.

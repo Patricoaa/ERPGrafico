@@ -29,10 +29,10 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
             >
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 canvas-prepress relative">
                     <div className="absolute inset-4 pointer-events-none z-[1]">
-                        <CmykRing size="sm" className="absolute top-0 left-0 opacity-80" />
-                        <CmykRing size="sm" className="absolute top-0 right-0 opacity-80" />
-                        <CmykRing size="sm" className="absolute bottom-0 left-0 opacity-80" />
-                        <CmykRing size="sm" className="absolute bottom-0 right-0 opacity-80" />
+                        <CmykRing size="xs" className="absolute top-0 left-0 opacity-80" />
+                        <CmykRing size="xs" className="absolute top-0 right-0 opacity-80" />
+                        <CmykRing size="xs" className="absolute bottom-0 left-0 opacity-80" />
+                        <CmykRing size="xs" className="absolute bottom-0 right-0 opacity-80" />
                     </div>
                     <SkeletonShell isLoading={true} ariaLabel="Cargando perfil">
                         <div className="flex-1 h-full">
@@ -122,10 +122,10 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
         >
             <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground canvas-prepress relative">
                 <div className="absolute inset-4 pointer-events-none z-[1]">
-                    <CmykRing size="sm" className="absolute top-0 left-0 opacity-80" />
-                    <CmykRing size="sm" className="absolute top-0 right-0 opacity-80" />
-                    <CmykRing size="sm" className="absolute bottom-0 left-0 opacity-80" />
-                    <CmykRing size="sm" className="absolute bottom-0 right-0 opacity-80" />
+                    <CmykRing size="xs" className="absolute top-0 left-0 opacity-80" />
+                    <CmykRing size="xs" className="absolute top-0 right-0 opacity-80" />
+                    <CmykRing size="xs" className="absolute bottom-0 left-0 opacity-80" />
+                    <CmykRing size="xs" className="absolute bottom-0 right-0 opacity-80" />
                 </div>
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">

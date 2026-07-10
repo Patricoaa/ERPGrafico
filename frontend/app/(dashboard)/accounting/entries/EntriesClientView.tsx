@@ -18,9 +18,8 @@ import { useJournalEntries, type JournalEntry } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
-import { journalEntrySearchDef } from "@/features/accounting/searchDef"
-import { journalEntrySegDef } from "@/features/accounting/segmentationDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { journalEntryUnifiedSearchDef } from "@/features/accounting"
 import type { JournalEntryInitialData } from '@/types/forms'
 
 interface EntriesPageProps {
@@ -30,11 +29,8 @@ interface EntriesPageProps {
 }
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(journalEntrySearchDef)
-    const basePeriod = { serverParamFrom: 'date_after', serverParamTo: 'date_before' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(journalEntrySegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...textFilters, ...segFilters }
+    const search = useUnifiedSearch(journalEntryUnifiedSearchDef)
+    const allFilters = { ...search.filters }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, entries, isLoading, refetch } = useJournalEntries({
         ...allFilters,
@@ -211,10 +207,22 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     isLoading={isLoading}
                     entityLabel="accounting.journalentry"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
-                    segmentation={<SegmentationBar def={journalEntrySegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={journalEntryUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar asientos..."
+                    />}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     manualPagination
                     pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
@@ -222,7 +230,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     pagination={pageState}
                     onPaginationChange={setPageState}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "finance",
                         title: "Aún no hay asientos contables",
@@ -231,9 +239,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     cardGroupBy={{
                         field: 'date',
                         sort: 'desc',
-                        aggregators: [
-                            { key: 'count', label: 'Asientos', fn: 'count', format: 'integer' },
-                        ],
                     }}
                     onRowClick={(m) => openDetail(m.id)}
                     renderCard={(m) => {

@@ -6,10 +6,9 @@ import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, EntityCard, ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch, createDateColumn } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, DataCell, EntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch, createDateColumn } from '@/components/shared'
 import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
-import { absenceSegDef } from "../segmentationDef"
-import { absenceSearchDef } from "../searchDef"
+import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
@@ -22,12 +21,9 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filterFn: filterAbsences, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<Absence>(absenceSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(absenceSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const { absences, isLoading: loading, isRefetching, refetch: fetchAbsences } = useAbsences(segFilters, initialAbsences)
-    const filteredAbsences = filterAbsences(absences)
+    const search = useUnifiedSearch(absenceUnifiedSearchDef)
+    const { absences, isLoading: loading, isRefetching, refetch: fetchAbsences } = useAbsences(search.filters, initialAbsences)
+    const filteredAbsences = search.filterFn(absences)
     const [employees, setEmployees] = useState<Employee[]>([])
 
     const isNewModalOpen = searchParams.get("modal") === "new"
@@ -103,14 +99,28 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                     isLoading={loading}
                     isRefetching={isRefetching}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Buscar inasistencia..." className="w-full" />}
-                    segmentation={<SegmentationBar def={absenceSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={absenceUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar inasistencia..."
+                    />}
+                    unifiedSearchConfig={absenceUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     onRowClick={(row: Absence) => openSelected(row.id)}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "users",
                         title: "Aún no hay inasistencias",

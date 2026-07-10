@@ -16,8 +16,8 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import React from "react"
 
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
-import { SmartSearchBar, useClientSearch } from "@/components/shared"
-import { warehouseSearchDef } from "@/features/inventory/searchDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { warehouseUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface WarehouseClientViewProps {
@@ -28,7 +28,7 @@ interface WarehouseClientViewProps {
 
 export function WarehouseClientView({ externalOpen, onExternalOpenChange, createAction }: WarehouseClientViewProps) {
     const { warehouses, isLoading, refetch, deleteWarehouse } = useWarehouses()
-    const { filterFn, isFiltered } = useClientSearch<Warehouse>(warehouseSearchDef)
+    const search = useUnifiedSearch(warehouseUnifiedSearchDef)
 
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -179,13 +179,30 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 <DataTableView
                     entityLabel="inventory.warehouse"
                     columns={columns}
-                    data={filterFn(warehouses)}
+                    data={search.filterFn(warehouses)}
                     isLoading={isLoading}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." className="w-full" />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={warehouseUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar almacén..."
+                    />}
+                    unifiedSearchConfig={warehouseUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     bulkActions={bulkActions}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay almacenes",

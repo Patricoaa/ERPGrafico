@@ -28,14 +28,13 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import type { KpiCardDef } from '@/components/shared'
 import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
-import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
+import { PageHeader, PageHeaderButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { type Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
-import { subscriptionSearchDef } from "@/features/inventory/searchDef"
-import { subscriptionSegDef } from "@/features/inventory/segmentationDef"
+import { subscriptionUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 
 // Subscription type imported from useSubscriptions hook
 
@@ -54,12 +53,8 @@ interface SubscriptionsClientViewProps {
 }
 
 export function SubscriptionsClientView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsClientViewProps) {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(subscriptionSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(subscriptionSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = useMemo(() => ({ ...textFilters, ...segFilters }), [textFilters, segFilters])
-    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(allFilters)
+    const search = useUnifiedSearch(subscriptionUnifiedSearchDef)
+    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(search.filters)
     const { data: stats } = useSubscriptionStats<Stats>()
     const kpiCards = useMemo<KpiCardDef[] | undefined>(() => {
         if (!stats) return undefined
@@ -431,14 +426,28 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                             data={subscriptions}
                             isLoading={loading}
                             variant="embedded"
-                            smartSearch={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-full" />}
-                            segmentation={<SegmentationBar def={subscriptionSegDef} basePeriod={basePeriod} />}
-                            showReset={isFiltered}
-                            onReset={() => { clearText(); clearSeg() }}
+                            unifiedSearch={<UnifiedSearchBar
+                                config={subscriptionUnifiedSearchDef}
+                                chips={search.chips}
+                                isFiltered={search.isFiltered}
+                                inputValue={search.inputValue}
+                                onInputChange={search.setInputValue}
+                                onApply={search.applyFilter}
+                                onRemove={search.removeFilter}
+                                onClearAll={search.clearAll}
+                                groupBy={search.groupBy}
+                                onGroupBySelect={search.setGroupBy}
+                                paramValues={search.paramValues}
+                                placeholder="Buscar suscripciones..."
+                            />}
+                            unifiedSearchConfig={subscriptionUnifiedSearchDef}
+                            currentGroupBy={search.groupBy}
+                            showReset={search.isFiltered}
+                            onReset={search.clearAll}
                             defaultPageSize={20}
                             bulkActions={bulkActions}
                             createAction={createAction}
-                            isFiltered={isFiltered}
+                            isFiltered={search.isFiltered}
                             emptyState={{
                                 context: "generic",
                                 title: "Aún no hay suscripciones",

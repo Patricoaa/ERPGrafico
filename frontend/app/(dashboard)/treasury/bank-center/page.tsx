@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { PageSectionHeader } from "@/components/shared"
-import { BankCenterPageClientView } from "@/features/treasury"
+import BankCenterPageClient from "./BankCenterPageClient"
 
 export const metadata: Metadata = {
     title: "Centro de Bancos | ERPGrafico",
@@ -11,6 +11,6 @@ export default function BankCenterPage() {
     return (
         <>
             <PageSectionHeader title="Centro de Bancos" description="Vista consolidada de bancos y productos financieros" />
-            <BankCenterPageClientView />
+            <BankCenterPageClient />
         </>)
 }

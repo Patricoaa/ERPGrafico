@@ -19,8 +19,9 @@ import { toast } from "sonner"
 import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
-import { DataTable, SegmentationBar, useSegmentation } from '@/components/shared'
+import { DataTable, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 const TRANSACTION_TYPE_OPTIONS = [
     { value: "SUBSCRIPTION", label: "Suscripción de Capital" },
@@ -103,28 +104,27 @@ export function PartnerLedgerTab() {
         return 'neutral'
     }
 
-    const partnerSegDef = useMemo(() => ({
-        segments: [
+    const partnerSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [],
+        filters: [
             {
+                type: 'single',
                 key: 'partner',
                 label: 'Socio',
-                type: 'tabs' as const,
-                variant: 'dropdown' as const,
                 serverParam: 'partner',
                 options: partners.map(p => ({ label: p.name, value: p.name })),
             },
             {
+                type: 'single',
                 key: 'transaction_type',
                 label: 'Tipo',
-                type: 'tabs' as const,
-                variant: 'dropdown' as const,
                 serverParam: 'transaction_type',
                 options: TRANSACTION_TYPE_OPTIONS.map(o => ({ label: o.label, value: o.value })),
             },
         ],
     }), [partners])
 
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(partnerSegDef)
+    const search = useUnifiedSearch(partnerSearchConfig)
 
     type TransactionWithBalance = PartnerTransaction & { balance_after: number }
 
@@ -146,16 +146,16 @@ export function PartnerLedgerTab() {
 
     const filteredTxsWithBalance = useMemo(() => {
         let result = txsWithBalance
-        if (segFilters.partner) {
+        if (search.filters.partner) {
             result = result.filter(tx =>
-                tx.partner_name === segFilters.partner || tx.partner?.toString() === segFilters.partner
+                tx.partner_name === search.filters.partner || tx.partner?.toString() === search.filters.partner
             )
         }
-        if (segFilters.transaction_type) {
-            result = result.filter(tx => tx.transaction_type === segFilters.transaction_type)
+        if (search.filters.transaction_type) {
+            result = result.filter(tx => tx.transaction_type === search.filters.transaction_type)
         }
         return result
-    }, [txsWithBalance, segFilters])
+    }, [txsWithBalance, search.filters])
 
     const columns: ColumnDef<TransactionWithBalance>[] = [
         {
@@ -240,9 +240,21 @@ export function PartnerLedgerTab() {
                 isLoading={loading}
                 variant="embedded"
                 hiddenColumns={["transaction_type"]}
-                segmentation={<SegmentationBar def={partnerSegDef} />}
-                showReset={isSegFiltered}
-                onReset={clearSeg}
+                unifiedSearch={<UnifiedSearchBar
+                    config={partnerSearchConfig}
+                    chips={search.chips}
+                    isFiltered={search.isFiltered}
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                />}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
                 toolbarActions={[
                     { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => setIsContributionOpen(true), intent: 'success' },
                     { key: 'withdrawal', label: 'Registrar Retiro', icon: LogOut, onClick: () => setIsWithdrawalOpen(true), intent: 'destructive' },

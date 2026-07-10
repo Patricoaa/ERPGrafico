@@ -8,15 +8,13 @@ import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EntityCard,
-    SmartSearchBar, useSmartSearch,
-    SegmentationBar, useSegmentation,
+    UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { useChecks, useCheckMutations } from '../hooks/useChecks'
 import { CheckDepositModal } from './CheckDepositModal'
 import { checkActions, type CheckActionsCtx } from './checkActions'
-import { checkSearchDef } from './searchDef'
-import { checkSegDef } from './segmentationDef'
 import { BankFilter } from './BankFilter'
 import type { Check, CheckDirection } from './types'
 
@@ -40,21 +38,39 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
 
     const { openEntity } = useGlobalModals()
 
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(checkSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(checkSegDef)
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'search', label: 'N° Cheque / Girador / Monto', serverParam: 'search' },
+        ],
+        filters: [
+            { key: 'status', label: 'Estado', type: 'single', serverParam: 'status', options: [
+                { label: 'En Cartera', value: 'IN_PORTFOLIO' },
+                { label: 'Depositado', value: 'DEPOSITED' },
+                { label: 'Cobrado', value: 'CLEARED' },
+                { label: 'Protestado', value: 'BOUNCED' },
+                { label: 'Anulado', value: 'VOIDED' },
+            ]},
+        ],
+        dateFilters: [{
+            key: 'due_date',
+            label: 'Vencimiento',
+            type: 'date',
+            options: [
+                { label: 'Personalizado', value: 'custom', serverParamFrom: 'due_date_after', serverParamTo: 'due_date_before' },
+            ],
+        }],
+    }), [])
+    const search = useUnifiedSearch(config)
     const [bankParam, setBankParam] = useQueryState('bank', parseAsString)
 
     const effectiveBank = bankParam ?? (bankId ? String(bankId) : undefined)
 
     const queryParams = useMemo(() => {
-        const p: Record<string, string> = {
-            ...textFilters,
-            ...segFilters,
-        }
+        const p: Record<string, string> = { ...search.filters }
         if (effectiveBank) p.bank = effectiveBank
         if (direction) p.direction = direction
         return Object.keys(p).length ? p : undefined
-    }, [effectiveBank, direction, textFilters, segFilters])
+    }, [effectiveBank, direction, search.filters])
 
     const { checks = [], isLoading } = useChecks(queryParams)
 
@@ -80,7 +96,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
         }
     }, [router, pathname, searchParams])
 
-    const isFiltered = isTextFiltered || isSegFiltered || !!bankParam
+    const isFiltered = search.isFiltered || !!bankParam
 
     const handleViewDetail = useCallback(
         (id: number) => {
@@ -91,10 +107,9 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     )
 
     const handleReset = useCallback(() => {
-        clearText()
-        clearSeg()
+        search.clearAll()
         setBankParam(null)
-    }, [clearText, clearSeg, setBankParam])
+    }, [search.clearAll, setBankParam])
 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
@@ -200,16 +215,21 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             ? { context: 'treasury', title: 'Sin cheques girados', description: 'Los cheques propios emitidos en compras aparecerán aquí.' }
                             : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Los cheques recibidos en ventas o registro de pagos aparecerán aquí.' }
                     }
-                    smartSearch={<SmartSearchBar searchDef={checkSearchDef} placeholder="Buscar por N° cheque, girador o monto..." />}
-                    segmentation={
-                        <SegmentationBar def={{
-                            ...checkSegDef,
-                            segments: [
-                                ...checkSegDef.segments,
-                                { key: 'bank', label: 'Banco', type: 'custom', render: () => <BankFilter /> },
-                            ],
-                        }} />
-                    }
+                    unifiedSearch={<UnifiedSearchBar
+                        config={config}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por N° cheque, girador o monto..."
+                        prefix={<BankFilter />}
+                    />}
                     isFiltered={isFiltered}
                     showReset={isFiltered}
                     onReset={handleReset}

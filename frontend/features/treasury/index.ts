@@ -32,10 +32,6 @@ export type {
 } from './types'
 export { treasuryAccountActions } from './treasuryAccountActions'
 export type { TreasuryAccountActionsCtx } from './treasuryAccountActions'
-export {
-  treasuryAccountSegDef, terminalBatchSegDef, deviceSegDef, bankSegDef,
-  paymentMethodSegDef, treasuryMovementsSegDef,
-} from './segmentationDef'
 export { treasuryApi } from './api/treasuryApi'
 export { useProvisionAccount, useTreasuryAccounts } from './hooks/useTreasuryAccounts'
 export type { TreasuryAccountFilters } from './hooks/useTreasuryAccounts'
@@ -106,6 +102,5 @@ export { BankCheckSection } from './components/BankCheckSection'
 export { BankCreditSection } from './components/BankCreditSection'
 export { BankUpcomingMaturities } from './components/BankUpcomingMaturities'
 export { BankRecentActivity } from './components/BankRecentActivity'
-export { BankCenterPageClientView } from './components/BankCenterPageClientView'
 export { statementLineUnmatchActions } from './components/statementLineUnmatchActions'
 export type { StatementLineUnmatchActionsCtx } from './components/statementLineUnmatchActions'

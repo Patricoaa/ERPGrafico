@@ -157,9 +157,9 @@ const InvoiceDrawer = dynamic(
     { ssr: false, loading: () => skeleton("factura") }
 )
 
-const SaleDeliveryDrawer = dynamic(
-    () => import("@/features/sales/components/SaleDeliveryDrawer").then((m) => m.SaleDeliveryDrawer),
-    { ssr: false, loading: () => skeleton("despacho") }
+const InventoryDocumentDrawer = dynamic(
+    () => import("@/features/inventory/components/InventoryDocumentDrawer").then((m) => m.InventoryDocumentDrawer),
+    { ssr: false, loading: () => skeleton("documento de inventario") }
 )
 
 const CashMovementDrawer = dynamic(
@@ -192,10 +192,8 @@ const GroupDrawer = dynamic(
     { ssr: false, loading: () => skeleton("grupo") }
 )
 
-const PurchaseReceiptDrawer = dynamic(
-    () => import("@/features/purchasing/components/PurchaseReceiptDrawer").then((m) => m.PurchaseReceiptDrawer),
-    { ssr: false, loading: () => skeleton("recepción de compra") }
-)
+// Obsolete drawers removed
+
 
 const PurchaseReturnDrawer = dynamic(
     () => import("@/features/purchasing/components/PurchaseReturnDrawer").then((m) => m.PurchaseReturnDrawer),
@@ -464,8 +462,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Purchasing (read-only detail drawers) ────────────────────────────────
     "purchasing.purchasereceipt": ({ id, open, onOpenChange }) => (
-        <PurchaseReceiptDrawer
-            receiptId={id}
+        <InventoryDocumentDrawer
+            documentId={id}
             open={open}
             onOpenChange={onOpenChange}
         />
@@ -532,10 +530,16 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             onOpenChange={onOpenChange}
         />
     ),
-    "sales.saledelivery": ({ id, open, onOpenChange, data }) => (
-        <SaleDeliveryDrawer
-            id={id}
-            saleOrderId={(data as { sale_order?: number })?.sale_order}
+    "sales.saledelivery": ({ id, open, onOpenChange }) => (
+        <InventoryDocumentDrawer
+            documentId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "inventory.inventorydocument": ({ id, open, onOpenChange }) => (
+        <InventoryDocumentDrawer
+            documentId={id}
             open={open}
             onOpenChange={onOpenChange}
         />

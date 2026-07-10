@@ -21,9 +21,8 @@ import { buildAccountTree } from "../utils/accountTree"
 
 import { ActivitySidebar } from "@/features/audit"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation } from "@/components/shared"
-import { accountSearchDef } from "../searchDef"
-import { accountSegDef } from "../segmentationDef"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { accountUnifiedSearchDef } from "../unifiedSearchDef"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -32,11 +31,8 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(accountSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(accountSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...textFilters, ...segFilters }
-    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: allFilters as unknown as Record<string, unknown> })
+    const search = useUnifiedSearch(accountUnifiedSearchDef)
+    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
@@ -244,11 +240,23 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
                     autoExpand={true}
                     createAction={createAction}
-                    smartSearch={<SmartSearchBar searchDef={accountSearchDef} placeholder="Buscar por cuenta o código..." className="w-full" />}
-                    segmentation={<SegmentationBar def={accountSegDef} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
-                    isFiltered={isFiltered}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={accountUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por cuenta o código..."
+                    />}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "finance",
                         title: "Aún no hay cuentas contables",

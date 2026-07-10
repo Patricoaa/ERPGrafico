@@ -17,10 +17,9 @@ import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
 import { type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
 import { fiscalYearActions, type FiscalYearActionsCtx } from './fiscalYearActions';
-import { ToolbarCreateButton, SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar } from '@/components/shared';
+import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
 import { ClosuresSkeleton } from './ClosuresSkeleton';
-import { fiscalYearSearchDef } from '../../searchDef';
-import { fiscalYearSegDef } from '../../segmentationDef';
+import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
 import { toast } from 'sonner';
 
 interface AccountingClosuresClientViewProps {
@@ -309,15 +308,13 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         }
     }, [pendingClosePeriodId, closePeriod])
 
-    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<{ year: number; periods: AccountingPeriod[]; taxPeriods: TaxPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(fiscalYearSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
+    const search = useUnifiedSearch(fiscalYearUnifiedSearchDef)
 
     const filteredGrouped = useMemo(() => {
         let result = groupedData
-        if (segFilters.status) result = result.filter(g => (g.fiscalYear?.status || 'OPEN') === segFilters.status)
-        return filterFn(result.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))
-    }, [groupedData, segFilters.status, filterFn])
+        if (search.filters.status) result = result.filter(g => (g.fiscalYear?.status || 'OPEN') === search.filters.status)
+        return search.filterFn(result.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))
+    }, [groupedData, search.filters.status, search.filterFn, search])
 
     if (isLoading) {
         return <ClosuresSkeleton />;
@@ -390,10 +387,22 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                     data={filteredGrouped}
                     isLoading={actionLoadingYr || actionLoadingPeriod || isLoadingTaxAction}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." className="w-full" />}
-                    segmentation={<SegmentationBar def={fiscalYearSegDef} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={fiscalYearUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar ejercicio..."
+                    />}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={10}
                     createAction={
                         <ToolbarCreateButton

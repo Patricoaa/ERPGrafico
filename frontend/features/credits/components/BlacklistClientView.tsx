@@ -9,9 +9,8 @@ import {
     recoverDebt
 } from '@/features/credits/api/creditsApi'
 import { type CreditContact, type CreditLedgerEntry } from '@/features/credits/api/creditsApi'
-import {SmartSearchBar, useClientSearch, useSegmentation, SegmentationBar} from '@/components/shared'
-import { creditContactSearchDef } from "../searchDef"
-import { creditContactSegDef } from "../segmentationDef"
+import {UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
 
 import { DataTable } from '@/components/shared'
@@ -191,13 +190,25 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
 
 export function BlacklistClientView() {
     const { contacts: rawContacts, isLoading: loading, refetch: fetchData } = useBlacklistedPortfolio()
-    const { filterFn } = useClientSearch<CreditContact>(creditContactSearchDef)
-    const { filters: segFilters } = useSegmentation(creditContactSegDef)
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'search', label: 'Cliente / RUT', serverParam: 'search', clientKey: ['name', 'tax_id'] },
+        ],
+        filters: [
+            { key: 'risk_level', label: 'Riesgo', type: 'single', serverParam: 'risk_level', options: [
+                { label: 'Bajo', value: 'LOW' },
+                { label: 'Medio', value: 'MEDIUM' },
+                { label: 'Alto', value: 'HIGH' },
+                { label: 'Crítico', value: 'CRITICAL' },
+            ]},
+        ],
+    }), [])
+    const search = useUnifiedSearch(config)
     const contacts = useMemo(() => {
         let result = rawContacts
-        if (segFilters.risk_level) result = result.filter(c => c.credit_risk_level === segFilters.risk_level)
-        return filterFn(result)
-    }, [rawContacts, filterFn, segFilters.risk_level])
+        if (search.filters.risk_level) result = result.filter(c => c.credit_risk_level === search.filters.risk_level)
+        return search.filterFn(result)
+    }, [rawContacts, search.filterFn, search.filters.risk_level])
 
     const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
         {
@@ -259,8 +270,23 @@ export function BlacklistClientView() {
                     data={contacts}
                     variant="embedded"
                     isLoading={loading}
-                    smartSearch={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
-                    segmentation={<SegmentationBar def={creditContactSegDef} />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={config}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Cliente o RUT..."
+                    />}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
+                    isFiltered={search.isFiltered}
                     renderSubComponent={(row) => (
                         <BlacklistContactPanel contact={row.original} onRefresh={fetchData} />
                     )}

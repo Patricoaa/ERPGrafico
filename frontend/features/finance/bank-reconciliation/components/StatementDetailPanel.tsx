@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +10,7 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Info, AlertCircle, Activity
 } from "lucide-react"
-import { ActionConfirmModal, DataTable, DataTableColumnHeader, DataCell, SkeletonShell, SegmentationBar } from '@/components/shared'
+import { ActionConfirmModal, DataTable, DataTableColumnHeader, DataCell, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx } from "@/features/treasury"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -18,6 +18,7 @@ import { useStatementQuery, useUnmatchMutation } from "@/features/finance"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Progress } from "@/components/ui/progress"
 import { toast } from "sonner"
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 interface BankStatementLine {
     id: number
@@ -79,6 +80,33 @@ export function StatementDetailPanel({
     const fetchStatement = statementQuery.refetch
 
     const { unmatch } = useUnmatchMutation(statementId, (statement as BankStatement | null)?.treasury_account ?? 0)
+
+    const statementSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [],
+        filters: [
+            {
+                type: 'multi',
+                key: 'reconciliation_state',
+                label: 'Estado Reconciliación',
+                serverParam: 'reconciliation_state',
+                options: [
+                    { label: "Sin Conciliar", value: "UNRECONCILED" },
+                    { label: "Conciliado", value: "RECONCILED" },
+                    { label: "Sugerencia (Match)", value: "MATCHED" },
+                    { label: "Excluido", value: "EXCLUDED" },
+                    { label: "En Disputa", value: "DISPUTED" },
+                ],
+            },
+        ],
+    }), [])
+
+    const search = useUnifiedSearch(statementSearchConfig)
+
+    const filteredLines = useMemo(() => {
+        if (!search.filters.reconciliation_state) return statement?.lines ?? []
+        const allowed = new Set(search.filters.reconciliation_state.split(','))
+        return (statement?.lines ?? []).filter(l => allowed.has(l.reconciliation_state))
+    }, [statement?.lines, search.filters.reconciliation_state])
 
     const statementLineUnmatchActionsCtx: StatementLineUnmatchActionsCtx = {
         onUnmatch: (lineId) => setUnmatchDialog({ open: true, lineId }),
@@ -283,23 +311,27 @@ export function StatementDetailPanel({
 
             <DataTable
                 columns={columns}
-                data={statement.lines}
+                data={filteredLines}
                 variant="embedded"
-                segmentation={
+                unifiedSearch={
                     !detailOnly ? (
-                        <SegmentationBar def={{
-                            segments: [
-                                { key: 'reconciliation_state', label: 'Estado Reconciliación', type: 'multiselect', serverParam: 'reconciliation_state', columnId: 'reconciliation_state', options: [
-                                    { label: "Sin Conciliar", value: "UNRECONCILED" },
-                                    { label: "Conciliado", value: "RECONCILED" },
-                                    { label: "Sugerencia (Match)", value: "MATCHED" },
-                                    { label: "Excluido", value: "EXCLUDED" },
-                                    { label: "En Disputa", value: "DISPUTED" },
-                                ] },
-                            ],
-                        }} />
+                        <UnifiedSearchBar
+                            config={statementSearchConfig}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                        />
                     ) : undefined
                 }
+                showReset={!detailOnly ? search.isFiltered : undefined}
+                onReset={!detailOnly ? search.clearAll : undefined}
                 defaultPageSize={20}
                 createAction={
                     !hideCreateAction && statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 ? (
