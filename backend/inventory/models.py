@@ -1425,6 +1425,15 @@ class InventoryDocumentDetail(models.Model):
         verbose_name = _("Detalle de Documento")
         verbose_name_plural = _("Detalles de Documento")
 
+    def __init__(self, *args, **kwargs):
+        # Allow legacy kwarg 'warehouse' and 'source_warehouse' during object instantiation (e.g. from tests or legacy services)
+        _warehouse = kwargs.pop('warehouse', None)
+        _source_warehouse = kwargs.pop('source_warehouse', None)
+        super().__init__(*args, **kwargs)
+        # Store them in private attributes in case they need to be resolved before save
+        self._legacy_warehouse = _warehouse
+        self._legacy_source_warehouse = _source_warehouse
+
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
 

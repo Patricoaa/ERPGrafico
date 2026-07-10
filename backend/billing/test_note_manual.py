@@ -4,6 +4,7 @@ Run with: python backend/manage.py shell < backend/billing/test_note_manual.py
 """
 
 from decimal import Decimal
+import pytest
 
 from django.db import transaction
 from django.utils import timezone
@@ -68,7 +69,12 @@ def setup_test_data():
     warehouse, _ = Warehouse.objects.get_or_create(name="Test Warehouse NC")
 
     # Product Category
-    prod_cat, _ = ProductCategory.objects.get_or_create(name="Test Category NC")
+    prod_cat, _ = ProductCategory.objects.get_or_create(
+        name="Test Category NC",
+        defaults={
+            "income_account": acc_revenue,
+        }
+    )
 
     # Products
     service, _ = Product.objects.get_or_create(
@@ -79,7 +85,6 @@ def setup_test_data():
             "category": prod_cat,
             "uom": uom,
             "track_inventory": False,
-            "income_account": acc_revenue,
         },
     )
 
@@ -150,6 +155,7 @@ def create_posted_invoice(setup):
 
 
 @transaction.atomic
+@pytest.mark.django_db
 def test_complete_workflow():
     """Test complete NC workflow"""
     print("\n" + "=" * 60)
@@ -217,7 +223,7 @@ def test_complete_workflow():
             moves = StockMove.objects.filter(description__contains=f"WORKFLOW-{workflow.id}")
             print(f"   Stock moves created: {moves.count()}")
             for move in moves:
-                print(f"      - {move.product.name}: {move.quantity} ({move.move_type})")
+                print(f"      - {move.product.name}: {move.quantity} ({getattr(move.source_location, 'name', '?')} → {getattr(move.destination_location, 'name', '?')})")
         else:
             print("\n3. Skipping logistics (no stockable items)...")
             workflow = NoteCheckoutService.skip_logistics(workflow_id=workflow.id)

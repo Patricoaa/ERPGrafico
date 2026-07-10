@@ -574,7 +574,7 @@ class SalesService:
                         print(f"DEBUG: No OT created for {product.internal_code} (not express)")
 
         # 2. Process lines for stock moves and quantity updates
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -924,7 +924,7 @@ class SalesService:
             )
 
         # 2. Reverse Stock Moves & Update Sale Lines
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -1197,7 +1197,7 @@ class SalesService:
             if not default_warehouse:
                 print("WARNING: No warehouse found for return moves")
 
-            from inventory.models import InventoryDocument, InventoryDocumentDetail
+            from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
             from inventory.services import InventoryService
             doc_inv = InventoryDocument.objects.create(
                 document_type=InventoryDocument.Type.RECEIPT,

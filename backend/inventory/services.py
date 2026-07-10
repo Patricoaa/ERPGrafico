@@ -117,7 +117,7 @@ class InventoryService:
             raise ValidationError("Solo se pueden confirmar documentos en estado borrador o aprobado.")
             
         generated_moves = []
-        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse', 'source_location', 'destination_location'):
+        for detail in document.details.select_related('product', 'source_location', 'destination_location'):
             
             # Infer Locations if they are missing (Dual-Write Support)
             src_loc = detail.source_location
@@ -153,51 +153,28 @@ class InventoryService:
                         dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first()
 
             if document.document_type == InventoryDocument.Type.TRANSFER:
-                if not detail.source_warehouse:
-                    raise ValidationError("Las transferencias requieren una bodega de origen.")
-                # We can now just create ONE move instead of two, but for dual-write compatibility we keep two?
-                # Actually, the legacy code expects OUT and IN. Let's do a single move for dual write if possible.
-                # No, legacy `StockMove` expects `move_type` IN and OUT.
-                out_move = StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.source_warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.OUT,
-                    source_location=src_loc,
-                    destination_location=dst_loc,
-                    description=f"Transferencia Salida Doc: {document.reference or document.id}",
-                    journal_entry=journal_entry
-                )
-                in_move = StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.IN,
-                    source_location=src_loc,
-                    destination_location=dst_loc,
-                    description=f"Transferencia Entrada Doc: {document.reference or document.id}",
-                    journal_entry=journal_entry
-                )
-                generated_moves.extend([out_move, in_move])
-            else:
-                if document.document_type == InventoryDocument.Type.RECEIPT:
-                    move_type = StockMove.Type.IN
-                    qty = detail.quantity
-                elif document.document_type == InventoryDocument.Type.DELIVERY:
-                    move_type = StockMove.Type.OUT
-                    qty = detail.quantity
-                else: # ADJUSTMENT, PRODUCTION
-                    if document.document_type == InventoryDocument.Type.PRODUCTION:
-                        move_type = StockMove.Type.IN if detail.quantity >= 0 else StockMove.Type.OUT
-                    else:
-                        move_type = StockMove.Type.ADJUSTMENT
-                    qty = detail.quantity
-                    
+                if not src_loc:
+                    raise ValidationError("Las transferencias requieren una ubicación de origen.")
                 move = StockMove.objects.create(
                     product=detail.product,
-                    warehouse=detail.warehouse,
+                    quantity=detail.quantity,
+                    source_location=src_loc,
+                    destination_location=dst_loc,
+                    description=f"Transferencia Doc: {document.reference or document.id}",
+                    journal_entry=journal_entry
+                )
+                generated_moves.append(move)
+            else:
+                if document.document_type == InventoryDocument.Type.RECEIPT:
+                    qty = detail.quantity
+                elif document.document_type == InventoryDocument.Type.DELIVERY:
+                    qty = detail.quantity
+                else: # ADJUSTMENT, PRODUCTION
+                    qty = detail.quantity
+
+                move = StockMove.objects.create(
+                    product=detail.product,
                     quantity=abs(qty),
-                    move_type=move_type,
                     source_location=src_loc,
                     destination_location=dst_loc,
                     unit_cost=detail.unit_cost,
@@ -220,41 +197,15 @@ class InventoryService:
         if document.status != InventoryDocument.Status.CONFIRMED:
             raise ValidationError("Solo se pueden anular documentos confirmados.")
             
-        # To reverse the document, we create reverse StockMoves
-        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse'):
-            if document.document_type == InventoryDocument.Type.TRANSFER:
-                # Reverse Dest IN -> OUT
-                StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.OUT,
-                    description=f"Anulación Transferencia Entrada Doc: {document.reference or document.id}"
-                )
-                # Reverse Source OUT -> IN
-                StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.source_warehouse,
-                    quantity=detail.quantity,
-                    move_type=StockMove.Type.IN,
-                    description=f"Anulación Transferencia Salida Doc: {document.reference or document.id}"
-                )
-            else:
-                if document.document_type == InventoryDocument.Type.RECEIPT:
-                    move_type = StockMove.Type.OUT
-                elif document.document_type == InventoryDocument.Type.DELIVERY:
-                    move_type = StockMove.Type.IN
-                else:
-                    move_type = StockMove.Type.ADJUSTMENT # Needs negative qty in payload if adjustment
-                    
-                StockMove.objects.create(
-                    product=detail.product,
-                    warehouse=detail.warehouse,
-                    quantity=-detail.quantity if move_type == StockMove.Type.ADJUSTMENT else detail.quantity,
-                    move_type=move_type,
-                    unit_cost=detail.unit_cost,
-                    description=f"Anulación {document.get_document_type_display()} Doc: {document.reference or document.id}"
-                )
+        for detail in document.details.select_related('product', 'source_location', 'destination_location'):
+            StockMove.objects.create(
+                product=detail.product,
+                quantity=detail.quantity,
+                source_location=detail.destination_location,
+                destination_location=detail.source_location,
+                unit_cost=detail.unit_cost,
+                description=f"Anulación {document.get_document_type_display()} Doc: {document.reference or document.id}"
+            )
                 
         document.status = InventoryDocument.Status.CANCELLED
         document.save(update_fields=['status'])
