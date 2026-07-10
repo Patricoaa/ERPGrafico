@@ -495,10 +495,10 @@ class StockMoveSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_code = serializers.CharField(source="product.code", read_only=True)
     uom_name = serializers.CharField(source="uom.name", read_only=True)
-    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    source_location_name = serializers.CharField(source="source_location.name", read_only=True)
+    destination_location_name = serializers.CharField(source="destination_location.name", read_only=True)
     product_internal_code = serializers.CharField(source="product.internal_code", read_only=True)
     product_code = serializers.CharField(source="product.code", read_only=True)
-    move_type_display = serializers.CharField(source="get_move_type_display", read_only=True)
     journal_entry_number = serializers.CharField(
         source="journal_entry.number", read_only=True, allow_null=True
     )
@@ -561,8 +561,8 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
     product_code = serializers.CharField(source="product.code", read_only=True)
     product_internal_code = serializers.CharField(source="product.internal_code", read_only=True)
     uom_name = serializers.CharField(source="product.uom.name", read_only=True)
-    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
-    source_warehouse_name = serializers.CharField(source="source_warehouse.name", read_only=True, allow_null=True)
+    source_location_name = serializers.CharField(source="source_location.name", read_only=True)
+    destination_location_name = serializers.CharField(source="destination_location.name", read_only=True)
 
     class Meta:
         model = InventoryDocumentDetail
@@ -573,10 +573,10 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
             "product_code",
             "product_internal_code",
             "uom_name",
-            "warehouse",
-            "warehouse_name",
-            "source_warehouse",
-            "source_warehouse_name",
+            "source_location",
+            "source_location_name",
+            "destination_location",
+            "destination_location_name",
             "quantity",
             "unit_cost",
         ]
