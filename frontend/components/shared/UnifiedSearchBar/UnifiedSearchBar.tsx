@@ -3,18 +3,14 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { Search, ChevronDown, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 import { SearchBarMenu } from './SearchBarMenu'
 import { SearchSuggestions } from './SearchSuggestions'
-import { TabBar } from '@/components/shared'
-import type { LucideIcon } from 'lucide-react'
 import type {
   UnifiedSearchConfig,
   UnifiedChip,
   MultiSelectOption,
-  ViewTabsConfig,
 } from '@/types/unified-search'
 
 interface UnifiedSearchBarProps {
@@ -33,8 +29,9 @@ interface UnifiedSearchBarProps {
   placeholder?: string
   className?: string
   prefix?: React.ReactNode
-  suffix?: React.ReactNode
-  viewTabs?: ViewTabsConfig
+  viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
+  currentView?: string
+  onViewChange?: (view: string) => void
 }
 
 function formatChipLabel(chip: UnifiedChip): string {
@@ -57,8 +54,9 @@ export function UnifiedSearchBar({
   placeholder = 'Buscar...',
   className,
   prefix,
-  suffix,
-  viewTabs,
+  viewOptions,
+  currentView,
+  onViewChange,
 }: UnifiedSearchBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [forceFilters, setForceFilters] = useState(false)
@@ -169,33 +167,6 @@ export function UnifiedSearchBar({
               </div>
             </div>
 
-            {viewTabs && viewTabs.items.length > 1 && (
-              <div className="flex items-center h-9 bg-background px-1 border-l border-border/40 shrink-0">
-                <TabBar
-                  value={viewTabs.value}
-                  onValueChange={viewTabs.onValueChange}
-                  items={viewTabs.items.map(i => ({
-                    value: i.value,
-                    label: i.label,
-                    icon: i.icon as LucideIcon | undefined,
-                    badge: i.badge,
-                    hasErrors: i.hasErrors,
-                    hidden: i.hidden,
-                    disabled: i.disabled,
-                  }))}
-                  className="w-auto"
-                >
-                  <div className="hidden" />
-                </TabBar>
-              </div>
-            )}
-
-            {suffix && (
-              <div className="flex items-center gap-1 h-9 bg-background px-1 border-l border-border/40 shrink-0">
-                {suffix}
-              </div>
-            )}
-
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
@@ -235,6 +206,9 @@ export function UnifiedSearchBar({
               onApply={onApply}
               onRemove={onRemove}
               onGroupBySelect={onGroupBySelect}
+              viewOptions={viewOptions}
+              currentView={currentView}
+              onViewChange={onViewChange}
             />
           )}
         </PopoverContent>
