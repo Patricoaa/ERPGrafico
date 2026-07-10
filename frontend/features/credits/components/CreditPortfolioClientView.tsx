@@ -51,6 +51,9 @@ export function CreditPortfolioClientView({
                 { label: 'Crítico', value: 'CRITICAL' },
             ]},
         ],
+        groupBy: [
+            { key: 'credit_risk_level', label: 'Riesgo', field: 'credit_risk_level' },
+        ],
     }), [])
     const contactSearch = useUnifiedSearch(contactConfig)
 
@@ -65,6 +68,9 @@ export function CreditPortfolioClientView({
                 { label: 'Ajuste', value: 'ADJUSTMENT' },
                 { label: 'Reversión', value: 'REVERSAL' },
             ]},
+        ],
+        groupBy: [
+            { key: 'origin', label: 'Origen', field: 'origin' },
         ],
     }), [])
     const historySearch = useUnifiedSearch(historyConfig)

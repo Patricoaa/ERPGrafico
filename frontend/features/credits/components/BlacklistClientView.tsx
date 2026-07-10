@@ -202,6 +202,9 @@ export function BlacklistClientView() {
                 { label: 'Crítico', value: 'CRITICAL' },
             ]},
         ],
+        groupBy: [
+            { key: 'credit_risk_level', label: 'Riesgo', field: 'credit_risk_level' },
+        ],
     }), [])
     const search = useUnifiedSearch(config)
     const contacts = useMemo(() => {

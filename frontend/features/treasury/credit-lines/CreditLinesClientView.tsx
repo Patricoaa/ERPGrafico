@@ -32,6 +32,9 @@ export function CreditLinesClientView({ bankId }: Props) {
         searchFields: [
             { key: 'search', label: 'Código / Cuenta / Límite', serverParam: 'search', clientKey: ['code', 'account_name', 'credit_limit'] },
         ],
+        groupBy: [
+            { key: 'status', label: 'Estado', field: 'status' },
+        ],
     }), [])
     const search = useUnifiedSearch(config)
     const filteredData = useMemo(() => search.filterFn(creditLines ?? []), [search.filterFn, creditLines])

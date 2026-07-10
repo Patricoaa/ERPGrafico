@@ -51,6 +51,10 @@ export function StockReport() {
             { key: 'qty_reserved', label: 'Reservado', type: 'range', serverParamFrom: 'qty_reserved_from', serverParamTo: 'qty_reserved_to' },
             { key: 'total_value', label: 'Valorización', type: 'range', serverParamFrom: 'total_value_from', serverParamTo: 'total_value_to' },
         ],
+        groupBy: [
+            { key: 'category_name', label: 'Categoría', field: 'category_name' },
+            { key: 'warehouse_name', label: 'Bodega', field: 'warehouse_name' },
+        ],
     }), [])
 
     const search = useUnifiedSearch(config, filterOptions)
