@@ -12,6 +12,7 @@ export type {
   SingleSelectFilterDef,
   GroupByOptionDef,
   DropdownFilterDef,
+  ViewTabsConfig,
 
   CustomFilterDef,
 } from '@/types/unified-search'

@@ -8,10 +8,13 @@ import { cn } from '@/lib/utils'
 
 import { SearchBarMenu } from './SearchBarMenu'
 import { SearchSuggestions } from './SearchSuggestions'
+import { TabBar } from '@/components/shared'
+import type { LucideIcon } from 'lucide-react'
 import type {
   UnifiedSearchConfig,
   UnifiedChip,
   MultiSelectOption,
+  ViewTabsConfig,
 } from '@/types/unified-search'
 
 interface UnifiedSearchBarProps {
@@ -30,6 +33,8 @@ interface UnifiedSearchBarProps {
   placeholder?: string
   className?: string
   prefix?: React.ReactNode
+  suffix?: React.ReactNode
+  viewTabs?: ViewTabsConfig
 }
 
 function formatChipLabel(chip: UnifiedChip): string {
@@ -52,6 +57,8 @@ export function UnifiedSearchBar({
   placeholder = 'Buscar...',
   className,
   prefix,
+  suffix,
+  viewTabs,
 }: UnifiedSearchBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [forceFilters, setForceFilters] = useState(false)
@@ -114,8 +121,7 @@ export function UnifiedSearchBar({
               ref={containerRef}
               onClick={handleBarClick}
               className={cn(
-                "flex items-center flex-1 h-9 bg-background border border-border/60 rounded-l-sm px-2 gap-1",
-                "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all",
+                "flex items-center flex-1 h-9 bg-background rounded-l-sm px-2 gap-1",
                 "cursor-pointer",
               )}
             >
@@ -163,11 +169,38 @@ export function UnifiedSearchBar({
               </div>
             </div>
 
+            {viewTabs && viewTabs.items.length > 1 && (
+              <div className="flex items-center h-9 bg-background px-1 border-l border-border/40 shrink-0">
+                <TabBar
+                  value={viewTabs.value}
+                  onValueChange={viewTabs.onValueChange}
+                  items={viewTabs.items.map(i => ({
+                    value: i.value,
+                    label: i.label,
+                    icon: i.icon as LucideIcon | undefined,
+                    badge: i.badge,
+                    hasErrors: i.hasErrors,
+                    hidden: i.hidden,
+                    disabled: i.disabled,
+                  }))}
+                  className="w-auto"
+                >
+                  <div className="hidden" />
+                </TabBar>
+              </div>
+            )}
+
+            {suffix && (
+              <div className="flex items-center gap-1 h-9 bg-background px-1 border-l border-border/40 shrink-0">
+                {suffix}
+              </div>
+            )}
+
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
               className={cn(
-                "h-9 w-7 flex items-center justify-center bg-background border border-l-0 border-border/60 rounded-r-sm shrink-0",
+                "h-9 w-7 flex items-center justify-center bg-background rounded-r-sm shrink-0",
                 "hover:bg-accent/50 transition-colors",
               )}
             >
