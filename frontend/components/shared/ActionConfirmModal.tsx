@@ -24,6 +24,8 @@ interface ActionConfirmModalProps {
     requireReason?: boolean
     reasonLabel?: string
     reasonPlaceholder?: string
+    /** Deshabilita el botón de confirmación (p. ej. mientras un campo obligatorio esté vacío). */
+    disabled?: boolean
 }
 
 export function ActionConfirmModal({
@@ -38,7 +40,8 @@ export function ActionConfirmModal({
     icon: CustomIcon,
     requireReason = false,
     reasonLabel = "Motivo",
-    reasonPlaceholder = "Indique el motivo de esta operación…"
+    reasonPlaceholder = "Indique el motivo de esta operación…",
+    disabled = false
 }: ActionConfirmModalProps) {
     const [isLoading, setIsLoading] = useState(false)
     const [reason, setReason] = useState("")
@@ -129,7 +132,7 @@ export function ActionConfirmModal({
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
-                        disabled={isLoading}
+                        disabled={isLoading || disabled}
                         className="flex-1 sm:flex-none"
                     >
                         {cancelText}
@@ -137,7 +140,7 @@ export function ActionConfirmModal({
                     <ActionSlideButton
                         variant={variant === "destructive" ? "destructive" : variant === "success" ? "success" : "primary"}
                         onClick={handleConfirm}
-                        disabled={reasonMissing}
+                        disabled={disabled || reasonMissing}
                         loading={isLoading}
                         className={cn(
                             "flex-1 sm:flex-none min-w-[100px]",
