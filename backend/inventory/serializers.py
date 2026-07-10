@@ -563,6 +563,10 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
     uom_name = serializers.CharField(source="product.uom.name", read_only=True)
     source_location_name = serializers.CharField(source="source_location.name", read_only=True)
     destination_location_name = serializers.CharField(source="destination_location.name", read_only=True)
+    
+    # Convenience write-only: pass warehouse_id; backend infers the INTERNAL Location
+    warehouse_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    source_warehouse_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = InventoryDocumentDetail
@@ -573,6 +577,8 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
             "product_code",
             "product_internal_code",
             "uom_name",
+            "warehouse_id",
+            "source_warehouse_id",
             "source_location",
             "source_location_name",
             "destination_location",
@@ -580,6 +586,10 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
             "quantity",
             "unit_cost",
         ]
+        extra_kwargs = {
+            "source_location": {"required": False},
+            "destination_location": {"required": False},
+        }
 
 
 class InventoryDocumentSerializer(serializers.ModelSerializer):
@@ -613,8 +623,62 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
         ]
         
     def create(self, validated_data):
+        from .models import Location, InventoryDocument as InvDoc
+        
         details_data = validated_data.pop('details', [])
         document = InventoryDocument.objects.create(**validated_data)
+        doc_type = document.document_type
+        
+        # Cache virtual locations
+        loc_vendor = Location.objects.filter(location_type="VENDOR").first()
+        loc_customer = Location.objects.filter(location_type="CUSTOMER").first()
+        loc_gain = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first()
+        loc_loss = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first()
+        loc_capital = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
+        
         for detail_data in details_data:
+            # Resolve warehouse_id to INTERNAL Location if provided
+            warehouse_id = detail_data.pop('warehouse_id', None)
+            source_warehouse_id = detail_data.pop('source_warehouse_id', None)
+            
+            src = detail_data.get('source_location')
+            dst = detail_data.get('destination_location')
+            
+            if not src or not dst:
+                internal_loc = Location.objects.filter(
+                    location_type="INTERNAL", warehouse_id=warehouse_id
+                ).first() if warehouse_id else None
+                
+                src_internal = Location.objects.filter(
+                    location_type="INTERNAL", warehouse_id=source_warehouse_id
+                ).first() if source_warehouse_id else None
+                
+                if doc_type == InvDoc.Type.RECEIPT:
+                    src = loc_vendor
+                    dst = internal_loc
+                elif doc_type == InvDoc.Type.DELIVERY:
+                    src = internal_loc
+                    dst = loc_customer
+                elif doc_type == InvDoc.Type.TRANSFER:
+                    src = src_internal
+                    dst = internal_loc
+                elif doc_type == InvDoc.Type.PARTNER_CONTRIBUTION:
+                    src = loc_capital
+                    dst = internal_loc
+                elif doc_type == InvDoc.Type.PARTNER_WITHDRAWAL:
+                    src = internal_loc
+                    dst = loc_capital
+                else:  # ADJUSTMENT
+                    qty = detail_data.get('quantity', 0)
+                    if qty and float(str(qty)) > 0:
+                        src = loc_gain
+                        dst = internal_loc
+                    else:
+                        src = internal_loc
+                        dst = loc_loss
+                
+                detail_data['source_location'] = src
+                detail_data['destination_location'] = dst
+            
             InventoryDocumentDetail.objects.create(document=document, **detail_data)
         return document

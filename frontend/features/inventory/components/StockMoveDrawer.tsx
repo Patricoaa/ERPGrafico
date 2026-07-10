@@ -40,12 +40,12 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                         <span>{move?.quantity ?? '0'} {move?.uom_name ?? ''}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>Bodega:</span>
-                        <span>{move?.warehouse_name ?? '-'}</span>
+                        <span>Origen:</span>
+                        <span>{move?.source_location_name ?? '-'}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>Tipo:</span>
-                        <span>{move?.move_type ?? '-'}</span>
+                        <span>Destino:</span>
+                        <span>{move?.destination_location_name ?? '-'}</span>
                     </div>
                 </div>
             </PrintableLayout>
@@ -64,8 +64,6 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando movimiento de stock">
                     {move && (
                         <div className="p-4 space-y-4">
-                            <StatusBadge status={move.move_type} />
-
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <span className="text-xs text-muted-foreground">Producto</span>
@@ -79,12 +77,12 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                                     <p className="font-bold text-lg">{move.quantity} {move.uom_name ?? ''}</p>
                                 </div>
                                 <div>
-                                    <span className="text-xs text-muted-foreground">Bodega</span>
-                                    <p className="font-medium">{move.warehouse_name}</p>
+                                    <span className="text-xs text-muted-foreground">Origen</span>
+                                    <p className="font-medium">{move.source_location_name}</p>
                                 </div>
                                 <div>
-                                    <span className="text-xs text-muted-foreground">Tipo de Movimiento</span>
-                                    <p className="font-medium">{move.move_type}</p>
+                                    <span className="text-xs text-muted-foreground">Destino</span>
+                                    <p className="font-medium">{move.destination_location_name}</p>
                                 </div>
                                 <div className="col-span-2">
                                     <span className="text-xs text-muted-foreground">Descripción</span>
