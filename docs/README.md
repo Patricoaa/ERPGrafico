@@ -72,8 +72,7 @@ last_review: 2026-06-19
 | “searchable entity”, “global search”, “index”, “rebuild search” | [add-searchable-entity.md](30-playbooks/add-searchable-entity.md) | 30 |
 | “generic form”, “universal registry”, “metadata schema”, “data-driven UI”, “Django architecture refactor” | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
 | “DataTable”, “view mode”, “card view”, “kanban view”, “view switching”, “cardMode”, “isLoading skeleton”, “EntityCard”, “variant embedded” | [component-datatable-views.md](20-contracts/component-datatable-views.md) | 20 |
-| “segmentation”, “SegmentationBar”, “status tabs in toolbar”, “date filter in toolbar”, “filtro de estado toolbar” | [segmentation-decision.md](20-contracts/segmentation-decision.md) | 20 |
-| “smart search”, “search bar filter”, “useSmartSearch”, “useClientSearch”, “searchDef”, “SmartSearchBar” | [searchbar-decision.md](20-contracts/searchbar-decision.md) | 20 |
+| “search bar”, “filter”, “búsqueda”, “filtro”, “useUnifiedSearch”, “UnifiedSearchBar”, “unifiedSearchDef”, “searchDef”, “segmentation”, “SegmentationBar”, “SmartSearchBar”, “date filter in toolbar” | [unified-searchbar.md](20-contracts/unified-searchbar.md) | 20 |
 | “ProductSelector”, “selector de productos shared”, “migrar POS selector”, “CategoryFilter shared”, “ProductGrid shared”, “VariantSelectorModal shared” | [50-audit/POSSelector/README.md](50-audit/POSSelector/README.md) | 50 |
 | “stale cache”, “queryKey mismatch”, “FSD compliance”, “invariante #4”, “invariante #5”, “raw api en componente”, “useMutation en componente”, “refactor data layer” | [50-audit/fsddata/fsd-data-layer-audit.md](50-audit/fsddata/fsd-data-layer-audit.md) + [refactor-plan](50-audit/fsddata/fsd-data-layer-refactor-plan.md) | 50 |
 | “delete entity”, “borrar”, “anular”, “archivar”, “soft delete”, “hard delete”, “archive vs annul”, “is_active”, “status=cancelled” | [deletion-policy.md](20-contracts/deletion-policy.md) | 20 |
