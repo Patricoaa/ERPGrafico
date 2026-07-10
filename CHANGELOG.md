@@ -2,6 +2,61 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/Patricoaa/ERPGrafico/compare/v0.2.1...v0.2.2) (2026-07-10)
+
+
+### 💅 Styling
+
+* corner CmykRings to xs in PrepressPanel and ProfileSidePanel ([f2c7c57](https://github.com/Patricoaa/ERPGrafico/commit/f2c7c57b40345efb66350e0a1f069883d3f92a31))
+* expand CmykRing xs to 12px, add 2xs at 8px for corners ([ac35a4e](https://github.com/Patricoaa/ERPGrafico/commit/ac35a4e85c3af249408e55185bd9f4d580a57d7d))
+* remove decorative CmykRing from 404, reduce corner rings to xs ([39ec4ee](https://github.com/Patricoaa/ERPGrafico/commit/39ec4eec9fd6fe4d07c955ee2117bf0a9a50fde2))
+
+
+### 🐛 Bug Fixes
+
+* **inventory,treasury:** corregir inmutabilidad de movimientos de inventario en setup_demo_data y servicios del backend ([dd8a2f8](https://github.com/Patricoaa/ERPGrafico/commit/dd8a2f8c47d7c9bc396c2511b10808976d74f50f))
+* **inventory:** resolve UnboundLocalError in adjust_stock by moving StockMove import to function start ([1b175f6](https://github.com/Patricoaa/ERPGrafico/commit/1b175f6caac18f66320f08778dbced0ee758ff3c))
+* **MultiSelectFilterItem:** guard against undefined activeParams ([ac6ec45](https://github.com/Patricoaa/ERPGrafico/commit/ac6ec45ab9390e64ab10924f8b161244594ea61b))
+* **sales:** convert billing_status from toggle to multi-select ([c153be5](https://github.com/Patricoaa/ERPGrafico/commit/c153be55535aee8d68bd4baa6727ce779f73bd96))
+* **SearchBarMenu:** dynamic height based on content, viewport-relative max ([ebfafab](https://github.com/Patricoaa/ERPGrafico/commit/ebfafabe4ecaf83ad41f0026bcdab981a4bc9a89))
+* **SearchBarMenu:** increase max-h to 80vh for more breathing room ([e39cd06](https://github.com/Patricoaa/ERPGrafico/commit/e39cd06a2b3718412ca7351ae0b790a1bcca1ed5))
+* **treasury:** corregir error de indentación en card_service.py ([fb74c6e](https://github.com/Patricoaa/ERPGrafico/commit/fb74c6e5b339968df7f1cc752f14374348d3b6f8))
+* **UnifiedSearchBar:** chip format and input clear on suggestion select ([4a6f93c](https://github.com/Patricoaa/ERPGrafico/commit/4a6f93cb3e6adcee2f2125cebb86db74f70f46cf))
+* **UnifiedSearchBar:** icons, ringcmyk checkboxes, multi-column multiselect, dedupe title ([aac98ef](https://github.com/Patricoaa/ERPGrafico/commit/aac98eff5b44ee91790029c8c8344bce2d2aeaed))
+* **UnifiedSearchBar:** open dropdown on bar click (not only chevron) ([e242a6d](https://github.com/Patricoaa/ERPGrafico/commit/e242a6d34747687d944d9157e15c6fbb1c58ba7a))
+* **UnifiedSearchBar:** remove stopPropagation on input click ([f30ebe1](https://github.com/Patricoaa/ERPGrafico/commit/f30ebe110e36c8cd202ac112e4db86bfbbb9f1e6))
+* **UnifiedSearchBar:** separate chevron trigger, always opens filter menu ([1f17acc](https://github.com/Patricoaa/ERPGrafico/commit/1f17acc34bb4ab6ad0a5f175c5f9e9c6ebe20026))
+
+
+### ⚙️ Refactors
+
+* consolidate CmykRing usage — ContactCardGrid uses Checkbox, DataTable owns dock header ([fd035fc](https://github.com/Patricoaa/ERPGrafico/commit/fd035fca4ed1e317c948927673625815997a5c22))
+* **inventory:** Etapa 3 - Operaciones internas refactorizadas a InventoryDocument y Stock ([aa8f930](https://github.com/Patricoaa/ERPGrafico/commit/aa8f930e7be79178fed6d2650cd598fd2c773961))
+* **inventory:** inmutabilidad en backend y migracion completa a documentos de inventario en frontend ([4dc8b55](https://github.com/Patricoaa/ERPGrafico/commit/4dc8b55705fe7d87339a486454e805c74c6b1559))
+* **inventory:** migrate production and purchasing modules to InventoryDocument ([a2590c8](https://github.com/Patricoaa/ERPGrafico/commit/a2590c8e8bdbde2731bbfcda78aaa293704c16c3))
+* **inventory:** unificar vistas de recepciones y despachos en documentos de inventario centralizados ([3e583d1](https://github.com/Patricoaa/ERPGrafico/commit/3e583d1a5fe2b8a0b150c24095d4bc4f49a62b75))
+* **MultiSelectFilterItem:** replace inline grid with accordion dropdown ([9f47991](https://github.com/Patricoaa/ERPGrafico/commit/9f47991402001fe0c7fc7d36e689cc90988e7dcc))
+* remove aggregator infrastructure from groupby ([7c874a0](https://github.com/Patricoaa/ERPGrafico/commit/7c874a0c79137979f51b095aafec9b636c4eea1d))
+
+
+### ✨ Features
+
+* add custom 404 and global-error pages with company branding ([c087a9c](https://github.com/Patricoaa/ERPGrafico/commit/c087a9c7a38d98396be05498e3f30214fb17bfb0))
+* add custom date range calendar and 'Esta semana' preset to date filter ([52d071c](https://github.com/Patricoaa/ERPGrafico/commit/52d071c9c9ad0771a3069f78a728c8dc79112237))
+* **inventory:** Etapa 2 - Motor documental y confirmacion de inventario ([8d3deba](https://github.com/Patricoaa/ERPGrafico/commit/8d3deba9a88e8e51f266f44c5acfb959664b6f40))
+* **inventory:** implement Stock table, InventoryService and transitional sync for stage 1 ([dd46722](https://github.com/Patricoaa/ERPGrafico/commit/dd4672248099e2b8ae6a34aa20ddff8b04f9f01d))
+* Phase 0 + Phase 1 UnifiedSearchBar migration ([c9c2542](https://github.com/Patricoaa/ERPGrafico/commit/c9c25420e860764f9d470caff4eb967ce98cb0ef))
+* Phase 2 UnifiedSearchBar migration - migrate 3 views without segments ([5be5cb0](https://github.com/Patricoaa/ERPGrafico/commit/5be5cb0385ba254a4958b6a54882a03449e9b8c4))
+* Phase 3 UnifiedSearchBar migration - migrate 7 views with segments ([f57f4db](https://github.com/Patricoaa/ERPGrafico/commit/f57f4db9cb84be16e26443590297205d77817b2f))
+* Phase 4 + Phase 5 UnifiedSearchBar migration - all remaining views ([1e4ae32](https://github.com/Patricoaa/ERPGrafico/commit/1e4ae3238e1fead4926c5233c65bf5d7a10ab2dc))
+* **sales:** add date range filter for creation date in search bar ([59040e0](https://github.com/Patricoaa/ERPGrafico/commit/59040e07e935f70f961162360b70db37d42dbea3))
+* **unified-search:** implementar UnifiedSearchBar tipo Odoo 19 con dropdown 2 columnas, búsqueda por campos, multi-select y chips ([27e9095](https://github.com/Patricoaa/ERPGrafico/commit/27e9095adebf4831e02340da37522449c8a34dbc))
+
+
+### 📚 Documentation
+
+* replace SmartSearchBar+SegmentationBar contracts with unified-searchbar.md ([f6fe0d0](https://github.com/Patricoaa/ERPGrafico/commit/f6fe0d0dc5e026e331d08b8c2f0c6deab0c16fe6))
+
 ### [0.2.1](https://github.com/Patricoaa/ERPGrafico/compare/v0.2.0...v0.2.1) (2026-07-08)
 
 
