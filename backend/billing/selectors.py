@@ -87,13 +87,13 @@ class InvoiceSelectorExt:
                 for line in delivery.lines.select_related('stock_move'):
                     if line.stock_move_id:
                         m = line.stock_move
-                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': m.move_type})
+                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': f"{getattr(m.source_location, 'name', '?')} → {getattr(m.destination_location, 'name', '?')}"})
         if invoice.purchase_order_id:
             for receipt in invoice.purchase_order.receipts.all():
                 for line in receipt.lines.select_related('stock_move'):
                     if line.stock_move_id:
                         m = line.stock_move
-                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': m.move_type})
+                        moves.append({'id': m.id, 'reference': str(m), 'date': m.date, 'status': f"{getattr(m.source_location, 'name', '?')} → {getattr(m.destination_location, 'name', '?')}"})
         return moves
 
     @staticmethod

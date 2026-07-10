@@ -6,6 +6,7 @@ from django.db.models import (
     IntegerField,
     OuterRef,
     Prefetch,
+    Q,
     QuerySet,
     Subquery,
     Sum,
@@ -220,7 +221,10 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
     for p in products:
         if warehouse_id:
             stocks_qs = p.stocks.filter(warehouse_id=warehouse_id)
-            moves_qs = p.stock_moves.filter(warehouse_id=warehouse_id)
+            moves_qs = p.stock_moves.filter(
+                Q(source_location__warehouse_id=warehouse_id) |
+                Q(destination_location__warehouse_id=warehouse_id)
+            )
             moves_in_qs = moves_qs.filter(quantity__gt=0)
             moves_out_qs = moves_qs.filter(quantity__lt=0)
         else:
@@ -302,7 +306,7 @@ class ProductSelector:
 
         moves = (
             StockMove.objects.filter(product_id__in=product_ids)
-            .select_related("warehouse", "uom", "product")
+            .select_related("source_location", "destination_location", "uom", "product")
             .prefetch_related(
                 "sale_delivery_line",
                 "purchase_receipt_line",
@@ -317,7 +321,12 @@ class ProductSelector:
         for m in moves:
             unit_price = float(m.unit_cost or 0)
 
-            if unit_price == 0 or m.move_type == "OUT":
+            # Determine direction: OUT if source is INTERNAL and destination is not
+            src_type = m.source_location.location_type if m.source_location else "VIRTUAL"
+            dst_type = m.destination_location.location_type if m.destination_location else "VIRTUAL"
+            is_out = src_type == "INTERNAL" and dst_type != "INTERNAL"
+
+            if unit_price == 0 or is_out:
                 if hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
                     unit_price = float(m.purchase_receipt_line.unit_cost)
                 elif hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
@@ -368,11 +377,11 @@ class ProductSelector:
                     "related_id": related_id,
                     "related_type": related_type,
                     "date": m.date,
-                    "type": m.move_type,
+                    "type": f"{m.source_location.name if m.source_location else '?'} → {m.destination_location.name if m.destination_location else '?'}",
                     "quantity": float(m.quantity),
                     "unit_price": unit_price,
                     "total_price": abs(float(m.quantity) * unit_price),
-                    "warehouse": m.warehouse.name,
+                    "warehouse": m.source_location.warehouse.name if (m.source_location and m.source_location.location_type == 'INTERNAL' and m.source_location.warehouse) else (m.destination_location.warehouse.name if (m.destination_location and m.destination_location.location_type == 'INTERNAL' and m.destination_location.warehouse) else "-"),
                     "description": description,
                     "uom": m.uom.name if m.uom else "",
                 }
