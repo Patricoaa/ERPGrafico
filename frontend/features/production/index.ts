@@ -3,6 +3,8 @@ export { WorkOrderKanban } from './components/WorkOrderKanban'
 export { WorkOrderTimeline } from './components/WorkOrderTimeline'
 export { ProductionMetricsCard } from './components/ProductionMetricsCard'
 export { BOMDrawer } from './components/BOMDrawer'
+export { BOMClientView } from './components/BOMClientView'
+export type { BOMListItem } from './components/BOMClientView'
 export {
   useWorkOrderProducts,
   useBOMs,
@@ -51,5 +53,4 @@ export type {
 
 export type { WorkOrder, BOM, ProductMinimal } from './types'
 
-export { workOrderSegDef, bomSegDef } from './segmentationDef'
 export { bomUnifiedSearchDef, workOrderUnifiedSearchDef } from './unifiedSearchDef'
