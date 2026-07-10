@@ -60,25 +60,22 @@ class InventoryService:
         from .models import Stock, StockMove
         
         # Calculate in memory to avoid N+1 and complex DB locks
+        # In the new Location model: Stock is sum of moves WHERE destination_location is an INTERNAL location of this warehouse
+        # MINUS sum of moves WHERE source_location is an INTERNAL location of this warehouse
+        
         in_qty = StockMove.objects.filter(
             product_id=product_id, 
-            warehouse_id=warehouse_id, 
-            move_type=StockMove.Type.IN
+            destination_location__warehouse_id=warehouse_id,
+            destination_location__location_type="INTERNAL"
         ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
         
         out_qty = StockMove.objects.filter(
             product_id=product_id, 
-            warehouse_id=warehouse_id, 
-            move_type=StockMove.Type.OUT
+            source_location__warehouse_id=warehouse_id,
+            source_location__location_type="INTERNAL"
         ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
         
-        adj_qty = StockMove.objects.filter(
-            product_id=product_id, 
-            warehouse_id=warehouse_id, 
-            move_type=StockMove.Type.ADJUSTMENT
-        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0')
-
-        total_qty = in_qty - out_qty + adj_qty
+        total_qty = in_qty - out_qty
 
         stock, _ = Stock.objects.get_or_create(
             product_id=product_id,
@@ -114,31 +111,70 @@ class InventoryService:
     @staticmethod
     @transaction.atomic
     def confirmar_documento(document, user=None, journal_entry=None):
-        from .models import InventoryDocument, StockMove
+        from .models import InventoryDocument, StockMove, Location
         
         if document.status not in [InventoryDocument.Status.DRAFT, InventoryDocument.Status.APPROVED]:
             raise ValidationError("Solo se pueden confirmar documentos en estado borrador o aprobado.")
             
         generated_moves = []
-        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse'):
+        for detail in document.details.select_related('product', 'warehouse', 'source_warehouse', 'source_location', 'destination_location'):
+            
+            # Infer Locations if they are missing (Dual-Write Support)
+            src_loc = detail.source_location
+            dst_loc = detail.destination_location
+            
+            if not src_loc or not dst_loc:
+                internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse=detail.warehouse).first()
+                if document.document_type == InventoryDocument.Type.TRANSFER:
+                    src_internal = Location.objects.filter(location_type="INTERNAL", warehouse=detail.source_warehouse).first()
+                    src_loc = src_internal
+                    dst_loc = internal_loc
+                elif document.document_type == InventoryDocument.Type.RECEIPT:
+                    src_loc = Location.objects.filter(location_type="VENDOR").first()
+                    dst_loc = internal_loc
+                elif document.document_type == InventoryDocument.Type.DELIVERY:
+                    src_loc = internal_loc
+                    dst_loc = Location.objects.filter(location_type="CUSTOMER").first()
+                elif document.document_type == InventoryDocument.Type.PARTNER_CONTRIBUTION:
+                    src_loc = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
+                    dst_loc = internal_loc
+                elif document.document_type == InventoryDocument.Type.PARTNER_WITHDRAWAL:
+                    src_loc = internal_loc
+                    dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
+                elif document.document_type == InventoryDocument.Type.PRODUCTION:
+                    src_loc = Location.objects.filter(location_type="VIRTUAL").first() # Simplification
+                    dst_loc = internal_loc
+                else: # ADJUSTMENT
+                    if detail.quantity > 0:
+                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first()
+                        dst_loc = internal_loc
+                    else:
+                        src_loc = internal_loc
+                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first()
+
             if document.document_type == InventoryDocument.Type.TRANSFER:
                 if not detail.source_warehouse:
                     raise ValidationError("Las transferencias requieren una bodega de origen.")
-                # Source OUT
+                # We can now just create ONE move instead of two, but for dual-write compatibility we keep two?
+                # Actually, the legacy code expects OUT and IN. Let's do a single move for dual write if possible.
+                # No, legacy `StockMove` expects `move_type` IN and OUT.
                 out_move = StockMove.objects.create(
                     product=detail.product,
                     warehouse=detail.source_warehouse,
                     quantity=detail.quantity,
                     move_type=StockMove.Type.OUT,
+                    source_location=src_loc,
+                    destination_location=dst_loc,
                     description=f"Transferencia Salida Doc: {document.reference or document.id}",
                     journal_entry=journal_entry
                 )
-                # Dest IN
                 in_move = StockMove.objects.create(
                     product=detail.product,
                     warehouse=detail.warehouse,
                     quantity=detail.quantity,
                     move_type=StockMove.Type.IN,
+                    source_location=src_loc,
+                    destination_location=dst_loc,
                     description=f"Transferencia Entrada Doc: {document.reference or document.id}",
                     journal_entry=journal_entry
                 )
@@ -160,8 +196,10 @@ class InventoryService:
                 move = StockMove.objects.create(
                     product=detail.product,
                     warehouse=detail.warehouse,
-                    quantity=qty,
+                    quantity=abs(qty),
                     move_type=move_type,
+                    source_location=src_loc,
+                    destination_location=dst_loc,
                     unit_cost=detail.unit_cost,
                     description=f"{document.get_document_type_display()} Doc: {document.reference or document.id}",
                     journal_entry=journal_entry
