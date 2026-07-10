@@ -103,7 +103,7 @@ def list_products(*, user, params: dict) -> QuerySet:
                 Prefetch(
                     "component",
                     queryset=Product.objects.filter(is_active=True).annotate(
-                        annotated_current_stock=Coalesce(Sum("stocks__quantity"), 0.0)
+                        annotated_current_stock=Coalesce(Sum("stocks__quantity"), Value(0, output_field=DecimalField()))
                     ).select_related("uom"),
                 )
             ),

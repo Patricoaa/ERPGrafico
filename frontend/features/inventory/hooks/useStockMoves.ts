@@ -107,12 +107,30 @@ export function useStockAdjustment() {
 
     const adjustMutation = useMutation({
         mutationFn: async (payload: StockAdjustmentPayload) => {
-            const res = await api.post<unknown>('/inventory/moves/adjust/', payload)
-            return res.data
+            // Create Document
+            const docPayload = {
+                document_type: 'ADJUSTMENT',
+                date: new Date().toISOString().split('T')[0],
+                reference: payload.adjustment_reason || "Ajuste Manual",
+                notes: payload.description,
+                details: [{
+                    product: payload.product_id,
+                    warehouse: payload.warehouse_id,
+                    quantity: payload.quantity,
+                    unit_cost: payload.unit_cost
+                }]
+            }
+            
+            const docRes = await api.post<{id: number}>('/inventory/documents/', docPayload)
+            
+            // Confirm Document
+            const confirmRes = await api.post(`/inventory/documents/${docRes.data.id}/confirm/`)
+            
+            return confirmRes.data
         },
         onSuccess: () => {
             markLocalMutation()
-            invalidateCrossFeature(queryClient, [STOCK_MOVES_QUERY_KEY, PRODUCTS_KEYS.all])
+            invalidateCrossFeature(queryClient, [STOCK_MOVES_QUERY_KEY, PRODUCTS_KEYS.all, ['inventory', 'documents']])
         },
     })
 

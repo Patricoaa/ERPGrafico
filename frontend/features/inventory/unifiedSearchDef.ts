@@ -1,4 +1,5 @@
 import type { UnifiedSearchConfig } from '@/types/unified-search'
+import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
 
 export const uomUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
@@ -72,4 +73,184 @@ export const pricingRuleUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+}
+
+export const stockMoveUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'product_name',
+      label: 'Producto',
+      serverParam: 'product_name',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'move_type',
+      label: 'Tipo',
+      serverParam: 'move_type',
+      options: [
+        { label: 'Entrada', value: 'IN' },
+        { label: 'Salida', value: 'OUT' },
+        { label: 'Ajuste', value: 'ADJ' },
+      ],
+    },
+  ],
+  dateFilters: [{
+    type: 'date',
+    key: 'date',
+    label: 'Fecha',
+    options: [
+      { label: 'Hoy', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: today },
+      { label: 'Esta semana', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisWeek },
+      { label: 'Este mes', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisMonth },
+      { label: 'Este trimestre', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisQuarter },
+      { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
+    ],
+  }],
+  basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
+}
+
+export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Producto',
+      serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Activo', value: 'ACTIVE' },
+        { label: 'Pausado', value: 'PAUSED' },
+        { label: 'Cancelado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+  dateFilters: [{
+    type: 'date',
+    key: 'date',
+    label: 'Fecha',
+    options: [
+      { label: 'Hoy', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: today },
+      { label: 'Esta semana', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisWeek },
+      { label: 'Este mes', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisMonth },
+      { label: 'Este trimestre', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisQuarter },
+      { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
+    ],
+  }],
+  basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
+}
+
+export const productUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Nombre / SKU',
+      serverParam: 'search',
+      suggestionsUrl: 'inventory/products/filter-suggestions/',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'product_type',
+      label: 'Tipo',
+      serverParam: 'product_type',
+      options: [
+        { label: 'Almacenable', value: 'STORABLE' },
+        { label: 'Consumible', value: 'CONSUMABLE' },
+        { label: 'Servicio', value: 'SERVICE' },
+        { label: 'Fabricable', value: 'MANUFACTURABLE' },
+        { label: 'Suscripción', value: 'SUBSCRIPTION' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'has_variants',
+      label: 'Variantes',
+      serverParam: 'has_variants',
+      options: [
+        { label: 'Con variantes', value: 'true' },
+        { label: 'Sin variantes', value: 'false' },
+      ],
+    },
+    {
+      type: 'multi',
+      key: 'availability',
+      label: 'Disponible para',
+      serverParam: 'availability',
+      options: [
+        { label: 'Venta', value: 'sale' },
+        { label: 'Compra', value: 'purchase' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'is_active',
+      label: 'Estado',
+      serverParam: 'is_active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+  ],
+}
+
+export const documentUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Buscar por Folio, referencia, contacto...',
+      serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Todos', value: '' },
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'Aprobado', value: 'APPROVED' },
+        { label: 'Confirmado', value: 'CONFIRMED' },
+        { label: 'Anulado', value: 'CANCELLED' },
+      ],
+    },
+    {
+      type: 'single',
+      key: 'document_type',
+      label: 'Tipo',
+      serverParam: 'document_type',
+      options: [
+        { label: 'Todos', value: '' },
+        { label: 'Recepción', value: 'RECEIPT' },
+        { label: 'Entrega', value: 'DELIVERY' },
+        { label: 'Transferencia', value: 'TRANSFER' },
+        { label: 'Ajuste', value: 'ADJUSTMENT' },
+        { label: 'Producción', value: 'PRODUCTION' },
+      ],
+    },
+  ],
+  dateFilters: [{
+    type: 'date',
+    key: 'date',
+    label: 'Fecha',
+    options: [
+      { label: 'Hoy', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: today },
+      { label: 'Esta semana', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisWeek },
+      { label: 'Este mes', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisMonth },
+      { label: 'Este trimestre', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisQuarter },
+      { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
+    ],
+  }],
+  basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }

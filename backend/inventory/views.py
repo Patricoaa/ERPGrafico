@@ -350,9 +350,13 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     @action(detail=False, methods=["post"])
     def adjust(self, request):
         """
-        Custom endpoint to perform manual stock adjustment.
-        Supports partner_contact_id for PARTNER_CONTRIBUTION/PARTNER_WITHDRAWAL reasons.
+        [DEPRECATED] Custom endpoint to perform manual stock adjustment.
+        Please use the InventoryDocument endpoints (create document -> confirm document).
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning("DEPRECATED: /inventory/moves/adjust/ called. Migrate to POST /inventory/documents/")
+        
         from django.core.exceptions import ValidationError
 
         try:

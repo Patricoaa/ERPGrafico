@@ -583,7 +583,7 @@ class InventoryDocumentDetailSerializer(serializers.ModelSerializer):
 
 
 class InventoryDocumentSerializer(serializers.ModelSerializer):
-    details = InventoryDocumentDetailSerializer(many=True, read_only=True)
+    details = InventoryDocumentDetailSerializer(many=True, required=False)
     partner_name = serializers.CharField(source="partner.name", read_only=True)
     created_by_name = serializers.CharField(source="created_by.name", read_only=True)
     confirmed_by_name = serializers.CharField(source="confirmed_by.name", read_only=True)
@@ -611,3 +611,10 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             "updated_at",
             "details",
         ]
+        
+    def create(self, validated_data):
+        details_data = validated_data.pop('details', [])
+        document = InventoryDocument.objects.create(**validated_data)
+        for detail_data in details_data:
+            InventoryDocumentDetail.objects.create(document=document, **detail_data)
+        return document

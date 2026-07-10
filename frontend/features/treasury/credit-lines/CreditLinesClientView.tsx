@@ -7,9 +7,9 @@ import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, Skeleton, EmptyState,
     ToolbarCreateButton,
-    SmartSearchBar, useClientSearch,
+    UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
-import { creditLineSearchDef } from './searchDef'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { Button } from '@/components/ui/button'
 import { useCreditLines, useCreditLineMutations } from '../hooks/useCreditLines'
 import { CreditLineDrawer } from './CreditLineDrawer'
@@ -28,8 +28,13 @@ export function CreditLinesClientView({ bankId }: Props) {
     const [editingLine, setEditingLine] = useState<CreditLine | null>(null)
     const [bankCheckingAccounts, setBankCheckingAccounts] = useState<TreasuryAccount[]>([])
 
-    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<CreditLine>(creditLineSearchDef)
-    const filteredData = useMemo(() => filterFn(creditLines ?? []), [filterFn, creditLines])
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'search', label: 'Código / Cuenta / Límite', serverParam: 'search', clientKey: ['code', 'account_name', 'credit_limit'] },
+        ],
+    }), [])
+    const search = useUnifiedSearch(config)
+    const filteredData = useMemo(() => search.filterFn(creditLines ?? []), [search.filterFn, creditLines])
 
     useEffect(() => {
         if (bankId && !editingLine) {
@@ -42,9 +47,7 @@ export function CreditLinesClientView({ bankId }: Props) {
         setDrawerOpen(true)
     }
 
-    const handleReset = useCallback(() => {
-        clearText()
-    }, [clearText])
+
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -145,10 +148,23 @@ export function CreditLinesClientView({ bankId }: Props) {
                         onClick={handleNewLine}
                     />
                 }
-                isFiltered={isTextFiltered}
-                showReset={isTextFiltered}
-                onReset={handleReset}
-                smartSearch={<SmartSearchBar searchDef={creditLineSearchDef} placeholder="Buscar por código, cuenta o límite..." />}
+                isFiltered={search.isFiltered}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
+                unifiedSearch={<UnifiedSearchBar
+                    config={config}
+                    chips={search.chips}
+                    isFiltered={search.isFiltered}
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                    placeholder="Buscar por código, cuenta o límite..."
+                />}
             />
 
             <CreditLineDrawer

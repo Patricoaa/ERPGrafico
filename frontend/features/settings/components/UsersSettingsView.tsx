@@ -2,7 +2,8 @@
 
 import {useState, useEffect, useMemo} from "react"
 
-import { DataTableView, SmartSearchBar, ToolbarCreateButton, SegmentationBar, EntityCard, useSegmentation, useSmartSearch, type FilterState } from '@/components/shared'
+import { DataTableView, ToolbarCreateButton, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -15,8 +16,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
 
 import { type AppUser } from "@/types/entities"
-import { userSearchDef } from "@/features/users"
-import { userSegDef } from "@/features/users"
+
 
 interface UsersSettingsViewProps {
     activeTab: string
@@ -27,16 +27,27 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(userSearchDef)
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(userSegDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const allFilters = { ...textFilters, ...segFilters }
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'search', label: 'Nombre / Email / Usuario', serverParam: 'search' },
+        ],
+        filters: [
+            { key: 'role', label: 'Rol', type: 'single', serverParam: 'role', options: [
+                { label: 'Admin', value: 'ADMIN' },
+                { label: 'Gerente', value: 'MANAGER' },
+                { label: 'Operador', value: 'OPERATOR' },
+                { label: 'Lectura', value: 'READ_ONLY' },
+            ]},
+        ],
+    }), [])
+    const search = useUnifiedSearch(config)
+    const isFiltered = search.isFiltered
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, users, isLoading, refetch } = useUsers({
-        ...allFilters,
+        ...search.filters,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
-    } as FilterState & { page?: number; page_size?: number })
+    } as Parameters<typeof useUsers>[0])
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -180,10 +191,22 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                                 data={users}
                                 variant="embedded"
                                 isLoading={isLoading}
-                                smartSearch={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
-                                segmentation={<SegmentationBar def={userSegDef} />}
+                                unifiedSearch={<UnifiedSearchBar
+                                    config={config}
+                                    chips={search.chips}
+                                    isFiltered={search.isFiltered}
+                                    inputValue={search.inputValue}
+                                    onInputChange={search.setInputValue}
+                                    onApply={search.applyFilter}
+                                    onRemove={search.removeFilter}
+                                    onClearAll={search.clearAll}
+                                    groupBy={search.groupBy}
+                                    onGroupBySelect={search.setGroupBy}
+                                    paramValues={search.paramValues}
+                                    placeholder="Buscar usuario por nombre, email o username..."
+                                />}
                                 showReset={isFiltered}
-                                onReset={() => { clearText(); clearSeg() }}
+                                onReset={search.clearAll}
                                 isFiltered={isFiltered}
                                 createAction={usersCreateAction}
                                 manualPagination

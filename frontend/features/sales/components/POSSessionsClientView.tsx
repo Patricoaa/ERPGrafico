@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, SegmentationBar, useSegmentation } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
@@ -43,15 +43,14 @@ interface POSSessionsClientViewProps {
 }
 
 import { usePOSSessions } from "@/features/pos"
-import { posSessionSegDef } from "@/features/pos"
+import { posSessionUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 
 export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(posSessionSegDef, basePeriod)
-    const { sessions, isLoading, refetch } = usePOSSessions(segFilters)
+    const search = useUnifiedSearch(posSessionUnifiedSearchDef)
+    const { sessions, isLoading, refetch } = usePOSSessions(search.filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
         endpoint: '/treasury/pos-sessions'
@@ -179,11 +178,25 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                     variant="embedded"
                     isLoading={isLoading}
                     entityLabel="pos.session"
-                    segmentation={<SegmentationBar def={posSessionSegDef} basePeriod={basePeriod} />}
-                    showReset={isSegFiltered}
-                    onReset={clearSeg}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={posSessionUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                    />}
+                    unifiedSearchConfig={posSessionUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={10}
-                    isFiltered={isSegFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "pos",
                         title: "Aún no hay sesiones de caja",

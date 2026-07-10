@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
@@ -27,8 +27,8 @@ import { cn } from "@/lib/utils"
 import { type TaxPeriod, type TaxDeclaration, type TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { type Row, type Table } from "@tanstack/react-table"
-import { SkeletonShell, SmartSearchBar, useClientSearch } from "@/components/shared"
-import { taxPeriodSearchDef } from "@/features/tax/searchDef"
+import { SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
 import { useCreateTaxPayment } from "../hooks/useTaxMutations"
@@ -154,8 +154,13 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         }
     }
 
-    const { filterFn } = useClientSearch<TaxPeriod>(taxPeriodSearchDef)
-    const filteredPeriods = filterFn(periods)
+    const config: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'month_display', label: 'Período', serverParam: 'month_display', clientKey: ['month_display', 'year'] },
+        ],
+    }), [])
+    const search = useUnifiedSearch(config)
+    const filteredPeriods = useMemo(() => search.filterFn(periods), [search.filterFn, periods])
 
     const latestPeriod = periods.length > 0 ? periods[0] : null
     const currentPeriodDisplay = latestPeriod
@@ -298,7 +303,20 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                     isLoading={isLoading}
                     entityLabel="tax.taxperiod"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." className="w-full" />}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={config}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar período..."
+                    />}
                     createAction={createAction}
                     renderLoadingView={useCallback(() => (
                         <div className="grid gap-3 pt-2">

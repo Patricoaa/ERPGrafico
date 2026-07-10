@@ -11,10 +11,9 @@ import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
-import { ToolbarCreateButton, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from "@/components/shared"
+import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx } from "@/features/hr"
-import { salaryAdvanceSegDef } from "../segmentationDef"
-import { salaryAdvanceSearchDef } from "../searchDef"
+import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
@@ -27,12 +26,9 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filterFn: filterAdvances, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<SalaryAdvance>(salaryAdvanceSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(salaryAdvanceSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const { advances, isLoading: loading, isRefetching, refetch: refetchAdvances } = useSalaryAdvances(segFilters, initialAdvances)
-    const filteredAdvances = filterAdvances(advances)
+    const search = useUnifiedSearch(salaryAdvanceUnifiedSearchDef)
+    const { advances, isLoading: loading, isRefetching, refetch: refetchAdvances } = useSalaryAdvances(search.filters, initialAdvances)
+    const filteredAdvances = search.filterFn(advances)
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
 
@@ -145,13 +141,27 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                     isRefetching={isRefetching}
                     entityLabel="hr.salaryadvance"
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipo..." className="w-full" />}
-                    segmentation={<SegmentationBar def={salaryAdvanceSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={salaryAdvanceUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar anticipo..."
+                    />}
+                    unifiedSearchConfig={salaryAdvanceUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "finance",
                         title: "Aún no hay anticipos",

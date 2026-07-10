@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { DataTableView, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
@@ -13,8 +13,7 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
-import { treasuryMovementsSegDef } from "@/features/treasury/segmentationDef"
-import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
+import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 
@@ -65,9 +64,7 @@ interface TreasuryMovementsClientViewProps {
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryMovementsSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryMovementsSegDef, basePeriod)
+    const search = useUnifiedSearch(treasuryMovementsUnifiedSearchDef)
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -75,8 +72,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const treasuryAccountFromUrl = searchParams.get('treasury_account')
     const isAccountFiltered = Boolean(treasuryAccountFromUrl)
     const allFilters = {
-        ...textFilters,
-        ...segFilters,
+        ...search.filters,
         ...(treasuryAccountFromUrl ? { treasury_account: treasuryAccountFromUrl } : {}),
     }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
@@ -85,7 +81,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
-    const isFiltered = isTextFiltered || isSegFiltered || isAccountFiltered
 
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
@@ -125,10 +120,9 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     }, [searchParams, pathname, router])
 
     const handleReset = React.useCallback(() => {
-        clearText()
-        clearSeg()
+        search.clearAll()
         handleClearAccountFilter()
-    }, [clearText, clearSeg, handleClearAccountFilter])
+    }, [search.clearAll, handleClearAccountFilter])
 
     const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
@@ -338,30 +332,38 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    smartSearch={
-                        <SmartSearchBar
-                            searchDef={treasuryMovementsSearchDef}
-                            placeholder="Buscar movimiento..."
-                            className="w-full"
-                            prefix={isAccountFiltered ? (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
-                                    Cta. #{treasuryAccountFromUrl}
-                                    <Button
-                                         variant="ghost"
-                                         onClick={handleClearAccountFilter}
-                                         className="ml-0.5 hover:text-info/80 h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none text-current"
-                                     >
-                                         ×
-                                     </Button>
-                                </span>
-                            ) : undefined}
-                        />
-                    }
-                    segmentation={<SegmentationBar def={treasuryMovementsSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={treasuryMovementsUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered || isAccountFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar movimiento..."
+                        prefix={isAccountFiltered ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20 text-[10px] font-black uppercase tracking-wider font-mono shrink-0">
+                                Cta. #{treasuryAccountFromUrl}
+                                <Button
+                                     variant="ghost"
+                                     onClick={handleClearAccountFilter}
+                                     className="ml-0.5 hover:text-info/80 h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none text-current"
+                                 >
+                                     ×
+                                 </Button>
+                            </span>
+                        ) : undefined}
+                    />}
+                    unifiedSearchConfig={treasuryMovementsUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered || isAccountFiltered}
                     onReset={handleReset}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered || isAccountFiltered}
                     emptyState={{
                         context: "treasury",
                         title: "Aún no hay movimientos de caja",

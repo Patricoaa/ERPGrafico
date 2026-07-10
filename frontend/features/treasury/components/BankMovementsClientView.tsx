@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { DataTableView, EntityCard, StatusBadge, SegmentationBar, useSegmentation, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { DataTableView, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
@@ -12,8 +12,7 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
-import { treasuryMovementsSegDef } from "@/features/treasury/segmentationDef"
-import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
+import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
@@ -60,16 +59,13 @@ interface TreasuryMovement {
 
 export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(treasuryMovementsSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(treasuryMovementsSegDef, basePeriod)
+    const search = useUnifiedSearch(treasuryMovementsUnifiedSearchDef)
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
 
     const allFilters = {
-        ...textFilters,
-        ...segFilters,
+        ...search.filters,
         bank: bankId,
     }
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
@@ -78,7 +74,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
-    const isFiltered = isTextFiltered || isSegFiltered
 
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
@@ -103,9 +98,8 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
     }, [searchParams, pathname, router])
 
     const handleReset = React.useCallback(() => {
-        clearText()
-        clearSeg()
-    }, [clearText, clearSeg])
+        search.clearAll()
+    }, [search.clearAll])
 
     const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
@@ -298,13 +292,25 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
-                    smartSearch={
-                        <SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimiento..." className="w-full" />
-                    }
-                    segmentation={<SegmentationBar def={treasuryMovementsSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={treasuryMovementsUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar movimiento..."
+                    />}
+                    unifiedSearchConfig={treasuryMovementsUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
                     onReset={handleReset}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "treasury",
                         title: "Aún no hay movimientos bancarios",

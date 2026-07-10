@@ -315,8 +315,7 @@ export function PortfolioTable({
     isLoading,
     onRefresh,
     createAction,
-    smartSearch,
-    segmentation,
+    unifiedSearch,
     kpiCards,
 }: {
     columns: ColumnDef<CreditContact>[],
@@ -324,8 +323,7 @@ export function PortfolioTable({
     isLoading: boolean,
     onRefresh: () => void,
     createAction?: React.ReactNode,
-    smartSearch?: React.ReactNode,
-    segmentation?: React.ReactNode,
+    unifiedSearch?: React.ReactNode,
     kpiCards?: KpiCardDef[],
 }) {
     const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
@@ -371,8 +369,7 @@ export function PortfolioTable({
                         description: "Habilite cupos de crédito para sus clientes para comenzar el seguimiento.",
                     }}
                     createAction={createAction}
-                    smartSearch={smartSearch}
-                    segmentation={segmentation}
+                    unifiedSearch={unifiedSearch}
                     kpiCards={kpiCards}
                 />
             </div>

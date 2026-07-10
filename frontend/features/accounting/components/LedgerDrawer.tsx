@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Printer } from "lucide-react"
 import { useDrawerIdentity } from "@/features/_shared"
-import { DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, SegmentationBar, SmartSearchBar, StatCard, useClientSearch } from '@/components/shared'
+import { DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, StatCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -13,19 +13,7 @@ import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatCurrency } from "@/lib/money"
-import type { SearchDefinition } from "@/types/search"
-
-const ledgerMovementSearchDef: SearchDefinition = {
-    fields: [
-        {
-            key: 'description',
-            label: 'Descripción',
-            type: 'text',
-            serverParam: 'search',
-            clientKey: ['description', 'label'],
-        },
-    ],
-}
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
 
@@ -212,6 +200,19 @@ function LedgerContent({
 }) {
     const { serverDate } = useServerDate()
 
+    const ledgerSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [
+            {
+                key: 'description',
+                label: 'Descripción',
+                serverParam: 'search',
+                clientKey: ['description', 'label'],
+            },
+        ],
+    }), [])
+
+    const search = useUnifiedSearch(ledgerSearchConfig)
+
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -311,10 +312,9 @@ function LedgerContent({
         ledgerMovementActions.column(ledgerMovementActionsCtx)
     ]
 
-    const { filterFn } = useClientSearch<LedgerMovement>(ledgerMovementSearchDef)
     const filteredMovements = useMemo(
-        () => filterFn(data?.movements ?? []),
-        [filterFn, data?.movements],
+        () => search.filterFn(data?.movements ?? []),
+        [search.filterFn, data?.movements],
     )
 
     return (
@@ -358,6 +358,18 @@ function LedgerContent({
                 />
             </div>
 
+            <div className="flex items-center justify-end shrink-0">
+                <DateRangeFilter
+                    variant="ghost"
+                    onDateChange={(range) => {
+                        if (range?.from && range?.to) {
+                            setDateRange({ from: range.from, to: range.to })
+                        }
+                    }}
+                    defaultRange={dateRange || undefined}
+                />
+            </div>
+
             <div className="flex-1 overflow-hidden">
                 <DataTable
                     columns={columns}
@@ -365,36 +377,23 @@ function LedgerContent({
                     isLoading={isLoading}
                     variant="embedded"
                     defaultPageSize={100}
-                    smartSearch={
-                        <SmartSearchBar
-                            searchDef={ledgerMovementSearchDef}
-                            placeholder="Buscar por descripción..."
-                            className="w-full"
-                        />
-                    }
-                    segmentation={
-                        <SegmentationBar def={{
-                            segments: [
-                                {
-                                    key: 'date_range',
-                                    label: 'Fecha',
-                                    type: 'custom',
-                                    render: () => (
-                                        <DateRangeFilter
-                                            variant="ghost"
-                                            onDateChange={(range) => {
-                                                if (range?.from && range?.to) {
-                                                    setDateRange({ from: range.from, to: range.to })
-                                                }
-                                            }}
-                                            defaultRange={dateRange || undefined}
-                                        />
-                                    ),
-                                },
-                            ],
-                        }} />
-                    }
+                    unifiedSearch={<UnifiedSearchBar
+                        config={ledgerSearchConfig}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por descripción..."
+                    />}
+                    showReset={search.isFiltered}
                     onReset={() => {
+                        search.clearAll()
                         if (serverDate) {
                             setDateRange({
                                 from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),

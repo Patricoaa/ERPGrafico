@@ -5,9 +5,8 @@ import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import {IconButton, SmartSearchBar, useSmartSearch, SegmentationBar, useSegmentation} from "@/components/shared"
-import { invoiceSearchDef } from "@/features/billing/searchDef"
-import { invoiceSegDef } from "@/features/billing/segmentationDef"
+import {IconButton, UnifiedSearchBar, useUnifiedSearch} from "@/components/shared"
+import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import { treasuryApi } from "@/features/treasury"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
@@ -21,11 +20,8 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
-    const { filters: textFilters, isFiltered: isTextFiltered, clearAll: clearText } = useSmartSearch(invoiceSearchDef)
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(invoiceSegDef, basePeriod)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...(textFilters as InvoiceFilters), ...(segFilters as Record<string, string>), mode: 'sale' } })
+    const search = useUnifiedSearch(invoiceUnifiedSearchDef)
+    const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...search.filters, mode: 'sale' } as InvoiceFilters })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
@@ -151,14 +147,28 @@ export function SalesInvoicesClientView() {
                     isRefetching={isRefetching}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
-                    segmentation={<SegmentationBar def={invoiceSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={invoiceUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar facturas..."
+                    />}
+                    unifiedSearchConfig={invoiceUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     defaultPageSize={20}
                     isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
                     isHubOpen={isHubOpen}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "finance",
                         title: "Aún no hay documentos de venta",

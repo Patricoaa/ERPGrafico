@@ -16,10 +16,8 @@ import {
     MoneyDisplay,
     EntityCard,
     StatusBadge,
-    SegmentationBar,
-    useSegmentation,
-    SmartSearchBar,
-    useClientSearch,
+    UnifiedSearchBar,
+    useUnifiedSearch,
     StatCard,
     SummaryTable,
     Skeleton,
@@ -27,8 +25,7 @@ import {
     ToolbarCreateButton,
     type ToolbarActionItem,
 } from '@/components/shared'
-import type { SegmentationDefinition } from '@/types/segmentation'
-import type { SearchDefinition } from '@/types/search'
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useBankOverview } from '../hooks/useBankOverview'
 import type { BankOverviewData } from '../hooks/useBankOverview'
 import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../types'
@@ -41,13 +38,7 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
 import { invalidateCrossFeature } from '@/lib/invalidation'
-
-const unbilledSearchDef: SearchDefinition = {
-    fields: [
-        { key: 'contact', label: 'Contacto / OC', type: 'text', serverParam: 'contact', clientKey: ['partnerName', 'purchaseOrderDisplayId', 'reference'] },
-        { key: 'amount', label: 'Monto', type: 'text', serverParam: 'amount' },
-    ],
-}
+import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
 
 interface UnbilledChargesViewProps {
     bankId: number
@@ -101,12 +92,16 @@ export function UnbilledChargesView({
         [overviewData],
     )
 
-    const segDef: SegmentationDefinition = useMemo(() => ({
-        segments: [
+    const unifiedConfig: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            { key: 'contact', label: 'Contacto / OC', type: 'text', serverParam: 'search', clientKey: ['partnerName', 'purchaseOrderDisplayId', 'reference'] },
+            { key: 'amount', label: 'Monto', type: 'text', serverParam: 'search' },
+        ],
+        filters: [
             {
+                type: 'single',
                 key: 'scope',
                 label: 'Alcance',
-                type: 'tabs',
                 serverParam: 'scope',
                 defaultValue: 'month',
                 options: [
@@ -115,36 +110,39 @@ export function UnbilledChargesView({
                 ],
             },
             {
+                type: 'single',
                 key: 'card',
                 label: 'Tarjeta',
-                type: 'tabs',
                 serverParam: 'card',
-                variant: 'dropdown',
                 defaultValue: String(creditCardAccounts[0]?.id ?? ''),
                 options: creditCardAccounts.map(a => ({ label: a.name, value: String(a.id) })),
             },
+        ],
+        dateFilters: [
             {
+                type: 'date',
                 key: 'charge_date',
                 label: 'Fecha del cargo',
-                type: 'date',
-                serverParamDate: 'charge_date',
-                serverParamFrom: 'charge_date_from',
-                serverParamTo: 'charge_date_to',
+                options: [
+                    { label: 'Hoy', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: today },
+                    { label: 'Esta semana', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisWeek },
+                    { label: 'Este mes', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisMonth },
+                    { label: 'Este trimestre', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisQuarter },
+                    { label: 'Este año', serverParamFrom: 'charge_date_from', serverParamTo: 'charge_date_to', getValue: thisYear },
+                ],
             },
         ],
+        basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
     }), [creditCardAccounts])
 
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, apply, clearAll: clearSeg } = useSegmentation(segDef, basePeriod)
-    const { filterFn, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<UnbilledItemRow>(unbilledSearchDef)
+    const search = useUnifiedSearch(unifiedConfig)
 
-    const selectedCardAccount = segFilters.card ? Number(segFilters.card) : (creditCardAccounts[0]?.id ?? 0)
+    const selectedCardAccount = search.filters.card ? Number(search.filters.card) : (creditCardAccounts[0]?.id ?? 0)
     const currentAccount = creditCardAccounts.find(a => a.id === selectedCardAccount)
     const cardAccountName = currentAccount?.name ?? ''
     const currency = currentAccount?.currency ?? 'CLP'
 
-    const today = new Date().toISOString().split('T')[0]
-    const cutOffDate = segFilters.scope !== 'all' ? today : undefined
+    const cutOffDate = (search.filters.scope ?? 'month') !== 'all' ? new Date().toISOString().split('T')[0] : undefined
 
     const { data: result, isLoading } = useUnbilledCharges(selectedCardAccount, cutOffDate)
 
@@ -164,11 +162,8 @@ export function UnbilledChargesView({
     )
 
     const filteredRows = useMemo(() => {
-        let result = filterFn(mergedRows)
-        const { charge_date, charge_date_from, charge_date_to } = segFilters
-        if (charge_date) {
-            result = result.filter(r => r.date === charge_date)
-        }
+        let result = search.filterFn(mergedRows)
+        const { charge_date_from, charge_date_to } = search.filters
         if (charge_date_from) {
             result = result.filter(r => r.date >= charge_date_from)
         }
@@ -176,7 +171,7 @@ export function UnbilledChargesView({
             result = result.filter(r => r.date <= charge_date_to)
         }
         return result
-    }, [mergedRows, filterFn, segFilters])
+    }, [mergedRows, search.filterFn, search.filters])
 
     // ── Sync URL params with drawer state (adjust during render) ──
     if (selectedId && chargeToEdit && !chargeDrawerOpen) {
@@ -402,10 +397,24 @@ export function UnbilledChargesView({
                     data={filteredRows}
                     isLoading={isLoading}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={unbilledSearchDef} placeholder="Buscar por contacto, OC o monto..." className="w-full" />}
-                    showReset={isTextFiltered || isSegFiltered}
-                    isFiltered={isTextFiltered || isSegFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={unifiedConfig}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar por contacto, OC o monto..."
+                    />}
+                    unifiedSearchConfig={unifiedConfig}
+                    showReset={search.isFiltered}
+                    isFiltered={search.isFiltered}
+                    onReset={search.clearAll}
                     onRowClick={(row: UnbilledItemRow) => {
                         if (row.source === 'pending' && row.originalPendingCharge) {
                             openSelected(row.originalPendingCharge.id)
@@ -525,12 +534,11 @@ export function UnbilledChargesView({
                             ],
                             cardAccounts: creditCardAccounts,
                             cardAccountId: selectedCardAccount,
-                            onCardAccountChange: (id) => apply('card', String(id)),
-                            scope: segFilters.scope as 'month' | 'all',
-                            onScopeChange: (v) => apply('scope', v),
+                            onCardAccountChange: (id) => search.applyFilter('card', String(id)),
+                            scope: (search.filters.scope ?? 'month') as 'month' | 'all',
+                            onScopeChange: (v) => search.applyFilter('scope', v),
                         },
                     }}
-                    segmentation={<SegmentationBar def={segDef} basePeriod={basePeriod} />}
                     createAction={<ToolbarCreateButton label="Agregar Cargo" onClick={handleAddChargeClick} />}
                     toolbarActions={toolbarActions}
                     emptyState={{

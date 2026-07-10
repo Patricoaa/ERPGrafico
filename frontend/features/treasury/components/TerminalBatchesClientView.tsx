@@ -10,10 +10,9 @@ import { format } from "date-fns"
 
 import { useTerminalBatches } from "@/features/treasury"
 import type { TerminalBatch } from "@/features/treasury/types"
-import { DataCell, SegmentationBar, useSegmentation, SmartSearchBar, useClientSearch } from '@/components/shared'
+import { DataCell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { SkeletonShell } from "@/components/shared"
-import { terminalBatchSegDef } from "@/features/treasury/segmentationDef"
-import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
+import { terminalBatchUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 
 // Lazy load feature components
 const LazyTerminalBatchSelectionModal = lazy(() => import("./TerminalBatchSelectionModal"))
@@ -31,12 +30,9 @@ export function TerminalBatchesClientView({
     createAction
 }: TerminalBatchesClientViewProps) {
     const router = useRouter()
-    const basePeriod = { serverParamFrom: 'date_from', serverParamTo: 'date_to' }
-    const { filters: segFilters, isFiltered: isSegFiltered, clearAll: clearSeg } = useSegmentation(terminalBatchSegDef, basePeriod)
-    const { filterFn: filterBatches, isFiltered: isTextFiltered, clearAll: clearText } = useClientSearch<TerminalBatch>(terminalBatchSearchDef)
-    const isFiltered = isTextFiltered || isSegFiltered
-    const { batches, isLoading, refetch } = useTerminalBatches(segFilters)
-    const filteredBatches = filterBatches(batches)
+    const search = useUnifiedSearch(terminalBatchUnifiedSearchDef)
+    const { batches, isLoading, refetch } = useTerminalBatches(search.filters)
+    const filteredBatches = search.filterFn(batches)
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
@@ -139,12 +135,26 @@ export function TerminalBatchesClientView({
                     data={filteredBatches}
                     isLoading={isLoading}
                     variant="embedded"
-                    smartSearch={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidación..." className="w-full" />}
-                    segmentation={<SegmentationBar def={terminalBatchSegDef} basePeriod={basePeriod} />}
-                    showReset={isFiltered}
-                    onReset={() => { clearText(); clearSeg() }}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={terminalBatchUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar liquidación..."
+                    />}
+                    unifiedSearchConfig={terminalBatchUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
                     createAction={createAction}
-                    isFiltered={isFiltered}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "treasury",
                         title: "Aún no hay liquidaciones",
