@@ -14,6 +14,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { toast } from "sonner"
 
 import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
 
@@ -68,12 +69,22 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         ...search.filters,
         bank: bankId,
     }
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
         ...(allFilters as TreasuryMovementFilters),
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     })
+
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
 
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
@@ -287,11 +298,11 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                     data={movements}
                     isLoading={isLoading}
                     variant="embedded"
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={totalCount}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     unifiedSearch={<UnifiedSearchBar
                         config={treasuryMovementsUnifiedSearchDef}
                         chips={search.chips}
@@ -307,7 +318,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                         placeholder="Buscar movimiento..."
                     />}
                     unifiedSearchConfig={treasuryMovementsUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={search.isFiltered}
                     onReset={handleReset}
                     isFiltered={search.isFiltered}
@@ -316,7 +327,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                         title: "Aún no hay movimientos bancarios",
                         description: "Los movimientos registrados en las cuentas de este banco aparecerán aquí.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(m) => {
                         const type = m.movement_type
                         const isWriteOff = m.payment_method === 'WRITE_OFF'

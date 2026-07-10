@@ -20,6 +20,7 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { journalEntryUnifiedSearchDef } from "@/features/accounting"
+import { toast } from "sonner"
 import type { JournalEntryInitialData } from '@/types/forms'
 
 interface EntriesPageProps {
@@ -31,12 +32,23 @@ interface EntriesPageProps {
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
     const search = useUnifiedSearch(journalEntryUnifiedSearchDef)
     const allFilters = { ...search.filters }
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, entries, isLoading, refetch } = useJournalEntries({
         ...allFilters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     } as unknown as Parameters<typeof useJournalEntries>[0])
+
+    const totalCount = page?.count ?? 0
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -224,11 +236,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
                     defaultPageSize={20}
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={page?.count ?? 0}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     createAction={createAction}
                     isFiltered={search.isFiltered}
                     emptyState={{
@@ -236,10 +248,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         title: "Aún no hay asientos contables",
                         description: "Los asientos se registran al confirmar operaciones o puedes crear uno manualmente.",
                     }}
-                    cardGroupBy={{
-                        field: 'date',
-                        sort: 'desc',
-                    }}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     onRowClick={(m) => openDetail(m.id)}
                     renderCard={(m) => {
                         const Icon = m.is_manual ? FileEdit : m.reversal_of ? RotateCcw : FileText

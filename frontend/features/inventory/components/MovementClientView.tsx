@@ -43,6 +43,7 @@ interface MovementClientViewProps {
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { toast } from "sonner"
 import React from "react"
 
 
@@ -50,12 +51,22 @@ import React from "react"
 export function MovementClientView({ externalOpen, onExternalOpenChange, createAction: externalCreateAction }: MovementClientViewProps) {
     const createAction = externalCreateAction
     const search = useUnifiedSearch(stockMoveUnifiedSearchDef)
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, moves, totalCount, isLoading, refetch } = useStockMoves({
         ...search.filters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     })
+
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -154,11 +165,11 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     data={moves}
                     isLoading={isLoading}
                     variant="embedded"
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={totalCount}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     unifiedSearch={<UnifiedSearchBar
                         config={stockMoveUnifiedSearchDef}
                         chips={search.chips}
@@ -174,7 +185,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                         placeholder="Buscar movimientos..."
                     />}
                     unifiedSearchConfig={stockMoveUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
                     createAction={createAction}
@@ -184,7 +195,6 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                         title: "Aún no hay movimientos de stock",
                         description: "Los movimientos se registran al recibir, despachar o ajustar inventario.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(move: StockMove) => {
                         return (
                             <EntityCard

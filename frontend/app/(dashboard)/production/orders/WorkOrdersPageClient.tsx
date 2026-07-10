@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTable } from '@/components/shared'
+import { ActionConfirmModal, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
@@ -25,6 +25,7 @@ import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/compo
 import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { workOrderUnifiedSearchDef } from "@/features/production"
+import { toast } from "sonner"
 
 import type { WorkOrder, WizardMode, StageId } from "@/features/production/types"
 
@@ -33,19 +34,30 @@ interface WorkOrdersPageClientProps {
 }
 
 export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageClientProps) {
-    const { currentView, handleViewChange, viewOptions } = useViewMode("production.workorder")
+    const { currentView } = useViewMode("production.workorder")
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
 
     const search = useUnifiedSearch(workOrderUnifiedSearchDef)
     const allFilters = { ...search.filters }
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
         ...allFilters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined)
+
+    const totalCount = page?.count ?? 0
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
 
     const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
@@ -282,18 +294,19 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
 
             <div className="mt-2 flex-1 min-h-0 flex flex-col">
                 <FadeIn key={currentView} className="h-full">
-                    <DataTable
+                    <DataTableView
+                        entityLabel="production.workorder"
                         columns={columns}
                         data={orders}
                         isLoading={loading}
                         isRefetching={isRefetching}
                         variant="embedded"
                         defaultPageSize={50}
-                        manualPagination
-                        pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                        manualPagination={!effectiveGrouping}
+                        pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                         rowCount={page?.count ?? 0}
-                        pagination={pageState}
-                        onPaginationChange={setPageState}
+                        pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                        onPaginationChange={effectiveGrouping ? undefined : setPageState}
                         isFiltered={search.isFiltered}
                         emptyState={{
                             context: "production",
@@ -314,11 +327,10 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                             paramValues={search.paramValues}
                             placeholder="Buscar OTs..."
                         />}
+                        unifiedSearchConfig={workOrderUnifiedSearchDef}
+                        currentGroupBy={effectiveGrouping ? search.groupBy : null}
                         showReset={search.isFiltered}
                         onReset={search.clearAll}
-                        viewOptions={viewOptions}
-                        currentView={currentView}
-                        onViewChange={handleViewChange}
                         renderCustomView={
                             currentView === "kanban" ? renderKanbanView :
                                 currentView === "timeline" ? renderTimelineView :

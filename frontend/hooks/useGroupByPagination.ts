@@ -3,29 +3,31 @@ import { toast } from 'sonner'
 
 const MAX_GROUP_BY_RECORDS = 5000
 
-interface UseGroupByPaginationOptions<T> {
-  pagedData: T[]
+interface UseGroupByPaginationOptions {
   totalCount: number
   groupBy: string | null
-  allData: T[] | undefined
-  allDataIsLoading: boolean
   maxRecords?: number
 }
 
-interface UseGroupByPaginationReturn<T> {
-  displayData: T[]
-  isGroupedBy: boolean
+interface UseGroupByPaginationReturn {
+  isGrouping: boolean
   isOverLimit: boolean
+  effectivePage: number
+  effectivePageSize: number
+  manualPagination: boolean
+  currentGroupBy: string | null
 }
 
-export function useGroupByPagination<T>({
-  pagedData,
+export function useGroupByPagination({
   totalCount,
   groupBy,
-  allData,
-  allDataIsLoading,
   maxRecords = MAX_GROUP_BY_RECORDS,
-}: UseGroupByPaginationOptions<T>): UseGroupByPaginationReturn<T> {
+  currentPageSize,
+  currentPageIndex,
+}: UseGroupByPaginationOptions & {
+  currentPageSize: number
+  currentPageIndex: number
+}): UseGroupByPaginationReturn {
   const wantsGrouping = groupBy !== null
   const overLimit = wantsGrouping && totalCount > maxRecords
   const warnedRef = useRef(false)
@@ -42,18 +44,14 @@ export function useGroupByPagination<T>({
     }
   }, [overLimit, totalCount])
 
-  const displayData = useMemo(() => {
-    if (!wantsGrouping) return pagedData
-    if (overLimit) return pagedData
-    if (allDataIsLoading || !allData) return []
-    return allData
-  }, [wantsGrouping, overLimit, pagedData, allData, allDataIsLoading])
+  const isGrouping = wantsGrouping && !overLimit
 
-  const isGroupedBy = wantsGrouping && !overLimit && !allDataIsLoading && !!allData
-
-  return {
-    displayData,
-    isGroupedBy,
+  return useMemo(() => ({
+    isGrouping,
     isOverLimit: overLimit,
-  }
+    effectivePage: isGrouping ? 1 : currentPageIndex + 1,
+    effectivePageSize: isGrouping ? maxRecords : currentPageSize,
+    manualPagination: !isGrouping,
+    currentGroupBy: isGrouping ? groupBy : null,
+  }), [isGrouping, overLimit, currentPageIndex, currentPageSize, maxRecords, groupBy])
 }
