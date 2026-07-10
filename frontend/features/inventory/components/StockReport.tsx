@@ -2,14 +2,12 @@
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
-import { ArrowRightLeft } from "lucide-react"
 
-import { BaseModal, DataCell, DataTableView, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
+import { DataCell, DataTableView, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
-import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
@@ -60,12 +58,9 @@ export function StockReport() {
     const search = useUnifiedSearch(config, filterOptions)
     const { report, isLoading, refetch } = useStockReport(search.paramValues.warehouse_id as string | null)
 
-    const [adjustingProduct, setAdjustingProduct] = useState<StockReportItem | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
-    const [isFormLoading, setIsFormLoading] = useState(false)
 
     const stockReportActionsCtx: StockReportActionsCtx = {
-        onAdjust: (product) => setAdjustingProduct(product as StockReportItem | null),
         onHistory: (product) => setInsightsProduct(product as StockReportItem | null),
     }
 
@@ -233,7 +228,7 @@ export function StockReport() {
         },
 
         stockReportActions.column(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
-    ], [setAdjustingProduct, setInsightsProduct, stockReportActionsCtx])
+    ], [setInsightsProduct, stockReportActionsCtx])
 
     return (
         <div className="flex-1 flex flex-col min-h-0">
@@ -283,46 +278,6 @@ export function StockReport() {
                     )}
                 />
             </div>
-
-            <BaseModal
-                open={!!adjustingProduct}
-                onOpenChange={(open) => !open && setAdjustingProduct(null)}
-                size="lg"
-                hideScrollArea={true}
-                contentClassName="p-0"
-                icon={ArrowRightLeft}
-                title="Ajuste de Stock"
-                description={adjustingProduct ? `${adjustingProduct.name} • SKU: ${adjustingProduct.internal_code || 'N/A'}` : undefined}
-                footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={() => setAdjustingProduct(null)} />
-                                <SubmitButton
-                                    form="adjustment-form"
-                                    loading={isFormLoading}
-                                    variant="primary"
-                                    className="px-8"
-                                >
-                                    Confirmar Ajuste
-                                </SubmitButton>
-                            </>
-                        }
-                    />
-                }
-            >
-                {adjustingProduct && (
-                    <AdjustmentForm
-                        onLoadingChange={setIsFormLoading}
-                        preSelectedProduct={adjustingProduct.id.toString()}
-                        onSuccess={() => {
-                            setAdjustingProduct(null);
-                            refetch();
-                        }}
-                        onCancel={() => setAdjustingProduct(null)}
-                    />
-                )}
-            </BaseModal>
 
             <ProductInsightsModal
                 open={!!insightsProduct}
