@@ -33,7 +33,7 @@ class PurchaseReturnService:
             return doc
 
         # 1. Reverse Stock Moves
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -178,7 +178,7 @@ class PurchaseReturnService:
         total_inventory_reversal = Decimal("0")
 
         # 1. Stock Moves
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(

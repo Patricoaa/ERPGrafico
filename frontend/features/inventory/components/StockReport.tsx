@@ -3,10 +3,9 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
 import { ArrowRightLeft } from "lucide-react"
-import { useQueryState, parseAsString } from 'nuqs'
 
 import { BaseModal, DataCell, DataTableView, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
@@ -14,7 +13,7 @@ import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
-import { StockReportCategoryFilter, StockReportWarehouseFilter } from './stockReportFilters'
+import { useCategories, useWarehouses } from '@/features/inventory'
 
 interface StockReportItem {
     id: number | string
@@ -32,23 +31,30 @@ interface StockReportItem {
 }
 
 export function StockReport() {
-    const [categoryValue, setCategoryValue] = useQueryState('category', parseAsString)
-    const [warehouseId, setWarehouseId] = useQueryState('warehouse_id', parseAsString)
+    const { categories } = useCategories()
+    const { warehouses } = useWarehouses()
 
-    const { report, isLoading, refetch } = useStockReport(warehouseId)
+    const filterOptions: Record<string, MultiSelectOption[]> = useMemo(() => ({
+        category: categories.map((c) => ({ label: c.name, value: String(c.id) })),
+        warehouse: warehouses.map((w) => ({ label: w.name, value: String(w.id) })),
+    }), [categories, warehouses])
 
     const config: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
             { key: 'search', label: 'Producto / SKU', serverParam: 'search', clientKey: ['name', 'code', 'internal_code'] },
         ],
         filters: [
+            { key: 'category', label: 'Categoría', type: 'single', serverParam: 'category', dynamic: true },
+            { key: 'warehouse', label: 'Bodega', type: 'single', serverParam: 'warehouse_id', dynamic: true },
             { key: 'stock_qty', label: 'Stock (Físico)', type: 'range', serverParamFrom: 'stock_qty_from', serverParamTo: 'stock_qty_to' },
             { key: 'qty_available', label: 'Disponible', type: 'range', serverParamFrom: 'qty_available_from', serverParamTo: 'qty_available_to' },
             { key: 'qty_reserved', label: 'Reservado', type: 'range', serverParamFrom: 'qty_reserved_from', serverParamTo: 'qty_reserved_to' },
             { key: 'total_value', label: 'Valorización', type: 'range', serverParamFrom: 'total_value_from', serverParamTo: 'total_value_to' },
         ],
     }), [])
-    const search = useUnifiedSearch(config)
+
+    const search = useUnifiedSearch(config, filterOptions)
+    const { report, isLoading, refetch } = useStockReport(search.paramValues.warehouse_id as string | null)
 
     const [adjustingProduct, setAdjustingProduct] = useState<StockReportItem | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
@@ -59,12 +65,10 @@ export function StockReport() {
         onHistory: (product) => setInsightsProduct(product as StockReportItem | null),
     }
 
-    const isFiltered = search.isFiltered || categoryValue !== null || warehouseId !== null
+    const isFiltered = search.isFiltered
 
     const clearAll = async () => {
         await search.clearAll()
-        await setCategoryValue(null)
-        await setWarehouseId(null)
     }
 
     const filteredReport = useMemo(() => {
@@ -83,8 +87,8 @@ export function StockReport() {
             }
 
             // Category filter
-            if (categoryValue) {
-                if (String(item.category_id) !== categoryValue) return false;
+            if (search.filters.category) {
+                if (String(item.category_id) !== search.filters.category) return false;
             }
 
             // Stock qty range
@@ -121,7 +125,7 @@ export function StockReport() {
 
             return true;
         });
-    }, [search.filters, report, categoryValue, warehouseId, isFiltered])
+    }, [search.filters, report, isFiltered])
 
     const columns = useMemo<ColumnDef<StockReportItem>[]>(() => [
         {
@@ -248,13 +252,8 @@ export function StockReport() {
                         groupBy={search.groupBy}
                         onGroupBySelect={search.setGroupBy}
                         paramValues={search.paramValues}
+                        filterOptions={search.filterOptions}
                         placeholder="Buscar por producto o SKU..."
-                        prefix={
-                            <div className="flex items-center gap-0">
-                                <StockReportCategoryFilter />
-                                <StockReportWarehouseFilter />
-                            </div>
-                        }
                     />}
                     showReset={isFiltered}
                     onReset={clearAll}

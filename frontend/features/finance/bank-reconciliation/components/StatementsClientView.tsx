@@ -14,9 +14,8 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import { Progress } from "@/components/ui/progress"
-import type { UnifiedSearchConfig } from '@/types/unified-search'
+import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { cn } from "@/lib/utils"
-import { useQueryState, parseAsString } from 'nuqs'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
@@ -40,7 +39,9 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     const [expandedStmtId, setExpandedStmtId] = useState<number | null>(null)
     const [workbenchStatementId, setWorkbenchStatementId] = useState<number | null>(null)
 
-    const [bankAccountParam, setBankAccountParam] = useQueryState('bank_account_id', parseAsString)
+    const filterOptions: Record<string, MultiSelectOption[]> = useMemo(() => ({
+        bank_account: (accounts ?? []).map((a) => ({ label: a.name, value: String(a.id) })),
+    }), [accounts])
 
     const statementsUnifiedConfig = useMemo<UnifiedSearchConfig>(() => ({
         searchFields: [
@@ -52,6 +53,13 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
             },
         ],
         filters: [
+            {
+                type: 'single',
+                key: 'bank_account',
+                label: 'Cuenta Bancaria',
+                serverParam: 'bank_account_id',
+                dynamic: true,
+            },
             {
                 type: 'single',
                 key: 'state',
@@ -66,17 +74,16 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
         ],
     }), [])
 
-    const search = useUnifiedSearch(statementsUnifiedConfig)
+    const search = useUnifiedSearch(statementsUnifiedConfig, filterOptions)
 
-    const isFiltered = search.isFiltered || !!bankAccountParam
+    const isFiltered = search.isFiltered
     const handleReset = useCallback(() => {
         search.clearAll()
-        setBankAccountParam(null)
-    }, [search, setBankAccountParam])
+    }, [search])
 
     const { data: statements = [], isLoading, refetch } = useStatementsQuery(
-        bankAccountParam && bankAccountParam !== 'all'
-            ? { treasury_account: bankAccountParam }
+        search.filters.bank_account_id && search.filters.bank_account_id !== 'all'
+            ? { treasury_account: search.filters.bank_account_id }
             : bankId
             ? { bank: String(bankId) }
             : undefined,
@@ -409,21 +416,8 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                         groupBy={search.groupBy}
                         onGroupBySelect={search.setGroupBy}
                         paramValues={search.paramValues}
+                        filterOptions={search.filterOptions}
                         placeholder="Buscar cartola..."
-                        prefix={accounts ? (
-                            <div className="flex items-center gap-1 shrink-0">
-                                <select
-                                    value={bankAccountParam ?? 'all'}
-                                    onChange={(e) => setBankAccountParam(e.target.value === 'all' ? null : e.target.value)}
-                                    className="h-7 text-[11px] bg-background border border-border/60 rounded px-1.5 text-foreground cursor-pointer"
-                                >
-                                    <option value="all">Todas las cuentas</option>
-                                    {accounts.map(a => (
-                                        <option key={a.id} value={String(a.id)}>{a.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        ) : null}
                     />}
                     createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
@@ -437,7 +431,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 open={importModalOpen}
                 onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
-                defaultAccountId={bankAccountParam && bankAccountParam !== 'all' ? Number(bankAccountParam) : undefined}
+                defaultAccountId={search.filters.bank_account_id && search.filters.bank_account_id !== 'all' ? Number(search.filters.bank_account_id) : undefined}
                 allowedAccountIds={accounts?.map(a => a.id)}
             />
 

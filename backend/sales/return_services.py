@@ -40,7 +40,7 @@ class ReturnService:
             )
 
         # 2. Reverse Stock Moves (Create opposite moves)
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -230,7 +230,7 @@ class ReturnService:
         total_cogs_reversal = Decimal("0")
 
         # 1. Stock Moves
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
@@ -254,7 +254,8 @@ class ReturnService:
                     InventoryDocumentDetail(
                         document=doc_inv,
                         product=product,
-                        warehouse=return_doc.warehouse,
+                        source_location=Location.objects.get_or_create(location_type='CUSTOMER', defaults={'name': 'Clientes'})[0],
+                        destination_location=Location.objects.get_or_create(location_type='INTERNAL', warehouse=return_doc.warehouse, defaults={'name': return_doc.warehouse.name if return_doc.warehouse else 'Interno'})[0],
                         quantity=qty_base,
                         unit_cost=line.unit_cost
                     )

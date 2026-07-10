@@ -21,10 +21,12 @@ export interface StockMove {
     product_name: string
     product_internal_code?: string
     product_code?: string
-    warehouse_name: string
+    source_location: number
+    source_location_name: string
+    destination_location: number
+    destination_location_name: string
     quantity: string
     uom_name: string
-    move_type: string
     description: string
     related_documents: Array<{
         type: string
@@ -43,11 +45,7 @@ import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import React from "react"
 
-const MOVE_TYPE_MAP: Record<string, { intent: "success" | "destructive" | "warning" | "neutral", label: string }> = {
-    'IN': { intent: 'success', label: 'Entrada' },
-    'OUT': { intent: 'destructive', label: 'Salida' },
-    'ADJ': { intent: 'warning', label: 'Ajuste' }
-}
+
 
 export function MovementClientView({ externalOpen, onExternalOpenChange, createAction: externalCreateAction }: MovementClientViewProps) {
     const createAction = externalCreateAction
@@ -134,39 +132,15 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
             ),
         },
         {
-            accessorKey: "warehouse_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Almacén" className="justify-center" />,
+            id: "flow",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Origen → Destino" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.getValue("warehouse_name")}
-                </DataCell.Text>
+                <div className="flex flex-col items-center gap-0.5 text-center">
+                    <DataCell.Text className="text-muted-foreground text-xs">{row.original.source_location_name}</DataCell.Text>
+                    <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                    <DataCell.Text className="text-xs font-medium">{row.original.destination_location_name}</DataCell.Text>
+                </div>
             ),
-        },
-        {
-            accessorKey: "quantity",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cantidad" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.NumericFlow
-                    value={row.getValue("quantity")}
-                    unit={row.original.uom_name}
-                    showSign={true}
-                />
-            ),
-            size: 100,
-        },
-        {
-            accessorKey: "move_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => {
-                const type = row.original.move_type
-                const config = MOVE_TYPE_MAP[type] || { intent: 'neutral' as const, label: type }
-                return (
-                    <div className="flex justify-center w-full">
-                        <Chip intent={config.intent} size="sm">{config.label}</Chip>
-                    </div>
-                )
-            },
-            size: 100,
         },
         stockMoveActions.column(actionsCtx),
     ], [actionsCtx])
@@ -212,7 +186,6 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     }}
                     cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(move: StockMove) => {
-                        const typeConfig = MOVE_TYPE_MAP[move.move_type] || { intent: 'neutral' as const, label: move.move_type }
                         return (
                             <EntityCard
                                 key={move.id}
@@ -228,9 +201,9 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                                 />
                                 <EntityCard.Body actions={stockMoveActions.render(move, actionsCtx)}>
                                     <EntityCard.Field label="Fecha" value={<DataCell.Date value={move.date} />} />
-                                    <EntityCard.Field label="Almacén" value={move.warehouse_name} />
+                                    <EntityCard.Field label="Origen" value={move.source_location_name} />
+                                    <EntityCard.Field label="Destino" value={move.destination_location_name} />
                                     <EntityCard.Field label="Cantidad" value={<DataCell.NumericFlow value={move.quantity} unit={move.uom_name} showSign />} />
-                                    <EntityCard.Field label="Tipo" value={<Chip intent={typeConfig.intent} size="sm">{typeConfig.label}</Chip>} />
                                 </EntityCard.Body>
                             </EntityCard>
                         )

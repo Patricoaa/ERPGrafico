@@ -1,6 +1,6 @@
 import pytest
 from decimal import Decimal
-from inventory.models import InventoryDocument, InventoryDocumentDetail, Stock, StockMove, Product, Warehouse, ProductCategory
+from inventory.models import InventoryDocument, InventoryDocumentDetail, Stock, StockMove, Product, Warehouse, ProductCategory, Location
 from inventory.services import InventoryService
 
 @pytest.fixture
@@ -20,10 +20,14 @@ def test_document_confirmation_and_cancellation(base_inventory_setup):
         status=InventoryDocument.Status.DRAFT,
         reference='REC-001'
     )
+    vendor_loc, _ = Location.objects.get_or_create(location_type='VENDOR', defaults={'name': 'Proveedor'})
+    internal_loc, _ = Location.objects.get_or_create(location_type='INTERNAL', warehouse=warehouse, defaults={'name': 'Interno'})
+
     InventoryDocumentDetail.objects.create(
         document=doc,
         product=product,
-        warehouse=warehouse,
+        source_location=vendor_loc,
+        destination_location=internal_loc,
         quantity=Decimal('50.0')
     )
     
@@ -51,12 +55,16 @@ def test_transfer_document(base_inventory_setup):
     product, warehouse_src = base_inventory_setup
     warehouse_dest = Warehouse.objects.create(name='Dest Warehouse', code='TW03')
     
+    vendor_loc, _ = Location.objects.get_or_create(location_type='VENDOR', defaults={'name': 'Proveedor'})
+    src_internal_loc, _ = Location.objects.get_or_create(location_type='INTERNAL', warehouse=warehouse_src, defaults={'name': 'Interno Origen'})
+    dest_internal_loc, _ = Location.objects.get_or_create(location_type='INTERNAL', warehouse=warehouse_dest, defaults={'name': 'Interno Destino'})
+
     # Give some initial stock
     StockMove.objects.create(
         product=product,
-        warehouse=warehouse_src,
-        quantity=Decimal('100.0'),
-        move_type=StockMove.Type.IN
+        source_location=vendor_loc,
+        destination_location=src_internal_loc,
+        quantity=Decimal('100.0')
     )
     
     doc = InventoryDocument.objects.create(
@@ -67,8 +75,8 @@ def test_transfer_document(base_inventory_setup):
     InventoryDocumentDetail.objects.create(
         document=doc,
         product=product,
-        warehouse=warehouse_dest,
-        source_warehouse=warehouse_src,
+        source_location=src_internal_loc,
+        destination_location=dest_internal_loc,
         quantity=Decimal('20.0')
     )
     

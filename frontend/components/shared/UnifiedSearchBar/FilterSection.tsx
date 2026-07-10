@@ -9,6 +9,7 @@ import type {
   MultiSelectFilterDef,
   SingleSelectFilterDef,
   CustomFilterDef,
+  MultiSelectOption,
 } from '@/types/unified-search'
 import { ToggleFilterItem } from './filters/ToggleFilterItem'
 import { SingleSelectFilterItem } from './filters/SingleSelectFilterItem'
@@ -20,6 +21,7 @@ interface FilterSectionProps {
   filters?: DropdownFilterDef[]
   dateFilters?: DateFilterDef[]
   paramValues: Record<string, string | null>
+  filterOptions?: Record<string, MultiSelectOption[]>
   onApply: (param: string, value: string) => Promise<void>
   onRemove: (param: string) => Promise<void>
 }
@@ -28,6 +30,7 @@ export function FilterSection({
   filters,
   dateFilters,
   paramValues,
+  filterOptions,
   onApply,
   onRemove,
 }: FilterSectionProps) {
@@ -86,6 +89,7 @@ export function FilterSection({
               def={sf}
               selectedValue={(paramValues[sf.serverParam] as string) ?? ''}
               activeParams={activeParams}
+              filterOptions={filterOptions}
               onApply={onApply}
               onRemove={onRemove}
             />

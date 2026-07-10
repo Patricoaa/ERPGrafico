@@ -452,7 +452,7 @@ class PurchasingService:
             source_object_id=receipt.id,
         )
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
         
         doc = InventoryDocument.objects.create(
@@ -604,7 +604,7 @@ class PurchasingService:
             f"DEBUG: has_boleta={has_boleta}, StockMove fields={[f.name for f in StockMove._meta.get_fields()]}"
         )
 
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
         
         doc = InventoryDocument.objects.create(
@@ -1023,7 +1023,7 @@ class PurchasingService:
 
         # 6. Process Inventory Movements (for both NC and ND if return_items specified)
         if return_items:
-            from inventory.models import InventoryDocument, InventoryDocumentDetail
+            from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
             from inventory.services import InventoryService
 
             doc = InventoryDocument.objects.create(
@@ -1264,7 +1264,7 @@ class PurchasingService:
             )
 
         # 2. Reverse Stock Moves & Update Purchase Lines
-        from inventory.models import InventoryDocument, InventoryDocumentDetail
+        from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
 
         doc_inv = InventoryDocument.objects.create(
