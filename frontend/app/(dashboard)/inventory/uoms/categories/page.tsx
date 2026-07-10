@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default async function UoMsCategoriesPage() {
-    redirect("/inventory/settings/uoms/categories")
+    redirect("/inventory/products/uoms/categories")
 }

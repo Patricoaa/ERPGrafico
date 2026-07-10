@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
-export default async function SettingsProductsPage() {
+export default async function ProductsManagementCategoriesPage() {
     redirect("/inventory/products/categories")
 }
