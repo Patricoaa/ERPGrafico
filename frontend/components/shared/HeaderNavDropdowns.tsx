@@ -99,6 +99,7 @@ export function HeaderNavDropdowns({ navigation }: HeaderNavDropdownsProps) {
                     <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
 
                     <DropdownMenu
+                        modal={false}
                         open={openDropdown === 'secondary'}
                         onOpenChange={(open) => setOpenDropdown(open ? 'secondary' : null)}
                     >
