@@ -59,8 +59,9 @@ export interface SingleSelectFilterDef {
   key: string
   label: string
   serverParam: string
-  options: MultiSelectOption[]
+  options?: MultiSelectOption[]
   defaultValue?: string
+  dynamic?: boolean
 }
 
 export interface CustomFilterDef {
@@ -116,4 +117,5 @@ export interface UseUnifiedSearchReturn {
   inputValue: string
   setInputValue: (val: string) => void
   filterFn: <T>(data: T[]) => T[]
+  filterOptions: Record<string, MultiSelectOption[]>
 }

@@ -10,6 +10,7 @@ import type {
   RangeFilterDef,
   MultiSelectFilterDef,
   SingleSelectFilterDef,
+  MultiSelectOption,
 } from '@/types/unified-search'
 
 const PRESERVED_PARAMS = new Set(['selected'])
@@ -93,7 +94,10 @@ function getChipVariant(source: FlatParamDef['source']): UnifiedChip['variant'] 
   }
 }
 
-export function useUnifiedSearch(config: UnifiedSearchConfig): UseUnifiedSearchReturn {
+export function useUnifiedSearch(
+  config: UnifiedSearchConfig,
+  filterOptions?: Record<string, MultiSelectOption[]>,
+): UseUnifiedSearchReturn {
   const [inputValue, setInputValue] = useState('')
 
   const paramDefs = useMemo(() => collectParamDefs(config), [config])
@@ -160,7 +164,9 @@ export function useUnifiedSearch(config: UnifiedSearchConfig): UseUnifiedSearchR
         let valueLabel = value
         if (paramDef.source === 'single') {
           const filterDef = config.filters?.find(f => f.type === 'single' && f.serverParam === param) as SingleSelectFilterDef | undefined
-          const opt = filterDef?.options.find(o => o.value === value)
+          const dynamicOpts = filterDef?.dynamic && filterOptions ? filterOptions[filterDef.key] : undefined
+          const opts = dynamicOpts ?? (filterDef?.options ?? [])
+          const opt = opts.find(o => o.value === value)
           valueLabel = opt?.label ?? value
         } else if (paramDef.source === 'multi') {
           const parts = value.split(',').filter(Boolean)
@@ -199,7 +205,7 @@ export function useUnifiedSearch(config: UnifiedSearchConfig): UseUnifiedSearchR
 
       return result
     },
-    [paramValues, paramDefs, removeFilter, config.filters, config.groupBy],
+    [paramValues, paramDefs, removeFilter, config.filters, config.groupBy, filterOptions],
   )
 
   const isFiltered = chips.length > 0
@@ -265,5 +271,6 @@ export function useUnifiedSearch(config: UnifiedSearchConfig): UseUnifiedSearchR
     inputValue,
     setInputValue,
     filterFn,
+    filterOptions: filterOptions ?? {},
   }
 }
