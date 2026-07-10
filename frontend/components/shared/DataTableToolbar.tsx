@@ -105,75 +105,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         return columnFilterCount > 0 || !!globalFilter
     }, [table, globalFilter])
 
-    const suffixContent = unifiedSearch ? (
-        <>
-            {effectiveColumnToggle && (
-                <DataTableColumnToggle table={table} />
-            )}
-
-            {effectiveSortOptions && sortableColumns.length > 0 && (
-                <DropdownMenu>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={TOOLBAR_ICON_BTN}
-                                >
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">Ordenar columnas</TooltipContent>
-                    </Tooltip>
-                    <DropdownMenuContent
-                        align="end"
-                        className="w-[200px] p-1 border-border/80 shadow-floating"
-                    >
-                        {sortableColumns.map((column) => {
-                            const isSorted = column.getIsSorted()
-                            return (
-                                <div
-                                    key={column.id}
-                                    className={cn(
-                                        TOOLBAR_MENU_ITEM,
-                                        isSorted
-                                            ? "bg-accent/50 text-primary"
-                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                    )}
-                                    onClick={() =>
-                                        column.toggleSorting(column.getIsSorted() === "asc")
-                                    }
-                                >
-                                    <div className="mr-3 flex h-3.5 w-3.5 items-center justify-center transition-all">
-                                        {isSorted === "desc" ? (
-                                            <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                                        ) : isSorted === "asc" ? (
-                                            <ArrowUp className="h-3.5 w-3.5 text-primary" />
-                                        ) : (
-                                            <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
-                                        )}
-                                    </div>
-                                    <span>
-                                        {(column.columnDef.meta as { title?: string })?.title ||
-                                            translateColumnId(column.id)}
-                                    </span>
-                                </div>
-                            )
-                        })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )}
-        </>
-    ) : undefined
-
-    const viewTabsConfig = viewOptions && viewOptions.length > 1 ? {
-        items: viewOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon })),
-        value: currentView ?? '',
-        onValueChange: (v: string) => onViewChange?.(v),
-    } : undefined
-
     return (
         <SegmentationTableContext.Provider value={table as Table<unknown>}>
             <div className="w-full space-y-4">
@@ -182,8 +113,9 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         <div className="flex-1 min-w-0">
                             {React.isValidElement(unifiedSearch)
                                 ? React.cloneElement(unifiedSearch as React.ReactElement<Record<string, unknown>>, {
-                                    suffix: suffixContent,
-                                    viewTabs: viewTabsConfig,
+                                    viewOptions,
+                                    currentView,
+                                    onViewChange,
                                 })
                                 : unifiedSearch}
                         </div>

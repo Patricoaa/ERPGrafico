@@ -104,20 +104,6 @@ export interface UnifiedChip {
   onRemove: () => void
 }
 
-export interface ViewTabsConfig {
-  items: {
-    value: string
-    label: string
-    icon?: React.ComponentType<{ className?: string }>
-    badge?: string | number
-    hasErrors?: boolean
-    hidden?: boolean
-    disabled?: boolean
-  }[]
-  value: string
-  onValueChange: (value: string) => void
-}
-
 export interface UseUnifiedSearchReturn {
   filters: Record<string, string>
   paramValues: Record<string, string | null>
