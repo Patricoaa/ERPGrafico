@@ -85,9 +85,8 @@ export * from './FadeIn';
 export { SearchablePopover } from './SearchablePopover';
 export type { SearchablePopoverProps } from './SearchablePopover';
 
-// Smart Search
-export { SmartSearchBar, useSmartSearch, useClientSearch } from './SmartSearchBar';
-export type { FilterState } from './SmartSearchBar';
+/** Active filter params derived from a search definition, ready to send to the API. */
+export type FilterState = Record<string, string>
 
 // Segmentation
 export { SegmentationBar, useSegmentation, useSegmentationTable } from './SegmentationBar';
