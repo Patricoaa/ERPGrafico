@@ -133,7 +133,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         {analyticsPanel?.screen && currentView === 'analytics' && (
-                            <div className="shrink-0">
+                            <div className="shrink-0 h-9 flex items-center">
                                 <AnalyticsTabBar
                                     tabs={analyticsPanel.screen.tabs}
                                     activeTab={analyticsPanel.screen.activeTab}
@@ -227,7 +227,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         {analyticsPanel?.screen && currentView === 'analytics' && (
-                            <div className="shrink-0">
+                            <div className="shrink-0 h-9 flex items-center">
                                 <AnalyticsTabBar
                                     tabs={analyticsPanel.screen.tabs}
                                     activeTab={analyticsPanel.screen.activeTab}
