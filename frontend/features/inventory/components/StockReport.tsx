@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useState, useMemo } from "react"
 
 import { DataCell, DataTableView, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
+import type { MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 
@@ -12,6 +12,7 @@ import { ProductInsightsModal } from "@/features/inventory/components/ProductIns
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 import { useCategories, useWarehouses } from '@/features/inventory'
+import { stockReportUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 
 interface StockReportItem {
     id: number | string
@@ -37,25 +38,7 @@ export function StockReport() {
         warehouse: warehouses.map((w) => ({ label: w.name, value: String(w.id) })),
     }), [categories, warehouses])
 
-    const config: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'Producto / SKU', serverParam: 'search', clientKey: ['name', 'code', 'internal_code'] },
-        ],
-        filters: [
-            { key: 'category', label: 'Categoría', type: 'single', serverParam: 'category', dynamic: true },
-            { key: 'warehouse', label: 'Bodega', type: 'single', serverParam: 'warehouse_id', dynamic: true },
-            { key: 'stock_qty', label: 'Stock (Físico)', type: 'range', serverParamFrom: 'stock_qty_from', serverParamTo: 'stock_qty_to' },
-            { key: 'qty_available', label: 'Disponible', type: 'range', serverParamFrom: 'qty_available_from', serverParamTo: 'qty_available_to' },
-            { key: 'qty_reserved', label: 'Reservado', type: 'range', serverParamFrom: 'qty_reserved_from', serverParamTo: 'qty_reserved_to' },
-            { key: 'total_value', label: 'Valorización', type: 'range', serverParamFrom: 'total_value_from', serverParamTo: 'total_value_to' },
-        ],
-        groupBy: [
-            { key: 'category_name', label: 'Categoría', field: 'category_name' },
-            { key: 'warehouse_name', label: 'Bodega', field: 'warehouse_name' },
-        ],
-    }), [])
-
-    const search = useUnifiedSearch(config, filterOptions)
+    const search = useUnifiedSearch(stockReportUnifiedSearchDef, filterOptions)
     const { report, isLoading, refetch } = useStockReport(search.paramValues.warehouse_id as string | null)
 
     const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
@@ -240,7 +223,7 @@ export function StockReport() {
                     isLoading={isLoading}
                     variant="embedded"
                     unifiedSearch={<UnifiedSearchBar
-                        config={config}
+                        config={stockReportUnifiedSearchDef}
                         chips={search.chips}
                         isFiltered={search.isFiltered}
                         inputValue={search.inputValue}

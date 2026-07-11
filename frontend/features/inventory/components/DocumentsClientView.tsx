@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Chip, DataTableView } from '@/components/shared'
+import { Chip, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
 import { Button } from "@/components/ui/button"
@@ -27,13 +27,6 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
     'TRANSFER': { intent: 'info', label: 'Transferencia' },
     'ADJUSTMENT': { intent: 'warning', label: 'Ajuste' },
     'PRODUCTION': { intent: 'neutral', label: 'Producción' }
-}
-
-const STATUS_MAP: Record<string, { intent: "neutral" | "success" | "destructive" | "warning", label: string }> = {
-    'DRAFT': { intent: 'neutral', label: 'Borrador' },
-    'APPROVED': { intent: 'warning', label: 'Aprobado' },
-    'CONFIRMED': { intent: 'success', label: 'Confirmado' },
-    'CANCELLED': { intent: 'destructive', label: 'Anulado' }
 }
 
 export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewProps) {
@@ -172,14 +165,11 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
             {
                 accessorKey: "status",
                 header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-                cell: ({ row }) => {
-                    const config = STATUS_MAP[row.original.status] || { intent: 'neutral' as const, label: row.original.status }
-                    return (
-                        <div className="flex justify-center w-full">
-                            <Chip intent={config.intent} size="sm">{config.label}</Chip>
-                        </div>
-                    )
-                },
+                cell: ({ row }) => (
+                    <div className="flex justify-center w-full">
+                        <StatusBadge status={row.original.status} />
+                    </div>
+                ),
                 size: 100,
             },
             {
@@ -243,7 +233,6 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                     }}
                     renderCard={(doc: InventoryDocument) => {
                         const typeConfig = DOCUMENT_TYPE_MAP[doc.document_type] || { intent: 'neutral' as const, label: doc.document_type }
-                        const statusConfig = STATUS_MAP[doc.status] || { intent: 'neutral' as const, label: doc.status }
                         return (
                             <EntityCard
                                 key={doc.id}
@@ -255,7 +244,7 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                                 />
                                 <EntityCard.Body>
                                     <EntityCard.Field label="Tipo" value={<Chip intent={typeConfig.intent} size="sm">{typeConfig.label}</Chip>} />
-                                    <EntityCard.Field label="Estado" value={<Chip intent={statusConfig.intent} size="sm">{statusConfig.label}</Chip>} />
+                                    <EntityCard.Field label="Estado" value={<StatusBadge status={doc.status} size="sm" />} />
                                     {doc.reference && <EntityCard.Field label="Referencia" value={doc.reference} />}
                                 </EntityCard.Body>
                             </EntityCard>

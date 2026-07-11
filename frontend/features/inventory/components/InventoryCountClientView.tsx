@@ -2,17 +2,18 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Chip, DataTable } from '@/components/shared'
+import { DataTableView, DataCell, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, Plus, ClipboardCheck, Check, Loader2 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useInventoryCounts, useInventoryCount, useInventoryCountMutations } from "../hooks/useInventoryCounts"
 import { useWarehouses } from "../hooks/useWarehouses"
-import { InventoryCountLine } from "../types"
+import { inventoryCountUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import type { InventoryCount, InventoryCountLine } from "../types"
 import { toast } from "sonner"
+import { showApiError } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 import {
     Dialog,
@@ -22,14 +23,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { LabeledSelect, LabeledInput } from "@/components/shared"
-
-const STATUS_MAP: Record<string, { intent: "neutral" | "success" | "destructive" | "warning", label: string }> = {
-    'DRAFT': { intent: 'neutral', label: 'Borrador' },
-    'IN_PROGRESS': { intent: 'warning', label: 'En Progreso' },
-    'APPLIED': { intent: 'success', label: 'Aplicado' },
-    'CANCELLED': { intent: 'destructive', label: 'Cancelado' },
-}
 
 interface NewCountFormValues {
     warehouse: number
@@ -43,9 +36,13 @@ export function InventoryCountClientView() {
 
     const selectedCountId = searchParams.get('selected')
     const [showNewDialog, setShowNewDialog] = useState(false)
+    const search = useUnifiedSearch(inventoryCountUnifiedSearchDef)
 
-    const { counts, totalCount, isLoading: isLoadingCounts, refetch: refetchCounts } = useInventoryCounts({
-        page_size: 100,
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const { page, counts, totalCount, isLoading: isLoadingCounts, refetch: refetchCounts } = useInventoryCounts({
+        ...search.filters,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
     })
 
     const { data: selectedCount, isLoading: isLoadingCount } = useInventoryCount(
@@ -57,19 +54,19 @@ export function InventoryCountClientView() {
 
     const [editedLines, setEditedLines] = useState<Map<number, number>>(new Map())
 
-    const handleSelectCount = (id: number) => {
+    const handleSelectCount = useCallback((id: number) => {
         setEditedLines(new Map())
         const params = new URLSearchParams(searchParams.toString())
         params.set('selected', String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
+    }, [searchParams, pathname, router])
 
-    const handleBack = () => {
+    const handleBack = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         params.delete('selected')
         const query = params.toString()
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+    }, [searchParams, pathname, router])
 
     const handleCellEdit = useCallback((lineId: number, value: string) => {
         setEditedLines(prev => {
@@ -98,8 +95,8 @@ export function InventoryCountClientView() {
             await saveLines({ id: Number(selectedCountId), lines })
             setEditedLines(new Map())
             toast.success("Cantidades guardadas correctamente")
-        } catch {
-            toast.error("Error al guardar las cantidades")
+        } catch (error) {
+            showApiError(error, "Error al guardar las cantidades")
         }
     }, [selectedCountId, editedLines, saveLines])
 
@@ -113,8 +110,8 @@ export function InventoryCountClientView() {
             }))
             try {
                 await saveLines({ id: Number(selectedCountId), lines })
-            } catch {
-                toast.error("Error al guardar las cantidades antes de aplicar")
+            } catch (error) {
+                showApiError(error, "Error al guardar las cantidades antes de aplicar")
                 return
             }
         }
@@ -127,8 +124,8 @@ export function InventoryCountClientView() {
                 toast.success("Conteo aplicado. No se encontraron diferencias.")
             }
             refetchCounts()
-        } catch {
-            toast.error("Error al aplicar el conteo")
+        } catch (error) {
+            showApiError(error, "Error al aplicar el conteo")
         }
     }, [selectedCountId, editedLines, saveLines, applyCount, refetchCounts])
 
@@ -137,24 +134,24 @@ export function InventoryCountClientView() {
             const result = await createCount({ warehouse: values.warehouse, notes: values.notes })
             setShowNewDialog(false)
             handleSelectCount(result.id)
-            toast.success("Sesion de conteo creada")
-        } catch {
-            toast.error("Error al crear la sesion de conteo")
+            toast.success("Sesión de conteo creada")
+        } catch (error) {
+            showApiError(error, "Error al crear la sesión de conteo")
         }
-    }, [createCount])
+    }, [createCount, handleSelectCount])
 
-    const getCountedQty = (line: InventoryCountLine): number | null => {
+    const getCountedQty = useCallback((line: InventoryCountLine): number | null => {
         if (editedLines.has(line.id)) {
             return editedLines.get(line.id)!
         }
         return line.counted_qty
-    }
+    }, [editedLines])
 
-    const getDifference = (line: InventoryCountLine): number | null => {
+    const getDifference = useCallback((line: InventoryCountLine): number | null => {
         const counted = getCountedQty(line)
         if (counted === null) return null
         return counted - line.theoretical_qty
-    }
+    }, [getCountedQty])
 
     const linesWithChanges = useMemo(() => {
         if (!selectedCount) return 0
@@ -163,14 +160,14 @@ export function InventoryCountClientView() {
             if (counted === null) return false
             return counted !== line.theoretical_qty
         }).length
-    }, [selectedCount, editedLines])
+    }, [selectedCount, editedLines, getCountedQty])
 
     // ─── Detail View ──────────────────────────────────────────────────────
     if (selectedCountId && selectedCount) {
         const lineColumns: ColumnDef<InventoryCountLine>[] = [
             {
                 accessorKey: "product_code",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Codigo" className="justify-center" />,
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
                 cell: ({ row }) => <DataCell.Code>{row.original.product_code}</DataCell.Code>,
                 size: 100,
             },
@@ -189,7 +186,7 @@ export function InventoryCountClientView() {
             },
             {
                 accessorKey: "theoretical_qty",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Stock Teorico" className="justify-center" />,
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Stock Teórico" className="justify-center" />,
                 cell: ({ row }) => (
                     <div className="text-center font-mono text-sm">
                         {Number(row.original.theoretical_qty).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
@@ -250,12 +247,10 @@ export function InventoryCountClientView() {
             },
         ]
 
-        const statusConfig = STATUS_MAP[selectedCount.status] || { intent: 'neutral' as const, label: selectedCount.status }
         const isInProgress = selectedCount.status === 'IN_PROGRESS'
 
         return (
             <div className="flex-1 min-h-0 flex flex-col">
-                {/* Header */}
                 <div className="shrink-0 flex items-center justify-between gap-4 pb-4">
                     <div className="flex items-center gap-3">
                         <Button
@@ -269,10 +264,10 @@ export function InventoryCountClientView() {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-lg font-semibold">Conteo #{selectedCount.id}</h2>
-                                <Chip intent={statusConfig.intent} size="sm">{statusConfig.label}</Chip>
+                                <StatusBadge status={selectedCount.status} />
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                {selectedCount.warehouse_name} &middot; {selectedCount.total_products} productos &middot;{' '}
+                                {selectedCount.warehouse_name} · {selectedCount.total_products} productos ·{' '}
                                 {selectedCount.counted_products} contados
                                 {linesWithChanges > 0 && (
                                     <span className="ml-1 text-warning">({linesWithChanges} con cambios sin guardar)</span>
@@ -304,9 +299,9 @@ export function InventoryCountClientView() {
                     )}
                 </div>
 
-                {/* Table */}
                 <div className="flex-1 min-h-0">
-                    <DataTable
+                    <DataTableView
+                        entityLabel="inventory.inventorycount"
                         columns={lineColumns}
                         data={selectedCount.lines}
                         isLoading={isLoadingCount}
@@ -342,7 +337,7 @@ export function InventoryCountClientView() {
     }
 
     // ─── List View ────────────────────────────────────────────────────────
-    const listColumns: ColumnDef<typeof counts[number]>[] = [
+    const listColumns: ColumnDef<InventoryCount>[] = [
         {
             accessorKey: "id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
@@ -351,21 +346,18 @@ export function InventoryCountClientView() {
         },
         {
             accessorKey: "warehouse_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Almacen" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Almacén" />,
             cell: ({ row }) => <DataCell.Text>{row.original.warehouse_name}</DataCell.Text>,
             size: 180,
         },
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => {
-                const config = STATUS_MAP[row.original.status] || { intent: 'neutral' as const, label: row.original.status }
-                return (
-                    <div className="flex justify-center w-full">
-                        <Chip intent={config.intent} size="sm">{config.label}</Chip>
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <StatusBadge status={row.original.status} />
+                </div>
+            ),
             size: 120,
         },
         {
@@ -387,7 +379,7 @@ export function InventoryCountClientView() {
                 return (
                     <div className="flex justify-center w-full">
                         {diffCount > 0 ? (
-                            <Chip intent="warning" size="sm">{diffCount} diferencias</Chip>
+                            <StatusBadge status="WARNING" label={`${diffCount} diferencias`} />
                         ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                         )}
@@ -410,54 +402,84 @@ export function InventoryCountClientView() {
             cell: ({ row }) => <DataCell.Date value={row.original.created_at} />,
             size: 100,
         },
-        {
-            id: "actions",
-            header: () => null,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <button
-                        className="text-xs text-primary font-medium hover:underline"
-                        onClick={() => handleSelectCount(row.original.id)}
-                    >
-                        {row.original.status === 'IN_PROGRESS' ? 'Continuar' : 'Ver Detalles'}
-                    </button>
-                </div>
-            ),
-            size: 100,
-        },
     ]
+
+    const createAction = (
+        <Button size="sm" onClick={() => setShowNewDialog(true)}>
+            <Plus className="w-4 h-4 mr-1" />
+            Nuevo Conteo
+        </Button>
+    )
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="inventory.inventorycount"
                     columns={listColumns}
                     data={counts}
                     isLoading={isLoadingCounts}
-                    variant="standalone"
-                    createAction={
-                        <Button size="sm" onClick={() => setShowNewDialog(true)}>
-                            <Plus className="w-4 h-4 mr-1" />
-                            Nuevo Conteo
-                        </Button>
-                    }
+                    variant="embedded"
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={totalCount}
+                    pagination={pageState}
+                    onPaginationChange={setPageState}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={inventoryCountUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar conteos..."
+                    />}
+                    unifiedSearchConfig={inventoryCountUnifiedSearchDef}
+                    currentGroupBy={search.groupBy}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
+                    createAction={createAction}
+                    isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "No hay conteos de inventario",
-                        description: "Crea un nuevo conteo para comparar el stock teorico con el stock real.",
+                        description: "Crea un nuevo conteo para comparar el stock teórico con el stock real.",
                     }}
-                    onRowClick={(row) => handleSelectCount(row.id)}
-                    getRowClassName={(row) => row.original.status === 'IN_PROGRESS' ? 'bg-warning/5' : ''}
+                    renderCard={(count: InventoryCount) => (
+                        <EntityCard
+                            key={count.id}
+                            onClick={() => handleSelectCount(count.id)}
+                        >
+                            <EntityCard.Header
+                                title={`Conteo #${count.id}`}
+                                subtitle={count.warehouse_name}
+                                trailing={<StatusBadge status={count.status} size="sm" />}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Progreso" value={`${count.counted_products} / ${count.total_products}`} />
+                                {count.products_with_difference > 0 && (
+                                    <EntityCard.Field
+                                        label="Diferencias"
+                                        value={<StatusBadge status="WARNING" label={`${count.products_with_difference} diferencias`} size="sm" />}
+                                    />
+                                )}
+                                <EntityCard.Field label="Creado por" value={count.created_by_name ?? '-'} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 
-            {/* New Count Dialog */}
             <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
                         <DialogTitle>Nuevo Conteo de Inventario</DialogTitle>
                         <DialogDescription>
-                            Selecciona el almacen para cargar el stock teorico y comenzar el conteo.
+                            Selecciona el almacén para cargar el stock teórico y comenzar el conteo.
                         </DialogDescription>
                     </DialogHeader>
                     <NewCountForm
@@ -495,10 +517,10 @@ function NewCountForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <LabeledSelect
-                label="Almacen"
+                label="Almacén"
                 value={warehouse}
                 onChange={setWarehouse}
-                placeholder="Seleccione el almacen"
+                placeholder="Seleccione el almacén"
                 required
                 options={warehouses.map(w => ({ value: w.id.toString(), label: w.name }))}
             />

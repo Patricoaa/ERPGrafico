@@ -449,7 +449,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                             createAction={createAction}
                             isFiltered={search.isFiltered}
                             emptyState={{
-                                context: "generic",
+                                context: "inventory",
                                 title: "Aún no hay suscripciones",
                                 description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
                             }}
