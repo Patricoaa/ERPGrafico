@@ -38,6 +38,7 @@ interface StatusStyle {
 export const STATUS_MAP: Record<string, StatusStyle> = {
     // ── Lifecycle & Documents ────────────────────────────────────────────
     DRAFT:          { label: 'Borrador',     intent: 'info' },
+    APPROVED:       { label: 'Aprobado',     intent: 'warning' },
     CONFIRMED:      { label: 'Confirmado',   intent: 'warning' },
     PAID:           { label: 'Pagado',       intent: 'success' },
     CANCELLED:      { label: 'Cancelado',    intent: 'destructive' },
