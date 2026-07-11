@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { EquityCompositionTab } from "./partners/EquityCompositionTab"
+import { PartnersClientView } from "./partners/PartnersClientView"
 import { ProfitDistributionsTab } from "./partners/ProfitDistributionsTab"
 
 interface PartnersSettingsViewProps {
@@ -20,7 +20,7 @@ export function PartnersSettingsView({
     return (
         <div className="h-full flex flex-col overflow-y-auto">
             {activeTab === "composition" && (
-                <EquityCompositionTab
+                <PartnersClientView
                     initialAddPartnerOpen={initialAddPartnerOpen}
                     createAction={createAction}
                 />

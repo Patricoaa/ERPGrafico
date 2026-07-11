@@ -1,5 +1,4 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState, useCallback, useMemo } from "react"
 import {
@@ -17,10 +16,11 @@ import { partnersApi } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/lib/money"
 import {
     CardSkeleton,
     SkeletonShell,
-        DataTable,
+    DataTableView,
     Chip,
     UnifiedSearchBar,
     useUnifiedSearch
@@ -78,13 +78,15 @@ const partnerUnifiedSearchDef: UnifiedSearchConfig = {
     ],
 }
 
-export function EquityCompositionTab({
+interface PartnersClientViewProps {
+    initialAddPartnerOpen?: boolean
+    createAction?: React.ReactNode
+}
+
+export function PartnersClientView({
     initialAddPartnerOpen = false,
     createAction
-}: {
-    initialAddPartnerOpen?: boolean,
-    createAction?: React.ReactNode
-}) {
+}: PartnersClientViewProps) {
     const search = useUnifiedSearch(partnerUnifiedSearchDef)
     const [loading, setLoading] = useState(true)
     const [partners, setPartners] = useState<Partner[]>([])
@@ -106,14 +108,12 @@ export function EquityCompositionTab({
         }
     }, [searchParams, router, pathname])
 
-    // Custom action modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
     const [isDividendOpen, setIsDividendOpen] = useState(false)
     const [isMobilizeOpen, setIsMobilizeOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
 
-    // Modal pre-filling state
     const [subModalParams, setSubModalParams] = useState({
         partnerId: undefined as string | undefined,
         amount: undefined as string | undefined
@@ -551,42 +551,41 @@ export function EquityCompositionTab({
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
-                columns={columns}
-                data={filteredPartners}
-                isLoading={loading}
-                variant="embedded"
-                createAction={createAction}
-                analyticsPanel={analyticsPanel}
-                unifiedSearch={<UnifiedSearchBar
-                    config={partnerUnifiedSearchDef}
-                    chips={search.chips}
-                    isFiltered={search.isFiltered}
-                    inputValue={search.inputValue}
-                    onInputChange={search.setInputValue}
-                    onApply={search.applyFilter}
-                    onRemove={search.removeFilter}
-                    onClearAll={search.clearAll}
-                    groupBy={search.groupBy}
-                    onGroupBySelect={search.setGroupBy}
-                    paramValues={search.paramValues}
-                    placeholder="Buscar socio por nombre o ID fiscal..."
-                />}
-                showReset={search.isFiltered}
-                onReset={search.clearAll}
-                toolbarActions={
-                    !hasPartners
-                        ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
-                        : [
-                            { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
-                            { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
-                        ]
-                }
-            />
+                <DataTableView
+                    entityLabel="settings.partner"
+                    columns={columns}
+                    data={filteredPartners}
+                    isLoading={loading}
+                    variant="embedded"
+                    createAction={createAction}
+                    analyticsPanel={analyticsPanel}
+                    unifiedSearch={<UnifiedSearchBar
+                        config={partnerUnifiedSearchDef}
+                        chips={search.chips}
+                        isFiltered={search.isFiltered}
+                        inputValue={search.inputValue}
+                        onInputChange={search.setInputValue}
+                        onApply={search.applyFilter}
+                        onRemove={search.removeFilter}
+                        onClearAll={search.clearAll}
+                        groupBy={search.groupBy}
+                        onGroupBySelect={search.setGroupBy}
+                        paramValues={search.paramValues}
+                        placeholder="Buscar socio por nombre o ID fiscal..."
+                    />}
+                    showReset={search.isFiltered}
+                    onReset={search.clearAll}
+                    toolbarActions={
+                        !hasPartners
+                            ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
+                            : [
+                                { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
+                                { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
+                            ]
+                    }
+                />
             </div>
 
-
-            {/* Modals remain the same */}
             <SubscriptionMovementModal
                 open={isSubscriptionOpen}
                 onOpenChange={(open) => {
