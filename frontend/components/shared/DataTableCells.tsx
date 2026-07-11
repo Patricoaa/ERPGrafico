@@ -1,11 +1,12 @@
 
 import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
-import { ExternalLink, type LucideIcon, MoreVertical } from "lucide-react"
+import { ArrowUpRight, ArrowDownLeft, History, ExternalLink, type LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent, DataTableColumnHeader } from "@/components/shared"
+import { formatCurrency } from "@/lib/money"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import {
@@ -181,6 +182,25 @@ export const DataCell = {
         return (
             <div className={cn("text-xs font-medium text-foreground flex justify-center items-center w-full", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
+            </div>
+        )
+    },
+
+    /**
+     * Currency cell with inflow/outflow semantics.
+     * Shows directional icon, sign prefix (+/-), and semantic color.
+     * Use for ledgers, movement tables, and transaction histories.
+     */
+    CurrencyFlow: ({ value, direction, currency = "CLP", digits = 0, showIcon = true, showSign = true, className, ...props }: ValueCellProps<number | string> & { direction: 'inflow' | 'outflow' | 'neutral', currency?: string, digits?: number, showIcon?: boolean, showSign?: boolean }) => {
+        const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
+        const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
+        const textColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-foreground'
+        const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
+
+        return (
+            <div className={cn("flex items-center justify-end gap-1 font-mono text-[11px] font-black", className)} {...props}>
+                {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
+                <span className={textColor}>{sign}{formatCurrency(value, currency, { maximumFractionDigits: digits })}</span>
             </div>
         )
     },

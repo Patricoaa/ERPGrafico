@@ -4,8 +4,6 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState, useMemo } from "react"
 import {
     History,
-    ArrowUpRight,
-    ArrowDownLeft,
     Calendar,
     Wallet,
     LogOut
@@ -104,12 +102,6 @@ export function PartnerLedgerDrawer({
         'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
     ].includes(type)
 
-    const getTransactionIcon = (type: string) => {
-        if (isInflow(type)) return <ArrowUpRight className="h-3.5 w-3.5 text-success" />
-        if (isOutflow(type)) return <ArrowDownLeft className="h-3.5 w-3.5 text-destructive" />
-        return <History className="h-3.5 w-3.5 text-muted-foreground" />
-    }
-
     const getTransactionIntent = (type: string): "info" | "warning" | "success" | "destructive" | "neutral" => {
         if (type === 'SUBSCRIPTION') return 'info'
         if (type.includes('TRANSFER')) return 'warning'
@@ -160,15 +152,8 @@ export function PartnerLedgerDrawer({
             header: () => <div className="text-right">Monto</div>,
             cell: ({ row }) => {
                 const type = row.original.transaction_type
-                const amount = parseFloat(row.getValue("amount"))
-                return (
-                    <div className="flex items-center justify-end gap-1 font-mono text-[11px] font-black">
-                        {getTransactionIcon(type)}
-                        <span className={isOutflow(type) ? 'text-destructive' : 'text-success'}>
-                            {isOutflow(type) ? '-' : '+'}{formatCurrency(amount)}
-                        </span>
-                    </div>
-                )
+                const direction = isInflow(type) ? 'inflow' : isOutflow(type) ? 'outflow' : 'neutral' as const
+                return <DataCell.CurrencyFlow value={row.getValue("amount")} direction={direction} />
             }
         },
         {
