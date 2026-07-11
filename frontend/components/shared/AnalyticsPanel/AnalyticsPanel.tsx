@@ -84,7 +84,7 @@ function AnalyticsTabContent({ tab, isActive }: { tab: AnalyticsTab; isActive: b
             value={tab.value}
             className="flex-1 flex flex-col"
         >
-            <div className="p-6 flex flex-col min-h-0 h-full">
+            <div className="p-6 flex flex-col min-h-0">
                 {tab.description && (
                     <p className="text-xs text-muted-foreground/70 font-medium mb-4 shrink-0">
                         {tab.description}
