@@ -13,7 +13,7 @@ import { groupItems } from "@/lib/group-utils"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { AnalyticsPanelContent } from "./AnalyticsPanel"
+import { AnalyticsLayout } from "./AnalyticsPanel"
 
 interface CardGroupByDef {
   field: string
@@ -87,14 +87,21 @@ export function DataTableView<TData, TValue>({
 
     const analyticsScreen = dataTableProps.analyticsPanel?.screen
     if (currentView === "analytics" && analyticsScreen) {
+      const activeTab = analyticsScreen.activeTab ?? analyticsScreen.tabs[0]?.value
+      const activeTabData = analyticsScreen.tabs.find((t) => t.value === activeTab) ?? analyticsScreen.tabs[0]
+
       return () => (
-        <div className="flex-1 flex flex-col min-h-0 p-6">
-          <AnalyticsPanelContent
-            entityName={analyticsScreen.entityName}
-            tabs={analyticsScreen.tabs}
-            activeTab={analyticsScreen.activeTab}
-            onTabChange={analyticsScreen.onTabChange}
-          />
+        <div className="flex-1 flex flex-col min-h-0">
+          {activeTabData?.description && (
+            <p className="text-xs text-muted-foreground/70 font-medium mb-4 shrink-0 px-6 pt-6">
+              {activeTabData.description}
+            </p>
+          )}
+          {activeTabData?.columns?.length ? (
+            <div className="flex-1 min-h-0 flex flex-col px-6 pb-6">
+              <AnalyticsLayout columns={activeTabData.columns} />
+            </div>
+          ) : null}
         </div>
       )
     }

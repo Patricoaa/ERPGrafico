@@ -1,5 +1,5 @@
-export { AnalyticsPanel, AnalyticsPanelContent } from "./AnalyticsPanel"
-export type { AnalyticsPanelContentProps } from "./AnalyticsPanel"
+export { AnalyticsPanel, AnalyticsPanelContent, AnalyticsTabBar } from "./AnalyticsPanel"
+export type { AnalyticsPanelContentProps, AnalyticsTabBarProps } from "./AnalyticsPanel"
 export { AnalyticsChart } from "./AnalyticsChart"
 export { AnalyticsLayout } from "./AnalyticsLayout"
 
