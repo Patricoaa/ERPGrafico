@@ -8,7 +8,6 @@ interface PartnersSettingsViewProps {
     activeTab?: string
     initialFlowOpen?: boolean
     initialAddPartnerOpen?: boolean
-    initialStatsOpen?: boolean
     createAction?: React.ReactNode
 }
 
@@ -16,7 +15,6 @@ export function PartnersSettingsView({
     activeTab = "composition",
     initialFlowOpen = false,
     initialAddPartnerOpen = false,
-    initialStatsOpen = false,
     createAction
 }: PartnersSettingsViewProps) {
     return (
@@ -24,7 +22,6 @@ export function PartnersSettingsView({
             {activeTab === "composition" && (
                 <EquityCompositionTab
                     initialAddPartnerOpen={initialAddPartnerOpen}
-                    initialStatsOpen={initialStatsOpen}
                     createAction={createAction}
                 />
             )}
