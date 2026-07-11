@@ -215,34 +215,29 @@ export const DataCell = {
 
     /**
      * Flow/Polarity number display for stock or accounting movements (e.g. +100, -50).
-     * Uses semantic colors from globals.css (text-success, text-destructive, text-muted-foreground)
+     * Directional icons + semantic colors. Mirrors CurrencyFlow for quantities.
+     * When `direction` is omitted, infers from sign (backward compatible).
      */
-    NumericFlow: ({ value, unit, className, showSign = true, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, showSign?: boolean }) => {
+    NumericFlow: ({ value, unit, direction: dirProp, showIcon = true, showSign = true, className, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean }) => {
         if (value === null || value === undefined || value === "") return <div className="flex justify-center text-muted-foreground text-xs">-</div>
 
         const numValue = Number(value)
         if (isNaN(numValue)) return <div className="text-xs font-medium text-foreground flex justify-center items-center">-</div>
 
-        const isPositive = numValue > 0;
-        const isNegative = numValue < 0;
+        const direction = dirProp ?? (numValue > 0 ? 'inflow' : numValue < 0 ? 'outflow' : 'neutral')
 
-        const colorClass = isPositive ? "text-income" : isNegative ? "text-expense" : "text-muted-foreground";
-        const sign = showSign ? (isPositive ? "+" : "") : "";
+        const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
+        const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
+        const textColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-foreground'
+        const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
+
+        // eslint-disable-next-line no-restricted-syntax -- flow/polarity quantity format, not currency
+        const formatted = Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
         return (
-            <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>
-                <span className={cn(
-                    "text-xs font-medium tabular-nums flex justify-center items-center",
-                    colorClass
-                )}>
-                    {/* eslint-disable-next-line no-restricted-syntax -- flow/polarity quantity format, not currency */}
-                    {sign}{Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                </span>
-                {unit && (
-                    <span className="text-xs text-muted-foreground mt-0.5 ml-1">
-                        {unit}
-                    </span>
-                )}
+            <div className={cn("flex items-center justify-end gap-1 font-mono text-[11px] font-black", className)} {...props}>
+                {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
+                <span className={textColor}>{sign}{formatted}{unit && ` ${unit}`}</span>
             </div>
         )
     },
