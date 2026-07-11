@@ -1,25 +1,30 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback, useMemo } from "react"
 import {
     Plus,
     AlertCircle,
-    MoveHorizontal
+    MoveHorizontal,
+    PieChart as PieChartIcon,
+    Wallet,
+    Gauge,
+    TrendingUp
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { partnersApi } from "@/features/contacts"
-import { type Partner, type PartnerSummary } from "@/features/contacts"
+import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
     CardSkeleton,
     SkeletonShell,
         DataTable,
-    DataCell,
     Chip
 } from "@/components/shared"
+import type { AnalyticsPanelConfig } from "@/components/shared"
+import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
     SubscriptionMovementModal,
@@ -32,21 +37,17 @@ import { AddPartnerModal } from "@/features/settings/components/partners/AddPart
 import { InitialCapitalModal } from "@/features/settings/components/InitialCapitalModal"
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
 import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
-import { EquityStatsDrawer } from "@/features/settings/components/partners/EquityStatsDrawer"
 import { type ColumnDef } from "@tanstack/react-table"
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
-    initialStatsOpen = false,
     createAction
 }: {
     initialAddPartnerOpen?: boolean,
-    initialStatsOpen?: boolean,
     createAction?: React.ReactNode
 }) {
     const [loading, setLoading] = useState(true)
     const [partners, setPartners] = useState<Partner[]>([])
-    const [summary, setSummary] = useState<PartnerSummary | null>(null)
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
@@ -70,7 +71,6 @@ export function EquityCompositionTab({
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
     const [isDividendOpen, setIsDividendOpen] = useState(false)
     const [isMobilizeOpen, setIsMobilizeOpen] = useState(false)
-    const [isStatsOpen, setIsStatsOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
 
     // Modal pre-filling state
@@ -82,12 +82,8 @@ export function EquityCompositionTab({
     const fetchData = async () => {
         setLoading(true)
         try {
-            const [pData, sData] = await Promise.all([
-                partnersApi.getPartners(),
-                partnersApi.getSummary()
-            ])
+            const pData = await partnersApi.getPartners()
             setPartners(pData)
-            setSummary(sData)
         } catch (error) {
             console.error(error)
             toast.error("Error al cargar datos societarios")
@@ -99,12 +95,8 @@ export function EquityCompositionTab({
     useEffect(() => {
         const initialFetch = async () => {
             try {
-                const [pData, sData] = await Promise.all([
-                    partnersApi.getPartners(),
-                    partnersApi.getSummary()
-                ])
+                const pData = await partnersApi.getPartners()
                 setPartners(pData)
-                setSummary(sData)
             } catch (error) {
                 console.error(error)
                 toast.error("Error al cargar datos societarios")
@@ -120,12 +112,6 @@ export function EquityCompositionTab({
             setTimeout(() => setIsAddPartnerOpen(true), 0)
         }
     }, [initialAddPartnerOpen])
-
-    useEffect(() => {
-        if (initialStatsOpen) {
-            setTimeout(() => setIsStatsOpen(true), 0)
-        }
-    }, [initialStatsOpen])
 
     const ledgerParam = searchParams.get("ledger")
     const { selectedPartnerName, partnerIdForLedger, isLedgerOpen } = React.useMemo(() => {
@@ -144,6 +130,239 @@ export function EquityCompositionTab({
             isLedgerOpen: false
         }
     }, [ledgerParam, partners])
+
+    const analyticsData = usePartnerAnalyticsData(partners)
+
+    const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
+        screen: {
+            entityName: "Composición Societaria",
+            tabs: [
+                {
+                    value: "composicion",
+                    label: "Composición",
+                    icon: PieChartIcon,
+                    columns: [
+                        {
+                            id: "col-main",
+                            weight: 2,
+                            sections: [
+                                {
+                                    id: "kpi-patrimonio",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Patrimonio Neto",
+                                            value: formatCurrency(analyticsData.totalNetEquity),
+                                            icon: TrendingUp,
+                                            accent: "primary",
+                                            variant: "fill",
+                                            subtext: "Valor Libro de la Compañía",
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "chart-capital",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Capital Enterado vs Pendiente",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "bar-chart",
+                                                data: analyticsData.capitalComparison,
+                                                keys: ["paid", "pending"],
+                                                indexBy: "name",
+                                                showLegend: true,
+                                                axisBottomLegend: "Socio",
+                                                axisLeftLegend: "Monto ($)",
+                                            },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: "col-side",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-socios",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Socios",
+                                            value: analyticsData.partnerCount.toString(),
+                                            icon: PieChartIcon,
+                                            accent: "info",
+                                            variant: "minimal",
+                                            subtext: "Total activos",
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "chart-equity",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Distribución Patrimonial",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "pie-chart",
+                                                data: analyticsData.equityDistribution,
+                                                showLegend: true,
+                                                valueFormat: "currency",
+                                            },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    value: "saldos",
+                    label: "Saldos",
+                    icon: Wallet,
+                    columns: [
+                        {
+                            id: "col-main",
+                            weight: 2,
+                            sections: [
+                                {
+                                    id: "chart-balances",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Composición de Saldos por Socio",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "bar-chart",
+                                                data: analyticsData.balanceComposition,
+                                                keys: ["equity", "earnings", "pending", "withdrawals"],
+                                                indexBy: "name",
+                                                showLegend: true,
+                                                axisBottomLegend: "Socio",
+                                                axisLeftLegend: "Monto ($)",
+                                            },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: "col-side",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-earnings",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Utilidades Acumuladas",
+                                            value: formatCurrency(analyticsData.totalEarnings),
+                                            icon: TrendingUp,
+                                            accent: "success",
+                                            variant: "minimal",
+                                            subtext: "Resultados retenidos",
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "kpi-dividends",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Dividendos por Pagar",
+                                            value: formatCurrency(analyticsData.totalDividendsPayable),
+                                            icon: Wallet,
+                                            accent: "warning",
+                                            variant: "minimal",
+                                            subtext: "Obligaciones pendientes",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    value: "metricas",
+                    label: "Métricas",
+                    icon: Gauge,
+                    columns: [
+                        {
+                            id: "col-main",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-top",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Mayor Patrimonio",
+                                            value: analyticsData.partnerRanking[0]?.name ?? "—",
+                                            icon: TrendingUp,
+                                            accent: "primary",
+                                            variant: "minimal",
+                                            subtext: analyticsData.partnerRanking[0]
+                                                ? `${formatCurrency(analyticsData.partnerRanking[0].netEquity)}`
+                                                : "Sin datos",
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "kpi-bottom",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Menor Patrimonio",
+                                            value: analyticsData.partnerRanking.length > 0
+                                                ? analyticsData.partnerRanking[analyticsData.partnerRanking.length - 1].name
+                                                : "—",
+                                            icon: Gauge,
+                                            accent: "muted",
+                                            variant: "minimal",
+                                            subtext: analyticsData.partnerRanking.length > 0
+                                                ? `${formatCurrency(analyticsData.partnerRanking[analyticsData.partnerRanking.length - 1].netEquity)}`
+                                                : "Sin datos",
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "kpi-pending",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Capital Pendiente Total",
+                                            value: formatCurrency(analyticsData.totalPending),
+                                            icon: AlertCircle,
+                                            accent: "warning",
+                                            variant: "minimal",
+                                            subtext: `${analyticsData.partnerCount} socios`,
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "kpi-withdrawals",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Retiros Provisorios",
+                                            value: formatCurrency(analyticsData.totalWithdrawals),
+                                            icon: Wallet,
+                                            accent: "destructive",
+                                            variant: "minimal",
+                                            subtext: "Saldos provisorios",
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    }), [analyticsData])
 
     if (loading) {
         return (
@@ -300,6 +519,7 @@ export function EquityCompositionTab({
                 isLoading={loading}
                 variant="embedded"
                 createAction={createAction}
+                analyticsPanel={analyticsPanel}
                 toolbarActions={
                     !hasPartners
                         ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
@@ -364,17 +584,6 @@ export function EquityCompositionTab({
                 partnerId={partnerIdForLedger ?? selectedPartnerId}
                 partnerName={selectedPartnerName}
             />
-            {summary && (
-                <EquityStatsDrawer
-                    open={isStatsOpen}
-                    onOpenChange={(open) => {
-                        setIsStatsOpen(open)
-                        if (!open) clearModalParam()
-                    }}
-                    partners={partners}
-                    summary={summary}
-                />
-            )}
             <AddPartnerModal
                 open={isAddPartnerOpen}
                 onOpenChange={(open) => {
