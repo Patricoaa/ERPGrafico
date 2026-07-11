@@ -3,6 +3,16 @@
 import React from "react"
 import type { BarChartConfig, LineChartConfig, PieChartConfig } from "./types"
 import { PieChart, BarChart, LineChart } from "../charts"
+import { formatCompactSpanish } from "@/lib/utils/number"
+import {
+    nivoTheme,
+    barDefaults,
+    pieDefaults,
+    cardBarDefaults,
+    cardLineDefaults,
+    cardPieDefaults,
+    cardLegend,
+} from "./nivo-theme"
 
 const defaultLegend = {
     anchor: "top" as const,
@@ -16,32 +26,69 @@ const defaultLegend = {
 }
 
 function BarChartRenderer(props: BarChartConfig) {
-    const pit = props.compact ? 4 : 16
-    const showLegend = props.showLegend ?? true
-    const legendPad = showLegend && !props.compact ? 24 : 0
-    const axisBottomPad = props.axisBottomLegend ? 20 : 0
-    const axisLeftPad = props.axisLeftLegend ? 96 : 0
-    const axes = props.compact
+    const isCard = props.preset === "card"
+    const isCompact = props.compact
+
+    const showLegend = isCard
+        ? (props.lineOverlay ? true : props.keys.length > 1)
+        : isCompact
+            ? false
+            : (props.showLegend ?? true)
+
+    const cardMargin = {
+        ...cardBarDefaults.margin,
+        bottom: showLegend ? 56 : cardBarDefaults.margin.bottom,
+    }
+
+    const margin = isCard
+        ? cardMargin
+        : isCompact
+            ? { top: 4, right: 4, bottom: 28, left: 64 }
+            : { top: 40, right: 16, bottom: 28 + (props.axisBottomLegend ? 20 : 0), left: 64 + (props.axisLeftLegend ? 96 : 0) }
+
+    const isCurrency = props.valueFormat === "$,.0f"
+    const compactFmt = (v: number) => formatCompactSpanish(v, isCurrency)
+
+    const axes = isCompact
         ? { axisBottom: null, axisLeft: null }
-        : {
-            axisBottom: props.axisBottomLegend
-                ? {
+        : isCard
+            ? {
+                axisBottom: {
                     tickSize: 0,
                     tickPadding: 8,
                     legend: props.axisBottomLegend,
                     legendPosition: "middle" as const,
-                    legendOffset: 36,
-                }
-                : { tickSize: 0, tickPadding: 8 },
-            axisLeft: {
-                tickSize: 0,
-                tickPadding: 8,
-                format: props.valueFormat ?? "$,.0f",
-                legend: props.axisLeftLegend,
-                legendPosition: "middle" as const,
-                legendOffset: -140,
-            },
-        }
+                    legendOffset: 28,
+                    format: compactFmt,
+                },
+                axisLeft: {
+                    tickSize: 0,
+                    tickPadding: 8,
+                    legend: props.axisLeftLegend,
+                    legendPosition: "middle" as const,
+                    legendOffset: -40,
+                    format: compactFmt,
+                },
+            }
+            : {
+                axisBottom: props.axisBottomLegend
+                    ? {
+                        tickSize: 0,
+                        tickPadding: 8,
+                        legend: props.axisBottomLegend,
+                        legendPosition: "middle" as const,
+                        legendOffset: 36,
+                    }
+                    : { tickSize: 0, tickPadding: 8 },
+                axisLeft: {
+                    tickSize: 0,
+                    tickPadding: 8,
+                    format: props.valueFormat ?? "$,.0f",
+                    legend: props.axisLeftLegend,
+                    legendPosition: "middle" as const,
+                    legendOffset: -140,
+                },
+            }
 
     const legendItems = props.lineOverlay && showLegend
         ? [
@@ -58,23 +105,25 @@ function BarChartRenderer(props: BarChartConfig) {
         ]
         : undefined
 
+    const legendConfig = isCard ? cardLegend : defaultLegend
+
     const barLegends = legendItems
-        ? [{ data: legendItems, dataFrom: "keys" as const, ...defaultLegend }]
+        ? [{ data: legendItems, dataFrom: "keys" as const, ...legendConfig }]
         : showLegend
-            ? [{ dataFrom: "keys" as const, ...defaultLegend }]
+            ? [{ dataFrom: "keys" as const, ...legendConfig }]
             : []
 
     return (
-        <div className="flex-1 min-h-0 w-full relative">
+        <div className="flex-1 min-h-[300px] w-full relative">
             <BarChart
                 data={props.data}
                 keys={props.keys}
                 indexBy={props.indexBy}
-                padding={props.padding}
-                borderRadius={props.borderRadius}
+                padding={props.padding ?? (isCard ? cardBarDefaults.padding : barDefaults.padding)}
+                borderRadius={props.borderRadius ?? (isCard ? cardBarDefaults.borderRadius : barDefaults.borderRadius)}
                 valueFormat={props.valueFormat}
-                margin={{ top: pit + legendPad, right: pit, bottom: 28 + axisBottomPad, left: 64 + axisLeftPad }}
-                enableGridY={props.enableGridY}
+                margin={margin}
+                enableGridY={props.enableGridY ?? (isCard ? cardBarDefaults.enableGridY : barDefaults.enableGridY)}
                 legends={barLegends}
                 {...axes}
             />
@@ -83,40 +132,85 @@ function BarChartRenderer(props: BarChartConfig) {
 }
 
 function LineChartRenderer(props: LineChartConfig) {
-    const pit = props.compact ? 4 : 16
-    const showLegend = props.showLegend ?? true
-    const legendPad = showLegend && !props.compact ? 24 : 0
-    const axisBottomPad = props.axisBottomLegend ? 20 : 0
-    const axisLeftPad = props.axisLeftLegend ? 96 : 0
-    const axes = props.compact
+    const isCard = props.preset === "card"
+    const isCompact = props.compact
+
+    const showLegend = isCard
+        ? props.data.length > 1
+        : isCompact
+            ? false
+            : (props.showLegend ?? true)
+
+    const cardMargin = {
+        ...cardLineDefaults.margin,
+        bottom: showLegend ? 56 : cardLineDefaults.margin.bottom,
+    }
+
+    const margin = isCard
+        ? cardMargin
+        : isCompact
+            ? { top: 4, right: 4, bottom: 28, left: 64 }
+            : { top: 40, right: 16, bottom: 28 + (props.axisBottomLegend ? 20 : 0), left: 64 + (props.axisLeftLegend ? 96 : 0) }
+
+    const isCurrency = props.valueFormat === "$,.0f"
+    const compactFmt = (v: number) => formatCompactSpanish(v, isCurrency)
+
+    const axes = isCompact
         ? { axisBottom: null, axisLeft: null }
-        : {
-            axisBottom: props.axisBottomLegend
-                ? {
+        : isCard
+            ? {
+                axisBottom: {
                     tickSize: 0,
                     tickPadding: 8,
                     legend: props.axisBottomLegend,
                     legendPosition: "middle" as const,
-                    legendOffset: 36,
-                }
-                : { tickSize: 0, tickPadding: 8 },
-            axisLeft: {
-                tickSize: 0,
-                tickPadding: 8,
-                format: props.valueFormat ?? "$,.0f",
-                legend: props.axisLeftLegend,
-                legendPosition: "middle" as const,
-                legendOffset: -140,
-            },
-        }
+                    legendOffset: 28,
+                    format: compactFmt,
+                },
+                axisLeft: {
+                    tickSize: 0,
+                    tickPadding: 8,
+                    legend: props.axisLeftLegend,
+                    legendPosition: "middle" as const,
+                    legendOffset: -40,
+                    format: compactFmt,
+                },
+            }
+            : {
+                axisBottom: props.axisBottomLegend
+                    ? {
+                        tickSize: 0,
+                        tickPadding: 8,
+                        legend: props.axisBottomLegend,
+                        legendPosition: "middle" as const,
+                        legendOffset: 36,
+                    }
+                    : { tickSize: 0, tickPadding: 8 },
+                axisLeft: {
+                    tickSize: 0,
+                    tickPadding: 8,
+                    format: props.valueFormat ?? "$,.0f",
+                    legend: props.axisLeftLegend,
+                    legendPosition: "middle" as const,
+                    legendOffset: -140,
+                },
+            }
+
+    const legendConfig = isCard ? cardLegend : defaultLegend
 
     return (
-        <div className="flex-1 min-h-0 w-full relative">
+        <div className="flex-1 min-h-[300px] w-full relative">
             <LineChart
                 data={props.data}
-                margin={{ top: pit + legendPad, right: pit, bottom: 28 + axisBottomPad, left: 64 + axisLeftPad }}
-                enableArea={props.enableArea}
-                legends={showLegend ? [{ ...defaultLegend }] : []}
+                margin={margin}
+                lineWidth={isCard ? cardLineDefaults.lineWidth : undefined}
+                pointSize={isCard ? cardLineDefaults.pointSize : undefined}
+                enableArea={isCard ? cardLineDefaults.enableArea : props.enableArea}
+                areaOpacity={isCard ? cardLineDefaults.areaOpacity : undefined}
+                enablePointLabel={isCard ? cardLineDefaults.enablePointLabel : undefined}
+                useMesh={isCard ? cardLineDefaults.useMesh : undefined}
+                crosshairType={isCard ? cardLineDefaults.crosshairType : undefined}
+                legends={showLegend ? [{ ...legendConfig }] : []}
                 {...axes}
             />
         </div>
@@ -124,21 +218,44 @@ function LineChartRenderer(props: LineChartConfig) {
 }
 
 function PieChartRenderer(props: PieChartConfig) {
-    const pit = props.compact ? 4 : 16
-    const showLegend = props.showLegend ?? true
-    const legendPad = showLegend && !props.compact ? 24 : 0
+    const isCard = props.preset === "card"
+    const isCompact = props.compact
+
+    const margin = isCard
+        ? cardPieDefaults.margin
+        : isCompact
+            ? { top: 4, right: 4, bottom: 4, left: 4 }
+            : { top: 40, right: 16, bottom: 16, left: 16 }
+
+    const showLegend = isCard
+        ? props.data.length > 2
+        : isCompact
+            ? false
+            : (props.showLegend ?? true)
+
+    const legendConfig = isCard ? cardLegend : defaultLegend
 
     return (
-        <div className="flex-1 min-h-0 w-full relative">
+        <div className="flex-1 min-h-[300px] w-full relative">
             <PieChart
                 data={props.data}
-                innerRadius={props.innerRadius}
-                enableArcLinkLabels={props.enableArcLinkLabels}
-                enableArcLabels={props.enableLabels}
-                arcLabel={props.arcLabel}
+                innerRadius={isCard ? cardPieDefaults.innerRadius : props.innerRadius}
+                enableArcLinkLabels={isCard ? cardPieDefaults.enableArcLinkLabels : props.enableArcLinkLabels}
+                enableArcLabels={isCard ? cardPieDefaults.enableArcLabels : props.enableLabels}
+                arcLabel={isCard
+                    ? ({ percentage }: { percentage: number }) => `${Math.round(percentage)}%`
+                    : props.arcLabel
+                }
+                arcLabelsFont={isCard ? cardPieDefaults.arcLabelsFont : undefined}
+                arcLabelsRadiusOffset={isCard ? cardPieDefaults.arcLabelsRadiusOffset : undefined}
+                arcLabelsSkipAngle={isCard ? cardPieDefaults.arcLabelsSkipAngle : undefined}
                 centerLabel={props.centerLabel}
-                legends={showLegend ? [{ ...defaultLegend }] : []}
-                margin={{ top: pit + legendPad, right: pit, bottom: pit, left: pit }}
+                padAngle={isCard ? cardPieDefaults.padAngle : undefined}
+                cornerRadius={isCard ? cardPieDefaults.cornerRadius : undefined}
+                borderWidth={isCard ? cardPieDefaults.borderWidth : undefined}
+                borderColor={isCard ? cardPieDefaults.borderColor : undefined}
+                legends={showLegend ? [{ ...legendConfig }] : []}
+                margin={margin}
                 renderTooltip={
                     props.valueFormat
                         ? ({ id, value }) => {

@@ -241,10 +241,9 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                                             variant: 'chart',
                                                             chart: {
                                                                 type: 'line-chart',
+                                                                preset: 'card',
                                                                 data: hubData.paymentEvolutionChart,
-                                                                enableArea: true,
-                                                                showLegend: true,
-                                                                 valueFormat: '$,.0f',
+                                                                valueFormat: '$,.0f',
                                                             },
                                                         },
                                                     } : {
@@ -269,11 +268,9 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                                             variant: 'chart',
                                                             chart: {
                                                                 type: 'pie-chart',
+                                                                preset: 'card',
                                                                 data: hubData.costBreakdownDonut,
-                                                                innerRadius: 0.6,
-                                                                showLegend: true,
                                                                 enableLabels: true,
-                                                                enableArcLinkLabels: false,
                                                                 arcLabel: (d: { value: number }) => {
                                                                     const total = hubData.costBreakdownDonut.reduce((s, item) => s + item.value, 0);
                                                                     return total > 0 ? `${Math.round((d.value / total) * 100)}%` : '';

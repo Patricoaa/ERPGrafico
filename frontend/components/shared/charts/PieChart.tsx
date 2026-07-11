@@ -38,11 +38,13 @@ export interface PieChartProps {
     activeOuterRadiusOffset?: number
     activeInnerRadiusOffset?: number
     borderWidth?: number
+    borderColor?: unknown
     enableArcLinkLabels?: boolean
     enableArcLabels?: boolean
     arcLabelsRadiusOffset?: number
     arcLabelsSkipAngle?: number
     arcLabelsTextColor?: unknown
+    arcLabelsFont?: unknown
     arcLabel?: unknown
     legends?: unknown[]
     margin?: { top: number; right: number; bottom: number; left: number }
