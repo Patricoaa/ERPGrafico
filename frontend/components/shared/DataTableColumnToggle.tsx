@@ -33,6 +33,15 @@ export function translateColumnId(id: string): string {
         pending_amount: "Mto Pendiente",
         payment_method: "M. de Pago",
         prevision: "Previsión / Salud",
+        name: "Nombre",
+        partner_equity_percentage: "Part. %",
+        partner_total_contributions: "C. Suscrito",
+        partner_total_paid_in: "C. Enterado",
+        partner_pending_capital: "Pendiente",
+        partner_provisional_withdrawals_balance: "R. Provisorios",
+        partner_earnings_balance: "Utilidades",
+        partner_dividends_payable_balance: "D. por Pagar",
+        partner_net_equity: "Patrimonio",
     }
     return translations[id] || translateFieldName(id) || id
 }

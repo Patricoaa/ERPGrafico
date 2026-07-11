@@ -50,6 +50,32 @@ const partnerUnifiedSearchDef: UnifiedSearchConfig = {
             clientKey: ['name', 'tax_id'],
         },
     ],
+    filters: [
+        {
+            type: 'toggle',
+            key: 'has_pending_capital',
+            label: 'Con Capital Pendiente',
+            serverParam: 'has_pending_capital',
+        },
+        {
+            type: 'toggle',
+            key: 'has_earnings',
+            label: 'Con Utilidades',
+            serverParam: 'has_earnings',
+        },
+        {
+            type: 'toggle',
+            key: 'has_dividends',
+            label: 'Con Dividendos por Pagar',
+            serverParam: 'has_dividends',
+        },
+        {
+            type: 'toggle',
+            key: 'has_withdrawals',
+            label: 'Con Retiros Provisorios',
+            serverParam: 'has_withdrawals',
+        },
+    ],
 }
 
 export function EquityCompositionTab({
@@ -146,6 +172,23 @@ export function EquityCompositionTab({
     }, [ledgerParam, partners])
 
     const analyticsData = usePartnerAnalyticsData(partners)
+
+    const filteredPartners = useMemo(() => {
+        let result = search.filterFn(partners)
+        if (search.filters.has_pending_capital) {
+            result = result.filter(p => parseFloat(p.partner_pending_capital) > 0)
+        }
+        if (search.filters.has_earnings) {
+            result = result.filter(p => parseFloat(p.partner_earnings_balance) > 0)
+        }
+        if (search.filters.has_dividends) {
+            result = result.filter(p => parseFloat(p.partner_dividends_payable_balance) > 0)
+        }
+        if (search.filters.has_withdrawals) {
+            result = result.filter(p => parseFloat(p.partner_provisional_withdrawals_balance) > 0)
+        }
+        return result
+    }, [partners, search])
 
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
         screen: {
@@ -392,7 +435,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "name",
             header: "Socio",
-            enableHiding: false,
             cell: ({ row }) => (
                 <div className="flex flex-col gap-1 py-1 max-w-[220px]">
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</span>
@@ -412,7 +454,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_equity_percentage",
             header: () => <div className="text-right">Part. %</div>,
-            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right">
                     <Chip size="xs" intent="primary">
@@ -424,7 +465,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_total_contributions",
             header: () => <div className="text-right whitespace-nowrap">C. Suscrito</div>,
-            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right font-mono text-[11px] font-bold opacity-80">
                     {formatCurrency(row.getValue("partner_total_contributions"))}
@@ -434,7 +474,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_total_paid_in",
             header: () => <div className="text-right whitespace-nowrap">C. Enterado</div>,
-            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right font-mono text-[11px] font-black text-success">
                     {formatCurrency(row.getValue("partner_total_paid_in"))}
@@ -444,7 +483,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_pending_capital",
             header: () => <div className="text-right">Pendiente</div>,
-            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_pending_capital"))
                 return (
@@ -460,7 +498,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_provisional_withdrawals_balance",
             header: () => <div className="text-right whitespace-nowrap">R. Provisorios</div>,
-            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_provisional_withdrawals_balance"))
                 return (
@@ -476,7 +513,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_earnings_balance",
             header: () => <div className="text-right whitespace-nowrap text-success">Utilidades</div>,
-            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_earnings_balance"))
                 return (
@@ -492,7 +528,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_dividends_payable_balance",
             header: () => <div className="text-right whitespace-nowrap text-warning">D. por Pagar</div>,
-            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_dividends_payable_balance"))
                 return (
@@ -508,7 +543,6 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_net_equity",
             header: () => <div className="text-right whitespace-nowrap text-primary">Patrimonio</div>,
-            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right font-mono text-[12px] font-black text-primary bg-primary/5 px-2 py-1 relative ring-1 ring-primary/10">
                     {formatCurrency(row.getValue("partner_net_equity"))}
@@ -523,7 +557,7 @@ export function EquityCompositionTab({
             <div className="flex-1 min-h-0">
                 <DataTable
                 columns={columns}
-                data={search.filterFn(partners)}
+                data={filteredPartners}
                 isLoading={loading}
                 variant="embedded"
                 createAction={createAction}
