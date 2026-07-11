@@ -1,4 +1,5 @@
-export { AnalyticsPanel } from "./AnalyticsPanel"
+export { AnalyticsPanel, AnalyticsPanelContent } from "./AnalyticsPanel"
+export type { AnalyticsPanelContentProps } from "./AnalyticsPanel"
 export { AnalyticsChart } from "./AnalyticsChart"
 export { AnalyticsLayout } from "./AnalyticsLayout"
 

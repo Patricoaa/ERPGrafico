@@ -6,19 +6,57 @@ import { Drawer, TabBar, TabBarContent } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
 import type { AnalyticsPanelProps, AnalyticsTab } from "./types"
 
-export function AnalyticsPanel({
-    open,
-    onOpenChange,
+export interface AnalyticsPanelContentProps {
+    entityName: string
+    tabs: AnalyticsTab[]
+    activeTab?: string
+    onTabChange?: (value: string) => void
+}
+
+export function AnalyticsPanelContent({
     entityName,
     tabs,
     activeTab: activeTabProp,
     onTabChange,
-}: AnalyticsPanelProps) {
+}: AnalyticsPanelContentProps) {
     const [internalTab, setInternalTab] = useState(tabs[0]?.value ?? "")
 
     const currentTab = activeTabProp ?? internalTab
     const handleTabChange = onTabChange ?? setInternalTab
 
+    return (
+        <TabBar
+            items={tabs.map((t) => ({
+                value: t.value,
+                label: t.label,
+                icon: t.icon,
+                badge: t.badge,
+            }))}
+            value={currentTab}
+            onValueChange={handleTabChange}
+            orientation="horizontal"
+            className="flex-1 flex flex-col overflow-hidden"
+            contentClassName="flex flex-col"
+        >
+            {tabs.map((tab) => (
+                <AnalyticsTabContent
+                    key={tab.value}
+                    tab={tab}
+                    isActive={tab.value === currentTab}
+                />
+            ))}
+        </TabBar>
+    )
+}
+
+export function AnalyticsPanel({
+    open,
+    onOpenChange,
+    entityName,
+    tabs,
+    activeTab,
+    onTabChange,
+}: AnalyticsPanelProps) {
     return (
         <Drawer
             open={open}
@@ -29,27 +67,12 @@ export function AnalyticsPanel({
             defaultSize="60%"
             boundary="embedded"
         >
-            <TabBar
-                items={tabs.map((t) => ({
-                    value: t.value,
-                    label: t.label,
-                    icon: t.icon,
-                    badge: t.badge,
-                }))}
-                value={currentTab}
-                onValueChange={handleTabChange}
-                orientation="horizontal"
-                className="flex-1 flex flex-col overflow-hidden"
-                contentClassName="flex flex-col"
-            >
-                {tabs.map((tab) => (
-                    <AnalyticsTabContent
-                        key={tab.value}
-                        tab={tab}
-                        isActive={tab.value === currentTab}
-                    />
-                ))}
-            </TabBar>
+            <AnalyticsPanelContent
+                entityName={entityName}
+                tabs={tabs}
+                activeTab={activeTab}
+                onTabChange={onTabChange}
+            />
         </Drawer>
     )
 }
