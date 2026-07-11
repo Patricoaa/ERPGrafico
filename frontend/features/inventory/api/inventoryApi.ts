@@ -170,4 +170,29 @@ export const inventoryApi = {
         const { data } = await api.post<InventoryDocument>(`inventory/documents/${id}/annul/`)
         return data
     },
+
+    createAdjustment: async (payload: { adjustment_type: string, warehouse: number, notes?: string }) => {
+        const { data } = await api.post('inventory/adjustments/', payload)
+        return data
+    },
+
+    startCount: async (id: number | string) => {
+        const { data } = await api.post(`inventory/adjustments/${id}/start_count/`)
+        return data
+    },
+
+    applyAdjustment: async (id: number | string) => {
+        const { data } = await api.post(`inventory/adjustments/${id}/apply/`)
+        return data
+    },
+
+    getPickingTypes: async () => {
+        const { data } = await api.get('inventory/picking-types/')
+        return data
+    },
+
+    createPicking: async (payload: { picking_type: number, warehouse: number, partner?: number, origin?: string }) => {
+        const { data } = await api.post('inventory/pickings/', payload)
+        return data
+    },
 }

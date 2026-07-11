@@ -1824,3 +1824,86 @@ class ProductFavorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+
+class InventoryCount(models.Model):
+    """Sesion de conteo de inventario. Snapshot del stock teorico
+    con capacidad de registrar cantidades reales y generar ajustes."""
+
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Borrador")
+        IN_PROGRESS = "IN_PROGRESS", _("En Progreso")
+        APPLIED = "APPLIED", _("Aplicado")
+        CANCELLED = "CANCELLED", _("Cancelado")
+
+    warehouse = models.ForeignKey(
+        Warehouse, on_delete=models.PROTECT, related_name="inventory_counts"
+    )
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT
+    )
+    notes = models.TextField(_("Notas"), blank=True, default="")
+    created_by = models.ForeignKey(
+        "core.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_counts",
+    )
+    applied_at = models.DateTimeField(null=True, blank=True)
+    document = models.ForeignKey(
+        InventoryDocument,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_counts",
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Conteo de Inventario")
+        verbose_name_plural = _("Conteos de Inventario")
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"Conteo #{self.id} - {self.warehouse.name}"
+
+
+class InventoryCountLine(models.Model):
+    """Linea individual de conteo: producto + stock teorico + cantidad real."""
+
+    count = models.ForeignKey(
+        InventoryCount, on_delete=models.CASCADE, related_name="lines"
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, related_name="count_lines"
+    )
+    theoretical_qty = models.DecimalField(
+        _("Cantidad Teorica"), max_digits=12, decimal_places=4
+    )
+    counted_qty = models.DecimalField(
+        _("Cantidad Contada"), max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    unit_cost = models.DecimalField(
+        _("Costo Unitario"), max_digits=12, decimal_places=2, default=0
+    )
+    uom_name = models.CharField(_("Unidad"), max_length=50, blank=True, default="")
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Linea de Conteo")
+        verbose_name_plural = _("Lineas de Conteo")
+        ordering = ["id"]
+
+    @property
+    def difference(self):
+        if self.counted_qty is None:
+            return None
+        return self.counted_qty - self.theoretical_qty
+
+    @property
+    def has_difference(self):
+        return self.counted_qty is not None and self.difference != 0
+
+    def __str__(self):
+        return f"{self.product.name}: {self.theoretical_qty} -> {self.counted_qty}"

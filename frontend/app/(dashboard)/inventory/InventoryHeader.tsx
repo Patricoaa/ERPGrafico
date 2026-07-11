@@ -16,7 +16,8 @@ export function InventoryHeader() {
 
     const subActiveValue = (() => {
         if (activeValue === 'products') return segments[2] || 'products'
-        if (activeValue === 'stock') return segments[2] || 'report'
+        if (activeValue === 'reports') return segments[2] || 'stock'
+        if (activeValue === 'operations') return segments[2] || 'warehouses'
         if (activeValue === 'config') return segments[2] || 'valuation'
         return undefined
     })()
@@ -51,15 +52,23 @@ export function InventoryHeader() {
             ]
         },
         {
-            value: "stock",
-            label: "Existencias",
-            iconName: getEntityIconName('inventory.stockmove'),
-            href: "/inventory/stock",
+            value: "reports",
+            label: "Reportes",
+            iconName: "file-text",
+            href: "/inventory/reports",
             subTabs: [
-                { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory/stock/report" },
-                { value: "documents", label: "Documentos", iconName: "file-text", href: "/inventory/stock/documents" },
-                { value: "movements", label: "Movimientos", iconName: getEntityIconName('inventory.stockmove'), href: getViewModeUrl('inventory.stockmove', "/inventory/stock/movements") },
-                { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: getViewModeUrl('inventory.warehouse', "/inventory/stock/warehouses") },
+                { value: "stock", label: "Existencias", iconName: "package", href: "/inventory/reports/stock" },
+                { value: "movements", label: "Movimientos de stock", iconName: getEntityIconName('inventory.stockmove'), href: getViewModeUrl('inventory.stockmove', "/inventory/reports/movements") },
+            ]
+        },
+        {
+            value: "operations",
+            label: "Operaciones",
+            iconName: "activity",
+            href: "/inventory/operations",
+            subTabs: [
+                { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: getViewModeUrl('inventory.warehouse', "/inventory/operations/warehouses") },
+                { value: "documents", label: "Recepciones, entregas y ajustes", iconName: "file-text", href: "/inventory/operations/documents" },
             ]
         },
         {
@@ -94,11 +103,13 @@ export function InventoryHeader() {
             if (subActiveValue === 'pricing-rules') return { title: "Reglas de Precios", description: "Políticas de tarifas, descuentos y márgenes por cliente o volumen.", iconName: getEntityIconName('inventory.pricingrule') }
             return { title: "Catálogo de Productos", description: "Gestión de bienes físicos, servicios y consumibles.", iconName: getEntityIconName('inventory.product') }
         }
-        if (activeValue === 'stock') {
-            if (subActiveValue === 'documents') return { title: "Documentos de Inventario", description: "Historial de recepciones, entregas, transferencias y ajustes físicos.", iconName: "file-text" as const }
+        if (activeValue === 'reports') {
             if (subActiveValue === 'movements') return { title: "Movimientos de Stock", description: "Histórico de entradas, salidas y transferencias entre ubicaciones.", iconName: getEntityIconName('inventory.stockmove') }
-            if (subActiveValue === 'warehouses') return { title: "Almacenes y Ubicaciones", description: "Estructura física y lógica para el almacenamiento de mercadería.", iconName: getEntityIconName('inventory.warehouse') }
-            return { title: "Reporte de Existencias", description: "Estado actual del inventario por almacén, valorizado en tiempo real.", iconName: "file-text" as const }
+            return { title: "Reporte de Existencias", description: "Estado actual del inventario por almacén, valorizado en tiempo real.", iconName: "package" as const }
+        }
+        if (activeValue === 'operations') {
+            if (subActiveValue === 'documents') return { title: "Recepciones, Entregas y Ajustes", description: "Historial y gestión de movimientos físicos, transferencias y mermas.", iconName: "file-text" as const }
+            return { title: "Almacenes y Ubicaciones", description: "Estructura física y lógica para el almacenamiento de mercadería.", iconName: getEntityIconName('inventory.warehouse') }
         }
         if (activeValue === 'config') return { title: "Configuración de Inventario", description: "Parámetros generales del módulo de inventario.", iconName: "settings" as const }
         return { title: "Inventario", description: "", iconName: getEntityIconName('inventory.product') ?? "package" }

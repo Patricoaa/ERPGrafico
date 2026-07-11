@@ -70,3 +70,70 @@ export function useInventoryDocumentMutations(id?: number | string) {
         isAnnulling: annulMutation.isPending,
     }
 }
+
+export function useAdjustmentMutations() {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const createMutation = useMutation({
+        mutationFn: (payload: { adjustment_type: string, warehouse: number, notes?: string }) => inventoryApi.createAdjustment(payload),
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: INVENTORY_DOCUMENTS_QUERY_KEY })
+        }
+    })
+
+    const startCountMutation = useMutation({
+        mutationFn: (docId: number | string) => inventoryApi.startCount(docId),
+        onSuccess: (data, docId) => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: INVENTORY_DOCUMENTS_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: [...INVENTORY_DOCUMENTS_QUERY_KEY, 'detail', docId] })
+        }
+    })
+
+    const applyMutation = useMutation({
+        mutationFn: (docId: number | string) => inventoryApi.applyAdjustment(docId),
+        onSuccess: (data, docId) => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: INVENTORY_DOCUMENTS_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: [...INVENTORY_DOCUMENTS_QUERY_KEY, 'detail', docId] })
+            invalidateCrossFeature(queryClient, [['inventory', 'stockReport'], ['inventory', 'stockMoves']])
+        }
+    })
+
+    return {
+        createAdjustment: createMutation.mutateAsync,
+        isCreating: createMutation.isPending,
+        startCount: startCountMutation.mutateAsync,
+        isStarting: startCountMutation.isPending,
+        applyAdjustment: applyMutation.mutateAsync,
+        isApplying: applyMutation.isPending,
+    }
+}
+
+export function usePickingTypes() {
+    return useQuery({
+        queryKey: ['inventory', 'pickingTypes'],
+        queryFn: () => inventoryApi.getPickingTypes(),
+        staleTime: 5 * 60 * 1000,
+    })
+}
+
+export function usePickingMutations() {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const createMutation = useMutation({
+        mutationFn: (payload: { picking_type: number, warehouse: number, partner?: number, origin?: string }) => inventoryApi.createPicking(payload),
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: INVENTORY_DOCUMENTS_QUERY_KEY })
+        }
+    })
+
+    return {
+        createPicking: createMutation.mutateAsync,
+        isCreating: createMutation.isPending,
+    }
+}
