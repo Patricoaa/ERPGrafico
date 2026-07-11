@@ -225,6 +225,17 @@ export const stockReportUnifiedSearchDef: UnifiedSearchConfig = {
   ],
 }
 
+export const inventoryCountLineSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Producto / Código',
+      serverParam: 'search',
+      clientKey: ['product_name', 'product_code', 'product_internal_code'],
+    },
+  ],
+}
+
 export const inventoryCountUnifiedSearchDef: UnifiedSearchConfig = {
   searchFields: [
     {
