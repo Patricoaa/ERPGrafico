@@ -5,6 +5,7 @@ import {
     Landmark, CreditCard, Banknote, Plus, Trash2, Info,
 } from "lucide-react"
 import { GenericWizard, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
+import { formatMoney } from "@/lib/money"
 import type { WizardStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -567,7 +568,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                 )
                             })}
                             {creditCards.filter((c) => c.name).map((c, i) => (
-                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} badge={c.creditLimit ? `Cupo: $${Number(c.creditLimit).toLocaleString('es-CL')}` : undefined} />
+                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} badge={c.creditLimit ? `Cupo: ${formatMoney(c.creditLimit)}` : undefined} />
                             ))}
                             {loans.filter((l) => l.principal).map((l, i) => (
                                 <SummaryRow

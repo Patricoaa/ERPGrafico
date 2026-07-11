@@ -51,7 +51,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
     const fmt = (val: string) => {
         const n = parseFloat(val)
         if (loan.currency === 'UF') {
-            return `${Math.round(n).toLocaleString('es-CL')} UF`
+            return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n))} UF`
         }
         return new Intl.NumberFormat('es-CL', {
             style: 'currency', currency: 'CLP',

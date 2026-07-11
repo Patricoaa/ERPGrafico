@@ -4,6 +4,7 @@ import React from "react"
 import type { BarChartConfig, LineChartConfig, PieChartConfig } from "./types"
 import { PieChart, BarChart, LineChart } from "../charts"
 import { formatCompactSpanish } from "@/lib/utils/number"
+import { formatMoney, formatQuantity } from "@/lib/money"
 import {
     nivoTheme,
     barDefaults,
@@ -228,10 +229,9 @@ function PieChartRenderer(props: PieChartConfig) {
                               if (!Number.isFinite(val)) {
                                   formatted = String(val)
                               } else if (props.valueFormat === "currency") {
-                                  formatted =
-                                      "$" + Math.round(val).toLocaleString("es-CL")
+                                  formatted = formatMoney(Math.round(val))
                               } else {
-                                  formatted = val.toLocaleString("es-CL")
+                                  formatted = formatQuantity(val)
                               }
                               return (
                                   <>

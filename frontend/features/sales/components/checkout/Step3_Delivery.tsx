@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, RadioCard } from "@/components/shared"
+import { StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, QuantityDisplay, RadioCard } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
@@ -210,7 +210,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                     </div>
                                             </TableCell>
                                             <TableCell className="text-right font-semibold">
-                                                {pendingQty.toLocaleString('es-CL')}
+                                                <QuantityDisplay value={pendingQty} decimals={2} inline />
                                             </TableCell>
                                             <TableCell>
                                                 <LabeledInput
