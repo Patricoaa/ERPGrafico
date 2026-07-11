@@ -14,6 +14,10 @@ from accounting.models import Account, AccountType, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
 
 from .models import (
+    InventoryCount,
+    InventoryCountLine,
+    InventoryDocument,
+    InventoryDocumentDetail,
     PricingRule,
     Product,
     ProductAttributeValue,
@@ -1880,3 +1884,101 @@ class ProductService:
             price_surcharge=None,
         )
         return {"updated": updated}
+
+
+class InventoryCountService:
+    """Logica de negocio para conteos de inventario."""
+
+    @staticmethod
+    @transaction.atomic
+    def create_count(*, warehouse_id: int, user, notes: str = "") -> InventoryCount:
+        from .models import Stock
+
+        warehouse = Warehouse.objects.get(id=warehouse_id)
+        count = InventoryCount.objects.create(
+            warehouse=warehouse, created_by=user, notes=notes
+        )
+
+        stocks = (
+            Stock.objects.filter(warehouse=warehouse, quantity__gt=0)
+            .select_related("product", "product__uom")
+        )
+
+        lines = []
+        for stock in stocks:
+            lines.append(
+                InventoryCountLine(
+                    count=count,
+                    product=stock.product,
+                    theoretical_qty=stock.quantity,
+                    unit_cost=stock.product.cost_price or 0,
+                    uom_name=stock.product.uom.name if stock.product.uom else "",
+                )
+            )
+        InventoryCountLine.objects.bulk_create(lines)
+
+        count.status = InventoryCount.Status.IN_PROGRESS
+        count.save()
+        return count
+
+    @staticmethod
+    @transaction.atomic
+    def save_lines(*, count_id: int, updates: list) -> InventoryCount:
+        count = InventoryCount.objects.get(id=count_id)
+        if count.status != InventoryCount.Status.IN_PROGRESS:
+            raise ValidationError("Solo se pueden editar conteos en progreso.")
+
+        for update in updates:
+            InventoryCountLine.objects.filter(id=update["line_id"], count=count).update(
+                counted_qty=update["counted_qty"]
+            )
+
+        return InventoryCount.objects.get(id=count_id)
+
+    @staticmethod
+    @transaction.atomic
+    def apply_count(*, count_id: int, user) -> InventoryDocument:
+        from django.db.models import F
+
+        count = InventoryCount.objects.get(id=count_id)
+        if count.status != InventoryCount.Status.IN_PROGRESS:
+            raise ValidationError("Solo se pueden aplicar conteos en progreso.")
+
+        lines_with_diff = count.lines.filter(counted_qty__isnull=False).exclude(
+            counted_qty=F("theoretical_qty")
+        )
+
+        if not lines_with_diff.exists():
+            count.status = InventoryCount.Status.APPLIED
+            count.applied_at = timezone.now()
+            count.save()
+            return None
+
+        doc = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.ADJUSTMENT,
+            status=InventoryDocument.Status.DRAFT,
+            notes=f"Ajuste por conteo #{count.id}. {count.notes}".strip(),
+            created_by=user,
+        )
+
+        details = []
+        for line in lines_with_diff:
+            diff = line.counted_qty - line.theoretical_qty
+            details.append(
+                InventoryDocumentDetail(
+                    document=doc,
+                    product=line.product,
+                    quantity=diff,
+                    unit_cost=line.unit_cost,
+                )
+            )
+        InventoryDocumentDetail.objects.bulk_create(details)
+
+        InventoryService.confirmar_documento(doc, user=user, generate_accounting=True)
+
+        count.document = doc
+        count.status = InventoryCount.Status.APPLIED
+        count.applied_at = timezone.now()
+        count.save()
+
+        return doc
