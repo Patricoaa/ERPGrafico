@@ -18,7 +18,7 @@ import {
 /** Declarative view configuration for DataTable routes */
 export interface ViewPolicy {
   /** Available view modes for this entity's list page */
-  availableViews: ('list' | 'card' | 'grid' | 'kanban' | 'timeline')[];
+  availableViews: ('list' | 'card' | 'grid' | 'kanban' | 'timeline' | 'analytics')[];
   /** Default view when no ?view= param is present */
   defaultView: 'list' | 'card' | 'grid' | 'kanban';
   /** Card component strategy: 'domain' = DomainCard (workflow entities), 'entity' = EntityCard, 'custom' = domain-specific */
@@ -537,7 +537,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/settings/partners',
     detailUrlPattern: '/settings/partners?selected={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'analytics'], defaultView: 'list' },
   },
 
   // ── Purchasing (missing entities) ──────────────────────────────────────
@@ -1084,6 +1084,7 @@ const VIEW_ICON_MAP: Record<string, { label: string; icon: LucideIcon }> = {
   grid:    { label: 'Grilla',     icon: LayoutGrid },
   kanban:  { label: 'Kanban',     icon: Kanban },
   timeline:{ label: 'Cronograma', icon: CalendarDays },
+  analytics:{ label: 'Análisis',  icon: BarChart3 },
 };
 
 /**
