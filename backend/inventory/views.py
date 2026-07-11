@@ -11,6 +11,7 @@ from core.idempotency import idempotent_endpoint
 
 from .filters import ProductFilter, StockMoveFilter, UoMFilter
 from .models import (
+    InventoryCount,
     PricingRule,
     Product,
     ProductAttribute,
@@ -32,6 +33,8 @@ from .selectors import (
     list_products,
 )
 from .serializers import (
+    InventoryCountCreateSerializer,
+    InventoryCountSerializer,
     PricingRuleSerializer,
     ProductAttributeSerializer,
     ProductAttributeValueSerializer,
@@ -46,7 +49,7 @@ from .serializers import (
     WarehouseSerializer,
     InventoryDocumentSerializer,
 )
-from .services import StockService, UoMService, ProductService, PricingService
+from .services import InventoryCountService, StockService, UoMService, ProductService, PricingService
 
 
 class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
@@ -410,10 +413,6 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
 
 
 class InventoryCountViewSet(viewsets.ModelViewSet):
-    from .models import InventoryCount
-    from .serializers import InventoryCountSerializer, InventoryCountCreateSerializer
-    from .services import InventoryCountService
-
     queryset = (
         InventoryCount.objects.select_related("warehouse", "created_by", "document")
         .prefetch_related("lines", "lines__product")
