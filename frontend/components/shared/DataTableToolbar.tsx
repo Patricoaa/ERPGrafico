@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, X, LayoutDashboard } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, X, LayoutDashboard, MoreVertical } from "lucide-react"
 import { type Table } from "@tanstack/react-table"
 
 import { SEG_DROPDOWN_ITEM, TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN } from './search-styles'
@@ -161,7 +161,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 </Tooltip>
                             )}
 
-                            {effectiveColumnToggle && (
+                            {effectiveColumnToggle && !unifiedSearch && (
                                 <DataTableColumnToggle table={table} />
                             )}
 
@@ -170,10 +170,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
-                                            size="sm"
-                                            className="h-9 px-2 text-xs font-semibold tracking-tight gap-1 rounded-sm shrink-0"
+                                            size="icon"
+                                            className="h-9 w-9 shrink-0 bg-muted/50 hover:bg-muted rounded-md"
                                         >
-                                            Acciones
+                                            <MoreVertical className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent
@@ -320,10 +320,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
-                                            size="sm"
-                                            className="h-9 px-2 text-xs font-semibold tracking-tight gap-1 rounded-sm shrink-0"
+                                            size="icon"
+                                            className="h-9 w-9 shrink-0 bg-muted/50 hover:bg-muted rounded-md"
                                         >
-                                            Acciones
+                                            <MoreVertical className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent

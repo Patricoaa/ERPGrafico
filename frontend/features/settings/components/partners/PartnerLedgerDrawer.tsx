@@ -201,7 +201,7 @@ export function PartnerLedgerDrawer({
             boundary="embedded"
             resizable={false}
             showOverlay={true}
-            defaultSize="100%"
+            defaultSize="80%"
         >
             {loading ? (
                 <div className="p-4">
