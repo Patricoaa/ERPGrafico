@@ -161,6 +161,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 </Tooltip>
                             )}
 
+                            {effectiveColumnToggle && (
+                                <DataTableColumnToggle table={table} />
+                            )}
+
                             {toolbarActions && toolbarActions.length > 0 && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
