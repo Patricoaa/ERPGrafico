@@ -33,7 +33,7 @@ export function AnalyticsTabBar({
             value={currentTab}
             onValueChange={handleTabChange}
             orientation="horizontal"
-            className="w-auto shrink-0"
+            className="flex-none w-auto shrink-0"
         >
             <div className="hidden" />
         </TabBar>
