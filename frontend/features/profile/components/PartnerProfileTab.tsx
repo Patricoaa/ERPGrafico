@@ -19,7 +19,6 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { type PartnerTransaction } from "@/features/contacts"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 
-import { cn } from "@/lib/utils"
 import {SkeletonShell} from "@/components/shared"
 
 import { PaymentDrawer } from "@/features/treasury"
@@ -96,13 +95,12 @@ export function PartnerProfileTab({ contactId }: Props) {
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Monto" />,
             cell: ({ row }) => {
                 const type = row.original.transaction_type
-                const amount = row.getValue("amount") as string
                 const isNegative = type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT' || type === 'LOAN_OUT'
+                const direction = isNegative ? 'outflow' : 'inflow' as const
 
                 return (
-                    <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-destructive' : 'text-success')}>
-                        <span>{isNegative ? '-' : '+'}</span>
-                        <DataCell.Currency value={amount} className="" />
+                    <div className="flex justify-center w-full">
+                        <DataCell.CurrencyFlow value={row.getValue("amount")} direction={direction} showIcon={false} />
                     </div>
                 )
             },

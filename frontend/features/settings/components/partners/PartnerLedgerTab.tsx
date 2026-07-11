@@ -3,12 +3,9 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState, useMemo } from "react"
 import {
-    ArrowDownLeft,
-    ArrowUpRight,
     Wallet,
     Calendar,
-    LogOut,
-    History
+    LogOut
 } from "lucide-react"
 import { TableRow, TableCell } from "@/components/ui/table"
 
@@ -81,12 +78,6 @@ export function PartnerLedgerTab() {
         'WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION',
         'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
     ].includes(type)
-
-    const getTransactionIcon = (type: string) => {
-        if (isInflow(type)) return <ArrowUpRight className="h-3.5 w-3.5 text-success" />
-        if (isOutflow(type)) return <ArrowDownLeft className="h-3.5 w-3.5 text-destructive" />
-        return <History className="h-3.5 w-3.5 text-muted-foreground" />
-    }
 
     const getTransactionColor = (type: string) => {
         if (type === 'SUBSCRIPTION') return 'bg-info/10 text-info border-info/20'
@@ -204,15 +195,8 @@ export function PartnerLedgerTab() {
             header: () => <div className="text-right pr-4">Monto</div>,
             cell: ({ row }) => {
                 const type = row.original.transaction_type
-                const amount = parseFloat(row.getValue("amount"))
-                return (
-                    <div className="flex items-center justify-end gap-1 font-mono text-[11px] font-black pr-4">
-                        {getTransactionIcon(type)}
-                        <span className={isOutflow(type) ? 'text-destructive' : 'text-success'}>
-                            {isOutflow(type) ? '-' : '+'}{formatCurrency(amount)}
-                        </span>
-                    </div>
-                )
+                const direction = isInflow(type) ? 'inflow' : isOutflow(type) ? 'outflow' : 'neutral' as const
+                return <DataCell.CurrencyFlow value={row.getValue("amount")} direction={direction} className="pr-4" />
             }
         },
         {
