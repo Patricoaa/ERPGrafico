@@ -50,6 +50,7 @@ export function AnalyticsPanel({
                 orientation="horizontal"
                 className="flex-1 flex flex-col overflow-hidden"
                 contentClassName="flex flex-col"
+                listClassName="pt-2"
             >
                 {tabs.map((tab) => (
                     <AnalyticsTabContent
