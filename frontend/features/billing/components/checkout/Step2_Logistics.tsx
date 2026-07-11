@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FormSection, LabeledInput, LabeledContainer, LabeledSwitch, PeriodValidationDateInput, RadioCard, StepHeader } from "@/components/shared"
+import { FormSection, LabeledInput, LabeledContainer, LabeledSwitch, PeriodValidationDateInput, QuantityDisplay, RadioCard, StepHeader } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Truck, Package, Calendar, AlertTriangle, ShoppingBag } from "lucide-react"
 import { billingApi } from "../../api/billingApi"
@@ -273,7 +273,7 @@ export function Step2_Logistics({
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right font-semibold text-xs tabular-nums">
-                                                    {itemQty.toLocaleString('es-CL')}
+                                                    <QuantityDisplay value={itemQty} decimals={2} inline />
                                                 </TableCell>
                                                 <TableCell>
                                                     <LabeledInput

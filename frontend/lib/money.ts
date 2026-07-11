@@ -19,3 +19,20 @@ export function formatMoney(
 }
 
 export const formatCurrency = formatMoney;
+
+/**
+ * Formats a numeric quantity with locale-aware thousand separators.
+ * Use this ONLY in non-JSX contexts (template literals, state messages, tooltips).
+ * For rendering in JSX, always use <QuantityDisplay /> instead.
+ */
+export function formatQuantity(
+  value: number | string | null | undefined,
+  decimals = 0,
+): string {
+  const n = Number(value)
+  if (isNaN(n) || value === null || value === undefined) return '—'
+  return new Intl.NumberFormat('es-CL', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(n)
+}

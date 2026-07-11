@@ -115,7 +115,7 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
 function formatMoney(value: string, currency: string) {
     const n = parseFloat(value || '0')
     if (currency === 'UF') {
-        return `${n.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} UF`
+        return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} UF`
     }
     return new Intl.NumberFormat('es-CL', {
         style: 'currency', currency: 'CLP',
