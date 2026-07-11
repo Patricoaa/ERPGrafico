@@ -2,15 +2,15 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTableView, DataCell, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput } from '@/components/shared'
+import { DataTableView, DataCell, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Plus, ClipboardCheck, Check, Loader2 } from "lucide-react"
+import { ArrowRight, Plus, ClipboardCheck, Check, Loader2 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useInventoryCounts, useInventoryCount, useInventoryCountMutations } from "../hooks/useInventoryCounts"
 import { useWarehouses } from "../hooks/useWarehouses"
-import { inventoryCountUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { inventoryCountUnifiedSearchDef, inventoryCountLineSearchDef } from "@/features/inventory/unifiedSearchDef"
 import type { InventoryCount, InventoryCountLine } from "../types"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -37,6 +37,7 @@ export function InventoryCountClientView() {
     const selectedCountId = searchParams.get('selected')
     const [showNewDialog, setShowNewDialog] = useState(false)
     const search = useUnifiedSearch(inventoryCountUnifiedSearchDef)
+    const lineSearch = useUnifiedSearch(inventoryCountLineSearchDef)
 
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, counts, totalCount, isLoading: isLoadingCounts, refetch: refetchCounts } = useInventoryCounts({
@@ -61,7 +62,7 @@ export function InventoryCountClientView() {
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [searchParams, pathname, router])
 
-    const handleBack = useCallback(() => {
+    const handleCloseDrawer = useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         params.delete('selected')
         const query = params.toString()
@@ -162,181 +163,93 @@ export function InventoryCountClientView() {
         }).length
     }, [selectedCount, editedLines, getCountedQty])
 
-    // ─── Detail View ──────────────────────────────────────────────────────
-    if (selectedCountId && selectedCount) {
-        const lineColumns: ColumnDef<InventoryCountLine>[] = [
-            {
-                accessorKey: "product_code",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-                cell: ({ row }) => <DataCell.Code>{row.original.product_code}</DataCell.Code>,
-                size: 100,
-            },
-            {
-                accessorKey: "product_name",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
-                cell: ({ row }) => (
-                    <div className="flex flex-col">
-                        <DataCell.Text>{row.original.product_name}</DataCell.Text>
-                        {row.original.product_internal_code && (
-                            <span className="text-[10px] text-muted-foreground font-mono">{row.original.product_internal_code}</span>
-                        )}
-                    </div>
-                ),
-                size: 250,
-            },
-            {
-                accessorKey: "theoretical_qty",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Stock Teórico" className="justify-center" />,
-                cell: ({ row }) => (
-                    <div className="text-center font-mono text-sm">
-                        {Number(row.original.theoretical_qty).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
-                    </div>
-                ),
-                size: 120,
-            },
-            {
-                id: "counted_qty",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Cantidad Real" className="justify-center" />,
-                cell: ({ row }) => {
-                    const line = row.original
-                    const value = getCountedQty(line)
-                    return (
-                        <div className="flex justify-center">
-                            <Input
-                                type="number"
-                                value={value ?? ''}
-                                onChange={(e) => handleCellEdit(line.id, e.target.value)}
-                                placeholder="--"
-                                className={cn(
-                                    "w-24 h-8 text-center text-sm font-mono",
-                                    value !== null && value !== line.theoretical_qty && "border-warning bg-warning/10"
-                                )}
-                                disabled={selectedCount.status !== 'IN_PROGRESS'}
-                            />
-                        </div>
-                    )
-                },
-                size: 130,
-            },
-            {
-                id: "difference",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Diferencia" className="justify-center" />,
-                cell: ({ row }) => {
-                    const diff = getDifference(row.original)
-                    if (diff === null) return <span className="text-muted-foreground text-center block">--</span>
-                    return (
-                        <div className={cn(
-                            "text-center font-mono font-medium text-sm",
-                            diff > 0 && "text-success",
-                            diff < 0 && "text-destructive",
-                            diff === 0 && "text-muted-foreground"
-                        )}>
-                            {diff > 0 ? '+' : ''}{Number(diff).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
-                        </div>
-                    )
-                },
-                size: 110,
-            },
-            {
-                accessorKey: "uom_name",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Unidad" className="justify-center" />,
-                cell: ({ row }) => (
-                    <div className="text-center text-sm text-muted-foreground">{row.original.uom_name}</div>
-                ),
-                size: 80,
-            },
-        ]
+    const drawerIsOpen = !!selectedCountId
+    const isDrawerLoading = drawerIsOpen && isLoadingCount
+    const count = selectedCount
 
-        const isInProgress = selectedCount.status === 'IN_PROGRESS'
-
-        return (
-            <div className="flex-1 min-h-0 flex flex-col">
-                <div className="shrink-0 flex items-center justify-between gap-4 pb-4">
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleBack}
-                            className="h-8 w-8 p-0"
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-lg font-semibold">Conteo #{selectedCount.id}</h2>
-                                <StatusBadge status={selectedCount.status} />
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                {selectedCount.warehouse_name} · {selectedCount.total_products} productos ·{' '}
-                                {selectedCount.counted_products} contados
-                                {linesWithChanges > 0 && (
-                                    <span className="ml-1 text-warning">({linesWithChanges} con cambios sin guardar)</span>
-                                )}
-                            </p>
-                        </div>
-                    </div>
-
-                    {isInProgress && (
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleSaveAll}
-                                disabled={editedLines.size === 0 || isSaving}
-                            >
-                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
-                                Guardar ({editedLines.size})
-                            </Button>
-                            <Button
-                                size="sm"
-                                onClick={handleApply}
-                                disabled={isApplying}
-                            >
-                                {isApplying ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ClipboardCheck className="h-4 w-4 mr-1" />}
-                                Aplicar Conteo
-                            </Button>
-                        </div>
+    const lineColumns: ColumnDef<InventoryCountLine>[] = [
+        {
+            accessorKey: "product_code",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
+            cell: ({ row }) => <DataCell.Code>{row.original.product_code}</DataCell.Code>,
+            size: 100,
+        },
+        {
+            accessorKey: "product_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" />,
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <DataCell.Text>{row.original.product_name}</DataCell.Text>
+                    {row.original.product_internal_code && (
+                        <span className="text-[10px] text-muted-foreground font-mono">{row.original.product_internal_code}</span>
                     )}
                 </div>
-
-                <div className="flex-1 min-h-0">
-                    <DataTableView
-                        entityLabel="inventory.inventorycount"
-                        columns={lineColumns}
-                        data={selectedCount.lines}
-                        isLoading={isLoadingCount}
-                        variant="embedded"
-                        hidePagination
-                        noBorder
-                        emptyState={{
-                            context: "inventory",
-                            title: "Sin productos",
-                            description: "Este conteo no tiene productos registrados.",
-                        }}
-                    />
+            ),
+            size: 250,
+        },
+        {
+            accessorKey: "theoretical_qty",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Stock Teórico" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="text-center font-mono text-sm">
+                    {Number(row.original.theoretical_qty).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
                 </div>
-            </div>
-        )
-    }
+            ),
+            size: 120,
+        },
+        {
+            id: "counted_qty",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cantidad Real" className="justify-center" />,
+            cell: ({ row }) => {
+                const line = row.original
+                const value = getCountedQty(line)
+                return (
+                    <div className="flex justify-center">
+                        <Input
+                            type="number"
+                            value={value ?? ''}
+                            onChange={(e) => handleCellEdit(line.id, e.target.value)}
+                            placeholder="--"
+                            className={cn(
+                                "w-24 h-8 text-center text-sm font-mono",
+                                value !== null && value !== line.theoretical_qty && "border-warning bg-warning/10"
+                            )}
+                            disabled={count?.status !== 'IN_PROGRESS'}
+                        />
+                    </div>
+                )
+            },
+            size: 130,
+        },
+        {
+            id: "difference",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Diferencia" className="justify-center" />,
+            cell: ({ row }) => {
+                const diff = getDifference(row.original)
+                if (diff === null) return <span className="text-muted-foreground text-center block">--</span>
+                return (
+                    <div className={cn(
+                        "text-center font-mono font-medium text-sm",
+                        diff > 0 && "text-success",
+                        diff < 0 && "text-destructive",
+                        diff === 0 && "text-muted-foreground"
+                    )}>
+                        {diff > 0 ? '+' : ''}{Number(diff).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
+                    </div>
+                )
+            },
+            size: 110,
+        },
+        {
+            accessorKey: "uom_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Unidad" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="text-center text-sm text-muted-foreground">{row.original.uom_name}</div>
+            ),
+            size: 80,
+        },
+    ]
 
-    // ─── Loading Detail ───────────────────────────────────────────────────
-    if (selectedCountId && isLoadingCount) {
-        return (
-            <div className="flex-1 min-h-0 flex flex-col">
-                <div className="shrink-0 flex items-center gap-3 pb-4">
-                    <Button variant="ghost" size="sm" onClick={handleBack} className="h-8 w-8 p-0">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <p className="text-sm text-muted-foreground">Cargando conteo...</p>
-                </div>
-                <div className="flex-1 min-h-0 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            </div>
-        )
-    }
-
-    // ─── List View ────────────────────────────────────────────────────────
     const listColumns: ColumnDef<InventoryCount>[] = [
         {
             accessorKey: "id",
@@ -396,6 +309,16 @@ export function InventoryCountClientView() {
             ),
             size: 150,
         },
+        {
+            id: "actions",
+            header: () => null,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+            ),
+            size: 50,
+        },
     ]
 
     const createAction = (
@@ -404,6 +327,9 @@ export function InventoryCountClientView() {
             Nuevo Conteo
         </Button>
     )
+
+    const drawerTitle = count ? `Conteo #${count.id}` : "Conteo"
+    const isInProgress = count?.status === 'IN_PROGRESS'
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -418,6 +344,7 @@ export function InventoryCountClientView() {
                     rowCount={totalCount}
                     pagination={pageState}
                     onPaginationChange={setPageState}
+                    onRowClick={(row) => handleSelectCount(row.id)}
                     unifiedSearch={<UnifiedSearchBar
                         config={inventoryCountUnifiedSearchDef}
                         chips={search.chips}
@@ -443,31 +370,124 @@ export function InventoryCountClientView() {
                         title: "No hay conteos de inventario",
                         description: "Crea un nuevo conteo para comparar el stock teórico con el stock real.",
                     }}
-                    renderCard={(count: InventoryCount) => (
+                    renderCard={(cnt: InventoryCount) => (
                         <EntityCard
-                            key={count.id}
-                            onClick={() => handleSelectCount(count.id)}
+                            key={cnt.id}
+                            onClick={() => handleSelectCount(cnt.id)}
                         >
                             <EntityCard.Header
-                                title={`Conteo #${count.id}`}
-                                subtitle={count.warehouse_name}
-                                trailing={<StatusBadge status={count.status} size="sm" />}
+                                title={`Conteo #${cnt.id}`}
+                                subtitle={cnt.warehouse_name}
+                                trailing={<StatusBadge status={cnt.status} size="sm" />}
                             />
                             <EntityCard.Body>
-                                <EntityCard.Field label="Progreso" value={`${count.counted_products} / ${count.total_products}`} />
-                                {count.products_with_difference > 0 && (
+                                <EntityCard.Field label="Progreso" value={`${cnt.counted_products} / ${cnt.total_products}`} />
+                                {cnt.products_with_difference > 0 && (
                                     <EntityCard.Field
                                         label="Diferencias"
-                                        value={<StatusBadge status="WARNING" label={`${count.products_with_difference} diferencias`} size="sm" />}
+                                        value={<StatusBadge status="WARNING" label={`${cnt.products_with_difference} diferencias`} size="sm" />}
                                     />
                                 )}
-                                <EntityCard.Field label="Creado por" value={count.created_by_name ?? '-'} />
+                                <EntityCard.Field label="Creado por" value={cnt.created_by_name ?? '-'} />
                             </EntityCard.Body>
                         </EntityCard>
                     )}
                 />
             </div>
 
+            {/* Detail Drawer */}
+            <Drawer
+                open={drawerIsOpen}
+                onOpenChange={(open) => { if (!open) handleCloseDrawer() }}
+                side="bottom"
+                boundary="embedded"
+                defaultSize="80vh"
+                title={drawerTitle}
+                subtitle={count?.warehouse_name}
+                icon="clipboard-check"
+                mode="view"
+            >
+                {isDrawerLoading ? (
+                    <SkeletonShell isLoading ariaLabel="Cargando conteo" />
+                ) : count ? (
+                    <div className="flex flex-col h-full">
+                        {/* Header actions */}
+                        <div className="shrink-0 flex items-center justify-between gap-4 px-4 pt-4 pb-2">
+                            <div className="flex items-center gap-2">
+                                <StatusBadge status={count.status} />
+                                <span className="text-sm text-muted-foreground">
+                                    {count.total_products} productos · {count.counted_products} contados
+                                    {linesWithChanges > 0 && (
+                                        <span className="ml-1 text-warning">({linesWithChanges} sin guardar)</span>
+                                    )}
+                                </span>
+                            </div>
+
+                            {isInProgress && (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleSaveAll}
+                                        disabled={editedLines.size === 0 || isSaving}
+                                    >
+                                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
+                                        Guardar ({editedLines.size})
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={handleApply}
+                                        disabled={isApplying}
+                                    >
+                                        {isApplying ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ClipboardCheck className="h-4 w-4 mr-1" />}
+                                        Aplicar Conteo
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Lines table */}
+                        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                            <div className="shrink-0 px-4 pb-2">
+                                <UnifiedSearchBar
+                                    config={inventoryCountLineSearchDef}
+                                    chips={lineSearch.chips}
+                                    isFiltered={lineSearch.isFiltered}
+                                    inputValue={lineSearch.inputValue}
+                                    onInputChange={lineSearch.setInputValue}
+                                    onApply={lineSearch.applyFilter}
+                                    onRemove={lineSearch.removeFilter}
+                                    onClearAll={lineSearch.clearAll}
+                                    groupBy={lineSearch.groupBy}
+                                    onGroupBySelect={lineSearch.setGroupBy}
+                                    paramValues={lineSearch.paramValues}
+                                    placeholder="Buscar producto..."
+                                />
+                            </div>
+                            <div className="flex-1 min-h-0">
+                                <DataTableView
+                                    entityLabel="inventory.inventorycount"
+                                    columns={lineColumns}
+                                    data={lineSearch.filterFn(count.lines)}
+                                    isLoading={false}
+                                    variant="embedded"
+                                    hidePagination
+                                    noBorder
+                                    showReset={lineSearch.isFiltered}
+                                    onReset={lineSearch.clearAll}
+                                    emptyState={{
+                                        context: "inventory",
+                                        title: "Sin productos",
+                                        description: "Este conteo no tiene productos registrados.",
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
+            </Drawer>
+
+            {/* New Count Dialog */}
             <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
                 <DialogContent className="sm:max-w-[400px]">
                     <DialogHeader>
