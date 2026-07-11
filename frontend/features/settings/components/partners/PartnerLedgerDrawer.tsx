@@ -128,15 +128,6 @@ export function PartnerLedgerDrawer({
             )
         },
         {
-            accessorKey: "description",
-            header: "Concepto",
-            cell: ({ row }) => (
-                <DataCell.Text className="justify-start">
-                    <span className="truncate max-w-[250px]">{row.getValue("description")}</span>
-                </DataCell.Text>
-            )
-        },
-        {
             accessorKey: "amount",
             header: () => <div className="text-right">Monto</div>,
             cell: ({ row }) => {
@@ -149,7 +140,7 @@ export function PartnerLedgerDrawer({
             accessorKey: "balance_after",
             header: () => <div className="text-right">Saldo</div>,
             cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("balance_after")} className="text-right font-mono text-[11px] font-black text-primary bg-primary/5 px-2 py-1 ring-1 ring-primary/10" />
+                <DataCell.Currency value={row.getValue("balance_after")} className="text-right font-mono text-[11px] font-black text-primary" />
             )
         },
     ]
@@ -191,7 +182,7 @@ export function PartnerLedgerDrawer({
                     <SkeletonShell isLoading ariaLabel="Cargando..." />
                 </div>
             ) : (
-                <div className="p-4 animate-in fade-in duration-500">
+                <div className="p-4 animate-in fade-in duration-500 flex-1 min-h-0 flex flex-col">
                     <DataTable
                         columns={columns}
                         data={filteredTransactions}
