@@ -124,28 +124,28 @@ export function StatCard({
 
   const interactiveClasses = isInteractive
     ? variant === "minimal" || variant === "fill"
-        ? "card-base cursor-pointer hover:brightness-95 dark:hover:brightness-125"
-        : "card-base cursor-pointer"
+      ? "card-base cursor-pointer hover:brightness-95 dark:hover:brightness-125"
+      : "card-base cursor-pointer"
     : ""
 
   const containerProps =
     variant === "minimal"
       ? {
-          className: cn(
-            baseCardClasses,
-            "p-3 rounded-md",
-            accentBg[accent],
-            interactiveClasses,
-            active && activeRing[accent],
-            className,
-          ),
-          onClick,
-          role: onClick ? "button" as const : undefined,
-          tabIndex: onClick ? 0 : undefined,
-          onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
-        }
+        className: cn(
+          baseCardClasses,
+          "p-3 rounded-md",
+          accentBg[accent],
+          interactiveClasses,
+          active && activeRing[accent],
+          className,
+        ),
+        onClick,
+        role: onClick ? "button" as const : undefined,
+        tabIndex: onClick ? 0 : undefined,
+        onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
+      }
       : variant === "fill"
-      ? {
+        ? {
           className: cn(
             baseCardClasses,
             accentBg[accent],
@@ -158,10 +158,11 @@ export function StatCard({
           tabIndex: onClick ? 0 : undefined,
           onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
         }
-      : {
+        : {
           className: cn(
             baseCardClasses,
             variant === "default" && "gap-0 py-3",
+            (variant === "chart" || variant === "metric-chart") && "py-0 gap-0",
             variant === "compact" && accentBg[accent],
             interactiveClasses,
             active && activeRing[accent],
@@ -276,12 +277,24 @@ export function StatCard({
     const TrendIcon = trendIcon
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0">
-          <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {label}
-          </CardTitle>
+        <CardHeader className="flex flex-row items-start justify-between px-3 py-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {Icon && (
+              <div className={cn("p-1.5 rounded-md border shrink-0", accentIconBg[accent])}>
+                <Icon className="h-3.5 w-3.5" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                {label}
+              </CardTitle>
+              {subtext && (
+                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{subtext}</p>
+              )}
+            </div>
+          </div>
           {trend && (
-            <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
+            <div className={cn("flex items-center gap-1 text-xs font-bold shrink-0", trendColor)}>
               <TrendIcon className="h-3 w-3" />
               <span>{trend.value}</span>
             </div>
@@ -296,14 +309,26 @@ export function StatCard({
     const TrendIcon = trendIcon
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0 gap-4">
+        <CardHeader className="flex flex-row items-start justify-between px-3 py-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className={cn("font-black  tracking-tighter shrink-0", valueSizeMap[valueSize])}>
-              {value}
-            </span>
-            <span className="text-xs font-bold text-muted-foreground truncate">
-              {label}
-            </span>
+            {Icon && (
+              <div className={cn("p-1.5 rounded-md border shrink-0", accentIconBg[accent])}>
+                <Icon className="h-3.5 w-3.5" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className={cn("font-black tracking-tighter shrink-0", valueSizeMap[valueSize])}>
+                  {value}
+                </span>
+                <span className="text-xs font-bold text-muted-foreground truncate">
+                  {label}
+                </span>
+              </div>
+              {subtext && (
+                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{subtext}</p>
+              )}
+            </div>
           </div>
           {trend && (
             <div className={cn("flex items-center gap-1 text-xs font-bold shrink-0", trendColor)}>

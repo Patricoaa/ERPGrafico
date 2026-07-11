@@ -17,7 +17,7 @@ function SectionRenderer({ section }: { section: AnalyticsSectionType }) {
             : undefined
 
         return (
-            <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 <StatCard
                     label={card.label}
                     value={card.value}
@@ -61,7 +61,7 @@ function ColRenderer({ column }: { column: AnalyticsColumn }) {
         return (
             <div className="flex flex-col gap-4 min-h-0" style={{ flex: column.weight ?? 1 }}>
                 {column.sections.map((section) => (
-                    <div key={section.id} className="flex-1 min-h-0 flex flex-col">
+                    <div key={section.id} className="flex-1 min-h-0 flex flex-col overflow-hidden">
                         <SectionRenderer section={section} />
                     </div>
                 ))}
@@ -80,7 +80,7 @@ function ColRenderer({ column }: { column: AnalyticsColumn }) {
             {column.sections.map((section) => (
                 <div
                     key={section.id}
-                    className="flex flex-col min-h-0"
+                    className="flex flex-col min-h-0 overflow-hidden"
                     style={{ gridColumn: `span ${section.colSpan ?? 1}` }}
                 >
                     <SectionRenderer section={section} />

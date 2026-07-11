@@ -120,12 +120,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 variant: "chart",
                                                 chart: {
                                                         type: "line-chart",
+                                                        preset: "card",
                                                         data: lineData,
-                                                        enableArea: true,
-                                                        showLegend: true,
                                                         valueFormat: "$,.0f",
-                                                        axisBottomLegend: "Período",
-                                                        axisLeftLegend: "Monto ($)",
                                                     },
                                             },
                                         },
@@ -145,8 +142,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 variant: "chart",
                                                 chart: {
                                                         type: "pie-chart",
+                                                        preset: "card",
                                                         data: analyticsData.paymentMethodDistribution,
-                                                        showLegend: true,
                                                     },
                                             },
                                         },
@@ -175,12 +172,11 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 variant: "chart",
                                                 chart: {
                                                         type: "bar-chart",
+                                                        preset: "card",
                                                         data: analyticsData.topSuppliers,
                                                         keys: ["total"],
                                                         indexBy: "supplier",
                                                         valueFormat: "~s",
-                                                        axisBottomLegend: "Proveedor",
-                                                        axisLeftLegend: "Monto ($)",
                                                         lineOverlay: {
                                                             dataKey: "orderCount",
                                                             label: "Cantidad Órdenes",
@@ -207,12 +203,12 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 subtext: `${analyticsData.lateCount} con retraso · ${analyticsData.pendingReceiptCount} pendientes · ${analyticsData.overdueCount} vencidas`,
                                                 chart: {
                                                         type: "pie-chart",
+                                                        preset: "card",
                                                         data: [
                                                             { id: "A tiempo", value: analyticsData.onTimeCount, color: "#22c55e" },
                                                             { id: "Con retraso", value: analyticsData.lateCount, color: "#ef4444" },
                                                             { id: "Pendientes", value: analyticsData.pendingReceiptCount, color: "#f59e0b" },
                                                         ],
-                                                        innerRadius: 0.6,
                                                         compact: true,
                                                         enableLabels: true,
                                                         arcLabel: (d: { id: string; value: number }) => {
@@ -238,11 +234,10 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 variant: "chart",
                                                 chart: {
                                                         type: "bar-chart",
+                                                        preset: "card",
                                                         data: analyticsData.ordersByWarehouse,
                                                         keys: ["count"],
                                                         indexBy: "warehouse",
-                                                        axisBottomLegend: "Almacén",
-                                                        axisLeftLegend: "Cantidad",
                                                     },
                                             },
                                         },

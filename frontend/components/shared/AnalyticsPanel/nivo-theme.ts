@@ -34,7 +34,7 @@ export const barDefaults = {
     padding: 0.25,
     borderRadius: 6,
     enableGridX: false,
-    enableGridY: true,
+    enableGridY: false,
 }
 
 export const lineDefaults = {
@@ -83,4 +83,50 @@ export function getCssChartColors(variant?: "pie"): string[] {
         }
         return val || "#000"
     })
+}
+
+// ── Card presets (centralized aesthetics for StatCard context) ──
+
+export const cardBarDefaults = {
+    margin: { top: 8, right: 8, bottom: 24, left: 40 },
+    padding: 0.3,
+    borderRadius: 6,
+    enableGridX: false,
+    enableGridY: false,
+}
+
+export const cardLineDefaults = {
+    margin: { top: 8, right: 8, bottom: 24, left: 40 },
+    lineWidth: 2,
+    pointSize: 0,
+    enableArea: true,
+    areaOpacity: 0.06,
+    enablePointLabel: false,
+    useMesh: true,
+    crosshairType: "cross" as const,
+}
+
+export const cardPieDefaults = {
+    margin: { top: 8, right: 8, bottom: 8, left: 8 },
+    innerRadius: 0.55,
+    padAngle: 1.5,
+    cornerRadius: 4,
+    borderWidth: 1.5,
+    borderColor: { theme: "background" },
+    enableArcLinkLabels: false,
+    enableArcLabels: true,
+    arcLabelsRadiusOffset: 0.65,
+    arcLabelsSkipAngle: 12,
+    arcLabelsFont: { fontWeight: 700 as const },
+}
+
+export const cardLegend = {
+    anchor: "bottom" as const,
+    direction: "row" as const,
+    translateY: 20,
+    itemWidth: 72,
+    itemHeight: 12,
+    itemsSpacing: 8,
+    symbolSize: 6,
+    symbolShape: "circle" as const,
 }

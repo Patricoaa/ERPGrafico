@@ -26,7 +26,7 @@ export function AnalyticsPanel({
             title={`Análisis · ${entityName}`}
             icon={<LayoutDashboard />}
             side="right"
-            defaultSize="40%"
+            defaultSize="60%"
             boundary="embedded"
         >
             <TabBar

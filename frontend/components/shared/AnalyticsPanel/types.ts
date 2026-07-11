@@ -27,6 +27,7 @@ export interface StatCardConfig {
 
 export interface BarChartConfig {
     type: "bar-chart"
+    preset?: "card"
     data: Record<string, string | number>[]
     keys: string[]
     indexBy: string
@@ -43,6 +44,7 @@ export interface BarChartConfig {
 
 export interface LineChartConfig {
     type: "line-chart"
+    preset?: "card"
     data: Array<{ id: string; data: Array<{ x: string | number; y: number }> }>
     enableArea?: boolean
     showLegend?: boolean
@@ -54,6 +56,7 @@ export interface LineChartConfig {
 
 export interface PieChartConfig {
     type: "pie-chart"
+    preset?: "card"
     data: Array<{ id: string; value: number; color?: string }>
     innerRadius?: number
     showLegend?: boolean
