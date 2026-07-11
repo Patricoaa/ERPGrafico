@@ -143,8 +143,7 @@ export function EquityCompositionTab({
                     icon: PieChartIcon,
                     columns: [
                         {
-                            id: "col-main",
-                            weight: 2,
+                            id: "col-single",
                             sections: [
                                 {
                                     id: "kpi-patrimonio",
@@ -160,31 +159,6 @@ export function EquityCompositionTab({
                                         },
                                     },
                                 },
-                                {
-                                    id: "chart-capital",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Capital Enterado vs Pendiente",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                data: analyticsData.capitalComparison,
-                                                keys: ["paid", "pending"],
-                                                indexBy: "name",
-                                                showLegend: true,
-                                                axisBottomLegend: "Socio",
-                                                axisLeftLegend: "Monto ($)",
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-side",
-                            weight: 1,
-                            sections: [
                                 {
                                     id: "kpi-socios",
                                     content: {
@@ -215,30 +189,17 @@ export function EquityCompositionTab({
                                         },
                                     },
                                 },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "saldos",
-                    label: "Saldos",
-                    icon: Wallet,
-                    columns: [
-                        {
-                            id: "col-main",
-                            weight: 2,
-                            sections: [
                                 {
-                                    id: "chart-balances",
+                                    id: "chart-capital",
                                     content: {
                                         type: "stat-card",
                                         config: {
-                                            label: "Composición de Saldos por Socio",
+                                            label: "Capital Enterado vs Pendiente",
                                             variant: "chart",
                                             chart: {
                                                 type: "bar-chart",
-                                                data: analyticsData.balanceComposition,
-                                                keys: ["equity", "earnings", "pending", "withdrawals"],
+                                                data: analyticsData.capitalComparison,
+                                                keys: ["paid", "pending"],
                                                 indexBy: "name",
                                                 showLegend: true,
                                                 axisBottomLegend: "Socio",
@@ -249,9 +210,15 @@ export function EquityCompositionTab({
                                 },
                             ],
                         },
+                    ],
+                },
+                {
+                    value: "saldos",
+                    label: "Saldos",
+                    icon: Wallet,
+                    columns: [
                         {
-                            id: "col-side",
-                            weight: 1,
+                            id: "col-single",
                             sections: [
                                 {
                                     id: "kpi-earnings",
@@ -281,6 +248,25 @@ export function EquityCompositionTab({
                                         },
                                     },
                                 },
+                                {
+                                    id: "chart-balances",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Composición de Saldos por Socio",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "bar-chart",
+                                                data: analyticsData.balanceComposition,
+                                                keys: ["equity", "earnings", "pending", "withdrawals"],
+                                                indexBy: "name",
+                                                showLegend: true,
+                                                axisBottomLegend: "Socio",
+                                                axisLeftLegend: "Monto ($)",
+                                            },
+                                        },
+                                    },
+                                },
                             ],
                         },
                     ],
@@ -291,8 +277,7 @@ export function EquityCompositionTab({
                     icon: Gauge,
                     columns: [
                         {
-                            id: "col-main",
-                            weight: 1,
+                            id: "col-single",
                             sections: [
                                 {
                                     id: "kpi-top",

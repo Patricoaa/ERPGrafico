@@ -35,8 +35,9 @@ export function AnalyticsPanel({
             onOpenChange={onOpenChange}
             title={`Análisis · ${entityName}`}
             icon={<LayoutDashboard />}
-            side="bottom"
-            defaultSize="70vh"
+            side="right"
+            defaultSize="40%"
+            boundary="embedded"
         >
             <TabBar
                 items={tabs.map((t) => ({
