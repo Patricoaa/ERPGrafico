@@ -9,6 +9,8 @@ from core.serializers import AttachmentSerializer
 
 
 from .models import (
+    InventoryCount,
+    InventoryCountLine,
     PricingRule,
     Product,
     ProductAttribute,
@@ -682,3 +684,59 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             
             InventoryDocumentDetail.objects.create(document=document, **detail_data)
         return document
+
+
+class InventoryCountLineSerializer(serializers.ModelSerializer):
+    difference = serializers.DecimalField(max_digits=12, decimal_places=4, read_only=True)
+    has_difference = serializers.BooleanField(read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_code = serializers.CharField(source="product.code", read_only=True)
+    product_internal_code = serializers.CharField(source="product.internal_code", read_only=True)
+
+    class Meta:
+        model = InventoryCountLine
+        fields = [
+            "id", "product", "product_name", "product_code", "product_internal_code",
+            "theoretical_qty", "counted_qty", "unit_cost", "uom_name",
+            "difference", "has_difference",
+        ]
+
+
+class InventoryCountSerializer(serializers.ModelSerializer):
+    lines = InventoryCountLineSerializer(many=True, read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+    document_id = serializers.IntegerField(source="document.id", read_only=True, default=None)
+    total_products = serializers.SerializerMethodField()
+    counted_products = serializers.SerializerMethodField()
+    products_with_difference = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = InventoryCount
+        fields = [
+            "id", "warehouse", "warehouse_name", "status", "status_display",
+            "notes", "created_by", "created_by_name", "applied_at",
+            "document_id", "lines", "total_products", "counted_products",
+            "products_with_difference", "created_at", "updated_at",
+        ]
+        read_only_fields = ["status", "created_by", "applied_at", "document"]
+
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return obj.created_by.get_full_name() or obj.created_by.username
+        return None
+
+    def get_total_products(self, obj):
+        return obj.lines.count()
+
+    def get_counted_products(self, obj):
+        return obj.lines.filter(counted_qty__isnull=False).count()
+
+    def get_products_with_difference(self, obj):
+        return sum(1 for line in obj.lines.all() if line.has_difference)
+
+
+class InventoryCountCreateSerializer(serializers.Serializer):
+    warehouse = serializers.IntegerField()
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
