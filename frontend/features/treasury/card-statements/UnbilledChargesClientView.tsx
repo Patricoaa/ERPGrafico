@@ -532,11 +532,6 @@ export function UnbilledChargesClientView({
                                     ],
                                 },
                             ],
-                            cardAccounts: creditCardAccounts,
-                            cardAccountId: selectedCardAccount,
-                            onCardAccountChange: (id) => search.applyFilter('card', String(id)),
-                            scope: (search.filters.scope ?? 'month') as 'month' | 'all',
-                            onScopeChange: (v) => search.applyFilter('scope', v),
                         },
                     }}
                     createAction={<ToolbarCreateButton label="Agregar Cargo" onClick={handleAddChargeClick} />}

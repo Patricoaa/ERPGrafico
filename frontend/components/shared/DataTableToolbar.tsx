@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { LucideIcon } from "lucide-react"
 import { TabBar } from "@/components/shared"
-import { AnalyticsPanel, type AnalyticsTab, type Granularity } from "./AnalyticsPanel"
+import { AnalyticsPanel, type AnalyticsTab } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTableColumnToggle, translateColumnId } from "./DataTableColumnToggle"
 import { SegmentationTableContext } from "./SegmentationTableContext"
@@ -51,15 +51,6 @@ export type AnalyticsPanelConfig = {
         tabs: AnalyticsTab[]
         activeTab?: string
         onTabChange?: (value: string) => void
-        granularity?: Granularity
-        onGranularityChange?: (g: Granularity) => void
-        dateRange?: { from: string; to: string } | null
-        onDateRangeChange?: (range: { from: string; to: string } | null) => void
-        cardAccounts?: Array<{ id: number; name: string; currency: string }>
-        cardAccountId?: number | null
-        onCardAccountChange?: (id: number) => void
-        scope?: 'month' | 'all'
-        onScopeChange?: (scope: 'month' | 'all') => void
     }
 }
 
@@ -363,15 +354,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     tabs={analyticsPanel.screen.tabs}
                     activeTab={analyticsPanel.screen.activeTab}
                     onTabChange={analyticsPanel.screen.onTabChange}
-                    granularity={analyticsPanel.screen.granularity}
-                    onGranularityChange={analyticsPanel.screen.onGranularityChange}
-                    dateRange={analyticsPanel.screen.dateRange}
-                    onDateRangeChange={analyticsPanel.screen.onDateRangeChange}
-                    cardAccounts={analyticsPanel.screen.cardAccounts}
-                    cardAccountId={analyticsPanel.screen.cardAccountId}
-                    onCardAccountChange={analyticsPanel.screen.onCardAccountChange}
-                    scope={analyticsPanel.screen.scope}
-                    onScopeChange={analyticsPanel.screen.onScopeChange}
                 />
             )}
         </SegmentationTableContext.Provider>

@@ -4,7 +4,6 @@ import React, { useState } from "react"
 import { LayoutDashboard } from "lucide-react"
 import { Drawer, TabBar, TabBarContent } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
-import { AnalyticsSegmentation } from "./AnalyticsSegmentation"
 import type { AnalyticsPanelProps, AnalyticsTab } from "./types"
 
 export function AnalyticsPanel({
@@ -14,15 +13,6 @@ export function AnalyticsPanel({
     tabs,
     activeTab: activeTabProp,
     onTabChange,
-    granularity,
-    onGranularityChange,
-    dateRange,
-    onDateRangeChange,
-    cardAccounts,
-    cardAccountId,
-    onCardAccountChange,
-    scope,
-    onScopeChange,
 }: AnalyticsPanelProps) {
     const [internalTab, setInternalTab] = useState(tabs[0]?.value ?? "")
 
@@ -60,17 +50,6 @@ export function AnalyticsPanel({
                     />
                 ))}
             </TabBar>
-            <AnalyticsSegmentation
-                cardAccounts={cardAccounts}
-                cardAccountId={cardAccountId}
-                onCardAccountChange={onCardAccountChange}
-                scope={scope}
-                onScopeChange={onScopeChange}
-                granularity={granularity}
-                onGranularityChange={onGranularityChange}
-                dateRange={dateRange}
-                onDateRangeChange={onDateRangeChange}
-            />
         </Drawer>
     )
 }

@@ -5,9 +5,6 @@ import type { LucideIcon } from "lucide-react"
 // ── Accent ──
 export type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
 
-// ── Granularity ──
-export type Granularity = "day" | "month" | "year"
-
 // ── StatCardConfig ──
 export interface StatCardConfig {
     label: string
@@ -103,22 +100,6 @@ export interface AnalyticsPanelProps {
     tabs: AnalyticsTab[]
     activeTab?: string
     onTabChange?: (value: string) => void
-    granularity?: Granularity
-    onGranularityChange?: (g: Granularity) => void
-    dateRange?: { from: string; to: string } | null
-    onDateRangeChange?: (range: { from: string; to: string } | null) => void
-    cardAccounts?: Array<{ id: number; name: string; currency: string }>
-    cardAccountId?: number | null
-    onCardAccountChange?: (id: number) => void
-    scope?: "month" | "all"
-    onScopeChange?: (scope: "month" | "all") => void
 }
 
-// ── Timeline ──
 
-export interface TimelineEvent {
-    date: string
-    label: string
-    description?: string
-    status?: "success" | "warning" | "destructive" | "neutral"
-}
