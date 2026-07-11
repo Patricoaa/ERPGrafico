@@ -229,7 +229,7 @@ export const inventoryCountLineSearchDef: UnifiedSearchConfig = {
   searchFields: [
     {
       key: 'search',
-      label: 'Producto / Código',
+      label: 'Producto / Código / SKU',
       serverParam: 'search',
       clientKey: ['product_name', 'product_code', 'product_internal_code'],
     },

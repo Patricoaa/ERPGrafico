@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTableView, DataCell, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell } from '@/components/shared'
+import { DataTableView, DataCell, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell, QuantityDisplay } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowRight, Plus, ClipboardCheck, Check, Loader2 } from "lucide-react"
+import { ArrowRight, Plus, ClipboardCheck, Check, Equal } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useInventoryCounts, useInventoryCount, useInventoryCountMutations } from "../hooks/useInventoryCounts"
 import { useWarehouses } from "../hooks/useWarehouses"
@@ -15,6 +15,10 @@ import type { InventoryCount, InventoryCountLine } from "../types"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { cn } from "@/lib/utils"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { SubmitButton, ActionSlideButton } from "@/components/shared"
 import {
     Dialog,
     DialogContent,
@@ -28,6 +32,12 @@ interface NewCountFormValues {
     warehouse: number
     notes?: string
 }
+
+const newCountSchema = z.object({
+    warehouse: z.number().min(1, "Selecciona un almacén"),
+    notes: z.string().optional(),
+})
+type NewCountFormData = z.infer<typeof newCountSchema>
 
 export function InventoryCountClientView() {
     const searchParams = useSearchParams()
@@ -84,12 +94,32 @@ export function InventoryCountClientView() {
         })
     }, [])
 
+    const handleSetToTheoretical = useCallback((lineId: number, theoreticalQty: number) => {
+        setEditedLines(prev => {
+            const next = new Map(prev)
+            next.set(lineId, theoreticalQty)
+            return next
+        })
+    }, [])
+
+    const handleSetAllToTheoretical = useCallback(() => {
+        if (!selectedCount) return
+        setEditedLines(prev => {
+            const next = new Map(prev)
+            for (const line of selectedCount.lines) {
+                next.set(line.id, line.theoretical_qty)
+            }
+            return next
+        })
+        toast.success("Todas las cantidades ajustadas al stock teórico")
+    }, [selectedCount])
+
     const handleSaveAll = useCallback(async () => {
         if (!selectedCountId || editedLines.size === 0) return
 
         const lines = Array.from(editedLines.entries()).map(([line_id, counted_qty]) => ({
             line_id,
-            counted_qty,
+            counted_qty: Number.isInteger(counted_qty) ? counted_qty : counted_qty,
         }))
 
         try {
@@ -107,7 +137,7 @@ export function InventoryCountClientView() {
         if (editedLines.size > 0) {
             const lines = Array.from(editedLines.entries()).map(([line_id, counted_qty]) => ({
                 line_id,
-                counted_qty,
+                counted_qty: Number.isInteger(counted_qty) ? counted_qty : counted_qty,
             }))
             try {
                 await saveLines({ id: Number(selectedCountId), lines })
@@ -143,7 +173,7 @@ export function InventoryCountClientView() {
 
     const getCountedQty = useCallback((line: InventoryCountLine): number | null => {
         if (editedLines.has(line.id)) {
-            return editedLines.get(line.id)!
+            return editedLines.get(line.id) ?? null
         }
         return line.counted_qty
     }, [editedLines])
@@ -161,11 +191,12 @@ export function InventoryCountClientView() {
             if (counted === null) return false
             return counted !== line.theoretical_qty
         }).length
-    }, [selectedCount, editedLines, getCountedQty])
+    }, [selectedCount, getCountedQty])
 
     const drawerIsOpen = !!selectedCountId
     const isDrawerLoading = drawerIsOpen && isLoadingCount
     const count = selectedCount
+    const isInProgress = count?.status === 'IN_PROGRESS'
 
     const lineColumns: ColumnDef<InventoryCountLine>[] = [
         {
@@ -191,20 +222,20 @@ export function InventoryCountClientView() {
             accessorKey: "theoretical_qty",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Stock Teórico" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="text-center font-mono text-sm">
-                    {Number(row.original.theoretical_qty).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
+                <div className="text-center">
+                    <QuantityDisplay value={row.original.theoretical_qty} />
                 </div>
             ),
             size: 120,
         },
         {
             id: "counted_qty",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cantidad Real" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Stock Real" className="justify-center" />,
             cell: ({ row }) => {
                 const line = row.original
                 const value = getCountedQty(line)
                 return (
-                    <div className="flex justify-center">
+                    <div className="flex justify-center gap-1">
                         <Input
                             type="number"
                             value={value ?? ''}
@@ -214,12 +245,23 @@ export function InventoryCountClientView() {
                                 "w-24 h-8 text-center text-sm font-mono",
                                 value !== null && value !== line.theoretical_qty && "border-warning bg-warning/10"
                             )}
-                            disabled={count?.status !== 'IN_PROGRESS'}
+                            disabled={!isInProgress}
                         />
+                        {isInProgress && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0"
+                                onClick={() => handleSetToTheoretical(line.id, line.theoretical_qty)}
+                                title="Igualar a stock teórico"
+                            >
+                                <Equal className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Button>
+                        )}
                     </div>
                 )
             },
-            size: 130,
+            size: 170,
         },
         {
             id: "difference",
@@ -229,12 +271,12 @@ export function InventoryCountClientView() {
                 if (diff === null) return <span className="text-muted-foreground text-center block">--</span>
                 return (
                     <div className={cn(
-                        "text-center font-mono font-medium text-sm",
+                        "text-center font-medium text-sm",
                         diff > 0 && "text-success",
                         diff < 0 && "text-destructive",
                         diff === 0 && "text-muted-foreground"
                     )}>
-                        {diff > 0 ? '+' : ''}{Number(diff).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
+                        <QuantityDisplay value={diff} showSign />
                     </div>
                 )
             },
@@ -312,7 +354,7 @@ export function InventoryCountClientView() {
         {
             id: "actions",
             header: () => null,
-            cell: ({ row }) => (
+            cell: () => (
                 <div className="flex justify-center w-full">
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -328,8 +370,17 @@ export function InventoryCountClientView() {
         </Button>
     )
 
-    const drawerTitle = count ? `Conteo #${count.id}` : "Conteo"
-    const isInProgress = count?.status === 'IN_PROGRESS'
+    const drawerSubtitle = count ? (
+        <div className="flex items-center gap-2">
+            <StatusBadge status={count.status} />
+            <span className="text-sm text-muted-foreground">
+                {count.total_products} productos · {count.counted_products} contados
+                {linesWithChanges > 0 && (
+                    <span className="ml-1 text-warning">({linesWithChanges} sin guardar)</span>
+                )}
+            </span>
+        </div>
+    ) : undefined
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -402,86 +453,81 @@ export function InventoryCountClientView() {
                 side="bottom"
                 boundary="embedded"
                 defaultSize="80vh"
-                title={drawerTitle}
-                subtitle={count?.warehouse_name}
+                title={count ? `Conteo #${count.id}` : "Conteo"}
+                subtitle={drawerSubtitle}
                 icon="clipboard-check"
                 mode="view"
+                headerActions={
+                    isInProgress ? (
+                        <div className="flex items-center gap-2">
+                            <ActionSlideButton
+                                variant="cmyk"
+                                size="sm"
+                                onClick={handleSetAllToTheoretical}
+                                icon={<Equal className="h-4 w-4" />}
+                            >
+                                Igual a Stock Teórico
+                            </ActionSlideButton>
+                            <ActionSlideButton
+                                variant="success"
+                                size="sm"
+                                onClick={handleSaveAll}
+                                disabled={editedLines.size === 0}
+                                loading={isSaving}
+                                icon={<Check className="h-4 w-4" />}
+                            >
+                                Guardar ({editedLines.size})
+                            </ActionSlideButton>
+                            <ActionSlideButton
+                                variant="primary"
+                                size="sm"
+                                onClick={handleApply}
+                                loading={isApplying}
+                                icon={<ClipboardCheck className="h-4 w-4" />}
+                            >
+                                Aplicar Conteo
+                            </ActionSlideButton>
+                        </div>
+                    ) : undefined
+                }
             >
                 {isDrawerLoading ? (
                     <SkeletonShell isLoading ariaLabel="Cargando conteo" />
                 ) : count ? (
-                    <div className="flex flex-col h-full">
-                        {/* Header actions */}
-                        <div className="shrink-0 flex items-center justify-between gap-4 px-4 pt-4 pb-2">
-                            <div className="flex items-center gap-2">
-                                <StatusBadge status={count.status} />
-                                <span className="text-sm text-muted-foreground">
-                                    {count.total_products} productos · {count.counted_products} contados
-                                    {linesWithChanges > 0 && (
-                                        <span className="ml-1 text-warning">({linesWithChanges} sin guardar)</span>
-                                    )}
-                                </span>
-                            </div>
-
-                            {isInProgress && (
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleSaveAll}
-                                        disabled={editedLines.size === 0 || isSaving}
-                                    >
-                                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
-                                        Guardar ({editedLines.size})
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={handleApply}
-                                        disabled={isApplying}
-                                    >
-                                        {isApplying ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ClipboardCheck className="h-4 w-4 mr-1" />}
-                                        Aplicar Conteo
-                                    </Button>
-                                </div>
-                            )}
+                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                        <div className="shrink-0 px-4 pb-2">
+                            <UnifiedSearchBar
+                                config={inventoryCountLineSearchDef}
+                                chips={lineSearch.chips}
+                                isFiltered={lineSearch.isFiltered}
+                                inputValue={lineSearch.inputValue}
+                                onInputChange={lineSearch.setInputValue}
+                                onApply={lineSearch.applyFilter}
+                                onRemove={lineSearch.removeFilter}
+                                onClearAll={lineSearch.clearAll}
+                                groupBy={lineSearch.groupBy}
+                                onGroupBySelect={lineSearch.setGroupBy}
+                                paramValues={lineSearch.paramValues}
+                                placeholder="Buscar producto, código o SKU..."
+                            />
                         </div>
-
-                        {/* Lines table */}
-                        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                            <div className="shrink-0 px-4 pb-2">
-                                <UnifiedSearchBar
-                                    config={inventoryCountLineSearchDef}
-                                    chips={lineSearch.chips}
-                                    isFiltered={lineSearch.isFiltered}
-                                    inputValue={lineSearch.inputValue}
-                                    onInputChange={lineSearch.setInputValue}
-                                    onApply={lineSearch.applyFilter}
-                                    onRemove={lineSearch.removeFilter}
-                                    onClearAll={lineSearch.clearAll}
-                                    groupBy={lineSearch.groupBy}
-                                    onGroupBySelect={lineSearch.setGroupBy}
-                                    paramValues={lineSearch.paramValues}
-                                    placeholder="Buscar producto..."
-                                />
-                            </div>
-                            <div className="flex-1 min-h-0">
-                                <DataTableView
-                                    entityLabel="inventory.inventorycount"
-                                    columns={lineColumns}
-                                    data={lineSearch.filterFn(count.lines)}
-                                    isLoading={false}
-                                    variant="embedded"
-                                    hidePagination
-                                    noBorder
-                                    showReset={lineSearch.isFiltered}
-                                    onReset={lineSearch.clearAll}
-                                    emptyState={{
-                                        context: "inventory",
-                                        title: "Sin productos",
-                                        description: "Este conteo no tiene productos registrados.",
-                                    }}
-                                />
-                            </div>
+                        <div className="flex-1 min-h-0">
+                            <DataTableView
+                                entityLabel="inventory.inventorycount"
+                                columns={lineColumns}
+                                data={lineSearch.filterFn(count.lines)}
+                                isLoading={false}
+                                variant="embedded"
+                                hidePagination
+                                noBorder
+                                showReset={lineSearch.isFiltered}
+                                onReset={lineSearch.clearAll}
+                                emptyState={{
+                                    context: "inventory",
+                                    title: "Sin productos",
+                                    description: "Este conteo no tiene productos registrados.",
+                                }}
+                            />
                         </div>
                     </div>
                 ) : null}
@@ -519,39 +565,35 @@ function NewCountForm({
     isSubmitting: boolean
     onCancel: () => void
 }) {
-    const [warehouse, setWarehouse] = useState<string>("")
-    const [notes, setNotes] = useState("")
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!warehouse) return
-        onSubmit({ warehouse: Number(warehouse), notes: notes || undefined })
-    }
+    const form = useForm<NewCountFormData>({
+        resolver: zodResolver(newCountSchema),
+        defaultValues: { warehouse: 0, notes: "" },
+    })
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="new-count-form" onSubmit={form.handleSubmit((data) => onSubmit({ warehouse: data.warehouse, notes: data.notes || undefined }))} className="space-y-4">
             <LabeledSelect
                 label="Almacén"
-                value={warehouse}
-                onChange={setWarehouse}
+                value={form.watch("warehouse")?.toString() ?? ""}
+                onChange={(v) => form.setValue("warehouse", Number(v), { shouldValidate: true })}
                 placeholder="Seleccione el almacén"
-                required
                 options={warehouses.map(w => ({ value: w.id.toString(), label: w.name }))}
             />
+            {form.formState.errors.warehouse && (
+                <p className="text-xs text-destructive">{form.formState.errors.warehouse.message}</p>
+            )}
             <LabeledInput
                 label="Notas (opcional)"
                 placeholder="Motivo del conteo"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                {...form.register("notes")}
             />
             <DialogFooter>
                 <Button type="button" variant="ghost" onClick={onCancel}>
                     Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting || !warehouse}>
-                    {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                <SubmitButton type="submit" form="new-count-form" loading={isSubmitting}>
                     Crear Conteo
-                </Button>
+                </SubmitButton>
             </DialogFooter>
         </form>
     )
