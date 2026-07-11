@@ -1,10 +1,8 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState, useMemo } from "react"
 import {
     History,
-    Calendar,
     Wallet,
     LogOut
 } from "lucide-react"
@@ -12,7 +10,7 @@ import { Drawer, DataTable, SkeletonShell, DataCell, UnifiedSearchBar, useUnifie
 import { partnersApi } from "@/features/contacts"
 import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts"
 import { toast } from "sonner"
-import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
+import {parseDateOnly} from "@/lib/utils"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 import { type ColumnDef } from "@tanstack/react-table"
@@ -117,35 +115,26 @@ export function PartnerLedgerDrawer({
             accessorKey: "date",
             header: "Fecha",
             cell: ({ row }) => (
-                <div className="flex items-center gap-2 text-[10px] font-mono whitespace-nowrap opacity-80">
-                    <Calendar className="h-3 w-3 opacity-40 shrink-0" />
-                    {formatDate(row.getValue("date"))}
-                </div>
+                <DataCell.Date value={row.getValue("date")} />
+            )
+        },
+        {
+            accessorKey: "transaction_type",
+            header: "Tipo",
+            cell: ({ row }) => (
+                <DataCell.Chip intent={getTransactionIntent(row.original.transaction_type)}>
+                    {row.original.transaction_type_display}
+                </DataCell.Chip>
             )
         },
         {
             accessorKey: "description",
             header: "Concepto",
             cell: ({ row }) => (
-                <div className="flex flex-col gap-0.5">
-                    <DataCell.Chip intent={getTransactionIntent(row.original.transaction_type)}>
-                        {row.original.transaction_type_display}
-                    </DataCell.Chip>
-                    <span className="text-[10px] text-muted-foreground italic truncate max-w-[250px] leading-tight">
-                        {row.getValue("description")}
-                    </span>
-                </div>
+                <DataCell.Text className="justify-start">
+                    <span className="truncate max-w-[250px]">{row.getValue("description")}</span>
+                </DataCell.Text>
             )
-        },
-        {
-            accessorKey: "journal_entry_display",
-            header: "Asiento",
-            cell: ({ row }) => {
-                const val = row.getValue("journal_entry_display")
-                return val ? (
-                    <DataCell.Code>{val as string}</DataCell.Code>
-                ) : <span className="text-muted-foreground/30 px-2">-</span>
-            }
         },
         {
             accessorKey: "amount",
@@ -160,15 +149,9 @@ export function PartnerLedgerDrawer({
             accessorKey: "balance_after",
             header: () => <div className="text-right">Saldo</div>,
             cell: ({ row }) => (
-                <div className="text-right font-mono text-[11px] font-black text-primary bg-primary/5 px-2 py-1 relative ring-1 ring-primary/10">
-                    {formatCurrency(row.getValue("balance_after"))}
-                </div>
+                <DataCell.Currency value={row.getValue("balance_after")} className="text-right font-mono text-[11px] font-black text-primary bg-primary/5 px-2 py-1 ring-1 ring-primary/10" />
             )
         },
-        {
-            accessorKey: "transaction_type",
-            header: "Tipo",
-        }
     ]
 
     // We need to calculate balance_after specifically for this partner's chronological list
@@ -214,7 +197,7 @@ export function PartnerLedgerDrawer({
                         data={filteredTransactions}
                         isLoading={loading}
                         variant="embedded"
-                        hiddenColumns={["transaction_type"]}
+                        hiddenColumns={[]}
                         unifiedSearch={<UnifiedSearchBar
                             config={partnerSearchConfig}
                             chips={search.chips}
