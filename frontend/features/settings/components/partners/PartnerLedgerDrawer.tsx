@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
     History,
     ArrowUpRight,
@@ -10,15 +10,32 @@ import {
     Wallet,
     LogOut
 } from "lucide-react"
-import { Drawer, DataTable, SkeletonShell, DataCell } from "@/components/shared"
+import { Drawer, DataTable, SkeletonShell, DataCell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
 import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts"
 import { toast } from "sonner"
 import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 import { type ColumnDef } from "@tanstack/react-table"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
+
+const TRANSACTION_TYPE_OPTIONS = [
+    { value: "SUBSCRIPTION", label: "Suscripción de Capital" },
+    { value: "REDUCTION", label: "Reducción de Capital" },
+    { value: "CAPITAL_CASH", label: "Aporte Efectivo" },
+    { value: "CAPITAL_INVENTORY", label: "Aporte en Bienes" },
+    { value: "PROV_WITHDRAWAL", label: "Retiro Provisorio" },
+    { value: "WITHDRAWAL", label: "Retiro de Utilidades" },
+    { value: "DIVIDEND", label: "Distribución" },
+    { value: "DIVIDEND_PAY", label: "Pago de Dividendo" },
+    { value: "REINVESTMENT", label: "Reinversión" },
+    { value: "RETAINED", label: "Utilidades Retenidas" },
+    { value: "LOSS_ABSORB", label: "Absorción" },
+    { value: "TRANSFER_IN", label: "Transferencia (In)" },
+    { value: "TRANSFER_OUT", label: "Transferencia (Out)" },
+]
 
 interface PartnerLedgerDrawerProps {
     open: boolean
@@ -37,6 +54,21 @@ export function PartnerLedgerDrawer({
     const [data, setData] = useState<PartnerStatement | null>(null)
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
+
+    const partnerSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [],
+        filters: [
+            {
+                type: 'single',
+                key: 'transaction_type',
+                label: 'Tipo',
+                serverParam: 'transaction_type',
+                options: TRANSACTION_TYPE_OPTIONS,
+            },
+        ],
+    }), [])
+
+    const search = useUnifiedSearch(partnerSearchConfig)
 
     const fetchData = async () => {
         if (!partnerId) return
@@ -147,6 +179,10 @@ export function PartnerLedgerDrawer({
                     {formatCurrency(row.getValue("balance_after"))}
                 </div>
             )
+        },
+        {
+            accessorKey: "transaction_type",
+            header: "Tipo",
         }
     ]
 
@@ -164,6 +200,11 @@ export function PartnerLedgerDrawer({
         return withBal.reverse()
     }, [data])
 
+    const filteredTransactions = useMemo(() => {
+        if (!search.filters.transaction_type) return transactionsWithBalance
+        return transactionsWithBalance.filter(tx => tx.transaction_type === search.filters.transaction_type)
+    }, [transactionsWithBalance, search.filters])
+
     return (
         <Drawer
             open={open}
@@ -178,16 +219,33 @@ export function PartnerLedgerDrawer({
             defaultSize="100%"
         >
             {loading ? (
-                <div className="mt-4">
+                <div className="p-4">
                     <SkeletonShell isLoading ariaLabel="Cargando..." />
                 </div>
             ) : (
-                <div className="mt-4 animate-in fade-in duration-500">
+                <div className="p-4 animate-in fade-in duration-500">
                     <DataTable
                         columns={columns}
-                        data={transactionsWithBalance}
+                        data={filteredTransactions}
                         isLoading={loading}
                         variant="embedded"
+                        hiddenColumns={["transaction_type"]}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={partnerSearchConfig}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                        />}
+                        showReset={search.isFiltered}
+                        onReset={search.clearAll}
+                        columnToggle
                         toolbarActions={[
                             { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => setIsContributionOpen(true), intent: 'success' },
                             { key: 'withdrawal', label: 'Registrar Retiro', icon: LogOut, onClick: () => setIsWithdrawalOpen(true), intent: 'destructive' },
