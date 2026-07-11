@@ -523,44 +523,44 @@ export function InventoryCountClientView() {
                 }
             >
                 {isDrawerLoading ? (
-                    <SkeletonShell isLoading ariaLabel="Cargando conteo" />
+                    <div className="p-4">
+                        <SkeletonShell isLoading ariaLabel="Cargando conteo" />
+                    </div>
                 ) : count ? (
-                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                        <div className="shrink-0 px-4 pb-1">
-                            <UnifiedSearchBar
-                                config={inventoryCountLineSearchDef}
-                                chips={lineSearch.chips}
-                                isFiltered={lineSearch.isFiltered}
-                                inputValue={lineSearch.inputValue}
-                                onInputChange={lineSearch.setInputValue}
-                                onApply={lineSearch.applyFilter}
-                                onRemove={lineSearch.removeFilter}
-                                onClearAll={lineSearch.clearAll}
-                                groupBy={lineSearch.groupBy}
-                                onGroupBySelect={lineSearch.setGroupBy}
-                                paramValues={lineSearch.paramValues}
-                                placeholder="Buscar producto, código o SKU..."
-                            />
-                        </div>
-                        <div className="flex-1 min-h-0">
-                            <DataTableView
-                                entityLabel="inventory.inventorycount"
-                                columns={lineColumns}
-                                data={lineSearch.filterFn(count.lines)}
-                                isLoading={false}
-                                variant="embedded"
-                                hidePagination
-                                noBorder
-                                columnToggle={false}
-                                showReset={lineSearch.isFiltered}
-                                onReset={lineSearch.clearAll}
-                                emptyState={{
-                                    context: "inventory",
-                                    title: "Sin productos",
-                                    description: "Este conteo no tiene productos registrados.",
-                                }}
-                            />
-                        </div>
+                    <div className="p-4 animate-in fade-in duration-500">
+                        <DataTableView
+                            entityLabel="inventory.inventorycount"
+                            columns={lineColumns}
+                            data={lineSearch.filterFn(count.lines)}
+                            isLoading={false}
+                            variant="embedded"
+                            hidePagination
+                            noBorder
+                            columnToggle={false}
+                            unifiedSearch={
+                                <UnifiedSearchBar
+                                    config={inventoryCountLineSearchDef}
+                                    chips={lineSearch.chips}
+                                    isFiltered={lineSearch.isFiltered}
+                                    inputValue={lineSearch.inputValue}
+                                    onInputChange={lineSearch.setInputValue}
+                                    onApply={lineSearch.applyFilter}
+                                    onRemove={lineSearch.removeFilter}
+                                    onClearAll={lineSearch.clearAll}
+                                    groupBy={lineSearch.groupBy}
+                                    onGroupBySelect={lineSearch.setGroupBy}
+                                    paramValues={lineSearch.paramValues}
+                                    placeholder="Buscar producto, código o SKU..."
+                                />
+                            }
+                            showReset={lineSearch.isFiltered}
+                            onReset={lineSearch.clearAll}
+                            emptyState={{
+                                context: "inventory",
+                                title: "Sin productos",
+                                description: "Este conteo no tiene productos registrados.",
+                            }}
+                        />
                     </div>
                 ) : null}
             </Drawer>
