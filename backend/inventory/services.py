@@ -183,6 +183,21 @@ class InventoryService:
             
         # Accounting Generation
         if generate_accounting and not journal_entry:
+            from accounting.models import AccountingSettings
+            from inventory.models import Location
+
+            acc_settings = AccountingSettings.get_solo()
+            if acc_settings:
+                for loc_name, acc_field in [
+                    ("Ajuste por Sobrante/Ganancia", acc_settings.adjustment_income_account),
+                    ("Ajuste por Merma/Pérdida", acc_settings.adjustment_expense_account),
+                    ("Capital de Socios", acc_settings.partner_capital_contribution_account),
+                ]:
+                    if acc_field:
+                        Location.objects.filter(
+                            location_type="VIRTUAL", name=loc_name, account__isnull=True
+                        ).update(account=acc_field)
+
             items = []
             total_value = 0
             

@@ -399,6 +399,22 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.WARNING(f"     ⚠ {name}: NOT CONFIGURED"))
 
+        # Sync Location.account for VIRTUAL locations from AccountingSettings
+        virtual_account_map = {
+            "Ajuste por Sobrante/Ganancia": settings.adjustment_income_account,
+            "Ajuste por Merma/Pérdida": settings.adjustment_expense_account,
+            "Capital de Socios": settings.partner_capital_contribution_account,
+        }
+        synced = 0
+        for loc_name, account in virtual_account_map.items():
+            if account:
+                updated = Location.objects.filter(
+                    location_type="VIRTUAL", name=loc_name
+                ).update(account=account)
+                synced += updated
+        if synced:
+            self.stdout.write(f"  ✓ Synced {synced} virtual location accounts from AccountingSettings")
+
         # ADR-0038: Verifica que las TreasuryAccount puente de Cheque fueron
         # auto-creadas por el signal post_save de AccountingSettings al
         # cablear check_portfolio_account / issued_checks_account. Si el
