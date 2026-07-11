@@ -718,7 +718,7 @@ class InventoryCountSerializer(serializers.ModelSerializer):
             "id", "warehouse", "warehouse_name", "status", "status_display",
             "notes", "created_by", "created_by_name", "applied_at",
             "document_id", "lines", "total_products", "counted_products",
-            "products_with_difference", "created_at", "updated_at",
+            "products_with_difference",
         ]
         read_only_fields = ["status", "created_by", "applied_at", "document"]
 

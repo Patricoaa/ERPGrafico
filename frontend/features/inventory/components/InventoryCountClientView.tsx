@@ -396,12 +396,6 @@ export function InventoryCountClientView() {
             ),
             size: 150,
         },
-        {
-            accessorKey: "created_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Date value={row.original.created_at} />,
-            size: 100,
-        },
     ]
 
     const createAction = (

@@ -224,8 +224,6 @@ export interface InventoryCount {
     total_products: number
     counted_products: number
     products_with_difference: number
-    created_at: string
-    updated_at: string
 }
 
 export interface InventoryCountFilters {
