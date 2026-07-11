@@ -551,6 +551,7 @@ export function InventoryCountClientView() {
                                 variant="embedded"
                                 hidePagination
                                 noBorder
+                                columnToggle={false}
                                 showReset={lineSearch.isFiltered}
                                 onReset={lineSearch.clearAll}
                                 emptyState={{
