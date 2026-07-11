@@ -63,6 +63,7 @@ function EditableQtyCell({
         }
         const num = parseFloat(localValue)
         if (!isNaN(num)) {
+            setLocalValue(String(num))
             onCommit(line.id, num)
         }
     }, [localValue, line.id, onCommit])
@@ -78,7 +79,8 @@ function EditableQtyCell({
     return (
         <div className="flex justify-center gap-1">
             <Input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={localValue}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -490,7 +492,7 @@ export function InventoryCountClientView() {
                             {isInProgress && (
                                 <>
                                     <ActionSlideButton
-                                        variant="cmyk"
+                                        variant="muted"
                                         size="sm"
                                         onClick={handleSetAllToTheoretical}
                                         icon={<Equal className="h-4 w-4" />}
@@ -567,7 +569,17 @@ export function InventoryCountClientView() {
 
             {/* New Count Dialog */}
             <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent
+                    className="sm:max-w-[400px]"
+                    onPointerDownOutside={(e) => {
+                        const target = e.target as HTMLElement
+                        if (target.closest('[data-slot="select-content"]') ||
+                            target.closest('[role="listbox"]') ||
+                            target.closest('[data-radix-popper-content-wrapper]')) {
+                            e.preventDefault()
+                        }
+                    }}
+                >
                     <DialogHeader>
                         <DialogTitle>Nuevo Conteo de Inventario</DialogTitle>
                         <DialogDescription>
