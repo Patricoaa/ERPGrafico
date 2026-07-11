@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters } from '../types'
+import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
 import { toPage, type Page } from '@/lib/pagination'
 
 /**
@@ -193,6 +193,38 @@ export const inventoryApi = {
 
     createPicking: async (payload: { picking_type: number, warehouse: number, partner?: number, origin?: string }) => {
         const { data } = await api.post('inventory/pickings/', payload)
+        return data
+    },
+
+    // ─── Inventory Counts ─────────────────────────────────────────────────
+
+    getInventoryCounts: async (filters?: InventoryCountFilters): Promise<Page<InventoryCount>> => {
+        const params = new URLSearchParams()
+        if (filters?.page) params.append('page', String(filters.page))
+        if (filters?.page_size) params.append('page_size', String(filters.page_size))
+        if (filters?.status) params.append('status', filters.status)
+        if (filters?.warehouse) params.append('warehouse', String(filters.warehouse))
+        const { data } = await api.get<{ count: number; results: InventoryCount[] }>('inventory/counts/', { params })
+        return toPage<InventoryCount>(data, filters?.page ?? 1, filters?.page_size ?? 50)
+    },
+
+    getInventoryCount: async (id: number): Promise<InventoryCount> => {
+        const { data } = await api.get<InventoryCount>(`inventory/counts/${id}/`)
+        return data
+    },
+
+    createInventoryCount: async (payload: { warehouse: number, notes?: string }): Promise<InventoryCount> => {
+        const { data } = await api.post<InventoryCount>('inventory/counts/', payload)
+        return data
+    },
+
+    saveInventoryCountLines: async (id: number, lines: Array<{ line_id: number, counted_qty: number }>): Promise<InventoryCount> => {
+        const { data } = await api.post<InventoryCount>(`inventory/counts/${id}/save_lines/`, { lines })
+        return data
+    },
+
+    applyInventoryCount: async (id: number): Promise<InventoryCount> => {
+        const { data } = await api.post<InventoryCount>(`inventory/counts/${id}/apply/`)
         return data
     },
 }
