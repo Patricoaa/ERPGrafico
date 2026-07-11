@@ -21,9 +21,11 @@ import {
     CardSkeleton,
     SkeletonShell,
         DataTable,
-    Chip
+    Chip,
+    UnifiedSearchBar,
+    useUnifiedSearch
 } from "@/components/shared"
-import type { AnalyticsPanelConfig } from "@/components/shared"
+import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
@@ -39,6 +41,17 @@ import { MobilizeEarningsWizard } from "@/features/settings/components/partners/
 import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
 import { type ColumnDef } from "@tanstack/react-table"
 
+const partnerUnifiedSearchDef: UnifiedSearchConfig = {
+    searchFields: [
+        {
+            key: 'name',
+            label: 'Nombre / ID Fiscal',
+            serverParam: 'search',
+            clientKey: ['name', 'tax_id'],
+        },
+    ],
+}
+
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
     createAction
@@ -46,6 +59,7 @@ export function EquityCompositionTab({
     initialAddPartnerOpen?: boolean,
     createAction?: React.ReactNode
 }) {
+    const search = useUnifiedSearch(partnerUnifiedSearchDef)
     const [loading, setLoading] = useState(true)
     const [partners, setPartners] = useState<Partner[]>([])
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
@@ -378,6 +392,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "name",
             header: "Socio",
+            enableHiding: false,
             cell: ({ row }) => (
                 <div className="flex flex-col gap-1 py-1 max-w-[220px]">
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</span>
@@ -397,6 +412,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_equity_percentage",
             header: () => <div className="text-right">Part. %</div>,
+            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right">
                     <Chip size="xs" intent="primary">
@@ -408,6 +424,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_total_contributions",
             header: () => <div className="text-right whitespace-nowrap">C. Suscrito</div>,
+            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right font-mono text-[11px] font-bold opacity-80">
                     {formatCurrency(row.getValue("partner_total_contributions"))}
@@ -417,6 +434,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_total_paid_in",
             header: () => <div className="text-right whitespace-nowrap">C. Enterado</div>,
+            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right font-mono text-[11px] font-black text-success">
                     {formatCurrency(row.getValue("partner_total_paid_in"))}
@@ -426,6 +444,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_pending_capital",
             header: () => <div className="text-right">Pendiente</div>,
+            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_pending_capital"))
                 return (
@@ -441,6 +460,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_provisional_withdrawals_balance",
             header: () => <div className="text-right whitespace-nowrap">R. Provisorios</div>,
+            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_provisional_withdrawals_balance"))
                 return (
@@ -456,6 +476,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_earnings_balance",
             header: () => <div className="text-right whitespace-nowrap text-success">Utilidades</div>,
+            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_earnings_balance"))
                 return (
@@ -471,6 +492,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_dividends_payable_balance",
             header: () => <div className="text-right whitespace-nowrap text-warning">D. por Pagar</div>,
+            enableHiding: false,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_dividends_payable_balance"))
                 return (
@@ -486,6 +508,7 @@ export function EquityCompositionTab({
         {
             accessorKey: "partner_net_equity",
             header: () => <div className="text-right whitespace-nowrap text-primary">Patrimonio</div>,
+            enableHiding: false,
             cell: ({ row }) => (
                 <div className="text-right font-mono text-[12px] font-black text-primary bg-primary/5 px-2 py-1 relative ring-1 ring-primary/10">
                     {formatCurrency(row.getValue("partner_net_equity"))}
@@ -500,11 +523,27 @@ export function EquityCompositionTab({
             <div className="flex-1 min-h-0">
                 <DataTable
                 columns={columns}
-                data={partners}
+                data={search.filterFn(partners)}
                 isLoading={loading}
                 variant="embedded"
                 createAction={createAction}
                 analyticsPanel={analyticsPanel}
+                unifiedSearch={<UnifiedSearchBar
+                    config={partnerUnifiedSearchDef}
+                    chips={search.chips}
+                    isFiltered={search.isFiltered}
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                    placeholder="Buscar socio por nombre o ID fiscal..."
+                />}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
                 toolbarActions={
                     !hasPartners
                         ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
