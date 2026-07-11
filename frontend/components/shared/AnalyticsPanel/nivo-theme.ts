@@ -119,14 +119,3 @@ export const cardPieDefaults = {
     arcLabelsSkipAngle: 12,
     arcLabelsFont: { fontWeight: 700 as const },
 }
-
-export const cardLegend = {
-    anchor: "bottom" as const,
-    direction: "row" as const,
-    translateY: 48,
-    itemWidth: 72,
-    itemHeight: 12,
-    itemsSpacing: 8,
-    symbolSize: 6,
-    symbolShape: "circle" as const,
-}

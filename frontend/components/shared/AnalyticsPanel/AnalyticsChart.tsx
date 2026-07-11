@@ -7,11 +7,9 @@ import { formatCompactSpanish } from "@/lib/utils/number"
 import {
     nivoTheme,
     barDefaults,
-    pieDefaults,
     cardBarDefaults,
     cardLineDefaults,
     cardPieDefaults,
-    cardLegend,
 } from "./nivo-theme"
 
 const defaultLegend = {
@@ -29,19 +27,8 @@ function BarChartRenderer(props: BarChartConfig) {
     const isCard = props.preset === "card"
     const isCompact = props.compact
 
-    const showLegend = isCard
-        ? (props.lineOverlay ? true : props.keys.length > 1)
-        : isCompact
-            ? false
-            : (props.showLegend ?? true)
-
-    const cardMargin = {
-        ...cardBarDefaults.margin,
-        bottom: showLegend ? 64 : cardBarDefaults.margin.bottom,
-    }
-
     const margin = isCard
-        ? cardMargin
+        ? cardBarDefaults.margin
         : isCompact
             ? { top: 4, right: 4, bottom: 28, left: 64 }
             : { top: 40, right: 16, bottom: 28 + (props.axisBottomLegend ? 20 : 0), left: 64 + (props.axisLeftLegend ? 96 : 0) }
@@ -80,7 +67,11 @@ function BarChartRenderer(props: BarChartConfig) {
                 },
             }
 
-    const legendItems = props.lineOverlay && showLegend
+    const showLegend = isCompact
+        ? false
+        : (props.showLegend ?? true)
+
+    const legendItems = !isCard && props.lineOverlay && showLegend
         ? [
             ...(props.keys ?? []).map((key) => ({
                 id: key,
@@ -95,13 +86,13 @@ function BarChartRenderer(props: BarChartConfig) {
         ]
         : undefined
 
-    const legendConfig = isCard ? cardLegend : defaultLegend
-
-    const barLegends = legendItems
-        ? [{ data: legendItems, dataFrom: "keys" as const, ...legendConfig }]
-        : showLegend
-            ? [{ dataFrom: "keys" as const, ...legendConfig }]
-            : []
+    const barLegends = isCard
+        ? []
+        : legendItems
+            ? [{ data: legendItems, dataFrom: "keys" as const, ...defaultLegend }]
+            : showLegend
+                ? [{ dataFrom: "keys" as const, ...defaultLegend }]
+                : []
 
     return (
         <div className="flex-1 min-h-[300px] w-full relative">
@@ -125,19 +116,8 @@ function LineChartRenderer(props: LineChartConfig) {
     const isCard = props.preset === "card"
     const isCompact = props.compact
 
-    const showLegend = isCard
-        ? props.data.length > 1
-        : isCompact
-            ? false
-            : (props.showLegend ?? true)
-
-    const cardMargin = {
-        ...cardLineDefaults.margin,
-        bottom: showLegend ? 64 : cardLineDefaults.margin.bottom,
-    }
-
     const margin = isCard
-        ? cardMargin
+        ? cardLineDefaults.margin
         : isCompact
             ? { top: 4, right: 4, bottom: 28, left: 64 }
             : { top: 40, right: 16, bottom: 28 + (props.axisBottomLegend ? 20 : 0), left: 64 + (props.axisLeftLegend ? 96 : 0) }
@@ -176,7 +156,9 @@ function LineChartRenderer(props: LineChartConfig) {
                 },
             }
 
-    const legendConfig = isCard ? cardLegend : defaultLegend
+    const showLegend = isCompact
+        ? false
+        : (props.showLegend ?? true)
 
     return (
         <div className="flex-1 min-h-[300px] w-full relative">
@@ -190,7 +172,7 @@ function LineChartRenderer(props: LineChartConfig) {
                 enablePointLabel={isCard ? cardLineDefaults.enablePointLabel : undefined}
                 useMesh={isCard ? cardLineDefaults.useMesh : undefined}
                 crosshairType={isCard ? cardLineDefaults.crosshairType : undefined}
-                legends={showLegend ? [{ ...legendConfig }] : []}
+                legends={isCard ? [] : showLegend ? [{ ...defaultLegend }] : []}
                 {...axes}
             />
         </div>
@@ -207,13 +189,9 @@ function PieChartRenderer(props: PieChartConfig) {
             ? { top: 4, right: 4, bottom: 4, left: 4 }
             : { top: 40, right: 16, bottom: 16, left: 16 }
 
-    const showLegend = isCard
-        ? props.data.length > 2
-        : isCompact
-            ? false
-            : (props.showLegend ?? true)
-
-    const legendConfig = isCard ? cardLegend : defaultLegend
+    const showLegend = isCompact
+        ? false
+        : (props.showLegend ?? true)
 
     return (
         <div className="flex-1 min-h-[300px] w-full relative">
@@ -240,7 +218,7 @@ function PieChartRenderer(props: PieChartConfig) {
                 cornerRadius={isCard ? cardPieDefaults.cornerRadius : undefined}
                 borderWidth={isCard ? cardPieDefaults.borderWidth : undefined}
                 borderColor={isCard ? cardPieDefaults.borderColor : undefined}
-                legends={showLegend ? [{ ...legendConfig }] : []}
+                legends={isCard ? [] : showLegend ? [{ ...defaultLegend }] : []}
                 margin={margin}
                 renderTooltip={
                     props.valueFormat

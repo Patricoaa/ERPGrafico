@@ -1,9 +1,40 @@
 "use client"
 
 import React from "react"
-import type { AnalyticsColumn, AnalyticsSection as AnalyticsSectionType } from "./types"
-import { StatCard } from "@/components/shared"
+import type { AnalyticsColumn, AnalyticsSection as AnalyticsSectionType, ChartConfig } from "./types"
+import { StatCard, ChartLegend } from "@/components/shared"
 import { AnalyticsChart } from "./AnalyticsChart"
+import { getCssChartColors } from "./nivo-theme"
+
+function extractLegendItems(chart: ChartConfig): Array<{ label: string; color?: string }> {
+    const palette = getCssChartColors(chart.type === "pie-chart" ? "pie" : undefined)
+
+    switch (chart.type) {
+        case "bar-chart": {
+            const items = chart.keys.map((key, i) => ({
+                label: key.charAt(0).toUpperCase() + key.slice(1),
+                color: palette[i % palette.length],
+            }))
+            if (chart.lineOverlay) {
+                items.push({
+                    label: chart.lineOverlay.label,
+                    color: chart.lineOverlay.color ?? "#f59e0b",
+                })
+            }
+            return items
+        }
+        case "line-chart":
+            return chart.data.map((series, i) => ({
+                label: series.id,
+                color: palette[i % palette.length],
+            }))
+        case "pie-chart":
+            return chart.data.map((slice, i) => ({
+                label: slice.id,
+                color: slice.color ?? palette[i % palette.length],
+            }))
+    }
+}
 
 function SectionRenderer({ section }: { section: AnalyticsSectionType }) {
     const content = section.content
@@ -32,6 +63,10 @@ function SectionRenderer({ section }: { section: AnalyticsSectionType }) {
                     active={card.active}
                     loading={card.loading}
                     chart={card.chart ? <AnalyticsChart {...card.chart} /> : undefined}
+                    chartLegend={card.chart?.preset === "card"
+                        ? <ChartLegend items={extractLegendItems(card.chart)} />
+                        : undefined
+                    }
                 />
             </div>
         )
