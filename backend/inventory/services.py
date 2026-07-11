@@ -1970,6 +1970,7 @@ class InventoryCountService:
                     product=line.product,
                     quantity=diff,
                     unit_cost=line.unit_cost,
+                    warehouse=count.warehouse,
                 )
             )
         InventoryDocumentDetail.objects.bulk_create(details)
