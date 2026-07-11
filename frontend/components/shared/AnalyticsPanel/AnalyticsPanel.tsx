@@ -6,6 +6,40 @@ import { Drawer, TabBar, TabBarContent } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
 import type { AnalyticsPanelProps, AnalyticsTab } from "./types"
 
+export interface AnalyticsTabBarProps {
+    tabs: AnalyticsTab[]
+    activeTab?: string
+    onTabChange?: (value: string) => void
+}
+
+export function AnalyticsTabBar({
+    tabs,
+    activeTab: activeTabProp,
+    onTabChange,
+}: AnalyticsTabBarProps) {
+    const [internalTab, setInternalTab] = useState(tabs[0]?.value ?? "")
+
+    const currentTab = activeTabProp ?? internalTab
+    const handleTabChange = onTabChange ?? setInternalTab
+
+    return (
+        <TabBar
+            items={tabs.map((t) => ({
+                value: t.value,
+                label: t.label,
+                icon: t.icon,
+                badge: t.badge,
+            }))}
+            value={currentTab}
+            onValueChange={handleTabChange}
+            orientation="horizontal"
+            className="w-auto shrink-0"
+        >
+            <div className="hidden" />
+        </TabBar>
+    )
+}
+
 export interface AnalyticsPanelContentProps {
     entityName: string
     tabs: AnalyticsTab[]

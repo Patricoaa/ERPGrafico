@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { LucideIcon } from "lucide-react"
 import { TabBar } from "@/components/shared"
-import { AnalyticsPanel, type AnalyticsTab } from "./AnalyticsPanel"
+import { AnalyticsPanel, AnalyticsTabBar, type AnalyticsTab } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTableColumnToggle, translateColumnId } from "./DataTableColumnToggle"
 import { SegmentationTableContext } from "./SegmentationTableContext"
@@ -132,6 +132,14 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
+                        {analyticsPanel?.screen && currentView === 'analytics' && (
+                            <AnalyticsTabBar
+                                tabs={analyticsPanel.screen.tabs}
+                                activeTab={analyticsPanel.screen.activeTab}
+                                onTabChange={analyticsPanel.screen.onTabChange}
+                            />
+                        )}
+
                         <div className="flex items-center gap-1 shrink-0">
                             {analyticsPanel && currentView !== 'analytics' && (
                                 <Tooltip>
@@ -214,6 +222,14 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom">Limpiar filtros</TooltipContent>
                             </Tooltip>
+                        )}
+
+                        {analyticsPanel?.screen && currentView === 'analytics' && (
+                            <AnalyticsTabBar
+                                tabs={analyticsPanel.screen.tabs}
+                                activeTab={analyticsPanel.screen.activeTab}
+                                onTabChange={analyticsPanel.screen.onTabChange}
+                            />
                         )}
 
                         <div className="flex items-center gap-1 shrink-0">
