@@ -208,9 +208,13 @@ export function Drawer({
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 flex flex-col overflow-hidden panel-surface",
+                    "p-0 flex flex-col overflow-hidden",
+                    !(boundary === "embedded" && isHorizontal) && "panel-surface",
                     boundary === "embedded" ? "absolute!" : "fixed!",
                     sideStyles[side],
+                    boundary === "embedded" && isHorizontal
+                        ? (side === "right" ? "border-l! border-border/15! border-t-0! border-r-0! border-b-0!" : "border-r! border-border/15! border-t-0! border-l-0! border-b-0!")
+                        : undefined,
                     className
                 )}
             >
