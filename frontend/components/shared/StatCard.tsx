@@ -34,6 +34,7 @@ interface StatCardProps {
   active?: boolean
   loading?: boolean
   chart?: React.ReactNode
+  chartLegend?: React.ReactNode
   children?: React.ReactNode
   className?: string
 }
@@ -97,6 +98,7 @@ export function StatCard({
   href,
   onClick,
   chart,
+  chartLegend,
   active = false,
   loading = false,
   children,
@@ -293,12 +295,15 @@ export function StatCard({
               )}
             </div>
           </div>
-          {trend && (
-            <div className={cn("flex items-center gap-1 text-xs font-bold shrink-0", trendColor)}>
-              <TrendIcon className="h-3 w-3" />
-              <span>{trend.value}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3 shrink-0">
+            {chartLegend}
+            {trend && (
+              <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
+                <TrendIcon className="h-3 w-3" />
+                <span>{trend.value}</span>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 min-h-0 p-3">
           {chart}
@@ -330,13 +335,16 @@ export function StatCard({
               )}
             </div>
           </div>
-          {trend && (
-            <div className={cn("flex items-center gap-1 text-xs font-bold shrink-0", trendColor)}>
-              <TrendIcon className="h-3 w-3" />
-              <span>{trend.value}</span>
-              {trend.label && <span className="text-muted-foreground font-normal">{trend.label}</span>}
-            </div>
-          )}
+          <div className="flex items-center gap-3 shrink-0">
+            {chartLegend}
+            {trend && (
+              <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
+                <TrendIcon className="h-3 w-3" />
+                <span>{trend.value}</span>
+                {trend.label && <span className="text-muted-foreground font-normal">{trend.label}</span>}
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 min-h-0 p-3">
           {chart}

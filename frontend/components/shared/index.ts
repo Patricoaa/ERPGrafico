@@ -34,6 +34,7 @@ export * from './ActionDock';
 
 // Cards & Containers
 export * from './StatCard';
+export * from './ChartLegend';
 export * from './AnalyticsPanel';
 export * from './CardSkeleton';
 export * from './SkeletonShell';
