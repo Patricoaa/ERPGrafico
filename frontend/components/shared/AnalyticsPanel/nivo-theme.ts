@@ -123,7 +123,7 @@ export const cardPieDefaults = {
 export const cardLegend = {
     anchor: "bottom" as const,
     direction: "row" as const,
-    translateY: 20,
+    translateY: 48,
     itemWidth: 72,
     itemHeight: 12,
     itemsSpacing: 8,
