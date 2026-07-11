@@ -412,9 +412,8 @@ export function InventoryCountClientView() {
     ) : undefined
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
+        <div className="flex-1 min-h-0 overflow-y-auto p-4">
+            <DataTableView
                     entityLabel="inventory.inventorycount"
                     columns={listColumns}
                     data={counts}
@@ -473,7 +472,6 @@ export function InventoryCountClientView() {
                         </EntityCard>
                     )}
                 />
-            </div>
 
             {/* Detail Drawer */}
             <Drawer
