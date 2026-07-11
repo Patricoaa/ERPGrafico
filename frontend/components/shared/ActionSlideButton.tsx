@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Loader2, type LucideIcon } from "lucide-react";
 
 export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'destructive' | 'success' | 'cmyk';
+    variant?: 'primary' | 'destructive' | 'success' | 'cmyk' | 'muted';
     size?: 'default' | 'sm' | 'lg' | 'icon' | 'icon-sm' | 'icon-lg';
     /** Show loading spinner and disable interaction */
     loading?: boolean;
@@ -33,6 +33,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
         const isDestructive = variant === 'destructive';
         const isSuccess = variant === 'success';
         const isCmyk = variant === 'cmyk';
+        const isMuted = variant === 'muted';
         const isDisabled = disabled || loading;
 
         return (
@@ -48,6 +49,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",
                     isSuccess && "border-success text-success hover:text-success-foreground bg-success/5",
                     isCmyk && "border-border/50 text-foreground hover:text-white bg-transparent",
+                    isMuted && "border-border/50 text-muted-foreground hover:text-foreground bg-transparent",
                     isDisabled && "opacity-50 cursor-not-allowed pointer-events-none",
                     "group",
                     className
@@ -64,7 +66,8 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                         "group-hover:translate-x-0 group-focus-visible:translate-x-0 group-active:translate-x-0",
                         isPrimary && "bg-primary",
                         isDestructive && "bg-destructive",
-                        isSuccess && "bg-success"
+                        isSuccess && "bg-success",
+                        isMuted && "bg-muted"
                     )}
                     {...(isCmyk ? { style: { background: 'var(--gradient-cmyk)' } as React.CSSProperties } : {})}
                 />
