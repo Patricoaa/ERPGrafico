@@ -69,7 +69,7 @@ export function InventoryHeader() {
             subTabs: [
                 { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: getViewModeUrl('inventory.warehouse', "/inventory/operations/warehouses") },
                 { value: "documents", label: "Recepciones, entregas y ajustes", iconName: "file-text", href: "/inventory/operations/documents" },
-                { value: "counts", label: "Ajuste de Inventario", iconName: "clipboard-check", href: "/inventory/operations/counts" },
+                { value: "counts", label: "Conteo de Inventario", iconName: "clipboard-check", href: "/inventory/operations/counts" },
             ]
         },
         {
@@ -110,7 +110,7 @@ export function InventoryHeader() {
         }
         if (activeValue === 'operations') {
             if (subActiveValue === 'documents') return { title: "Recepciones, Entregas y Ajustes", description: "Historial y gestión de movimientos físicos, transferencias y mermas.", iconName: "file-text" as const }
-            if (subActiveValue === 'counts') return { title: "Ajuste de Inventario", description: "Conteo rápido de stock teórico vs real y generación de ajustes.", iconName: "clipboard-check" as const }
+            if (subActiveValue === 'counts') return { title: "Conteo de Inventario", description: "Conteo rápido de stock teórico vs real y generación de ajustes.", iconName: "clipboard-check" as const }
             return { title: "Almacenes y Ubicaciones", description: "Estructura física y lógica para el almacenamiento de mercadería.", iconName: getEntityIconName('inventory.warehouse') }
         }
         if (activeValue === 'config') return { title: "Configuración de Inventario", description: "Parámetros generales del módulo de inventario.", iconName: "settings" as const }

@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { InventoryCountClientView } from "@/features/inventory"
 
 export const metadata: Metadata = {
-    title: "Ajuste de Inventario",
+    title: "Conteo de Inventario",
 }
 
 export default function InventoryCountsPage() {
