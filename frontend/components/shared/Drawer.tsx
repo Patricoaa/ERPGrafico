@@ -10,6 +10,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 type DrawerMode = 'create' | 'edit' | 'view'
 
@@ -100,11 +101,28 @@ export function Drawer({
     const uniqueId = useId()
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
 
+    // For embedded horizontal drawers we portal into the body (to escape overflow:hidden)
+    // but compute position from the main-content bounding rect so it visually aligns.
+    const [embeddedRect, setEmbeddedRect] = React.useState<DOMRect | null>(null)
+
+    useEffect(() => {
+        if (boundary !== "embedded" || !isHorizontal) return
+        const update = () => {
+            const el = document.getElementById("main-content")
+            if (el) setEmbeddedRect(el.getBoundingClientRect())
+        }
+        update()
+        window.addEventListener("resize", update)
+        return () => window.removeEventListener("resize", update)
+    }, [boundary, isHorizontal])
+
     const containerElement = useSyncExternalStore(
         () => () => {},
         () => {
             if (typeof document === "undefined") return null
             if (boundary === "screen") return document.body
+            // Horizontal embedded drawers: use body to avoid overflow:hidden clipping
+            if (isHorizontal) return document.body
             return (
                 document.getElementById("main-content") ??
                 document.getElementById("module-sheets-portal-container") ??
@@ -172,10 +190,10 @@ export function Drawer({
 
     // Render classes for side specific logic
     const sideStyles = {
-        bottom: "rounded-t-xl! border-t-0! bottom-0! top-auto! w-full! left-0! right-0!",
-        top: "rounded-b-xl! border-b-0! top-0! bottom-auto! w-full! left-0! right-0!",
-        right: "rounded-l-xl! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none!",
-        left: "rounded-r-xl! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none!",
+        bottom: "rounded-t-xl! rounded-b-none! border-t-0! bottom-0! top-auto! w-full! left-0! right-0! m-0!",
+        top: "rounded-b-xl! rounded-t-none! border-b-0! top-0! bottom-auto! w-full! left-0! right-0! m-0!",
+        right: "rounded-l-xl! rounded-r-none! border-l-0! h-full! left-auto! top-0! bottom-0! sm:max-w-none! m-0!",
+        left: "rounded-r-xl! rounded-l-none! border-r-0! h-full! right-auto! top-0! bottom-0! sm:max-w-none! m-0!",
     }
 
     const iconElement: React.ReactNode = icon
@@ -202,8 +220,24 @@ export function Drawer({
                     maxWidth: isHorizontal ? (maxSize ?? '100vw') : undefined,
                     minHeight: !isHorizontal ? minSize : undefined,
                     maxHeight: !isHorizontal ? (maxSize ?? '100vh') : undefined,
-                    ...(side === "right" ? { right: 0, top: 0, bottom: 0, height: '100%' } : {}),
-                    ...(side === "left" ? { left: 0, top: 0, bottom: 0, height: '100%' } : {}),
+                    // Horizontal embedded: fixed to body, aligned to main-content rect
+                    ...(side === "right" && boundary === "embedded" && embeddedRect ? {
+                        position: 'fixed',
+                        right: 0,
+                        top: embeddedRect.top,
+                        bottom: window.innerHeight - embeddedRect.bottom,
+                        height: 'auto',
+                    } : {}),
+                    ...(side === "left" && boundary === "embedded" && embeddedRect ? {
+                        position: 'fixed',
+                        left: embeddedRect.left,
+                        top: embeddedRect.top,
+                        bottom: window.innerHeight - embeddedRect.bottom,
+                        height: 'auto',
+                    } : {}),
+                    // Non-embedded or rect not yet measured: fall back to absolute
+                    ...(side === "right" && !(boundary === "embedded" && embeddedRect) ? { right: 0, top: 0, bottom: 0, height: '100%' } : {}),
+                    ...(side === "left" && !(boundary === "embedded" && embeddedRect) ? { left: 0, top: 0, bottom: 0, height: '100%' } : {}),
                     ...(side === "bottom" ? { left: 0, right: 0, bottom: 0, width: '100%' } : {}),
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
                 }}
@@ -271,13 +305,13 @@ export function Drawer({
                     </SheetHeader>
                 )}
 
-                <div className={cn(
-                    "flex-1 flex flex-col overflow-y-auto pt-2 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent",
+                <ScrollArea className={cn(
+                    "flex-1 flex flex-col pt-2",
                     mode === "view" && "bg-muted/30",
                     contentClassName
                 )}>
                     {children}
-                </div>
+                </ScrollArea>
 
                 {footer && (
                     <div className={cn("border-t px-6 py-3 flex-shrink-0", footerClassName)}>
