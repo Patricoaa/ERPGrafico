@@ -133,11 +133,13 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         {analyticsPanel?.screen && currentView === 'analytics' && (
-                            <AnalyticsTabBar
-                                tabs={analyticsPanel.screen.tabs}
-                                activeTab={analyticsPanel.screen.activeTab}
-                                onTabChange={analyticsPanel.screen.onTabChange}
-                            />
+                            <div className="shrink-0">
+                                <AnalyticsTabBar
+                                    tabs={analyticsPanel.screen.tabs}
+                                    activeTab={analyticsPanel.screen.activeTab}
+                                    onTabChange={analyticsPanel.screen.onTabChange}
+                                />
+                            </div>
                         )}
 
                         <div className="flex items-center gap-1 shrink-0">
@@ -225,11 +227,13 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         {analyticsPanel?.screen && currentView === 'analytics' && (
-                            <AnalyticsTabBar
-                                tabs={analyticsPanel.screen.tabs}
-                                activeTab={analyticsPanel.screen.activeTab}
-                                onTabChange={analyticsPanel.screen.onTabChange}
-                            />
+                            <div className="shrink-0">
+                                <AnalyticsTabBar
+                                    tabs={analyticsPanel.screen.tabs}
+                                    activeTab={analyticsPanel.screen.activeTab}
+                                    onTabChange={analyticsPanel.screen.onTabChange}
+                                />
+                            </div>
                         )}
 
                         <div className="flex items-center gap-1 shrink-0">
