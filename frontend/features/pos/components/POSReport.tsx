@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { Printer, Download, Calculator, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { SheetCloseButton } from "@/components/shared"
+import { DataCell, SheetCloseButton } from "@/components/shared"
 import { toast } from "sonner"
 import { useDownloadPOSReportPDF } from "../hooks/usePOSSessions"
 
@@ -152,20 +152,20 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
 
                     <div className="flex justify-between">
                             <span className="font-bold text-muted-foreground">(+) Efectivo de ventas:</span>
-                            <span className="font-black font-mono text-income">+{formatCurrency(data.total_cash_sales)}</span>
+                            <DataCell.CurrencyFlow value={data.total_cash_sales} direction="inflow" showIcon={false} className="font-black" />
                     </div>
 
                     {totalInflows > 0 && (
                         <div className="flex justify-between">
                             <span className="font-bold text-muted-foreground">(+) Depósitos manuales:</span>
-                            <span className="font-black font-mono text-income">+{formatCurrency(totalInflows)}</span>
+                            <DataCell.CurrencyFlow value={totalInflows} direction="inflow" showIcon={false} className="font-black" />
                         </div>
                     )}
 
                     {totalOutflows > 0 && (
                         <div className="flex justify-between">
                             <span className="font-bold text-muted-foreground">(-) Retiros / gastos:</span>
-                            <span className="font-black font-mono text-expense">-{formatCurrency(totalOutflows)}</span>
+                            <DataCell.CurrencyFlow value={totalOutflows} direction="outflow" showIcon={false} className="font-black" />
                         </div>
                     )}
 

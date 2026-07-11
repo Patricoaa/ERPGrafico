@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
 
-import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
+import { ActionConfirmModal, BaseModal, CancelButton, DataCell, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi } from "@/features/contacts"
 import { settingsApi } from "../../hooks"
@@ -526,7 +526,7 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
                     />
                     {selectedPartner && (
                         <p className="text-[10px] text-muted-foreground font-medium mt-1">
-                            Capital Pendiente (por cobrar): <span className="font-mono font-bold text-success">{formatCurrency(pendingCapital)}</span>
+                            Capital Pendiente (por cobrar): <DataCell.CurrencyFlow value={pendingCapital} direction="inflow" showIcon={false} className="font-bold" />
                         </p>
                     )}
                 </div>
@@ -659,7 +659,7 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
                     />
                     {selectedPartner && (
                         <p className="text-[10px] text-muted-foreground font-medium mt-1">
-                            Acumulado en Retiros Provisorios (Deuda del Socio): <span className="font-mono font-bold text-destructive">{formatCurrency(withdrawalsBalance)}</span>
+                            Acumulado en Retiros Provisorios (Deuda del Socio): <DataCell.CurrencyFlow value={withdrawalsBalance} direction="outflow" showIcon={false} className="font-bold" />
                         </p>
                     )}
                 </div>
