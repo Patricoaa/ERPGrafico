@@ -414,64 +414,64 @@ export function InventoryCountClientView() {
     return (
         <div className="flex-1 min-h-0 overflow-y-auto p-4">
             <DataTableView
-                    entityLabel="inventory.inventorycount"
-                    columns={listColumns}
-                    data={counts}
-                    isLoading={isLoadingCounts}
-                    variant="embedded"
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
-                    rowCount={totalCount}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
-                    onRowClick={(row) => handleSelectCount(row.id)}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={inventoryCountUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar conteos..."
-                    />}
-                    unifiedSearchConfig={inventoryCountUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    createAction={createAction}
+                entityLabel="inventory.inventorycount"
+                columns={listColumns}
+                data={counts}
+                isLoading={isLoadingCounts}
+                variant="embedded"
+                pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                rowCount={totalCount}
+                pagination={pageState}
+                onPaginationChange={setPageState}
+                onRowClick={(row) => handleSelectCount(row.id)}
+                unifiedSearch={<UnifiedSearchBar
+                    config={inventoryCountUnifiedSearchDef}
+                    chips={search.chips}
                     isFiltered={search.isFiltered}
-                    emptyState={{
-                        context: "inventory",
-                        title: "No hay conteos de inventario",
-                        description: "Crea un nuevo conteo para comparar el stock teórico con el stock real.",
-                    }}
-                    renderCard={(cnt: InventoryCount) => (
-                        <EntityCard
-                            key={cnt.id}
-                            onClick={() => handleSelectCount(cnt.id)}
-                        >
-                            <EntityCard.Header
-                                title={`Conteo #${cnt.id}`}
-                                subtitle={cnt.warehouse_name}
-                                trailing={<StatusBadge status={cnt.status} size="sm" />}
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Progreso" value={`${cnt.counted_products} / ${cnt.total_products}`} />
-                                {cnt.products_with_difference > 0 && (
-                                    <EntityCard.Field
-                                        label="Diferencias"
-                                        value={<StatusBadge status="WARNING" label={`${cnt.products_with_difference} diferencias`} size="sm" />}
-                                    />
-                                )}
-                                <EntityCard.Field label="Creado por" value={cnt.created_by_name ?? '-'} />
-                            </EntityCard.Body>
-                        </EntityCard>
-                    )}
-                />
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                    placeholder="Buscar conteos..."
+                />}
+                unifiedSearchConfig={inventoryCountUnifiedSearchDef}
+                currentGroupBy={search.groupBy}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
+                createAction={createAction}
+                isFiltered={search.isFiltered}
+                emptyState={{
+                    context: "inventory",
+                    title: "No hay conteos de inventario",
+                    description: "Crea un nuevo conteo para comparar el stock teórico con el stock real.",
+                }}
+                renderCard={(cnt: InventoryCount) => (
+                    <EntityCard
+                        key={cnt.id}
+                        onClick={() => handleSelectCount(cnt.id)}
+                    >
+                        <EntityCard.Header
+                            title={`Conteo #${cnt.id}`}
+                            subtitle={cnt.warehouse_name}
+                            trailing={<StatusBadge status={cnt.status} size="sm" />}
+                        />
+                        <EntityCard.Body>
+                            <EntityCard.Field label="Progreso" value={`${cnt.counted_products} / ${cnt.total_products}`} />
+                            {cnt.products_with_difference > 0 && (
+                                <EntityCard.Field
+                                    label="Diferencias"
+                                    value={<StatusBadge status="WARNING" label={`${cnt.products_with_difference} diferencias`} size="sm" />}
+                                />
+                            )}
+                            <EntityCard.Field label="Creado por" value={cnt.created_by_name ?? '-'} />
+                        </EntityCard.Body>
+                    </EntityCard>
+                )}
+            />
 
             {/* Detail Drawer */}
             <Drawer
