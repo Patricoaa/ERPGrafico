@@ -766,7 +766,7 @@ export function DataTable<TData, TValue>({
                 </div>
 
                 {/* Pagination Section (Outside) */}
-                {!hidePagination && (
+                {!hidePagination && currentView !== 'analytics' && (
                     <div className="px-1 shrink-0 border-t border-border/40 py-1">
                         <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                     </div>
@@ -915,7 +915,7 @@ export function DataTable<TData, TValue>({
                     </Table>
                 </div>
             )}
-            {!hidePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
+            {!hidePagination && currentView !== 'analytics' && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
             {dockNode}
         </div>
     )

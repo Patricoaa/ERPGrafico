@@ -133,7 +133,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         <div className="flex items-center gap-1 shrink-0">
-                            {analyticsPanel && (
+                            {analyticsPanel && currentView !== 'analytics' && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button
@@ -217,7 +217,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         <div className="flex items-center gap-1 shrink-0">
-                            {analyticsPanel && (
+                            {analyticsPanel && currentView !== 'analytics' && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button

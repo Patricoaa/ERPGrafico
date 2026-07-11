@@ -13,6 +13,7 @@ import { groupItems } from "@/lib/group-utils"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { AnalyticsPanelContent } from "./AnalyticsPanel"
 
 interface CardGroupByDef {
   field: string
@@ -84,6 +85,20 @@ export function DataTableView<TData, TValue>({
     if (externalRenderCustomView) return externalRenderCustomView
     if (!policy) return undefined
 
+    const analyticsScreen = dataTableProps.analyticsPanel?.screen
+    if (currentView === "analytics" && analyticsScreen) {
+      return () => (
+        <div className="flex-1 flex flex-col min-h-0 p-6">
+          <AnalyticsPanelContent
+            entityName={analyticsScreen.entityName}
+            tabs={analyticsScreen.tabs}
+            activeTab={analyticsScreen.activeTab}
+            onTabChange={analyticsScreen.onTabChange}
+          />
+        </div>
+      )
+    }
+
     switch (policy.cardComponent) {
       case "domain":
         if (derivedCardGroupBy) {
@@ -144,7 +159,7 @@ export function DataTableView<TData, TValue>({
       default:
         return undefined
     }
-  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, derivedCardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered, hasBulkActions, dataTableProps.bulkActions, dataTableProps.bulkDock])
+  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, derivedCardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered, dataTableProps.analyticsPanel, currentView, hasBulkActions, dataTableProps.bulkActions, dataTableProps.bulkDock])
 
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView
