@@ -5,11 +5,15 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Chip, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
+import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Plus, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft, FileText } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { useInventoryDocuments } from "../hooks/useInventoryDocuments"
 import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
+import { DocumentCreateWizardDrawer, type DocumentCreateType } from "./DocumentCreateWizardDrawer"
 import type { InventoryDocument } from "../types"
 import { toast } from "sonner"
 import React from "react"
@@ -84,6 +88,49 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
         const query = params.toString()
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
+
+    const createActionType = searchParams.get('createDocument') as DocumentCreateType | null
+
+    const handleOpenWizard = (type: DocumentCreateType) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('createDocument', type)
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
+    const handleCloseWizard = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('createDocument')
+        router.push(`${pathname}?${params.toString()}`)
+    }
+
+    const createAction = (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button size="sm" className="ml-auto flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Nuevo Documento
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => handleOpenWizard("count")}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Nuevo Ajuste o Conteo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOpenWizard("receipt")}>
+                    <ArrowDownToLine className="w-4 h-4 mr-2" />
+                    Nueva Recepción
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOpenWizard("delivery")}>
+                    <ArrowUpFromLine className="w-4 h-4 mr-2" />
+                    Nueva Entrega
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleOpenWizard("transfer")}>
+                    <ArrowRightLeft className="w-4 h-4 mr-2" />
+                    Nueva Transferencia
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
 
     const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
         const cols: ColumnDef<InventoryDocument>[] = [
@@ -194,6 +241,7 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                     currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
+                    createAction={createAction}
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
@@ -233,6 +281,19 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                     onSuccess={refetch}
                 />
             )}
+
+            <DocumentCreateWizardDrawer
+                open={!!createActionType}
+                onOpenChange={(open) => {
+                    if (!open) handleCloseWizard()
+                }}
+                defaultType={createActionType || "count"}
+                onSuccess={(id) => {
+                    refetch()
+                    handleCloseWizard()
+                    handleSelect(id)
+                }}
+            />
         </div>
     )
 }

@@ -197,7 +197,20 @@ class InventoryService:
                 debit_account = move.product.get_asset_account if dst.location_type == 'INTERNAL' else dst.account
                 
                 if not credit_account or not debit_account:
-                    raise ValidationError(f"No se pudieron resolver las cuentas contables para el movimiento del producto {move.product.name}")
+                    missing = []
+                    if not credit_account:
+                        if src.location_type == 'INTERNAL':
+                            missing.append(f"cuenta de inventario para el producto '{move.product.name}'")
+                        else:
+                            missing.append(f"cuenta contable asociada a la ubicación origen '{src.name}'")
+                    if not debit_account:
+                        if dst.location_type == 'INTERNAL':
+                            missing.append(f"cuenta de inventario para el producto '{move.product.name}'")
+                        else:
+                            missing.append(f"cuenta contable asociada a la ubicación destino '{dst.name}'")
+                            
+                    error_msg = f"No se pudieron resolver las cuentas contables: Falta {', y '.join(missing)}."
+                    raise ValidationError(error_msg)
                     
                 if credit_account != debit_account:
                     items.append(JournalItem(
@@ -444,14 +457,13 @@ class StockService:
             unit_cost=unit_cost
         )
 
-        # 2. Confirm Document and Generate Accounting
-        doc, generated_moves = InventoryService.confirmar_documento(doc, user=user, generate_accounting=True)
-        move = generated_moves[0] if generated_moves else None
+        # 2. Build Accounting Context manually (Decoupled from Virtual Location)
+        asset_account = product.get_asset_account
+        if not asset_account:
+            raise ValidationError(f"Falta cuenta de inventario para el producto '{product.name}'.")
 
-        if not move:
-            raise ValidationError("No se pudo generar el movimiento de inventario.")
-
-        entry = move.journal_entry
+        credit_account = None
+        debit_account = None
 
         target_tx_type = PartnerTransaction.Type.OTHER
 
@@ -461,16 +473,72 @@ class StockService:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
             else:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
+                
+            debit_account = asset_account
+            # The partner gives capital
+            credit_account = settings.partner_capital_contribution_account
+            if not credit_account:
+                raise ValidationError("Falta configurar la cuenta 'Aportes de Capital' en los ajustes de contabilidad.")
         else:
             # Smart Withdrawal: Priority Dividends Payable > Provisional Withdrawal
             if partner_contact.partner_dividends_payable_balance > 0:
                 target_tx_type = PartnerTransaction.Type.DIVIDEND_PAYMENT
             else:
                 target_tx_type = PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL
+                
+            credit_account = asset_account
+            # The partner withdraws capital
+            if target_tx_type == PartnerTransaction.Type.DIVIDEND_PAYMENT:
+                debit_account = getattr(partner_contact, 'partner_dividends_payable_account', None) or settings.partner_dividends_payable_account
+                if not debit_account:
+                    raise ValidationError("Falta configurar la cuenta 'Dividendos por Pagar' en ajustes de contabilidad.")
+            else:
+                debit_account = settings.partner_provisional_withdrawal_account or settings.partner_capital_contribution_account
+                if not debit_account:
+                    raise ValidationError("Falta configurar la cuenta 'Retiros Provisionales' o 'Aportes de Capital' en ajustes contables.")
 
         total_value = abs(quantity * unit_cost)
-        
-        # 4. Create PartnerTransaction
+
+        # 3. Create Journal Entry
+        entry = None
+        if total_value > 0:
+            from django.contrib.contenttypes.models import ContentType
+            entry_data = {
+                "date": timezone.now().date(),
+                "description": GlosaBuilder.build(
+                    GlosaBuilder.AJUSTE_STOCK, str(doc.id), doc.notes, total_value
+                ),
+                "status": JournalEntry.State.POSTED,
+                "is_manual": False,
+                "source_content_type": ContentType.objects.get_for_model(InventoryDocument),
+                "source_object_id": doc.id,
+            }
+            items_data = [
+                {
+                    "account": debit_account,
+                    "debit": total_value,
+                    "credit": Decimal("0.00"),
+                    "label": f"{doc.get_document_type_display()} {product.name}",
+                },
+                {
+                    "account": credit_account,
+                    "debit": Decimal("0.00"),
+                    "credit": total_value,
+                    "label": f"{doc.get_document_type_display()} {product.name}",
+                }
+            ]
+            entry = JournalEntryService.create_entry(entry_data, items_data)
+
+        # 4. Confirm Document
+        doc, generated_moves = InventoryService.confirmar_documento(
+            doc, user=user, journal_entry=entry, generate_accounting=False
+        )
+        move = generated_moves[0] if generated_moves else None
+
+        if not move:
+            raise ValidationError("No se pudo generar el movimiento de inventario.")
+
+        # 5. Create PartnerTransaction
         PartnerTransaction.objects.create(
             partner=partner_contact,
             transaction_type=target_tx_type,

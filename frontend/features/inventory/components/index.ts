@@ -19,5 +19,5 @@ export * from './UoMDrawer';
 export * from './UoMCategoryDrawer';
 export * from './WarehouseDrawer';
 export * from './DocumentsClientView';
+export * from './DocumentCreateWizardDrawer';
 export * from './InventoryDocumentDrawer';
-

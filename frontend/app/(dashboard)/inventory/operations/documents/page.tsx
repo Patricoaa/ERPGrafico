@@ -3,7 +3,7 @@ import { PageSectionHeader } from "@/components/shared"
 import { DocumentsClientView } from "@/features/inventory"
 
 export const metadata: Metadata = {
-    title: "Documentos de Inventario | ERPGrafico",
+    title: "Recepciones, Entregas y Ajustes | ERPGrafico",
 }
 
 export default function InventoryDocumentsPage() {
