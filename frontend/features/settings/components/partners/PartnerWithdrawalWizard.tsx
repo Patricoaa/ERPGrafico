@@ -12,7 +12,7 @@ import {
     Banknote,
     AlertTriangle
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, type WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, DataCell, GenericWizard, type WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
@@ -218,11 +218,11 @@ export function PartnerWithdrawalWizard({
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">
                                     <p className="text-[9px] text-muted-foreground font-medium uppercase">Retiros Acumulados</p>
-                                    <p className="text-sm font-black text-destructive font-mono">{formatCurrency(selectedPartner.partner_provisional_withdrawals_balance)}</p>
+                                    <p className="text-sm font-black font-mono"><DataCell.CurrencyFlow value={selectedPartner.partner_provisional_withdrawals_balance} direction="outflow" showIcon={false} /></p>
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[9px] text-muted-foreground font-medium uppercase">Utilidades x Distribuir</p>
-                                    <p className="text-sm font-black text-success font-mono">{formatCurrency(selectedPartner.partner_earnings_balance)}</p>
+                                    <p className="text-sm font-black font-mono"><DataCell.CurrencyFlow value={selectedPartner.partner_earnings_balance} direction="inflow" showIcon={false} /></p>
                                 </div>
                             </div>
                         </div>

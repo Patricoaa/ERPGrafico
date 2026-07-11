@@ -256,12 +256,10 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
             accessorKey: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
             cell: ({ row }) => {
-                const amount = parseFloat(row.getValue("amount"))
                 const type = row.getValue("movement_type") as string
-                const signedAmount = type === 'OUTBOUND' ? -amount : amount
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Currency value={signedAmount} />
+                        <DataCell.CurrencyFlow value={row.getValue("amount")} direction={type === 'OUTBOUND' ? 'outflow' : 'inflow'} />
                     </div>
                 )
             },
@@ -365,7 +363,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                         }
 
                         const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
-                        const signedAmount = type === 'OUTBOUND' ? -amount : amount
 
                         return (
                             <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
@@ -381,7 +378,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                                             <span>{destLabel}</span>
                                         </div>
                                     }
-                                    trailing={<DataCell.Currency value={signedAmount} />}
+                                    trailing={<DataCell.CurrencyFlow value={amount} direction={type === 'OUTBOUND' ? 'outflow' : 'inflow'} />}
                                 />
                             </EntityCard>
                         )

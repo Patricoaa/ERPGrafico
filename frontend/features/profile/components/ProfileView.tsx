@@ -454,12 +454,12 @@ function PersonalTab({
         {
             accessorKey: "total_haberes",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Haberes" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_haberes")} className="text-success font-bold" />,
+            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_haberes")} direction="inflow" showIcon={false} className="font-bold" />,
         },
         {
             accessorKey: "total_descuentos",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Descuentos" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_descuentos") || "0"} className="text-destructive font-bold" />,
+            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_descuentos") || "0"} direction="outflow" showIcon={false} className="font-bold" />,
         },
         {
             accessorKey: "net_salary",

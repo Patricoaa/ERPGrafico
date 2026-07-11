@@ -572,9 +572,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isCredit = safeParseFloat(row.original.credit) > safeParseFloat(row.original.debit)
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
-                        <span className={cn("font-mono font-black text-sm tracking-tight", isCredit ? "text-success" : "text-destructive")}>
-                            {formatCurrency(amount)}
-                        </span>
+                        <DataCell.CurrencyFlow value={amount} direction={isCredit ? 'inflow' : 'outflow'} showIcon={false} className="text-sm" />
                     </div>
                 )
             },

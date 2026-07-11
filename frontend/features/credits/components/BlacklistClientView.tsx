@@ -145,7 +145,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                                         <DataCell.Currency value={entry.effective_total} />
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.paid_amount} className="text-success" />
+                                        <DataCell.CurrencyFlow value={entry.paid_amount} direction="inflow" showIcon={false} />
                                     </td>
                                     <td className="py-2 pr-4 text-center">
                                         <DataCell.Currency value={entry.balance} className="font-bold" />
@@ -250,7 +250,7 @@ export function BlacklistClientView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda Actual" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.original.credit_balance_used} className="text-destructive font-black" />
+                    <DataCell.CurrencyFlow value={row.original.credit_balance_used} direction="outflow" showIcon={false} className="font-black" />
                 </div>
             ),
         },

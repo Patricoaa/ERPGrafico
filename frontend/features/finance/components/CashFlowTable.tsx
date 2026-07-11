@@ -13,7 +13,7 @@ import { cn, parseDateOnly } from "@/lib/utils";
 ;
 import {AlertCircle, CheckCircle2, Info, Calendar} from "lucide-react";
 ;
-import { BaseModal, Chip, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
+import { BaseModal, Chip, DataCell, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
 import { Button } from "@/components/ui/button";
 ;
 
@@ -220,7 +220,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                                             {parseDateOnly(item.due_date).toLocaleDateString('es-CL')}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <MoneyDisplay amount={item.amount} className={item.direction === 'INBOUND' ? 'text-success' : 'text-destructive'} />
+                                            <DataCell.CurrencyFlow value={item.amount} direction={item.direction === 'INBOUND' ? 'inflow' : 'outflow'} showIcon={false} />
                                         </TableCell>
                                     </TableRow>
                                 ))}
