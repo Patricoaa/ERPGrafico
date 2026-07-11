@@ -37,7 +37,7 @@ function BarChartRenderer(props: BarChartConfig) {
 
     const cardMargin = {
         ...cardBarDefaults.margin,
-        bottom: showLegend ? 56 : cardBarDefaults.margin.bottom,
+        bottom: showLegend ? 64 : cardBarDefaults.margin.bottom,
     }
 
     const margin = isCard
@@ -53,20 +53,10 @@ function BarChartRenderer(props: BarChartConfig) {
         ? { axisBottom: null, axisLeft: null }
         : isCard
             ? {
-                axisBottom: {
-                    tickSize: 0,
-                    tickPadding: 8,
-                    legend: props.axisBottomLegend,
-                    legendPosition: "middle" as const,
-                    legendOffset: 28,
-                    format: compactFmt,
-                },
+                axisBottom: { tickSize: 0, tickPadding: 8 },
                 axisLeft: {
                     tickSize: 0,
                     tickPadding: 8,
-                    legend: props.axisLeftLegend,
-                    legendPosition: "middle" as const,
-                    legendOffset: -40,
                     format: compactFmt,
                 },
             }
@@ -143,7 +133,7 @@ function LineChartRenderer(props: LineChartConfig) {
 
     const cardMargin = {
         ...cardLineDefaults.margin,
-        bottom: showLegend ? 56 : cardLineDefaults.margin.bottom,
+        bottom: showLegend ? 64 : cardLineDefaults.margin.bottom,
     }
 
     const margin = isCard
@@ -159,20 +149,10 @@ function LineChartRenderer(props: LineChartConfig) {
         ? { axisBottom: null, axisLeft: null }
         : isCard
             ? {
-                axisBottom: {
-                    tickSize: 0,
-                    tickPadding: 8,
-                    legend: props.axisBottomLegend,
-                    legendPosition: "middle" as const,
-                    legendOffset: 28,
-                    format: compactFmt,
-                },
+                axisBottom: { tickSize: 0, tickPadding: 8 },
                 axisLeft: {
                     tickSize: 0,
                     tickPadding: 8,
-                    legend: props.axisLeftLegend,
-                    legendPosition: "middle" as const,
-                    legendOffset: -40,
                     format: compactFmt,
                 },
             }
@@ -243,7 +223,13 @@ function PieChartRenderer(props: PieChartConfig) {
                 enableArcLinkLabels={isCard ? cardPieDefaults.enableArcLinkLabels : props.enableArcLinkLabels}
                 enableArcLabels={isCard ? cardPieDefaults.enableArcLabels : props.enableLabels}
                 arcLabel={isCard
-                    ? ({ percentage }: { percentage: number }) => `${Math.round(percentage)}%`
+                    ? (() => {
+                        const total = props.data.reduce((sum, d) => sum + d.value, 0)
+                        return (datum: { id: string; value: number }) => {
+                            const pct = total > 0 ? (datum.value / total) * 100 : 0
+                            return `${Math.round(pct)}%`
+                        }
+                    })()
                     : props.arcLabel
                 }
                 arcLabelsFont={isCard ? cardPieDefaults.arcLabelsFont : undefined}
