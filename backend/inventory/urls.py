@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .subscription_views import SubscriptionViewSet
 from .views import (
     CategoryViewSet,
+    InventoryCountViewSet,
     PricingRuleViewSet,
     ProductAttributeValueViewSet,
     ProductAttributeViewSet,
@@ -29,6 +30,7 @@ router.register(r"attributes", ProductAttributeViewSet, basename="productattribu
 router.register(r"attribute-values", ProductAttributeValueViewSet, basename="productattributevalue")
 router.register(r"uom-prices", ProductUoMPriceViewSet, basename="uom-prices")
 router.register(r"documents", InventoryDocumentViewSet, basename="inventorydocument")
+router.register(r"counts", InventoryCountViewSet, basename="inventorycount")
 
 urlpatterns = [
     path("", include(router.urls)),

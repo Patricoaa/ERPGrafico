@@ -408,3 +408,46 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class InventoryCountViewSet(viewsets.ModelViewSet):
+    from .models import InventoryCount
+    from .serializers import InventoryCountSerializer, InventoryCountCreateSerializer
+    from .services import InventoryCountService
+
+    queryset = (
+        InventoryCount.objects.select_related("warehouse", "created_by", "document")
+        .prefetch_related("lines", "lines__product")
+        .all()
+    )
+    serializer_class = InventoryCountSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status", "warehouse"]
+
+    def create(self, request):
+        s = InventoryCountCreateSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        count = InventoryCountService.create_count(
+            warehouse_id=s.validated_data["warehouse"],
+            user=request.user,
+            notes=s.validated_data.get("notes", ""),
+        )
+        return Response(self.get_serializer(count).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def save_lines(self, request, pk=None):
+        from .services import InventoryCountService
+
+        count = InventoryCountService.save_lines(
+            count_id=pk, updates=request.data.get("lines", [])
+        )
+        return Response(self.get_serializer(count).data)
+
+    @action(detail=True, methods=["post"])
+    def apply(self, request, pk=None):
+        from .services import InventoryCountService
+
+        doc = InventoryCountService.apply_count(count_id=pk, user=request.user)
+        count = self.get_object()
+        return Response(self.get_serializer(count).data)
+
