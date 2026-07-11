@@ -86,15 +86,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     const params: Record<string, string> = {}
     if (bankId) params.bank = String(bankId)
     if (cardAccountId) params.card_account = String(cardAccountId)
-    const [granularity, setGranularity] = useState<'day' | 'month' | 'year'>('month')
-    const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null)
 
-    const months = useMemo(() => dateRange === null
-        ? 24
-        : Math.max(1, Math.ceil((parseDateOnly(dateRange.to).getTime() - parseDateOnly(dateRange.from).getTime()) / (30 * 24 * 60 * 60 * 1000))),
-    [dateRange])
-
-    const hubData = useStatementsAnalyticsData(cardAccountId, months, granularity)
+    const hubData = useStatementsAnalyticsData(cardAccountId, 24)
 
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,
@@ -299,13 +292,6 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                     ],
                                 },
                             ],
-                            cardAccounts: creditCardAccounts,
-                            cardAccountId: cardAccountId,
-                            onCardAccountChange: (id) => search.applyFilter('card', String(id)),
-                            granularity,
-                            onGranularityChange: setGranularity,
-                            dateRange,
-                            onDateRangeChange: setDateRange,
                         },
                     }}
                     emptyState={{

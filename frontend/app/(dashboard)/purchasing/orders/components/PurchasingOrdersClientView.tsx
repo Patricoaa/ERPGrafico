@@ -80,10 +80,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const { hubConfig, isHubOpen } = useHubPanel()
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
-    const [granularity, setGranularity] = useState<"day" | "month" | "year">("month")
-    const [dateRange, setDateRange] = useState<{ from: string; to: string } | null>(null)
 
-    const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[], dateRange, granularity)
+    const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[])
 
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => {
         if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }
@@ -102,10 +100,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         return {
             screen: {
                 entityName: "Órdenes de Compra",
-                granularity,
-                onGranularityChange: setGranularity,
-                dateRange,
-                onDateRangeChange: setDateRange,
                 tabs: [
                     // ── Tab 1: Financiero ──────────────────────────────
                     {
