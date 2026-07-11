@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Chip, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -22,14 +22,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import {
-    Form,
-    FormField,
-} from "@/components/ui/form"
-import { LabeledInput } from "@/components/shared"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { LabeledSelect, LabeledInput } from "@/components/shared"
 
 const STATUS_MAP: Record<string, { intent: "neutral" | "success" | "destructive" | "warning", label: string }> = {
     'DRAFT': { intent: 'neutral', label: 'Borrador' },
@@ -38,12 +31,10 @@ const STATUS_MAP: Record<string, { intent: "neutral" | "success" | "destructive"
     'CANCELLED': { intent: 'destructive', label: 'Cancelado' },
 }
 
-const newCountSchema = z.object({
-    warehouse: z.coerce.number().min(1, "El almacen es requerido"),
-    notes: z.string().optional(),
-})
-
-type NewCountFormValues = z.infer<typeof newCountSchema>
+interface NewCountFormValues {
+    warehouse: number
+    notes?: string
+}
 
 export function InventoryCountClientView() {
     const searchParams = useSearchParams()
@@ -57,20 +48,17 @@ export function InventoryCountClientView() {
         page_size: 100,
     })
 
-    const { count: selectedCount, isLoading: isLoadingCount } = useInventoryCount(
+    const { data: selectedCount, isLoading: isLoadingCount } = useInventoryCount(
         selectedCountId ? Number(selectedCountId) : null
     )
 
     const { createCount, saveLines, applyCount, isCreating, isSaving, isApplying } = useInventoryCountMutations()
-    const { warehouses } = useWarehouses({ page_size: 100 })
+    const { warehouses } = useWarehouses()
 
     const [editedLines, setEditedLines] = useState<Map<number, number>>(new Map())
 
-    useEffect(() => {
-        setEditedLines(new Map())
-    }, [selectedCountId])
-
     const handleSelectCount = (id: number) => {
+        setEditedLines(new Map())
         const params = new URLSearchParams(searchParams.toString())
         params.set('selected', String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -170,7 +158,7 @@ export function InventoryCountClientView() {
 
     const linesWithChanges = useMemo(() => {
         if (!selectedCount) return 0
-        return selectedCount.lines.filter(line => {
+        return selectedCount.lines.filter((line: InventoryCountLine) => {
             const counted = getCountedQty(line)
             if (counted === null) return false
             return counted !== line.theoretical_qty
@@ -224,7 +212,7 @@ export function InventoryCountClientView() {
                                 placeholder="--"
                                 className={cn(
                                     "w-24 h-8 text-center text-sm font-mono",
-                                    value !== null && value !== line.theoretical_qty && "border-amber-500 bg-amber-50 dark:bg-amber-950/30"
+                                    value !== null && value !== line.theoretical_qty && "border-warning bg-warning/10"
                                 )}
                                 disabled={selectedCount.status !== 'IN_PROGRESS'}
                             />
@@ -242,8 +230,8 @@ export function InventoryCountClientView() {
                     return (
                         <div className={cn(
                             "text-center font-mono font-medium text-sm",
-                            diff > 0 && "text-green-600",
-                            diff < 0 && "text-red-600",
+                            diff > 0 && "text-success",
+                            diff < 0 && "text-destructive",
                             diff === 0 && "text-muted-foreground"
                         )}>
                             {diff > 0 ? '+' : ''}{Number(diff).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
@@ -287,7 +275,7 @@ export function InventoryCountClientView() {
                                 {selectedCount.warehouse_name} &middot; {selectedCount.total_products} productos &middot;{' '}
                                 {selectedCount.counted_products} contados
                                 {linesWithChanges > 0 && (
-                                    <span className="ml-1 text-amber-600">({linesWithChanges} con cambios sin guardar)</span>
+                                    <span className="ml-1 text-warning">({linesWithChanges} con cambios sin guardar)</span>
                                 )}
                             </p>
                         </div>
@@ -459,7 +447,7 @@ export function InventoryCountClientView() {
                         description: "Crea un nuevo conteo para comparar el stock teorico con el stock real.",
                     }}
                     onRowClick={(row) => handleSelectCount(row.id)}
-                    getRowClassName={(row) => row.original.status === 'IN_PROGRESS' ? 'bg-amber-50/50 dark:bg-amber-950/10' : ''}
+                    getRowClassName={(row) => row.original.status === 'IN_PROGRESS' ? 'bg-warning/5' : ''}
                 />
             </div>
 
@@ -495,51 +483,40 @@ function NewCountForm({
     isSubmitting: boolean
     onCancel: () => void
 }) {
-    const form = useForm<NewCountFormValues>({
-        resolver: zodResolver(newCountSchema),
-        defaultValues: { notes: "" },
-    })
+    const [warehouse, setWarehouse] = useState<string>("")
+    const [notes, setNotes] = useState("")
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!warehouse) return
+        onSubmit({ warehouse: Number(warehouse), notes: notes || undefined })
+    }
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                    control={form.control}
-                    name="warehouse"
-                    render={({ field }) => (
-                        <LabeledInput
-                            label="Almacen"
-                            type="select"
-                            options={warehouses.map(w => ({ value: w.id.toString(), label: w.name }))}
-                            placeholder="Seleccione el almacen"
-                            required
-                            {...field}
-                        />
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                        <LabeledInput
-                            label="Notas (opcional)"
-                            type="text"
-                            placeholder="Motivo del conteo"
-                            {...field}
-                            value={field.value || ""}
-                        />
-                    )}
-                />
-                <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={onCancel}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                        Crear Conteo
-                    </Button>
-                </DialogFooter>
-            </form>
-        </Form>
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <LabeledSelect
+                label="Almacen"
+                value={warehouse}
+                onChange={setWarehouse}
+                placeholder="Seleccione el almacen"
+                required
+                options={warehouses.map(w => ({ value: w.id.toString(), label: w.name }))}
+            />
+            <LabeledInput
+                label="Notas (opcional)"
+                placeholder="Motivo del conteo"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+            />
+            <DialogFooter>
+                <Button type="button" variant="ghost" onClick={onCancel}>
+                    Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting || !warehouse}>
+                    {isSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                    Crear Conteo
+                </Button>
+            </DialogFooter>
+        </form>
     )
 }
