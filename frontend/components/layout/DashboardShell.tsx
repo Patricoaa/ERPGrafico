@@ -38,25 +38,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const { isHubEffectivelyOpen } = useHubPanel()
     const { totalSheetsWidth } = useGlobalModals()
 
-    // Sync global data attributes for repelling fixed UI elements (like Sheets)
-    useEffect(() => {
-        if (isInboxOpen) {
-            document.body.setAttribute('data-inbox-open', 'true')
-        } else {
-            document.body.removeAttribute('data-inbox-open')
-        }
-
-        if (isHubEffectivelyOpen) {
-            document.body.setAttribute('data-hub-open', 'true')
-        } else {
-            document.body.removeAttribute('data-hub-open')
-        }
-    }, [isInboxOpen, isHubEffectivelyOpen])
-
-    const handleInboxToggle = () => {
-        setIsInboxOpen(prev => !prev)
-    }
-
     const nav = config?.navigation
     let l4Tabs: { value: string; label: string; href: string }[] = []
     let activeL4Tab = ""
@@ -70,10 +51,35 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         }
     }
 
+    // Sync global data attributes for repelling fixed UI elements (like Sheets)
+    useEffect(() => {
+        if (isInboxOpen) {
+            document.body.setAttribute('data-inbox-open', 'true')
+        } else {
+            document.body.removeAttribute('data-inbox-open')
+        }
+
+        if (isHubEffectivelyOpen) {
+            document.body.setAttribute('data-hub-open', 'true')
+        } else {
+            document.body.removeAttribute('data-hub-open')
+        }
+
+        if (l4Tabs.length > 0) {
+            document.body.setAttribute('data-has-l4-tabs', 'true')
+        } else {
+            document.body.removeAttribute('data-has-l4-tabs')
+        }
+    }, [isInboxOpen, isHubEffectivelyOpen, l4Tabs.length])
+
+    const handleInboxToggle = () => {
+        setIsInboxOpen(prev => !prev)
+    }
+
     return (
         <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
+            <div className="absolute top-0 left-0 right-0 h-[var(--header-height)] flex items-center bg-background z-30 gap-3 px-4 md:px-6">
                 {/* Module launcher: shows current module icon, hover → hamburger */}
                 <Button
                     variant="ghost"
@@ -114,12 +120,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 />
 
                 {/* Left: page title & meta — fills remaining space */}
-                <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
+                <div className="flex-1 flex items-start gap-4 min-w-0 pointer-events-none">
                     <div className="flex flex-col min-w-0">
                         {config ? (
                             <div
                                 key={pathname + config.title}
-                                className="flex items-center gap-3 pointer-events-auto min-w-0 animate-in fade-in slide-in-from-left-1 ease-premium duration-300 fill-mode-both"
+                                className="flex items-center gap-3 mt-2 pointer-events-auto min-w-0 animate-in fade-in slide-in-from-left-1 ease-premium duration-300 fill-mode-both"
                             >
                                 {config.isLoading && (
                                     <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-card shrink-0">
