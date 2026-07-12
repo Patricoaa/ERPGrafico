@@ -1,8 +1,10 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroupItem } from "@/components/ui/radio-group"
-import { CmykRing } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
+
+const CMYK_CONIC =
+    "conic-gradient(from 0deg, var(--color-cyan) 0deg 90deg, var(--color-magenta) 90deg 180deg, var(--color-yellow) 180deg 270deg, var(--color-black) 270deg 360deg)"
 
 interface RadioCardProps {
     value: string
@@ -52,12 +54,29 @@ export function RadioCard({
                 className="peer sr-only"
             />
 
-            {/* Círculo decorativo */}
+            {/* Radio indicator: círculo azul + ring CMYK envolvente */}
             <div className={cn(
-                "shrink-0 h-5 w-5 rounded-full border-2 border-muted bg-transparent transition-colors",
-                "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10",
+                "relative shrink-0 h-5 w-5",
                 isVertical && "absolute top-2.5 right-2.5"
-            )} />
+            )}>
+                {/* Ring CMYK — envuelve el círculo cuando está checked */}
+                <div
+                    className={cn(
+                        "absolute -inset-1 rounded-full pointer-events-none opacity-0 transition-opacity duration-200",
+                        "peer-data-[state=checked]:opacity-100"
+                    )}
+                    style={{
+                        background: CMYK_CONIC,
+                        mask: "radial-gradient(circle, transparent 71%, black 72%)",
+                        WebkitMask: "radial-gradient(circle, transparent 71%, black 72%)",
+                    }}
+                />
+                {/* Círculo azul decorativo */}
+                <div className={cn(
+                    "absolute inset-0 rounded-full border-2 border-muted bg-transparent transition-colors",
+                    "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
+                )} />
+            </div>
 
             {/* Opcional: Ícono sin fondo */}
             {icon && (
@@ -79,16 +98,6 @@ export function RadioCard({
                 )}
                 {children}
             </div>
-
-            {/* Indicador CMYK — derecha del card */}
-            <CmykRing
-                size="sm"
-                className={cn(
-                    "shrink-0 pointer-events-none opacity-0 transition-opacity duration-200",
-                    "peer-data-[state=checked]:opacity-100",
-                    isVertical && "absolute top-3 right-3"
-                )}
-            />
         </Label>
     )
 }
