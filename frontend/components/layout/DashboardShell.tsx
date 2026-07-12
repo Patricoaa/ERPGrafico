@@ -81,7 +81,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     onClick={() => setIsModuleLauncherOpen(true)}
                     onMouseEnter={() => setIsLauncherHovered(true)}
                     onMouseLeave={() => setIsLauncherHovered(false)}
-                    className="flex-none rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+                    className="flex-none rounded-md border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
                     aria-label="Seleccionar módulo"
                 >
                     <AnimatePresence mode="wait" initial={false}>
@@ -197,7 +197,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 }}
             >
                 {l4Tabs.length > 0 && (
-                    <div className="flex-none px-6 pb-2 -mt-2">
+                    <div className="flex-none px-8 pb-2 -mt-2">
                         <TabBar
                             items={l4Tabs}
                             value={activeL4Tab}
