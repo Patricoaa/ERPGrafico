@@ -64,13 +64,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         } else {
             document.body.removeAttribute('data-hub-open')
         }
-
-        if (l4Tabs.length > 0) {
-            document.body.setAttribute('data-has-l4-tabs', 'true')
-        } else {
-            document.body.removeAttribute('data-has-l4-tabs')
-        }
-    }, [isInboxOpen, isHubEffectivelyOpen, l4Tabs.length])
+    }, [isInboxOpen, isHubEffectivelyOpen])
 
     const handleInboxToggle = () => {
         setIsInboxOpen(prev => !prev)
@@ -79,7 +73,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     return (
         <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-0 right-0 h-[var(--header-height)] flex items-center bg-background z-30 gap-3 px-4 md:px-6">
+            <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
                 {/* Module launcher: shows current module icon, hover → hamburger */}
                 <Button
                     variant="ghost"
@@ -120,94 +114,74 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 />
 
                 {/* Left: page title & meta — fills remaining space */}
-                <div className="flex-1 flex items-start gap-4 min-w-0 pointer-events-none">
-                    <div className="flex flex-col min-w-0">
-                        {config ? (
-                            <div
-                                key={pathname + config.title}
-                                className="flex items-center gap-3 mt-2 pointer-events-auto min-w-0 animate-in fade-in slide-in-from-left-1 ease-premium duration-300 fill-mode-both"
-                            >
-                                {config.isLoading && (
-                                    <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-card shrink-0">
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    </Skeleton>
+                <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
+                    {config ? (
+                        <div
+                            key={pathname + config.title}
+                            className="flex items-center gap-3 pointer-events-auto min-w-0 animate-in fade-in slide-in-from-left-1 ease-premium duration-300 fill-mode-both"
+                        >
+                            {config.isLoading && (
+                                <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-card shrink-0">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                </Skeleton>
+                            )}
+
+                            {/* Texts & Icons Wrapper */}
+                            <div className="flex items-center gap-5">
+                                {/* Left: Title — dropdown nav or static */}
+                                {config.navigation ? (
+                                    <ModuleNavigationMenu
+                                        navigation={config.navigation}
+                                    />
+                                ) : (
+                                    <div className="flex flex-col w-min">
+                                        <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
+                                            {config.icon ? (
+                                                <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
+                                            ) : config.iconName ? (
+                                                <DynamicIcon name={config.iconName} className="h-4 w-4 text-primary/70 shrink-0" />
+                                            ) : null}
+                                            {config.title}
+                                        </h1>
+                                    </div>
                                 )}
 
-                                {/* Texts & Icons Wrapper */}
-                                <div className="flex items-center gap-5">
-                                    {/* Left: Title — dropdown nav or static */}
-                                    {config.navigation ? (
-                                        <ModuleNavigationMenu
-                                            navigation={config.navigation}
-                                        />
-                                    ) : (
-                                        <div className="flex flex-col w-min">
-                                            <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
-                                                {config.icon ? (
-                                                    <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
-                                                ) : config.iconName ? (
-                                                    <DynamicIcon name={config.iconName} className="h-4 w-4 text-primary/70 shrink-0" />
-                                                ) : null}
-                                                {config.title}
-                                            </h1>
-                                        </div>
+                                {/* Right: Icons & Actions */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {config.status && (
+                                        config.status.type === 'saving' ? (
+                                            <Skeleton className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                                                {config.status.label}
+                                            </Skeleton>
+                                        ) : (
+                                            <div className={cn(
+                                                "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",
+                                                config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
+                                                config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
+                                                !config.status.type && "bg-muted text-muted-foreground border-border"
+                                            )}>
+                                                {config.status.label}
+                                            </div>
+                                        )
                                     )}
 
-                                    {/* Right: Icons & Actions */}
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        {config.status && (
-                                            config.status.type === 'saving' ? (
-                                                <Skeleton className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
-                                                    {config.status.label}
-                                                </Skeleton>
-                                            ) : (
-                                                <div className={cn(
-                                                    "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",
-                                                    config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
-                                                    config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
-                                                    !config.status.type && "bg-muted text-muted-foreground border-border"
-                                                )}>
-                                                    {config.status.label}
-                                                </div>
-                                            )
-                                        )}
-
-                                        {config.titleActions && (
-                                            <div className="flex items-center ml-1">
-                                                {config.titleActions}
-                                            </div>
-                                        )}
-                                    </div>
+                                    {config.titleActions && (
+                                        <div className="flex items-center ml-1">
+                                            {config.titleActions}
+                                        </div>
+                                    )}
                                 </div>
-
-                                {config.children && (
-                                    <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border shrink-0">
-                                        {config.children}
-                                    </div>
-                                )}
                             </div>
-                        ) : (
-                            <PageHeaderSkeleton />
-                        )}
 
-                        {/* L4 TabBar — 2nd row inside center zone */}
-                        {l4Tabs.length > 0 && (
-                            <div className="pointer-events-auto px-8 -mt-0.5">
-                                <TabBar
-                                    items={l4Tabs}
-                                    value={activeL4Tab}
-                                    onValueChange={(val) => {
-                                        const tab = l4Tabs.find(t => t.value === val)
-                                        if (tab) router.push(tab.href)
-                                    }}
-                                    variant="underline"
-                                    dense
-                                >
-                                    <div className="hidden" />
-                                </TabBar>
-                            </div>
-                        )}
-                    </div>
+                            {config.children && (
+                                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border shrink-0">
+                                    {config.children}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <PageHeaderSkeleton />
+                    )}
                 </div>
 
                 {/* Right: UserActions */}
@@ -222,6 +196,22 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     marginRight: `${totalSheetsWidth}px`,
                 }}
             >
+                {l4Tabs.length > 0 && (
+                    <div className="flex-none px-8 pb-2">
+                        <TabBar
+                            items={l4Tabs}
+                            value={activeL4Tab}
+                            onValueChange={(val) => {
+                                const tab = l4Tabs.find(t => t.value === val)
+                                if (tab) router.push(tab.href)
+                            }}
+                            variant="underline"
+                            dense
+                        >
+                            <div className="hidden" />
+                        </TabBar>
+                    </div>
+                )}
                 <PrepressPanel
                     id="main-content"
                     className="flex-1 flex flex-col overflow-hidden relative panel-surface"
