@@ -49,21 +49,17 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
         <div className="flex items-center gap-0 min-w-0 h-full">
             {/* ── Module Name (Root) — static display ── */}
             {navigation.moduleName && (
-                <div className="flex items-center shrink-0">
+                <div className="flex items-center shrink-0 mr-2">
                     {(() => {
                         const modIcon = getModuleIconName(currentModuleId)
                         return modIcon ? (
-                            <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70 mr-1.5" />
+                            <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70" />
                         ) : null
                     })()}
-                    <span className="text-sm font-semibold tracking-tight text-muted-foreground">
-                        {navigation.moduleName}
-                    </span>
-                    <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
                 </div>
             )}
 
-            <NavigationMenu className="h-full max-w-full justify-start overflow-hidden">
+            <NavigationMenu className="h-full max-w-full justify-start">
                 <NavigationMenuList className="h-full space-x-1">
                     {visibleItems.map((item) => {
                         const isActive = item.value === activeValue
