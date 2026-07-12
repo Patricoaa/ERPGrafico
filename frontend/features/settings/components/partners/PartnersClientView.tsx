@@ -18,7 +18,6 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
 import {
-    CardSkeleton,
     SkeletonShell,
     DataTableView,
     Chip,
@@ -94,6 +93,7 @@ export function PartnersClientView({
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
     const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("composicion")
 
     const router = useRouter()
     const pathname = usePathname()
@@ -119,7 +119,7 @@ export function PartnersClientView({
         amount: undefined as string | undefined
     })
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true)
         try {
             const pData = await partnersApi.getPartners()
@@ -130,21 +130,23 @@ export function PartnersClientView({
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
-        const initialFetch = async () => {
+        let cancelled = false
+        const load = async () => {
             try {
                 const pData = await partnersApi.getPartners()
-                setPartners(pData)
+                if (!cancelled) setPartners(pData)
             } catch (error) {
                 console.error(error)
                 toast.error("Error al cargar datos societarios")
             } finally {
-                setLoading(false)
+                if (!cancelled) setLoading(false)
             }
         }
-        initialFetch()
+        load()
+        return () => { cancelled = true }
     }, [])
 
     useEffect(() => {
@@ -193,6 +195,8 @@ export function PartnersClientView({
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
         screen: {
             entityName: "Composición Societaria",
+            activeTab: analyticsActiveTab,
+            onTabChange: setAnalyticsActiveTab,
             tabs: [
                 {
                     value: "composicion",
@@ -400,16 +404,7 @@ export function PartnersClientView({
                 },
             ],
         },
-    }), [analyticsData])
-
-    if (loading) {
-        return (
-            <div className="space-y-6">
-                <CardSkeleton count={4} variant="grid" />
-                <SkeletonShell isLoading ariaLabel="Cargando..." />
-            </div>
-        )
-    }
+    }), [analyticsData, analyticsActiveTab])
 
     const hasPartners = partners.length > 0
 
@@ -549,42 +544,43 @@ export function PartnersClientView({
     ]
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="flex-1 min-h-0">
-                <DataTableView
-                    entityLabel="settings.partner"
-                    columns={columns}
-                    data={filteredPartners}
-                    isLoading={loading}
-                    variant="embedded"
-                    createAction={createAction}
-                    analyticsPanel={analyticsPanel}
-                    unifiedSearch={<UnifiedSearchBar
-                        config={partnerUnifiedSearchDef}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        placeholder="Buscar socio por nombre o ID fiscal..."
-                    />}
-                    showReset={search.isFiltered}
-                    onReset={search.clearAll}
-                    toolbarActions={
-                        !hasPartners
-                            ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
-                            : [
-                                { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
-                                { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
-                            ]
-                    }
-                />
-            </div>
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando composición societaria">
+            <div className="h-full flex flex-col">
+                <div className="flex-1 min-h-0">
+                    <DataTableView
+                        entityLabel="settings.partner"
+                        columns={columns}
+                        data={filteredPartners}
+                        isRefetching={loading}
+                        variant="embedded"
+                        createAction={createAction}
+                        analyticsPanel={analyticsPanel}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={partnerUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            placeholder="Buscar socio por nombre o ID fiscal..."
+                        />}
+                        showReset={search.isFiltered}
+                        onReset={search.clearAll}
+                        toolbarActions={
+                            !hasPartners
+                                ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
+                                : [
+                                    { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
+                                    { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
+                                ]
+                        }
+                    />
+                </div>
 
             <SubscriptionMovementModal
                 open={isSubscriptionOpen}
@@ -652,6 +648,7 @@ export function PartnersClientView({
                     fetchData()
                 }}
             />
-        </div>
+            </div>
+        </SkeletonShell>
     )
 }
