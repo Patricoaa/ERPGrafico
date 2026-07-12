@@ -1,14 +1,8 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { TabBar, TabBarContent } from "@/components/shared"
 import { UoMClientView, UoMCategoryClientView } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared"
-
-const TABS = [
-    { value: "units", label: "Unidades" },
-    { value: "uom-categories", label: "Categorías de Medida" },
-]
 
 export default function ProductsUoMsPage() {
     const pathname = usePathname()
@@ -21,18 +15,12 @@ export default function ProductsUoMsPage() {
         : <ToolbarCreateButton label="Nueva Categoría" href="/inventory/products/uoms/categories?modal=new" />
 
     return (
-        <TabBar
-            items={TABS}
-            value={activeTab}
-            onValueChange={() => {}}
-            variant="underline"
-        >
-            <TabBarContent value="units" className="mt-0 flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden flex flex-col">
+            {activeTab === 'units' ? (
                 <UoMClientView createAction={createAction} />
-            </TabBarContent>
-            <TabBarContent value="uom-categories" className="mt-0 flex-1 overflow-hidden">
+            ) : (
                 <UoMCategoryClientView createAction={createAction} />
-            </TabBarContent>
-        </TabBar>
+            )}
+        </div>
     )
 }
