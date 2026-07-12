@@ -418,10 +418,6 @@
   }
 }
 
-body[data-has-l4-tabs] {
-  --header-height: 5rem;
-}
-
 /*
  * PANEL SURFACE — Unified visual treatment for the main shell and
  * every floating side panel (CollapsibleSheet — Hub, Inbox, Profile,
