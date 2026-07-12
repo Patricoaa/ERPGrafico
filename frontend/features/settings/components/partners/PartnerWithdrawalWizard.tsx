@@ -246,7 +246,6 @@ export function PartnerWithdrawalWizard({
                         label="Efectivo"
                         description="Egreso de caja o transferencia bancaria."
                         icon={<Wallet className="h-6 w-6" />}
-                        className="card-base min-h-[140px] flex-col items-center justify-center text-center [&:has([data-state=checked])]:border-destructive [&:has([data-state=checked])]:bg-destructive/5 [&:has([data-state=checked])]:shadow-floating [&:has([data-state=checked])]:shadow-destructive/10"
                     />
                     <RadioCard
                         id="method-assets"
@@ -254,7 +253,6 @@ export function PartnerWithdrawalWizard({
                         label="Bienes / Stock"
                         description="Retiro de mercaderías o productos del inventario."
                         icon={<Package className="h-6 w-6" />}
-                        className="card-base min-h-[140px] flex-col items-center justify-center text-center [&:has([data-state=checked])]:border-warning [&:has([data-state=checked])]:bg-warning/5 [&:has([data-state=checked])]:shadow-floating [&:has([data-state=checked])]:shadow-warning/10"
                     />
                 </RadioGroup>
             )

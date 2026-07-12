@@ -248,7 +248,6 @@ export function PartnerContributionWizard({
                         label="Efectivo"
                         description="Caja, banco o transferencia bancaria electrónica."
                         icon={<Wallet className="h-6 w-6" />}
-                        className="card-base min-h-[140px] flex-col items-center justify-center text-center [&:has([data-state=checked])]:border-success [&:has([data-state=checked])]:bg-success/5 [&:has([data-state=checked])]:shadow-floating [&:has([data-state=checked])]:shadow-success/10"
                     />
                     <RadioCard
                         id="method-assets"
@@ -256,7 +255,6 @@ export function PartnerContributionWizard({
                         label="Bienes / Stock"
                         description="Materias primas, insumos o productos para la venta."
                         icon={<Package className="h-6 w-6" />}
-                        className="card-base min-h-[140px] flex-col items-center justify-center text-center [&:has([data-state=checked])]:border-warning [&:has([data-state=checked])]:bg-warning/5 [&:has([data-state=checked])]:shadow-floating [&:has([data-state=checked])]:shadow-warning/10"
                     />
                 </RadioGroup>
             )

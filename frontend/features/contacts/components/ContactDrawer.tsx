@@ -37,10 +37,9 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { type LucideIcon } from "lucide-react"
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, LabeledContainer, RadioCard, DynamicIcon, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
+import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
-import { resolveCategory } from "@/lib/badge-resolvers"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -359,21 +358,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                             })()}
 
                                             <LabeledContainer label="Roles del Contacto">
-                                                <div className="grid grid-cols-3 gap-2 w-full">
-                                                    {(["CUSTOMER", "SUPPLIER", "RELATED", "PARTNER", "EMPLOYEE", "USER"] as const).map(value => {
-                                                        const resolved = resolveCategory('contact_type', value)
-                                                        return (
-                                                            <RadioGroup key={value} value={c?.active_roles?.includes(value) ? "on" : "off"} disabled>
-                                                                <RadioCard
-                                                                    id={`role-${value}`}
-                                                                    value="on"
-                                                                    label={resolved.label}
-                                                                    icon={resolved.icon ? <DynamicIcon name={resolved.icon} className="h-4 w-4" /> : undefined}
-                                                                    disabled
-                                                                />
-                                                            </RadioGroup>
-                                                        )
-                                                    })}
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {(["CUSTOMER", "SUPPLIER", "RELATED", "PARTNER", "EMPLOYEE", "USER"] as const).map(value => (
+                                                        <Chip.Category key={value} domain="contact_type" value={value} size="sm" />
+                                                    ))}
                                                 </div>
                                             </LabeledContainer>
                                         </div>
