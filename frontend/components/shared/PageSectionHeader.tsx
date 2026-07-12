@@ -55,8 +55,24 @@ export function PageSectionHeader({ title, description, tabs, subTabs }: PageSec
                         <div className="hidden" />
                     </TabBar>
                 )}
+                {hasSubTabs && !hasTabs && (
+                    <TabBar
+                        items={subTabs.map(t => ({ value: t.value, label: t.label }))}
+                        value={activeSubTab}
+                        onValueChange={(value) => {
+                            const tab = subTabs.find(t => t.value === value)
+                            if (tab) router.push(tab.href)
+                        }}
+                        variant="toolbar"
+                        dense
+                        className="w-auto flex-none shrink-0"
+                        containerClassName="justify-end"
+                    >
+                        <div className="hidden" />
+                    </TabBar>
+                )}
             </div>
-            {hasSubTabs && (
+            {hasSubTabs && hasTabs && (
                 <div className="flex justify-end pb-2">
                     <TabBar
                         items={subTabs.map(t => ({ value: t.value, label: t.label }))}
