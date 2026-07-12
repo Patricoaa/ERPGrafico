@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -12,7 +12,7 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { HeaderNavDropdowns, PageHeaderSkeleton, ModuleLauncher, PrepressPanel } from '@/components/shared'
+import { ModuleNavigationMenu, PageHeaderSkeleton, ModuleLauncher, PrepressPanel, TabBar } from '@/components/shared'
 import { Loader2, Menu } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
 
@@ -24,6 +24,7 @@ const TaskInboxSidebar = dynamic(
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    const router = useRouter()
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
     const [isModuleLauncherOpen, setIsModuleLauncherOpen] = useState(false)
@@ -49,6 +50,19 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
     const handleInboxToggle = () => {
         setIsInboxOpen(prev => !prev)
+    }
+
+    const nav = config?.navigation
+    let l4Tabs: { value: string; label: string; href: string }[] = []
+    let activeL4Tab = ""
+
+    if (nav && nav.subSubActiveValue) {
+        const activeTab = nav.tabs.find(t => t.value === nav.activeValue)
+        const activeSubTab = activeTab?.subTabs?.find(st => st.value === nav.subActiveValue)
+        if (activeSubTab?.subTabs) {
+            l4Tabs = activeSubTab.subTabs.map(t => ({ value: t.value, label: t.label, href: t.href }))
+            activeL4Tab = nav.subSubActiveValue
+        }
     }
 
     return (
@@ -87,7 +101,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                             <div className="flex items-center gap-5">
                                 {/* Left: Title — dropdown nav or static */}
                                 {config.navigation ? (
-                                    <HeaderNavDropdowns
+                                    <ModuleNavigationMenu
                                         navigation={config.navigation}
                                     />
                                 ) : (
@@ -153,6 +167,22 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     marginRight: `${totalSheetsWidth}px`,
                 }}
             >
+                {l4Tabs.length > 0 && (
+                    <div className="flex-none px-6 pb-2 -mt-2">
+                        <TabBar
+                            items={l4Tabs}
+                            value={activeL4Tab}
+                            onValueChange={(val) => {
+                                const tab = l4Tabs.find(t => t.value === val)
+                                if (tab) router.push(tab.href)
+                            }}
+                            variant="underline"
+                            dense
+                        >
+                            <div className="hidden" />
+                        </TabBar>
+                    </div>
+                )}
                 <PrepressPanel
                     id="main-content"
                     className="flex-1 flex flex-col overflow-hidden relative panel-surface"
