@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
@@ -80,6 +80,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const { hubConfig, isHubOpen } = useHubPanel()
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("financiero")
 
     const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[])
 
@@ -100,6 +101,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         return {
             screen: {
                 entityName: "Órdenes de Compra",
+                activeTab: analyticsActiveTab,
+                onTabChange: setAnalyticsActiveTab,
                 tabs: [
                     // ── Tab 1: Financiero ──────────────────────────────
                     {
@@ -251,7 +254,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 ],
             },
         }
-    }, [analyticsData, viewMode])
+    }, [analyticsData, viewMode, analyticsActiveTab])
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
