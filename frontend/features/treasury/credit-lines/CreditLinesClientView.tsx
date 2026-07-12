@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, Skeleton, EmptyState,
+    StatusBadge, MoneyDisplay, SkeletonShell, EmptyState,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
@@ -51,10 +51,6 @@ export function CreditLinesClientView({ bankId }: Props) {
     }
 
 
-
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
 
     if (isError) {
         return (
@@ -140,6 +136,7 @@ export function CreditLinesClientView({ bankId }: Props) {
     ]
 
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando líneas de crédito">
         <div className="space-y-4">
             <DataTableView
                 columns={columns}
@@ -182,5 +179,6 @@ export function CreditLinesClientView({ bankId }: Props) {
             />
 
         </div>
+        </SkeletonShell>
     )
 }

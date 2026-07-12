@@ -207,8 +207,6 @@ export function StatementDetailPanel({
         statementLineUnmatchActions.column(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
     ]
 
-    if (loading) return <div className="flex-1"><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
-
     if (!statement) {
         return (
             <div className="flex-1">
@@ -234,6 +232,7 @@ export function StatementDetailPanel({
     const netMovement = totalCredits - totalDebits
 
     return (
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando cartola">
         <div className={detailOnly ? "" : "space-y-4"}>
             {!detailOnly && (
                 <>
@@ -369,5 +368,6 @@ export function StatementDetailPanel({
                 confirmText="Confirmar"
             />
         </div>
+        </SkeletonShell>
     )
 }

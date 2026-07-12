@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, AlertTriangle, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
+    StatusBadge, MoneyDisplay, SkeletonShell, EmptyState, EntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -130,10 +130,6 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
 
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("costos")
 
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
-
     if (isError) {
         return (
             <EmptyState
@@ -196,6 +192,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     ]
 
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando estados de cuenta">
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -338,5 +335,6 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                 onOpenChange={(open) => { if (!open) clearAll() }}
             />
         </div>
+        </SkeletonShell>
     )
 }

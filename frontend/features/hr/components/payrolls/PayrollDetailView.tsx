@@ -244,8 +244,6 @@ export function PayrollDetailView({
         }
     }, [isSheet, payroll, isPosted, generating, posting, salaroPaid, previredPaid, viewMode, onHeaderDataChange])
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
-
     if (!payroll) return (
         <div className="flex flex-col items-center justify-center p-24 text-muted-foreground gap-4">
             <FileText className="h-12 w-12 opacity-20" />
@@ -254,6 +252,7 @@ export function PayrollDetailView({
     )
 
     return (
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando liquidación">
         <div className={cn("flex-1 flex flex-col min-h-0", isSheet ? "w-full" : "space-y-6")}>
             {/* Header Section */}
             {!isSheet && (
@@ -444,6 +443,7 @@ export function PayrollDetailView({
                 confirmText="Confirmar y Contabilizar"
             />
         </div>
+        </SkeletonShell>
     )
 }
 

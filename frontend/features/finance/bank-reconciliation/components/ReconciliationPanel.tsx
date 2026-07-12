@@ -696,9 +696,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         return <EmptyState context="finance" variant="compact" title="Error al cargar datos" description="No se pudieron cargar los datos de conciliación." />
     }
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
-
     return (
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando conciliación">
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
             <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
                 {/* ─── Unified Workbench Toolbar ─── */}
@@ -1480,5 +1479,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 </CollapsibleSheet>
             </Tabs>
         </DndContext>
+        </SkeletonShell>
     )
 }

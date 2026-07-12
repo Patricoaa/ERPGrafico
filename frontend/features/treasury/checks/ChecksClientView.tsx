@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, Skeleton, EntityCard,
+    StatusBadge, MoneyDisplay, SkeletonShell, EntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
@@ -120,10 +120,6 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
 
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
-
     const isIssued = direction === 'ISSUED'
 
     const actionsCtx: CheckActionsCtx = {
@@ -208,6 +204,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     ]
 
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cheques">
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -281,5 +278,6 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                 />
             )}
         </div>
+        </SkeletonShell>
     )
 }
