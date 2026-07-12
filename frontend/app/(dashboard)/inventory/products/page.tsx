@@ -37,7 +37,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
         }
     }
 
-    const createAction = <ToolbarCreateButton label="Nuevo Producto" href="/inventory/products?modal=new" />
+    const createAction = <ToolbarCreateButton key="create-product" label="Nuevo Producto" href="/inventory/products?modal=new" />
 
     return (
         <>
