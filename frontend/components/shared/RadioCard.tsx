@@ -35,8 +35,8 @@ export function RadioCard({
             htmlFor={id}
             className={cn(
                 "relative group flex rounded-sm border border-input p-3 transition-all h-full",
-                isVertical 
-                    ? "flex-col items-center justify-center text-center gap-2 p-4 min-h-[110px]" 
+                isVertical
+                    ? "flex-col items-center justify-center text-center gap-2 p-4 min-h-[110px]"
                     : "flex-row items-center gap-3",
                 !disabled && "cursor-pointer hover:border-primary/50 hover:bg-accent/50",
                 disabled && "opacity-50 cursor-not-allowed",
@@ -44,22 +44,20 @@ export function RadioCard({
                 className
             )}
         >
-            {/* Círculo decorativo que envuelve al Radio */}
+            {/* Radio input accesible — oculto visualmente */}
+            <RadioGroupItem
+                value={value}
+                id={id}
+                disabled={disabled}
+                className="peer sr-only"
+            />
+
+            {/* Círculo decorativo */}
             <div className={cn(
-                "relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10",
+                "shrink-0 h-5 w-5 rounded-full border-2 border-muted bg-transparent transition-colors",
+                "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10",
                 isVertical && "absolute top-2.5 right-2.5"
-            )}>
-                <RadioGroupItem 
-                    value={value} 
-                    id={id} 
-                    disabled={disabled}
-                    className="peer border-none shadow-none ring-0 focus-visible:ring-0 w-3 h-3 m-0" 
-                />
-                <CmykRing 
-                    size="sm" 
-                    className="absolute inset-0 m-auto pointer-events-none opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" 
-                />
-            </div>
+            )} />
 
             {/* Opcional: Ícono sin fondo */}
             {icon && (
@@ -67,7 +65,7 @@ export function RadioCard({
                     {icon}
                 </div>
             )}
-            
+
             {/* Textos */}
             <div className={cn(
                 "flex flex-col gap-1 min-w-0 flex-1 justify-center",
@@ -79,10 +77,18 @@ export function RadioCard({
                         {description}
                     </span>
                 )}
-                {/* Por si queremos inyectar un badge o código interno */}
                 {children}
             </div>
+
+            {/* Indicador CMYK — derecha del card */}
+            <CmykRing
+                size="sm"
+                className={cn(
+                    "shrink-0 pointer-events-none opacity-0 transition-opacity duration-200",
+                    "peer-data-[state=checked]:opacity-100",
+                    isVertical && "absolute top-3 right-3"
+                )}
+            />
         </Label>
     )
 }
-
