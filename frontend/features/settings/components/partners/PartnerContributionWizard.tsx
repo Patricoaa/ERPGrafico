@@ -1,5 +1,5 @@
 "use client"
-import { Button } from "@/components/ui/button"
+import { RadioGroup } from "@/components/ui/radio-group"
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
@@ -11,7 +11,7 @@ import {
     ArrowDownCircle,
     Banknote
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, type WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, RadioCard, GenericWizard, type WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
@@ -20,7 +20,6 @@ import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "../.
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 import {Alert} from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -238,49 +237,28 @@ export function PartnerContributionWizard({
             description: "¿Qué se está aportando?",
             isValid: !!method,
             component: (
-                <div className="grid grid-cols-2 gap-4 py-8">
-                    <Button
-                        onClick={() => setMethod("CASH")}
-                        className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
-                            method === "CASH"
-                                ? "border-success bg-success/5 shadow-floating shadow-success/10"
-                                : "border-muted hover:border-success/30 hover:bg-muted/50"
-                        )}
-                    >
-                        <div className={cn(
-                            "p-4 rounded-full transition-transform group-hover:scale-110",
-                            method === "CASH" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
-                        )}>
-                            <Wallet className="h-8 w-8" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="font-black text-sm uppercase tracking-tight">Efectivo</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Caja, banco o transferencia bancaria electrónica.</p>
-                        </div>
-                    </Button>
-
-                    <Button
-                        onClick={() => setMethod("ASSETS")}
-                        className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
-                            method === "ASSETS"
-                                ? "border-warning bg-warning/5 shadow-floating shadow-warning/10"
-                                : "border-muted hover:border-warning/30 hover:bg-muted/50"
-                        )}
-                    >
-                        <div className={cn(
-                            "p-4 rounded-full transition-transform group-hover:scale-110",
-                            method === "ASSETS" ? "bg-warning text-warning-foreground" : "bg-muted text-muted-foreground"
-                        )}>
-                            <Package className="h-8 w-8" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="font-black text-sm uppercase tracking-tight">Bienes / Stock</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Materias primas, insumos o productos para la venta.</p>
-                        </div>
-                    </Button>
-                </div>
+                <RadioGroup
+                    value={method}
+                    onValueChange={(v) => setMethod(v as ContributionMethod)}
+                    className="grid grid-cols-2 gap-4 py-8"
+                >
+                    <RadioCard
+                        id="method-cash"
+                        value="CASH"
+                        label="Efectivo"
+                        description="Caja, banco o transferencia bancaria electrónica."
+                        icon={<Wallet className="h-6 w-6" />}
+                        className="card-base min-h-[140px] flex-col items-center justify-center text-center [&:has([data-state=checked])]:border-success [&:has([data-state=checked])]:bg-success/5 [&:has([data-state=checked])]:shadow-floating [&:has([data-state=checked])]:shadow-success/10"
+                    />
+                    <RadioCard
+                        id="method-assets"
+                        value="ASSETS"
+                        label="Bienes / Stock"
+                        description="Materias primas, insumos o productos para la venta."
+                        icon={<Package className="h-6 w-6" />}
+                        className="card-base min-h-[140px] flex-col items-center justify-center text-center [&:has([data-state=checked])]:border-warning [&:has([data-state=checked])]:bg-warning/5 [&:has([data-state=checked])]:shadow-floating [&:has([data-state=checked])]:shadow-warning/10"
+                    />
+                </RadioGroup>
             )
         },
         {
