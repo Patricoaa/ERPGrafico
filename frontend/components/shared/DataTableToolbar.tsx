@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useMemo } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, X, LayoutDashboard, MoreVertical } from "lucide-react"
+import React, { useMemo } from "react"
+import { ArrowUpDown, ArrowUp, ArrowDown, X, MoreVertical } from "lucide-react"
 import { type Table } from "@tanstack/react-table"
 
 import { SEG_DROPDOWN_ITEM, TOOLBAR_MENU_ITEM, TOOLBAR_ICON_BTN } from './search-styles'
@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { LucideIcon } from "lucide-react"
 import { TabBar } from "@/components/shared"
-import { AnalyticsPanel, AnalyticsTabBar, type AnalyticsTab } from "./AnalyticsPanel"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTableColumnToggle, translateColumnId } from "./DataTableColumnToggle"
 import { SegmentationTableContext } from "./SegmentationTableContext"
@@ -40,18 +39,7 @@ interface DataTableToolbarProps<TData> {
     columnToggle?: boolean
     unifiedSearch?: React.ReactNode
     showReset?: boolean
-    analyticsPanel?: AnalyticsPanelConfig
     createAction?: React.ReactNode
-}
-
-export type AnalyticsPanelConfig = {
-    onClick?: () => void
-    screen?: {
-        entityName: string
-        tabs: AnalyticsTab[]
-        activeTab?: string
-        onTabChange?: (value: string) => void
-    }
 }
 
 export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
@@ -66,18 +54,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         columnToggle,
         unifiedSearch,
         showReset,
-        analyticsPanel,
         createAction,
     } = props
-
-    const [analyticsOpen, setAnalyticsOpen] = useState(false)
-
-    const handleAnalyticsClick = () => {
-        analyticsPanel?.onClick?.()
-        if (analyticsPanel?.screen) {
-            setAnalyticsOpen(true)
-        }
-    }
 
     const effectiveColumnToggle = columnToggle ?? (currentView === 'list' || !currentView)
     const effectiveSortOptions = sortOptions ?? (currentView === 'card' || currentView === 'grid')
@@ -132,36 +110,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
-                        {analyticsPanel?.screen && currentView === 'analytics' && (
-                            <div className="shrink-0 h-9 flex items-center">
-                                <AnalyticsTabBar
-                                    tabs={analyticsPanel.screen.tabs}
-                                    activeTab={analyticsPanel.screen.activeTab}
-                                    onTabChange={analyticsPanel.screen.onTabChange}
-                                />
-                            </div>
-                        )}
-
                         <div className="flex items-center gap-1 shrink-0">
-                            {analyticsPanel && currentView !== 'analytics' && (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className={TOOLBAR_ICON_BTN}
-                                            onClick={handleAnalyticsClick}
-                                        >
-                                            <LayoutDashboard className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom">
-                                        Análisis de{" "}
-                                        {analyticsPanel.screen?.entityName || "Panel"}
-                                    </TooltipContent>
-                                </Tooltip>
-                            )}
-
                             {effectiveColumnToggle && !unifiedSearch && (
                                 <DataTableColumnToggle table={table} />
                             )}
@@ -226,36 +175,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
-                        {analyticsPanel?.screen && currentView === 'analytics' && (
-                            <div className="shrink-0 h-9 flex items-center">
-                                <AnalyticsTabBar
-                                    tabs={analyticsPanel.screen.tabs}
-                                    activeTab={analyticsPanel.screen.activeTab}
-                                    onTabChange={analyticsPanel.screen.onTabChange}
-                                />
-                            </div>
-                        )}
-
                         <div className="flex items-center gap-1 shrink-0">
-                            {analyticsPanel && currentView !== 'analytics' && (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className={TOOLBAR_ICON_BTN}
-                                            onClick={handleAnalyticsClick}
-                                        >
-                                            <LayoutDashboard className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom">
-                                        Análisis de{" "}
-                                        {analyticsPanel.screen?.entityName || "Panel"}
-                                    </TooltipContent>
-                                </Tooltip>
-                            )}
-
                             {effectiveColumnToggle && (
                                 <DataTableColumnToggle table={table} />
                             )}
@@ -365,17 +285,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     </div>
                 )}
             </div>
-
-            {analyticsPanel?.screen && (
-                <AnalyticsPanel
-                    open={analyticsOpen}
-                    onOpenChange={setAnalyticsOpen}
-                    entityName={analyticsPanel.screen.entityName}
-                    tabs={analyticsPanel.screen.tabs}
-                    activeTab={analyticsPanel.screen.activeTab}
-                    onTabChange={analyticsPanel.screen.onTabChange}
-                />
-            )}
         </SegmentationTableContext.Provider>
     )
 }

@@ -313,7 +313,6 @@ export function DataTable<TData, TValue>({
         createAction ||
         (viewOptions && viewOptions.length > 0) ||
         sortOptions ||
-        analyticsPanel ||
         columnToggle ||
         !!currentView
     )
@@ -398,7 +397,6 @@ export function DataTable<TData, TValue>({
                         columnToggle={columnToggle}
                         unifiedSearch={unifiedSearch}
                         showReset={showReset}
-                        analyticsPanel={analyticsPanel}
                         createAction={createAction}
                     />
                 )}
@@ -713,7 +711,6 @@ export function DataTable<TData, TValue>({
                             columnToggle={columnToggle}
                             unifiedSearch={unifiedSearch}
                             showReset={showReset}
-                            analyticsPanel={analyticsPanel}
                             createAction={createAction}
                         />
                     </div>
@@ -798,7 +795,6 @@ export function DataTable<TData, TValue>({
                         columnToggle={columnToggle}
                         unifiedSearch={unifiedSearch}
                         showReset={showReset}
-                        analyticsPanel={analyticsPanel}
                         createAction={createAction}
                     />
                 </div>

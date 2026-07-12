@@ -105,4 +105,14 @@ export interface AnalyticsPanelProps {
     onTabChange?: (value: string) => void
 }
 
+export type AnalyticsPanelConfig = {
+    onClick?: () => void
+    screen?: {
+        entityName: string
+        tabs: AnalyticsTab[]
+        activeTab?: string
+        onTabChange?: (value: string) => void
+    }
+}
+
 
