@@ -45,13 +45,11 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
 
     return (
         <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar">
-            <div className="px-6 pt-2">
-                <PageSectionHeader
-                    title={SUB_VIEW_LABELS[activeTab] || "Resumen"}
-                    description={bankName}
-                    subTabs={cardSubTabs}
-                />
-            </div>
+            <PageSectionHeader
+                title={SUB_VIEW_LABELS[activeTab] || "Resumen"}
+                description={bankName}
+                subTabs={cardSubTabs}
+            />
             {activeTab === "overview" && isLoading && <OverviewSkeleton />}
             {activeTab === "overview" && !isLoading && (
                 isError ? (
