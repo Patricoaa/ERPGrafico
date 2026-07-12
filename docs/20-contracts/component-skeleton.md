@@ -289,12 +289,6 @@ Wrappers de alto nivel para rutas completas. Usar en `loading.tsx`.
 | `contentType` | `'table' \| 'card' \| 'form' \| 'custom'` | `'table'` | Contenido del cuerpo |
 | `children` | `ReactNode` | — | Reemplaza el body cuando `contentType='custom'` |
 
-#### `HubSkeleton`
-
-| prop | type | default | notas |
-|------|------|---------|-------|
-| `phases` | `number` | `4` | Cantidad de tarjetas de fase verticales |
-
 #### Sub-componentes (no usar directamente en `loading.tsx`)
 
 - `PageHeaderSkeleton` — barra superior con icono + título
@@ -330,7 +324,7 @@ Esta regla está aplicada por ESLint (`no-restricted-imports` en `eslint.config.
 
 ## Accesibilidad
 
-- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `PageLayoutSkeleton`, `HubSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
+- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `PageLayoutSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
 - Los sub-componentes (`PageTabsSkeleton`, `ToolbarSkeleton`, `PageHeaderSkeleton`) **no** llevan `role="status"` para evitar regiones live anidadas.
 - `SkeletonShell` usa `aria-busy="true"` + `aria-live="polite"` cuando activo.
 - `prefers-reduced-motion: reduce` desactiva todas las animaciones shimmer (`animation: none; opacity: 0.5`). Definido en `globals.css`.
