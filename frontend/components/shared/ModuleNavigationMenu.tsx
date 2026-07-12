@@ -47,15 +47,18 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
 
     return (
         <div className="flex items-center gap-0 min-w-0 h-full">
-            {/* ── Module Name (Root) — static display ── */}
+            {/* ── Module Name (Root) — Context Badge ── */}
             {navigation.moduleName && (
-                <div className="flex items-center shrink-0 mr-2">
+                <div className="flex items-center shrink-0 mr-4 px-2.5 py-1 bg-muted/40 rounded-md border border-border/40 select-none">
                     {(() => {
                         const modIcon = getModuleIconName(currentModuleId)
                         return modIcon ? (
-                            <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/70" />
+                            <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/80 mr-2" />
                         ) : null
                     })()}
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {navigation.moduleName}
+                    </span>
                 </div>
             )}
 
@@ -85,7 +88,7 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                                         </div>
                                     </NavigationMenuTrigger>
                                     <NavigationMenuContent>
-                                        <ul className="grid w-[400px] gap-1 p-2 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-popover/95 backdrop-blur-md rounded-lg shadow-floating border border-border/40">
+                                        <ul className="grid w-[400px] gap-1 p-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                                             {visibleSubTabs.map((subItem) => (
                                                 <ListItem
                                                     key={subItem.value}
