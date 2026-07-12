@@ -7,7 +7,7 @@ import { formatEntityDisplay } from '@/lib/entity-registry'
 import { Chip } from '@/components/shared'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton, CardSkeleton, StatusBadge, EmptyState, } from '@/components/shared'
+import { SkeletonShell, CardSkeleton, StatusBadge, EmptyState, } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
@@ -112,28 +112,19 @@ export function OrderActionPanel({
             tabIcon={Zap}
             size="md"
         >
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando panel de acciones">
             <div className="flex flex-col h-full">
                 <div className="shrink-0 px-6 pt-6 pb-4 border-b">
                     <PanelHeader
-                        title={loading ? (
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-7 w-32 font-mono" />
-                                <Skeleton className="h-6 w-20 rounded-full" />
-                            </div>
-                        ) : (
+                        title={
                             <div className="flex items-center gap-2">
                                 <span className="font-mono">
                                     {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', (order ?? {}) as Record<string, unknown>)}
                                 </span>
                                 <StatusBadge status={order?.status || ""} />
                             </div>
-                        )}
-                        subtitle={loading ? (
-                            <div className="flex flex-col gap-2">
-                                <Skeleton className="h-5 w-48" />
-                                <Skeleton className="h-3 w-32" />
-                            </div>
-                        ) : (
+                        }
+                        subtitle={
                             <div className="flex flex-col gap-1">
                                 <span className="text-base font-medium text-foreground">
                                     {orderType === 'purchase' ? order?.supplier?.name : order?.customer?.name}
@@ -142,18 +133,13 @@ export function OrderActionPanel({
                                     {formatPlainDate(order?.date)}
                                 </span>
                             </div>
-                        )}
+                        }
                         onClose={() => onOpenChange(false)}
                         closeTooltip="Cerrar panel de acciones"
                     />
                 </div>
 
                 <ScrollArea className="flex-1 px-6 ">
-                    {loading ? (
-                        <div className="py-6">
-                            <CardSkeleton count={3} variant="list" />
-                        </div>
-                    ) : (
                         <div className="space-y-6 py-6">
                             {/* Order Summary Card */}
                             <div className="bg-muted/50 rounded-md p-4 space-y-3">
@@ -244,9 +230,9 @@ export function OrderActionPanel({
                                  )}
                             </div>
                         </div>
-                    )}
                 </ScrollArea>
             </div>
+            </SkeletonShell>
         </CollapsibleSheet>
     )
 }

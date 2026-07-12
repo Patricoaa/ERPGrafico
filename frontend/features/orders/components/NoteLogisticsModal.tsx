@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput } from '@/components/shared'
+import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell } from '@/components/shared'
 import {
     Table,
     TableBody,
@@ -172,11 +172,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                 </>
             }
         >
-            {loading ? (
-                <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            ) : (
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando datos del documento">
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledSelect
@@ -248,7 +244,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                         onChange={(e) => setNotes(e.target.value)}
                     />
                 </div>
-            )}
+            </SkeletonShell>
         </BaseModal>
     )
 }
