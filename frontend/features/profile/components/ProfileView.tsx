@@ -361,6 +361,14 @@ function PersonalTab({
         }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
+    const payrollSearchConfig: UnifiedSearchConfig = useMemo(() => ({
+        filters: [
+            { key: 'period_label', label: 'Período', type: 'multi', serverParam: 'period_label', columnId: 'period_label', dynamic: true, options: [] },
+        ],
+        searchFields: [],
+    }), [])
+    const payrollSearch = useUnifiedSearch(payrollSearchConfig)
+
     if (!employee) {
         return (
             <div className="max-w-3xl">
@@ -372,14 +380,6 @@ function PersonalTab({
             </div>
         )
     }
-
-    const payrollSearchConfig: UnifiedSearchConfig = useMemo(() => ({
-        filters: [
-            { key: 'period_label', label: 'Período', type: 'multi', serverParam: 'period_label', columnId: 'period_label', dynamic: true, options: [] },
-        ],
-        searchFields: [],
-    }), [])
-    const payrollSearch = useUnifiedSearch(payrollSearchConfig)
 
     // Payroll columns
     const payrollColumns: ColumnDef<Payroll>[] = [

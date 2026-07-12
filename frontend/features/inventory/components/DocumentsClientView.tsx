@@ -57,24 +57,18 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
         }
     }, [isOverLimit, totalCount])
 
-    const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null)
-
-    useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId) {
-            setSelectedDocumentId(Number(selectedId))
-        }
-    }, [searchParams])
+    const selectedDocumentId = useMemo(
+        () => searchParams.get('selected') ? Number(searchParams.get('selected')) : null,
+        [searchParams],
+    )
 
     const handleSelect = (id: number) => {
-        setSelectedDocumentId(id)
         const params = new URLSearchParams(searchParams.toString())
         params.set('selected', String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleCloseDrawer = () => {
-        setSelectedDocumentId(null)
         const params = new URLSearchParams(searchParams.toString())
         params.delete('selected')
         const query = params.toString()

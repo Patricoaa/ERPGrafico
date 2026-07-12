@@ -90,20 +90,22 @@ export function DataTableView<TData, TValue>({
       const activeTab = analyticsScreen.activeTab ?? analyticsScreen.tabs[0]?.value
       const activeTabData = analyticsScreen.tabs.find((t) => t.value === activeTab) ?? analyticsScreen.tabs[0]
 
-      return () => (
-        <div className="flex-1 flex flex-col min-h-0">
-          {activeTabData?.description && (
-            <p className="text-xs text-muted-foreground/70 font-medium mb-4 shrink-0 px-6 pt-6">
-              {activeTabData.description}
-            </p>
-          )}
-          {activeTabData?.columns?.length ? (
-            <div className="flex-1 min-h-0 flex flex-col">
-              <AnalyticsLayout columns={activeTabData.columns} />
-            </div>
-          ) : null}
-        </div>
-      )
+      return function AnalyticsCustomView() {
+        return (
+          <div className="flex-1 flex flex-col min-h-0">
+            {activeTabData?.description && (
+              <p className="text-xs text-muted-foreground/70 font-medium mb-4 shrink-0 px-6 pt-6">
+                {activeTabData.description}
+              </p>
+            )}
+            {activeTabData?.columns?.length ? (
+              <div className="flex-1 min-h-0 flex flex-col">
+                <AnalyticsLayout columns={activeTabData.columns} />
+              </div>
+            ) : null}
+          </div>
+        )
+      }
     }
 
     switch (policy.cardComponent) {

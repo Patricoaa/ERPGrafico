@@ -128,6 +128,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         [selectedId, statements],
     )
 
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("costos")
+
     if (isLoading) {
         return <Skeleton className="h-full" />
     }
@@ -222,6 +224,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                     analyticsPanel={{
                         screen: {
                             entityName: "Gestión TC",
+                            activeTab: analyticsActiveTab,
+                            onTabChange: setAnalyticsActiveTab,
                             tabs: [
                                 {
                                     value: 'costos',
