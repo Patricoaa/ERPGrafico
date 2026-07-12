@@ -20,7 +20,7 @@ import {
     useUnifiedSearch,
     StatCard,
     SummaryTable,
-    Skeleton,
+    SkeletonShell,
     EmptyState,
     ToolbarCreateButton,
     type ToolbarActionItem,
@@ -74,6 +74,7 @@ export function UnbilledChargesClientView({
 }: UnbilledChargesClientViewProps) {
     const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
     const [showBillCharges, setShowBillCharges] = useState(false)
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("cupo")
     const queryClient = useQueryClient()
     const { openHub } = useHubPanel()
     const searchParams = useSearchParams()
@@ -365,17 +366,6 @@ export function UnbilledChargesClientView({
 
     const usedPercent = forecast?.credit_limit ? (parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit)) * 100 : 0
 
-    if (overviewLoading) {
-        return (
-            <div className="h-full flex items-center justify-center">
-                <div className="space-y-3 w-full max-w-md">
-                    <Skeleton className="h-8 w-48 mx-auto" />
-                    <Skeleton className="h-64 w-full" />
-                </div>
-            </div>
-        )
-    }
-
     if (creditCardAccounts.length === 0) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -389,6 +379,7 @@ export function UnbilledChargesClientView({
     }
 
     return (
+        <SkeletonShell isLoading={overviewLoading} ariaLabel="Cargando resumen de tarjeta">
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -423,6 +414,8 @@ export function UnbilledChargesClientView({
                     analyticsPanel={{
                         screen: {
                             entityName: "Gestión TC",
+                            activeTab: analyticsActiveTab,
+                            onTabChange: setAnalyticsActiveTab,
                             tabs: [
                                 {
                                     value: 'cupo',
@@ -599,5 +592,6 @@ export function UnbilledChargesClientView({
             )}
 
         </div>
+        </SkeletonShell>
     )
 }

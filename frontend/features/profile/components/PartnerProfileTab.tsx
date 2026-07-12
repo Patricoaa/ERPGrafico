@@ -108,14 +108,12 @@ export function PartnerProfileTab({ contactId }: Props) {
         partnerTransactionActions.column(actionsCtx)
     ]
 
-    if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
-
     if (isError || !statement) return null
 
     const { contact, summary } = statement
 
     return (
-
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
         <div className="flex flex-col w-full h-full space-y-6">
             <Accordion type="multiple" defaultValue={["summary", "history"]} className="w-full space-y-6">
 
@@ -222,6 +220,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 />
             )}
         </div>
+        </SkeletonShell>
     )
 }
 

@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { FileText, AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
+    StatusBadge, MoneyDisplay, SkeletonShell, EmptyState, EntityCard,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
@@ -92,10 +92,6 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         params.delete("modal")
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
-
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
 
     if (isError) {
         return (
@@ -196,6 +192,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     ]
 
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando créditos">
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -287,5 +284,6 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 onOpenChange={(open) => { if (!open) clearAll() }}
             />
         </div>
+        </SkeletonShell>
     )
 }
