@@ -3,9 +3,7 @@
 import { usePathname } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
 import { Skeleton, EmptyState, PageSectionHeader } from "@/components/shared"
-import { useMemo } from "react"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
-import { getSubViewTabs } from "../constants"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
 import { BankCheckingSection } from "./BankCheckingSection"
@@ -17,6 +15,15 @@ import { LoansClientView } from "../loans/LoansClientView"
 import { CardChargesView } from "../card-statements/CardChargesView"
 import { BankMovementsClientView } from "./BankMovementsClientView"
 import { StatementsClientView } from "@/features/finance"
+
+const SUB_VIEW_LABELS: Record<string, string> = {
+    overview: "Resumen",
+    movements: "Movimientos",
+    checks: "Cheques",
+    loans: "Préstamos",
+    cards: "Tarjeta",
+    reconciliation: "Conciliación",
+}
 
 export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab?: string }) {
     const pathname = usePathname()
@@ -31,17 +38,20 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
         ? overviewData.accounts.filter((a: { account_type: string }) => a.account_type === "CHECKING").map((a: { id: number; name: string }) => ({ id: a.id, name: a.name }))
         : []
 
-    const cardSubTabs = useMemo(() => {
-        if (activeTab !== "cards") return undefined
-        return [
-            { value: "unbilled", label: "Cargos No Facturados", href: `/treasury/bank-center/${bankId}/cards/unbilled` },
-            { value: "statements", label: "Cargos Facturados", href: `/treasury/bank-center/${bankId}/cards/statements` },
-        ]
-    }, [activeTab, bankId])
+    const cardSubTabs = activeTab === "cards" ? [
+        { value: "unbilled", label: "Cargos No Facturados", href: `/treasury/bank-center/${bankId}/cards/unbilled` },
+        { value: "statements", label: "Cargos Facturados", href: `/treasury/bank-center/${bankId}/cards/statements` },
+    ] : undefined
 
     return (
         <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar">
-            <PageSectionHeader title={bankName} tabs={getSubViewTabs(bankId)} subTabs={cardSubTabs} />
+            <div className="px-6 pt-2">
+                <PageSectionHeader
+                    title={SUB_VIEW_LABELS[activeTab] || "Resumen"}
+                    description={bankName}
+                    subTabs={cardSubTabs}
+                />
+            </div>
             {activeTab === "overview" && isLoading && <OverviewSkeleton />}
             {activeTab === "overview" && !isLoading && (
                 isError ? (

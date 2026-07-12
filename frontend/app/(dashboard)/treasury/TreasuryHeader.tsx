@@ -7,6 +7,15 @@ import { getEntityIconName } from "@/lib/entity-registry"
 import { useBanks } from "@/features/treasury"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 
+const BANK_SUB_VIEWS = [
+    { value: "overview", label: "Resumen", iconName: "bar-chart-3" },
+    { value: "movements", label: "Movimientos", iconName: "arrow-left-right" },
+    { value: "checks", label: "Cheques", iconName: "check-square" },
+    { value: "loans", label: "Préstamos", iconName: "landmark" },
+    { value: "cards", label: "Tarjeta", iconName: "credit-card" },
+    { value: "reconciliation", label: "Conciliación", iconName: "git-compare" },
+]
+
 export function TreasuryHeader() {
     const pathname = usePathname()
     const { banks } = useBanks()
@@ -35,6 +44,11 @@ export function TreasuryHeader() {
         return undefined
     }, [activeValue, segments])
 
+    const subSubActiveValue = useMemo(() => {
+        if (activeValue === 'bank-center') return segments[3] || 'overview'
+        return undefined
+    }, [activeValue, segments])
+
     const bankSubTabs = useMemo(() => {
         const allTab = { value: 'all', label: 'Todos', iconName: 'layout-grid', href: '/treasury/bank-center' }
         const bankTabs = banks
@@ -44,6 +58,12 @@ export function TreasuryHeader() {
                 label: bank.name,
                 iconName: 'landmark' as string,
                 href: `/treasury/bank-center/${bank.id}/overview`,
+                subTabs: BANK_SUB_VIEWS.map(sv => ({
+                    value: sv.value,
+                    label: sv.label,
+                    iconName: sv.iconName,
+                    href: `/treasury/bank-center/${bank.id}/${sv.value === 'cards' ? 'cards/unbilled' : sv.value}`,
+                })),
             }))
         return [allTab, ...bankTabs]
     }, [banks])
@@ -87,6 +107,7 @@ export function TreasuryHeader() {
         tabs,
         activeValue,
         subActiveValue,
+        subSubActiveValue,
     }
 
     const getHeaderConfig = () => {

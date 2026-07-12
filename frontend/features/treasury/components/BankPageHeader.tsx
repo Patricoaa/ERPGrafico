@@ -5,6 +5,15 @@ import { PageHeader } from "@/components/shared"
 import { useBanks } from "@/features/treasury"
 import type { PageHeaderStatus } from "@/components/shared"
 
+const BANK_SUB_VIEWS = [
+    { value: "overview", label: "Resumen", iconName: "bar-chart-3" },
+    { value: "movements", label: "Movimientos", iconName: "arrow-left-right" },
+    { value: "checks", label: "Cheques", iconName: "check-square" },
+    { value: "loans", label: "Préstamos", iconName: "landmark" },
+    { value: "cards", label: "Tarjeta", iconName: "credit-card" },
+    { value: "reconciliation", label: "Conciliación", iconName: "git-compare" },
+]
+
 interface BankPageHeaderProps {
     bankId: number
     breadcrumbs?: { label: string; href?: string }[]
@@ -28,7 +37,13 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
                 value: `bank-${bank.id}`,
                 label: bank.name,
                 iconName: "landmark" as string,
-                href: `/treasury/bank-center/${bank.id}/${subSubActiveValue}`,
+                href: `/treasury/bank-center/${bank.id}/overview`,
+                subTabs: BANK_SUB_VIEWS.map(sv => ({
+                    value: sv.value,
+                    label: sv.label,
+                    iconName: sv.iconName,
+                    href: `/treasury/bank-center/${bank.id}/${sv.value === 'cards' ? 'cards/unbilled' : sv.value}`,
+                })),
             })),
     ]
 
