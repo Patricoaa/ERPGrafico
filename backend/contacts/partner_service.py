@@ -191,9 +191,7 @@ class PartnerService:
         PartnerService._validate_partner(partner)
         PartnerService._validate_amount(amount)
         settings = PartnerService._get_settings()
-        receivable_account = settings.partner_capital_receivable_account
-        if not receivable_account:
-            raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
+        receivable_account = PartnerService._resolve_partner_receivable_account(partner)
 
         # Resolve accounts
         treasury_account = None
@@ -500,9 +498,7 @@ class PartnerService:
         if not settings.partner_capital_social_account:
             raise ValidationError("No se ha configurado la cuenta de Capital Social.")
 
-        receivable_account = settings.partner_capital_receivable_account
-        if not receivable_account:
-            raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
+        receivable_account = PartnerService._resolve_partner_receivable_account(partner)
 
         # Journal Entry
         entry = JournalEntry.objects.create(
@@ -590,9 +586,7 @@ class PartnerService:
         if not settings.partner_capital_social_account:
             raise ValidationError("No se ha configurado la cuenta de Capital Social.")
 
-        receivable_account = settings.partner_capital_receivable_account
-        if not receivable_account:
-            raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
+        receivable_account = PartnerService._resolve_partner_receivable_account(partner)
 
         entry = JournalEntry.objects.create(
             description=GlosaBuilder.build(GlosaBuilder.REDUCCION_CAPITAL, partner.display_id, partner.name, amount),
@@ -757,9 +751,8 @@ class PartnerService:
             buyer.save()
 
         settings = PartnerService._get_settings()
-        receivable_account = settings.partner_capital_receivable_account
-        if not receivable_account:
-            raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
+        seller_receivable_account = PartnerService._resolve_partner_receivable_account(seller)
+        buyer_receivable_account = PartnerService._resolve_partner_receivable_account(buyer)
 
         entry = JournalEntry.objects.create(
             description=GlosaBuilder.build(GlosaBuilder.TRANSFERENCIA_CAPITAL, transfer.display_id, f"{seller.name} → {buyer.name}", amount),
@@ -768,7 +761,7 @@ class PartnerService:
         )
         JournalItem.objects.create(
             entry=entry,
-            account=receivable_account,
+            account=seller_receivable_account,
             partner=seller,
             label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"{seller.name} → {buyer.name}", transfer.display_id),
             debit=amount,
@@ -776,7 +769,7 @@ class PartnerService:
         )
         JournalItem.objects.create(
             entry=entry,
-            account=receivable_account,
+            account=buyer_receivable_account,
             partner=buyer,
             label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, buyer.name, transfer.display_id),
             debit=0,
@@ -836,10 +829,6 @@ class PartnerService:
         if not settings.partner_capital_social_account:
             raise ValidationError("No se ha configurado la cuenta de Capital Social.")
 
-        receivable_account = settings.partner_capital_receivable_account
-        if not receivable_account:
-            raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
-
         contacts_with_amounts = []
         total_capital = Decimal("0")
 
@@ -880,9 +869,10 @@ class PartnerService:
                 created_by=created_by,
             )
 
+            partner_receivable = PartnerService._resolve_partner_receivable_account(contact)
             JournalItem.objects.create(
                 entry=entry,
-                account=receivable_account,
+                account=partner_receivable,
                 partner=contact,
                 partner_name=contact.name,
                 label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, contact.name, "APERTURA"),
@@ -1203,6 +1193,42 @@ class PartnerService:
     # ──────────────────────────────────────────────────────────────
     # PRIVATE HELPERS
     # ──────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _resolve_partner_receivable_account(partner: Contact):
+        """
+        Resolves the per-partner receivable sub-account under the global
+        ``partner_capital_receivable_account`` parent.
+
+        The parent account (e.g. 1.1.05.01) is a category container and has
+        children → ``is_selectable`` is False, so it cannot be posted to.
+        This helper finds or auto-creates the partner-specific leaf account
+        (e.g. 1.1.05.01.003) under that parent.
+
+        Naming convention: ``{parent.name} - {partner.name}``
+        """
+        from accounting.models import Account
+
+        settings = PartnerService._get_settings()
+        parent_account = settings.partner_capital_receivable_account
+        if not parent_account:
+            raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
+
+        child_account = Account.objects.filter(
+            parent=parent_account,
+            name__endswith=f" - {partner.name}",
+        ).first()
+
+        if child_account:
+            return child_account
+
+        child_account = Account(
+            parent=parent_account,
+            name=f"{parent_account.name} - {partner.name}",
+        )
+        child_account.save()
+
+        return child_account
 
     @staticmethod
     def _validate_partner(partner: Contact):
