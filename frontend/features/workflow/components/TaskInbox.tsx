@@ -258,6 +258,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 orientation="horizontal"
                 dense
                 className="w-full px-4"
+                containerClassName="w-full justify-start"
                 contentClassName="mt-3 bg-transparent flex flex-col"
             >
                 <TabBarContent value="approvals" className="h-full flex flex-col mt-0">
