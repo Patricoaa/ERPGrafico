@@ -113,23 +113,23 @@ export function PartnerLedgerDrawer({
     const columns: ColumnDef<TransactionWithBalance>[] = [
         {
             accessorKey: "date",
-            header: "Fecha",
+            header: () => <div className="text-center">Fecha</div>,
             cell: ({ row }) => (
                 <DataCell.Date value={row.getValue("date")} />
             )
         },
         {
             accessorKey: "transaction_type",
-            header: "Tipo",
+            header: () => <div className="text-center">Tipo</div>,
             cell: ({ row }) => (
-                <DataCell.Chip intent={getTransactionIntent(row.original.transaction_type)}>
+                <DataCell.Text>
                     {row.original.transaction_type_display}
-                </DataCell.Chip>
+                </DataCell.Text>
             )
         },
         {
             accessorKey: "amount",
-            header: () => <div className="text-right">Monto</div>,
+            header: () => <div className="text-center">Monto</div>,
             cell: ({ row }) => {
                 const type = row.original.transaction_type
                 const direction = isInflow(type) ? 'inflow' : isOutflow(type) ? 'outflow' : 'neutral' as const
@@ -138,9 +138,9 @@ export function PartnerLedgerDrawer({
         },
         {
             accessorKey: "balance_after",
-            header: () => <div className="text-right">Saldo</div>,
+            header: () => <div className="text-center">Saldo</div>,
             cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("balance_after")} className="text-right font-mono text-[11px] font-black text-primary" />
+                <DataCell.Currency value={row.getValue("balance_after")} className="text-right font-mono text-[11px] font-black" />
             )
         },
     ]

@@ -19,7 +19,7 @@ import { formatCurrency } from "@/lib/money"
 import {
     SkeletonShell,
     DataTableView,
-    Chip,
+    DataCell,
     UnifiedSearchBar,
     useUnifiedSearch
 } from "@/components/shared"
@@ -393,12 +393,12 @@ export function PartnersClientView({
     const columns: ColumnDef<Partner>[] = [
         {
             accessorKey: "name",
-            header: "Socio",
+            header: () => <div className="text-center">Socio</div>,
             cell: ({ row }) => (
-                <div className="flex flex-col gap-1 py-1 max-w-[220px]">
-                    <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</span>
-                    <span className="text-[9px] font-mono opacity-50">{row.original.tax_id}</span>
-
+                <div className="flex flex-col gap-1 py-1 items-center">
+                    <DataCell.ContactLink contactId={row.original.id}>
+                        {row.original.name}
+                    </DataCell.ContactLink>
                     {Number(row.original.partner_excess_capital) > 0 && (
                         <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center gap-2 overflow-hidden ring-1 ring-warning/10">
                             <div className="flex items-center gap-1.5 text-[9px] text-warning font-black uppercase tracking-tighter">
@@ -412,100 +412,102 @@ export function PartnersClientView({
         },
         {
             accessorKey: "partner_equity_percentage",
-            header: () => <div className="text-right">Part. %</div>,
+            header: () => <div className="text-center">Part. %</div>,
             cell: ({ row }) => (
-                <div className="text-right">
-                    <Chip size="xs" intent="primary">
-                        {row.getValue("partner_equity_percentage")}%
-                    </Chip>
-                </div>
+                <DataCell.Text>
+                    {row.getValue("partner_equity_percentage")}%
+                </DataCell.Text>
             )
         },
         {
             accessorKey: "partner_total_contributions",
-            header: () => <div className="text-right whitespace-nowrap">C. Suscrito</div>,
+            header: () => <div className="text-center whitespace-nowrap">C. Suscrito</div>,
             cell: ({ row }) => (
-                <div className="text-right font-mono text-[11px] font-bold opacity-80">
-                    {formatCurrency(row.getValue("partner_total_contributions"))}
-                </div>
+                <DataCell.Currency value={row.getValue("partner_total_contributions")} className="text-right font-mono text-[11px] font-bold opacity-80" />
             )
         },
         {
             accessorKey: "partner_total_paid_in",
-            header: () => <div className="text-right whitespace-nowrap">C. Enterado</div>,
+            header: () => <div className="text-center whitespace-nowrap">C. Enterado</div>,
             cell: ({ row }) => (
-                <div className="text-right font-mono text-[11px] font-black text-success">
-                    {formatCurrency(row.getValue("partner_total_paid_in"))}
-                </div>
+                <DataCell.Currency value={row.getValue("partner_total_paid_in")} className="text-right font-mono text-[11px] font-black text-success" />
             )
         },
         {
             accessorKey: "partner_pending_capital",
-            header: () => <div className="text-right">Pendiente</div>,
+            header: () => <div className="text-center">Pendiente</div>,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_pending_capital"))
                 return (
-                    <div className={cn(
-                        "text-right font-mono text-[11px] font-bold",
-                        val > 0 ? 'text-warning' : 'text-muted-foreground/30'
-                    )}>
-                        {formatCurrency(val)}
-                    </div>
+                    <DataCell.Currency
+                        value={val}
+                        className={cn(
+                            "text-right font-mono text-[11px] font-bold",
+                            val > 0 ? 'text-warning' : 'text-muted-foreground/30'
+                        )}
+                    />
                 )
             }
         },
         {
             accessorKey: "partner_provisional_withdrawals_balance",
-            header: () => <div className="text-right whitespace-nowrap">R. Provisorios</div>,
+            header: () => <div className="text-center whitespace-nowrap">R. Provisorios</div>,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_provisional_withdrawals_balance"))
                 return (
-                    <div className={cn(
-                        "text-right font-mono text-[11px] font-bold",
-                        val > 0 ? 'text-destructive' : 'text-muted-foreground/30'
-                    )}>
-                        {val > 0 ? `(${formatCurrency(val)})` : '-'}
-                    </div>
+                    <DataCell.Currency
+                        value={val > 0 ? val : 0}
+                        showZeroAsDash={val <= 0}
+                        className={cn(
+                            "text-right font-mono text-[11px] font-bold",
+                            val > 0 ? 'text-destructive' : 'text-muted-foreground/30'
+                        )}
+                    />
                 )
             }
         },
         {
             accessorKey: "partner_earnings_balance",
-            header: () => <div className="text-right whitespace-nowrap text-success">Utilidades</div>,
+            header: () => <div className="text-center whitespace-nowrap">Utilidades</div>,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_earnings_balance"))
                 return (
-                    <div className={cn(
-                        "text-right font-mono text-[11px] font-bold",
-                        val > 0 ? 'text-success' : 'text-muted-foreground/30'
-                    )}>
-                        {val > 0 ? formatCurrency(val) : '-'}
-                    </div>
+                    <DataCell.Currency
+                        value={val > 0 ? val : 0}
+                        showZeroAsDash={val <= 0}
+                        className={cn(
+                            "text-right font-mono text-[11px] font-bold",
+                            val > 0 ? 'text-success' : 'text-muted-foreground/30'
+                        )}
+                    />
                 )
             }
         },
         {
             accessorKey: "partner_dividends_payable_balance",
-            header: () => <div className="text-right whitespace-nowrap text-warning">D. por Pagar</div>,
+            header: () => <div className="text-center whitespace-nowrap">D. por Pagar</div>,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("partner_dividends_payable_balance"))
                 return (
-                    <div className={cn(
-                        "text-right font-mono text-[11px] font-bold",
-                        val > 0 ? 'text-warning' : 'text-muted-foreground/30'
-                    )}>
-                        {val > 0 ? formatCurrency(val) : '-'}
-                    </div>
+                    <DataCell.Currency
+                        value={val > 0 ? val : 0}
+                        showZeroAsDash={val <= 0}
+                        className={cn(
+                            "text-right font-mono text-[11px] font-bold",
+                            val > 0 ? 'text-warning' : 'text-muted-foreground/30'
+                        )}
+                    />
                 )
             }
         },
         {
             accessorKey: "partner_net_equity",
-            header: () => <div className="text-right whitespace-nowrap text-primary">Patrimonio</div>,
+            header: () => <div className="text-center whitespace-nowrap">Patrimonio</div>,
             cell: ({ row }) => (
-                <div className="text-right font-mono text-[12px] font-black text-primary bg-primary/5 px-2 py-1 relative ring-1 ring-primary/10">
-                    {formatCurrency(row.getValue("partner_net_equity"))}
-                </div>
+                <DataCell.Currency
+                    value={row.getValue("partner_net_equity")}
+                    className="text-right font-mono text-[12px] font-black"
+                />
             )
         },
         partnerActions.column(partnerActionsCtx)
