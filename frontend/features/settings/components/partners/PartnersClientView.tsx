@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useCallback, useMemo } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
     Plus,
     AlertCircle,
@@ -12,9 +12,8 @@ import {
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import { partnersApi } from "@/features/contacts"
-import { type Partner } from "@/features/contacts"
-import { toast } from "sonner"
+import { usePartners } from "@/features/contacts"
+import type { Partner } from "@/features/contacts"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
 import {
@@ -87,8 +86,7 @@ export function PartnersClientView({
     createAction
 }: PartnersClientViewProps) {
     const search = useUnifiedSearch(partnerUnifiedSearchDef)
-    const [loading, setLoading] = useState(true)
-    const [partners, setPartners] = useState<Partner[]>([])
+    const { data: partners = [], isLoading, isFetching, refetch } = usePartners()
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
@@ -99,7 +97,7 @@ export function PartnersClientView({
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const clearModalParam = useCallback(() => {
+    const clearModalParam = React.useCallback(() => {
         const params = new URLSearchParams(searchParams.toString())
         if (params.has('modal')) {
             params.delete('modal')
@@ -118,36 +116,6 @@ export function PartnersClientView({
         partnerId: undefined as string | undefined,
         amount: undefined as string | undefined
     })
-
-    const fetchData = useCallback(async () => {
-        setLoading(true)
-        try {
-            const pData = await partnersApi.getPartners()
-            setPartners(pData)
-        } catch (error) {
-            console.error(error)
-            toast.error("Error al cargar datos societarios")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        let cancelled = false
-        const load = async () => {
-            try {
-                const pData = await partnersApi.getPartners()
-                if (!cancelled) setPartners(pData)
-            } catch (error) {
-                console.error(error)
-                toast.error("Error al cargar datos societarios")
-            } finally {
-                if (!cancelled) setLoading(false)
-            }
-        }
-        load()
-        return () => { cancelled = true }
-    }, [])
 
     useEffect(() => {
         if (initialAddPartnerOpen) {
@@ -544,14 +512,14 @@ export function PartnersClientView({
     ]
 
     return (
-        <SkeletonShell isLoading={loading} ariaLabel="Cargando composición societaria">
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando composición societaria">
             <div className="h-full flex flex-col">
                 <div className="flex-1 min-h-0">
                     <DataTableView
                         entityLabel="settings.partner"
                         columns={columns}
                         data={filteredPartners}
-                        isRefetching={loading}
+                        isRefetching={isFetching}
                         variant="embedded"
                         createAction={createAction}
                         analyticsPanel={analyticsPanel}
@@ -588,37 +556,37 @@ export function PartnersClientView({
                     setIsSubscriptionOpen(open)
                     if (!open) setSubModalParams({ partnerId: undefined, amount: undefined })
                 }}
-                onSuccess={fetchData}
+                onSuccess={() => refetch()}
                 initialPartnerId={subModalParams.partnerId}
                 initialAmount={subModalParams.amount}
             />
             <EquityTransferModal
                 open={isTransferOpen}
                 onOpenChange={setIsTransferOpen}
-                onSuccess={fetchData}
+                onSuccess={() => refetch()}
             />
             <PartnerContributionWizard
                 open={isContributionOpen}
                 onOpenChange={setIsContributionOpen}
-                onSuccess={fetchData}
+                onSuccess={() => refetch()}
                 initialPartnerId={selectedPartnerId?.toString()}
             />
             <PartnerWithdrawalWizard
                 open={isWithdrawalOpen}
                 onOpenChange={setIsWithdrawalOpen}
-                onSuccess={fetchData}
+                onSuccess={() => refetch()}
                 initialPartnerId={selectedPartnerId?.toString()}
             />
             <MobilizeEarningsWizard
                 open={isMobilizeOpen}
                 onOpenChange={setIsMobilizeOpen}
-                onSuccess={fetchData}
+                onSuccess={() => refetch()}
                 initialPartnerId={selectedPartnerId}
             />
             <DividendPaymentModal
                 open={isDividendOpen}
                 onOpenChange={setIsDividendOpen}
-                onSuccess={fetchData}
+                onSuccess={() => refetch()}
                 initialPartnerId={selectedPartnerId?.toString()}
             />
             <PartnerLedgerDrawer
@@ -639,14 +607,12 @@ export function PartnersClientView({
                     setIsAddPartnerOpen(open)
                     if (!open) clearModalParam()
                 }}
-                onSuccess={fetchData}
+                onSuccess={() => refetch()}
             />
             <InitialCapitalModal
                 open={isInitialSetupOpen}
                 onOpenChange={setIsInitialSetupOpen}
-                onSuccess={() => {
-                    fetchData()
-                }}
+                onSuccess={() => refetch()}
             />
             </div>
         </SkeletonShell>
