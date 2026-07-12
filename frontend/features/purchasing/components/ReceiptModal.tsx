@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
 
-import { BaseModal, CancelButton, Chip, DataCell, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
+import { BaseModal, CancelButton, Chip, DataCell, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
 import {
     Table,
     TableBody,
@@ -244,11 +244,7 @@ export function ReceiptModal({
                 />
             }
         >
-            {loading ? (
-                <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            ) : (
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando datos de orden">
                 <div className="space-y-4">
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
@@ -408,7 +404,7 @@ export function ReceiptModal({
                         </Alert>
                     )}
                 </div>
-            )}
+            </SkeletonShell>
         </BaseModal>
     )
 }
