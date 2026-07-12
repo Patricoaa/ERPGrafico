@@ -3,6 +3,20 @@ import { financeApi } from '../../api/financeApi'
 import type { BankStatement, TreasuryAccount, PaginatedResponse, BankStatementLine, ReconciliationSystemItem, QueryPaginationParams } from '../types'
 import { reconciliationKeys } from './queryKeys'
 
+interface SimulationResult {
+    line: {
+        description: string;
+        date: string;
+        amount: number | string;
+    };
+    payment: {
+        partner?: string;
+        reference?: string;
+        amount: number | string;
+    };
+    score: number;
+}
+
 export function useStatementsQuery(params?: Record<string, string>) {
     return useQuery({
         queryKey: reconciliationKeys.statements(),
@@ -17,6 +31,23 @@ export function useStatementQuery(id: number, enabled: boolean = true) {
         queryFn: () => financeApi.getStatement(id) as Promise<BankStatement>,
         staleTime: 2 * 60 * 1000,
         enabled: enabled && !!id
+    })
+}
+
+export function useSimulationQuery(rule: Record<string, unknown> | null) {
+    return useQuery({
+        queryKey: reconciliationKeys.simulation(rule ?? {}),
+        queryFn: async () => {
+            const treasuryAccount = rule?.treasury_account as Record<string, unknown> | undefined
+            const payload = {
+                ...rule,
+                treasury_account_id: treasuryAccount?.id
+            }
+            const response = await financeApi.simulateRule(payload) as Record<string, unknown>
+            return (response.results as SimulationResult[]) || []
+        },
+        staleTime: 30_000,
+        enabled: !!rule,
     })
 }
 

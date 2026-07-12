@@ -8,6 +8,7 @@ export {
 } from './hooks/usePurchasing'
 
 export { usePurchasingAnalyticsData } from './hooks/usePurchasingAnalyticsData'
+export { useReceiptData } from './hooks/useReceiptData'
 export type { PurchasingAnalyticsData, TrendData } from './hooks/usePurchasingAnalyticsData'
 
 export type {

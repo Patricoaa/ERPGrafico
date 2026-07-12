@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type * as z from "zod"
@@ -14,18 +14,7 @@ import { ActionConfirmModal, ActionSlideButton, AutoSaveStatusBadge, BaseModal, 
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import {
-    getGlobalHRSettings,
-    updateGlobalHRSettings,
-    getAFPs,
-    createAFP,
-    updateAFP,
-    deleteAFP,
-    getPayrollConcepts,
-    createPayrollConcept,
-    updatePayrollConcept,
-    deletePayrollConcept
-} from '@/features/hr'
+import { useHrSettings } from '@/features/hr'
 import type {
     AFP,
     PayrollConcept
@@ -42,9 +31,7 @@ import { payrollConceptActions, type PayrollConceptActionsCtx } from './payrollC
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
 export function HRSettingsView({ activeTab = "global" }: { activeTab?: string }) {
-    const [loading, setLoading] = useState(true)
-    const [concepts, setConcepts] = useState<PayrollConcept[]>([])
-    const [afps, setAfps] = useState<AFP[]>([])
+    const { settings, concepts, afps, isLoading, updateSettings, createConcept, updateConcept, deleteConcept, createAfp, updateAfp, deleteAfp, refetch } = useHrSettings()
     const [editingConcept, setEditingConcept] = useState<PayrollConcept | null>(null)
 
     // Global Settings Form
@@ -57,40 +44,28 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         }
     })
 
-    const fetchData = useCallback(async () => {
-        try {
-            const [settings, conceptsData, afpsData] = await Promise.all([
-                getGlobalHRSettings(),
-                getPayrollConcepts(),
-                getAFPs()
-            ])
-
+    // Initialize form when settings load
+    const settingsRef = useCallback(() => {
+        if (settings) {
             globalForm.reset({
                 uf_current_value: settings.uf_current_value,
                 utm_current_value: settings.utm_current_value,
                 min_wage_value: settings.min_wage_value || "500000",
             })
-            setConcepts(conceptsData)
-            setAfps(afpsData)
-        } catch (error) {
-            console.error(error)
-            toast.error("Error al cargar datos de RRHH")
-        } finally {
-            setLoading(false)
         }
-    }, [globalForm])
+    }, [settings, globalForm])
 
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            fetchData()
-        })
-    }, [fetchData])
+    // Run once when settings first load
+    const [formInitialized, setFormInitialized] = useState(false)
+    if (settings && !formInitialized) {
+        settingsRef()
+        setFormInitialized(true)
+    }
 
     const conceptDeleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await deletePayrollConcept(id)
+            await deleteConcept(id)
             toast.success("Concepto eliminado")
-            fetchData()
         } catch {
             toast.error("Error al eliminar concepto")
         }
@@ -98,22 +73,21 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
     const afpDeleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await deleteAFP(id)
+            await deleteAfp(id)
             toast.success("AFP eliminada")
-            fetchData()
         } catch {
             toast.error("Error al eliminar AFP")
         }
     })
 
     const onSaveGlobal = useCallback(async (data: GlobalHRFormValues) => {
-        await updateGlobalHRSettings(data)
-    }, [])
+        await updateSettings(data)
+    }, [updateSettings])
 
     const { status: globalStatus, invalidReason: globalInvalidReason, lastSavedAt: globalLastSavedAt, retry: globalRetry } = useAutoSaveForm({
         form: globalForm,
         onSave: onSaveGlobal,
-        enabled: !loading,
+        enabled: !isLoading,
     })
 
     useUnsavedChangesGuard(globalStatus)
@@ -170,9 +144,8 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         payrollConceptActions.column(payrollConceptActionsCtx),
     ]
 
-    if (loading) return <SkeletonShell isLoading={loading} ariaLabel="Cargando configuración de RRHH" />
-
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando configuración de RRHH">
         <div className="max-w-6xl mx-auto space-y-6">
             <FadeIn key={activeTab}>
                 {/* --- Tab: Global --- */}
@@ -252,14 +225,14 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                 <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
                                 <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
                             </div>
-                            <ConceptDialog onSaved={fetchData} />
+                            <ConceptDialog onSaved={() => refetch()} onCreate={createConcept} onUpdate={updateConcept} />
                         </div>
 
                         <div className="flex-1 min-h-0">
                             <DataTable
                                 columns={conceptColumns}
                                 data={concepts}
-                                isLoading={loading}
+                                isLoading={isLoading}
                                 variant="embedded"
                             />
                         </div>
@@ -274,14 +247,14 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                                 <h3 className="text-sm font-black uppercase text-primary tracking-widest">Instituciones Previsionales (AFP)</h3>
                                 <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de comisiones para cálculo individual</p>
                             </div>
-                            <AFPDialog onSaved={fetchData} />
+                            <AFPDialog onSaved={() => refetch()} onCreate={createAfp} onUpdate={updateAfp} />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {afps.map((afp) => (
                                 <Card key={afp.id} variant="default" className="relative overflow-hidden group hover:border-primary/50 transition-all">
                                     <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <AFPDialog afp={afp} onSaved={fetchData} />
+                                        <AFPDialog afp={afp} onSaved={() => refetch()} onCreate={createAfp} onUpdate={updateAfp} />
                                     </div>
                                     <CardHeader className="pb-2">
                                         <CardTitle className="text-lg text-primary">{afp.name}</CardTitle>
@@ -309,9 +282,11 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
             <ConceptDialog
                 key={editingConcept?.id ?? 'new'}
                 concept={editingConcept || undefined}
-                onSaved={fetchData}
+                onSaved={() => refetch()}
                 open={!!editingConcept}
                 onOpenChange={(open) => { if (!open) setEditingConcept(null) }}
+                onCreate={createConcept}
+                onUpdate={updateConcept}
             />
 
             <ActionConfirmModal
@@ -332,16 +307,19 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 variant="destructive"
             />
         </div>
+        </SkeletonShell>
     )
 }
 
 // --- DIALOGS ---
 
-function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: setControlledOpen }: {
+function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: setControlledOpen, onCreate, onUpdate }: {
     concept?: PayrollConcept
     onSaved: () => void
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    onCreate: (data: Record<string, unknown>) => Promise<unknown>
+    onUpdate: (id: number, data: Record<string, unknown>) => Promise<unknown>
 }) {
     const [internalOpen, setInternalOpen] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -380,10 +358,10 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
                 account: Number(data.account),
             }
             if (concept) {
-                await updatePayrollConcept(concept.id, convertedData)
+                await onUpdate(concept.id, convertedData)
                 toast.success("Concepto actualizado")
             } else {
-                await createPayrollConcept(convertedData)
+                await onCreate(convertedData)
                 toast.success("Concepto creado")
             }
             onSaved()
@@ -544,7 +522,7 @@ function ConceptDialog({ concept, onSaved, open: controlledOpen, onOpenChange: s
     )
 }
 
-function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
+function AFPDialog({ afp, onSaved, onCreate, onUpdate }: { afp?: AFP, onSaved: () => void, onCreate: (data: Record<string, unknown>) => Promise<unknown>, onUpdate: (id: number, data: Record<string, unknown>) => Promise<unknown> }) {
     const [open, setOpen] = useState(false)
     const [saving, setSaving] = useState(false)
 
@@ -569,10 +547,10 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                 account: data.account ? Number(data.account) : null,
             }
             if (afp) {
-                await updateAFP(afp.id, convertedData)
+                await onUpdate(afp.id, convertedData)
                 toast.success("AFP actualizada")
             } else {
-                await createAFP(convertedData)
+                await onCreate(convertedData)
                 toast.success("AFP registrada")
             }
             onSaved()
