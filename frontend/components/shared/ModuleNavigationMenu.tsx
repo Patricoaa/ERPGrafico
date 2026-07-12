@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { DynamicIcon } from '@/components/shared'
 import {
@@ -14,7 +13,6 @@ import {
     NavigationMenuTrigger,
     navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { getModuleIconName } from "@/lib/module-registry"
 import { useAuth } from "@/contexts/AuthContext"
 import type { NavigationConfig, NavigationTabConfig, SubTabConfig } from "@/components/providers/HeaderProvider"
 
@@ -24,10 +22,6 @@ interface ModuleNavigationMenuProps {
 
 export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) {
     const { tabs, activeValue, subActiveValue, breadcrumbs } = navigation
-
-    const pathname = usePathname()
-    const segments = pathname.split('/').filter(Boolean)
-    const currentModuleId = segments[0] || 'dashboard'
 
     const { hasPermission } = useAuth()
 
@@ -47,21 +41,6 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
 
     return (
         <div className="flex items-center gap-0 min-w-0 h-full">
-            {/* ── Module Name (Root) — Context Badge ── */}
-            {navigation.moduleName && (
-                <div className="flex items-center shrink-0 mr-4 px-2.5 py-1 bg-muted/40 rounded-md border border-border/40 select-none">
-                    {(() => {
-                        const modIcon = getModuleIconName(currentModuleId)
-                        return modIcon ? (
-                            <DynamicIcon name={modIcon} className="h-4 w-4 shrink-0 text-primary/80 mr-2" />
-                        ) : null
-                    })()}
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                        {navigation.moduleName}
-                    </span>
-                </div>
-            )}
-
             <NavigationMenu className="h-full max-w-full justify-start">
                 <NavigationMenuList className="h-full space-x-1">
                     {visibleItems.map((item) => {
