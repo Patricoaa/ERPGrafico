@@ -499,6 +499,7 @@ class PartnerService:
             raise ValidationError("No se ha configurado la cuenta de Capital Social.")
 
         receivable_account = PartnerService._resolve_partner_receivable_account(partner)
+        social_account = PartnerService._resolve_partner_social_account(partner)
 
         # Journal Entry
         entry = JournalEntry.objects.create(
@@ -516,12 +517,6 @@ class PartnerService:
             credit=0,
         )
         # Cr: Capital Social (Equity)
-        social_account = settings.partner_capital_social_account
-        if not social_account:
-            raise ValidationError(
-                "La cuenta de Capital Social no está configurada globalmente."
-            )
-
         JournalItem.objects.create(
             entry=entry,
             account=social_account,
@@ -587,6 +582,7 @@ class PartnerService:
             raise ValidationError("No se ha configurado la cuenta de Capital Social.")
 
         receivable_account = PartnerService._resolve_partner_receivable_account(partner)
+        social_account = PartnerService._resolve_partner_social_account(partner)
 
         entry = JournalEntry.objects.create(
             description=GlosaBuilder.build(GlosaBuilder.REDUCCION_CAPITAL, partner.display_id, partner.name, amount),
@@ -595,12 +591,6 @@ class PartnerService:
         )
 
         # Dr: Capital Social (Equity reduction)
-        social_account = settings.partner_capital_social_account
-        if not social_account:
-            raise ValidationError(
-                "La cuenta de Capital Social no está configurada globalmente."
-            )
-
         JournalItem.objects.create(
             entry=entry,
             account=social_account,
@@ -857,7 +847,7 @@ class PartnerService:
             date=today,
         )
 
-        # Individual partner transactions + debit items
+        # Individual partner transactions + debit/credit items
         for contact, amount in contacts_with_amounts:
             PartnerTransaction.objects.create(
                 partner=contact,
@@ -870,6 +860,8 @@ class PartnerService:
             )
 
             partner_receivable = PartnerService._resolve_partner_receivable_account(contact)
+            partner_social = PartnerService._resolve_partner_social_account(contact)
+
             JournalItem.objects.create(
                 entry=entry,
                 account=partner_receivable,
@@ -880,14 +872,15 @@ class PartnerService:
                 credit=0,
             )
 
-        # Single credit to Capital Social
-        JournalItem.objects.create(
-            entry=entry,
-            account=settings.partner_capital_social_account,
-            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, "Inicial", "APERTURA"),
-            debit=0,
-            credit=total_capital,
-        )
+            # Cr: Capital Social (per-partner)
+            JournalItem.objects.create(
+                entry=entry,
+                account=partner_social,
+                partner=contact,
+                label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, contact.name, "APERTURA"),
+                debit=0,
+                credit=amount,
+            )
 
         entry.check_balance()
 
@@ -1213,6 +1206,42 @@ class PartnerService:
         parent_account = settings.partner_capital_receivable_account
         if not parent_account:
             raise ValidationError("La cuenta de Aportes por Cobrar Socios no está configurada.")
+
+        child_account = Account.objects.filter(
+            parent=parent_account,
+            name__endswith=f" - {partner.name}",
+        ).first()
+
+        if child_account:
+            return child_account
+
+        child_account = Account(
+            parent=parent_account,
+            name=f"{parent_account.name} - {partner.name}",
+        )
+        child_account.save()
+
+        return child_account
+
+    @staticmethod
+    def _resolve_partner_social_account(partner: Contact):
+        """
+        Resolves the per-partner Capital Social sub-account under the global
+        ``partner_capital_social_account`` parent.
+
+        Same pattern as ``_resolve_partner_receivable_account``: the parent
+        (e.g. 3.1.01) is a category container with children and cannot be
+        posted to directly.  This finds or auto-creates the partner-specific
+        leaf account (e.g. 3.1.01.003).
+
+        Naming convention: ``{parent.name} - {partner.name}``
+        """
+        from accounting.models import Account
+
+        settings = PartnerService._get_settings()
+        parent_account = settings.partner_capital_social_account
+        if not parent_account:
+            raise ValidationError("No se ha configurado la cuenta de Capital Social.")
 
         child_account = Account.objects.filter(
             parent=parent_account,
