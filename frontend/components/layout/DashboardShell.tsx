@@ -12,9 +12,10 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { ModuleNavigationMenu, PageHeaderSkeleton, ModuleLauncher, PrepressPanel, TabBar } from '@/components/shared'
+import { ModuleNavigationMenu, PageHeaderSkeleton, ModuleLauncher, PrepressPanel, TabBar, DynamicIcon } from '@/components/shared'
 import { Loader2, Menu } from "lucide-react"
-import { DynamicIcon } from '@/components/shared'
+import { AnimatePresence, motion } from "framer-motion"
+import { getModuleIconName } from "@/lib/module-registry"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -28,6 +29,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
     const [isModuleLauncherOpen, setIsModuleLauncherOpen] = useState(false)
+    const [isLauncherHovered, setIsLauncherHovered] = useState(false)
+
+    const currentModuleId = pathname.split('/').filter(Boolean)[0] || 'dashboard'
+    const currentModuleIcon = getModuleIconName(currentModuleId)
 
     const { config } = useHeader()
     const { isHubEffectivelyOpen } = useHubPanel()
@@ -69,15 +74,39 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
             <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
-                {/* Hamburger: always-visible module selector trigger */}
+                {/* Module launcher: shows current module icon, hover → hamburger */}
                 <Button
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => setIsModuleLauncherOpen(true)}
+                    onMouseEnter={() => setIsLauncherHovered(true)}
+                    onMouseLeave={() => setIsLauncherHovered(false)}
                     className="flex-none rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
                     aria-label="Seleccionar módulo"
                 >
-                    <Menu className="h-5 w-5" />
+                    <AnimatePresence mode="wait" initial={false}>
+                        {isLauncherHovered ? (
+                            <motion.div
+                                key="hamburger"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                <Menu className="h-5 w-5" />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key={`module-${currentModuleId}`}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                <DynamicIcon name={currentModuleIcon} className="h-5 w-5" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </Button>
                 <ModuleLauncher
                     open={isModuleLauncherOpen}
