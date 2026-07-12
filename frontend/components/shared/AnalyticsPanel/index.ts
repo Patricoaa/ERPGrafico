@@ -7,6 +7,7 @@ export { AnalyticsLayout } from "./AnalyticsLayout"
 export { SummaryTable } from "./shared-utils"
 
 export type {
+    AnalyticsPanelConfig,
     AnalyticsPanelProps,
     AnalyticsTab,
     AnalyticsColumn,
