@@ -39,7 +39,7 @@ const CollapsibleSection = ({
         <Button
             variant="ghost"
             onClick={onToggle}
-            className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+            className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-sm hover:bg-muted/50"
         >
             <span>{title} ({count})</span>
             {expanded ? (
@@ -194,7 +194,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
             <Card
                 key={task.id}
                 className={cn(
-                    "card-base px-3 py-2.5 cursor-pointer group flex flex-col gap-2 w-full",
+                    "card-base rounded-sm px-3 py-2.5 cursor-pointer group flex flex-col gap-2 w-full",
                     "transition-all duration-150 ease-out hover:shadow-sm hover:bg-muted/40",
                     isRejected && "opacity-40 grayscale-[0.5]"
                 )}
@@ -258,7 +258,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 orientation="horizontal"
                 dense
                 className="w-full px-4"
-                contentClassName="mt-3 bg-transparent px-4 flex flex-col"
+                contentClassName="mt-3 bg-transparent flex flex-col"
             >
                 <TabBarContent value="approvals" className="h-full flex flex-col mt-0">
                      <SkeletonShell isLoading={isLoading} ariaLabel="Cargando aprobaciones">
@@ -286,7 +286,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             )}
 
                              {approvalTasks.length === 0 && (
-                                 <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/30 rounded-md border border-dashed text-muted-foreground">
+                                 <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/30 rounded-sm border border-dashed text-muted-foreground">
                                      <CheckCircle2 className="h-8 w-8 mb-2 opacity-20" />
                                      <p className="text-xs">No tienes aprobaciones</p>
                                  </div>
@@ -298,7 +298,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                  <TabBarContent value="tasks" className="h-full flex flex-col mt-0">
                      <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas">
                          {operationalTasks.length === 0 ? (
-                             <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/10 rounded-md border border-dashed text-muted-foreground">
+                             <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/10 rounded-sm border border-dashed text-muted-foreground">
                                  <ListTodo className="h-8 w-8 mb-2 opacity-20" />
                                  <p className="text-xs">No tienes tareas pendientes</p>
                              </div>
