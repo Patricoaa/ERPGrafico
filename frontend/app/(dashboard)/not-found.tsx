@@ -3,6 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useBranding } from "@/contexts/BrandingProvider"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { LayoutDashboard } from "lucide-react"
