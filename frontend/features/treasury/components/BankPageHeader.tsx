@@ -4,15 +4,7 @@ import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { useBanks } from "@/features/treasury"
 import type { PageHeaderStatus } from "@/components/shared"
-
-const BANK_SUB_VIEWS = [
-    { value: "overview", label: "Resumen", iconName: "bar-chart-3" },
-    { value: "movements", label: "Movimientos", iconName: "arrow-left-right" },
-    { value: "checks", label: "Cheques", iconName: "check-square" },
-    { value: "loans", label: "Préstamos", iconName: "landmark" },
-    { value: "cards", label: "Tarjeta", iconName: "credit-card" },
-    { value: "reconciliation", label: "Conciliación", iconName: "git-compare" },
-]
+import { OPERACIONES_SUB_TABS, TERMINAL_COBRO_SUB_TABS, buildBankSubTabs } from "@/features/treasury/navigation"
 
 interface BankPageHeaderProps {
     bankId: number
@@ -29,32 +21,15 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
     const segments = pathname.split('/').filter(Boolean)
     const subSubActiveValue = segments[3] || 'overview'
 
-    const bankSubTabs = [
-        { value: "all", label: "Todos", iconName: "layout-grid", href: "/treasury/bank-center" },
-        ...banks
-            .filter(b => b.is_active)
-            .map(bank => ({
-                value: `bank-${bank.id}`,
-                label: bank.name,
-                iconName: "landmark" as string,
-                href: `/treasury/bank-center/${bank.id}/overview`,
-                subTabs: BANK_SUB_VIEWS.map(sv => ({
-                    value: sv.value,
-                    label: sv.label,
-                    iconName: sv.iconName,
-                    href: `/treasury/bank-center/${bank.id}/${sv.value === 'cards' ? 'cards/unbilled' : sv.value}`,
-                })),
-            })),
-    ]
+    const bankSubTabs = buildBankSubTabs(banks)
 
     const navigation = {
         moduleName: "Tesorería",
         moduleHref: "/treasury",
         tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements", subTabs: OPERACIONES_SUB_TABS },
             { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center", subTabs: bankSubTabs },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
-
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers", subTabs: TERMINAL_COBRO_SUB_TABS },
         ],
         activeValue: "bank-center",
         subActiveValue: `bank-${bankId}`,
