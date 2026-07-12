@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { CollapsibleSheet, PanelHeader } from '@/components/shared'
 import { Zap } from 'lucide-react'
 import { formatEntityDisplay } from '@/lib/entity-registry'
@@ -16,7 +15,7 @@ import { formatPlainDate } from '@/lib/utils'
 import { formatCurrency } from '@/lib/money'
 import { purchaseOrderActions } from '@/features/purchasing'
 import { saleOrderActions } from '@/features/sales'
-import { ordersApi } from '../hooks/useOrdersMutations'
+import { useOrderDetail } from '../hooks/useOrderDetail'
 import type { UserPermissions, ActionCategory as CategoryType } from '@/types/actions'
 import { type Order } from '../types'
 
@@ -35,57 +34,18 @@ export function OrderActionPanel({
     orderType,
     onActionComplete
 }: OrderActionPanelProps) {
-    const [order, setOrder] = useState<Order | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [userPermissions, setUserPermissions] = useState<UserPermissions | null>(null)
+    const { order, userPermissions, isLoading, refetch } = useOrderDetail(orderId, orderType, open && !!orderId)
 
     const actionRegistry = orderType === 'purchase'
         ? purchaseOrderActions
         : saleOrderActions
 
-    const fetchOrderDetails = async () => {
-        setLoading(true)
-        try {
-            const data = orderType === 'purchase'
-                ? await ordersApi.getPurchaseOrder(orderId)
-                : await ordersApi.getSaleOrder(orderId)
-            setOrder(data as Order)
-        } catch (error) {
-            console.error('Error fetching order:', error)
-            toast.error('Error al cargar los detalles de la orden')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const fetchUserPermissions = async () => {
-        try {
-            const data = await ordersApi.getCurrentUser()
-            setUserPermissions({
-                permissions: (data as { permissions?: string[] }).permissions || [],
-                isSuperuser: (data as { is_superuser?: boolean }).is_superuser || false
-            })
-        } catch (error) {
-            console.error('Error fetching user permissions:', error)
-            setUserPermissions({ permissions: [], isSuperuser: false })
-        }
-    }
-
-    useEffect(() => {
-        if (open && orderId) {
-            requestAnimationFrame(() => {
-                fetchOrderDetails()
-                fetchUserPermissions()
-            })
-        }
-    }, [open, orderId])
-
     const filteredActions = order && userPermissions
-        ? filterAvailableActions(actionRegistry, order, userPermissions)
+        ? filterAvailableActions(actionRegistry, order as Order, userPermissions)
         : {}
 
     const handleActionComplete = () => {
-        fetchOrderDetails()
+        refetch()
         onActionComplete?.()
     }
 
@@ -112,7 +72,7 @@ export function OrderActionPanel({
             tabIcon={Zap}
             size="md"
         >
-            <SkeletonShell isLoading={loading} ariaLabel="Cargando panel de acciones">
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando panel de acciones">
             <div className="flex flex-col h-full">
                 <div className="shrink-0 px-6 pt-6 pb-4 border-b">
                     <PanelHeader

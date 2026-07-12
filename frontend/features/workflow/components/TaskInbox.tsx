@@ -1,19 +1,19 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
-import { getTasks, type Task } from '@/features/workflow/api/workflowApi'
+import { useState, useEffect } from "react"
+import { type Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { TabBar, TabBarContent, type TabItem } from "@/components/shared"
+import { TabBar, TabBarContent, type TabItem, SkeletonShell } from "@/components/shared"
 import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, ArrowRight, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { cn } from "@/lib/utils"
-import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useUpdateTask } from "../hooks/useWorkflowMutations"
+import { useTasks } from "../hooks/useTasks"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -59,23 +59,12 @@ const CollapsibleSection = ({
     </div>
 )
 
-function TaskSkeleton() {
-    return (
-        <Card className="card-base p-3 backdrop-blur-sm">
-            <div className="h-4 bg-muted/50 rounded w-3/5 animate-pulse" />
-            <div className="h-3 bg-muted/30 rounded w-2/5 animate-pulse mt-3" />
-        </Card>
-    )
-}
-
 interface TaskInboxProps {
     onCountChange?: (counts: { total: number; approvals: number; tasks: number }) => void
 }
 
 export function TaskInbox({ onCountChange }: TaskInboxProps) {
-    const [approvalTasks, setApprovalTasks] = useState<Task[]>([])
-    const [operationalTasks, setOperationalTasks] = useState<Task[]>([])
-    const [loading, setLoading] = useState(true)
+    const { approvalTasks, operationalTasks, isLoading, refetch } = useTasks()
     const [actioningTask, setActioningTask] = useState<number | null>(null)
     const [activeTab, setActiveTab] = useState("approvals")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
@@ -86,61 +75,6 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const searchParams = useSearchParams()
     const router = useRouter()
     const selectedId = searchParams.get('selected')
-
-    const lastApprovalsCount = useRef<number | null>(null)
-    const lastTasksCount = useRef<number | null>(null)
-
-    const fetchTasks = useCallback(async (silent = false) => {
-        if (!silent) setLoading(true)
-        try {
-            const approvalsRes = await getTasks({ category: 'APPROVAL' })
-            const approvals = Array.isArray(approvalsRes) ? approvalsRes : (approvalsRes.results || [])
-            setApprovalTasks(approvals)
-
-            const tasksRes = await getTasks({ category: 'TASK', status: 'PENDING' })
-            const tasks = Array.isArray(tasksRes) ? tasksRes : (tasksRes.results || [])
-            setOperationalTasks(tasks)
-
-            const currentPendingApprovals = approvals.filter((t: Task) => t.status === 'PENDING').length
-            const currentPendingTasks = tasks.length
-
-            if (silent) {
-                if (lastApprovalsCount.current !== null && currentPendingApprovals > lastApprovalsCount.current) {
-                    toast.success("Nueva aprobación recibida", {
-                        description: "Tienes una nueva solicitud pendiente de revisión.",
-                        duration: 5000,
-                    })
-                }
-                if (lastTasksCount.current !== null && currentPendingTasks > lastTasksCount.current) {
-                    toast.info("Nueva tarea recibida", {
-                        description: "Se ha asignado una nueva tarea operativa a tu bandeja.",
-                        duration: 5000,
-                    })
-                }
-            }
-
-            lastApprovalsCount.current = currentPendingApprovals
-            lastTasksCount.current = currentPendingTasks
-
-        } catch {
-            if (!silent) toast.error("Error al cargar tareas")
-        } finally {
-            if (!silent) setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        const handle = requestAnimationFrame(() => {
-            fetchTasks()
-        })
-        const interval = setInterval(() => {
-            fetchTasks(true)
-        }, 30000)
-        return () => {
-            cancelAnimationFrame(handle)
-            clearInterval(interval)
-        }
-    }, [fetchTasks])
 
     const approvalsPending = approvalTasks.filter(t => t.status === 'PENDING')
     const approvalsCompleted = approvalTasks.filter(t => t.status !== 'PENDING')
@@ -162,24 +96,24 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         if (task.task_type === 'OT_CREATION') {
             const saleOrderId = task.data?.sale_order_id || (task.data?.order_type === 'sale' ? task.object_id : null)
             if (saleOrderId) {
-                openHub({ orderId: saleOrderId, type: 'sale', onActionSuccess: () => fetchTasks() })
+                openHub({ orderId: saleOrderId, type: 'sale', onActionSuccess: () => refetch() })
             } else {
                 openEntity('production.workorder', task.object_id)
             }
         } else if (task.task_type?.includes('OT_')) {
             openEntity('production.workorder', task.object_id)
         } else if (task.task_type?.includes('OC_')) {
-            openHub({ orderId: task.object_id, type: 'purchase', onActionSuccess: () => fetchTasks() })
+            openHub({ orderId: task.object_id, type: 'purchase', onActionSuccess: () => refetch() })
         } else if (task.task_type?.includes('OV_')) {
-            openHub({ orderId: task.object_id, type: 'sale', onActionSuccess: () => fetchTasks() })
+            openHub({ orderId: task.object_id, type: 'sale', onActionSuccess: () => refetch() })
         } else if (task.task_type?.includes('NC_') || task.task_type?.includes('ND_')) {
-            openHub({ orderId: task.object_id, type: 'sale', onActionSuccess: () => fetchTasks() })
+            openHub({ orderId: task.object_id, type: 'sale', onActionSuccess: () => refetch() })
         } else if (task.task_type?.startsWith('HUB_')) {
             const orderType = (task.data?.order_type as 'purchase' | 'sale' | 'obligation') || 'sale'
             if (task.data?.is_invoice || task.task_type?.includes('_NC_') || task.task_type?.includes('_ND_')) {
-                openHub({ orderId: null, invoiceId: task.object_id, type: orderType, onActionSuccess: () => fetchTasks() })
+                openHub({ orderId: null, invoiceId: task.object_id, type: orderType, onActionSuccess: () => refetch() })
             } else {
-                openHub({ orderId: task.object_id, type: orderType, onActionSuccess: () => fetchTasks() })
+                openHub({ orderId: task.object_id, type: orderType, onActionSuccess: () => refetch() })
             }
         } else if (task.task_type === 'CREDIT_POS_REQUEST') {
             toast.info("Usando vista rápida de aprobación (Click en el botón, no en la tarjeta)");
@@ -199,7 +133,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     }
 
     useEffect(() => {
-        if (selectedId && !loading) {
+        if (selectedId && !isLoading) {
             const task = [...approvalTasks, ...operationalTasks].find(t => t.id === parseInt(selectedId))
             if (task) {
                 navigateToTask(task)
@@ -208,7 +142,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 router.replace(`?${params.toString()}`, { scroll: false })
             }
         }
-    }, [selectedId, loading, approvalTasks, operationalTasks])
+    }, [selectedId, isLoading, approvalTasks, operationalTasks])
 
     const { updateTask } = useUpdateTask()
 
@@ -228,7 +162,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
             })
 
             toast.success(`Crédito ${action === 'APPROVE' ? 'Aprobado' : 'Rechazado'}`)
-            fetchTasks()
+            refetch()
         } catch {
             toast.error("Error al procesar la solicitud")
         } finally {
@@ -327,13 +261,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 contentClassName="mt-3 bg-transparent px-4 flex flex-col"
             >
                 <TabBarContent value="approvals" className="h-full flex flex-col mt-0">
-                     {loading ? (
-                         <div className="flex flex-col gap-2">
-                             <TaskSkeleton />
-                             <TaskSkeleton />
-                             <TaskSkeleton />
-                         </div>
-                     ) : (
+                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando aprobaciones">
                          <div className="flex flex-col flex-1">
                              {approvalsPending.length > 0 && (
                                  <CollapsibleSection
@@ -364,26 +292,22 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                                  </div>
                              )}
                          </div>
-                    )}
+                     </SkeletonShell>
                  </TabBarContent>
 
                  <TabBarContent value="tasks" className="h-full flex flex-col mt-0">
-                     {loading ? (
-                         <div className="flex flex-col gap-2">
-                             <TaskSkeleton />
-                             <TaskSkeleton />
-                             <TaskSkeleton />
-                         </div>
-                     ) : operationalTasks.length === 0 ? (
-                         <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/10 rounded-md border border-dashed text-muted-foreground">
-                             <ListTodo className="h-8 w-8 mb-2 opacity-20" />
-                             <p className="text-xs">No tienes tareas pendientes</p>
-                         </div>
-                      ) : (
-                          <div className="space-y-2">
-                              {operationalTasks.map(task => renderTaskCard(task))}
-                          </div>
-                      )}
+                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas">
+                         {operationalTasks.length === 0 ? (
+                             <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/10 rounded-md border border-dashed text-muted-foreground">
+                                 <ListTodo className="h-8 w-8 mb-2 opacity-20" />
+                                 <p className="text-xs">No tienes tareas pendientes</p>
+                             </div>
+                          ) : (
+                              <div className="space-y-2">
+                                  {operationalTasks.map(task => renderTaskCard(task))}
+                              </div>
+                          )}
+                     </SkeletonShell>
                  </TabBarContent>
              </TabBar>
          </div>

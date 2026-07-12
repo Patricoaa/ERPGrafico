@@ -13,6 +13,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { purchasingApi } from "../api/purchasingApi"
+import { useReceiptData } from "../hooks/useReceiptData"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -64,15 +65,15 @@ export function ReceiptModal({
     filterType = 'ALL'
 }: ReceiptModalProps) {
     const { dateString } = useServerDate()
-    const [order, setOrder] = useState<PurchaseOrder | null>(null)
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
+    const { order: orderData, warehouses: warehousesData, isLoading } = useReceiptData(orderId, open && !!orderId)
+    const order = orderData as unknown as PurchaseOrder | null
+    const warehouses = warehousesData as unknown as Warehouse[]
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [receiptQuantities, setReceiptQuantities] = useState<{ [lineId: number]: number }>({})
     const [receiptCosts, setReceiptCosts] = useState<{ [lineId: number]: number }>({})
     const [receiptDate, setReceiptDate] = useState("")
     const [deliveryReference, setDeliveryReference] = useState("")
     const [notes, setNotes] = useState("")
-    const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [isPartialReceipt, setIsPartialReceipt] = useState(false)
 
@@ -85,50 +86,26 @@ export function ReceiptModal({
         }
     }, [dateString])
 
-    const fetchData = async () => {
-        setLoading(true)
-        try {
-            // Fetch order details
-            const orderData = await purchasingApi.getOrder(orderId) as unknown as PurchaseOrder
-            setOrder(orderData)
-
-            // Initialize quantities and costs
+    // Initialize from hook data when it loads
+    useEffect(() => {
+        if (order) {
             const initialQuantities: { [lineId: number]: number } = {}
             const initialCosts: { [lineId: number]: number } = {}
 
-            orderData.lines.forEach((line: PurchaseOrderLine) => {
+            order.lines.forEach((line: PurchaseOrderLine) => {
                 initialQuantities[line.id] = Math.ceil(line.quantity_pending)
                 initialCosts[line.id] = Math.ceil(line.unit_cost)
             })
             setReceiptQuantities(initialQuantities)
             setReceiptCosts(initialCosts)
 
-            // Fetch warehouses
-            const warehousesData = await purchasingApi.getWarehouses()
-            const warehousesList = warehousesData as unknown as Warehouse[]
-            setWarehouses(warehousesList)
-
-            // Default to order warehouse
-            if (orderData.warehouse) {
-                setSelectedWarehouse(orderData.warehouse)
-            } else if (warehousesList.length > 0) {
-                setSelectedWarehouse(warehousesList[0].id)
+            if (order.warehouse) {
+                setSelectedWarehouse(order.warehouse)
+            } else if (warehouses.length > 0) {
+                setSelectedWarehouse(warehouses[0].id)
             }
-        } catch (error) {
-            console.error("Error fetching data:", error)
-            toast.error(isRefund ? "Error al cargar los datos de devolución" : "Error al cargar los datos de recepción")
-        } finally {
-            setLoading(false)
         }
-    }
-
-    useEffect(() => {
-        if (open && orderId) {
-            requestAnimationFrame(() => {
-                fetchData()
-            })
-        }
-    }, [open, orderId])
+    }, [order, warehouses, selectedWarehouse])
 
     const handleQuantityChange = (lineId: number, value: string) => {
         const numValue = Math.ceil(parseFloat(value) || 0)
@@ -235,7 +212,7 @@ export function ReceiptModal({
                             <SubmitButton
                                 onClick={handleReceive}
                                 loading={submitting}
-                                disabled={loading || !selectedWarehouse}
+                                disabled={isLoading || !selectedWarehouse}
                             >
                                 {isRefund ? 'Confirmar Devolución' : (filterType === 'SERVICE' ? 'Confirmar Entrega' : 'Confirmar Recepción')}
                             </SubmitButton>
@@ -244,7 +221,7 @@ export function ReceiptModal({
                 />
             }
         >
-            <SkeletonShell isLoading={loading} ariaLabel="Cargando datos de orden">
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando datos de orden">
                 <div className="space-y-4">
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">

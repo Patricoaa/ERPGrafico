@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/table"
 import { Chip } from "@/components/shared"
 import { toast } from "sonner"
-import { ordersApi, useProcessLogistics } from "../hooks/useOrdersMutations"
+import { useProcessLogistics } from "../hooks/useOrdersMutations"
+import { useNoteLogisticsData } from "../hooks/useNoteLogisticsData"
 import {Loader2} from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 
@@ -42,13 +43,12 @@ interface NoteLogisticsModalProps {
 export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
     const { dateString } = useServerDate()
     const { processLogistics } = useProcessLogistics()
-    const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
+    const { warehouses, invoice: freshInvoice, isLoading, refetchInvoice } = useNoteLogisticsData(invoice?.id ?? null, open && !!invoice)
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
     const [displayLines, setDisplayLines] = useState<InvoiceLine[]>((invoice?.lines as unknown as InvoiceLine[]) || [])
     const [date, setDate] = useState("")
     const [notes, setNotes] = useState("")
-    const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
 
     // Sync date with server date
@@ -60,51 +60,26 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
 
     const isSale = !!invoice?.sale_order || !!(invoice as Record<string, unknown>)?.['sale_order_number']
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
-    // const lines = invoice?.lines || [] // REMOVED: Use displayLines instead
 
-    const fetchData = async () => {
-        setLoading(true)
-        try {
-            const warehousesList = await ordersApi.getWarehouses() as Record<string, unknown>[]
-            setWarehouses(warehousesList)
-
-            if (warehousesList.length > 0) {
-                setSelectedWarehouse(warehousesList[0].id as number)
-            }
-
-            const freshInvoice = await ordersApi.getInvoice(invoice.id) as Record<string, unknown>
-            const freshLines = (freshInvoice.lines || []) as InvoiceLine[]
-
+    // Initialize from hook data when it loads
+    useEffect(() => {
+        if (freshInvoice) {
+            const freshLines = ((freshInvoice as Record<string, unknown>).lines || []) as InvoiceLine[]
             setDisplayLines(freshLines)
 
-            // Initialize quantities with pending based on FRESH data
             const initial: { [pId: number]: number } = {}
             freshLines.forEach((line: InvoiceLine) => {
-                // Determine processed qty based on type
-                // Note: The serializer returns 'quantity_delivered' for Sales (even if it's returns for NC)
-                // and 'quantity_received' for Purchases.
                 const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
                 const pending = Math.max(0, line.quantity - processed)
                 initial[line.product_id] = pending
             })
             setProcessQuantities(initial)
-        } catch (error) {
-            console.error("Error fetching data:", error)
-            toast.error("Error al cargar datos actualizados del documento")
-        } finally {
-            setLoading(false)
-        }
-    }
 
-    useEffect(() => {
-        if (open && invoice) {
-            requestAnimationFrame(() => {
-                // Reset display lines to props initially while loading fresh data
-                setDisplayLines((invoice.lines as unknown as InvoiceLine[]) || [])
-                fetchData()
-            })
+            if (warehouses.length > 0 && !selectedWarehouse) {
+                setSelectedWarehouse(warehouses[0].id as number)
+            }
         }
-    }, [open, invoice])
+    }, [freshInvoice, isSale, warehouses, selectedWarehouse])
 
     const handleQuantityChange = (pId: number, value: string, max: number) => {
         const num = parseFloat(value) || 0
@@ -165,14 +140,14 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
             footer={
                 <>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={submitting || loading}>
+                    <Button onClick={handleSubmit} disabled={submitting || isLoading}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirmar Movimiento
                     </Button>
                 </>
             }
         >
-            <SkeletonShell isLoading={loading} ariaLabel="Cargando datos del documento">
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando datos del documento">
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledSelect

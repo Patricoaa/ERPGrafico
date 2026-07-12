@@ -1,64 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { financeApi } from "../../api/financeApi"
 import { DataCell, DataTable, EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared'
+import { useSimulationQuery } from "../hooks/useReconciliationQueries"
 
 import {formatPlainDate} from "@/lib/utils"
 import type { ColumnDef } from "@tanstack/react-table"
 
-interface SimulationResult {
-    line: {
-        description: string;
-        date: string;
-        amount: number | string;
-    };
-    payment: {
-        partner?: string;
-        reference?: string;
-        amount: number | string;
-    };
-    score: number;
-}
-
 export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
-    const [results, setResults] = useState<SimulationResult[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(false)
+    const { data: results, isLoading, isError } = useSimulationQuery(rule)
 
-    useEffect(() => {
-        const simulate = async () => {
-            setLoading(true)
-            setError(false)
-            try {
-                const treasuryAccount = rule.treasury_account as Record<string, unknown> | undefined
-                const payload = {
-                    ...rule,
-                    treasury_account_id: treasuryAccount?.id
-                }
-                const response = await financeApi.simulateRule(payload) as Record<string, unknown>
-                setResults((response.results as SimulationResult[]))
-            } catch (error) {
-                console.error("Simulation error", error)
-                setError(true)
-            } finally {
-                setLoading(false)
-            }
-        }
-        simulate()
-    }, [rule])
+    if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
-
-    if (error) {
+    if (isError) {
         return <EmptyState context="finance" variant="compact" title="Error de simulación" description="No se pudieron simular las reglas." />
     }
 
-    if (results.length === 0) {
+    if (!results || results.length === 0) {
         return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />
     }
 
-    const columns: ColumnDef<SimulationResult>[] = [
+    const columns: ColumnDef<typeof results[number]>[] = [
         {
             header: "Línea Banco",
             cell: ({ row }) => (
