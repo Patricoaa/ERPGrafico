@@ -9,6 +9,7 @@ import { ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
 import { ActionConfirmModal, PageHeader } from '@/components/shared'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { OPERACIONES_SUB_TABS, TERMINAL_COBRO_SUB_TABS } from '@/features/treasury/navigation'
 
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -53,9 +54,9 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
         moduleName: "Tesorería",
         moduleHref: "/treasury",
         tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements", subTabs: OPERACIONES_SUB_TABS },
             { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center" },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers", subTabs: TERMINAL_COBRO_SUB_TABS },
         ],
         activeValue: "bank-center",
         breadcrumbs: [

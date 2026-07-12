@@ -3,18 +3,10 @@
 import { usePathname } from "next/navigation"
 import { useMemo } from "react"
 import { PageHeader } from "@/components/shared"
-import { getEntityIconName } from "@/lib/entity-registry"
 import { useBanks } from "@/features/treasury"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
-
-const BANK_SUB_VIEWS = [
-    { value: "overview", label: "Resumen", iconName: "bar-chart-3" },
-    { value: "movements", label: "Movimientos", iconName: "arrow-left-right" },
-    { value: "checks", label: "Cheques", iconName: "check-square" },
-    { value: "loans", label: "Préstamos", iconName: "landmark" },
-    { value: "cards", label: "Tarjeta", iconName: "credit-card" },
-    { value: "reconciliation", label: "Conciliación", iconName: "git-compare" },
-]
+import { getEntityIconName } from "@/lib/entity-registry"
+import { OPERACIONES_SUB_TABS, TERMINAL_COBRO_SUB_TABS, buildBankSubTabs } from "@/features/treasury/navigation"
 
 export function TreasuryHeader() {
     const pathname = usePathname()
@@ -49,37 +41,15 @@ export function TreasuryHeader() {
         return undefined
     }, [activeValue, segments])
 
-    const bankSubTabs = useMemo(() => {
-        const allTab = { value: 'all', label: 'Todos', iconName: 'layout-grid', href: '/treasury/bank-center' }
-        const bankTabs = banks
-            .filter(b => b.is_active)
-            .map(bank => ({
-                value: `bank-${bank.id}`,
-                label: bank.name,
-                iconName: 'landmark' as string,
-                href: `/treasury/bank-center/${bank.id}/overview`,
-                subTabs: BANK_SUB_VIEWS.map(sv => ({
-                    value: sv.value,
-                    label: sv.label,
-                    iconName: sv.iconName,
-                    href: `/treasury/bank-center/${bank.id}/${sv.value === 'cards' ? 'cards/unbilled' : sv.value}`,
-                })),
-            }))
-        return [allTab, ...bankTabs]
-    }, [banks])
+    const bankSubTabs = useMemo(() => buildBankSubTabs(banks), [banks])
 
     const tabs = [
         {
             value: "operaciones",
             label: "Operaciones",
             iconName: "banknote",
-            href: getViewModeUrl('treasury.treasurymovement', "/treasury/operaciones/movements"),
-            subTabs: [
-                { value: "movements", label: "Movimientos", href: getViewModeUrl('treasury.treasurymovement', "/treasury/operaciones/movements"), iconName: getEntityIconName('treasury.treasurymovement') },
-                { value: "accounts", label: "Cuentas de Tesorería", href: getViewModeUrl('treasury.treasuryaccount', "/treasury/operaciones/accounts"), iconName: getEntityIconName('treasury.treasuryaccount') },
-                { value: "methods", label: "Métodos de Pago", href: getViewModeUrl('treasury.paymentmethod', "/treasury/operaciones/methods"), iconName: getEntityIconName('treasury.paymentmethod') },
-                { value: "checks", label: "Cheques Recibidos", href: getViewModeUrl('treasury.check', "/treasury/operaciones/checks"), iconName: getEntityIconName('treasury.check') },
-            ]
+            href: "/treasury/operaciones/movements",
+            subTabs: OPERACIONES_SUB_TABS,
         },
         {
             value: "bank-center",
@@ -93,11 +63,7 @@ export function TreasuryHeader() {
             label: "Terminal de Cobro",
             iconName: "credit-card",
             href: "/treasury/terminal-cobro/providers",
-            subTabs: [
-                { value: "providers", label: "Proveedores", iconName: getEntityIconName('treasury.terminalprovider'), href: getViewModeUrl('treasury.terminalprovider', "/treasury/terminal-cobro/providers") },
-                { value: "devices", label: "Dispositivos", iconName: getEntityIconName('treasury.terminaldevice'), href: getViewModeUrl('treasury.terminaldevice', "/treasury/terminal-cobro/devices") },
-                { value: "batches", label: "Lotes de Pago", iconName: getEntityIconName('treasury.terminalbatch'), href: getViewModeUrl('treasury.terminalbatch', "/treasury/terminal-cobro/batches") },
-            ]
+            subTabs: TERMINAL_COBRO_SUB_TABS,
         },
     ]
 

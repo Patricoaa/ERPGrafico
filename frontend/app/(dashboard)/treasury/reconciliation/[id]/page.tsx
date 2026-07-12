@@ -23,6 +23,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 
 import { DataCell } from '@/components/shared'
 import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx, useBankStatement, treasuryApi } from '@/features/treasury'
+import { OPERACIONES_SUB_TABS, TERMINAL_COBRO_SUB_TABS } from '@/features/treasury/navigation'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -268,9 +269,9 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         moduleName: "Tesorería",
         moduleHref: "/treasury",
         tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements", subTabs: OPERACIONES_SUB_TABS },
             { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center" },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers", subTabs: TERMINAL_COBRO_SUB_TABS },
         ],
         activeValue: "bank-center",
         breadcrumbs: [
