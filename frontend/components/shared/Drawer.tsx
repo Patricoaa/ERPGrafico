@@ -50,6 +50,11 @@ export interface DrawerProps extends PanelBaseProps {
     maxSize?: number | string
 
     modal?: boolean
+
+    /**
+     * Clases CSS aplicadas al viewport interno del ScrollArea (el contenedor scrolleable).
+     */
+    viewportClassName?: string
 }
 
 export function Drawer({
@@ -74,7 +79,8 @@ export function Drawer({
     headerClassName,
     footerClassName,
     titleClassName,
-    modal
+    modal,
+    viewportClassName
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
     const [size, setSize] = useState<number | string>(
@@ -275,7 +281,7 @@ export function Drawer({
                     "flex-1 flex flex-col pt-2",
                     mode === "view" && "bg-muted/30",
                     contentClassName
-                )}>
+                )} viewportClassName={viewportClassName}>
                     {children}
                 </ScrollArea>
 

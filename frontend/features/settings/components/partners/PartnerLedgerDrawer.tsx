@@ -176,13 +176,14 @@ export function PartnerLedgerDrawer({
             resizable={false}
             showOverlay={true}
             defaultSize="80%"
+            viewportClassName="!overflow-hidden [&>div]:!block [&>div]:h-full [&>div]:min-h-0 [&>div]:overflow-hidden"
         >
             {loading ? (
                 <div className="p-4">
                     <SkeletonShell isLoading ariaLabel="Cargando..." />
                 </div>
             ) : (
-                <div className="p-4 animate-in fade-in duration-500 flex-1 min-h-0 flex flex-col">
+                <div className="p-4 animate-in fade-in duration-500 h-full min-h-0 flex flex-col">
                     <DataTable
                         columns={columns}
                         data={filteredTransactions}
