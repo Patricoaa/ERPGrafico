@@ -16,6 +16,7 @@ from accounting.models import (
     BSCategory,
     Budget,
     BudgetItem,
+    ClosingChecklistTemplate,
     FiscalYear,
     JournalEntry,
     JournalItem,
@@ -25,8 +26,25 @@ from accounting.utils import get_default_vat_rate
 from billing.models import Invoice
 from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
-from contacts.partner_models import PartnerEquityStake, PartnerTransaction
-from core.models import Attachment, CompanySettings, GlobalSearchIndex, IdempotencyRecord, User
+from contacts.partner_models import (
+    PartnerEquityStake,
+    PartnerTransaction,
+    ProfitDistributionLine,
+    ProfitDistributionLineDestination,
+    ProfitDistributionPayment,
+    ProfitDistributionResolution,
+)
+from core.models import (
+    ActionLog,
+    Attachment,
+    BackgroundJob,
+    CompanySettings,
+    GlobalSearchIndex,
+    IdempotencyRecord,
+    PeriodReopenLog,
+    User,
+    UserPreference,
+)
 from hr.models import (
     AFP,
     Absence,
@@ -40,19 +58,23 @@ from hr.models import (
     SalaryAdvance,
 )
 from inventory.models import (
+    InventoryCount,
+    InventoryCountLine,
+    InventoryDocument,
+    InventoryDocumentDetail,
+    Location,
     PricingRule,
     Product,
     ProductAttribute,
     ProductAttributeValue,
     ProductCategory,
+    ProductUoMPrice,
+    Stock,
     StockMove,
     Subscription,
     UoM,
     UoMCategory,
     Warehouse,
-    InventoryDocument,
-    InventoryDocumentDetail,
-    Location,
 )
 from inventory.services import InventoryService
 from production.models import (
@@ -327,6 +349,13 @@ class Command(BaseCommand):
                 self._close_past_periods(accounts)
                 self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Syncing Permissions...")
+            from django.core.management import call_command
+            call_command("sync_permissions", verbosity=0)
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
+
         elapsed = time.time() - seed_start
         self.stdout.write(f"\n{'═' * 50}")
         self.stdout.write(
@@ -442,8 +471,6 @@ class Command(BaseCommand):
 
         from django.db import connection
 
-        from core.models import ActionLog
-
         purge_start = time.time()
         total_records = 0
         section_records = 0
@@ -485,8 +512,11 @@ class Command(BaseCommand):
         _section_header("0. System & Logs")
         _safe_delete(ActionLog, "ActionLog")
         _safe_delete(Attachment, "Attachment")
+        _safe_delete(BackgroundJob, "BackgroundJob")
         _safe_delete(GlobalSearchIndex, "GlobalSearchIndex")
         _safe_delete(IdempotencyRecord, "IdempotencyRecord")
+        _safe_delete(PeriodReopenLog, "PeriodReopenLog")
+        _safe_delete(UserPreference, "UserPreference")
         _safe_delete(Transition, "Transition")
         _safe_delete(Comment, "Comment")
         _safe_delete(WorkflowSettings, "WorkflowSettings")
@@ -571,6 +601,7 @@ class Command(BaseCommand):
         _section_header("7.5. Checks & Loans")
         _safe_delete(Check, "Check")
         _safe_delete(Checkbook, "Checkbook")
+        _safe_delete(CreditLine, "CreditLine")
         _safe_delete(LoanInstallment, "LoanInstallment")
         _safe_delete(BankLoan, "BankLoan")
         self.stdout.write(f"  {' ':<45} {section_records:>6} total")
@@ -586,8 +617,16 @@ class Command(BaseCommand):
         _safe_delete(CardPurchaseGroup, "CardPurchaseGroup")
         self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # ── 9. Financial Core ────────────────────────────────
-        _section_header("9. Financial Core")
+        # ── 9. Partner Distributions (must purge BEFORE FiscalYear — PROTECT FK) ──
+        _section_header("9. Partner Distributions")
+        _safe_delete(ProfitDistributionPayment, "ProfitDistributionPayment")
+        _safe_delete(ProfitDistributionLineDestination, "ProfitDistributionLineDestination")
+        _safe_delete(ProfitDistributionLine, "ProfitDistributionLine")
+        _safe_delete(ProfitDistributionResolution, "ProfitDistributionResolution")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+
+        # ── 9.5. Financial Core ────────────────────────────────
+        _section_header("9.5. Financial Core")
         _safe_delete(JournalEntry, "JournalEntry")
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
@@ -611,11 +650,16 @@ class Command(BaseCommand):
 
         # ── 10. Master Data & Basics ─────────────────────────
         _section_header("10. Master Data & Basics")
+        _safe_delete(ClosingChecklistTemplate, "ClosingChecklistTemplate")
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
         _safe_delete(ProductAttribute, "ProductAttribute")
+        _safe_delete(ProductUoMPrice, "ProductUoMPrice")
         _safe_delete(Product, "Product")
         _safe_delete(ProductCategory, "ProductCategory")
+        _safe_delete(InventoryCountLine, "InventoryCountLine")
+        _safe_delete(InventoryCount, "InventoryCount")
+        _safe_delete(Stock, "Stock")
         _safe_delete(Warehouse, "Warehouse")
         _safe_delete(PartnerEquityStake, "PartnerEquityStake")
         _safe_delete(Contact, "Contact")
