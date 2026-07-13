@@ -73,12 +73,12 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
 
     return (
         <Tabs value={activeTab} className="w-full flex flex-col">
-            <div className="pt-0">
-                <TabsContent value="account" className="mt-0 outline-none space-y-6">
+            <div className="pt-0 flex-1 min-h-0 flex flex-col">
+                <TabsContent value="account" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
                     <AccountTab activeSubTab={activeSubTab} />
                 </TabsContent>
 
-                <TabsContent value="personal" className="mt-0 outline-none space-y-6">
+                <TabsContent value="personal" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
                     <PersonalTab
                         profile={profile}
                         selectedPayrolls={selectedPayrolls}
@@ -90,7 +90,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
                 </TabsContent>
 
                 {isPartner && contactDetail && (
-                    <TabsContent value="partner" className="mt-0 outline-none space-y-6">
+                    <TabsContent value="partner" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
                         <PartnerProfileTab contactId={contactDetail.id} />
                     </TabsContent>
                 )}
@@ -105,7 +105,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
 function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
 
     return (
-        <div className="w-full h-full space-y-8">
+        <div className="w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-8 pb-6">
             {activeSubTab === "preferences" && (
                 <FadeIn delay={0.1} yOffset={10}>
                     <ThemeSelectionCard />
