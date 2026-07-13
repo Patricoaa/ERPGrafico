@@ -82,7 +82,7 @@ export function ProfileLayoutClient({ children }: { children: ReactNode }) {
 
     return (
         <>
-            <PageContainer className="flex flex-col" scrollable>
+            <PageContainer className="flex flex-col">
                 <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
                 <div className="flex-1 min-h-0 flex flex-col">
                     {isLoading ? (
