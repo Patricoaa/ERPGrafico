@@ -371,7 +371,7 @@ function PersonalTab({
 
     if (!employee) {
         return (
-            <div className="max-w-3xl">
+            <div className="flex-1 flex items-center justify-center w-full">
                 <EmptyState
                     icon={User}
                     title="Sin Ficha de Empleado"
@@ -583,7 +583,7 @@ function PersonalTab({
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <Card >
+                    <Card className="flex-1 flex flex-col">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Historial de Liquidaciones</CardTitle>
                             <CardDescription>
@@ -605,7 +605,7 @@ function PersonalTab({
                                     </ActionSlideButton>
                                 </div>
                             )}
-                            <div className="flex-1 min-h-0">
+                            <div className="flex-1 min-h-0 flex flex-col">
                                 {payrolls.length > 0 ? (
                                     <DataTable
                                         columns={payrollColumns}
@@ -634,12 +634,14 @@ function PersonalTab({
                                         }}
                                     />
                                 ) : (
-                                    <EmptyState
-                                        context="generic"
-                                        icon={FileText}
-                                        title="No tiene liquidaciones"
-                                        description="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
-                                    />
+                                    <div className="flex-1 flex items-center justify-center h-full">
+                                        <EmptyState
+                                            context="generic"
+                                            icon={FileText}
+                                            title="No tiene liquidaciones"
+                                            description="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
+                                        />
+                                    </div>
                                 )}
                             </div>
                         </CardContent>
@@ -650,15 +652,15 @@ function PersonalTab({
             {/* Sub-tab 3: Pagos */}
             {activeSubTab === "payments" && (
                 <FadeIn delay={0.2} yOffset={10}>
-                    <Card >
+                    <Card className="flex-1 flex flex-col">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Historial de Pagos y Anticipos</CardTitle>
                             <CardDescription>
                                 {unifiedPayments.length} transacción(es) registrada(s)
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-0">
-                            <div className="px-0">
+                        <CardContent className="p-0 flex-1 flex flex-col">
+                            <div className="px-0 flex-1 flex flex-col">
                                 {unifiedPayments.length > 0 ? (
                                     <DataTable
                                         columns={unifiedPaymentColumns}
@@ -669,12 +671,14 @@ function PersonalTab({
                                         toolbarClassName="px-6 pt-6 pb-2"
                                     />
                                 ) : (
-                                    <EmptyState
-                                        context="generic"
-                                        icon={CreditCard}
-                                        title="No tiene transacciones"
-                                        description="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
-                                    />
+                                    <div className="flex-1 flex items-center justify-center h-full">
+                                        <EmptyState
+                                            context="generic"
+                                            icon={CreditCard}
+                                            title="No tiene transacciones"
+                                            description="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
+                                        />
+                                    </div>
                                 )}
                             </div>
                         </CardContent>
