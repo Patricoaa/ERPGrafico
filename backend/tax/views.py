@@ -17,6 +17,7 @@ from .serializers import (
     AccountingPeriodSerializer,
     F29CalculationRequestSerializer,
     F29DeclarationSerializer,
+    F29DeclarationWriteSerializer,
     F29PaymentSerializer,
     F29RegistrationSerializer,
     TaxPeriodSerializer,
@@ -89,6 +90,11 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
     filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
     ordering_fields = ["tax_period__year", "tax_period__month", "declaration_date"]
     ordering = ["-tax_period__year", "-tax_period__month"]
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return F29DeclarationWriteSerializer
+        return F29DeclarationSerializer
 
     def create(self, request, *args, **kwargs):
         from .services_ext import TaxServiceExt

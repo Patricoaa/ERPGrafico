@@ -14,7 +14,12 @@ from core.mixins import AuditHistoryMixin
 
 from .models import Contact
 from .selectors import ContactSelector, list_contacts, list_credit_portfolio
-from .serializers import ContactListSerializer, ContactSerializer, PartnerListSerializer
+from .serializers import (
+    ContactListSerializer,
+    ContactSerializer,
+    ContactWriteSerializer,
+    PartnerListSerializer,
+)
 
 
 class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -48,6 +53,8 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """Use lightweight serializer for list and partners actions"""
         if self.action == "list":
             return ContactListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return ContactWriteSerializer
         if self.action == "partners":
             return PartnerListSerializer
         return ContactSerializer

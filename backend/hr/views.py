@@ -31,12 +31,15 @@ from .serializers import (
     AbsenceSerializer,
     AFPSerializer,
     EmployeeConceptAmountSerializer,
+    EmployeePayrollPreviewSerializer,
     EmployeeSerializer,
+    EmployeeWriteSerializer,
     GlobalHRSettingsSerializer,
     PayrollConceptSerializer,
     PayrollDetailSerializer,
     PayrollItemSerializer,
     PayrollListSerializer,
+    PayrollWriteSerializer,
     PayrollPaymentSerializer,
     SalaryAdvanceSerializer,
 )
@@ -125,6 +128,11 @@ class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
     serializer_class = EmployeeSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return EmployeeWriteSerializer
+        return EmployeeSerializer
     filterset_class = EmployeeFilter
     search_fields = ["contact__name", "contact__tax_id", "position"]
 
@@ -179,7 +187,9 @@ class PayrollViewSet(viewsets.ModelViewSet):
     search_fields = ["employee__contact__name"]
 
     def get_serializer_class(self):
-        if self.action in ("retrieve", "create", "update", "partial_update"):
+        if self.action in ("create", "update", "partial_update"):
+            return PayrollWriteSerializer
+        if self.action == "retrieve":
             return PayrollDetailSerializer
         return PayrollListSerializer
 
