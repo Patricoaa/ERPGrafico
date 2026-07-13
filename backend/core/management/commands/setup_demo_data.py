@@ -320,6 +320,13 @@ class Command(BaseCommand):
             self._create_demo_budget(accounts)
             self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
+            if not options["no_demo_flows"] and not options["only_infra"]:
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Closing Past Periods (F29 + Accounting)...")
+                self._close_past_periods(accounts)
+                self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
+
         elapsed = time.time() - seed_start
         self.stdout.write(f"\n{'═' * 50}")
         self.stdout.write(
@@ -2172,36 +2179,28 @@ class Command(BaseCommand):
             )
 
     def _create_periods(self):
-        """Creates tax and accounting periods for the current year."""
+        """Creates tax and accounting periods for the current year — all OPEN.
+
+        Periods are closed later by _close_past_periods() after all
+        transactions and F29 declarations have been created.
+        """
         current_year = timezone.now().year
-        current_month = timezone.now().month
         periods = []
-        # Create periods from January to current_month
-        for month in range(1, current_month + 1):
-            status = TaxPeriod.Status.OPEN
-            if month < current_month:
-                status = TaxPeriod.Status.CLOSED
-
+        for month in range(1, 13):
             tax_period, _ = TaxPeriod.objects.get_or_create(
-                year=current_year, month=month, defaults={"status": status}
+                year=current_year, month=month,
+                defaults={"status": TaxPeriod.Status.OPEN},
             )
-
             acc_period, _ = AccountingPeriod.objects.get_or_create(
-                year=current_year,
-                month=month,
-                defaults={"status": status, "tax_period": tax_period},
+                year=current_year, month=month,
+                defaults={
+                    "status": AccountingPeriod.Status.OPEN,
+                    "tax_period": tax_period,
+                },
             )
-
-            # Close them if they are in the past
-            if status == TaxPeriod.Status.CLOSED:
-                tax_period.closed_at = timezone.now()
-                tax_period.save()
-                acc_period.closed_at = timezone.now()
-                acc_period.save()
-
             periods.append({"tax": tax_period, "acc": acc_period})
 
-        self.stdout.write(f"    ✓ {len(periods)} periods created/verified for {current_year}.")
+        self.stdout.write(f"    ✓ {len(periods)} periods created (all OPEN) for {current_year}.")
         return periods
 
     def _create_sales_purchasing_demo(self, accounts, partners, inventory, periods):
@@ -2458,7 +2457,7 @@ class Command(BaseCommand):
             PurchasingService.receive_order(po1, wh)
             BillingService.create_purchase_bill(
                 po1,
-                supplier_invoice_number="FAC-SUP-001",
+                supplier_invoice_number=f"OC-{po1.number}",
                 date=today,
             )
             TreasuryService.create_movement(
@@ -2513,7 +2512,7 @@ class Command(BaseCommand):
             PurchasingService.receive_order(po2, wh)
             BillingService.create_purchase_bill(
                 po2,
-                supplier_invoice_number="FAC-SUP-002",
+                supplier_invoice_number=f"OC-{po2.number}",
                 date=today,
             )
             TreasuryService.create_card_purchase(
@@ -2571,7 +2570,7 @@ class Command(BaseCommand):
             PurchasingService.receive_order(po3, wh)
             BillingService.create_purchase_bill(
                 po3,
-                supplier_invoice_number="FAC-SUP-003",
+                supplier_invoice_number=f"OC-{po3.number}",
                 date=today,
             )
             chile_bank = Bank.objects.get(code="CHILE")
@@ -2627,20 +2626,17 @@ class Command(BaseCommand):
             po.save()
             PurchaseOrderService().confirm(po, user=admin)
             PurchasingService.receive_order(po, wh)
-            try:
-                BillingService.create_purchase_bill(
-                    po, supplier_invoice_number=f"FAC-SUP-MM-{month:02d}", date=order_date,
-                )
-                TreasuryService.create_movement(
-                    amount=po.total,
-                    movement_type=TreasuryMovement.Type.OUTBOUND,
-                    payment_method=TreasuryMovement.Method.TRANSFER,
-                    date=order_date, created_by=admin,
-                    from_account=bco_estado, partner=supplier,
-                    purchase_order=po, reference=f"Pago OC MultiMonth {month:02d}",
-                )
-            except Exception:
-                pass  # Skip invoice/payment for closed tax periods
+            BillingService.create_purchase_bill(
+                po, supplier_invoice_number=f"OC-{po.number}", date=order_date,
+            )
+            TreasuryService.create_movement(
+                amount=po.total,
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=order_date, created_by=admin,
+                from_account=bco_estado, partner=supplier,
+                purchase_order=po, reference=f"Pago OC MultiMonth {month:02d}",
+            )
             self.stdout.write(
                 f"  ✓ OCS-{po.number}: {supplier.name} → {qty}u {product.name} "
                 f"(${po.total:,.0f}) — {order_date.strftime('%b %Y')}"
@@ -2704,7 +2700,6 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.FACTURA,
                 payment_method="TRANSFER",
                 date=today,
-                number="1002",
             )
             TreasuryService.create_movement(
                 amount=inv1.total,
@@ -2813,7 +2808,6 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.FACTURA,
                 payment_method="CHECK",
                 date=today,
-                number="1003",
             )
             CheckService.receive(
                 bank_id=chile_bank.pk,
@@ -2872,29 +2866,23 @@ class Command(BaseCommand):
             SalesService.confirm_sale(so)
             delivery = SalesService.dispatch_order(so, wh)
             SalesService.confirm_delivery(delivery)
-            try:
-                inv = BillingService.create_sale_invoice(
-                    so, dte_type=Invoice.DTEType.FACTURA,
-                    payment_method="TRANSFER", date=order_date,
-                )
-                TreasuryService.create_movement(
-                    amount=inv.total,
-                    movement_type=TreasuryMovement.Type.INBOUND,
-                    payment_method=TreasuryMovement.Method.TRANSFER,
-                    date=order_date, created_by=admin,
-                    to_account=bco_estado, partner=customer,
-                    sale_order=so, invoice=inv,
-                    reference=f"Cobro Venta MultiMonth {month:02d}",
-                )
-                self.stdout.write(
-                    f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
-                    f"(${inv.total:,.0f}) — {order_date.strftime('%b %Y')}"
-                )
-            except Exception:
-                self.stdout.write(
-                    f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
-                    f"(sin factura — período cerrado) — {order_date.strftime('%b %Y')}"
-                )
+            inv = BillingService.create_sale_invoice(
+                so, dte_type=Invoice.DTEType.FACTURA,
+                payment_method="TRANSFER", date=order_date,
+            )
+            TreasuryService.create_movement(
+                amount=inv.total,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=order_date, created_by=admin,
+                to_account=bco_estado, partner=customer,
+                sale_order=so, invoice=inv,
+                reference=f"Cobro Venta MultiMonth {month:02d}",
+            )
+            self.stdout.write(
+                f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
+                f"(${inv.total:,.0f}) — {order_date.strftime('%b %Y')}"
+            )
         self.stdout.write(f"  ── +6 ventas multi-mes (Ene-Jun 2026)")
 
     def _initialize_company_settings(self):
@@ -3428,4 +3416,121 @@ class Command(BaseCommand):
 
         self.stdout.write(
             f"    ✓ Budget '{budget.name}' created/updated with {total_items} monthly items."
+        )
+
+    def _close_past_periods(self, accounts):
+        """Close past tax/accounting periods with full F29 lifecycle.
+
+        For each month before the current month:
+        1. Create F29 declaration (auto-calculates from invoices)
+        2. Register F29 (creates VAT clearing journal entry)
+        3. Pay F29 if amount due > 0
+        4. Close TaxPeriod
+        5. Close AccountingPeriod
+        """
+        from tax.services import (
+            AccountingPeriodService,
+            F29CalculationService,
+            F29PaymentService,
+            TaxPeriodService,
+        )
+
+        admin = User.objects.filter(is_superuser=True).first()
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        current_year = timezone.now().year
+        current_month = timezone.now().month
+
+        self.stdout.write(f"\n{'─' * 50}")
+        self.stdout.write("  Closing past periods (F29 + Accounting)...")
+
+        for month in range(1, current_month):
+            self.stdout.write(f"\n  ── Periodo {month:02d}/{current_year} ──")
+
+            # 1. Create F29 declaration
+            try:
+                declaration = F29CalculationService.create_or_update_declaration(
+                    year=current_year, month=month,
+                )
+                self.stdout.write(
+                    f"    ✓ F29 creado: ventas=${declaration.sales_taxed:,.0f}, "
+                    f"compras=${declaration.purchases_taxed:,.0f}, "
+                    f"IVA por pagar=${declaration.vat_to_pay:,.0f}"
+                )
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f"    ⚠ F29 création falló: {str(e)[:80]}"
+                ))
+                continue
+
+            # 2. Register F29 (journal entry)
+            if not declaration.is_registered:
+                try:
+                    F29CalculationService.register_declaration(
+                        declaration_id=declaration.pk,
+                        folio_number=f"SII-{current_year}-{month:02d}",
+                    )
+                    self.stdout.write(f"    ✓ F29 registrado (folio: SII-{current_year}-{month:02d})")
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(
+                        f"    ⚠ F29 registro falló: {str(e)[:80]}"
+                    ))
+                    continue
+
+            # 3. Pay F29 if amount due > 0
+            if declaration.total_amount_due > 0:
+                already_paid = sum(p.amount for p in declaration.payments.all())
+                remaining = declaration.total_amount_due - already_paid
+                if remaining > 0:
+                    try:
+                        from datetime import date as _date
+
+                        F29PaymentService.register_payment(
+                            declaration_id=declaration.pk,
+                            payment_data={
+                                "amount": remaining,
+                                "treasury_account_id": bco_estado.pk,
+                                "payment_date": _date(current_year, month, 28),
+                                "payment_method": "TRANSFER",
+                                "reference": f"Pago F29 {month:02d}/{current_year}",
+                            },
+                            user=admin,
+                        )
+                        self.stdout.write(
+                            f"    ✓ F29 pagado: ${remaining:,.0f} vía Transferencia BCO-ESTADO"
+                        )
+                    except Exception as e:
+                        self.stdout.write(self.style.WARNING(
+                            f"    ⚠ F29 pago falló: {str(e)[:80]}"
+                        ))
+                else:
+                    self.stdout.write(f"    ✓ F29 ya pagado completamente")
+            else:
+                self.stdout.write(f"    ✓ F29 sin saldo a pagar")
+
+            # 4. Close TaxPeriod
+            try:
+                TaxPeriodService.close_period(
+                    year=current_year, month=month, user=admin,
+                )
+                self.stdout.write(f"    ✓ Período tributario cerrado")
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f"    ⚠ Cierre tributario falló: {str(e)[:80]}"
+                ))
+                continue
+
+            # 5. Close AccountingPeriod
+            try:
+                AccountingPeriodService.close_period(
+                    year=current_year, month=month, user=admin,
+                )
+                self.stdout.write(f"    ✓ Período contable cerrado")
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f"    ⚠ Cierre contable falló: {str(e)[:80]}"
+                ))
+
+        closed_count = current_month - 1
+        self.stdout.write(
+            f"\n  ✓ {closed_count} períodos procesados para cierre ({current_year})"
         )
