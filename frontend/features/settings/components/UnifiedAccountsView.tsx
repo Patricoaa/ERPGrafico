@@ -1,14 +1,13 @@
 "use client"
 
-import React, { useCallback, useEffect, useRef, useState, startTransition } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useSearchParams, usePathname, useRouter } from "next/navigation"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Separator } from "@/components/ui/separator"
-import { AccountField, ActionConfirmModal, AutoSaveStatusBadge, LabeledInput, LabeledSelect, PageHeaderButton, SkeletonShell, TabBar, TabBarContent } from "@/components/shared"
+import { AccountField, ActionConfirmModal, AutoSaveStatusBadge, LabeledInput, LabeledSelect, PageHeaderButton, SkeletonShell } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useInitializeForm } from "@/hooks/useInitializeForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
@@ -40,71 +39,25 @@ const TABS = [
     { value: "impuestos", label: "Impuestos" },
 ]
 
-export function UnifiedAccountsView() {
-    const searchParams = useSearchParams()
-    const pathname = usePathname()
-    const router = useRouter()
-    const tabParam = searchParams.get('tab')
-    const [activeTab, setActiveTab] = useState(
-        TABS.some(t => t.value === tabParam) ? (tabParam as string) : "ventas"
-    )
-    const isFirstRender = useRef(true)
+export const VALID_ACCOUNT_TABS = TABS.map(t => t.value)
+export const DEFAULT_ACCOUNT_TAB = "ventas"
 
-    const handleTabChange = useCallback((value: string) => {
-        setActiveTab(value)
-        router.replace(`${pathname}?tab=${value}`, { scroll: false })
-    }, [pathname, router])
+interface UnifiedAccountsViewProps {
+    activeTab: string
+}
 
-    // Sync URL → state on browser back/forward
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false
-            return
-        }
-        if (tabParam && tabParam !== activeTab && TABS.some(t => t.value === tabParam)) {
-            startTransition(() => {
-                setActiveTab(tabParam)
-            })
-        }
-    }, [tabParam]) // eslint-disable-line react-hooks/exhaustive-deps
-
+export function UnifiedAccountsView({ activeTab }: UnifiedAccountsViewProps) {
     return (
         <div className="w-full flex-1 min-h-0 flex flex-col">
-            <TabBar
-                items={TABS}
-                value={activeTab}
-                onValueChange={handleTabChange}
-                orientation="horizontal"
-                contentClassName="overflow-y-auto bg-card"
-            >
-                <TabBarContent value="estructura">
-                    {activeTab === "estructura" && <EstructuraForm />}
-                </TabBarContent>
-                <TabBarContent value="ventas">
-                    {activeTab === "ventas" && <VentasForm />}
-                </TabBarContent>
-                <TabBarContent value="facturacion">
-                    {activeTab === "facturacion" && <FacturacionForm />}
-                </TabBarContent>
-                <TabBarContent value="compras">
-                    {activeTab === "compras" && <ComprasForm />}
-                </TabBarContent>
-                <TabBarContent value="inventario">
-                    {activeTab === "inventario" && <InventarioForm />}
-                </TabBarContent>
-                <TabBarContent value="tesoreria">
-                    {activeTab === "tesoreria" && <TesoreriasForm />}
-                </TabBarContent>
-                <TabBarContent value="rrhh">
-                    {activeTab === "rrhh" && <RRHHForm />}
-                </TabBarContent>
-                <TabBarContent value="socios">
-                    {activeTab === "socios" && <SociosForm />}
-                </TabBarContent>
-                <TabBarContent value="impuestos">
-                    {activeTab === "impuestos" && <ImpuestosForm />}
-                </TabBarContent>
-            </TabBar>
+            {activeTab === "estructura" && <EstructuraForm />}
+            {activeTab === "ventas" && <VentasForm />}
+            {activeTab === "facturacion" && <FacturacionForm />}
+            {activeTab === "compras" && <ComprasForm />}
+            {activeTab === "inventario" && <InventarioForm />}
+            {activeTab === "tesoreria" && <TesoreriasForm />}
+            {activeTab === "rrhh" && <RRHHForm />}
+            {activeTab === "socios" && <SociosForm />}
+            {activeTab === "impuestos" && <ImpuestosForm />}
         </div>
     )
 }
