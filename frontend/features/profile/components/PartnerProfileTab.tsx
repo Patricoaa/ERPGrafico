@@ -10,6 +10,7 @@ import {
     CalendarDays,
     User,
     FileText,
+    Landmark,
 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { type PartnerTransaction, usePartners } from "@/features/contacts"
@@ -134,7 +135,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     if (isError || !statement) return null
 
-    const { contact, summary } = statement
+    const { contact, summary, partner_account_detail } = statement
     const equityPct = parseFloat(summary.equity_percentage) || 0
 
     return (
@@ -148,7 +149,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         </CardHeader>
                         <CardContent className="pt-0">
                             <div className="grid grid-cols-8 gap-6">
-                                {/* Left: Partner info fields — notched */}
+                                {/* Left: Partner info + account — notched */}
                                 <div className="col-span-2 space-y-4">
                                     <LabeledContainer label="Socio">
                                         <div className="flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
@@ -170,10 +171,18 @@ export function PartnerProfileTab({ contactId }: Props) {
                                                 : "—"}
                                         </div>
                                     </LabeledContainer>
+                                    <LabeledContainer label="Cuenta particular">
+                                        <div className="flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
+                                            <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {partner_account_detail
+                                                ? `${partner_account_detail.code} — ${partner_account_detail.name}`
+                                                : "—"}
+                                        </div>
+                                    </LabeledContainer>
                                 </div>
 
-                                {/* Right: StatCard + PieChart */}
-                                <div className="col-span-6">
+                                {/* Middle: PieChart */}
+                                <div className="col-span-3">
                                     <StatCard
                                         label="Participación"
                                         value={`${equityPct}%`}
@@ -196,6 +205,34 @@ export function PartnerProfileTab({ contactId }: Props) {
                                                 />
                                             </div>
                                         }
+                                    />
+                                </div>
+
+                                {/* Right: Key metrics */}
+                                <div className="col-span-3 grid grid-rows-4 gap-3">
+                                    <StatCard
+                                        label="Capital suscrito"
+                                        value={formatCurrency(summary.total_contributions)}
+                                        variant="default"
+                                        accent="primary"
+                                    />
+                                    <StatCard
+                                        label="Capital pagado"
+                                        value={formatCurrency(summary.total_paid_in)}
+                                        variant="default"
+                                        accent="success"
+                                    />
+                                    <StatCard
+                                        label="Retiro provisorio"
+                                        value={formatCurrency(summary.provisional_withdrawals)}
+                                        variant="default"
+                                        accent="warning"
+                                    />
+                                    <StatCard
+                                        label="Utilidades retenidas"
+                                        value={formatCurrency(summary.earnings_balance)}
+                                        variant="default"
+                                        accent="info"
                                     />
                                 </div>
                             </div>
