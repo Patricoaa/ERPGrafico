@@ -276,6 +276,61 @@ class PaymentAllocationSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "created_by"]
 
 
+class TreasuryMovementListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for Treasury Movement list views."""
+    account_name = serializers.CharField(source="account.name", read_only=True)
+    payment_method_display = serializers.CharField(
+        source="get_payment_method_display", read_only=True
+    )
+    movement_type_display = serializers.CharField(
+        source="get_movement_type_display", read_only=True
+    )
+    display_id = serializers.CharField(read_only=True)
+    status = serializers.SerializerMethodField()
+
+    def get_status(self, obj):
+        if obj.is_reconciled:
+            return "RECONCILED"
+        if obj.is_pending_registration:
+            return "PENDING"
+        return "POSTED"
+
+    class Meta:
+        model = TreasuryMovement
+        fields = [
+            "id", "display_id", "account", "account_name", "amount", "date", 
+            "movement_type", "movement_type_display", "payment_method", "payment_method_display",
+            "status", "is_reconciled", "is_pending_registration", "created_at", "updated_at"
+        ]
+
+class TreasuryMovementWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views."""
+    class Meta:
+        model = TreasuryMovement
+        fields = [
+            "id",
+            "account",
+            "from_account",
+            "to_account",
+            "amount",
+            "date",
+            "movement_type",
+            "payment_method",
+            "payment_method_new",
+            "contact",
+            "invoice",
+            "sale_order",
+            "purchase_order",
+            "justify_reason",
+            "notes",
+            "terminal_batch",
+            "card_purchase_group",
+            "bank_statement_line",
+            "is_reconciled",
+            "is_pending_registration",
+        ]
+        read_only_fields = ["is_reconciled", "is_pending_registration"]
+
 class TreasuryMovementSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()

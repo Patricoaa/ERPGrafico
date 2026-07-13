@@ -73,6 +73,8 @@ from .serializers import (
     TerminalBatchSerializer,
     TreasuryAccountSerializer,
     TreasuryMovementSerializer,
+    TreasuryMovementListSerializer,
+    TreasuryMovementWriteSerializer,
 )
 from .services import TerminalBatchService, TreasuryService
 
@@ -345,6 +347,13 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     serializer_class = TreasuryMovementSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return TreasuryMovementListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return TreasuryMovementWriteSerializer
+        return TreasuryMovementSerializer
 
     def get_queryset(self):
         from .selectors import TreasuryMovementSelector
