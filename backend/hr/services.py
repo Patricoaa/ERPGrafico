@@ -124,6 +124,119 @@ class PayrollService:
         )
 
     @staticmethod
+    def _safe_parse_formula(formula: str) -> float:
+        """
+        Recursive descent parser for safe math expression evaluation.
+        Supports: numbers, +, -, *, /, %, parentheses, min(), max(), abs().
+        No eval(), no arbitrary code execution.
+        """
+        pos = [0]
+        f = formula
+
+        def skip_spaces():
+            while pos[0] < len(f) and f[pos[0]] == " ":
+                pos[0] += 1
+
+        def parse_number():
+            skip_spaces()
+            start = pos[0]
+            while pos[0] < len(f) and (f[pos[0]].isdigit() or f[pos[0]] == "."):
+                pos[0] += 1
+            if pos[0] == start:
+                raise ValueError(f"Expected number at position {start}")
+            return float(f[start:pos[0]])
+
+        def parse_func_or_var():
+            skip_spaces()
+            start = pos[0]
+            while pos[0] < len(f) and (f[pos[0]].isalnum() or f[pos[0]] == "_"):
+                pos[0] += 1
+            name = f[start:pos[0]].upper()
+            skip_spaces()
+            if pos[0] < len(f) and f[pos[0]] == "(":
+                pos[0] += 1
+                args = [parse_expression()]
+                while pos[0] < len(f) and f[pos[0]] == ",":
+                    pos[0] += 1
+                    args.append(parse_expression())
+                skip_spaces()
+                if pos[0] >= len(f) or f[pos[0]] != ")":
+                    raise ValueError(f"Expected ')' after function {name}")
+                pos[0] += 1
+                if name == "MIN":
+                    return min(args)
+                elif name == "MAX":
+                    return max(args)
+                elif name == "ABS":
+                    return abs(args[0])
+                else:
+                    raise ValueError(f"Unknown function: {name}")
+            raise ValueError(f"Unexpected identifier: {name}")
+
+        def parse_factor():
+            skip_spaces()
+            if pos[0] < len(f) and f[pos[0]] == "(":
+                pos[0] += 1
+                result = parse_expression()
+                skip_spaces()
+                if pos[0] >= len(f) or f[pos[0]] != ")":
+                    raise ValueError("Expected ')'")
+                pos[0] += 1
+                return result
+            elif pos[0] < len(f) and f[pos[0]] in "-+":
+                op = f[pos[0]]
+                pos[0] += 1
+                val = parse_factor()
+                return -val if op == "-" else val
+            elif pos[0] < len(f) and (f[pos[0]].isdigit() or f[pos[0]] == "."):
+                return parse_number()
+            elif pos[0] < len(f) and (f[pos[0]].isalpha() or f[pos[0]] == "_"):
+                return parse_func_or_var()
+            raise ValueError(f"Unexpected character at position {pos[0]}")
+
+        def parse_term():
+            result = parse_factor()
+            while True:
+                skip_spaces()
+                if pos[0] >= len(f) or f[pos[0]] not in "*/%":
+                    break
+                op = f[pos[0]]
+                pos[0] += 1
+                right = parse_factor()
+                if op == "*":
+                    result *= right
+                elif op == "/":
+                    if right == 0:
+                        raise ZeroDivisionError("Division by zero")
+                    result /= right
+                elif op == "%":
+                    if right == 0:
+                        raise ZeroDivisionError("Modulo by zero")
+                    result %= right
+            return result
+
+        def parse_expression():
+            result = parse_term()
+            while True:
+                skip_spaces()
+                if pos[0] >= len(f) or f[pos[0]] not in "+-":
+                    break
+                op = f[pos[0]]
+                pos[0] += 1
+                right = parse_term()
+                if op == "+":
+                    result += right
+                else:
+                    result -= right
+            return result
+
+        result = parse_expression()
+        skip_spaces()
+        if pos[0] != len(f):
+            raise ValueError(f"Unexpected trailing characters: {f[pos[0]:]}")
+        return result
+
+    @staticmethod
     def evaluate_formula(formula, context):
         """
         Evalúa una fórmula matemática simple de forma segura.
@@ -133,25 +246,11 @@ class PayrollService:
             return Decimal("0")
 
         try:
-            # Limpiar formula de caracteres no permitidos (básico para seguridad)
-            # Añadimos soporte para min/max
-            eval_globals = {
-                "__builtins__": {},
-                "min": min,
-                "max": max,
-                "abs": abs,
-            }
-
-            # Permitir letras, números y operadores comunes para evitar truncamiento por error
-            allowed_chars = (
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.+-*/()[],_<>!=% "
-            )
-            sanitized = "".join([c for c in formula if c in allowed_chars]).strip()
+            sanitized = formula
 
             # Reemplazar variables por sus valores (Insensible a mayúsculas y palabras completas)
             for var in sorted(context.keys(), key=len, reverse=True):
                 val = float(context[var]) if context[var] is not None else 0.0
-                # Regex para reemplazar solo palabras completas (evita sub-strings) e ignorar mayúsculas
                 pattern = re.compile(r"\b" + re.escape(var) + r"\b", re.IGNORECASE)
                 sanitized = pattern.sub(str(val), sanitized)
 
@@ -160,13 +259,8 @@ class PayrollService:
             while sanitized and sanitized[-1] in "+-*/%":
                 sanitized = sanitized[:-1].strip()
 
-            # Evaluar (restringido)
-            try:
-                result = eval(sanitized, eval_globals, {})
-                return Decimal(str(result)).quantize(Decimal("1"))
-            except Exception as e:
-                print(f"Error evaluando sanitized '{sanitized}': {e}")
-                raise e
+            result = PayrollService._safe_parse_formula(sanitized)
+            return Decimal(str(result)).quantize(Decimal("1"))
         except Exception as e:
             print(f"Error evaluando fórmula '{formula}': {e}")
             return Decimal("0")

@@ -65,12 +65,21 @@ GIT_HASH = get_git_hash()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "django-insecure-z_@n0q5=yw43a$i1x61*cq*t4k=6@3g4##a-%!k88yk391g52g"
-)
-
-# SECURITY WARNING: don't run with debug turned on in production!
+# In production (DEBUG=False), SECRET_KEY MUST be set via environment variable.
+# Default DEBUG=1 for local dev convenience; production deployments MUST set DEBUG=0.
 DEBUG = os.environ.get("DEBUG", "1") == "1"
+
+_secret_key = os.environ.get("SECRET_KEY", "")
+if not _secret_key:
+    if DEBUG:
+        _secret_key = "django-insecure-dev-only-key-CHANGE-IN-PRODUCTION"
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "SECRET_KEY environment variable is required in production. "
+            "Set it in your .env file or deployment environment."
+        )
+SECRET_KEY = _secret_key
 
 ALLOWED_HOSTS = [
     host.strip()
