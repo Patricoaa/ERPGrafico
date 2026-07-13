@@ -53,6 +53,11 @@ class UserSerializer(serializers.ModelSerializer):
 
         self.fields["contact"].queryset = Contact.objects.all()
 
+        # Prevent N+1 on list view by removing permissions field
+        view = self.context.get("view")
+        if view and getattr(view, "action", None) == "list":
+            self.fields.pop("permissions", None)
+
     def get_permissions(self, obj):
         return list(obj.get_all_permissions())
 
