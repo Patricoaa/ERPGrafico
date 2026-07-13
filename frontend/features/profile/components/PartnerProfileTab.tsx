@@ -140,7 +140,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
-            <div className="flex-1 min-h-0 flex flex-col overflow-auto">
+            <div className="h-full overflow-auto">
                 {/* Top: Información Societaria — compact, no scroll */}
                 <div className="shrink-0 pb-2">
                     <Card className="w-full">
