@@ -86,22 +86,22 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                         // No subtabs -> standard link
                         return (
                             <NavigationMenuItem key={item.value}>
-                                <Link href={item.href} legacyBehavior passHref>
-                                    <NavigationMenuLink 
-                                        className={cn(
-                                            navigationMenuTriggerStyle(),
-                                            "h-9 px-3 bg-transparent hover:bg-muted/50 transition-colors",
-                                            isActive && "text-primary bg-primary/5 hover:bg-primary/10"
-                                        )}
-                                    >
+                                <NavigationMenuLink asChild
+                                    className={cn(
+                                        navigationMenuTriggerStyle(),
+                                        "h-9 px-3 bg-transparent hover:bg-muted/50 transition-colors",
+                                        isActive && "text-primary bg-primary/5 hover:bg-primary/10"
+                                    )}
+                                >
+                                    <Link href={item.href}>
                                         <div className="flex items-center gap-2">
                                             {item.iconName && (
                                                 <DynamicIcon name={item.iconName} className="h-4 w-4 shrink-0" />
                                             )}
                                             <span className="font-medium text-sm tracking-tight">{item.label}</span>
                                         </div>
-                                    </NavigationMenuLink>
-                                </Link>
+                                    </Link>
+                                </NavigationMenuLink>
                             </NavigationMenuItem>
                         )
                     })}

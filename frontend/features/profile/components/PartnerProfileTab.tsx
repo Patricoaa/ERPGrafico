@@ -4,15 +4,16 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Chip, DataCell, DataTable, DataTableColumnHeader, LabeledContainer, PieChart, SkeletonShell, StatCard } from '@/components/shared'
+import { Chip, DataCell, DataTable, DataTableColumnHeader, LabeledContainer, SkeletonShell, StatCard } from '@/components/shared'
 import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
+import { ResponsiveTreeMapHtml } from "@nivo/treemap"
 import {
     CalendarDays,
     User,
     FileText,
 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { type PartnerTransaction } from "@/features/contacts"
+import { type PartnerTransaction, usePartners } from "@/features/contacts"
 import { PaymentDrawer } from "@/features/treasury"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
@@ -44,6 +45,8 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     const actionsCtx: PartnerTransactionActionsCtx = { onViewMovement: handleViewDetails }
 
+    const { data: partners } = usePartners()
+
     const txsWithBalance = useMemo(() => {
         if (!statement?.transactions) return []
         const sorted = [...statement.transactions].sort(
@@ -59,6 +62,16 @@ export function PartnerProfileTab({ contactId }: Props) {
             })
             .reverse()
     }, [statement])
+
+    const treemapData = useMemo(() => ({
+        name: "root",
+        children: (partners || [])
+            .filter(p => parseFloat(p.partner_equity_percentage) > 0)
+            .map(p => ({
+                id: p.name,
+                value: parseFloat(p.partner_equity_percentage) || 0,
+            })),
+    }), [partners])
 
     const columns: ColumnDef<PartnerTransaction & { balance_after: number }>[] = [
         {
@@ -125,11 +138,6 @@ export function PartnerProfileTab({ contactId }: Props) {
     const { contact, summary } = statement
     const equityPct = parseFloat(summary.equity_percentage) || 0
 
-    const pieData = [
-        { id: contact.name, value: equityPct },
-        { id: "Otros socios", value: Math.max(0, 100 - equityPct) },
-    ]
-
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
             <div className="flex flex-col h-full">
@@ -165,23 +173,28 @@ export function PartnerProfileTab({ contactId }: Props) {
                                     </LabeledContainer>
                                 </div>
 
-                                {/* Right: PieChart via StatCard chart variant */}
-                                <div className="col-span-6 h-[220px]">
+                                {/* Right: PieChart → StatCard + TreeMap */}
+                                <div className="col-span-6">
                                     <StatCard
-                                        label="Composición Patrimonial"
-                                        variant="chart"
+                                        label="Participación"
+                                        value={`${equityPct}%`}
+                                        subtext="Composición patrimonial"
+                                        variant="metric-chart"
                                         accent="primary"
                                         className="h-full"
                                         chart={
-                                            <div className="h-[170px]">
-                                                <PieChart
-                                                    data={pieData}
-                                                    centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
-                                                    innerRadius={45}
-                                                    padAngle={2}
-                                                    cornerRadius={3}
-                                                    enableArcLabels={false}
-                                                    margin={{ top: 10, right: 40, bottom: 10, left: 40 }}
+                                            <div className="h-[180px]">
+                                                <ResponsiveTreeMapHtml
+                                                    data={treemapData}
+                                                    leavesOnly={true}
+                                                    colors={{ scheme: "category10" }}
+                                                    label={(node: { id: string; value: number }) => `${node.id}: ${node.value}%`}
+                                                    enableLabel={true}
+                                                    labelTextColor={{ from: "color", modifiers: [["brighter", 2]] }}
+                                                    innerPadding={3}
+                                                    outerPadding={3}
+                                                    margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                                                    isInteractive={true}
                                                 />
                                             </div>
                                         }
