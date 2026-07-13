@@ -183,9 +183,9 @@ export function PartnerProfileTab({ contactId }: Props) {
 
                                 {/* Middle: PieChart */}
                                 <div className="col-span-3">
-                                    <Card className="h-full">
-                                        <CardContent className="h-full p-0">
-                                            <div className="h-[220px]">
+                                    <Card className="h-full flex flex-col">
+                                        <CardContent className="flex-1 min-h-0 p-0">
+                                            <div className="h-full">
                                                 <PieChart
                                                     data={pieData}
                                                     activeId={contact.name}
