@@ -142,7 +142,7 @@ export function PartnerProfileTab({ contactId }: Props) {
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
             <div className="flex flex-col">
                 {/* Top: Información Societaria — compact, no scroll */}
-                <div className="shrink-0 p-4 pb-2">
+                <div className="shrink-0 pb-2">
                     <Card className="w-full">
                         <CardHeader className="py-3">
                             <CardTitle className="text-sm text-primary">Información Societaria</CardTitle>
@@ -236,7 +236,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 </div>
 
                 {/* Bottom: Capital History — scrollable */}
-                <div className="p-4 pt-2">
+                <div className="pt-2">
                     <Card className="w-full flex flex-col">
                         <CardHeader className="py-3">
                             <CardTitle className="text-sm text-primary">Historial de Capital</CardTitle>
