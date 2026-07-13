@@ -22,6 +22,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- SYSTEM VERSIONING ---
 def get_version():
     try:
+        import subprocess
+
+        tag = (
+            subprocess.check_output(
+                ["git", "describe", "--tags", "--abbrev=0"], cwd=BASE_DIR
+            )
+            .decode("ascii")
+            .strip()
+            .lstrip("v")
+        )
+        if tag:
+            return tag
+    except Exception:
+        pass
+    try:
         with open(BASE_DIR / "VERSION", "r") as f:
             return f.read().strip()
     except Exception:
