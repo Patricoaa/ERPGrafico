@@ -14,7 +14,12 @@ from purchasing.models import PurchaseOrder
 from sales.models import SaleOrder
 
 from .models import Invoice
-from .serializers import CreateInvoiceSerializer, InvoiceListSerializer, InvoiceSerializer
+from .serializers import (
+    CreateInvoiceSerializer,
+    InvoiceListSerializer,
+    InvoiceSerializer,
+    InvoiceWriteSerializer,
+)
 from .services import BillingService
 
 
@@ -58,6 +63,8 @@ class InvoiceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistoryMix
     def get_serializer_class(self):
         if self.action == "list":
             return InvoiceListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return InvoiceWriteSerializer
         return InvoiceSerializer
 
     @idempotent_endpoint(scope="billing.invoice.create")

@@ -84,6 +84,42 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         total_allocated = sum(a.amount for a in obj.payment_allocations.all())
         return obj.total - (total_paid + total_allocated)
 
+class InvoiceWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views.
+    Omits all computed and related read-only fields."""
+    
+    class Meta:
+        model = Invoice
+        fields = [
+            "id",
+            "dte_type",
+            "sii_document_code",
+            "number",
+            "document_attachment",
+            "date",
+            "sale_order",
+            "purchase_order",
+            "corrected_invoice",
+            "contact",
+            "status",
+            "payment_method",
+            "total_net",
+            "total_tax",
+            "total_discount_amount",
+            "total",
+            "journal_entry",
+            "tax_period_closed",
+        ]
+        read_only_fields = [
+            "id",
+            "number",
+            "status",
+            "total_net",
+            "total_tax",
+            "total",
+            "journal_entry",
+            "tax_period_closed",
+        ]
 
 class InvoiceSerializer(serializers.ModelSerializer):
     attachments = AttachmentSerializer(many=True, read_only=True)
