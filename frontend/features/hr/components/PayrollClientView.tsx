@@ -1,23 +1,15 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import Link from "next/link"
 import { toast } from "sonner"
-import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr'
+import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, createCodeColumn, createStatusColumn } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, DataCell, createCodeColumn, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
-import { Button } from "@/components/ui/button"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr"
@@ -31,34 +23,30 @@ interface PayrollClientViewProps {
 export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     const { dateString } = useServerDate()
 
-    const createAction = (
-        <div className="flex items-center gap-2">
-            <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
-            <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link href="/hr/payrolls?action=generate_drafts" scroll={false}>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-9 w-9 p-0 bg-background hover:bg-muted"
-                            >
-                                <FileText className="h-4 w-4" />
-                            </Button>
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                        Generar borradores
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </div>
-    )
+    const createAction = <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
+
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const search = useUnifiedSearch(payrollUnifiedSearchDef)
     const { payrolls, isLoading: loading, isRefetching, refetch: fetchPayrolls } = usePayrolls(search.filters, initialPayrolls)
+
+    const handleGenerateDrafts = useCallback(async () => {
+        if (!confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) return
+        try {
+            const res = await triggerDraftPayrolls()
+            toast.success(res.detail)
+            fetchPayrolls()
+        } catch (err) {
+            console.error('[PayrollClientView] Error al generar borradores:', err)
+            const apiMsg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+            toast.error(apiMsg || "Error al iniciar tarea")
+        }
+    }, [fetchPayrolls])
+
+    const toolbarActions: ToolbarActionItem[] = useMemo(() => [
+        { key: 'generate_drafts', label: 'Generar borradores', icon: FileText, onClick: handleGenerateDrafts },
+    ], [handleGenerateDrafts])
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
         endpoint: '/hr/payrolls'
@@ -78,35 +66,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     const isNewModalOpen = searchParams.get("modal") === "new"
     // Derive from URL directly — no useState + useEffect needed
     const dialogOpen = isNewModalOpen
-
-    useEffect(() => {
-        const action = searchParams.get("action")
-        if (action === "generate_drafts") {
-            const executeAction = async () => {
-                if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
-                    try {
-                        const { triggerDraftPayrolls } = await import('@/features/hr')
-                        const res = await triggerDraftPayrolls()
-                        toast.success(res.detail)
-                        fetchPayrolls()
-                    } catch (err) {
-                        console.error('[PayrollClientView] Error al generar borradores:', err)
-                        const apiMsg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-                        toast.error(apiMsg || "Error al iniciar tarea")
-                    } finally {
-                        const params = new URLSearchParams(searchParams.toString())
-                        params.delete("action")
-                        router.push(`?${params.toString()}`, { scroll: false })
-                    }
-                } else {
-                    const params = new URLSearchParams(searchParams.toString())
-                    params.delete("action")
-                    router.push(`?${params.toString()}`, { scroll: false })
-                }
-            }
-            executeAction()
-        }
-    }, [searchParams, router, fetchPayrolls])
 
     const handleOpenChange = (open: boolean) => {
         if (!open) {
@@ -282,6 +241,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                     defaultPageSize={20}
                     onRowClick={(row: Payroll) => openDetail(row.id)}
                     createAction={createAction}
+                    toolbarActions={toolbarActions}
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "finance",
