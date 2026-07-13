@@ -27,7 +27,7 @@ class InventoryConfig(AppConfig):
         try:
             from core.prefix_registry import EntityPrefix
             from core.registry import SearchableEntity, UniversalRegistry
-            from inventory.models import Product, StockMove, Subscription, Warehouse
+            from inventory.models import Product, StockMove, Subscription, Warehouse, InventoryDocument
 
             UniversalRegistry.register(
                 SearchableEntity(
@@ -93,6 +93,23 @@ class InventoryConfig(AppConfig):
                     list_url="/inventory/stock/warehouses",
                     detail_url_pattern="/inventory/warehouses/{id}",
                     permission="inventory.view_warehouse",
+                )
+            )
+            UniversalRegistry.register(
+                SearchableEntity(
+                    model=InventoryDocument,
+                    label="inventory.inventorydocument",
+                    title_singular="Documento de Inventario",
+                    title_plural="Documentos de Inventario",
+                    icon="file-text",
+                    search_fields=("id", "reference", "notes"),
+                    short_display_template=f"{EntityPrefix.INVENTORY_DOCUMENT}-{{id}}",
+                    display_template="{document_type_display} #{id}",
+                    subtitle_template="{partner_name}",
+                    extra_info_template="{status_display}",
+                    list_url="/inventory/operations/documents",
+                    detail_url_pattern="/inventory/operations/documents/{id}",
+                    permission="inventory.view_inventorydocument",
                 )
             )
         except Exception:

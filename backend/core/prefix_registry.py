@@ -47,6 +47,7 @@ class EntityPrefix(StrEnum):
     BOM = "BOM"
 
     # ── Inventory ──────────────────────────────────────────────────────
+    INVENTORY_DOCUMENT = "DOC"
     STOCK_MOVE = "MOV"
     PRODUCT = "PRD"
     CATEGORY = "CAT"
