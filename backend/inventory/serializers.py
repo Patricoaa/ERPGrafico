@@ -614,6 +614,8 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             "partner",
             "partner_name",
             "reference",
+            "source_document_type",
+            "source_document_id",
             "notes",
             "created_by",
             "created_by_name",

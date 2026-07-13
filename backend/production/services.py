@@ -965,7 +965,9 @@ class WorkOrderService:
             document_type=InventoryDocument.Type.PRODUCTION,
             status=InventoryDocument.Status.DRAFT,
             date=timezone.now().date(),
-            reference=f"Producción {EntityPrefix.WORK_ORDER}-{work_order.number}"
+            reference=f"Producción {EntityPrefix.WORK_ORDER}-{work_order.number}",
+            source_document_type="production.workorder",
+            source_document_id=work_order.id,
         )
         details_to_create = []
         mat_consumptions_data = []

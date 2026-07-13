@@ -582,7 +582,9 @@ class SalesService:
             status=InventoryDocument.Status.DRAFT,
             date=delivery.delivery_date,
             reference=f"Despacho {EntityPrefix.SALE_ORDER}-{delivery.sale_order.number}",
-            partner=delivery.sale_order.customer
+            partner=delivery.sale_order.customer,
+            source_document_type="sales.saleorder",
+            source_document_id=delivery.sale_order.id,
         )
         details_to_create = []
 
@@ -932,7 +934,9 @@ class SalesService:
             status=InventoryDocument.Status.DRAFT,
             date=timezone.now().date(),
             reference=f"Anulación Despacho {delivery.number}",
-            partner=delivery.sale_order.customer
+            partner=delivery.sale_order.customer,
+            source_document_type="sales.saledelivery",
+            source_document_id=delivery.id,
         )
         details_to_create = []
 
@@ -1204,7 +1208,9 @@ class SalesService:
                 status=InventoryDocument.Status.DRAFT,
                 date=date or timezone.now().date(),
                 reference=f"Devolución NC {document_number} - NV {order.number}",
-                partner=order.customer
+                partner=order.customer,
+                source_document_type="sales.saleorder",
+                source_document_id=order.id,
             )
             details_to_create = []
 

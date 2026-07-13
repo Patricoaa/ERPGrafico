@@ -48,7 +48,9 @@ class ReturnService:
             status=InventoryDocument.Status.DRAFT,
             date=timezone.now().date(),
             reference=f"Anulación {doc.display_id}",
-            partner=doc.sale_order.client
+            partner=doc.sale_order.client,
+            source_document_type="sales.salereturn",
+            source_document_id=doc.id,
         )
         details_to_create = []
 
@@ -238,7 +240,9 @@ class ReturnService:
             status=InventoryDocument.Status.DRAFT,
             date=return_doc.date,
             reference=f"Devolución {EntityPrefix.SALE_ORDER}-{return_doc.sale_order.number}",
-            partner=return_doc.sale_order.customer
+            partner=return_doc.sale_order.customer,
+            source_document_type="sales.salereturn",
+            source_document_id=return_doc.id,
         )
         details_to_create = []
 
