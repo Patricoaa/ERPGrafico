@@ -416,6 +416,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `production.workorder` | `OT` | `WORK_ORDER` | Orden de Trabajo | `Wrench` |
 | `production.bom` | `BOM` | `BOM` | Lista de Materiales | `ClipboardList` |
 | `inventory.stockmove` | `MOV` | `STOCK_MOVE` | Movimiento de Stock | `ArrowLeftRight` |
+| `inventory.inventorydocument` | `DOC` | `INVENTORY_DOCUMENT` | Documento de Inventario | `FileText` |
 | `inventory.product` | `PRD` | `PRODUCT` | Producto | `Package` |
 | `inventory.subscription` | `SUB` | `SUBSCRIPTION` | Suscripción | `Repeat` |
 | `inventory.pricingrule` | `REG` | `PRICING_RULE` | Regla de Precio | `Percent` |

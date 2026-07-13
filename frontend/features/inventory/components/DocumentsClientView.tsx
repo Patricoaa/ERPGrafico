@@ -1,13 +1,10 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Chip, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard } from '@/components/shared'
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Plus, ArrowDownToLine, ArrowUpFromLine, ArrowRightLeft } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -16,9 +13,13 @@ import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
 import type { InventoryDocument } from "../types"
 import { toast } from "sonner"
 import React from "react"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface DocumentsClientViewProps {
     documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
 const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutral" | "info" | "primary", label: string }> = {
@@ -29,8 +30,7 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
     'PRODUCTION': { intent: 'neutral', label: 'Producción' }
 }
 
-export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewProps) {
-    const searchParams = useSearchParams()
+export function DocumentsClientView({ documentTypeFilter, externalOpen, onExternalOpenChange, createAction }: DocumentsClientViewProps) {
     const pathname = usePathname()
     const router = useRouter()
 
@@ -57,60 +57,29 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
         }
     }, [isOverLimit, totalCount])
 
-    const selectedDocumentId = useMemo(
-        () => searchParams.get('selected') ? Number(searchParams.get('selected')) : null,
-        [searchParams],
-    )
+    const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null)
 
-    const handleSelect = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<InventoryDocument>({
+        endpoint: '/inventory/documents'
+    })
+
+    useEffect(() => {
+        if (selectedFromUrl) {
+            requestAnimationFrame(() => {
+                setSelectedDocumentId(selectedFromUrl.id)
+            })
+        } else {
+            requestAnimationFrame(() => {
+                setSelectedDocumentId(null)
+            })
+        }
+    }, [selectedFromUrl])
 
     const handleCloseDrawer = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        setSelectedDocumentId(null)
+        clearSelection()
+        onExternalOpenChange?.(false)
     }
-
-    const createAction = (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button size="sm" className="ml-auto flex items-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nuevo Documento
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    params.set('createDocument', 'receipt')
-                    router.push(`${pathname}?${params.toString()}`)
-                }}>
-                    <ArrowDownToLine className="w-4 h-4 mr-2" />
-                    Nueva Recepción
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    params.set('createDocument', 'delivery')
-                    router.push(`${pathname}?${params.toString()}`)
-                }}>
-                    <ArrowUpFromLine className="w-4 h-4 mr-2" />
-                    Nueva Entrega
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                    const params = new URLSearchParams(searchParams.toString())
-                    params.set('createDocument', 'transfer')
-                    router.push(`${pathname}?${params.toString()}`)
-                }}>
-                    <ArrowRightLeft className="w-4 h-4 mr-2" />
-                    Nueva Transferencia
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    )
 
     const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
         const cols: ColumnDef<InventoryDocument>[] = [
@@ -119,7 +88,7 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                 header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
                 cell: ({ row }) => (
                     <div className="flex flex-col items-center gap-0.5">
-                        <DataCell.Code>{`#${row.original.id}`}</DataCell.Code>
+                        <DataCell.Code>{`DOC-${row.original.id}`}</DataCell.Code>
                         <DataCell.Date value={row.original.date} />
                     </div>
                 ),
@@ -173,7 +142,11 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                     <div className="flex justify-center w-full">
                         <button 
                             className="text-xs text-primary font-medium hover:underline"
-                            onClick={() => handleSelect(row.original.id)}
+                            onClick={() => {
+                                const params = new URLSearchParams()
+                                params.set('selected', String(row.original.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}
                         >
                             Ver Detalles
                         </button>
@@ -184,7 +157,7 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
         )
 
         return cols
-    }, [documentTypeFilter])
+    }, [documentTypeFilter, pathname, router])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -230,7 +203,11 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                         return (
                             <EntityCard
                                 key={doc.id}
-                                onClick={() => handleSelect(doc.id)}
+                                onClick={() => {
+                                    const params = new URLSearchParams()
+                                    params.set('selected', String(doc.id))
+                                    router.push(`${pathname}?${params.toString()}`)
+                                }}
                             >
                                 <EntityCard.Header
                                     title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
@@ -247,16 +224,14 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                 />
             </div>
 
-            {selectedDocumentId && (
-                <InventoryDocumentDrawer
-                    documentId={selectedDocumentId}
-                    open={selectedDocumentId !== null}
-                    onOpenChange={(open) => {
-                        if (!open) handleCloseDrawer()
-                    }}
-                    onSuccess={refetch}
-                />
-            )}
+            <InventoryDocumentDrawer
+                documentId={selectedDocumentId}
+                open={selectedDocumentId !== null || !!externalOpen}
+                onOpenChange={(open) => {
+                    if (!open) handleCloseDrawer()
+                }}
+                onSuccess={refetch}
+            />
         </div>
     )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef } from "react"
-import { Chip, Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
+import { Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { useDrawerIdentity } from "@/features/_shared"
@@ -149,7 +149,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
             <Drawer
                 open={open}
                 onOpenChange={onOpenChange}
-                side="right"
+                side="left"
                 boundary="embedded"
                 defaultSize={formDrawerWidth("master", false)}
                 title={identity.title}
