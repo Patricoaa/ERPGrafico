@@ -152,7 +152,7 @@ def compute_rut_dv(rut_body: str) -> str:
     multiplier = 2
     for digit in reversed(clean):
         total += int(digit) * multiplier
-        multiplier = 8 if multiplier == 7 else multiplier + 1
+        multiplier = 2 if multiplier == 7 else multiplier + 1
     remainder = total % 11
     dv = 11 - remainder
     if dv == 11:
