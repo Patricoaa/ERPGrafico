@@ -730,10 +730,10 @@ class InventoryCountSerializer(serializers.ModelSerializer):
         return None
 
     def get_total_products(self, obj):
-        return obj.lines.count()
+        return getattr(obj, "total_products_count", obj.lines.count())
 
     def get_counted_products(self, obj):
-        return obj.lines.filter(counted_qty__isnull=False).count()
+        return getattr(obj, "counted_products_count", obj.lines.filter(counted_qty__isnull=False).count())
 
     def get_products_with_difference(self, obj):
         return sum(1 for line in obj.lines.all() if line.has_difference)

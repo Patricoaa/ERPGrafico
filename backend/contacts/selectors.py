@@ -1,6 +1,7 @@
 from django.db import models
-from django.db.models import QuerySet
-from django.db.models.functions import Replace
+from django.db.models import Exists, OuterRef, QuerySet, Subquery, Sum, DecimalField as Df, Value
+from django.db.models.functions import Coalesce, Replace
+from decimal import Decimal
 
 from .models import Contact
 
@@ -64,7 +65,48 @@ def list_contacts(*, params: dict) -> QuerySet:
         queryset = queryset.filter(terminal_providers__is_active=True).distinct()
 
     queryset = queryset.annotate(
-        last_sale_date=models.Max("sale_orders__date")
+        last_sale_date=models.Max("sale_orders__date"),
+    )
+
+    from sales.models import SaleOrder
+    from purchasing.models import PurchaseOrder
+    from production.models import WorkOrder
+    from hr.models import Employee
+    from treasury.models import TreasuryMovement as _TM
+
+    credit_additions_sq = (
+        _TM.objects.filter(
+            contact_id=OuterRef("pk"),
+            payment_method="CREDIT_BALANCE",
+            movement_type="OUTBOUND",
+            is_pending_registration=False,
+        )
+        .values("contact_id")
+        .annotate(total=Sum("amount"))
+        .values("total")
+    )
+    credit_consumptions_sq = (
+        _TM.objects.filter(
+            contact_id=OuterRef("pk"),
+            payment_method="CREDIT_BALANCE",
+            movement_type="INBOUND",
+            is_pending_registration=False,
+        )
+        .values("contact_id")
+        .annotate(total=Sum("amount"))
+        .values("total")
+    )
+    queryset = queryset.annotate(
+        _has_sales=Exists(SaleOrder.objects.filter(customer=OuterRef("pk"))),
+        _has_purchases=Exists(PurchaseOrder.objects.filter(supplier=OuterRef("pk"))),
+        _has_work_orders=Exists(WorkOrder.objects.filter(related_contact=OuterRef("pk"))),
+        _has_employees=Exists(Employee.objects.filter(contact=OuterRef("pk"))),
+        _credit_balance_additions=Coalesce(
+            Subquery(credit_additions_sq, output_field=Df()), Value(Decimal("0"), output_field=Df())
+        ),
+        _credit_balance_consumptions=Coalesce(
+            Subquery(credit_consumptions_sq, output_field=Df()), Value(Decimal("0"), output_field=Df())
+        ),
     )
 
     return queryset

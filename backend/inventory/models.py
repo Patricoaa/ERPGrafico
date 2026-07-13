@@ -1031,7 +1031,10 @@ class Product(models.Model):
             active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
 
         # If no active BOM, treat as "Available" (no constraints)
-        if not active_bom or not active_bom.lines.exists():
+        if not active_bom:
+            return None
+        bom_lines = active_bom.lines.all()
+        if not bom_lines:
             return None
 
         # Calculate available quantity for each component
@@ -1039,7 +1042,7 @@ class Product(models.Model):
 
         min_manufacturable = float("inf")
 
-        for line in active_bom.lines.all():
+        for line in bom_lines:
             component = line.component
             required_qty = float(line.quantity)
 

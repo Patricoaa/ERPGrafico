@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -333,6 +334,9 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             "source_location",
             "destination_location",
             "journal_entry",
+        ).prefetch_related(
+            "purchase_receipt_line__receipt__purchase_order__invoices",
+            "sale_delivery_line__delivery__sale_order__invoices",
         ).all()
     serializer_class = StockMoveSerializer
     pagination_class = StandardResultsSetPagination
@@ -352,7 +356,7 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
 
 
 class PricingRuleViewSet(NoDestroyModelMixin, AuditHistory, viewsets.ModelViewSet):
-    queryset = PricingRule.objects.all()
+    queryset = PricingRule.objects.select_related("product", "category", "uom").all()
     serializer_class = PricingRuleSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -416,6 +420,10 @@ class InventoryCountViewSet(viewsets.ModelViewSet):
     queryset = (
         InventoryCount.objects.select_related("warehouse", "created_by", "document")
         .prefetch_related("lines", "lines__product")
+        .annotate(
+            total_products_count=Count("lines"),
+            counted_products_count=Count("lines", filter=Q(lines__counted_qty__isnull=False)),
+        )
         .all()
     )
     serializer_class = InventoryCountSerializer

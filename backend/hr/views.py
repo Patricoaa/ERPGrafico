@@ -324,7 +324,8 @@ class SalaryAdvanceFilter(django_filters.FilterSet):
 class SalaryAdvanceViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = SalaryAdvance.objects.select_related(
-        "employee", "employee__contact", "payroll"
+        "employee", "employee__contact", "payroll",
+        "journal_entry__treasury_movement__payment_method_new",
     ).all()
     serializer_class = SalaryAdvanceSerializer
     filter_backends = [DjangoFilterBackend]

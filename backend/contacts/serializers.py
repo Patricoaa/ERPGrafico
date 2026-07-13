@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from .models import Contact
@@ -89,30 +91,31 @@ class ContactSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "updated_at"]
 
 
-class ContactListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for list views"""
+class ContactTinySerializer(serializers.ModelSerializer):
+    """Minimal contact serializer for nesting in other serializers (e.g. bank executives).
+    Uses only DB fields — no computed properties, zero extra queries."""
 
-    contact_type = serializers.CharField(read_only=True)
-    active_roles = serializers.ListField(child=serializers.CharField(), read_only=True)
-    credit_balance_used = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
-    credit_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
-    partner_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
-    partner_total_contributions = serializers.DecimalField(
-        max_digits=14, decimal_places=0, read_only=True
-    )
-    partner_provisional_withdrawals_balance = serializers.DecimalField(
-        max_digits=14, decimal_places=0, read_only=True
-    )
-    partner_earnings_balance = serializers.DecimalField(
-        max_digits=14, decimal_places=0, read_only=True
-    )
-    partner_dividends_payable_balance = serializers.DecimalField(
-        max_digits=14, decimal_places=0, read_only=True
-    )
-    partner_net_equity = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
-    partner_excess_capital = serializers.DecimalField(
-        max_digits=14, decimal_places=0, read_only=True
-    )
+    class Meta:
+        model = Contact
+        fields = ["id", "name", "tax_id", "email", "phone"]
+        read_only_fields = fields
+
+
+class ContactListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for list views — reads from queryset annotations
+    instead of triggering per-contact DB queries via model properties."""
+
+    contact_type = serializers.SerializerMethodField()
+    active_roles = serializers.SerializerMethodField()
+    credit_balance_used = serializers.SerializerMethodField()
+    credit_balance = serializers.SerializerMethodField()
+    partner_balance = serializers.SerializerMethodField()
+    partner_total_contributions = serializers.SerializerMethodField()
+    partner_provisional_withdrawals_balance = serializers.SerializerMethodField()
+    partner_earnings_balance = serializers.SerializerMethodField()
+    partner_dividends_payable_balance = serializers.SerializerMethodField()
+    partner_net_equity = serializers.SerializerMethodField()
+    partner_excess_capital = serializers.SerializerMethodField()
     last_sale_date = serializers.DateField(read_only=True)
 
     class Meta:
@@ -150,6 +153,82 @@ class ContactListSerializer(serializers.ModelSerializer):
             "partner_net_equity",
             "last_sale_date",
         ]
+
+    def _bool(self, obj, attr):
+        return bool(getattr(obj, attr, False))
+
+    def get_contact_type(self, obj):
+        has_sales = self._bool(obj, "_has_sales")
+        has_purchases = self._bool(obj, "_has_purchases")
+        has_work_orders = self._bool(obj, "_has_work_orders")
+        if has_sales and has_purchases:
+            return "BOTH"
+        if has_sales:
+            return "CUSTOMER"
+        if has_purchases:
+            return "SUPPLIER"
+        if has_work_orders:
+            return "RELATED"
+        return "NONE"
+
+    def get_active_roles(self, obj):
+        roles = set(getattr(obj, "roles", []) or [])
+        if self._bool(obj, "_has_sales"):
+            roles.add("CUSTOMER")
+        if self._bool(obj, "_has_purchases"):
+            roles.add("SUPPLIER")
+        if self._bool(obj, "_has_work_orders"):
+            roles.add("RELATED")
+        if getattr(obj, "is_partner", False):
+            roles.add("PARTNER")
+        if self._bool(obj, "_has_employees"):
+            roles.add("EMPLOYEE")
+        return list(roles) if roles else ["NONE"]
+
+    def get_credit_balance_used(self, obj):
+        if not self._bool(obj, "_has_sales"):
+            return Decimal("0")
+        return obj.credit_balance_used
+
+    def get_credit_balance(self, obj):
+        additions = getattr(obj, "_credit_balance_additions", Decimal("0")) or Decimal("0")
+        consumptions = getattr(obj, "_credit_balance_consumptions", Decimal("0")) or Decimal("0")
+        return additions - consumptions
+
+    def get_partner_balance(self, obj):
+        if not getattr(obj, "is_partner", False):
+            return Decimal("0")
+        return obj.partner_balance
+
+    def get_partner_total_contributions(self, obj):
+        if not getattr(obj, "is_partner", False):
+            return Decimal("0")
+        return obj.partner_total_contributions
+
+    def get_partner_provisional_withdrawals_balance(self, obj):
+        if not getattr(obj, "is_partner", False):
+            return Decimal("0")
+        return obj.partner_provisional_withdrawals_balance
+
+    def get_partner_earnings_balance(self, obj):
+        if not getattr(obj, "is_partner", False):
+            return Decimal("0")
+        return obj.partner_earnings_balance
+
+    def get_partner_dividends_payable_balance(self, obj):
+        if not getattr(obj, "is_partner", False):
+            return Decimal("0")
+        return obj.partner_dividends_payable_balance
+
+    def get_partner_net_equity(self, obj):
+        if not getattr(obj, "is_partner", False):
+            return Decimal("0")
+        return obj.partner_net_equity
+
+    def get_partner_excess_capital(self, obj):
+        if not getattr(obj, "is_partner", False):
+            return Decimal("0")
+        return obj.partner_excess_capital
 
 
 class PartnerListSerializer(serializers.ModelSerializer):
