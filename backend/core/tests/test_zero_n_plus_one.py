@@ -36,7 +36,7 @@ class TestInventoryNPlusOne:
                 category=cat, product_type="STORABLE",
                 uom=uom, sale_uom=uom, purchase_uom=uom,
             )
-        with django_assert_max_num_queries(40):
+        with django_assert_max_num_queries(35):
             resp = api_client.get("/api/inventory/products/")
         assert resp.status_code == 200
 
@@ -49,7 +49,7 @@ class TestInventoryNPlusOne:
                 destination_location=internal_location,
                 quantity=Decimal("10"),
             )
-        with django_assert_max_num_queries(25):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/inventory/moves/")
         assert resp.status_code == 200
 
@@ -62,7 +62,7 @@ class TestInventoryNPlusOne:
                 min_quantity=Decimal("1"), max_quantity=Decimal("100"),
                 fixed_price=Decimal("1000"),
             )
-        with django_assert_max_num_queries(20):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/inventory/pricing-rules/")
         assert resp.status_code == 200
 
@@ -74,9 +74,9 @@ class TestInventoryNPlusOne:
                 status="ACTIVE", recurrence_period="MONTHLY",
                 start_date=date.today(), amount=Decimal("10000"),
             )
-        # BUG: selectors.py has NameError for Subscription import — 500 expected
-        resp = api_client.get("/api/inventory/subscriptions/")
-        assert resp.status_code == 500
+        with django_assert_max_num_queries(5):
+            resp = api_client.get("/api/inventory/subscriptions/")
+        assert resp.status_code == 200
 
     def test_inventory_count_list(self, api_client, warehouse, django_assert_max_num_queries):
         from inventory.models import InventoryCount
@@ -84,7 +84,7 @@ class TestInventoryNPlusOne:
             InventoryCount.objects.create(
                 warehouse=warehouse, status="DRAFT",
             )
-        with django_assert_max_num_queries(20):
+        with django_assert_max_num_queries(10):
             resp = api_client.get("/api/inventory/counts/")
         assert resp.status_code == 200
 
@@ -115,7 +115,7 @@ class TestSalesNPlusOne:
                 order=so, product=prod, description="L",
                 quantity=Decimal("1"), unit_price=Decimal("1000"), uom=uom,
             )
-        with django_assert_max_num_queries(50):
+        with django_assert_max_num_queries(25):
             resp = api_client.get("/api/sales/orders/")
         assert resp.status_code == 200
 
@@ -129,7 +129,7 @@ class TestSalesNPlusOne:
                 sale_order=sale_order, warehouse=warehouse,
                 delivery_date=date.today(), status="CONFIRMED",
             )
-        with django_assert_max_num_queries(25):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/sales/deliveries/")
         assert resp.status_code == 200
 
@@ -142,7 +142,7 @@ class TestSalesNPlusOne:
                 sale_order=sale_order, warehouse=warehouse,
                 date=date.today(), status="DRAFT",
             )
-        with django_assert_max_num_queries(25):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/sales/returns/")
         assert resp.status_code == 200
 
@@ -165,7 +165,7 @@ class TestBillingNPlusOne:
             Invoice.objects.create(
                 dte_type="FACTURA", status="POSTED", contact=c, sale_order=so,
             )
-        with django_assert_max_num_queries(120):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/billing/invoices/")
         assert resp.status_code == 200
 
@@ -188,7 +188,7 @@ class TestTreasuryNPlusOne:
                 to_account=treasury_account, account=account_asset,
                 contact=contact, sale_order=sale_order,
             )
-        with django_assert_max_num_queries(30):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/treasury/movements/")
         assert resp.status_code == 200
 
@@ -203,7 +203,7 @@ class TestTreasuryNPlusOne:
                 for j in range(2)
             ]
             b.account_executives.set(execs)
-        with django_assert_max_num_queries(155):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/treasury/banks/")
         assert resp.status_code == 200
 
@@ -255,7 +255,7 @@ class TestTreasuryNPlusOne:
                 commission_tax=Decimal("5000"), commission_total=Decimal("5000"),
                 net_amount=Decimal("45000"), status="PENDING",
             )
-        with django_assert_max_num_queries(20):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/treasury/terminal-batches/")
         assert resp.status_code == 200
 
@@ -283,7 +283,7 @@ class TestTreasuryNPlusOne:
                 disbursement_account=cta, liability_account=liab_cta,
                 status="ACTIVE",
             )
-        with django_assert_max_num_queries(25):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/treasury/loans/")
         assert resp.status_code == 200
 
@@ -305,7 +305,7 @@ class TestProductionNPlusOne:
                 description=f"OT {i}", status="DRAFT",
                 sale_order=sale_order, product=product, warehouse=warehouse,
             )
-        with django_assert_max_num_queries(35):
+        with django_assert_max_num_queries(10):
             resp = api_client.get("/api/production/orders/")
         assert resp.status_code == 200
 
@@ -325,7 +325,7 @@ class TestPurchasingNPlusOne:
             PurchaseOrder.objects.create(
                 status="CONFIRMED", supplier=supplier_contact,
             )
-        with django_assert_max_num_queries(35):
+        with django_assert_max_num_queries(10):
             resp = api_client.get("/api/purchasing/orders/")
         assert resp.status_code == 200
 
@@ -349,7 +349,7 @@ class TestHrNPlusOne:
                 payroll=p, concept=payroll_concept,
                 amount=Decimal("500000"),
             )
-        with django_assert_max_num_queries(25):
+        with django_assert_max_num_queries(10):
             resp = api_client.get("/api/hr/payrolls/")
         assert resp.status_code == 200
 
@@ -362,7 +362,7 @@ class TestHrNPlusOne:
                 employee=employee, amount=Decimal("100000"),
                 date=date.today(),
             )
-        with django_assert_max_num_queries(20):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/hr/advances/")
         assert resp.status_code == 200
 
@@ -380,6 +380,6 @@ class TestContactsNPlusOne:
             Contact.objects.create(
                 name=f"Contacto {i}", tax_id=f"77.{i:06d}-K",
             )
-        with django_assert_max_num_queries(60):
+        with django_assert_max_num_queries(5):
             resp = api_client.get("/api/contacts/")
         assert resp.status_code == 200

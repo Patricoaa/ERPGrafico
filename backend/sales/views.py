@@ -401,7 +401,11 @@ class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 class SaleReturnViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
-    queryset = SaleReturn.objects.all()
+    queryset = (
+        SaleReturn.objects.select_related("sale_order", "warehouse")
+        .prefetch_related("lines__product", "lines__uom")
+        .all()
+    )
     serializer_class = SaleReturnSerializer
 
     @action(detail=True, methods=["post"])

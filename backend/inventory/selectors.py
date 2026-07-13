@@ -44,6 +44,7 @@ def list_products(*, user, params: dict) -> QuerySet:
             "attribute_values__attribute",
             "allowed_sale_uoms",
             "attachments",
+            "uom_prices",
             Prefetch(
                 "variants",
                 queryset=Product.objects.filter(is_active=True)
@@ -159,6 +160,7 @@ def get_product_base_queryset(*, user) -> QuerySet:
             "attribute_values__attribute",
             "allowed_sale_uoms",
             "attachments",
+            "uom_prices",
             Prefetch(
                 "variants",
                 queryset=Product.objects.filter(is_active=True)
@@ -462,6 +464,8 @@ class SubscriptionSelector:
     @staticmethod
     def list_subscriptions(*, params: dict) -> QuerySet:
         from django.utils import timezone
+
+        from .models import Subscription
 
         queryset = Subscription.objects.all().select_related("product", "supplier").order_by("-created_at")
 

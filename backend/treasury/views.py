@@ -5,6 +5,7 @@ from decimal import Decimal
 import django_filters
 from celery.result import AsyncResult
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -77,7 +78,7 @@ from .services import TerminalBatchService, TreasuryService
 
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = Bank.objects.all().order_by("name")
+    queryset = Bank.objects.prefetch_related("account_executives").order_by("name")
     serializer_class = BankSerializer
     pagination_class = None  # Master data
 
@@ -1016,7 +1017,16 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
     ViewSet for managing Terminal Batches (Settlements).
     """
 
-    queryset = TerminalBatch.objects.all().order_by("-sales_date", "-created_at")
+    queryset = (
+        TerminalBatch.objects.select_related(
+            "provider",
+            "settlement_journal_entry",
+            "bank_statement_line__statement",
+            "supplier_invoice",
+        )
+        .annotate(payment_count_agg=Count("payments"))
+        .order_by("-sales_date", "-created_at")
+    )
     serializer_class = TerminalBatchSerializer
     filterset_fields = ["status", "provider", "sales_date"]
 

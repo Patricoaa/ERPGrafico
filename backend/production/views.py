@@ -50,6 +50,7 @@ from core.idempotency import idempotent_endpoint
 
 from .serializers import (
     BillOfMaterialsSerializer,
+    WorkOrderListSerializer,
     WorkOrderSerializer,
 )
 from .selectors import ProductionSelectorExt
@@ -85,6 +86,11 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         "tasks",
     )
     serializer_class = WorkOrderSerializer
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return WorkOrderListSerializer
+        return WorkOrderSerializer
 
     def _build_stock_context(self, work_order):
         return WorkOrderService.build_stock_context(work_order)

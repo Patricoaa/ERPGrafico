@@ -25,7 +25,24 @@ class InvoiceSelectorExt:
     @staticmethod
     def get_queryset_from_request(view, request):
         from .models import Invoice
-        qs = Invoice.objects.select_related('contact', 'journal_entry')
+        from sales.models import SaleOrder
+        from purchasing.models import PurchaseOrder
+        from django.db.models import Prefetch
+
+        is_list = view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']
+
+        if is_list:
+            qs = Invoice.objects.select_related(
+                'contact',
+                'sale_order__customer',
+                'purchase_order__supplier',
+                'journal_entry',
+            ).prefetch_related(
+                'payments',
+                'payment_allocations',
+            )
+        else:
+            qs = Invoice.objects.select_related('contact', 'journal_entry')
         if view.action in ['list', 'debit_notes_list', 'credit_notes_list', 'unpaid_invoices', 'dashboard_stats']:
             d_type = request.query_params.get('document_type')
             inv_type = request.query_params.get('invoice_type')
