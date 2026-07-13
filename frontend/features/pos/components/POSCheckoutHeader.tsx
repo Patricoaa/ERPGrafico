@@ -69,6 +69,11 @@ export function POSCheckoutHeader() {
                                 "flex flex-col items-center gap-[clamp(0.15rem,0.5vw,0.35rem)] relative"
                             )}
                         >
+                            {stepMeta && (
+                                <span className="text-[clamp(0.3rem,0.65vw,0.5rem)] text-muted-foreground truncate max-w-[clamp(40px,10vw,80px)] leading-tight">
+                                    {stepMeta}
+                                </span>
+                            )}
                             <div className={cn(
                                 "h-[clamp(1.5rem,3.5vw,2.25rem)] w-[clamp(1.5rem,3.5vw,2.25rem)] rounded-sm flex items-center justify-center transition-all duration-300 border-2",
                                 isActive ? "bg-primary border-primary text-primary-foreground scale-110" :
@@ -88,11 +93,6 @@ export function POSCheckoutHeader() {
                             )}>
                                 {step.label}
                             </span>
-                            {stepMeta && (
-                                <span className="text-[clamp(0.3rem,0.65vw,0.5rem)] text-muted-foreground truncate max-w-[clamp(40px,10vw,80px)] leading-tight">
-                                    {stepMeta}
-                                </span>
-                            )}
                         </div>
 
                         {index < steps.length - 1 && (
