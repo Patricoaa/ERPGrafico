@@ -91,6 +91,34 @@ class ContactSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "updated_at"]
 
 
+class ContactWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views."""
+    class Meta:
+        model = Contact
+        fields = [
+            "id",
+            "code",
+            "name",
+            "tax_id",
+            "contact_name",
+            "email",
+            "phone",
+            "address",
+            "is_default_customer",
+            "is_default_vendor",
+            "credit_enabled",
+            "credit_blocked",
+            "credit_limit",
+            "credit_days",
+            "credit_auto_blocked",
+            "credit_risk_level",
+            "credit_last_evaluated",
+            "is_partner",
+            "partner_equity_percentage",
+            "partner_since",
+        ]
+
+
 class ContactTinySerializer(serializers.ModelSerializer):
     """Minimal contact serializer for nesting in other serializers (e.g. bank executives).
     Uses only DB fields — no computed properties, zero extra queries."""

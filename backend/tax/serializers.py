@@ -133,6 +133,34 @@ class F29DeclarationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["journal_entry", "created_at", "updated_at"]
 
+class F29DeclarationWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = F29Declaration
+        fields = [
+            "id",
+            "tax_period",
+            "declaration_date",
+            "folio_number",
+            "sales_taxed",
+            "sales_exempt",
+            "debit_notes_taxed",
+            "credit_notes_taxed",
+            "purchases_taxed",
+            "purchases_exempt",
+            "purchase_debit_notes",
+            "purchase_credit_notes",
+            "ppm_amount",
+            "withholding_tax",
+            "vat_credit_carryforward",
+            "vat_correction_amount",
+            "second_category_tax",
+            "tax_rate",
+            "notes",
+            "document",
+            "journal_entry",
+        ]
+        read_only_fields = ["journal_entry"]
+
 
 class F29PaymentSerializer(serializers.ModelSerializer):
     declaration_display = serializers.CharField(source="declaration.__str__", read_only=True)
