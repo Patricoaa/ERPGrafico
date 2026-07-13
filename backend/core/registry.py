@@ -16,7 +16,7 @@ from functools import reduce
 from typing import Any, ClassVar
 
 from django.db import connection as _db_connection
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 
 logger = logging.getLogger(__name__)
@@ -394,39 +394,40 @@ class UniversalRegistry:
 
         from core.models import GlobalSearchIndex
 
-        # 1. Get or create index entry
-        ct = ContentType.objects.get_for_model(instance.__class__)
-        idx, _ = GlobalSearchIndex.objects.get_or_create(
-            content_type=ct, object_id=str(instance.pk), defaults={"entity_label": entity.label}
-        )
+        with transaction.atomic():
+            # 1. Get or create index entry
+            ct = ContentType.objects.get_for_model(instance.__class__)
+            idx, _ = GlobalSearchIndex.objects.get_or_create(
+                content_type=ct, object_id=str(instance.pk), defaults={"entity_label": entity.label}
+            )
 
-        # 2. Update display fields
-        idx.title = cls._render(entity.display_template, instance)
-        idx.subtitle = cls._render(entity.subtitle_template, instance)
-        idx.extra_info = cls._render(entity.extra_info_template, instance)
-        idx.icon = entity.icon
-        idx.entity_label = entity.label
-        idx.save()
+            # 2. Update display fields
+            idx.title = cls._render(entity.display_template, instance)
+            idx.subtitle = cls._render(entity.subtitle_template, instance)
+            idx.extra_info = cls._render(entity.extra_info_template, instance)
+            idx.icon = entity.icon
+            idx.entity_label = entity.label
+            idx.save()
 
-        # 3. Update search vector (calculated from original model fields)
-        # We now include ALL search fields, including related ones (__)
-        from django.db import connection as db_conn
+            # 3. Update search vector (calculated from original model fields)
+            # We now include ALL search fields, including related ones (__)
+            from django.db import connection as db_conn
 
-        fts_fields = entity.search_fields
-        if fts_fields and db_conn.vendor == "postgresql":
-            from django.contrib.postgres.search import SearchVector
+            fts_fields = entity.search_fields
+            if fts_fields and db_conn.vendor == "postgresql":
+                from django.contrib.postgres.search import SearchVector
 
-            try:
-                instance_with_vector = instance.__class__.objects.annotate(
-                    computed_vector=SearchVector(*fts_fields, config="spanish")
-                ).get(pk=instance.pk)
+                try:
+                    instance_with_vector = instance.__class__.objects.annotate(
+                        computed_vector=SearchVector(*fts_fields, config="spanish")
+                    ).get(pk=instance.pk)
 
-                idx.search_vector = instance_with_vector.computed_vector
-                idx.save()
-            except Exception:
-                # Log error but don't fail indexing if vector fails (e.g. non-string fields)
-                # We still have title/subtitle for icontains search
-                pass
+                    idx.search_vector = instance_with_vector.computed_vector
+                    idx.save()
+                except Exception:
+                    # Log error but don't fail indexing if vector fails (e.g. non-string fields)
+                    # We still have title/subtitle for icontains search
+                    pass
 
     @classmethod
     def remove_from_index(cls, instance: models.Model) -> None:
