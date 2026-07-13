@@ -612,7 +612,9 @@ class PurchasingService:
             status=InventoryDocument.Status.DRAFT,
             date=receipt.receipt_date,
             reference=f"Recepción {receipt.purchase_order.display_id}",
-            partner=receipt.purchase_order.supplier
+            partner=receipt.purchase_order.supplier,
+            source_document_type="purchasing.purchasereceipt",
+            source_document_id=receipt.id,
         )
         
         details_to_create = []
@@ -1031,7 +1033,9 @@ class PurchasingService:
                 status=InventoryDocument.Status.DRAFT,
                 date=timezone.now().date(),
                 reference=f"{invoice.get_dte_type_display()} {document_number} ({order.display_id})",
-                partner=order.supplier
+                partner=order.supplier,
+                source_document_type="billing.invoice",
+                source_document_id=invoice.id,
             )
             details_to_create = []
 
@@ -1266,13 +1270,15 @@ class PurchasingService:
         # 2. Reverse Stock Moves & Update Purchase Lines
         from inventory.models import InventoryDocument, InventoryDocumentDetail, Location
         from inventory.services import InventoryService
-
+        
         doc_inv = InventoryDocument.objects.create(
-            document_type=InventoryDocument.Type.DELIVERY,
+            document_type=InventoryDocument.Type.RECEIPT,
             status=InventoryDocument.Status.DRAFT,
-            date=timezone.now().date(),
-            reference=f"Anulación Recepción {receipt.number}",
-            partner=receipt.purchase_order.supplier
+            date=receipt.receipt_date,
+            reference=f"Recepción {receipt.purchase_order.display_id}",
+            partner=receipt.purchase_order.supplier,
+            source_document_type="purchasing.purchasereceipt",
+            source_document_id=receipt.id,
         )
         details_to_create = []
 

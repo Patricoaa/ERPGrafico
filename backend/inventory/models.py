@@ -1397,6 +1397,8 @@ class InventoryDocument(TimeStampedModel):
         related_name="inventory_documents"
     )
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
+    source_document_type = models.CharField(_("Tipo documento fuente"), max_length=50, blank=True, default="")
+    source_document_id = models.PositiveIntegerField(_("ID documento fuente"), null=True, blank=True)
     notes = models.TextField(_("Notas"), blank=True)
     
     # Audit fields

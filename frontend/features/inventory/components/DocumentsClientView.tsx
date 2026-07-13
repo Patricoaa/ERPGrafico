@@ -22,8 +22,6 @@ import { PrintableLayout } from "@/features/_shared"
 
 interface DocumentsClientViewProps {
     documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
-    externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
@@ -35,7 +33,7 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
     'PRODUCTION': { intent: 'neutral', label: 'Producción' }
 }
 
-export function DocumentsClientView({ documentTypeFilter, externalOpen, onExternalOpenChange, createAction }: DocumentsClientViewProps) {
+export function DocumentsClientView({ documentTypeFilter, createAction }: DocumentsClientViewProps) {
     const pathname = usePathname()
     const router = useRouter()
 
@@ -83,7 +81,6 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
     const handleCloseDrawer = () => {
         setSelectedDocumentId(null)
         clearSelection()
-        onExternalOpenChange?.(false)
     }
 
     const openSelected = useCallback((id: number) => {
@@ -149,10 +146,14 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
 
         cols.push({
             id: "reference",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.reference || '-'}</DataCell.Text>
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Referencia" className="justify-center" />,
+            cell: ({ row }) => {
+                const doc = row.original
+                if (doc.source_document_type && doc.source_document_id) {
+                    return <DataCell.Entity entityLabel={doc.source_document_type} number={doc.source_document_id} />
+                }
+                return <DataCell.Text>{doc.reference || '-'}</DataCell.Text>
+            },
             size: 120,
         })
 
@@ -238,7 +239,7 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
 
             <InventoryDocumentDrawer
                 documentId={selectedDocumentId}
-                open={selectedDocumentId !== null || !!externalOpen}
+                open={selectedDocumentId !== null}
                 onOpenChange={(open) => {
                     if (!open) handleCloseDrawer()
                 }}

@@ -173,6 +173,8 @@ export interface InventoryDocument {
     partner?: number | null
     partner_name?: string | null
     reference: string
+    source_document_type?: string | null
+    source_document_id?: number | null
     notes: string
     created_by?: number | null
     created_by_name?: string | null
