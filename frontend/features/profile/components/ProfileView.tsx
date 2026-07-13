@@ -72,8 +72,8 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
     }
 
     return (
-        <Tabs value={activeTab} className="w-full h-full flex flex-col">
-            <div className="pt-0 flex-1 min-h-0">
+        <Tabs value={activeTab} className="w-full flex flex-col">
+            <div className="pt-0">
                 <TabsContent value="account" className="mt-0 outline-none space-y-6">
                     <AccountTab activeSubTab={activeSubTab} />
                 </TabsContent>
