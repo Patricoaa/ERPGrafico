@@ -415,6 +415,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_qty_reserved(self, obj):
         if hasattr(obj, "annotated_qty_reserved"):
             return float(obj.annotated_qty_reserved)
+        logger.warning(f"[N+1 ZERO-POLICY] get_qty_reserved fallback query triggered for Product ID {obj.id}")
         request = self.context.get("request")
         exclude_id = request.query_params.get("exclude_draft_id") if request else None
         return float(obj.get_qty_reserved(exclude_id))
@@ -423,6 +424,7 @@ class ProductSerializer(serializers.ModelSerializer):
         if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
             return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved)
             
+        logger.warning(f"[N+1 ZERO-POLICY] get_qty_available fallback query triggered for Product ID {obj.id}")
         request = self.context.get("request")
         exclude_id = request.query_params.get("exclude_draft_id") if request else None
         return float(obj.get_qty_available(exclude_id))
