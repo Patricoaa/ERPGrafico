@@ -168,7 +168,9 @@ class PartnerTransaction(models.Model):
 
     @property
     def signed_amount(self):
-        """Returns positive for contributions, negative for withdrawals."""
+        """Returns positive for contributions, negative for withdrawals, 0 for subscriptions."""
+        if self.transaction_type == self.Type.EQUITY_SUBSCRIPTION:
+            return Decimal("0")
         if self.is_withdrawal:
             return -self.amount
         return self.amount

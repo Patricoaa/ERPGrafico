@@ -70,7 +70,7 @@ export function PartnerLedgerTab() {
 
     // Identify Inflow vs Outflow types for UI and Balance
     const isInflow = (type: string) => [
-        'SUBSCRIPTION', 'CAPITAL_CASH', 'CAPITAL_INVENTORY',
+        'CAPITAL_CASH', 'CAPITAL_INVENTORY',
         'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'
     ].includes(type)
 

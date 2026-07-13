@@ -91,7 +91,7 @@ export function PartnerLedgerDrawer({
     }, [open, partnerId])
 
     const isInflow = (type: string) => [
-        'SUBSCRIPTION', 'CAPITAL_CASH', 'CAPITAL_INVENTORY',
+        'CAPITAL_CASH', 'CAPITAL_INVENTORY',
         'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'
     ].includes(type)
 
