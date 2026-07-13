@@ -758,12 +758,15 @@ class Command(BaseCommand):
                 "name": "Socio Administrador (Socio A)",
                 "email": "socio.a@empresa.cl",
                 "is_partner": True,
-                "partner_equity_percentage": Decimal("50.00"),
+                "partner_equity_percentage": Decimal("35.00"),
             },
         )
+        if socio_a.partner_equity_percentage != Decimal("35.00"):
+            socio_a.partner_equity_percentage = Decimal("35.00")
+            socio_a.save(update_fields=["partner_equity_percentage"])
         if not PartnerEquityStake.objects.filter(partner=socio_a).exists():
             PartnerEquityStake.objects.create(
-                partner=socio_a, percentage=Decimal("50.00"), effective_from=timezone.now().date()
+                partner=socio_a, percentage=Decimal("35.00"), effective_from=timezone.now().date()
             )
 
         # Socio B: Capitalista
@@ -778,18 +781,51 @@ class Command(BaseCommand):
                 "name": "Socio Capitalista (Socio B)",
                 "email": "socio.b@empresa.cl",
                 "is_partner": True,
-                "partner_equity_percentage": Decimal("50.00"),
+                "partner_equity_percentage": Decimal("35.00"),
             },
         )
+        if socio_b.partner_equity_percentage != Decimal("35.00"):
+            socio_b.partner_equity_percentage = Decimal("35.00")
+            socio_b.save(update_fields=["partner_equity_percentage"])
         if not PartnerEquityStake.objects.filter(partner=socio_b).exists():
             PartnerEquityStake.objects.create(
-                partner=socio_b, percentage=Decimal("50.00"), effective_from=timezone.now().date()
+                partner=socio_b, percentage=Decimal("35.00"), effective_from=timezone.now().date()
             )
+
+        # Socio C: Admin/Owner (linked to the admin system user)
+        socio_admin_capital = get_or_create_subaccount("3.1.01", "Socio Admin", "003")
+        get_or_create_subaccount("3.2.01", "Socio Admin", "003")
+        socio_admin_receivable = get_or_create_subaccount("1.1.05.01", "Socio Admin", "003")
+        get_or_create_subaccount("2.1.07", "Socio Admin", "003")
+
+        admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
+        if admin_contact:
+            if not admin_contact.is_partner:
+                admin_contact.is_partner = True
+                admin_contact.partner_equity_percentage = Decimal("30.00")
+                admin_contact.partner_since = timezone.now().date()
+                admin_contact.save(update_fields=["is_partner", "partner_equity_percentage", "partner_since"])
+            elif admin_contact.partner_equity_percentage != Decimal("30.00"):
+                admin_contact.partner_equity_percentage = Decimal("30.00")
+                admin_contact.save(update_fields=["partner_equity_percentage"])
+            if not PartnerEquityStake.objects.filter(partner=admin_contact).exists():
+                PartnerEquityStake.objects.create(
+                    partner=admin_contact, percentage=Decimal("30.00"),
+                    effective_from=timezone.now().date(),
+                    notes="Socio fundador — usuario admin del sistema",
+                )
 
         owner_accounts = {
             socio_a.id: {"capital": socio_a_capital, "receivable": socio_a_receivable},
             socio_b.id: {"capital": socio_b_capital, "receivable": socio_b_receivable},
         }
+        owners_list = [socio_a, socio_b]
+        if admin_contact:
+            owner_accounts[admin_contact.id] = {
+                "capital": socio_admin_capital,
+                "receivable": socio_admin_receivable,
+            }
+            owners_list.append(admin_contact)
 
         # 3. Regular Customers and Suppliers
         c1, _ = Contact.objects.get_or_create(
@@ -816,7 +852,7 @@ class Command(BaseCommand):
 
         return {
             "default_customer": c_default,
-            "owners": [socio_a, socio_b],
+            "owners": owners_list,
             "owner_accounts": owner_accounts,
             "customers": [c1, c2],
             "suppliers": [s1, s2, s3],
@@ -2557,6 +2593,57 @@ class Command(BaseCommand):
 
         self.stdout.write("  ── 3 órdenes de compra, 3 receipts, 3 facturas, 3 pagos")
 
+        # ── Multi-month purchases (Jan-Jun 2026) ──────────────────────────
+        from datetime import date as _date
+
+        s3 = partners["suppliers"][2]  # Servicios Eléctricos Enel
+        tinta_m = Product.objects.get(code="MP-TIN-MAG")
+        tinta_y = Product.objects.get(code="MP-TIN-YEL")
+        multi_month_products = [
+            (s1, papel, uoms["resma"], 30, 5000, "Compra mensual resmas"),
+            (s2, tinta_c, uoms["kg"], 5, 12000, "Compra mensual tinta cyan"),
+            (s1, cartulina, uoms["paquete"], 3, 22000, "Compra mensual cartulina"),
+            (s2, tinta_m, uoms["kg"], 5, 12000, "Compra mensual tinta magenta"),
+            (s2, tinta_y, uoms["kg"], 5, 12000, "Compra mensual tinta yellow"),
+            (s1, papel, uoms["resma"], 40, 5000, "Compra semestral resmas"),
+        ]
+        for i, month in enumerate(range(1, 7)):
+            order_date = _date(2026, month, 15)
+            supplier, product, uom, qty, cost, note = multi_month_products[i]
+            note_tag = f"Seed-MultiMonth-{month:02d}"
+            if PurchaseOrder.objects.filter(notes=note_tag).exists():
+                continue
+            po = PurchaseOrder.objects.create(
+                supplier=supplier,
+                date=order_date,
+                payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
+                warehouse=wh,
+                notes=note_tag,
+            )
+            PurchaseLine.objects.create(
+                order=po, product=product, quantity=qty,
+                uom=uom, unit_cost=cost, tax_rate=get_default_vat_rate(),
+            )
+            po.save()
+            PurchaseOrderService().confirm(po, user=admin)
+            PurchasingService.receive_order(po, wh)
+            BillingService.create_purchase_bill(
+                po, supplier_invoice_number=f"FAC-SUP-MM-{month:02d}", date=order_date,
+            )
+            TreasuryService.create_movement(
+                amount=po.total,
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=order_date, created_by=admin,
+                from_account=bco_estado, partner=supplier,
+                purchase_order=po, reference=f"Pago OC MultiMonth {month:02d}",
+            )
+            self.stdout.write(
+                f"  ✓ OCS-{po.number}: {supplier.name} → {qty}u {product.name} "
+                f"(${po.total:,.0f}) — {order_date.strftime('%b %Y')}"
+            )
+        self.stdout.write(f"  ── +6 compras multi-mes (Ene-Jun 2026)")
+
     def _create_sales_demo(self, accounts, partners, inventory, uoms):
         from billing.services import BillingService
         from production.services import WorkOrderService
@@ -2743,6 +2830,63 @@ class Command(BaseCommand):
             )
 
         self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
+
+        # ── Multi-month sales (Jan-Jun 2026) ──────────────────────────────
+        from datetime import date as _date
+
+        impresion = Product.objects.get(code="PT-0001")
+        diseno = Product.objects.get(code="SRV-DIS-GRA")
+        encuadernacion = Product.objects.get(name="Servicio Encuadernación")
+        banner = Product.objects.get(name="Banner Roller Up (80x200cm)")
+        calendario = Product.objects.get(name="Calendario de Escritorio")
+        afiche = Product.objects.get(name="Afiche Publicitario (Couché 170g)")
+
+        multi_month_sales = [
+            (c1, impresion, uoms["hoja"], 300, Decimal("150"), "Venta mensual impresión"),
+            (c2, diseno, uoms["un"], 2, Decimal("25000"), "Servicio diseño gráfico"),
+            (c_default, banner, uoms["un"], 5, Decimal("35000"), "Venta banners"),
+            (c1, calendario, uoms["un"], 50, Decimal("2800"), "Venta calendarios"),
+            (c2, afiche, uoms["un"], 20, Decimal("1500"), "Venta afiches"),
+            (c_default, encuadernacion, uoms["un"], 15, Decimal("1500"), "Servicio encuadernación"),
+        ]
+        for i, month in enumerate(range(1, 7)):
+            order_date = _date(2026, month, 12)
+            customer, product, uom, qty, price, _desc = multi_month_sales[i]
+            note_tag = f"Seed-VentaMultiMonth-{month:02d}"
+            if SaleOrder.objects.filter(notes=note_tag).exists():
+                continue
+            so = SaleOrder.objects.create(
+                customer=customer, date=order_date,
+                payment_method=SaleOrder.PaymentMethod.TRANSFER,
+                notes=note_tag,
+            )
+            SaleLine.objects.create(
+                order=so, product=product, description=f"{product.name} x {qty}",
+                quantity=qty, uom=uom, unit_price=price,
+                tax_rate=get_default_vat_rate(),
+            )
+            so.save()
+            SalesService.confirm_sale(so)
+            delivery = SalesService.dispatch_order(so, wh)
+            SalesService.confirm_delivery(delivery)
+            inv = BillingService.create_sale_invoice(
+                so, dte_type=Invoice.DTEType.FACTURA,
+                payment_method="TRANSFER", date=order_date,
+            )
+            TreasuryService.create_movement(
+                amount=inv.total,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=order_date, created_by=admin,
+                to_account=bco_estado, partner=customer,
+                sale_order=so, invoice=inv,
+                reference=f"Cobro Venta MultiMonth {month:02d}",
+            )
+            self.stdout.write(
+                f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
+                f"(${inv.total:,.0f}) — {order_date.strftime('%b %Y')}"
+            )
+        self.stdout.write(f"  ── +6 ventas multi-mes (Ene-Jun 2026)")
 
     def _initialize_company_settings(self):
         """
@@ -2940,30 +3084,194 @@ class Command(BaseCommand):
             PayrollConcept.objects.update_or_create(name=name, defaults=data)
         self.stdout.write("    ✓ Payroll Concepts created.")
 
-        # 4. Demo Employee
-        admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
-        if admin_contact:
+        # 4. Demo Employees
+        from datetime import date
+
+        from hr.services import PayrollPaymentService, PayrollService, post_payroll
+
+        employees_data = [
+            {
+                "tax_id": "11111111-1",
+                "position": "Gerente de Operaciones",
+                "department": "Gerencia",
+                "base_salary": Decimal("1200000"),
+                "afp_name": "Habitat",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.D,
+                "cargas_familiares": 0,
+                "colacion": Decimal("65000"),
+                "movilizacion": Decimal("45000"),
+            },
+            {
+                "tax_id": "22222222-7",
+                "position": "Jefe de Ventas",
+                "department": "Ventas",
+                "base_salary": Decimal("950000"),
+                "afp_name": "Provida",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.B,
+                "cargas_familiares": 2,
+                "colacion": Decimal("55000"),
+                "movilizacion": Decimal("40000"),
+            },
+            {
+                "tax_id": "33333333-5",
+                "position": "Operador de Máquina Offset",
+                "department": "Taller",
+                "base_salary": Decimal("650000"),
+                "afp_name": "Modelo",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": True,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.A,
+                "cargas_familiares": 3,
+                "colacion": Decimal("50000"),
+                "movilizacion": Decimal("35000"),
+            },
+            {
+                "tax_id": "44444444-3",
+                "position": "Encargado de Bodega",
+                "department": "Bodega",
+                "base_salary": Decimal("600000"),
+                "afp_name": "Habitat",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.PARCIAL_40BIS,
+                "jornada_hours": Decimal("36.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.C,
+                "cargas_familiares": 1,
+                "colacion": Decimal("45000"),
+                "movilizacion": Decimal("30000"),
+            },
+            {
+                "tax_id": "55555555-1",
+                "position": "Ejecutivo de Ventas",
+                "department": "Ventas",
+                "base_salary": Decimal("700000"),
+                "afp_name": "Provida",
+                "salud_type": Employee.SaludType.ISAPRE,
+                "isapre_amount_uf": Decimal("1.5000"),
+                "jornada_type": Employee.JornadaType.EXENTA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.D,
+                "cargas_familiares": 0,
+                "colacion": Decimal("50000"),
+                "movilizacion": Decimal("40000"),
+            },
+            {
+                "tax_id": "66666666-K",
+                "position": "Diseñador Gráfico",
+                "department": "Diseño",
+                "base_salary": Decimal("750000"),
+                "afp_name": "Modelo",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.A,
+                "cargas_familiares": 4,
+                "colacion": Decimal("55000"),
+                "movilizacion": Decimal("35000"),
+            },
+        ]
+
+        created_employees = []
+        for emp_data in employees_data:
+            contact = Contact.objects.filter(tax_id=emp_data["tax_id"]).first()
+            if not contact:
+                continue
+            afp = AFP.objects.filter(name=emp_data["afp_name"]).first()
             emp, created = Employee.objects.get_or_create(
-                contact=admin_contact,
+                contact=contact,
                 defaults={
-                    "position": "Gerente de Operaciones",
-                    "base_salary": Decimal("1200000"),
-                    "afp": AFP.objects.filter(name="Habitat").first(),
-                    "salud_type": Employee.SaludType.FONASA,
-                    "start_date": timezone.now().date().replace(month=1, day=1),
+                    "position": emp_data["position"],
+                    "department": emp_data.get("department", ""),
+                    "base_salary": emp_data["base_salary"],
+                    "afp": afp,
+                    "salud_type": emp_data["salud_type"],
+                    "isapre_amount_uf": emp_data.get("isapre_amount_uf", Decimal("0")),
+                    "jornada_type": emp_data["jornada_type"],
+                    "jornada_hours": emp_data["jornada_hours"],
+                    "contract_type": emp_data["contract_type"],
+                    "trabajo_pesado": emp_data["trabajo_pesado"],
+                    "asignacion_familiar": emp_data["asignacion_familiar"],
+                    "cargas_familiares": emp_data["cargas_familiares"],
+                    "start_date": date(2026, 1, 1),
                 },
             )
             if created:
-                # Add some specific amounts
                 colacion = PayrollConcept.objects.get(name="Asignación de Colación")
                 movilidad = PayrollConcept.objects.get(name="Asignación de Movilización")
-                EmployeeConceptAmount.objects.create(
-                    employee=emp, concept=colacion, amount=Decimal("60000")
+                EmployeeConceptAmount.objects.get_or_create(
+                    employee=emp, concept=colacion, defaults={"amount": emp_data["colacion"]}
                 )
-                EmployeeConceptAmount.objects.create(
-                    employee=emp, concept=movilidad, amount=Decimal("40000")
+                EmployeeConceptAmount.objects.get_or_create(
+                    employee=emp, concept=movilidad, defaults={"amount": emp_data["movilizacion"]}
                 )
-            self.stdout.write(f"    ✓ Demo Employee '{admin_contact.name}' created.")
+                self.stdout.write(f"    ✓ Employee '{contact.name}' — {emp_data['position']} (${emp_data['base_salary']:,.0f})")
+            created_employees.append(emp)
+
+        # 5. Payrolls: Ene-Jun 2026 for each employee
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        payroll_months = [(2026, m) for m in range(1, 7)]
+        payroll_count = 0
+        payment_count = 0
+
+        for emp in created_employees:
+            for year, month in payroll_months:
+                existing = Payroll.objects.filter(
+                    employee=emp, period_year=year, period_month=month
+                ).first()
+                if existing:
+                    continue
+
+                try:
+                    payroll = PayrollService.generate_proforma_payroll(
+                        employee_id=emp.pk, year=year, month=month
+                    )
+                    post_payroll(payroll)
+                    payroll_count += 1
+
+                    PayrollPaymentService.pay_salary(
+                        payroll,
+                        treasury_account_id=bco_estado.pk,
+                        payment_date=date(year, month, 28),
+                        payment_method="TRANSFER",
+                        notes="Pago remuneración demo",
+                        created_by=User.objects.filter(is_superuser=True).first(),
+                    )
+                    PayrollPaymentService.pay_previred(
+                        payroll,
+                        treasury_account_id=bco_estado.pk,
+                        payment_date=date(year, month, 28),
+                        payment_method="TRANSFER",
+                        notes="Pago previred demo",
+                        created_by=User.objects.filter(is_superuser=True).first(),
+                    )
+                    payment_count += 2
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(
+                        f"    ⚠ Payroll {emp.code} {year}/{month:02d}: {str(e)[:80]}"
+                    ))
+
+        self.stdout.write(
+            f"    ✓ {len(created_employees)} empleados, "
+            f"{payroll_count} nóminas posteadas, {payment_count} pagos registrados"
+        )
 
     def _initialize_workflow_settings(self):
         """Seeds the WorkflowSettings singleton and standard NotificationRules."""
