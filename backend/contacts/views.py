@@ -216,8 +216,24 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get', 'post'])
     def partner_transactions(self, request, pk=None):
+        if request.method == 'POST':
+            from .partner_service import PartnerService
+            from rest_framework.exceptions import ValidationError
+            try:
+                ptx = PartnerService.partner_transactions_from_request(request, self.get_object())
+                return Response(
+                    {
+                        "message": "Transacción registrada.",
+                        "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
+                    }
+                )
+            except ValidationError as e:
+                return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
+            except Exception as e:
+                return Response({"error": str(e)}, status=500)
+
         from .serializers import PartnerTransactionSerializer
         transactions = ContactSelector.list_partner_transactions(self.get_object())
         page = self.paginate_queryset(transactions)
