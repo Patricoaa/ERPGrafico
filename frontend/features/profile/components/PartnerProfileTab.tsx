@@ -193,7 +193,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                                     padAngle={2}
                                                     cornerRadius={3}
                                                     enableArcLabels={true}
-                                                    arcLabel={(datum: { id: string | number; value: number }) => `${datum.value}%`}
+                                                    arcLabel={(datum: { id: string | number; value: number }) => String(datum.id)}
                                                     margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
                                                     centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
                                                 />
