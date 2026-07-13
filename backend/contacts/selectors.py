@@ -460,7 +460,9 @@ class ContactSelector:
 
     @staticmethod
     def list_partners():
-        return Contact.objects.filter(is_partner=True).distinct()
+        return Contact.objects.filter(is_partner=True).distinct().prefetch_related(
+            "partner_transactions",
+        )
 
     @staticmethod
     def get_credit_history(contact):
@@ -537,7 +539,13 @@ class ContactSelectorExt:
         if not contact.is_partner: raise ValidationError('El contacto no está marcado como socio.')
         from .partner_models import PartnerTransaction
         from .serializers import PartnerTransactionSerializer
+        from .partner_service import PartnerService
         transactions = PartnerTransaction.objects.filter(partner=contact).order_by('-date', '-created_at')
+        try:
+            account = PartnerService._resolve_partner_receivable_account(contact)
+            account_detail = {'id': account.id, 'name': account.name, 'code': account.code} if account else None
+        except Exception:
+            account_detail = None
         return {
             'contact': serializer_class(contact).data,
             'summary': {
@@ -547,7 +555,9 @@ class ContactSelectorExt:
                 'total_paid_in': str(contact.partner_total_paid_in),
                 'pending_capital': str(contact.partner_pending_capital),
                 'provisional_withdrawals': str(contact.partner_provisional_withdrawals_balance),
-                'total_formal_withdrawals': str(contact.partner_total_withdrawals)
+                'total_formal_withdrawals': str(contact.partner_total_withdrawals),
+                'earnings_balance': str(contact.partner_earnings_balance),
             },
+            'partner_account_detail': account_detail,
             'transactions': PartnerTransactionSerializer(transactions, many=True).data
         }

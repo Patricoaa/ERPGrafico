@@ -14,9 +14,16 @@ export const PARTNERS_KEYS = {
  * dedicados cuando se necesiten (no se incluyen aquí para evitar scope creep).
  */
 export function usePartners() {
-    return useQuery<Partner[]>({
+    const query = useQuery<Partner[]>({
         queryKey: PARTNERS_KEYS.list(),
         queryFn: () => partnersApi.getPartners(),
         staleTime: 5 * 60 * 1000,
     })
+    return {
+        data: query.data ?? [],
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        error: query.error,
+        refetch: query.refetch,
+    }
 }

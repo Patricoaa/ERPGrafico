@@ -152,6 +152,55 @@ class ContactListSerializer(serializers.ModelSerializer):
         ]
 
 
+class PartnerListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for the partners list endpoint — no credit/roles queries."""
+
+    partner_total_contributions = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_total_paid_in = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_pending_capital = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_excess_capital = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_provisional_withdrawals_balance = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_total_withdrawals = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_earnings_balance = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_dividends_payable_balance = serializers.DecimalField(
+        max_digits=14, decimal_places=0, read_only=True
+    )
+    partner_net_equity = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+
+    class Meta:
+        model = Contact
+        fields = [
+            "id",
+            "name",
+            "tax_id",
+            "partner_equity_percentage",
+            "partner_since",
+            "partner_total_contributions",
+            "partner_total_paid_in",
+            "partner_pending_capital",
+            "partner_excess_capital",
+            "partner_provisional_withdrawals_balance",
+            "partner_total_withdrawals",
+            "partner_earnings_balance",
+            "partner_dividends_payable_balance",
+            "partner_net_equity",
+        ]
+
+
 from .partner_models import (
     PartnerEquityStake,
     PartnerTransaction,

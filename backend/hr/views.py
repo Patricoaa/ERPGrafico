@@ -119,7 +119,9 @@ class EmployeeFilter(django_filters.FilterSet):
 
 
 class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
-    queryset = Employee.objects.select_related("contact", "afp").all()
+    queryset = Employee.objects.select_related("contact", "afp").prefetch_related(
+        "concept_amounts__concept"
+    ).all()
     serializer_class = EmployeeSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
