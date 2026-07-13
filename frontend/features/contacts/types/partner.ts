@@ -60,6 +60,8 @@ export interface PartnerTransaction {
     journal_entry_id: number;
     journal_entry_display: string;
     treasury_movement?: number;
+    stock_move?: number;
+    distribution_resolution?: number;
     created_by: number;
     created_by_name: string;
     created_at: string;

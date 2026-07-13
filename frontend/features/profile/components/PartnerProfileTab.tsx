@@ -14,7 +14,7 @@ import {
 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { type PartnerTransaction, usePartners } from "@/features/contacts"
-import { PaymentDrawer } from "@/features/treasury"
+import { LazyDrawer } from "@/features/_shared/transaction-drawer/drawerRegistry"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
 interface Props {
@@ -30,20 +30,17 @@ const isOutflow = (type: string) =>
 export function PartnerProfileTab({ contactId }: Props) {
     const { data: statement, isLoading, isError } = usePartnerStatement(contactId)
 
-    const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
+    const [viewConfig, setViewConfig] = useState<{ type: string; id: number } | null>(null)
 
-    const handleViewDetails = (movementId: number) => {
-        setSelectedMovementId(movementId)
-        setDetailsOpen(true)
+    const handleViewDocument = (type: string, id: number) => {
+        setViewConfig({ type, id })
     }
 
-    const closeDetails = () => {
-        setDetailsOpen(false)
-        setSelectedMovementId(null)
+    const closeDrawer = () => {
+        setViewConfig(null)
     }
 
-    const actionsCtx: PartnerTransactionActionsCtx = { onViewMovement: handleViewDetails }
+    const actionsCtx: PartnerTransactionActionsCtx = { onViewDocument: handleViewDocument }
 
     const { data: partners } = usePartners()
 
@@ -111,21 +108,17 @@ export function PartnerProfileTab({ contactId }: Props) {
         {
             accessorKey: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Monto" />,
-            cell: ({ row }) => {
-                const type = row.original.transaction_type
-                const direction = isOutflow(type) ? 'outflow' : 'inflow' as const
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.CurrencyFlow value={row.getValue("amount")} direction={direction} showIcon={false} />
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={row.getValue("amount")} />
+                </div>
+            ),
         },
         {
             accessorKey: "balance_after",
             header: () => <div className="text-right">Saldo</div>,
             cell: ({ row }) => (
-                <div className="text-right font-mono text-[11px] font-black text-primary bg-primary/5 px-2 py-1">
+                <div className="text-right font-mono text-[11px] font-black text-foreground px-2 py-1">
                     {formatCurrency(row.getValue("balance_after"))}
                 </div>
             ),
@@ -253,12 +246,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                     </Card>
                 </div>
 
-            {selectedMovementId && (
-                <PaymentDrawer
-                    paymentId={selectedMovementId}
-                    mode="view"
-                    open={detailsOpen}
-                    onOpenChange={(open) => !open && closeDetails()}
+            {viewConfig && (
+                <LazyDrawer
+                    type={viewConfig.type}
+                    id={viewConfig.id}
+                    open={true}
+                    onOpenChange={(open) => !open && closeDrawer()}
                 />
             )}
             </div>

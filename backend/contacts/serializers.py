@@ -186,6 +186,7 @@ class PartnerTransactionSerializer(serializers.ModelSerializer):
             "journal_entry_id",
             "journal_entry_display",
             "treasury_movement",
+            "stock_move",
             "distribution_resolution",
             "created_by",
             "created_by_name",
