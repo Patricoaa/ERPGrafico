@@ -86,7 +86,7 @@ export function PartnersClientView({
     createAction
 }: PartnersClientViewProps) {
     const search = useUnifiedSearch(partnerUnifiedSearchDef)
-    const { data: partners = [], isLoading, isFetching, refetch } = usePartners()
+    const { data: partners = [], isLoading, isFetching, refetch, error } = usePartners()
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
@@ -516,6 +516,11 @@ export function PartnersClientView({
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando composición societaria">
             <div className="h-full flex flex-col">
+                {error && (
+                    <div className="mx-4 mt-2 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                        Error al cargar socios: {error.message}
+                    </div>
+                )}
                 <div className="flex-1 min-h-0">
                     <DataTableView
                         entityLabel="settings.partner"

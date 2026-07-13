@@ -24,7 +24,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
     const pathname = usePathname()
     const searchParams = useSearchParams()
     const search = useUnifiedSearch(employeeUnifiedSearchDef)
-    const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees } = useEmployees(search.filters, initialEmployees)
+    const { employees, isLoading: loading, isRefetching, refetch: fetchEmployees, error } = useEmployees(search.filters, initialEmployees)
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
     })
@@ -135,6 +135,11 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
+            {error && (
+                <div className="mx-4 mt-2 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                    Error al cargar empleados: {error.message}
+                </div>
+            )}
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="hr.employee"
