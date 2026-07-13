@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Chip, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -8,12 +8,17 @@ import { DataCell, EntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { useInventoryDocuments } from "../hooks/useInventoryDocuments"
+import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
 import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
+import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
 import type { InventoryDocument } from "../types"
 import { toast } from "sonner"
 import React from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { showApiError } from "@/lib/errors"
+import { useRef } from "react"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared"
 
 interface DocumentsClientViewProps {
     documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
@@ -35,7 +40,7 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
     const router = useRouter()
 
     const search = useUnifiedSearch(documentUnifiedSearchDef)
-    const allFilters = useMemo(() => ({ 
+    const allFilters = useMemo(() => ({
         ...search.filters,
         ...(documentTypeFilter ? { document_type: documentTypeFilter } : {})
     }), [search.filters, documentTypeFilter])
@@ -81,31 +86,51 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
         onExternalOpenChange?.(false)
     }
 
+    const openSelected = useCallback((id: number) => {
+        const params = new URLSearchParams()
+        params.set('selected', String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname])
+
+    const { annulDocument } = useInventoryDocumentMutations()
+
+    const handleAnnul = useCallback(async (doc: InventoryDocument) => {
+        try {
+            await annulDocument(doc.id)
+            toast.success("Documento anulado con éxito.")
+            refetch()
+        } catch (error) {
+            showApiError(error, "Error al anular documento")
+        }
+    }, [annulDocument, refetch])
+
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
+
+    const actionsCtx: InventoryDocumentActionsCtx = useMemo(() => ({
+        onViewDetail: openSelected,
+        onPrint: () => handlePrint(),
+        onAnnul: handleAnnul,
+    }), [openSelected, handlePrint, handleAnnul])
+
     const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
         const cols: ColumnDef<InventoryDocument>[] = [
             {
                 id: "folio",
                 header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
                 cell: ({ row }) => (
-                    <div className="flex flex-col items-center gap-0.5">
-                        <DataCell.Code>{`DOC-${row.original.id}`}</DataCell.Code>
-                        <DataCell.Date value={row.original.date} />
-                    </div>
+                    <DataCell.Code>{`DOC-${row.original.id}`}</DataCell.Code>
                 ),
-                size: 100,
+                size: 90,
             },
             {
-                accessorKey: "partner_name",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto/Socio" className="justify-center" />,
+                accessorKey: "date",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
                 cell: ({ row }) => (
-                    <div className="flex flex-col items-center py-1 w-full">
-                        <DataCell.Text>{row.original.partner_name ?? '-'}</DataCell.Text>
-                        {row.original.reference && (
-                            <span className="text-[10px] text-muted-foreground font-mono">{row.original.reference}</span>
-                        )}
-                    </div>
+                    <DataCell.Date value={row.original.date} />
                 ),
-            }
+                size: 90,
+            },
         ]
 
         if (!documentTypeFilter) {
@@ -115,49 +140,36 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
                 cell: ({ row }) => {
                     const config = DOCUMENT_TYPE_MAP[row.original.document_type] || { intent: 'neutral' as const, label: row.original.document_type }
                     return (
-                        <div className="flex justify-center w-full">
-                            <Chip intent={config.intent} size="sm">{config.label}</Chip>
-                        </div>
+                        <DataCell.Chip intent={config.intent} size="sm">{config.label}</DataCell.Chip>
                     )
                 },
                 size: 120,
             })
         }
 
+        cols.push({
+            id: "reference",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
+            cell: ({ row }) => (
+                <DataCell.Text>{row.original.reference || '-'}</DataCell.Text>
+            ),
+            size: 120,
+        })
+
         cols.push(
             {
                 accessorKey: "status",
                 header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
                 cell: ({ row }) => (
-                    <div className="flex justify-center w-full">
-                        <StatusBadge status={row.original.status} />
-                    </div>
+                    <DataCell.Status status={row.original.status} />
                 ),
                 size: 100,
             },
-            {
-                id: "actions",
-                header: () => null,
-                cell: ({ row }) => (
-                    <div className="flex justify-center w-full">
-                        <button 
-                            className="text-xs text-primary font-medium hover:underline"
-                            onClick={() => {
-                                const params = new URLSearchParams()
-                                params.set('selected', String(row.original.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        >
-                            Ver Detalles
-                        </button>
-                    </div>
-                ),
-                size: 100,
-            }
+            documentActions.column(actionsCtx),
         )
 
         return cols
-    }, [documentTypeFilter, pathname, router])
+    }, [documentTypeFilter, actionsCtx])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -203,11 +215,7 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
                         return (
                             <EntityCard
                                 key={doc.id}
-                                onClick={() => {
-                                    const params = new URLSearchParams()
-                                    params.set('selected', String(doc.id))
-                                    router.push(`${pathname}?${params.toString()}`)
-                                }}
+                                onClick={() => openSelected(doc.id)}
                             >
                                 <EntityCard.Header
                                     title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
@@ -223,6 +231,10 @@ export function DocumentsClientView({ documentTypeFilter, externalOpen, onExtern
                     }}
                 />
             </div>
+
+            <PrintableLayout ref={printRef} title="Documento de Inventario" displayId={selectedDocumentId ? `DOC-${selectedDocumentId}` : ''}>
+                <div className="text-[9px]">Impresión de documento de inventario</div>
+            </PrintableLayout>
 
             <InventoryDocumentDrawer
                 documentId={selectedDocumentId}
