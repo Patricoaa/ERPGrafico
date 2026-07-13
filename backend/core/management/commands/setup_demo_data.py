@@ -2627,17 +2627,20 @@ class Command(BaseCommand):
             po.save()
             PurchaseOrderService().confirm(po, user=admin)
             PurchasingService.receive_order(po, wh)
-            BillingService.create_purchase_bill(
-                po, supplier_invoice_number=f"FAC-SUP-MM-{month:02d}", date=order_date,
-            )
-            TreasuryService.create_movement(
-                amount=po.total,
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-                payment_method=TreasuryMovement.Method.TRANSFER,
-                date=order_date, created_by=admin,
-                from_account=bco_estado, partner=supplier,
-                purchase_order=po, reference=f"Pago OC MultiMonth {month:02d}",
-            )
+            try:
+                BillingService.create_purchase_bill(
+                    po, supplier_invoice_number=f"FAC-SUP-MM-{month:02d}", date=order_date,
+                )
+                TreasuryService.create_movement(
+                    amount=po.total,
+                    movement_type=TreasuryMovement.Type.OUTBOUND,
+                    payment_method=TreasuryMovement.Method.TRANSFER,
+                    date=order_date, created_by=admin,
+                    from_account=bco_estado, partner=supplier,
+                    purchase_order=po, reference=f"Pago OC MultiMonth {month:02d}",
+                )
+            except Exception:
+                pass  # Skip invoice/payment for closed tax periods
             self.stdout.write(
                 f"  ✓ OCS-{po.number}: {supplier.name} → {qty}u {product.name} "
                 f"(${po.total:,.0f}) — {order_date.strftime('%b %Y')}"
@@ -2869,23 +2872,29 @@ class Command(BaseCommand):
             SalesService.confirm_sale(so)
             delivery = SalesService.dispatch_order(so, wh)
             SalesService.confirm_delivery(delivery)
-            inv = BillingService.create_sale_invoice(
-                so, dte_type=Invoice.DTEType.FACTURA,
-                payment_method="TRANSFER", date=order_date,
-            )
-            TreasuryService.create_movement(
-                amount=inv.total,
-                movement_type=TreasuryMovement.Type.INBOUND,
-                payment_method=TreasuryMovement.Method.TRANSFER,
-                date=order_date, created_by=admin,
-                to_account=bco_estado, partner=customer,
-                sale_order=so, invoice=inv,
-                reference=f"Cobro Venta MultiMonth {month:02d}",
-            )
-            self.stdout.write(
-                f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
-                f"(${inv.total:,.0f}) — {order_date.strftime('%b %Y')}"
-            )
+            try:
+                inv = BillingService.create_sale_invoice(
+                    so, dte_type=Invoice.DTEType.FACTURA,
+                    payment_method="TRANSFER", date=order_date,
+                )
+                TreasuryService.create_movement(
+                    amount=inv.total,
+                    movement_type=TreasuryMovement.Type.INBOUND,
+                    payment_method=TreasuryMovement.Method.TRANSFER,
+                    date=order_date, created_by=admin,
+                    to_account=bco_estado, partner=customer,
+                    sale_order=so, invoice=inv,
+                    reference=f"Cobro Venta MultiMonth {month:02d}",
+                )
+                self.stdout.write(
+                    f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
+                    f"(${inv.total:,.0f}) — {order_date.strftime('%b %Y')}"
+                )
+            except Exception:
+                self.stdout.write(
+                    f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
+                    f"(sin factura — período cerrado) — {order_date.strftime('%b %Y')}"
+                )
         self.stdout.write(f"  ── +6 ventas multi-mes (Ene-Jun 2026)")
 
     def _initialize_company_settings(self):
