@@ -29,15 +29,21 @@ export interface PartnerStatement {
         tax_id: string;
         partner_since?: string;
         created_at?: string;
-        partner_account_detail?: {
-            id: number;
-            name: string;
-            code: string;
-        };
     };
     summary: {
         equity_percentage: string;
         balance: string;
+        total_contributions: string;
+        total_paid_in: string;
+        pending_capital: string;
+        provisional_withdrawals: string;
+        total_formal_withdrawals: string;
+        earnings_balance: string;
+    };
+    partner_account_detail?: {
+        id: number;
+        name: string;
+        code: string;
     };
     transactions: PartnerTransaction[];
 }
