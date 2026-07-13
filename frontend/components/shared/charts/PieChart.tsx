@@ -40,6 +40,7 @@ export interface PieChartProps {
     borderWidth?: number
     borderColor?: unknown
     enableArcLinkLabels?: boolean
+    arcLinkLabel?: unknown
     enableArcLabels?: boolean
     arcLabelsRadiusOffset?: number
     arcLabelsSkipAngle?: number
@@ -132,7 +133,7 @@ export function PieChart({
                 {...rest as Record<string, unknown>}
             />
             {centerLabel && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ transform: "translateY(-6%)" }}>
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                         <div className="text-xl font-black  tracking-tighter text-foreground">
                             {centerLabel.value}
