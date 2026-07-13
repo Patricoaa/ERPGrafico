@@ -153,6 +153,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

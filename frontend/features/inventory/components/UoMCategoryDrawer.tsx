@@ -158,6 +158,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

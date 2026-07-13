@@ -56,6 +56,7 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
       </PrintableLayout>
 
       <Drawer
+                fillContent
         open={open}
         onOpenChange={onOpenChange}
         side="left"

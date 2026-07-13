@@ -55,6 +55,13 @@ export interface DrawerProps extends PanelBaseProps {
      * Clases CSS aplicadas al viewport interno del ScrollArea (el contenedor scrolleable).
      */
     viewportClassName?: string
+
+    /**
+     * Si es true, los children se renderizan en un div flex en vez de un ScrollArea.
+     * Útil cuando el contenido (e.g. FormSplitLayout) maneja su propio scroll
+     * y necesita llenar todo el alto disponible del drawer body.
+     */
+    fillContent?: boolean
 }
 
 export function Drawer({
@@ -80,7 +87,8 @@ export function Drawer({
     footerClassName,
     titleClassName,
     modal,
-    viewportClassName
+    viewportClassName,
+    fillContent = false
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
     const [size, setSize] = useState<number | string>(
@@ -277,13 +285,23 @@ export function Drawer({
                     </SheetHeader>
                 )}
 
-                <ScrollArea className={cn(
-                    "flex-1 flex flex-col pt-2",
-                    mode === "view" && "bg-muted/30",
-                    contentClassName
-                )} viewportClassName={viewportClassName}>
-                    {children}
-                </ScrollArea>
+                {fillContent ? (
+                    <div className={cn(
+                        "flex-1 flex flex-col overflow-hidden",
+                        mode === "view" && "bg-muted/30",
+                        contentClassName
+                    )}>
+                        {children}
+                    </div>
+                ) : (
+                    <ScrollArea className={cn(
+                        "flex-1 flex flex-col pt-2",
+                        mode === "view" && "bg-muted/30",
+                        contentClassName
+                    )} viewportClassName={viewportClassName}>
+                        {children}
+                    </ScrollArea>
+                )}
 
                 {footer && (
                     <div className={cn("border-t px-6 py-3 flex-shrink-0", footerClassName)}>

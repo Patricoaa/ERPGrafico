@@ -786,6 +786,7 @@ export function ProductDrawer({ open, onOpenChange, initialData, onSuccess, lock
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={(newOpen) => {
                     if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {

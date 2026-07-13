@@ -522,6 +522,7 @@ export function JournalEntryDrawer({
             )}
             <Trigger />
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

@@ -464,6 +464,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

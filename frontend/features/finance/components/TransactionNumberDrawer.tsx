@@ -101,6 +101,7 @@ export function TransactionNumberDrawer({
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

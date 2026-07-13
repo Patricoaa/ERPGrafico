@@ -286,6 +286,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 icon={identity.icon}

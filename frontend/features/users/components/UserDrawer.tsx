@@ -246,6 +246,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
             )}
 
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 title={identity.title}

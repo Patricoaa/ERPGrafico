@@ -63,6 +63,7 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
             </PrintableLayout>
 
             <Drawer
+                fillContent
                 mode="view"
                 open={open}
                 onOpenChange={onOpenChange}

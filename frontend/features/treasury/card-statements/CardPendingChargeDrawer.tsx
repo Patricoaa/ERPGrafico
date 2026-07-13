@@ -149,6 +149,7 @@ export function CardPendingChargeDrawer({
 
     return (
         <Drawer
+                fillContent
             open={open}
             onOpenChange={onOpenChange}
             side="left"

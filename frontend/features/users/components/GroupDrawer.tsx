@@ -158,6 +158,7 @@ export function GroupDrawer({
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={isOpen}
                 onOpenChange={setOpen}
                 side="left"
