@@ -627,10 +627,10 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     const notifByType = Object.fromEntries(notifRules.map((r) => [r.notification_type, r]))
 
     return (
-        <div className="space-y-4">
-            <Tabs value={activeTab} className="space-y-4">
+        <div className="flex flex-col flex-1 min-h-0 space-y-4">
+            <Tabs value={activeTab} className="flex-1 min-h-0 flex flex-col space-y-4">
                 <FadeIn key={activeTab}>
-                    <TabsContent value="approvals">
+                    <TabsContent value="approvals" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                         <div className="grid gap-2">
                             {TASK_TYPES.map((type) => (
                                 <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
@@ -648,7 +648,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="tasks" className="space-y-6">
+                    <TabsContent value="tasks" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-6">
                         <div>
                             <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
                             <div className="grid gap-2">
@@ -684,7 +684,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="notif" className="space-y-6">
+                    <TabsContent value="notif" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-6">
                         <div className="space-y-1 px-1">
                             <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
                             <p className="text-xs text-muted-foreground">Configure quién recibe las alertas de campana para eventos clave del sistema.</p>
