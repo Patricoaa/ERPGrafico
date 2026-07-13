@@ -1,0 +1,31 @@
+[tool.django_security_hunter]
+severity_threshold = "WARN"
+query_count_threshold = 50
+db_time_ms_threshold = 200
+
+# Known dev-only secrets (DJG002 false positive when DEBUG=True)
+static_secrets_allowlist = ["django-insecure-dev-only-key-not-for-production"]
+
+# Singleton model — no uniqueness constraint needed (DJG080 false positive)
+model_integrity_ignore_models = ["core.CompanySettings"]
+
+# Scan plugins — enable what's installed
+# pip_audit = false  # Run separately in CI via 'safety check'
+# bandit = false     # Run separately in CI via 'bandit -r'
+# semgrep = false    # Not installed by default
+
+# Score weights (lower = more forgiving for existing codebase)
+score_weight_info = 1
+score_weight_warn = 5
+score_weight_high = 15
+score_weight_critical = 40
+
+# --- Known false positive rationale ---
+# DJG001 (DEBUG): Defaults to "1" for local dev; CI sets DEBUG=0 via env
+# DJG023 (auth throttles): Global DRF DEFAULT_THROTTLE_CLASSES configured in settings.py
+# DJG024 (fields="__all__"): All serializers with __all__ are read-only (no user input binding)
+# DJG050 (setup_demo_data.py): Sequential execution, no concurrent access
+# DJG051 (services): Many functions use @transaction.atomic decorator (tool cannot detect)
+# DJG052 (QuerySet.update): Most are safe — tool cannot distinguish F() vs Python variable
+# DJG071 (HTTP client non-literal): False positive — URL comes from config constant
+# DJG075 (SQL in setup_demo_data): Raw SQL for DB-specific FTS setup only, no user input
