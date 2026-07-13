@@ -146,7 +146,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto flex flex-col flex-1 min-h-0 space-y-6">
             <div className="flex justify-end">
                 <AutoSaveStatusBadge
                     status={status}
@@ -157,9 +157,9 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
+                <Tabs value={activeTab} className="w-full flex-1 min-h-0 flex flex-col m-0 p-0 border-0 outline-none">
                     <FadeIn key={activeTab}>
-                        <TabsContent value="general" className="space-y-6">
+                        <TabsContent value="general" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-6">
                             <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary flex items-center gap-2">
@@ -359,7 +359,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="branding" className="space-y-6">
+                        <TabsContent value="branding" className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-6">
                             <Card variant="default">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary flex items-center gap-2">

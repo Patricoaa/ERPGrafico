@@ -146,7 +146,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando configuración de RRHH">
-        <div className="max-w-6xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto flex flex-col flex-1 min-h-0 space-y-6">
             <FadeIn key={activeTab}>
                 {/* --- Tab: Global --- */}
                 {activeTab === "global" && (
@@ -219,7 +219,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
 
                 {/* --- Tab: Conceptos --- */}
                 {activeTab === "concepts" && (
-                    <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                    <div className="flex flex-col flex-1 min-h-0 space-y-6 m-0 p-0 border-0 outline-none mt-6">
                         <div className="flex justify-between items-center px-1">
                             <div>
                                 <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
