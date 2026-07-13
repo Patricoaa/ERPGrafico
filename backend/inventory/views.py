@@ -41,6 +41,8 @@ from .serializers import (
     ProductAttributeValueSerializer,
     ProductCategorySerializer,
     ProductSerializer,
+    ProductListSerializer,
+    ProductWriteSerializer,
     ProductSimpleSerializer,
     ProductUoMPriceSerializer,
     StockMoveSerializer,
@@ -56,6 +58,13 @@ from .services import InventoryCountService, StockService, UoMService, ProductSe
 class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ProductListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return ProductWriteSerializer
+        return ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
     pagination_class = StandardResultsSetPagination

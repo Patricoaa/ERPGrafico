@@ -283,6 +283,107 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return BillOfMaterialsSerializer(obj.boms.all(), many=True).data
 
+class ProductListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for list views."""
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    uom_name = serializers.CharField(source="uom.name", read_only=True)
+    sale_uom_name = serializers.CharField(source="sale_uom.name", read_only=True)
+    
+    is_favorite = serializers.SerializerMethodField()
+    def get_is_favorite(self, obj):
+        return getattr(obj, "is_favorite", False)
+
+    current_stock = serializers.SerializerMethodField()
+    def get_current_stock(self, obj):
+        return float(getattr(obj, "annotated_current_stock", None) or 0.0)
+
+    effective_price = serializers.SerializerMethodField()
+    def get_effective_price(self, obj):
+        if hasattr(obj, "annotated_effective_price"):
+            return float(obj.annotated_effective_price)
+        return obj.sale_price
+
+    qty_reserved = serializers.SerializerMethodField()
+    def get_qty_reserved(self, obj):
+        return float(getattr(obj, "annotated_qty_reserved", None) or 0.0)
+
+    qty_available = serializers.SerializerMethodField()
+    def get_qty_available(self, obj):
+        if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
+            return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved or 0.0)
+        return 0.0
+        
+    image_thumbnail = serializers.SerializerMethodField()
+    def get_image_thumbnail(self, obj):
+        if obj.image and hasattr(obj, "image_thumbnail"):
+            try:
+                return (
+                    self.context["request"].build_absolute_uri(obj.image_thumbnail.url)
+                    if self.context.get("request")
+                    else obj.image_thumbnail.url
+                )
+            except Exception:
+                return None
+        return None
+
+    class Meta:
+        model = Product
+        fields = [
+            "id", "internal_code", "code", "name", "category", "category_name", 
+            "product_type", "image_thumbnail", "is_active", "is_favorite",
+            "uom", "uom_name", "sale_uom", "sale_uom_name", 
+            "sale_price", "cost_price", "effective_price", 
+            "current_stock", "qty_reserved", "qty_available",
+            "track_inventory", "can_be_sold", "can_be_purchased",
+            "has_variants", "is_variable_amount", "is_dynamic_pricing"
+        ]
+
+class ProductWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views."""
+    variant_generation_selection = serializers.JSONField(write_only=True, required=False)
+    uom_prices = ProductUoMPriceSerializer(many=True, required=False)
+    
+    class Meta:
+        model = Product
+        fields = [
+            "id", "internal_code", "code", "name", "category", "product_type", "image",
+            "mfg_auto_finalize", "mfg_enable_prepress", "mfg_enable_press", "mfg_enable_postpress",
+            "mfg_prepress_design", "mfg_prepress_specs", "mfg_prepress_folio",
+            "mfg_press_offset", "mfg_press_digital", "mfg_press_special",
+            "mfg_postpress_finishing", "mfg_postpress_binding",
+            "recurrence_period", "renewal_notice_days", "is_variable_amount", "is_dynamic_pricing",
+            "track_inventory", "can_be_sold", "can_be_purchased",
+            "uom", "sale_uom", "purchase_uom", "allowed_sale_uoms", "receiving_warehouse",
+            "sale_price", "sale_price_gross", "cost_price", "is_active",
+            "price_inheritance_mode", "price_surcharge", "preferred_supplier",
+            "subscription_supplier", "subscription_amount", "subscription_start_date",
+            "auto_activate_subscription", "default_invoice_type", "is_indefinite",
+            "contract_end_date", "payment_day_type", "payment_day", "payment_interval_days",
+            "variant_generation_selection", "uom_prices", "parent_template"
+        ]
+        
+    def validate(self, data):
+        from .validators import ProductValidator
+        return ProductValidator.validate(data)
+
+    def to_internal_value(self, data):
+        from .validators import ProductValidator
+        ret = ProductValidator.parse_request_data(data)
+        return super().to_internal_value(ret)
+
+    def run_validation(self, data=empty):
+        try:
+            return super().run_validation(data)
+        except serializers.ValidationError as e:
+            logger.error(f"Validation error in ProductWriteSerializer: {e.detail}. Data: {data}")
+            raise e
+
+    def create(self, validated_data):
+        return ProductService.create_product(validated_data)
+
+    def update(self, instance, validated_data):
+        return ProductService.update_product(instance, validated_data)
+
     class Meta:
         model = Product
         fields = [
@@ -478,12 +579,6 @@ class ProductSerializer(serializers.ModelSerializer):
         except serializers.ValidationError as e:
             logger.error(f"Validation error in ProductSerializer: {e.detail}. Data: {data}")
             raise e
-
-    def create(self, validated_data):
-        return ProductService.create_product(validated_data)
-
-    def update(self, instance, validated_data):
-        return ProductService.update_product(instance, validated_data)
 
 
 
