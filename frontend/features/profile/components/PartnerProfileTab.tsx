@@ -1,61 +1,66 @@
 "use client"
-import { formatPlainDate } from "@/lib/utils";
+import { formatPlainDate, parseDateOnly } from "@/lib/utils"
+import { formatCurrency } from "@/lib/money"
 
-import React, {useState} from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Chip, FadeIn, MoneyDisplay, StatCard } from '@/components/shared'
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import React, { useState, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Chip, DataCell, DataTable, DataTableColumnHeader, LabeledContainer, PieChart, SkeletonShell, StatCard } from '@/components/shared'
 import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
 import {
     CalendarDays,
     User,
     FileText,
-    Building2
 } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { type PartnerTransaction } from "@/features/contacts"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-
-import {SkeletonShell} from "@/components/shared"
-
 import { PaymentDrawer } from "@/features/treasury"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
 interface Props {
-    contactId: number;
+    contactId: number
 }
+
+const isInflow = (type: string) =>
+    ['CAPITAL_CASH', 'CAPITAL_INVENTORY', 'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'].includes(type)
+
+const isOutflow = (type: string) =>
+    ['WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION', 'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'].includes(type)
 
 export function PartnerProfileTab({ contactId }: Props) {
     const { data: statement, isLoading, isError } = usePartnerStatement(contactId)
-
-    // Movement Details state
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
 
     const handleViewDetails = (movementId: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(movementId))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setSelectedMovementId(movementId)
+        setDetailsOpen(true)
     }
 
     const closeDetails = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setDetailsOpen(false)
         setSelectedMovementId(null)
     }
 
     const actionsCtx: PartnerTransactionActionsCtx = { onViewMovement: handleViewDetails }
 
-    const columns: ColumnDef<PartnerTransaction>[] = [
+    const txsWithBalance = useMemo(() => {
+        if (!statement?.transactions) return []
+        const sorted = [...statement.transactions].sort(
+            (a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
+        )
+        let balance = 0
+        return sorted
+            .map((tx) => {
+                const amount = parseFloat(tx.amount) || 0
+                if (isInflow(tx.transaction_type)) balance += amount
+                else if (isOutflow(tx.transaction_type)) balance -= amount
+                return { ...tx, balance_after: balance }
+            })
+            .reverse()
+    }, [statement])
+
+    const columns: ColumnDef<PartnerTransaction & { balance_after: number }>[] = [
         {
             accessorKey: "date",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Fecha" />,
@@ -69,16 +74,16 @@ export function PartnerProfileTab({ contactId }: Props) {
             accessorKey: "transaction_type",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Operación" />,
             cell: ({ row }) => {
-                const tx = row.original;
-                const type = tx.transaction_type;
-                let intent: 'success' | 'warning' | 'info' | 'neutral' = 'neutral';
+                const tx = row.original
+                const type = tx.transaction_type
+                let intent: 'success' | 'warning' | 'info' | 'neutral' = 'neutral'
 
-                if (type === 'SUBSCRIPTION' || type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
-                    intent = 'success';
+                if (type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
+                    intent = 'success'
                 } else if (type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT') {
-                    intent = 'warning';
-                } else if (type === 'LOAN_IN') {
-                    intent = 'info';
+                    intent = 'warning'
+                } else if (type === 'SUBSCRIPTION') {
+                    intent = 'info'
                 }
 
                 return (
@@ -87,7 +92,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                             {tx.transaction_type_display || type}
                         </Chip>
                     </div>
-                );
+                )
             },
         },
         {
@@ -95,9 +100,7 @@ export function PartnerProfileTab({ contactId }: Props) {
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Monto" />,
             cell: ({ row }) => {
                 const type = row.original.transaction_type
-                const isNegative = type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT' || type === 'LOAN_OUT'
-                const direction = isNegative ? 'outflow' : 'inflow' as const
-
+                const direction = isOutflow(type) ? 'outflow' : 'inflow' as const
                 return (
                     <div className="flex justify-center w-full">
                         <DataCell.CurrencyFlow value={row.getValue("amount")} direction={direction} showIcon={false} />
@@ -105,111 +108,107 @@ export function PartnerProfileTab({ contactId }: Props) {
                 )
             },
         },
-        partnerTransactionActions.column(actionsCtx)
+        {
+            accessorKey: "balance_after",
+            header: () => <div className="text-right">Saldo</div>,
+            cell: ({ row }) => (
+                <div className="text-right font-mono text-[11px] font-black text-primary bg-primary/5 px-2 py-1">
+                    {formatCurrency(row.getValue("balance_after"))}
+                </div>
+            ),
+        },
+        partnerTransactionActions.column(actionsCtx) as ColumnDef<PartnerTransaction & { balance_after: number }>,
     ]
 
     if (isError || !statement) return null
 
     const { contact, summary } = statement
+    const equityPct = parseFloat(summary.equity_percentage) || 0
+
+    const pieData = [
+        { id: contact.name, value: equityPct },
+        { id: "Otros socios", value: Math.max(0, 100 - equityPct) },
+    ]
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
-        <div className="flex flex-col w-full h-full space-y-6">
-            <Accordion type="multiple" defaultValue={["summary", "history"]} className="w-full space-y-6">
+            <div className="flex flex-col h-full">
+                {/* Top: Información Societaria — compact, no scroll */}
+                <div className="shrink-0 p-4">
+                    <Card className="w-full">
+                        <CardHeader className="py-3">
+                            <CardTitle className="text-sm text-primary">Información Societaria</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <div className="grid grid-cols-8 gap-6">
+                                {/* Left: Partner info fields — notched */}
+                                <div className="col-span-2 space-y-4">
+                                    <LabeledContainer label="Socio">
+                                        <div className="flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
+                                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {contact.name}
+                                        </div>
+                                    </LabeledContainer>
+                                    <LabeledContainer label="RUT">
+                                        <div className="flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
+                                            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {contact.tax_id}
+                                        </div>
+                                    </LabeledContainer>
+                                    <LabeledContainer label="Socio desde">
+                                        <div className="flex items-center gap-2 px-2 py-1.5 text-sm font-medium">
+                                            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+                                            {(contact.partner_since || contact.created_at)
+                                                ? formatPlainDate(contact.partner_since || contact.created_at)
+                                                : "—"}
+                                        </div>
+                                    </LabeledContainer>
+                                </div>
 
-                {/* Section 1: Metrics & Summary */}
-                <AccordionItem value="summary" className="border-none">
-                    <FadeIn yOffset={10}>
-                        <Card >
-                            <AccordionTrigger className="hover:no-underline py-0">
-                                <CardHeader className="w-full">
-                                    <CardTitle className="text-lg text-primary">Resumen Patrimonial</CardTitle>
-                                    <CardDescription>Estado de capitalización neta</CardDescription>
-                                </CardHeader>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                <CardContent className="p-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <StatCard
-                                            label="Participación"
-                                            value={`${summary.equity_percentage}%`}
-                                            subtext="Participación sobre el total patrimonial"
-                                            variant="minimal"
-                                            accent="muted"
-                                            className="p-4 justify-center text-center"
-                                            valueSize="xl"
-                                        />
-                                        <StatCard
-                                            label="Saldo Particular Neto"
-                                            value={<MoneyDisplay amount={parseFloat(summary.balance)} />}
-                                            subtext="Neto acumulado de aportes y retiros"
-                                            variant="minimal"
-                                            accent="primary"
-                                            className="md:col-span-2 p-4 justify-center items-center text-center"
-                                        />
-                                    </div>
-                                </CardContent>
-                            </AccordionContent>
-                        </Card>
-                    </FadeIn>
-                </AccordionItem>
+                                {/* Right: PieChart via StatCard chart variant */}
+                                <div className="col-span-6 h-[220px]">
+                                    <StatCard
+                                        label="Composición Patrimonial"
+                                        variant="chart"
+                                        accent="primary"
+                                        className="h-full"
+                                        chart={
+                                            <div className="h-[170px]">
+                                                <PieChart
+                                                    data={pieData}
+                                                    centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
+                                                    innerRadius={45}
+                                                    padAngle={2}
+                                                    cornerRadius={3}
+                                                    enableArcLabels={false}
+                                                    margin={{ top: 10, right: 40, bottom: 10, left: 40 }}
+                                                />
+                                            </div>
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                {/* Section 2: Societal Info */}
-                <AccordionItem value="info" className="border-none">
-                    <FadeIn delay={0.1} yOffset={10}>
-                        <Card >
-                            <AccordionTrigger className="hover:no-underline py-0">
-                                <CardHeader className="w-full">
-                                    <CardTitle className="text-lg text-primary">Información Societaria</CardTitle>
-                                    <CardDescription>Identificación y cuentas vinculadas</CardDescription>
-                                </CardHeader>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                <CardContent className="p-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        <InfoField icon={<User className="h-3.5 w-3.5" />} label="Socio" value={contact.name} />
-                                        <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="RUT" value={contact.tax_id} />
-                                        <InfoField
-                                            icon={<Building2 className="h-3.5 w-3.5" />}
-                                            label="Cuenta Particular"
-                                            value={contact.partner_account_detail ? `${contact.partner_account_detail.name} (${contact.partner_account_detail.code})` : "No asignada"}
-                                        />
-                                        <InfoField
-                                            icon={<CalendarDays className="h-3.5 w-3.5" />}
-                                            label="Socio desde"
-                                            value={(contact.partner_since || contact.created_at) ? formatPlainDate(contact.partner_since || contact.created_at) : "—"}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </AccordionContent>
-                        </Card>
-                    </FadeIn>
-                </AccordionItem>
-
-                {/* Section 3: History */}
-                <AccordionItem value="history" className="border-none">
-                    <FadeIn delay={0.2} yOffset={10}>
-                        <Card >
-                            <AccordionTrigger className="hover:no-underline py-0">
-                                <CardHeader className="w-full">
-                                    <CardTitle className="text-lg text-primary">Historial de Capital</CardTitle>
-                                    <CardDescription>Resumen de movimientos históricos</CardDescription>
-                                </CardHeader>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                <DataTable
-                                    columns={columns}
-                                    data={statement.transactions}
-                                    variant="minimal"
-                                    noBorder={true}
-                                    defaultPageSize={10}
-                                />
-                            </AccordionContent>
-                        </Card>
-                    </FadeIn>
-                </AccordionItem>
-
-            </Accordion>
+                {/* Bottom: Capital History — scrollable */}
+                <div className="flex-1 min-h-0 overflow-auto p-4 pt-0">
+                    <Card className="w-full h-full flex flex-col">
+                        <CardHeader className="py-3">
+                            <CardTitle className="text-sm text-primary">Historial de Capital</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1 min-h-0 overflow-auto pt-0">
+                            <DataTable
+                                columns={columns}
+                                data={txsWithBalance}
+                                variant="embedded"
+                                noBorder={true}
+                                defaultPageSize={10}
+                            />
+                        </CardContent>
+                    </Card>
+                </div>
 
             {selectedMovementId && (
                 <PaymentDrawer
@@ -219,19 +218,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                     onOpenChange={(open) => !open && closeDetails()}
                 />
             )}
-        </div>
-        </SkeletonShell>
-    )
-}
-
-function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-    return (
-        <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted/20 text-sm font-medium text-foreground">
-                <span className="text-muted-foreground">{icon}</span>
-                {value}
             </div>
-        </div>
+        </SkeletonShell>
     )
 }
