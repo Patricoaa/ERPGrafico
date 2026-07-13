@@ -52,6 +52,7 @@ from .serializers import (
     BillOfMaterialsSerializer,
     WorkOrderListSerializer,
     WorkOrderSerializer,
+    WorkOrderWriteSerializer,
 )
 from .selectors import ProductionSelectorExt
 from .services import WorkOrderMetricsService, WorkOrderPdfService, WorkOrderService
@@ -90,6 +91,8 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def get_serializer_class(self):
         if self.action == "list":
             return WorkOrderListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return WorkOrderWriteSerializer
         return WorkOrderSerializer
 
     def _build_stock_context(self, work_order):

@@ -132,6 +132,34 @@ class WorkOrderInitialMaterialSerializer(serializers.Serializer):
         from .validators import ProductionValidator
         return ProductionValidator.validate_initial_material(data)
 
+class WorkOrderWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views.
+    Omits heavy nested components and read-only history/consumptions."""
+    
+    class Meta:
+        model = WorkOrder
+        fields = [
+            "id",
+            "number",
+            "description",
+            "sale_order",
+            "sale_line",
+            "related_contact",
+            "product",
+            "stage_data",
+            "estimated_completion_date",
+            "start_date",
+            "end_date",
+            "no_materials_required",
+            "is_manual",
+            "status",
+            "current_stage",
+            "actual_quantity_produced",
+            "is_rectified",
+            "rectified_from",
+            "notes",
+        ]
+        read_only_fields = ["id", "number", "status", "current_stage", "is_rectified"]
 
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
