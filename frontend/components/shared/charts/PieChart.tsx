@@ -48,6 +48,7 @@ export interface PieChartProps {
     arcLabel?: unknown
     legends?: unknown[]
     margin?: { top: number; right: number; bottom: number; left: number }
+    activeId?: string | number
 }
 
 function getArcTextColor(d: { color: string }): string {
@@ -72,6 +73,7 @@ export function PieChart({
     legends,
     margin,
     arcLabelsTextColor: arcLabelsTextColorProp,
+    activeId,
     ...rest
 }: PieChartProps) {
     const chartColors = useMemo(() => getCssChartColors("pie"), [])
@@ -110,6 +112,7 @@ export function PieChart({
                 theme={nivoTheme}
                 legends={legends as unknown as readonly LegendProps[] | undefined}
                 margin={margin}
+                activeId={activeId}
                 motionConfig="gentle"
                 tooltip={({ datum }: { datum: { id: string | number; label?: string | number; value: number; color: string } }) => (
                     <div className={premiumTooltipClass}>

@@ -4,9 +4,8 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Chip, DataCell, DataTable, DataTableColumnHeader, LabeledContainer, SkeletonShell, StatCard } from '@/components/shared'
+import { Chip, DataCell, DataTable, DataTableColumnHeader, LabeledContainer, SkeletonShell, StatCard, PieChart } from '@/components/shared'
 import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
-import { ResponsiveTreeMapHtml } from "@nivo/treemap"
 import {
     CalendarDays,
     User,
@@ -63,15 +62,15 @@ export function PartnerProfileTab({ contactId }: Props) {
             .reverse()
     }, [statement])
 
-    const treemapData = useMemo(() => ({
-        name: "root",
-        children: (partners || [])
+    const pieData = useMemo(() =>
+        (partners || [])
             .filter(p => parseFloat(p.partner_equity_percentage) > 0)
             .map(p => ({
                 id: p.name,
                 value: parseFloat(p.partner_equity_percentage) || 0,
             })),
-    }), [partners])
+        [partners],
+    )
 
     const columns: ColumnDef<PartnerTransaction & { balance_after: number }>[] = [
         {
@@ -173,7 +172,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                     </LabeledContainer>
                                 </div>
 
-                                {/* Right: PieChart → StatCard + TreeMap */}
+                                {/* Right: StatCard + PieChart */}
                                 <div className="col-span-6">
                                     <StatCard
                                         label="Participación"
@@ -184,17 +183,16 @@ export function PartnerProfileTab({ contactId }: Props) {
                                         className="h-full"
                                         chart={
                                             <div className="h-[180px]">
-                                                <ResponsiveTreeMapHtml
-                                                    data={treemapData}
-                                                    leavesOnly={true}
-                                                    colors={{ scheme: "category10" }}
-                                                    label={(node: { id: string; value: number }) => `${node.id}: ${node.value}%`}
-                                                    enableLabel={true}
-                                                    labelTextColor={{ from: "color", modifiers: [["brighter", 2]] }}
-                                                    innerPadding={3}
-                                                    outerPadding={3}
+                                                <PieChart
+                                                    data={pieData}
+                                                    activeId={contact.name}
+                                                    innerRadius={0.4}
+                                                    padAngle={2}
+                                                    cornerRadius={3}
+                                                    enableArcLabels={true}
+                                                    arcLabel={(datum: { id: string | number; value: number }) => `${datum.value}%`}
                                                     margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
-                                                    isInteractive={true}
+                                                    centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
                                                 />
                                             </div>
                                         }
