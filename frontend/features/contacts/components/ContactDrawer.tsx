@@ -263,6 +263,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 icon={identity.icon}

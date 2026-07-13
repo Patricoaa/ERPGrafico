@@ -139,6 +139,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

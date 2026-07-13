@@ -49,6 +49,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
             </PrintableLayout>
 
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

@@ -251,6 +251,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

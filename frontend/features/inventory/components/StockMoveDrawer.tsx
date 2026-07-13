@@ -51,6 +51,7 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
             </PrintableLayout>
 
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

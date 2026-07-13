@@ -212,6 +212,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

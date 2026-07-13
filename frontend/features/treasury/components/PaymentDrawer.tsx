@@ -203,6 +203,7 @@ export function PaymentDrawer({
                 </Button>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

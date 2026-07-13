@@ -202,6 +202,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

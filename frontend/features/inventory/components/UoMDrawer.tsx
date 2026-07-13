@@ -158,6 +158,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

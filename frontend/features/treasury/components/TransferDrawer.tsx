@@ -93,6 +93,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
     return (
         <>
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

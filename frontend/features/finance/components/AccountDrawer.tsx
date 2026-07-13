@@ -283,6 +283,7 @@ export function AccountDrawer({
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

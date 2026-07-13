@@ -468,6 +468,7 @@ export function CategoryDrawer({
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"

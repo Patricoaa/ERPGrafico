@@ -128,6 +128,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

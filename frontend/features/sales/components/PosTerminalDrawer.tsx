@@ -216,6 +216,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"

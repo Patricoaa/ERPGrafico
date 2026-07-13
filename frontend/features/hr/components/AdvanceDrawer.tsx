@@ -132,6 +132,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
