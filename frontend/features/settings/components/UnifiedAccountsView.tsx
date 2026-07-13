@@ -26,21 +26,7 @@ import { useBillingSettings } from "@/features/settings/hooks/useBillingSettings
 import { useInventorySettings } from "@/features/settings/hooks/useInventorySettings"
 import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettings"
 import { usePartnerSettings } from "@/features/settings/hooks/usePartnerSettings"
-
-const TABS = [
-    { value: "estructura", label: "Estructura" },
-    { value: "ventas", label: "Ventas" },
-    { value: "facturacion", label: "Facturación" },
-    { value: "compras", label: "Compras" },
-    { value: "inventario", label: "Inventario" },
-    { value: "tesoreria", label: "Tesorería" },
-    { value: "rrhh", label: "RRHH" },
-    { value: "socios", label: "Socios" },
-    { value: "impuestos", label: "Impuestos" },
-]
-
-export const VALID_ACCOUNT_TABS = TABS.map(t => t.value)
-export const DEFAULT_ACCOUNT_TAB = "ventas"
+import { ACCOUNT_TABS } from "@/features/settings/constants"
 
 interface UnifiedAccountsViewProps {
     activeTab: string
