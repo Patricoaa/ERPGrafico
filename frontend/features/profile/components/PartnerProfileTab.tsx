@@ -183,15 +183,9 @@ export function PartnerProfileTab({ contactId }: Props) {
 
                                 {/* Middle: PieChart */}
                                 <div className="col-span-3">
-                                    <StatCard
-                                        label="Participación"
-                                        value={`${equityPct}%`}
-                                        subtext="Composición patrimonial"
-                                        variant="metric-chart"
-                                        accent="primary"
-                                        className="h-full"
-                                        chart={
-                                            <div className="h-[180px]">
+                                    <Card className="h-full">
+                                        <CardContent className="h-full p-0">
+                                            <div className="h-[220px]">
                                                 <PieChart
                                                     data={pieData}
                                                     activeId={contact.name}
@@ -200,12 +194,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                                                     cornerRadius={3}
                                                     enableArcLabels={true}
                                                     arcLabel={(datum: { id: string | number; value: number }) => `${datum.value}%`}
-                                                    margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
+                                                    margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
                                                     centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
                                                 />
                                             </div>
-                                        }
-                                    />
+                                        </CardContent>
+                                    </Card>
                                 </div>
 
                                 {/* Right: Key metrics */}
