@@ -81,7 +81,7 @@ export function OrderActionPanel({
                                 <span className="font-mono">
                                     {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', (order ?? {}) as Record<string, unknown>)}
                                 </span>
-                                <StatusBadge status={order?.status || ""} />
+                                <StatusBadge status={order?.status || ""} variant="badge" />
                             </div>
                         }
                         subtitle={
@@ -127,6 +127,7 @@ export function OrderActionPanel({
                                                     ? (order?.receiving_status || "")
                                                     : (order?.delivery_status || "")
                                             }
+                                            variant="badge"
                                         />
                                     </div>
                                 </div>

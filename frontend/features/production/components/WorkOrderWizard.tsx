@@ -464,6 +464,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               <>
                 <StatusBadge
                   status={order.status}
+                  variant="badge"
                 />
                 {order.status === 'IN_PROGRESS' && (
                   <Button

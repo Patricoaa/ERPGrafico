@@ -231,7 +231,7 @@ export function PaymentDrawer({
                     <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="payment" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
                         {isViewMode && paymentData ? (
                             <div className="p-4 space-y-5">
-                                <StatusBadge status={paymentData.status} />
+                                <StatusBadge status={paymentData.status} variant="badge" />
 
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>

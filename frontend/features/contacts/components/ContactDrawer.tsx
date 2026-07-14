@@ -760,7 +760,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             cell: ({ row }) => {
                 if (type === 'work_order') {
                     return (
-                        <StatusBadge status={row.original.status as string} size="sm" />
+                        <StatusBadge status={row.original.status as string} size="sm" variant="badge" />
                     )
                 }
                 return <DomainHubStatus data={row.original} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />

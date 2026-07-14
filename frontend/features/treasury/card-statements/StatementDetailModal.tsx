@@ -143,6 +143,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                     <StatusBadge
                         status={row.original.movementType || ''}
                         label={row.original.movementTypeDisplay || ''}
+                        variant="badge"
                     />
                 </div>
             ),
@@ -205,7 +206,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Estado:</span>{' '}
-                                    <StatusBadge status={stmt.status} />
+                                    <StatusBadge status={stmt.status} variant="badge" />
                                 </div>
                                 {stmt.paid_at && (
                                     <div>

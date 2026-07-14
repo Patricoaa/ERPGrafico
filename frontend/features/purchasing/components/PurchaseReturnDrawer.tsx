@@ -109,7 +109,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Estado</span>
-                                        <p><StatusBadge status={String(r.status)} /></p>
+                                        <p><StatusBadge status={String(r.status)} variant="badge" /></p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Proveedor</span>

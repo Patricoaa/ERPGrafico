@@ -51,7 +51,7 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
                             </div>
                             <div>
                                 <span className="text-muted-foreground">Estado</span>
-                                <p><StatusBadge status={statement.status} /></p>
+                                <p><StatusBadge status={statement.status} variant="badge" /></p>
                             </div>
                             <div>
                                 <span className="text-muted-foreground">Saldo Inicial</span>
