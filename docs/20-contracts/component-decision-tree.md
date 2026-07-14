@@ -35,18 +35,20 @@ Cualquier acción CRUD que aparezca en una fila de `DataTable`, en el footer de 
 ```mermaid
 graph TD
     A["¿Dónde renderizo la acción?"]
-    A -->|"Fila de DataTable"| B{"¿Cuántas acciones?"}
-    A -->|"Footer de EntityCard / tarjeta Kanban"| C["CardActions + CardActions.Item / CardActions.Menu"]
-    B -->|"1"| D["DataCell.ActionSingle — ArrowRight en hover, ejecuta la acción"]
-    B -->|"2+"| E["DataCell.ActionMenu — kebab MoreVertical siempre visible"]
-    C --> F["CardActions.Item + CardActions.Menu (iconos individuales)"]
+    A -->|"Fila de DataTable"| B["createEntityActions + .auto(ctx)"]
+    A -->|"Footer de EntityCard / tarjeta Kanban"| C["createEntityActions + .render(item, ctx)"]
+    B --> D{"auto() detecta # acciones visibles"}
+    D -->|"0"| E["Celda vacía"]
+    D -->|"1"| F["DataCell.ActionSingle — ArrowRight en hover"]
+    D -->|"2+"| G["DataCell.ActionMenu — kebab MoreVertical"]
+    C --> H["DataCell.Action icons individuales"]
 ```
 
-- **1 acción en DataTable:** `DataCell.ActionSingle` — icono `ArrowRight`, oculto por defecto, aparece en hover de la fila (`group-hover`). Ejecuta la acción definida al hacer click.
-- **2+ acciones en DataTable:** `DataCell.ActionMenu` — kebab (`MoreVertical`) siempre visible. Todas las acciones van al dropdown.
-- **Cards / Kanban:** sin cambios — `CardActions.Item` muestra iconos individuales + `CardActions.Menu` para overflow.
-- **Forma preferida:** `<DataCell.Action action="edit" onClick={…} />` — icono, tooltip y color salen del registry.
-- **Acciones específicas del módulo (no CRUD):** mismo componente, pasando `icon` + `title` propios — se conservan tamaño (h-7 w-7), tooltip (delay 400ms, paleta sidebar).
+- **Patrón preferido:** Definir acciones como datos estructurados (`StructuredAction[]`) y usar `.auto(ctx)` — el sistema detecta automáticamente ActionSingle vs ActionMenu.
+- **`auto()`** lee `visible` flags en tiempo de render, filtra acciones ocultas, y elige el componente correcto por fila.
+- **Cards / Kanban:** `.render(item, ctx)` convierte datos estructurados → iconos `DataCell.Action` individuales.
+- **Forma legacy (JSX):** `.column(ctx)` sigue funcionando pero no soporta auto-detección.
+- **Acciones específicas del módulo (no CRUD):** usar `action` key del registry o pasar `icon` + `title` propios — se conservan tamaño, tooltip, paleta sidebar.
 - **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?hub` CollapsibleSheet). Para ver el detalle de una entidad, `openEntity(label, id)` con `mode='view'` ([component-entity-drawers.md](./component-entity-drawers.md), ADR-0028; `?detail` quedó deprecado). Nunca uses `?id`, `?edit` para edición de entidades — `?selected` es el canónico (ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)). `?modal` está reservado para apertura de wizards de creación/import (ver [list-modal-edit-pattern.md §9](./list-modal-edit-pattern.md#9-parámetro-modal-para-wizards-de-creaciónimport)). Reserva `?view` exclusivamente para el switch de viewMode.
 - **Orden canónico (siempre):** `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden.
 - **`annul` vs `delete`:** `annul` para documentos transaccionales (factura, OV, pago — preserva el registro para auditoría); `delete` para masters/config (categoría, almacén — borra el registro). Ambas son destructivas.
