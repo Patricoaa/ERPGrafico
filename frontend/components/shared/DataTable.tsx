@@ -729,8 +729,8 @@ export function DataTable<TData, TValue>({
                                 {renderCustomView(table)}
                             </div>
                         ) : (
-                            <table className={cn("w-full caption-bottom text-sm", isTableEmpty && "h-full")}>
-                                <TableHeader className="sticky top-0 bg-background z-10 border-b-2 py-1.5 rounded-t-sm">
+                            <table className={cn("w-full caption-bottom text-sm", !noBorder && "rounded-t-sm", isTableEmpty && "h-full")}>
+                                <TableHeader className="sticky top-0 bg-background z-10 border-b-2 py-1.5">
                                     {table.getHeaderGroups().map((headerGroup) => (
                                         <TableRow
                                             key={headerGroup.id}
