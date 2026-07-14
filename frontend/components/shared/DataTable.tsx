@@ -723,7 +723,7 @@ export function DataTable<TData, TValue>({
                 )}
 
                 <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25 overflow-hidden")}>
-                    <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-y-scroll custom-scrollbar overflow-x-auto" : "flex flex-col")}>
+                    <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", renderCustomView && "overflow-x-auto")}>
                         {renderCustomView ? (
                             <div className="py-0">
                                 {renderCustomView(table)}
@@ -731,9 +731,7 @@ export function DataTable<TData, TValue>({
                         ) : (
                             <Table
                                 className={cn(isTableEmpty && "h-full")}
-                                containerClassName={cn(
-                                    !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
-                                )}
+                                containerClassName="flex-1"
                             >
                                 <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 border-b-2 py-1.5" : "sticky top-0 bg-background z-10 border-b-2 py-1.5")}>
                                     {table.getHeaderGroups().map((headerGroup) => (
