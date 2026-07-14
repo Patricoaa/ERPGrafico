@@ -11,7 +11,7 @@ import type { MyProfile } from "@/types/profile"
 import type {Payroll} from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { ActionSlideButton, Chip, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
+import { ActionSlideButton, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -339,7 +339,7 @@ function PersonalTab({
         typeLabel: string;
         amount: string;
         payroll_display_id: string | null;
-        statusLabel?: string;
+        statusKey: string;
     }
 
     const unifiedPayments: UnifiedPayment[] = [
@@ -350,7 +350,7 @@ function PersonalTab({
             typeLabel: 'Anticipo',
             amount: a.amount,
             payroll_display_id: a.payroll_display_id || null,
-            statusLabel: a.is_discounted ? 'Descontado' : 'Pendiente'
+            statusKey: a.is_discounted ? 'DESCONTADO' : 'PENDING'
         })),
         ...payments.map(p => ({
             id: `pay-${p.id}`,
@@ -359,7 +359,7 @@ function PersonalTab({
             typeLabel: p.payment_type_display || p.payment_type,
             amount: p.amount,
             payroll_display_id: p.payroll_display_id || null,
-            statusLabel: 'Pagado'
+            statusKey: 'PAID'
         }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
@@ -474,17 +474,7 @@ function PersonalTab({
         {
             accessorKey: "typeLabel",
             header: "Tipo",
-            cell: ({ row }) => {
-                const type = row.original.type
-                const label = row.getValue("typeLabel") as string
-                return (
-                    <div className="flex justify-center">
-                        <Chip size="xs" intent={type === 'SALARIO' ? 'success' : type === 'ANTICIPO' ? 'info' : 'warning'}>
-                            {label}
-                        </Chip>
-                    </div>
-                )
-            },
+            cell: ({ row }) => <DataCell.Text>{row.getValue("typeLabel")}</DataCell.Text>,
         },
         {
             accessorKey: "amount",
@@ -492,9 +482,16 @@ function PersonalTab({
             cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
         },
         {
-            accessorKey: "statusLabel",
+            accessorKey: "statusKey",
             header: "Estado",
-            cell: ({ row }) => <DataCell.Secondary>{row.original.statusLabel}</DataCell.Secondary>
+            cell: ({ row }) => {
+                const s = row.original.statusKey
+                return (
+                    <div className="flex justify-center">
+                        <StatusBadge status={s} size="xs" />
+                    </div>
+                )
+            }
         }
     ]
 
