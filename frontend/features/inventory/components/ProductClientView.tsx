@@ -523,7 +523,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         const imageUrl = (product.image ?? product.image_thumbnail) ? resolveMediaUrl(product.image ?? product.image_thumbnail) ?? undefined : undefined
 
                         return (
-                            <EntityCard key={product.id} onClick={() => {
+                            <EntityCard key={product.id} defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
                                 params.set('selected', String(product.id))
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -551,8 +551,9 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                             }
                                         </div>
                                     }
+                                    actions={productActions.render(product, actionsCtx)}
                                 />
-                                <EntityCard.Body actions={productActions.render(product, actionsCtx)}>
+                                <EntityCard.Body>
                                     <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
                                     <EntityCard.Field label="Categoría" value={product.category_name} />
                                     <EntityCard.Field

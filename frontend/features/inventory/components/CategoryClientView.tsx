@@ -184,12 +184,13 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                         description: "Crea categorías para organizar y clasificar tu catálogo de productos.",
                     }}
                     renderCard={(category: Category) => (
-                        <EntityCard onClick={() => openSelected(category.id)}>
+                        <EntityCard onClick={() => openSelected(category.id)} defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? null}>
                             <EntityCard.Header
                                 title={category.name}
                                 subtitle={category.parent_name ?? 'Categoría raíz'}
+                                actions={categoryActions.render(category, actionsCtx)}
                             />
-                            <EntityCard.Body actions={categoryActions.render(category, actionsCtx)} />
+                            <EntityCard.Body />
                         </EntityCard>
                     )}
                 />

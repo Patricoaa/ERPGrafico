@@ -208,15 +208,16 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                         const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
 
                         return (
-                            <EntityCard key={terminal.id} onClick={() => openSelected(terminal.id)} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
+                            <EntityCard key={terminal.id} onClick={() => openSelected(terminal.id)} defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
                                 <EntityCard.Header
                                     title={terminal.name}
                                     subtitle={terminal.code}
                                     trailing={
                                         <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
                                     }
+                                    actions={posTerminalActions.render(terminal, actionsCtx)}
                                 />
-                                <EntityCard.Body actions={posTerminalActions.render(terminal, actionsCtx)}>
+                                <EntityCard.Body>
                                     <EntityCard.Field
                                         label="Ubicación"
                                         value={

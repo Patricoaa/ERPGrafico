@@ -122,7 +122,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
         const Icon = methodTypeIcons[method.method_type] || CreditCard
         const iconStyle = methodTypeIconStyles[method.method_type] || "text-muted-foreground bg-muted/50"
         return (
-            <EntityCard key={method.id} onClick={() => openEdit(method)}>
+            <EntityCard key={method.id} onClick={() => openEdit(method)} defaultAction={paymentMethodActions.defaultAction(paymentMethodActionsCtx)?.(method) ?? null}>
                 <EntityCard.Header
                     icon={Icon}
                     iconClassName={iconStyle}
@@ -138,8 +138,9 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                             <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">{method.treasury_account_name}</span>
                         </div>
                     }
+                    actions={paymentMethodActions.render(method, paymentMethodActionsCtx)}
                 />
-                <EntityCard.Body actions={paymentMethodActions.render(method, paymentMethodActionsCtx)}>
+                <EntityCard.Body>
                     <div className="flex items-center gap-2">
                         {method.allow_for_sales && (
                             <Chip size="xs" intent="success">Ventas</Chip>

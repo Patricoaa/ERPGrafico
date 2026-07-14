@@ -169,7 +169,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                         description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
                     }}
                     renderCard={(emp: Employee) => (
-                        <EntityCard key={emp.id} onClick={() => {
+                        <EntityCard key={emp.id} defaultAction={employeeActions.defaultAction(actionsCtx)?.(emp) ?? null} onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(emp.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -180,8 +180,9 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                                 trailing={
                                     <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
                                 }
+                                actions={employeeActions.render(emp, actionsCtx)}
                             />
-                            <EntityCard.Body actions={employeeActions.render(emp, actionsCtx)}>
+                            <EntityCard.Body>
                                 <EntityCard.Field label="Cargo" value={emp.position || '—'} />
                                 <EntityCard.Field label="Dpto." value={emp.department || '—'} />
                                 <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />

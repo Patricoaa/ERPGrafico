@@ -165,7 +165,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                     }}
                     cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(advance) => (
-                        <EntityCard key={advance.id} onClick={() => openSelected(advance.id)}>
+                        <EntityCard key={advance.id} onClick={() => openSelected(advance.id)} defaultAction={salaryAdvanceActions.defaultAction(salaryAdvanceActionsCtx)?.(advance) ?? null}>
                             <EntityCard.Header
                                 title={advance.employee_name || '---'}
                                 subtitle={`Anticipo ${advance.employee_display_id || ''}`}
@@ -175,8 +175,9 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                                         label={advance.is_discounted ? "Descontado" : "Pendiente"}
                                     />
                                 }
+                                actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}
                             />
-                            <EntityCard.Body actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}>
+                            <EntityCard.Body>
                                 <EntityCard.Field label="Fecha" value={<DataCell.Date value={advance.date} />} />
                                 <EntityCard.Field label="Monto" value={<DataCell.Currency value={parseFloat(advance.amount)} intent="warning" weight="bold" />} />
                             </EntityCard.Body>
