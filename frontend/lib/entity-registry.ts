@@ -25,6 +25,8 @@ export interface ViewPolicy {
   cardComponent?: 'entity' | 'custom';
   /** Grid layout for card/grid views */
   gridLayout?: 'single-column' | 'multi-column';
+  /** Card variant: 'compact' = header-only, 'full' = header + body + footer */
+  cardVariant?: 'compact' | 'full';
 }
 
 export interface EntityMetadata {
@@ -355,7 +357,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'TES-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'compact' },
   },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',
@@ -407,7 +409,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'compact' },
   },
   'tax.taxperiod': {
     label: 'tax.taxperiod',
@@ -567,7 +569,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'compact' },
   },
   'settings.partner': {
     label: 'settings.partner',
