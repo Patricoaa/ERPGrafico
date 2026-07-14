@@ -722,7 +722,7 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25")}>
+                <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25 overflow-hidden")}>
                     {renderCustomView ? (
                         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar overflow-x-auto py-0">
                             {renderCustomView(table)}
@@ -735,7 +735,7 @@ export function DataTable<TData, TValue>({
                             )}
                             className={cn(isTableEmpty && "h-full")}
                         >
-                            <TableHeader className="sticky top-0 bg-background z-10">
+                            <TableHeader className={cn("sticky top-0 bg-background z-10", !noBorder && "rounded-t-sm")}>
                                 {table.getHeaderGroups().map((headerGroup) => (
                                     <TableRow
                                         key={headerGroup.id}
