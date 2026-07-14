@@ -206,13 +206,15 @@ function ThemeSelectionCard() {
 
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
-        <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-medium text-foreground">
-                <span className="text-muted-foreground">{icon}</span>
+        <fieldset className="notched-field pointer-events-none" aria-disabled="true">
+            <legend className="px-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                {label}
+            </legend>
+            <div className="flex items-center gap-2 h-5 px-2 text-sm font-medium text-foreground">
+                <span className="text-muted-foreground/60">{icon}</span>
                 {value}
             </div>
-        </div>
+        </fieldset>
     )
 }
 
@@ -444,27 +446,27 @@ function PersonalTab({
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Folio" />,
-            cell: ({ row }) => <DataCell.Code className="text-center font-bold">{row.getValue("display_id")}</DataCell.Code>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
         },
         {
             accessorKey: "period_label",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Período" />,
-            cell: ({ row }) => <DataCell.Text className="text-center text-sm">{row.getValue("period_label")}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("period_label")}</DataCell.Text>,
         },
         {
             accessorKey: "total_haberes",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Haberes" />,
-            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_haberes")} direction="inflow" showIcon={false} className="font-bold" />,
+            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_haberes")} direction="inflow" showIcon={false} />,
         },
         {
             accessorKey: "total_descuentos",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Descuentos" />,
-            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_descuentos") || "0"} direction="outflow" showIcon={false} className="font-bold" />,
+            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_descuentos") || "0"} direction="outflow" showIcon={false} />,
         },
         {
             accessorKey: "net_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Líquido" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("net_salary")} className="font-bold text-foreground" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("net_salary")} />,
         },
         {
             accessorKey: "remuneration_paid_status",
@@ -566,13 +568,15 @@ function PersonalTab({
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
                                 <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
                                 <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
-                                <div className="space-y-1.5">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sueldo Base</span>
-                                    <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-bold text-foreground">
-                                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                                <fieldset className="notched-field pointer-events-none" aria-disabled="true">
+                                    <legend className="px-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                        Sueldo Base
+                                    </legend>
+                                    <div className="flex items-center gap-2 h-5 px-2 text-sm font-bold text-foreground">
+                                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground/60" />
                                         <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
                                     </div>
-                                </div>
+                                </fieldset>
                                 <InfoField icon={<Clock className="h-3.5 w-3.5" />} label="Jornada" value={employee.jornada_type_display || "—"} />
                             </div>
                         </CardContent>
@@ -611,8 +615,7 @@ function PersonalTab({
                                         columns={payrollColumns}
                                         data={payrolls}
                                         defaultPageSize={10}
-                                        variant="standalone"
-                                        noBorder={true}
+                                        variant="embedded"
                                         toolbarClassName="px-6 pt-6 pb-2 pl-14"
                                         unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
                                         renderSubComponent={(row) => {

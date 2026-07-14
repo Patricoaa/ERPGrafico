@@ -121,6 +121,10 @@ export interface DataTableProps<TData, TValue> {
     rowSelection?: RowSelectionState
     renderLoadingView?: () => React.ReactNode
     kpiCards?: KpiCardDef[]
+    /** Custom className for the Table's scroll container. Overrides the default max-height constraint. */
+    tableContainerClassName?: string
+    /** Custom className for the DataTable's outer wrapper div. */
+    className?: string
 }
 
 export interface KpiCardDef {
@@ -199,6 +203,8 @@ export function DataTable<TData, TValue>({
     rowSelection,
     renderLoadingView,
     kpiCards,
+    tableContainerClassName,
+    className,
     gridTemplate,
     gridGap = "gap-x-3",
     compactMaxHeight = "max-h-[65vh]",
@@ -776,7 +782,7 @@ export function DataTable<TData, TValue>({
 
     // ─── Classic Mode (unchanged) ─────────────────────────────────────────────
     return (
-        <div ref={containerRef} className="w-full space-y-4">
+        <div ref={containerRef} className={cn("w-full space-y-4", className)}>
             {kpiCardsNode}
             {showToolbar && (
                 <div className={cn(
@@ -802,7 +808,7 @@ export function DataTable<TData, TValue>({
             {renderCustomView ? (
                 renderCustomView(table)
             ) : (
-                <div className={cn("relative", !noBorder && "rounded-md border")}>
+                <div className={cn("relative flex-1 flex flex-col min-h-0", !noBorder && "rounded-md border")}>
                     <div className="absolute top-0 left-0 right-0 h-0.5 overflow-hidden pointer-events-none">
                         <div
                             className={cn(
@@ -812,7 +818,8 @@ export function DataTable<TData, TValue>({
                         />
                     </div>
                     <Table containerClassName={cn(
-                        !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
+                        !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar",
+                        tableContainerClassName
                     )}>
                         <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-card border-b" : "bg-muted/30")}>
                             {table.getHeaderGroups().map((headerGroup) => (
