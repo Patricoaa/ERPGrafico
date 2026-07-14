@@ -116,9 +116,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
             accessorKey: "id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="ID" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Code className="font-bold">SES-{row.original.id}</DataCell.Code>
-                </div>
+                    <DataCell.Code>SES-{row.original.id}</DataCell.Code>
             ),
         },
         {
@@ -147,7 +145,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
             accessorKey: "start_amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fondo Inicial" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("start_amount")} className="text-muted-foreground" />
+                <DataCell.Currency value={row.getValue("start_amount")} intent="muted" />
             ),
         },
         {

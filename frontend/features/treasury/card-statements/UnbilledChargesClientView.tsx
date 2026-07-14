@@ -304,7 +304,7 @@ export function UnbilledChargesClientView({
                     <DataCell.Currency
                         value={row.original.amount}
                         currency={currency}
-                        className="font-bold"
+                        weight="bold"
                     />
                 </div>
             ),
@@ -559,7 +559,8 @@ export function UnbilledChargesClientView({
                                 <DataCell.Currency
                                     value={item.amount}
                                     currency={currency}
-                                    className="font-bold text-base"
+                                    weight="bold"
+                                    size="lg"
                                 />
                             </EntityCard.Footer>
                         </EntityCard>

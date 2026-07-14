@@ -5,7 +5,6 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { EntityBadge } from "@/components/shared"
 import { type CreditContact, type CreditHistoryEntry } from "@/features/credits/api/creditsApi"
-import { cn } from "@/lib/utils"
 import { AlertCircle } from "lucide-react"
 
 export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnDef<CreditContact>[] => [
@@ -27,15 +26,15 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
         header: ({ column }) => <DataTableColumnHeader column={column} title="Riesgo" className="justify-center" />,
         cell: ({ row }) => {
             const risk = row.original.credit_risk_level
-            const color = risk === 'LOW' ? 'text-success' :
-                risk === 'MEDIUM' ? 'text-warning' :
-                    risk === 'HIGH' ? 'text-warning' : 'text-destructive'
+            const intent = risk === 'LOW' ? 'success' as const :
+                risk === 'MEDIUM' ? 'warning' as const :
+                    risk === 'HIGH' ? 'warning' as const : 'destructive' as const
             const label = risk === 'LOW' ? 'Bajo' :
                 risk === 'MEDIUM' ? 'Medio' :
                     risk === 'HIGH' ? 'Alto' : 'Crítico'
 
             return (
-                <DataCell.Text className={cn("font-black uppercase tracking-tighter text-[11px]", color)}>
+                <DataCell.Text weight="black" uppercase size="sm" intent={intent}>
                     {label}
                 </DataCell.Text>
             )
@@ -48,7 +47,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             const contact = row.original
             const limit = Number(contact.credit_limit || 0)
             return (
-                <DataCell.Currency value={limit} className="font-bold cursor-pointer hover:underline text-primary" onClick={(e) => { e.stopPropagation(); onEdit(contact); }} />
+                <DataCell.Currency value={limit} weight="bold" intent="primary" interactive onClick={(e) => { e.stopPropagation(); onEdit(contact); }} />
             )
         },
     },
@@ -56,14 +55,14 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
         accessorKey: "credit_balance_used",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-center" />,
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.credit_balance_used} className="text-info font-black" />
+            <DataCell.Currency value={row.original.credit_balance_used} intent="info" weight="black" />
         ),
     },
     {
         id: "current",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Vigente" className="justify-center" />,
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.credit_aging.current} className="text-success" />
+            <DataCell.Currency value={row.original.credit_aging.current} intent="success" />
         ),
     },
     {
@@ -73,7 +72,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             const aging = row.original.credit_aging
             const val = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus)
             return val > 0 ? (
-                <DataCell.Currency value={val} className="text-destructive font-black" />
+                <DataCell.Currency value={val} intent="destructive" weight="black" />
             ) : (
                 <span className="text-muted-foreground/30">—</span>
             )
@@ -147,7 +146,7 @@ export const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "effective_total",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.effective_total} className="font-black" />
+            <DataCell.Currency value={row.original.effective_total} weight="black" />
         )
     },
     {

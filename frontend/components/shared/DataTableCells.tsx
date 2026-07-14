@@ -32,6 +32,37 @@ interface ValueCellProps<T> extends BaseCellProps {
     value: T | null | undefined
 }
 
+// ─── DataCell style token maps ───────────────────────────────────────────────
+
+type DataCellSize = 'xs' | 'sm' | 'md' | 'lg'
+type DataCellIntent = 'default' | 'primary' | 'success' | 'warning' | 'destructive' | 'info' | 'muted'
+type DataCellWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'black'
+
+const SIZE_MAP: Record<DataCellSize, string> = {
+    xs: 'text-[10px]',
+    sm: 'text-[11px]',
+    md: 'text-xs',
+    lg: 'text-base',
+}
+
+const INTENT_MAP: Record<DataCellIntent, string> = {
+    default: 'text-foreground',
+    primary: 'text-primary',
+    success: 'text-success',
+    warning: 'text-warning',
+    destructive: 'text-destructive',
+    info: 'text-info',
+    muted: 'text-muted-foreground',
+}
+
+const WEIGHT_MAP: Record<DataCellWeight, string> = {
+    normal: 'font-normal',
+    medium: 'font-medium',
+    semibold: 'font-semibold',
+    bold: 'font-bold',
+    black: 'font-black',
+}
+
 /** Maps snake_case type identifiers to ENTITY_REGISTRY labels. */
 const TYPE_TO_LABEL: Record<string, string> = {
   sale_order: 'sales.saleorder',
@@ -77,8 +108,8 @@ export const DataCell = {
      * Texto primario: Todo texto que no encaje en las definiciones restantes
      * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
      */
-    Text: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-foreground", className)} {...props}>{children}</div>
+    Text: ({ children, className, size, intent, weight, uppercase, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, uppercase?: boolean }) => (
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", className)} {...props}>{children}</div>
     ),
 
     /**
@@ -178,9 +209,9 @@ export const DataCell = {
     },
 
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
-    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean }) => {
+    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean }) => {
         return (
-            <div className={cn("text-xs font-medium text-foreground flex justify-center items-center w-full", className)} {...props}>
+            <div className={cn("text-xs font-medium text-foreground flex justify-center items-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
             </div>
         )

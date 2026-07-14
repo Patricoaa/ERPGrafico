@@ -217,7 +217,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("opening_balance")} className="text-muted-foreground" />
+                <DataCell.Currency value={row.getValue("opening_balance")} intent="muted" />
             ),
         },
         {

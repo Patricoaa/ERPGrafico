@@ -68,7 +68,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                 const emp = row.original;
                 return (
                     <div>
-                        <DataCell.ContactLink contactId={emp.contact} className="font-bold">{emp.contact_detail?.name}</DataCell.ContactLink>
+                        <DataCell.ContactLink contactId={emp.contact}>{emp.contact_detail?.name}</DataCell.ContactLink>
                     </div>
                 );
             },
@@ -189,7 +189,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                             </EntityCard.Body>
                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
-                                <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} className="font-bold text-base" />
+                                <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} weight="bold" size="lg" />
                             </EntityCard.Footer>
                         </EntityCard>
                     )}

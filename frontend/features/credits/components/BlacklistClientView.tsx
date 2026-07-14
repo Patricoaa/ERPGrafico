@@ -148,7 +148,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                                         <DataCell.CurrencyFlow value={entry.paid_amount} direction="inflow" showIcon={false} />
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.balance} className="font-bold" />
+                                        <DataCell.Currency value={entry.balance} weight="bold" />
                                     </td>
                                     <td className="py-2 text-center">
                                         <DataCell.Status status={String(entry.aging_bucket).toUpperCase()} />
