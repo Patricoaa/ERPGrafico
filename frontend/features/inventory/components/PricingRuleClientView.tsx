@@ -261,13 +261,14 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Crea reglas para automatizar descuentos y precios por producto o categoría.",
                     }}
                     renderCard={(rule: PricingRule) => (
-                        <EntityCard onClick={() => openSelected(rule.id)}>
+                        <EntityCard onClick={() => openSelected(rule.id)} defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? null}>
                             <EntityCard.Header
                                 title={rule.name}
                                 subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
                                 trailing={<StatusBadge status={rule.active ? 'active' : 'inactive'} size="sm" />}
+                                actions={pricingRuleActions.render(rule, actionsCtx)}
                             />
-                            <EntityCard.Body actions={pricingRuleActions.render(rule, actionsCtx)}>
+                            <EntityCard.Body>
                                 <EntityCard.Field label="Tipo" value={rule.rule_type_display} />
                                 <EntityCard.Field
                                     label="Precio"

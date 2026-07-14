@@ -181,6 +181,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                         return (
                             <EntityCard
                                 key={move.id}
+                                defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? null}
                                 onClick={() => {
                                     const params = new URLSearchParams(searchParams.toString())
                                     params.set('selected', String(move.id))
@@ -190,8 +191,9 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                 <EntityCard.Header
                                     title={move.product_name}
                                     subtitle={move.display_id ?? String(move.id)}
+                                    actions={stockMoveActions.render(move, actionsCtx)}
                                 />
-                                <EntityCard.Body actions={stockMoveActions.render(move, actionsCtx)}>
+                                <EntityCard.Body>
                                     <EntityCard.Field label="Fecha" value={<DataCell.Date value={move.date} />} />
                                     <EntityCard.Field label="Origen" value={move.source_location_name} />
                                     <EntityCard.Field label="Destino" value={move.destination_location_name} />

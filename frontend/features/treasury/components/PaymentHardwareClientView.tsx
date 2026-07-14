@@ -231,7 +231,7 @@ export function PaymentHardwareClientView({
                             </Button>
                         )}
                         renderCard={(provider: PaymentTerminalProvider) => (
-                            <EntityCard key={provider.id} onClick={() => openProviderSelected(provider.id)}>
+                            <EntityCard key={provider.id} onClick={() => openProviderSelected(provider.id)} defaultAction={providerActions.defaultAction(providerActionsCtx)?.(provider) ?? null}>
                                 <EntityCard.Header
                                     title={
                                         <div className="flex items-center gap-2">
@@ -240,8 +240,9 @@ export function PaymentHardwareClientView({
                                         </div>
                                     }
                                     trailing={<StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />}
+                                    actions={providerActions.render(provider, providerActionsCtx)}
                                 />
-                                <EntityCard.Body actions={providerActions.render(provider, providerActionsCtx)}>
+                                <EntityCard.Body>
                                     <EntityCard.Field
                                         label="Recaudación"
                                         value={provider.receivable_account_name || "No configurada"}
@@ -298,16 +299,17 @@ export function PaymentHardwareClientView({
                             </Button>
                         )}
                         renderCard={(device: PaymentTerminalDevice) => (
-                            <EntityCard key={device.id} onClick={() => openDeviceSelected(device.id)}>
-                                <EntityCard.Header
-                                    title={
-                                        <div className="flex items-center gap-2">
-                                            <Smartphone className="h-4 w-4 text-info" />
-                                            {device.name}
-                                        </div>
-                                    }
-                                />
-                                <EntityCard.Body actions={deviceActions.render(device, deviceActionsCtx)}>
+                            <EntityCard key={device.id} onClick={() => openDeviceSelected(device.id)} defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}>
+                                    <EntityCard.Header
+                                        title={
+                                            <div className="flex items-center gap-2">
+                                                <Smartphone className="h-4 w-4 text-info" />
+                                                {device.name}
+                                            </div>
+                                        }
+                                        actions={deviceActions.render(device, deviceActionsCtx)}
+                                    />
+                                    <EntityCard.Body>
                                     <EntityCard.Field
                                         label="Proveedor"
                                         value={device.provider_name || "Sin proveedor"}

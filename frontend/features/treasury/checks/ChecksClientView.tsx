@@ -241,8 +241,9 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             <EntityCard.Header
                                 title={check.check_number}
                                 trailing={<StatusBadge status={check.status} />}
+                                actions={checkActions.render(check, actionsCtx)}
                             />
-                            <EntityCard.Body actions={checkActions.render(check, actionsCtx)}>
+                            <EntityCard.Body>
                                 <EntityCard.Field
                                     label={isIssued ? 'Beneficiario' : 'Girador'}
                                     value={check.counterparty_name ?? check.drawer_name ?? '—'}

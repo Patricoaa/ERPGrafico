@@ -191,7 +191,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                         description: "Las sesiones del punto de venta aparecerán aquí al abrir caja.",
                     }}
                     renderCard={(session: POSSession) => (
-                        <EntityCard onClick={() => {
+                        <EntityCard defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(session.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -200,8 +200,9 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                                 title={session.id_display}
                                 subtitle={session.user_name}
                                 trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
+                                actions={posSessionActions.render(session, actionsCtx)}
                             />
-                            <EntityCard.Body actions={posSessionActions.render(session, actionsCtx)}>
+                            <EntityCard.Body>
                                 <EntityCard.Field label="Cuenta" value={session.treasury_account_name} />
                                 <EntityCard.Field label="Apertura" value={<DataCell.Date value={session.opened_at} showTime />} />
                             </EntityCard.Body>

@@ -243,7 +243,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                             description: "Crea tu primer cliente o proveedor para empezar a operar.",
                         }}
                         renderCard={(contact: Contact) => (
-                            <EntityCard key={contact.id} onClick={() => openSelected(contact.id)}>
+                            <EntityCard key={contact.id} onClick={() => openSelected(contact.id)} defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? null}>
                                 <EntityCard.Header
                                     title={contact.name}
                                     subtitle={contact.tax_id || 'S/Rut'}
@@ -260,8 +260,9 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                             </div>
                                         </div>
                                     }
+                                    actions={contactActions.render(contact, actionsCtx)}
                                 />
-                                <EntityCard.Body actions={contactActions.render(contact, actionsCtx)}>
+                                <EntityCard.Body>
                                     <EntityCard.Field label="Email" value={contact.email || '-'} />
                                     <EntityCard.Field label="Teléfono" value={contact.phone || '-'} />
                                     {Number(contact.credit_limit || 0) > 0 && (

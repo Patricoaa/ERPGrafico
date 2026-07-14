@@ -216,13 +216,14 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                         description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
                     }}
                     renderCard={(loan: BankLoan) => (
-                        <EntityCard onClick={() => openLoan(loan.id, "detail")}>
+                        <EntityCard onClick={() => openLoan(loan.id, "detail")} defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}>
                             <EntityCard.Header
                                 title={loan.display_id}
                                 subtitle={loan.loan_number || undefined}
                                 trailing={<StatusBadge status={loan.status} />}
+                                actions={loanActions.render(loan, actionsCtx)}
                             />
-                            <EntityCard.Body actions={loanActions.render(loan, actionsCtx)}>
+                            <EntityCard.Body>
                                 <EntityCard.Field label="Banco" value={loan.lender_name} />
                                 <EntityCard.Field
                                     label="Capital"

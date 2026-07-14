@@ -200,13 +200,14 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                         description: "Crea una lista de materiales (BOM) para definir cómo se fabrica un producto.",
                     }}
                     renderCard={(bom: BOMListItem) => (
-                        <EntityCard onClick={() => bom.id != null && handleEdit(bom.id)}>
+                        <EntityCard onClick={() => bom.id != null && handleEdit(bom.id)} defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? null}>
                             <EntityCard.Header
                                 title={bom.name}
                                 subtitle={bom.product_name}
                                 trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
+                                actions={bomActions.render(bom, actionsCtx)}
                             />
-                            <EntityCard.Body actions={bomActions.render(bom, actionsCtx)}>
+                            <EntityCard.Body>
                                 {bom.product_internal_code && (
                                     <EntityCard.Field label="Código" value={<DataCell.Code>{bom.product_internal_code}</DataCell.Code>} />
                                 )}
