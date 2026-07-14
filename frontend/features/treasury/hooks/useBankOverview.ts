@@ -91,5 +91,6 @@ export function useBankOverview(bankId: number | null) {
         queryFn: () => treasuryApi.getBankOverview(bankId as number),
         enabled: bankId != null,
         staleTime: 2 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }

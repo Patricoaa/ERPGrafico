@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Chip, DataCell, DataTable, DataTableColumnHeader, LabeledContainer, SkeletonShell, StatCard, PieChart } from '@/components/shared'
+import { Chip, DataCell, DataTable, DataTableColumnHeader, LabeledContainer, SkeletonShell, StatCard, PieChart, StaleDataBanner } from '@/components/shared'
 import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
 import {
     CalendarDays,
@@ -123,16 +123,17 @@ export function PartnerProfileTab({ contactId }: Props) {
                 </div>
             ),
         },
-        partnerTransactionActions.column(actionsCtx) as ColumnDef<PartnerTransaction & { balance_after: number }>,
+        partnerTransactionActions.auto(actionsCtx) as ColumnDef<PartnerTransaction & { balance_after: number }>,
     ]
 
-    if (isError || !statement) return null
+    if (!statement) return null
 
     const { contact, summary, partner_account_detail } = statement
     const equityPct = parseFloat(summary.equity_percentage) || 0
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
             <div className="h-full overflow-y-auto custom-scrollbar">
                 {/* Top: Información Societaria — compact, no scroll */}
                 <div className="shrink-0 pb-2">

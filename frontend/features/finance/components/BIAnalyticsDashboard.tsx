@@ -3,7 +3,7 @@
 import React from 'react';
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
-import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart } from '@/components/shared';
+import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart, StaleDataBanner } from '@/components/shared';
 
 import { formatCurrency } from "@/lib/money";
 import { type DateRange } from "react-day-picker";
@@ -50,7 +50,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
 
     const { data, isLoading, isError } = useBIAnalytics(params)
 
-    if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar analytics" description="No se pudieron cargar los datos de inteligencia de negocio." />;
     if (!data && !isLoading) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const PLACEHOLDER = { sales: { total_sales: 0, growth: 0, average_ticket: 0, sales_count: 0, monthly_trend: [], top_customers: [] }, inventory: { total_value: 0, item_count: 0, turnover_ratio: 0, low_stock_alerts: 0, stock_distribution: [] }, performance: { purchase_total: 0, ar_total: 0, ap_total: 0 }, production: { finished_wo: 0, total_wo: 0, efficiency: 0 } };
@@ -59,6 +58,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando analytics de negocio">
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
             {/* KPI Overview Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard

@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, StatCard } from '@/components/shared'
+import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, StatCard, StaleDataBanner } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
 import { type DateRange } from "react-day-picker";
@@ -51,7 +51,6 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
     const { data, isLoading, isError } = useAnalysis(params)
     const { data: compData } = useAnalysis(compParams)
 
-    if (isError) return <EmptyState context="finance" variant="compact" title="Error al cargar ratios" description="No se pudieron cargar los indicadores financieros." />;
     if (!data && !isLoading) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const PLACEHOLDER: AnalysisData = { liquidity: { current_ratio: 0, acid_test: 0, current_assets: 0, current_liabilities: 0 }, structure: { debt_to_equity: 0, total_assets: 0, total_liabilities: 0, total_equity: 0 }, solvency: { solvency_ratio: 0 }, profitability: { gross_margin: 0, net_margin: 0 } };
@@ -90,6 +89,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando ratios financieros">
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
             {/* Key Metrics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <StatCard

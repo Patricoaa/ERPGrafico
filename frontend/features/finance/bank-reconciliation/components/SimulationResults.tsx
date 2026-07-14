@@ -1,6 +1,6 @@
 "use client"
 
-import { DataCell, DataTable, EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared'
+import { DataCell, DataTable, EmptyState, MoneyDisplay, SkeletonShell, StaleDataBanner } from '@/components/shared'
 import { useSimulationQuery } from "../hooks/useReconciliationQueries"
 
 import {formatPlainDate} from "@/lib/utils"
@@ -10,10 +10,6 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     const { data: results, isLoading, isError } = useSimulationQuery(rule)
 
     if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
-
-    if (isError) {
-        return <EmptyState context="finance" variant="compact" title="Error de simulación" description="No se pudieron simular las reglas." />
-    }
 
     if (!results || results.length === 0) {
         return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />
@@ -70,11 +66,14 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
     ]
 
     return (
-        <DataTable
-            columns={columns}
-            data={results}
-            variant="minimal"
-            hidePagination
-        />
+        <>
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
+            <DataTable
+                columns={columns}
+                data={results}
+                variant="minimal"
+                hidePagination
+            />
+        </>
     )
 }

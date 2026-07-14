@@ -2,11 +2,11 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
-import { PageContainer, PageHeader } from '@/components/shared'
+import { PageContainer, PageHeader, StaleDataBanner } from '@/components/shared'
 import { ProfileProvider, useProfile, ProfileSidePanel } from "@/features/profile"
 
 export function ProfileLayoutClient({ children }: { children: ReactNode }) {
-    const { data: profile, isLoading, isError } = useProfile()
+    const { data: profile, isLoading, isError, refetch } = useProfile()
     const pathname = usePathname()
     const [panelOpen, setPanelOpen] = useState(true)
 
@@ -89,12 +89,21 @@ export function ProfileLayoutClient({ children }: { children: ReactNode }) {
                         <div className="flex items-center justify-center h-64">
                             <p className="text-muted-foreground text-sm">Cargando perfil...</p>
                         </div>
-                    ) : isError || !profile ? (
-                        <div className="p-8 text-center text-muted-foreground">
-                            Error al cargar el perfil. Intente nuevamente.
+                    ) : !profile ? (
+                        <div className="flex flex-col items-center justify-center h-64 gap-4">
+                            <p className="text-muted-foreground text-sm">
+                                Error al cargar el perfil. Intente nuevamente.
+                            </p>
+                            <button
+                                onClick={() => refetch()}
+                                className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+                            >
+                                Reintentar
+                            </button>
                         </div>
                     ) : (
                         <ProfileProvider profile={profile}>
+                            {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4 mt-2" />}
                             {children}
                         </ProfileProvider>
                     )}

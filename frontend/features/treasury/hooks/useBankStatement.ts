@@ -7,6 +7,7 @@ export function useBankStatement<T = Record<string, unknown>>(id: number | null,
         queryKey: BANK_STATEMENTS_KEYS.detail(id as number),
         queryFn: () => treasuryApi.getStatement(id as number) as Promise<T>,
         enabled: !!id && enabled,
+        placeholderData: (prev) => prev,
     })
 
     return { statement, isLoading, isError, refetch }

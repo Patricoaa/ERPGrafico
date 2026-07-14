@@ -30,6 +30,7 @@ export function useCheck(id: number | null, enabled = true) {
         queryFn: () => checksApi.get(id as number),
         enabled: id != null && enabled,
         staleTime: 60 * 1000,
+        placeholderData: (prev) => prev,
     })
     return { check: check ?? null, isLoading, isError }
 }

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
-import { Skeleton, EmptyState, PageSectionHeader } from "@/components/shared"
+import { Skeleton, EmptyState, PageSectionHeader, StaleDataBanner } from "@/components/shared"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
@@ -51,37 +51,28 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                 subTabs={cardSubTabs}
             />
             {activeTab === "overview" && isLoading && <OverviewSkeleton />}
-            {activeTab === "overview" && !isLoading && (
-                isError ? (
-                    <div className="flex-1 flex items-center justify-center">
-                        <EmptyState
-                            title="Error al cargar datos del banco"
-                            description="Intente nuevamente más tarde."
-                            icon={AlertTriangle}
-                        />
-                    </div>
-                ) : overviewData ? (
-                    <div>
-                        <section className="py-4">
-                            <div className="flex flex-col lg:flex-row gap-5">
-                                <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                    <BankCheckingSection data={overviewData} bankId={bankId} />
-                                    <BankLoanSection data={overviewData} bankId={bankId} />
-                                </div>
-                                <div className="w-full lg:w-[380px] shrink-0">
-                                    <BankCreditSection data={overviewData} bankId={bankId} />
-                                </div>
+            {activeTab === "overview" && !isLoading && overviewData && (
+                <div>
+                    {isError && <StaleDataBanner className="mx-4 mt-2" />}
+                    <section className="py-4">
+                        <div className="flex flex-col lg:flex-row gap-5">
+                            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                <BankCheckingSection data={overviewData} bankId={bankId} />
+                                <BankLoanSection data={overviewData} bankId={bankId} />
                             </div>
-                        </section>
-                        <div className="border-b border-border/40" />
-                        <section className="py-4">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                <BankUpcomingMaturities data={overviewData} bankId={bankId} />
-                                <BankRecentActivity data={overviewData} bankId={bankId} />
+                            <div className="w-full lg:w-[380px] shrink-0">
+                                <BankCreditSection data={overviewData} bankId={bankId} />
                             </div>
-                        </section>
-                    </div>
-                ) : null
+                        </div>
+                    </section>
+                    <div className="border-b border-border/40" />
+                    <section className="py-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                            <BankUpcomingMaturities data={overviewData} bankId={bankId} />
+                            <BankRecentActivity data={overviewData} bankId={bankId} />
+                        </div>
+                    </section>
+                </div>
             )}
 
             {activeTab === "movements" && (

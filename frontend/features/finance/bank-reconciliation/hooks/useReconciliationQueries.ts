@@ -48,6 +48,7 @@ export function useSimulationQuery(rule: Record<string, unknown> | null) {
         },
         staleTime: 30_000,
         enabled: !!rule,
+        placeholderData: (prev) => prev,
     })
 }
 

@@ -16,7 +16,8 @@ import {
     DataCell, 
     UnifiedSearchBar,
     useUnifiedSearch,
-    StatusBadge 
+    StatusBadge,
+    StaleDataBanner,
 } from "@/components/shared"
 import { useBackgroundJobs, type BackgroundJob, jobUnifiedSearchDef } from "@/features/settings"
 
@@ -146,17 +147,9 @@ export default function JobsView() {
         }
     ], [refetch])
 
-    if (isError) {
-        return (
-            <Alert variant="destructive">
-                <AlertCircle className="w-4 h-4" />
-                <AlertDescription>Error al cargar el historial de procesos asíncronos.</AlertDescription>
-            </Alert>
-        )
-    }
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
+            {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4 mt-2" />}
             <DataTableView
                 columns={columns}
                 data={filteredJobs}

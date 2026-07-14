@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 
-import { EmptyState, FadeIn, MoneyDisplay, ReportTable, SkeletonShell, ReportToolbar } from '@/components/shared'
+import { EmptyState, FadeIn, MoneyDisplay, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
 import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
@@ -127,20 +127,6 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
         onPeriodLabelChange?.(periodLabel)
     }, [periodLabel, onPeriodLabelChange])
 
-    if (isError) {
-        return (
-        <PageContainer scrollable className="px-0">
-                <div className="w-full pt-4">
-                    <EmptyState
-                        context="finance"
-                        title="Error al cargar estados financieros"
-                        description="No se pudieron obtener los datos financieros. Intente nuevamente más tarde."
-                    />
-                </div>
-            </PageContainer>
-        )
-    }
-
     const renderBSDistribution = (d: BalanceSheetData) => {
         const segments = [
             { label: "Activos", value: d.total_assets || 0, bgClass: "bg-asset", textClass: "text-asset-foreground" },
@@ -180,6 +166,7 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
     return (
         <PageContainer scrollable className="px-0">
             <div className="w-full pt-4">
+                {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4" />}
                 {!hideToolbar && (
                     <ReportToolbar
                         headerFormat={headerFormat}
