@@ -93,6 +93,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     // ── Subscription / Employee ──────────────────────────────────────────
     ACTIVE:         { label: 'Activo',       intent: 'success' },
     INACTIVE:       { label: 'Inactivo',     intent: 'neutral' },
+    DESCONTADO:     { label: 'Descontado',   intent: 'success' },
     PAUSED:         { label: 'Pausado',      intent: 'warning' },
     EXPIRED:        { label: 'Vencido/a', intent: 'warning' },
 
