@@ -1,6 +1,6 @@
 
 import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
-import { ArrowUpRight, ArrowDownLeft, History, ExternalLink, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
+import { ArrowRight, ArrowUpRight, ArrowDownLeft, History, ExternalLink, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -108,7 +108,7 @@ export const DataCell = {
      * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
      */
     Text: ({ children, className, size, intent, weight, uppercase, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, uppercase?: boolean }) => (
-        <div className={cn("flex justify-start items-center text-left w-full text-sm font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", className)} {...props}>{children}</div>
     ),
 
     /**
@@ -116,12 +116,12 @@ export const DataCell = {
      * entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias).
      */
     Secondary: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-start items-center text-left w-full text-xs font-medium text-muted-foreground uppercase tracking-wider", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-muted-foreground uppercase tracking-wider", className)} {...props}>{children}</div>
     ),
 
     /** Standard text for identifiers (simple font as per request) */
     Code: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-start items-center text-left w-full text-xs font-mono font-medium text-muted-foreground uppercase tracking-widest", className)} {...props}>
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-mono font-medium text-muted-foreground uppercase tracking-widest", className)} {...props}>
             {children || "-"}
         </div>
     ),
@@ -166,11 +166,11 @@ export const DataCell = {
     Link: ({ children, href, onClick, className, external, ...props }: HTMLAttributes<HTMLElement> & { href?: string, onClick?: () => void, external?: boolean }) => {
         if (href) {
             return (
-                <div className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center", className)}>
+                <div className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-center items-center text-center", className)}>
                     <Link
                         href={href}
                         target={external ? "_blank" : undefined}
-                        className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center hover:underline hover:text-primary/80 flex items-center gap-1 w-fit")}
+                        className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-center items-center text-center hover:underline hover:text-primary/80 flex items-center gap-1 w-fit")}
                         {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
                     >
                         {children}
@@ -180,11 +180,11 @@ export const DataCell = {
             )
         }
         return (
-            <div className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center", className)}>
+                <div className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-center items-center text-center", className)}>
                 <Button
                     variant="ghost"
                     onClick={onClick}
-                    className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center hover:underline hover:text-primary/80 text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
+                    className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-center items-center text-center hover:underline hover:text-primary/80 text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
                     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                 >
                     {children}
@@ -197,12 +197,12 @@ export const DataCell = {
 
     /** Right-aligned number with tabular figures */
     Number: ({ value, suffix, prefix, className, decimals = 0, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number }) => {
-        if (value === null || value === undefined) return <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-end items-center", className)} {...props}>-</div>
+        if (value === null || value === undefined) return <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-center items-center text-center", className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-end items-center", className)} {...props}>
+            <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-center items-center text-center", className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
-                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-sm font-medium text-foreground flex justify-end items-center">{suffix}</span>}
+                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-sm font-medium text-foreground flex justify-center items-center text-center">{suffix}</span>}
             </div>
         )
     },
@@ -210,7 +210,7 @@ export const DataCell = {
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
     Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean }) => {
         return (
-            <div className={cn("text-sm font-medium text-foreground flex justify-end items-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", className)} {...props}>
+            <div className={cn("text-sm font-medium text-foreground flex justify-center items-center text-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
             </div>
         )
@@ -228,7 +228,7 @@ export const DataCell = {
         const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
 
         return (
-            <div className={cn("flex items-center justify-end gap-1 font-mono text-sm font-semibold", className)} {...props}>
+            <div className={cn("flex items-center justify-center gap-1 font-mono text-sm font-semibold text-center", className)} {...props}>
                 {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
                 <span className={textColor}>{sign}{formatCurrency(value, currency, { maximumFractionDigits: digits })}</span>
             </div>
@@ -237,7 +237,7 @@ export const DataCell = {
 
     Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string, digits?: number }) => {
         return (
-            <div className={cn("text-sm font-medium text-foreground flex justify-end items-center", className)} {...props}>
+            <div className={cn("text-sm font-medium text-foreground flex justify-center items-center text-center", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} />
             </div>
         )
@@ -249,10 +249,10 @@ export const DataCell = {
      * When `direction` is omitted, infers from sign (backward compatible).
      */
     NumericFlow: ({ value, unit, direction: dirProp, showIcon = true, showSign = true, className, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean }) => {
-        if (value === null || value === undefined || value === "") return <div className="flex justify-end text-muted-foreground text-sm">-</div>
+        if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center text-muted-foreground text-sm">-</div>
 
         const numValue = Number(value)
-        if (isNaN(numValue)) return <div className="text-sm font-medium text-foreground flex justify-end items-center">-</div>
+        if (isNaN(numValue)) return <div className="text-sm font-medium text-foreground flex justify-center items-center text-center">-</div>
 
         const direction = dirProp ?? (numValue > 0 ? 'inflow' : numValue < 0 ? 'outflow' : 'neutral')
 
@@ -265,7 +265,7 @@ export const DataCell = {
         const formatted = Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
         return (
-            <div className={cn("flex items-center justify-end gap-1 font-mono text-sm font-semibold", className)} {...props}>
+            <div className={cn("flex items-center justify-center gap-1 font-mono text-sm font-semibold text-center", className)} {...props}>
                 {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
                 <span className={textColor}>{sign}{formatted}{unit && ` ${unit}`}</span>
             </div>
@@ -297,9 +297,9 @@ export const DataCell = {
 
     /** Standard date format */
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
-        if (!value) return <div className={cn("flex justify-start items-center w-full text-sm text-muted-foreground/50", className)} {...props}>-</div>
+        if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-sm text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-start items-center w-full text-sm font-medium text-foreground whitespace-nowrap", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-center text-sm font-medium text-foreground whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -419,6 +419,59 @@ export const DataCell = {
         <div className={cn("flex justify-center items-center gap-1.5", className)} onClick={(e) => e.stopPropagation()} {...props}>
             {children}
         </div>
+    ),
+
+    /**
+     * Single-action hover-reveal button for DataTable rows.
+     * Renders an ArrowRight icon hidden by default, appearing on row hover
+     * (parent must have the `group` class — DataTable rows add it automatically).
+     * Executes the provided onClick when clicked.
+     *
+     * @contract docs/20-contracts/component-row-actions.md §4
+     */
+    ActionSingle: ({
+        onClick,
+        title = "Abrir",
+        className,
+    }: {
+        onClick?: (e: React.MouseEvent) => void
+        title?: string
+        className?: string
+    }) => (
+        <TooltipProvider delayDuration={400}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex justify-center items-center">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                "h-7 w-7 rounded-full transition-all duration-200",
+                                "opacity-0 group-hover:opacity-100",
+                                "hover:scale-110 active:scale-95",
+                                "hover:bg-accent hover:text-accent-foreground",
+                                className,
+                            )}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onClick?.(e)
+                            }}
+                            type="button"
+                        >
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </TooltipTrigger>
+                {title && (
+                    <TooltipContent
+                        side="top"
+                        className="text-xs font-semibold uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200"
+                    >
+                        {title}
+                    </TooltipContent>
+                )}
+            </Tooltip>
+        </TooltipProvider>
     ),
 
     /**
@@ -731,7 +784,7 @@ export function createExpanderColumn<TData>(opts?: {
                         e.stopPropagation()
                         row.toggleExpanded()
                     }}
-                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-1 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
                 >
                     {row.getIsExpanded() ? (
                         <ChevronDown className="h-4 w-4" />

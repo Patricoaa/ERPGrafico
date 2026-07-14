@@ -610,6 +610,7 @@ function PersonalTab({
                                                     columns={unifiedPaymentColumns}
                                                     data={relatedPayments}
                                                     variant="minimal"
+                                                    noBorder={true}
                                                     hidePagination={true}
                                                 />
                                             )
