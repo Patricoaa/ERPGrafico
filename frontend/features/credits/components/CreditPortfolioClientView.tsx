@@ -1,13 +1,13 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { CreditCard, Target, ShieldAlert, Activity } from "lucide-react"
+
 import { type CreditContact, type CreditHistoryEntry } from '@/features/credits/api/creditsApi'
 import CreditAssignmentModal from "./CreditAssignmentModal"
 import { DataTable } from '@/components/shared'
 import { PortfolioTable } from "./PortfolioTable"
 import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"
-import { UnifiedSearchBar, useUnifiedSearch, MoneyDisplay, type KpiCardDef } from "@/components/shared"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -92,26 +92,6 @@ export function CreditPortfolioClientView({
         [rawHistory, historySearch.filterFn, historySearch.filters.origin],
     )
 
-    const kpiCards = useMemo<KpiCardDef[]>(() => {
-        const s = data?.summary
-        const totalDebt = Number(s?.total_debt || 0)
-        const potentialLoss = Number(s?.potential_loss || 0)
-        const totalOverdue = Number(s?.overdue_30 || 0) + Number(s?.overdue_60 || 0) + Number(s?.overdue_90 || 0) + Number(s?.overdue_90plus || 0)
-        const contacts = data?.contacts || []
-        const computedTotalLimit = contacts.reduce((acc, c) => {
-            const limit = Number(c.credit_limit || 0)
-            const balance = Number(c.credit_balance_used || 0)
-            return acc + (limit > 0 ? limit : balance)
-        }, 0)
-        const computedUtilizationRate = computedTotalLimit > 0 ? (totalDebt / computedTotalLimit) * 100 : 0
-        return [
-            { label: "Deuda Total", value: <MoneyDisplay amount={totalDebt} />, subtext: `${s?.count_debtors || 0} clientes con deuda activa`, icon: CreditCard, accent: "primary" as const },
-            { label: "Exposición Total", value: <MoneyDisplay amount={computedTotalLimit} />, subtext: `Uso: ${computedUtilizationRate.toFixed(1)}% del límite`, icon: Target, accent: "info" as const },
-            { label: "Pérdida Potencial", value: <MoneyDisplay amount={potentialLoss} />, subtext: `${s?.risk_distribution?.CRITICAL || 0} riesgos críticos`, icon: ShieldAlert, accent: potentialLoss > 0 ? "destructive" as const : "muted" as const },
-            { label: "Tasa de Mora", value: `${((totalOverdue / (totalDebt || 1)) * 100).toFixed(1)}%`, subtext: `${s?.count_overdue || 0} vencimientos`, icon: Activity, accent: totalOverdue > 0 ? "warning" as const : "success" as const },
-        ]
-    }, [data])
-
     const handleModalSuccess = useCallback(async () => {
         await refetch()
         clearSelection()
@@ -148,7 +128,6 @@ export function CreditPortfolioClientView({
                             paramValues={contactSearch.paramValues}
                             placeholder="Cliente o RUT..."
                         />}
-                        kpiCards={kpiCards}
                     />
                 </div>
             ) : (
