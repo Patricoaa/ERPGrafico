@@ -501,7 +501,7 @@ function PersonalTab({
     const contact = employee.contact_detail
 
     return (
-        <div className="flex flex-col w-full h-full space-y-6">
+        <div className="flex flex-col w-full flex-1 min-h-0 space-y-6">
             {/* Sub-tab 1: Ficha de Empleado */}
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
@@ -582,13 +582,12 @@ function PersonalTab({
                                 </ActionSlideButton>
                             </div>
                         )}
-                        <div className="flex-1 min-h-0">
+                        <div className="flex-1 min-h-0 flex flex-col">
                             <DataTable
                                 columns={payrollColumns}
                                 data={payrolls}
                                 defaultPageSize={10}
                                 variant="embedded"
-                                toolbarClassName="px-6 pt-6 pb-2 pl-14"
                                 emptyState={{
                                     context: "generic",
                                     icon: FileText,
