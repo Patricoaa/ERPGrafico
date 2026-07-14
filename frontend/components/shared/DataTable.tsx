@@ -315,6 +315,7 @@ export function DataTable<TData, TValue>({
     }, [internalRowSelection, onRowSelectionChange])
 
     const showToolbar = !hideToolbar && !isMinimal && !isCompact && (
+        !!unifiedSearch ||
         (toolbarActions && toolbarActions.length > 0) ||
         createAction ||
         (viewOptions && viewOptions.length > 0) ||
@@ -780,7 +781,7 @@ export function DataTable<TData, TValue>({
 
     // ─── Classic Mode (unchanged) ─────────────────────────────────────────────
     return (
-        <div ref={containerRef} className={cn("w-full space-y-4", className)}>
+        <div ref={containerRef} className={cn(isEmbedded ? "w-full flex flex-col h-full min-h-0" : "w-full space-y-4", className)}>
             {kpiCardsNode}
             {showToolbar && (
                 <div className={cn(
@@ -816,7 +817,8 @@ export function DataTable<TData, TValue>({
                         />
                     </div>
                     <Table containerClassName={cn(
-                        !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar",
+                        !isInModal && !isEmbedded && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar",
+                        !isInModal && isEmbedded && "flex-1 min-h-0 overflow-y-auto custom-scrollbar",
                         tableContainerClassName
                     )}>
                         <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-card border-b" : "bg-muted/30")}>

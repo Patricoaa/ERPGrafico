@@ -461,7 +461,7 @@ function PersonalTab({
                 )
             }
         },
-        profilePayrollActions.column(profilePayrollActionsCtx) as ColumnDef<Payroll>,
+        profilePayrollActions.auto(profilePayrollActionsCtx) as ColumnDef<Payroll>,
     ]
 
     // Unified Payment columns
@@ -567,58 +567,50 @@ function PersonalTab({
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <Card className="flex-1 flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="text-lg text-primary">Historial de Liquidaciones</CardTitle>
-                            <CardDescription>
-                                {payrolls.length} liquidación(es) registrada(s)
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            {selectedPayrolls.length > 0 && (
-                                <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
-                                    <ActionSlideButton
-                                        size="sm"
-                                        className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
-                                        onClick={onBulkDownload}
-                                        disabled={downloadingAll}
-                                        loading={downloadingAll}
-                                    >
-                                        {!downloadingAll && <Download className="h-3.5 w-3.5" />}
-                                        Descargar {selectedPayrolls.length} seleccionada(s)
-                                    </ActionSlideButton>
-                                </div>
-                            )}
-                            <div className="flex-1 min-h-0 flex flex-col">
-                                    <DataTable
-                                        columns={payrollColumns}
-                                        data={payrolls}
-                                        defaultPageSize={10}
-                                        variant="embedded"
-                                        toolbarClassName="px-6 pt-6 pb-2 pl-14"
-                                        emptyState={{
-                                            context: "generic",
-                                            icon: FileText,
-                                            title: "No tiene liquidaciones",
-                                            description: "Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas.",
-                                        }}
-                                        unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
-                                        renderSubComponent={(row) => {
-                                            const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
-                                            return (
-                                                <DataTable
-                                                    columns={unifiedPaymentColumns}
-                                                    data={relatedPayments}
-                                                    variant="minimal"
-                                                    noBorder={true}
-                                                    hidePagination={true}
-                                                />
-                                            )
-                                        }}
-                                    />
+                    <div className="flex-1 min-h-0 flex flex-col">
+                        {selectedPayrolls.length > 0 && (
+                            <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
+                                <ActionSlideButton
+                                    size="sm"
+                                    className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
+                                    onClick={onBulkDownload}
+                                    disabled={downloadingAll}
+                                    loading={downloadingAll}
+                                >
+                                    {!downloadingAll && <Download className="h-3.5 w-3.5" />}
+                                    Descargar {selectedPayrolls.length} seleccionada(s)
+                                </ActionSlideButton>
                             </div>
-                        </CardContent>
-                    </Card>
+                        )}
+                        <div className="flex-1 min-h-0">
+                            <DataTable
+                                columns={payrollColumns}
+                                data={payrolls}
+                                defaultPageSize={10}
+                                variant="embedded"
+                                toolbarClassName="px-6 pt-6 pb-2 pl-14"
+                                emptyState={{
+                                    context: "generic",
+                                    icon: FileText,
+                                    title: "No tiene liquidaciones",
+                                    description: "Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas.",
+                                }}
+                                unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
+                                renderSubComponent={(row) => {
+                                    const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
+                                    return (
+                                        <DataTable
+                                            columns={unifiedPaymentColumns}
+                                            data={relatedPayments}
+                                            variant="minimal"
+                                            noBorder={true}
+                                            hidePagination={true}
+                                        />
+                                    )
+                                }}
+                            />
+                        </div>
+                    </div>
                 </FadeIn>
             )}
 
