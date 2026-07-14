@@ -300,7 +300,7 @@ class TreasuryMovementListSerializer(serializers.ModelSerializer):
         fields = [
             "id", "display_id", "account", "account_name", "amount", "date", 
             "movement_type", "movement_type_display", "payment_method", "payment_method_display",
-            "status", "is_reconciled", "is_pending_registration", "created_at", "updated_at"
+            "status", "is_reconciled", "is_pending_registration", "created_at"
         ]
 
 class TreasuryMovementWriteSerializer(serializers.ModelSerializer):
