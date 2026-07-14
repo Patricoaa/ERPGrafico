@@ -584,48 +584,57 @@ export type ActionMenuItem =
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface ActionsColumnConfig<TData> {
-    /** Function receiving the row data, must return DataCell.Action elements */
+    /** Function receiving the row data, must return DataCell.Action or DataCell.ActionSingle elements */
     renderActions: (item: TData) => ReactNode
-    /** Override the column header label. Default: "Acciones" */
+    /** Column header label. Omit for no header (default for DataTableViews). */
     headerLabel?: string
 }
 
 /**
  * createActionsColumn — Standard factory for the actions column.
  *
+ * By default renders no header (empty). Pass `headerLabel` to restore one.
+ * Column size is fixed at 40px to keep the actions column minimal.
+ *
  * @contract component-row-actions.md §5.1
  *
  * Usage:
  * ```tsx
- * const columns = [
- *   // ...data columns,
- *   createActionsColumn<Product>({
- *     renderActions: (item) => (
- *       <>
- *         <DataCell.Action icon={Pencil} title="Editar" onClick={() => edit(item)} />
- *         <DataCell.Action icon={Trash2} title="Eliminar" onClick={() => del(item)} />
- *       </>
- *     ),
- *   }),
- * ]
+ * // 1 action — single hover-reveal arrow
+ * createActionsColumn<Product>({
+ *   renderActions: (item) => (
+ *     <DataCell.ActionSingle onClick={() => edit(item)} />
+ *   ),
+ * })
+ *
+ * // 2+ actions — kebab menu
+ * createActionsColumn<Product>({
+ *   renderActions: (item) => (
+ *     <DataCell.ActionMenu items={[
+ *       { action: "edit", onClick: () => edit(item) },
+ *       { action: "delete", onClick: () => del(item) },
+ *     ]} />
+ *   ),
+ * })
  * ```
  */
 export function createActionsColumn<TData>({
     renderActions,
-    headerLabel = "Acciones",
+    headerLabel,
 }: ActionsColumnConfig<TData>): ColumnDef<TData, unknown> {
     return {
         id: "actions",
-        header: () => (
+        header: headerLabel ? () => (
             <div className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {headerLabel}
             </div>
-        ),
+        ) : undefined,
         cell: ({ row }) => (
             <DataCell.ActionGroup>
                 {renderActions(row.original)}
             </DataCell.ActionGroup>
         ),
+        size: 40,
         enableSorting: false,
         enableHiding: false,
     }
@@ -784,7 +793,7 @@ export function createExpanderColumn<TData>(opts?: {
                         e.stopPropagation()
                         row.toggleExpanded()
                     }}
-                    className="p-1 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+                    className="p-1 bg-transparent text-muted-foreground transition-colors"
                 >
                     {row.getIsExpanded() ? (
                         <ChevronDown className="h-4 w-4" />

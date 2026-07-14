@@ -16,7 +16,10 @@ import { createActionsColumn } from "./DataTableCells"
  *   )
  * )
  *
- * // 2. Use in table columns
+ * // 2a. Single action — renders ArrowRight on hover (DataTable)
+ * const columns = [ ..., myActions.single(ctx) ]
+ *
+ * // 2b. Multiple actions — renders kebab menu (DataTable)
  * const columns = [ ..., myActions.column(ctx) ]
  *
  * // 3. Use in renderCard
@@ -35,5 +38,14 @@ export function createEntityActions<T, Ctx = object>(
             }),
         /** Render the same actions for EntityCard.actions or EntityCard.Footer */
         render: (item: T, ctx: Ctx) => render(item, ctx),
+        /**
+         * Single-action variant for DataTable.
+         * Renders ArrowRight on row hover (no header, minimal column width).
+         * Use when the entity has only one action.
+         */
+        single: (ctx: Ctx): ColumnDef<T> =>
+            createActionsColumn({
+                renderActions: (item) => render(item, ctx),
+            }),
     }
 }
