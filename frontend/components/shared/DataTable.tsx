@@ -488,7 +488,7 @@ export function DataTable<TData, TValue>({
                                 <TableRow
                                     key={row.id}
                                     className={cn(
-                                        "table-row-hover border-b border-border/40",
+                                        "table-row-hover border-b border-border/40 group",
                                         onRowClick && "cursor-pointer",
                                         getRowClassName?.(row)
                                     )}
@@ -696,7 +696,7 @@ export function DataTable<TData, TValue>({
         const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
-            <div ref={containerRef} className={cn("relative flex flex-col h-full w-full space-y-1 min-h-0", !noBorder && "rounded-sm border border-border/25")}>
+            <div ref={containerRef} className="relative flex flex-col h-full w-full space-y-1 min-h-0">
                 {/* Toolbar Section (Outside) */}
                 {kpiCardsNode}
 
@@ -722,7 +722,7 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-y-scroll custom-scrollbar overflow-x-auto" : "flex flex-col overflow-hidden")}>
+                <div className={cn("flex-1 min-h-0", !noBorder && "rounded-sm border border-border/25", renderCustomView ? "overflow-y-scroll custom-scrollbar overflow-x-auto" : "flex flex-col overflow-hidden")}>
                     {renderCustomView ? (
                         <div className="py-0">
                             {renderCustomView(table)}
