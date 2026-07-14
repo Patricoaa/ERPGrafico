@@ -13,12 +13,12 @@ import {UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
 
-import { DataTable } from '@/components/shared'
+import { DataTable, createExpanderColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { Button } from "@/components/ui/button"
-import { UserCheck, DollarSign, AlertCircle, ChevronDown, ChevronRight } from "lucide-react"
+import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
 
 import { toast } from "sonner"
 import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
@@ -214,28 +214,7 @@ export function BlacklistClientView() {
     }, [rawContacts, search.filterFn, search.filters.risk_level])
 
     const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
-        {
-            id: "expander",
-            header: () => null,
-            cell: ({ row }) => (
-                <Button
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        row.toggleExpanded()
-                    }}
-                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    {row.getIsExpanded() ? (
-                        <ChevronDown className="h-4 w-4" />
-                    ) : (
-                        <ChevronRight className="h-4 w-4" />
-                    )}
-                </Button>
-            ),
-            size: 40,
-            enableSorting: false,
-            enableHiding: false,
-        },
+        createExpanderColumn<CreditContact>(),
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,

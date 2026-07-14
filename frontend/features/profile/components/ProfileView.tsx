@@ -24,9 +24,9 @@ import {
     User, ShieldCheck, KeyRound, Mail,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
     Download, Clock, FileText,
-    ChevronDown, ChevronRight, Sun, Moon, Monitor
+    Sun, Moon, Monitor
 } from "lucide-react"
-import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch, createExpanderColumn } from "@/components/shared"
 import type { UnifiedSearchConfig } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
@@ -385,28 +385,9 @@ function PersonalTab({
 
     // Payroll columns
     const payrollColumns: ColumnDef<Payroll>[] = [
-        {
-            id: "expander",
-            header: () => null,
-            cell: ({ row }) => {
-                const pId = row.original.display_id
-                const hasPayments = unifiedPayments.some(p => p.payroll_display_id === pId)
-                if (!hasPayments) return null
-                return (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 opacity-50 hover:opacity-100"
-                        onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation()
-                            row.toggleExpanded()
-                        }}
-                    >
-                        {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </Button>
-                )
-            },
-        },
+        createExpanderColumn<Payroll>({
+            canExpand: (row) => unifiedPayments.some(p => p.payroll_display_id === row.display_id)
+        }),
         {
             id: "select",
             header: ({ table }) => (
@@ -487,12 +468,12 @@ function PersonalTab({
     const unifiedPaymentColumns: ColumnDef<UnifiedPayment>[] = [
         {
             accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Fecha" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} className="text-center" />,
+            header: "Fecha",
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
             accessorKey: "typeLabel",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Tipo" />,
+            header: "Tipo",
             cell: ({ row }) => {
                 const type = row.original.type
                 const label = row.getValue("typeLabel") as string
@@ -507,14 +488,13 @@ function PersonalTab({
         },
         {
             accessorKey: "amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Monto" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} className="font-bold" />,
+            header: "Monto",
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
         },
-
         {
             accessorKey: "statusLabel",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Estado" />,
-            cell: ({ row }) => <DataCell.Secondary className="text-center font-bold uppercase tracking-wider">{row.original.statusLabel}</DataCell.Secondary>
+            header: "Estado",
+            cell: ({ row }) => <DataCell.Secondary>{row.original.statusLabel}</DataCell.Secondary>
         }
     ]
 
@@ -610,42 +590,31 @@ function PersonalTab({
                                 </div>
                             )}
                             <div className="flex-1 min-h-0 flex flex-col">
-                                {payrolls.length > 0 ? (
                                     <DataTable
                                         columns={payrollColumns}
                                         data={payrolls}
                                         defaultPageSize={10}
                                         variant="embedded"
                                         toolbarClassName="px-6 pt-6 pb-2 pl-14"
+                                        emptyState={{
+                                            context: "generic",
+                                            icon: FileText,
+                                            title: "No tiene liquidaciones",
+                                            description: "Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas.",
+                                        }}
                                         unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
                                         renderSubComponent={(row) => {
                                             const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
                                             return (
-                                                <div className="bg-muted/30 pb-4">
-                                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar border-t border-b">
-                                                        <DataTable
-                                                            columns={unifiedPaymentColumns}
-                                                            data={relatedPayments}
-                                                            variant="minimal"
-                                                            noBorder={true}
-                                                            hidePagination={true}
-                                                            defaultPageSize={100}
-                                                        />
-                                                    </div>
-                                                </div>
+                                                <DataTable
+                                                    columns={unifiedPaymentColumns}
+                                                    data={relatedPayments}
+                                                    variant="minimal"
+                                                    hidePagination={true}
+                                                />
                                             )
                                         }}
                                     />
-                                ) : (
-                                    <div className="flex-1 flex items-center justify-center h-full">
-                                        <EmptyState
-                                            context="generic"
-                                            icon={FileText}
-                                            title="No tiene liquidaciones"
-                                            description="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
-                                        />
-                                    </div>
-                                )}
                             </div>
                         </CardContent>
                     </Card>

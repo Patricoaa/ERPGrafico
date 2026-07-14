@@ -11,14 +11,14 @@ import {
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
-    RefreshCw, ShieldAlert, Gavel, ChevronDown, ChevronRight
+    RefreshCw, ShieldAlert, Gavel
 } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge, MoneyDisplay } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataTable, type KpiCardDef } from '@/components/shared'
+import { DataTable, type KpiCardDef, createExpanderColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { formatMoney } from "@/lib/money"
 
@@ -327,28 +327,7 @@ export function PortfolioTable({
     kpiCards?: KpiCardDef[],
 }) {
     const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
-        {
-            id: "expander",
-            header: () => null,
-            cell: ({ row }) => (
-                <Button
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        row.toggleExpanded()
-                    }}
-                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    {row.getIsExpanded() ? (
-                        <ChevronDown className="h-4 w-4" />
-                    ) : (
-                        <ChevronRight className="h-4 w-4" />
-                    )}
-                </Button>
-            ),
-            size: 40,
-            enableSorting: false,
-            enableHiding: false,
-        },
+        createExpanderColumn<CreditContact>(),
         ...columns,
     ], [columns])
 
