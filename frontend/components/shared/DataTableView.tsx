@@ -4,9 +4,8 @@ import React, { useMemo, useRef, useCallback } from "react"
 import { type Row, type Table as ReactTable } from "@tanstack/react-table"
 import { useViewMode } from "@/hooks/useViewMode"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
-import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView, createCardGroupLoadingView } from "@/lib/view-helpers"
+import { createEntityCardView, createCardLoadingView, createCardGroupView, createCardGroupLoadingView } from "@/lib/view-helpers"
 import { DataTable, type DataTableProps } from "./DataTable"
-import { DomainCard } from "./DomainCard"
 import type { EntityCardSkeletonProps } from "./EntityCard"
 import type { Group } from "@/lib/group-utils"
 import { groupItems } from "@/lib/group-utils"
@@ -109,43 +108,6 @@ export function DataTableView<TData, TValue>({
     }
 
     switch (policy.cardComponent) {
-      case "domain":
-        if (derivedCardGroupBy) {
-          return createCardGroupView({
-            renderCard: (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => {
-              const isAnySelected = table ? table.getSelectedRowModel().rows.length > 0 : false
-              return React.createElement(DomainCard, {
-                label: entityLabel,
-                data,
-                isSelected: isSelected?.(data as TData) ?? false,
-                isHubOpen: isHubOpen ?? false,
-                onClick: () => {
-                  if (hasBulkActions && isAnySelected && row) {
-                    row.toggleSelected()
-                  } else {
-                    dataTableProps.onRowClick?.(data as TData)
-                  }
-                },
-                selectable: hasBulkActions,
-                checked: row?.getIsSelected() ?? false,
-                onCheckedChange: (checked) => row?.toggleSelected(checked),
-                isAnySelected,
-              })
-            },
-            cardGroupBy: derivedCardGroupBy,
-            gridLayout: policy.gridLayout,
-            emptyState: dataTableProps.emptyState,
-            isFiltered: dataTableProps.isFiltered,
-          }) as unknown as (table: ReactTable<TData>) => React.ReactNode
-        }
-        return createDomainCardView(entityLabel, {
-          onRowClick: dataTableProps.onRowClick as (data: Record<string, unknown>) => void,
-          isSelected: isSelected as (data: Record<string, unknown>) => boolean,
-          isHubOpen: isHubOpen ?? false,
-          emptyState: dataTableProps.emptyState,
-          isFiltered: dataTableProps.isFiltered,
-          hasBulkActions,
-        }) as unknown as (table: ReactTable<TData>) => React.ReactNode
       case "entity":
         if (!renderCard) return undefined
         if (derivedCardGroupBy) {
@@ -173,7 +135,7 @@ export function DataTableView<TData, TValue>({
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView
     if (!isCustomView) return undefined
-    if (policy?.cardComponent === "domain" || policy?.cardComponent === "entity" || externalRenderCustomView) {
+    if (policy?.cardComponent === "entity" || externalRenderCustomView) {
       if (derivedCardGroupBy) {
         return createCardGroupLoadingView({
           gridLayout: policy?.gridLayout,

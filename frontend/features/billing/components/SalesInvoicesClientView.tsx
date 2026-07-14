@@ -3,11 +3,11 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, EntityCard, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import {IconButton, UnifiedSearchBar, useUnifiedSearch} from "@/components/shared"
+import {IconButton, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus} from "@/components/shared"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft, Calendar, GitBranch } from "lucide-react"
 import { treasuryApi } from "@/features/treasury"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
@@ -17,7 +17,9 @@ import { PaymentModal } from "@/features/treasury"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { getDtePrefix } from "@/lib/entity-registry"
+import { ENTITY_REGISTRY, getEntityIcon, getPartnerName, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
+import { formatPlainDate } from "@/lib/utils"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
@@ -147,6 +149,98 @@ export function SalesInvoicesClientView() {
                     isRefetching={isRefetching}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
+                    renderCard={(data: Invoice) => {
+                        const label = 'billing.invoice'
+                        const d = data as unknown as Record<string, unknown>
+                        const config = ENTITY_REGISTRY[label]?.cardConfig
+                        const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(d) : config?.iconClassName
+                        const total = parseFloat(String(d.total || 0))
+                        const pending = parseFloat(String(d.pending_amount || 0))
+                        const hasPending = total > 0 && pending > 0
+                        const adjustments = (d.adjustments || []) as Array<Record<string, unknown>>
+
+                        return (
+                            <EntityCard
+                                onClick={() => toggleSelection(data)}
+                                isSelected={hubConfig?.invoiceId === data.id}
+                                className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                            >
+                                <EntityCard.Header
+                                    icon={getEntityIcon(label)}
+                                    iconClassName={iconClassName}
+                                    title={getPartnerName(label, d)}
+                                    subtitle={
+                                        <span className="flex items-center gap-1.5 flex-wrap">
+                                            <span>{d.display_id as string}</span>
+                                            <span className="text-muted-foreground/20">·</span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3 opacity-50" />
+                                                {formatPlainDate(d.date as string)}
+                                            </span>
+                                        </span>
+                                    }
+                                    trailing={
+                                        <div className="flex items-center gap-4">
+                                            <div className="hidden sm:flex items-center gap-3">
+                                                {adjustments.length > 0 && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        {adjustments.map((adj) => (
+                                                            <span
+                                                                key={adj.id as number}
+                                                                className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/10 cursor-pointer hover:bg-primary/10"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    openHub({ invoiceId: adj.id as number, type: 'sale' })
+                                                                }}
+                                                            >
+                                                                <GitBranch className="h-3 w-3" />
+                                                                {formatEntityDisplay(label, d)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <DomainHubStatus label={label} data={d} />
+                                            </div>
+                                            <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
+                                        </div>
+                                    }
+                                />
+                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
+                                    <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                                        <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
+                                            {((d.lines || d.items || []) as Array<Record<string, unknown>>).map((line, idx: number) => (
+                                                <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                                                    <span>
+                                                        <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
+                                                        <span className="text-muted-foreground/40 mx-1">×</span>
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground truncate max-w-[220px]">{line.product_name as string || 'Producto'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-start gap-4 shrink-0 pr-9">
+                                            {d.delivery_date ? (
+                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Entrega</span>
+                                                    <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(String(d.delivery_date))}</span>
+                                                </div>
+                                            ) : null}
+                                            {hasPending && (
+                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                    <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
+                                                    <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col items-end min-w-[80px]">
+                                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
+                                                <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                                            </div>
+                                        </div>
+                                    </EntityCard.Body>
+                                )}
+                            </EntityCard>
+                        )
+                    }}
                     unifiedSearch={<UnifiedSearchBar
                         config={invoiceUnifiedSearchDef}
                         chips={search.chips}

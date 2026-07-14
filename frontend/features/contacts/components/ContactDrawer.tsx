@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
-import { ActionConfirmModal, DomainHubStatus, Drawer, StatCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DomainHubStatus, Drawer, EntityCard, StatCard, StatusBadge } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import {
     Form,
@@ -27,9 +27,12 @@ import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, Cli
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared"
 import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
-import { createDomainCardView } from "@/lib/view-helpers"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
+import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
+import { formatPlainDate } from "@/lib/utils"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { Calendar } from "lucide-react"
 
 import { DataTable } from '@/components/shared'
 
@@ -630,15 +633,91 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
     const cardView = useMemo(() => {
         const label = type === 'sale' ? 'sales.saleorder' : type === 'purchase' ? 'purchasing.purchaseorder' : 'production.workorder'
-        return createDomainCardView(label, {
-            onRowClick: (data: Record<string, unknown>) => {
-                if (type === 'work_order') {
-                    openEntity('production.workorder', data.id as number)
-                } else {
-                    openHub({ orderId: data.id as number, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
-                }
-            },
-        })
+        const handleClick = (data: Record<string, unknown>) => {
+            if (type === 'work_order') {
+                openEntity('production.workorder', data.id as number)
+            } else {
+                openHub({ orderId: data.id as number, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
+            }
+        }
+        const config = ENTITY_REGISTRY[label]?.cardConfig
+        return (table: { getRowModel: () => { rows: Array<{ original: Record<string, unknown>; id: string | number }> }; getState: () => { columnVisibility: Record<string, boolean> } }) => {
+            const rows = table.getRowModel().rows
+            if (rows.length === 0) {
+                                return <div className="flex h-full min-h-[12rem] items-center justify-center"><EmptyState context="generic" /></div>
+            }
+            const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName : config?.iconClassName
+            const dateLabel = typeof config?.dateLabel === 'function' ? config.dateLabel : config?.dateLabel ?? 'Entrega'
+            return (
+                <div className="grid gap-3 pt-1">
+                    {rows.map((row) => {
+                        const d = row.original
+                        const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
+                        const pending = parseFloat(String(d.pending_amount || 0))
+                        const hasPending = total > 0 && pending > 0
+                        return (
+                            <EntityCard key={row.id} onClick={() => handleClick(d)}>
+                                <EntityCard.Header
+                                    icon={getEntityIcon(label)}
+                                    iconClassName={typeof iconClassName === 'function' ? iconClassName(d) : iconClassName}
+                                    title={getPartnerName(label, d)}
+                                    subtitle={
+                                        <span className="flex items-center gap-1.5 flex-wrap">
+                                            <span>{d.display_id as string}</span>
+                                            <span className="text-muted-foreground/20">·</span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3 opacity-50" />
+                                                {formatPlainDate(d.date as string)}
+                                            </span>
+                                        </span>
+                                    }
+                                    trailing={
+                                        <div className="flex items-center gap-4">
+                                            <div className="hidden sm:flex items-center gap-3">
+                                                <DomainHubStatus label={label} data={d} />
+                                            </div>
+                                        </div>
+                                    }
+                                />
+                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
+                                    <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                                        <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
+                                            {((d.lines || d.items || []) as Array<Record<string, unknown>>).map((line, idx: number) => (
+                                                <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                                                    <span>
+                                                        <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
+                                                        <span className="text-muted-foreground/40 mx-1">×</span>
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground truncate max-w-[220px]">{line.product_name as string || 'Producto'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-start gap-4 shrink-0 pr-9">
+                                            {(d.delivery_date || d.receipt_date) ? (
+                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{typeof dateLabel === 'function' ? dateLabel(d) : dateLabel}</span>
+                                                    <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(String(d.delivery_date || d.receipt_date))}</span>
+                                                </div>
+                                            ) : null}
+                                            {hasPending && (
+                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                    <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
+                                                    <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col items-end min-w-[80px]">
+                                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
+                                                <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                                            </div>
+                                        </div>
+                                    </EntityCard.Body>
+                                )}
+                            </EntityCard>
+                        )
+                    })}
+                </div>
+            )
+        }
     }, [type, openEntity, openHub, onActionSuccess])
 
     const contactDocumentActionsCtx: ContactDocumentActionsCtx = {
@@ -687,7 +766,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 return <DomainHubStatus data={row.original} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
             }
         },
-        contactDocumentActions.column(contactDocumentActionsCtx)
+        contactDocumentActions.auto(contactDocumentActionsCtx)
     ]
 
     return (
@@ -834,9 +913,74 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<st
                         variant="embedded"
                         defaultPageSize={10}
                         currentView="card"
-                        renderCustomView={createDomainCardView('sales.saleorder', {
-                            onRowClick: (data: Record<string, unknown>) => openHub({ orderId: data.id as number, type: 'sale', onActionSuccess }),
-                        })}
+                        renderCustomView={(table) => {
+                            const rows = table.getRowModel().rows
+                            if (rows.length === 0) {
+                                return <div className="flex h-full min-h-[12rem] items-center justify-center"><EmptyState context="finance" /></div>
+                            }
+                            return (
+                                <div className="grid gap-3 pt-1">
+                                    {rows.map((row) => {
+                                        const d = row.original as Record<string, unknown>
+                                        const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
+                                        const pending = parseFloat(String(d.pending_amount || 0))
+                                        const hasPending = total > 0 && pending > 0
+                                        return (
+                                            <EntityCard key={row.id} onClick={() => openHub({ orderId: d.id as number, type: 'sale', onActionSuccess })}>
+                                                <EntityCard.Header
+                                                    icon={getEntityIcon('sales.saleorder')}
+                                                    title={getPartnerName('sales.saleorder', d)}
+                                                    subtitle={
+                                                        <span className="flex items-center gap-1.5 flex-wrap">
+                                                            <span>{d.display_id as string}</span>
+                                                            <span className="text-muted-foreground/20">·</span>
+                                                            <span className="flex items-center gap-1">
+                                                                <Calendar className="h-3 w-3 opacity-50" />
+                                                                {formatPlainDate(d.date as string)}
+                                                            </span>
+                                                        </span>
+                                                    }
+                                                    trailing={
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="hidden sm:flex items-center gap-3">
+                                                                <DomainHubStatus label="sales.saleorder" data={d} />
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                />
+                                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
+                                                    <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                                                        <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
+                                                            {((d.lines || d.items || []) as Array<Record<string, unknown>>).map((line, idx: number) => (
+                                                                <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                                                                    <span>
+                                                                        <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
+                                                                        <span className="text-muted-foreground/40 mx-1">×</span>
+                                                                    </span>
+                                                                    <span className="text-xs text-muted-foreground truncate max-w-[220px]">{line.product_name as string || 'Producto'}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div className="flex items-start gap-4 shrink-0 pr-9">
+                                                            {hasPending && (
+                                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                                    <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
+                                                                    <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex flex-col items-end min-w-[80px]">
+                                                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
+                                                                <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                                                            </div>
+                                                        </div>
+                                                    </EntityCard.Body>
+                                                )}
+                                            </EntityCard>
+                                        )
+                                    })}
+                                </div>
+                            )
+                        }}
                     />
                 </div>
             </div>

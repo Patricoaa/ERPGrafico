@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, EntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft, Calendar } from "lucide-react"
+import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
+import { formatPlainDate } from "@/lib/utils"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
@@ -200,6 +203,85 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     isRefetching={viewMode === 'orders' ? isRefetching : isRefetchingNotes}
+                    renderCard={(data: SaleOrder | SaleNote) => {
+                        const label = viewMode === 'orders' ? 'sales.saleorder' : 'billing.invoice'
+                        const d = data as unknown as Record<string, unknown>
+                        const config = ENTITY_REGISTRY[label]?.cardConfig
+                        const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(d) : config?.iconClassName
+                        const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
+                        const pending = parseFloat(String(d.pending_amount || 0))
+                        const hasPending = total > 0 && pending > 0
+
+                        return (
+                            <EntityCard
+                                onClick={() => toggleSelection(data.id)}
+                                isSelected={getSelectionId(data)}
+                                className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                            >
+                                <EntityCard.Header
+                                    icon={getEntityIcon(label)}
+                                    iconClassName={iconClassName}
+                                    title={getPartnerName(label, d)}
+                                    subtitle={
+                                        <span className="flex items-center gap-1.5 flex-wrap">
+                                            <span>{d.display_id as string}</span>
+                                            <span className="text-muted-foreground/20">·</span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3 opacity-50" />
+                                                {formatPlainDate(d.date as string)}
+                                            </span>
+                                            {viewMode === 'orders' && d.pos_session ? (
+                                                <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
+                                                    #{String(d.pos_session)}
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                    }
+                                    trailing={
+                                        <div className="flex items-center gap-4">
+                                            <div className="hidden sm:flex items-center gap-3">
+                                                <DomainHubStatus label={label} data={d} />
+                                            </div>
+                                            <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
+                                        </div>
+                                    }
+                                />
+                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
+                                    <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                                        <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
+                                            {((d.lines || d.items || []) as Array<Record<string, unknown>>).map((line, idx: number) => (
+                                                <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                                                    <span>
+                                                        <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
+                                                        <span className="text-muted-foreground/40 mx-1">×</span>
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground truncate max-w-[220px]">{line.product_name as string || 'Producto'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-start gap-4 shrink-0 pr-9">
+                                            {d.delivery_date ? (
+                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Entrega</span>
+                                                    <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(String(d.delivery_date))}</span>
+                                                </div>
+                                            ) : null}
+                                            {hasPending && (
+                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                    <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
+                                                    <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col items-end min-w-[80px]">
+                                                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
+                                                <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                                            </div>
+                                        </div>
+                                    </EntityCard.Body>
+                                )}
+                            </EntityCard>
+                        )
+                    }}
                     manualPagination={!effectiveGrouping}
                     pageCount={effectiveGrouping ? 1 : viewMode === 'orders'
                         ? (page ? Math.ceil(page.count / page.pageSize) : 0)
