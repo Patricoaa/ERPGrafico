@@ -1,9 +1,9 @@
 "use client"
 
 import React from 'react'
-import { AlertCircle, Banknote } from 'lucide-react'
+import { Banknote } from 'lucide-react'
 import {
-    Drawer, EmptyState, FormSection, SkeletonShell, StaleDataBanner,
+    Drawer, FormSection, SkeletonShell, StaleDataBanner,
 } from '@/components/shared'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'

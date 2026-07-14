@@ -4,11 +4,10 @@ import { useMemo } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Download, AlertCircle, RefreshCw } from "lucide-react"
+import { Download, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { 
     DataTableView, 

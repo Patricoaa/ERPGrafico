@@ -1,8 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { AlertTriangle } from "lucide-react"
-import { Skeleton, EmptyState, PageSectionHeader, StaleDataBanner } from "@/components/shared"
+import { Skeleton, PageSectionHeader, StaleDataBanner } from "@/components/shared"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
