@@ -1,14 +1,14 @@
 
 import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
-import { ArrowUpRight, ArrowDownLeft, History, ExternalLink, type LucideIcon, MoreVertical } from "lucide-react"
+import { ArrowUpRight, ArrowDownLeft, History, ExternalLink, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
 import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent, DataTableColumnHeader } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 import { formatCurrency } from "@/lib/money"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -36,12 +36,12 @@ interface ValueCellProps<T> extends BaseCellProps {
 
 type DataCellSize = 'xs' | 'sm' | 'md' | 'lg'
 type DataCellIntent = 'default' | 'primary' | 'success' | 'warning' | 'destructive' | 'info' | 'muted'
-type DataCellWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'black'
+type DataCellWeight = 'normal' | 'medium' | 'semibold' | 'bold'
 
 const SIZE_MAP: Record<DataCellSize, string> = {
-    xs: 'text-[10px]',
-    sm: 'text-[11px]',
-    md: 'text-xs',
+    xs: 'text-xs',
+    sm: 'text-xs',
+    md: 'text-sm',
     lg: 'text-base',
 }
 
@@ -60,7 +60,6 @@ const WEIGHT_MAP: Record<DataCellWeight, string> = {
     medium: 'font-medium',
     semibold: 'font-semibold',
     bold: 'font-bold',
-    black: 'font-black',
 }
 
 /** Maps snake_case type identifiers to ENTITY_REGISTRY labels. */
@@ -109,7 +108,7 @@ export const DataCell = {
      * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
      */
     Text: ({ children, className, size, intent, weight, uppercase, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, uppercase?: boolean }) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-start items-center text-left w-full text-sm font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", className)} {...props}>{children}</div>
     ),
 
     /**
@@ -117,12 +116,12 @@ export const DataCell = {
      * entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias).
      */
     Secondary: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-[11px] font-medium text-muted-foreground uppercase tracking-wider", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-start items-center text-left w-full text-xs font-medium text-muted-foreground uppercase tracking-wider", className)} {...props}>{children}</div>
     ),
 
     /** Standard text for identifiers (simple font as per request) */
     Code: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-[11px] font-mono font-medium text-muted-foreground uppercase tracking-widest", className)} {...props}>
+        <div className={cn("flex justify-start items-center text-left w-full text-xs font-mono font-medium text-muted-foreground uppercase tracking-widest", className)} {...props}>
             {children || "-"}
         </div>
     ),
@@ -167,11 +166,11 @@ export const DataCell = {
     Link: ({ children, href, onClick, className, external, ...props }: HTMLAttributes<HTMLElement> & { href?: string, onClick?: () => void, external?: boolean }) => {
         if (href) {
             return (
-                <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
+                <div className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center", className)}>
                     <Link
                         href={href}
                         target={external ? "_blank" : undefined}
-                        className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 flex items-center gap-1 w-fit")}
+                        className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center hover:underline hover:text-primary/80 flex items-center gap-1 w-fit")}
                         {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
                     >
                         {children}
@@ -181,11 +180,11 @@ export const DataCell = {
             )
         }
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
+            <div className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center", className)}>
                 <Button
                     variant="ghost"
                     onClick={onClick}
-                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
+                    className={cn("text-sm font-mono font-medium text-foreground/90 flex justify-start items-center hover:underline hover:text-primary/80 text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
                     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                 >
                     {children}
@@ -198,12 +197,12 @@ export const DataCell = {
 
     /** Right-aligned number with tabular figures */
     Number: ({ value, suffix, prefix, className, decimals = 0, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number }) => {
-        if (value === null || value === undefined) return <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>-</div>
+        if (value === null || value === undefined) return <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-end items-center", className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>
+            <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-end items-center", className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
-                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-xs font-medium text-foreground flex justify-center items-center">{suffix}</span>}
+                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-sm font-medium text-foreground flex justify-end items-center">{suffix}</span>}
             </div>
         )
     },
@@ -211,7 +210,7 @@ export const DataCell = {
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
     Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean }) => {
         return (
-            <div className={cn("text-xs font-medium text-foreground flex justify-center items-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", className)} {...props}>
+            <div className={cn("text-sm font-medium text-foreground flex justify-end items-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
             </div>
         )
@@ -229,7 +228,7 @@ export const DataCell = {
         const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
 
         return (
-            <div className={cn("flex items-center justify-end gap-1 font-mono text-[11px] font-black", className)} {...props}>
+            <div className={cn("flex items-center justify-end gap-1 font-mono text-sm font-semibold", className)} {...props}>
                 {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
                 <span className={textColor}>{sign}{formatCurrency(value, currency, { maximumFractionDigits: digits })}</span>
             </div>
@@ -238,7 +237,7 @@ export const DataCell = {
 
     Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string, digits?: number }) => {
         return (
-            <div className={cn("text-xs font-medium text-foreground flex justify-center items-center", className)} {...props}>
+            <div className={cn("text-sm font-medium text-foreground flex justify-end items-center", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} />
             </div>
         )
@@ -250,10 +249,10 @@ export const DataCell = {
      * When `direction` is omitted, infers from sign (backward compatible).
      */
     NumericFlow: ({ value, unit, direction: dirProp, showIcon = true, showSign = true, className, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean }) => {
-        if (value === null || value === undefined || value === "") return <div className="flex justify-center text-muted-foreground text-xs">-</div>
+        if (value === null || value === undefined || value === "") return <div className="flex justify-end text-muted-foreground text-sm">-</div>
 
         const numValue = Number(value)
-        if (isNaN(numValue)) return <div className="text-xs font-medium text-foreground flex justify-center items-center">-</div>
+        if (isNaN(numValue)) return <div className="text-sm font-medium text-foreground flex justify-end items-center">-</div>
 
         const direction = dirProp ?? (numValue > 0 ? 'inflow' : numValue < 0 ? 'outflow' : 'neutral')
 
@@ -266,7 +265,7 @@ export const DataCell = {
         const formatted = Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
         return (
-            <div className={cn("flex items-center justify-end gap-1 font-mono text-[11px] font-black", className)} {...props}>
+            <div className={cn("flex items-center justify-end gap-1 font-mono text-sm font-semibold", className)} {...props}>
                 {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
                 <span className={textColor}>{sign}{formatted}{unit && ` ${unit}`}</span>
             </div>
@@ -279,7 +278,7 @@ export const DataCell = {
         return (
             <div className={cn("space-y-1 w-full", className)} {...props}>
                 {(label || subLabel) && (
-                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider mb-0.5 px-0.5">
+                    <div className="flex justify-between items-center text-xs font-semibold uppercase tracking-wider mb-0.5 px-0.5">
                         <span className="text-foreground/80">{label}</span>
                         <span className="text-muted-foreground/60">{subLabel}</span>
                     </div>
@@ -298,15 +297,15 @@ export const DataCell = {
 
     /** Standard date format */
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
-        if (!value) return <div className={cn("flex justify-center items-center w-full text-[12px] text-muted-foreground/50", className)} {...props}>-</div>
+        if (!value) return <div className={cn("flex justify-start items-center w-full text-sm text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-sm font-medium text-foreground whitespace-nowrap", className)} {...props}>
+            <div className={cn("flex justify-start items-center w-full text-sm font-medium text-foreground whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
                         ? parseDateOnly(value)
                         : new Date(value)
-                    return <span className="text-[11px] text-muted-foreground/60 ml-1.5">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                    return <span className="text-xs text-muted-foreground/60 ml-1.5">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
                 })()}
             </div>
         )
@@ -406,7 +405,7 @@ export const DataCell = {
                         </div>
                     </TooltipTrigger>
                     {title && (
-                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
+                        <TooltipContent side="top" className="text-xs font-semibold uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                             {title}
                         </TooltipContent>
                     )}
@@ -489,7 +488,7 @@ export const DataCell = {
                                         e.stopPropagation()
                                         if ('onClick' in item && item.onClick) item.onClick(e as unknown as React.MouseEvent)
                                     }}
-                                    className="text-[11px] font-black uppercase tracking-widest rounded-sm cursor-pointer"
+                                    className="text-xs font-semibold uppercase tracking-widest rounded-sm cursor-pointer"
                                 >
                                     <Icon className="h-3.5 w-3.5" />
                                     {label}
@@ -498,7 +497,7 @@ export const DataCell = {
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
+                <TooltipContent side="top" className="text-xs font-semibold uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                     {title}
                 </TooltipContent>
             </Tooltip>
@@ -565,7 +564,7 @@ export function createActionsColumn<TData>({
     return {
         id: "actions",
         header: () => (
-            <div className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            <div className="text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {headerLabel}
             </div>
         ),
@@ -708,5 +707,42 @@ export function createStatusColumn<TData>(
         header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
         cell: ({ row }) => <DataCell.Status status={row.getValue(accessorKey) as string} variant={opts?.variant} label={opts?.label} />,
         enableSorting: opts?.enableSorting ?? true,
+    }
+}
+
+/**
+ * Creates an expander column for DataTable rows with sub-component expansion.
+ * Renders a chevron toggle button with a unified visual style.
+ *
+ * @param opts.canExpand — Optional predicate. When it returns `false` for a row,
+ *   the cell renders `null` (hidden button). Use when some rows have nothing to expand.
+ */
+export function createExpanderColumn<TData>(opts?: {
+    canExpand?: (row: TData) => boolean
+}): ColumnDef<TData> {
+    return {
+        id: "expander",
+        header: () => null,
+        cell: ({ row }) => {
+            if (opts?.canExpand && !opts.canExpand(row.original)) return null
+            return (
+                <Button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        row.toggleExpanded()
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    {row.getIsExpanded() ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                </Button>
+            )
+        },
+        size: 40,
+        enableSorting: false,
+        enableHiding: false,
     }
 }
