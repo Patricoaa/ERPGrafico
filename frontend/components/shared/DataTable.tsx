@@ -723,46 +723,48 @@ export function DataTable<TData, TValue>({
                 )}
 
                 <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25")}>
-                    <div className={cn("flex-1 min-h-0 overflow-auto custom-scrollbar", renderCustomView && "overflow-x-auto")}>
-                        {renderCustomView ? (
-                            <div className="py-0">
-                                {renderCustomView(table)}
+                    {renderCustomView ? (
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar overflow-x-auto py-0">
+                            {renderCustomView(table)}
+                        </div>
+                    ) : (
+                        <>
+                            <div className={cn("shrink-0 z-10 border-b-2 py-1.5", !noBorder && "bg-background rounded-t-sm")}>
+                                <table className="w-full text-sm">
+                                    <TableHeader>
+                                        {table.getHeaderGroups().map((headerGroup) => (
+                                            <TableRow
+                                                key={headerGroup.id}
+                                                className="border-none hover:bg-transparent"
+                                            >
+                                                {headerGroup.headers.map((header) => (
+                                                    <TableHead
+                                                        key={header.id}
+                                                        className="table-header"
+                                                    >
+                                                        {header.isPlaceholder
+                                                            ? null
+                                                            : flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                    </TableHead>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableHeader>
+                                </table>
                             </div>
-                        ) : (
-                            <table className={cn("w-full caption-bottom text-sm", !noBorder && "rounded-t-sm", isTableEmpty && "h-full")}>
-                                <TableHeader className="sticky top-0 bg-background z-10 border-b-2 py-1.5">
-                                    {table.getHeaderGroups().map((headerGroup) => (
-                                        <TableRow
-                                            key={headerGroup.id}
-                                            className="border-none hover:bg-transparent"
-                                        >
-                                            {headerGroup.headers.map((header) => (
-                                                <TableHead
-                                                    key={header.id}
-                                                    className="table-header"
-                                                >
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
-                                                        )}
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableHeader>
-                                <TableBody>
-                                    {tableBody}
-                                </TableBody>
-                                {renderFooter && (
-                                    <TableFooter className="table-footer border-t-2">
-                                        {renderFooter(table)}
-                                    </TableFooter>
-                                )}
-                            </table>
-                        )}
-                    </div>
+
+                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", isTableEmpty && "flex flex-col")}>
+                                <table className={cn("w-full text-sm", isTableEmpty && "h-full flex-1")}>
+                                    <TableBody>
+                                        {tableBody}
+                                    </TableBody>
+                                </table>
+                            </div>
+                        </>
+                    )}
 
                     {!hidePagination && currentView !== 'analytics' && (
                         <div className="px-2 shrink-0 border-t border-border/40 py-1.5 bg-background rounded-b-sm">
