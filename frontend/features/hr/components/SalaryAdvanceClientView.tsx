@@ -84,7 +84,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
             header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
-                    <DataCell.Text className="font-bold">{row.original.employee_name}</DataCell.Text>
+                    <DataCell.Text weight="bold">{row.original.employee_name}</DataCell.Text>
                     <DataCell.Secondary>{row.original.employee_display_id}</DataCell.Secondary>
                 </div>
             )
@@ -100,7 +100,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
             accessorKey: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
             cell: ({ row }) => (
-                    <DataCell.Currency value={parseFloat(row.original.amount)} className="text-warning font-bold" />
+                    <DataCell.Currency value={parseFloat(row.original.amount)} intent="warning" weight="bold" />
             )
         },
         {
@@ -178,7 +178,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                             />
                             <EntityCard.Body actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}>
                                 <EntityCard.Field label="Fecha" value={<DataCell.Date value={advance.date} />} />
-                                <EntityCard.Field label="Monto" value={<DataCell.Currency value={parseFloat(advance.amount)} className="text-warning font-bold" />} />
+                                <EntityCard.Field label="Monto" value={<DataCell.Currency value={parseFloat(advance.amount)} intent="warning" weight="bold" />} />
                             </EntityCard.Body>
                         </EntityCard>
                     )}

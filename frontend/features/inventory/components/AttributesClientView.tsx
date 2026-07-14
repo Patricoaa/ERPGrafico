@@ -200,7 +200,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
             cell: ({ row }) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     <Tag className="h-4 w-4 text-primary opacity-70" />
-                    <DataCell.Text className="text-center font-black uppercase text-[12px] tracking-tight">
+                    <DataCell.Text weight="black" uppercase size="md">
                         {row.getValue("name")}
                     </DataCell.Text>
                 </div>
