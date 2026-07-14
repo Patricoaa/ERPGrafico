@@ -283,6 +283,92 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return BillOfMaterialsSerializer(obj.boms.all(), many=True).data
 
+    def to_internal_value(self, data):
+        from .validators import ProductValidator
+        ret = ProductValidator.parse_request_data(data)
+        return super().to_internal_value(ret)
+
+    def get_current_stock(self, obj):
+        return float(getattr(obj, "annotated_current_stock", None) or 0.0)
+
+    def get_effective_price(self, obj):
+        if hasattr(obj, "annotated_effective_price"):
+            return float(obj.annotated_effective_price)
+        from .services import PricingService
+
+        return PricingService.get_product_price(obj, 1)
+
+    def get_effective_price_net(self, obj):
+        if hasattr(obj, "annotated_effective_price_net"):
+            return float(obj.annotated_effective_price_net)
+        from .services import PricingService
+
+        if obj.parent_template_id:
+            net, _ = PricingService.resolve_variant_price(obj)
+            return net
+        return obj.sale_price
+
+    def get_qty_reserved(self, obj):
+        if hasattr(obj, "annotated_qty_reserved"):
+            return float(obj.annotated_qty_reserved)
+        logger.warning(f"[N+1 ZERO-POLICY] get_qty_reserved fallback query triggered for Product ID {obj.id}")
+        request = self.context.get("request")
+        exclude_id = request.query_params.get("exclude_draft_id") if request else None
+        return float(obj.get_qty_reserved(exclude_id))
+
+    def get_qty_available(self, obj):
+        if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
+            return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved)
+
+        logger.warning(f"[N+1 ZERO-POLICY] get_qty_available fallback query triggered for Product ID {obj.id}")
+        request = self.context.get("request")
+        exclude_id = request.query_params.get("exclude_draft_id") if request else None
+        return float(obj.get_qty_available(exclude_id))
+
+    def get_last_purchase_price(self, obj):
+        if hasattr(obj, "annotated_last_purchase_price"):
+            v = obj.annotated_last_purchase_price
+            return float(v) if v is not None else 0.0
+        return 0.0
+
+    def get_manufacturable_quantity(self, obj):
+        qty = obj.get_manufacturable_quantity()
+        return float(qty) if qty is not None else None
+
+    def get_bom_cost(self, obj):
+        return float(obj.get_bom_cost())
+
+    def get_has_active_bom(self, obj):
+        return obj.has_active_bom()
+
+    def get_active_bom_id(self, obj):
+        if hasattr(obj, "_prefetched_objects_cache") and "boms" in obj._prefetched_objects_cache:
+            active_bom = next((bom for bom in obj.boms.all() if bom.active), None)
+        else:
+            active_bom = obj.boms.filter(active=True).first()
+        return active_bom.id if active_bom else None
+
+    def get_requires_bom_validation(self, obj):
+        return obj.requires_bom_validation
+
+    def get_available_uoms(self, obj):
+        if not obj.uom:
+            return []
+        from .services import UoMService
+
+        uoms = UoMService.get_allowed_uoms_for_context(obj, "sale")
+        return UoMSerializer(uoms, many=True).data
+
+    def validate(self, data):
+        from .validators import ProductValidator
+        return ProductValidator.validate(data)
+
+    def run_validation(self, data=empty):
+        from .validators import ProductValidator
+        if data is not empty:
+            data = ProductValidator.parse_request_data(data)
+        return super().run_validation(data)
+
     class Meta:
         model = Product
         fields = [
