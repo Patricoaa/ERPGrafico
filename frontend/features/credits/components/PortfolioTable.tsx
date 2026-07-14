@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge, MoneyDisplay } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataTable, type KpiCardDef, createExpanderColumn } from '@/components/shared'
+import { DataTable, createExpanderColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { formatMoney } from "@/lib/money"
 
@@ -316,7 +316,6 @@ export function PortfolioTable({
     onRefresh,
     createAction,
     unifiedSearch,
-    kpiCards,
 }: {
     columns: ColumnDef<CreditContact>[],
     data: CreditContact[],
@@ -324,7 +323,6 @@ export function PortfolioTable({
     onRefresh: () => void,
     createAction?: React.ReactNode,
     unifiedSearch?: React.ReactNode,
-    kpiCards?: KpiCardDef[],
 }) {
     const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
         createExpanderColumn<CreditContact>(),
@@ -349,7 +347,6 @@ export function PortfolioTable({
                     }}
                     createAction={createAction}
                     unifiedSearch={unifiedSearch}
-                    kpiCards={kpiCards}
                 />
             </div>
         </div>
