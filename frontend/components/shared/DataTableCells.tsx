@@ -170,7 +170,7 @@ export const DataCell = {
                         if (onClick) onClick(e);
                         else if (contactId) openEntity('contacts.contact', Number(contactId));
                     }}
-                    className={cn("flex justify-center items-center gap-1.5 text-sm font-mono font-bold hover:underline hover:text-cyan transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
+                    className={cn("flex justify-center items-center gap-1.5 text-sm font-mono font-medium hover:underline hover:text-cyan transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
                     {...props}
                 >
                     <span className="truncate">{children}</span>
