@@ -3,10 +3,10 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, AlertTriangle, Receipt } from 'lucide-react'
+import { CreditCard, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, SkeletonShell, EmptyState, EntityCard,
+    StatusBadge, MoneyDisplay, SkeletonShell, EntityCard,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'

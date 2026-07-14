@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 
-import { EmptyState, FadeIn, MoneyDisplay, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner } from '@/components/shared'
+import { FadeIn, MoneyDisplay, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
 import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"

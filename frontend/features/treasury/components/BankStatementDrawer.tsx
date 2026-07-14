@@ -1,6 +1,6 @@
 "use client"
 
-import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge, StaleDataBanner } from "@/components/shared"
+import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge, StaleDataBanner } from "@/components/shared"
 import { useDrawerIdentity } from "@/features/_shared"
 import { useBankStatement } from "../hooks/useBankStatement"
 import { formDrawerWidth } from "@/lib/form-widths"
