@@ -783,7 +783,18 @@ export function createExpanderColumn<TData>(opts?: {
 }): ColumnDef<TData> {
     return {
         id: "expander",
-        header: () => null,
+        header: ({ table }) => (
+            <Button
+                onClick={() => table.toggleAllRowsExpanded()}
+                className="p-1 bg-transparent text-muted-foreground hover:bg-background transition-colors"
+            >
+                {table.getIsAllRowsExpanded() ? (
+                    <ChevronDown className="h-4 w-4" />
+                ) : (
+                    <ChevronRight className="h-4 w-4" />
+                )}
+            </Button>
+        ),
         cell: ({ row }) => {
             if (opts?.canExpand && !opts.canExpand(row.original)) return null
             return (
@@ -792,7 +803,7 @@ export function createExpanderColumn<TData>(opts?: {
                         e.stopPropagation()
                         row.toggleExpanded()
                     }}
-                    className="p-1 bg-transparent text-muted-foreground transition-colors"
+                    className="p-1 bg-transparent text-muted-foreground hover:bg-background transition-colors"
                 >
                     {row.getIsExpanded() ? (
                         <ChevronDown className="h-4 w-4" />
