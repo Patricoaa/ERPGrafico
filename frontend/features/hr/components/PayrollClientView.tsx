@@ -137,66 +137,42 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
             accessorFn: (row) => row.employee_name || "",
             id: "employee",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-bold">{row.original.employee_name}</DataCell.Text></div>,
+            cell: ({ row }) => <DataCell.Text>{row.original.employee_name}</DataCell.Text>,
         },
         {
             accessorKey: "period_label",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Período" className="justify-center" />,
-            cell: ({ row }) => <div className="text-sm text-muted-foreground text-center w-full">{row.getValue("period_label")}</div>,
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("period_label") as string}</DataCell.Secondary>,
         },
         {
             accessorKey: "total_haberes",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} className="text-success font-medium" />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} />,
         },
         {
             accessorKey: "legal_deductions_worker",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).legal_deductions_worker || "0")} className="text-destructive text-[11px]" />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).legal_deductions_worker || "0")} />,
         },
         {
             accessorKey: "employer_contribution",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).employer_contribution || "0")} className="text-warning text-[11px]" />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).employer_contribution || "0")} />,
         },
         {
             accessorKey: "other_deductions",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Otros Desc." className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).other_deductions || "0")} className="text-muted-foreground text-[11px]" />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).other_deductions || "0")} />,
         },
         {
             accessorKey: "advances_total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).advances_total || "0")} className="text-primary text-[11px]" />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).advances_total || "0")} />,
         },
         {
             accessorKey: "net_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Líquido" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat(row.getValue("net_salary"))} className="font-bold" />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Currency value={parseFloat(row.getValue("net_salary"))} />,
         },
         createStatusColumn<Payroll>("status", "Estado"),
         createStatusColumn<Payroll>("remuneration_paid_status", "Remuneración"),
