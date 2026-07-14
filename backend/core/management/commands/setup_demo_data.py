@@ -3268,6 +3268,30 @@ class Command(BaseCommand):
 
         # 5. Payrolls: Ene-Jun 2026 for each employee
         bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+
+        from treasury.services import TreasuryService as _TS
+
+        admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
+        _funding_amount = Decimal("30000000")
+        if bco_estado.current_balance < _funding_amount:
+            _TS.create_movement(
+                amount=_funding_amount,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                to_account=bco_estado,
+                partner=admin_contact,
+                justify_reason=TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION,
+                created_by=User.objects.filter(is_superuser=True).first(),
+                date=timezone.now().date(),
+                reference="Aporte de Capital — Nóminas Demo",
+                notes=f"Aporte de ${_funding_amount:,.0f} para cubrir pagos de remuneraciones.",
+            )
+            bco_estado.refresh_from_db()
+            self.stdout.write(
+                f"    ✓ Aporte de capital ${_funding_amount:,.0f} → BCO-ESTADO "
+                f"(saldo ahora: ${bco_estado.current_balance:,.0f})"
+            )
+
         payroll_months = [(2026, m) for m in range(1, 7)]
         payroll_count = 0
         payment_count = 0
