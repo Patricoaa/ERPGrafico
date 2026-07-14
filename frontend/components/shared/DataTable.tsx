@@ -729,7 +729,7 @@ export function DataTable<TData, TValue>({
                         </div>
                     ) : (
                         <>
-                            <div className={cn("shrink-0 z-10 border-b-2 py-1.5", !noBorder && "bg-background rounded-t-sm")}>
+                            <div className={cn("shrink-0 z-10 border-b py-1", !noBorder && "bg-background rounded-t-sm")}>
                                 <table className="w-full text-sm">
                                     <TableHeader>
                                         {table.getHeaderGroups().map((headerGroup) => (
