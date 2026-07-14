@@ -237,9 +237,68 @@ class PayrollService:
         return result
 
     @staticmethod
+    def _strip_outer_parens(s):
+        s = s.strip()
+        if not s.startswith("("):
+            return s
+        depth = 0
+        for j, ch in enumerate(s):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    if j == len(s) - 1:
+                        return s[1:-1].strip()
+                    return s
+        return s
+
+    @staticmethod
+    def _eval_condition(cond_str):
+        cond_str = cond_str.strip()
+        if not cond_str:
+            return False
+        return bool(eval(cond_str, {"__builtins__": {}}))
+
+    @staticmethod
+    def _resolve_ternary(formula_str):
+        depth = 0
+        if_pos = -1
+        else_pos = -1
+
+        i = 0
+        while i < len(formula_str):
+            c = formula_str[i]
+            if c == "(":
+                depth += 1
+            elif c == ")":
+                depth -= 1
+            elif depth == 0:
+                if formula_str[i : i + 4] == " if ":
+                    if_pos = i
+                elif formula_str[i : i + 6] == " else ":
+                    else_pos = i
+                    break
+            i += 1
+
+        if if_pos == -1 or else_pos == -1 or if_pos >= else_pos:
+            return formula_str
+
+        true_branch = PayrollService._strip_outer_parens(formula_str[:if_pos])
+        condition = PayrollService._strip_outer_parens(formula_str[if_pos + 4 : else_pos])
+        false_branch = PayrollService._strip_outer_parens(formula_str[else_pos + 6 :])
+
+        cond_value = PayrollService._eval_condition(condition)
+
+        if cond_value:
+            return PayrollService._resolve_ternary(true_branch)
+        return PayrollService._resolve_ternary(false_branch)
+
+    @staticmethod
     def evaluate_formula(formula, context):
         """
         Evalúa una fórmula matemática simple de forma segura.
+        Soporta expresiones ternarias: X if COND else Y
         Variables soportadas en contexto: BASE, IMPONIBLE, UF, UTM, MIN_WAGE, AFP_PERCENT, ISAPRE_UF, CONTRATO_INDEFINIDO
         """
         if not formula:
@@ -253,6 +312,10 @@ class PayrollService:
                 val = float(context[var]) if context[var] is not None else 0.0
                 pattern = re.compile(r"\b" + re.escape(var) + r"\b", re.IGNORECASE)
                 sanitized = pattern.sub(str(val), sanitized)
+
+            # Resolver expresiones ternarias antes del parser matemático
+            if " if " in sanitized and " else " in sanitized:
+                sanitized = PayrollService._resolve_ternary(sanitized)
 
             # Limpieza final: eliminar operadores al final que causan invalid syntax (ej: "10 * 2 /")
             sanitized = sanitized.strip()
@@ -550,7 +613,7 @@ def post_payroll(payroll):
 
     with transaction.atomic():
         doc_ref = payroll.display_id
-        gross_amount = payroll.gross_salary or payroll.total_haberes
+        gross_amount = payroll.total_haberes
 
         entry = JournalEntry.objects.create(
             description=GlosaBuilder.build(
