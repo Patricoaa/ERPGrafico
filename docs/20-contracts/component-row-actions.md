@@ -117,12 +117,21 @@ is responsible for ordering. Lint rule (future ADR) will enforce ordering automa
 
 ---
 
-## 4. Overflow rule — when to use `ActionSingle` vs `ActionMenu`
+## 4. Overflow rule — auto-detection via structured data
 
-| # of actions in the row/card | DataTable layout | Cards layout |
-|------------------------------|------------------|--------------|
-| 1 | `DataCell.ActionSingle` — ArrowRight icon, hidden by default, revealed on row hover (`group-hover`). Executes the defined action on click. | `DataCell.Action` — icon always visible (current behavior). |
-| 2+ | `DataCell.ActionMenu` — kebab (`MoreVertical`) always visible. All actions go into the dropdown. | `DataCell.Action` icons + `DataCell.ActionMenu` for overflow (current behavior). |
+The `auto()` method on `createEntityActions` **automatically** chooses the correct layout
+based on the number of visible actions at runtime:
+
+| # visible actions | DataTable layout | Cards layout |
+|-------------------|------------------|--------------|
+| 0 | Empty cell | `null` |
+| 1 | `DataCell.ActionSingle` — ArrowRight icon, hidden by default, revealed on row hover | `DataCell.Action` — icon always visible |
+| 2+ | `DataCell.ActionMenu` — kebab (`MoreVertical`) always visible | Individual `DataCell.Action` icons |
+
+**How it works:**
+- Action files define a `StructuredAction[]` with optional `visible` flags.
+- `auto()` filters `visible: false`, counts remaining, and picks the right component.
+- No manual decision needed — the system adapts per-row at runtime.
 
 **DataTableViews (compact & normal):**
 - The actions column has no header label and a fixed width of 40px.
@@ -131,58 +140,74 @@ is responsible for ordering. Lint rule (future ADR) will enforce ordering automa
 - `DataCell.ActionMenu` renders the `MoreVertical` kebab, always visible.
 
 **Cards / Kanban:**
-- No changes — cards keep showing individual `DataCell.Action` icons as before.
+- `render()` converts structured data → individual `DataCell.Action` icons.
 - `CardActions` continues to work with `CardActions.Item` + `CardActions.Menu`.
-
-The kebab itself uses the icon `MoreVertical` (lucide) and is always the **last** element of the
-`ActionGroup` / `CardActions` row.
-
-Anti-pattern: using `DataCell.Action` (individual icon) as the sole action in a DataTable row —
-use `DataCell.ActionSingle` instead.
 
 ---
 
 ## 5. Implementation contracts
 
-### 5.1 Table — `createActionsColumn` + `DataCell.ActionSingle` / `DataCell.ActionMenu`
+### 5.1 Table — `auto()` with structured data (preferred)
+
+```tsx
+import { createEntityActions, type StructuredActions } from "@/components/shared"
+import type { Product } from "@/features/inventory/types"
+
+interface ProductActionsCtx {
+  onEdit: (id: number) => void
+  onArchive: (product: Product) => void
+  onDelete: (product: Product) => void
+}
+
+// Define actions as structured data — visibility is explicit
+export const productActions = createEntityActions<Product, ProductActionsCtx>(
+  (item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item.id) },
+    { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
+    // Only visible for non-active products with no stock:
+    { action: "delete", onClick: () => ctx.onDelete(item), visible: !item.is_active && item.stock === 0 },
+  ]
+)
+
+// Caller — auto() detects visible count per row:
+// - 1 visible → ActionSingle (ArrowRight on hover)
+// - 2+ visible → ActionMenu (kebab)
+const columns = [ productActions.auto(actionsCtx) ]
+```
+
+**Auto-detection at runtime:**
+- If a row has `is_active=true, stock=10` → 2 visible actions → kebab menu.
+- If a row has `is_active=false, stock=0` → 3 visible actions → kebab menu.
+- If a row has `is_active=true, stock=0` → only `edit` visible → ArrowRight.
+
+**Conditional visibility patterns:**
+
+```tsx
+// Pattern 1: simple flag
+{ action: "delete", onClick: () => ctx.onDelete(item), visible: !item.is_system }
+
+// Pattern 2: status-based
+{ action: "pay", onClick: () => ctx.onPay(item), visible: item.status === "PENDING" }
+
+// Pattern 3: permission-based
+{ action: "annul", onClick: () => ctx.onAnnul(item), visible: ctx.canDo('annul', item) }
+
+// Pattern 4: disabled but always visible (dimmed in UI)
+{ action: "lock", onClick: () => {}, disabled: true }
+```
+
+**Low-level alternative (JSX — still supported):**
 
 ```tsx
 import { createActionsColumn, DataCell } from "@/components/shared"
-import { ROW_ACTIONS } from "@/lib/row-actions"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
-const { openSelected, openDetail, openHub } = useEntityRouteActions()
-
-// ── 1 action — ActionSingle (ArrowRight on hover) ──────────────────────
-const columnsSingle = [
+const columns = [
   createActionsColumn<Product>({
     renderActions: (item) => (
       <DataCell.ActionSingle onClick={() => openSelected(item.id)} />
     ),
   }),
 ]
-
-// ── 2+ actions — ActionMenu (kebab always visible) ─────────────────────
-const columnsMulti = [
-  createActionsColumn<Product>({
-    renderActions: (item) => (
-      <DataCell.ActionMenu
-        items={[
-          { action: "edit",    onClick: () => openSelected(item.id) },
-          { action: "archive", onClick: () => archive(item) },
-          { separator: true },
-          { action: "delete",  onClick: () => confirmDelete(item) },
-        ]}
-      />
-    ),
-  }),
-]
-
-// ── via createEntityActions (preferred) ─────────────────────────────────
-// Single action:
-const columns = [ myActions.single(ctx) ]
-// Multiple actions:
-const columns = [ myActions.column(ctx) ]
 ```
 
 - `DataCell.Action action="<key>"` is the **preferred form**. It pulls icon + title + variant
@@ -190,51 +215,26 @@ const columns = [ myActions.column(ctx) ]
 - The legacy form `DataCell.Action icon={Pencil} title="Editar"` remains supported for
   module-specific actions only.
 
-### 5.2 Card / Kanban — `actions` prop + `CardActions`
+### 5.2 Card / Kanban — `render()` + structured data
 
 Actions are passed via the **`actions` prop** on `<EntityCard>`, which renders them in the
 top-right corner (absolute positioned) with `stopPropagation` so they never trigger the card's
-`onClick`. Use `createEntityActions().render(item, ctx)` (recommended) or hand-rolled `CardActions`.
+`onClick`. Use `createEntityActions().render(item, ctx)` which auto-converts structured data → JSX.
 
 ```tsx
-import { EntityCard, CardActions } from "@/components/shared"
+import { EntityCard } from "@/components/shared"
 import { myActions } from "./myActions"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
-const { openSelected } = useEntityRouteActions()
-
-const ctx: MyActionsCtx = {
-  onEdit: (id) => openSelected(id),
-  onDelete: (id) => confirmDelete(id),
-}
-
+// render() converts structured actions → individual DataCell.Action icons
 <EntityCard onClick={() => openSelected(item.id)} actions={myActions.render(item, ctx)}>
   <EntityCard.Header title={item.name} />
   <EntityCard.Body>…</EntityCard.Body>
 </EntityCard>
 ```
 
-For custom action layouts that differ from the shared entity-actions file (e.g. module-specific
-actions), use hand-rolled `CardActions` children:
-
-```tsx
-<EntityCard onClick={() => openSelected(item.id)} actions={
-  <CardActions orientation="horizontal">
-    <CardActions.Item action="hub" onClick={() => openHub(item.id)} />
-    <CardActions.Item action="edit" onClick={() => openSelected(item.id)} />
-    <CardActions.Menu
-      items={[
-        { action: "duplicate", onClick: () => duplicate(item) },
-        { separator: true },
-        { action: "delete", onClick: () => confirmDelete(item) },
-      ]}
-    />
-  </CardActions>
-}>
-  <EntityCard.Header title={item.name} />
-  <EntityCard.Body>…</EntityCard.Body>
-</EntityCard>
-```
+The `render()` method works with both patterns:
+- **Structured data** (array of `StructuredAction`) → converts to `DataCell.Action` icons.
+- **JSX** (legacy ReactNode) → passes through unchanged.
 
 `CardActions` is a thin wrapper around `DataCell.ActionGroup` + `DataCell.Action` /
 `DataCell.ActionMenu` — same primitives, same a11y, same tooltips. The wrapper exists so a future
@@ -284,8 +284,10 @@ setting local modal state). These are evaluated case-by-case.
 |--------------|---------|
 | Hand-rolled `<Button variant="ghost"><Pencil /></Button>` in a table row | `DataCell.Action action="edit"` |
 | `DataCell.Action icon={Edit2} title="Editar"` | `DataCell.Action action="edit"` — registry icon is `Pencil` |
-| `DataCell.Action action="edit"` as the sole action in a DataTable row | `DataCell.ActionSingle onClick={...}` — ArrowRight on hover, minimal column |
-| 2+ inline `DataCell.Action` icons in a DataTable row | `DataCell.ActionMenu items={[…]}` — kebab always visible |
+| Using `.column(ctx)` when actions are defined as structured data | `.auto(ctx)` — auto-detects ActionSingle vs ActionMenu |
+| Manual `DataCell.ActionSingle` / `DataCell.ActionMenu` in `renderActions` | Let `auto()` handle the decision based on visible count |
+| `DataCell.Action action="edit"` as the sole action in a DataTable row | `auto()` renders `DataCell.ActionSingle` automatically |
+| 2+ inline `DataCell.Action` icons in a DataTable row | `auto()` renders `DataCell.ActionMenu` automatically |
 | Popover + custom button list for >2 row actions | `DataCell.ActionMenu items={[…]}` |
 | Card with actions in `EntityCard.Footer` instead of the `actions` prop | Prop `actions` on `<EntityCard>` (top-right corner) — Footer is for metadata, not CRUD actions |
 | Card with a single hidden `Pencil` reachable only on hover | Explicit `CardActions` row with at minimum `edit` + `delete` visible |
@@ -299,10 +301,13 @@ setting local modal state). These are evaluated case-by-case.
 
 ## 7. Migration plan
 
-Existing call-sites using the **legacy** form (`DataCell.Action icon={Pencil} title="Editar"`)
-continue to work — they are not a contract violation, but the preferred form going forward is
-`DataCell.Action action="edit"`. The next refactor pass will rewrite them. New code must use the
-`action="<key>"` shorthand whenever the action exists in the registry.
+**New code must use structured data + `auto()`.** The JSX pattern with `.column()` is
+legacy and should only be used when maintaining existing code.
+
+Migration path:
+1. Add `StructuredAction[]` return to the render callback in each action file.
+2. Callers change `.column(ctx)` → `.auto(ctx)`.
+3. `.render(item, ctx)` auto-converts structured data → JSX for cards.
 
 ---
 
