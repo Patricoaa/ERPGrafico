@@ -696,7 +696,7 @@ export function DataTable<TData, TValue>({
         const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
-            <div ref={containerRef} className="relative flex flex-col h-full w-full space-y-1 min-h-0">
+            <div ref={containerRef} className={cn("relative flex flex-col h-full w-full space-y-1 min-h-0", !noBorder && "rounded-sm border border-border/25")}>
                 {/* Toolbar Section (Outside) */}
                 {kpiCardsNode}
 
