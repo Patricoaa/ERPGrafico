@@ -140,9 +140,10 @@ export function DataTableView<TData, TValue>({
         return createCardGroupLoadingView({
           gridLayout: policy?.gridLayout,
           skeletonProps: cardSkeleton,
+          cardVariant: policy?.cardVariant,
         })
       }
-      return createCardLoadingView(policy?.gridLayout ?? "single-column", undefined, cardSkeleton)
+      return createCardLoadingView(policy?.gridLayout ?? "single-column", undefined, cardSkeleton, policy?.cardVariant)
     }
     return undefined
   }, [externalLoadingView, externalRenderCustomView, isCustomView, policy, cardSkeleton, derivedCardGroupBy])
