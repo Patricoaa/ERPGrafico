@@ -722,7 +722,7 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25")}>
+                <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border-sm border-border/25")}>
                     <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-y-scroll custom-scrollbar overflow-x-auto" : "flex flex-col overflow-hidden")}>
                         {renderCustomView ? (
                             <div className="py-0">
