@@ -115,13 +115,13 @@ export const DataCell = {
      * Texto secundario: Todo dato complementario que se muestre junto a o debajo de un texto primario,
      * entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias).
      */
-    Secondary: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-sm font-medium text-muted-foreground uppercase tracking-wider", className)} {...props}>{children}</div>
+    Secondary: ({ children, className, size, intent, weight, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight }) => (
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-mono font-medium text-muted-foreground uppercase tracking-tight", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>{children}</div>
     ),
 
     /** Standard text for identifiers (simple font as per request) */
-    Code: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-sm font-mono font-medium text-muted-foreground uppercase tracking-widest", className)} {...props}>
+    Code: ({ children, className, size, intent, weight, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight }) => (
+        <div className={cn("flex justify-center items-center text-center w-full text-sm font-mono font-semibold text-foreground uppercase tracking-tight", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>
             {children || "-"}
         </div>
     ),
@@ -196,11 +196,11 @@ export const DataCell = {
     // --- Numeric Cells ---
 
     /** Right-aligned number with tabular figures */
-    Number: ({ value, suffix, prefix, className, decimals = 0, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number }) => {
-        if (value === null || value === undefined) return <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-center items-center text-center", className)} {...props}>-</div>
+    Number: ({ value, suffix, prefix, className, decimals = 0, size, intent, weight, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight }) => {
+        if (value === null || value === undefined) return <div className={cn("text-sm font-mono font-semibold tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("text-sm font-medium tabular-nums text-foreground flex justify-center items-center text-center", className)} {...props}>
+            <div className={cn("text-sm font-mono font-semibold tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
                 {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-sm font-medium text-foreground flex justify-center items-center text-center">{suffix}</span>}
             </div>
@@ -210,7 +210,7 @@ export const DataCell = {
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
     Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean }) => {
         return (
-            <div className={cn("text-sm font-medium text-foreground flex justify-center items-center text-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", className)} {...props}>
+            <div className={cn("text-sm font-mono font-semibold text-foreground flex justify-center items-center text-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
             </div>
         )
@@ -221,23 +221,23 @@ export const DataCell = {
      * Shows directional icon, sign prefix (+/-), and semantic color.
      * Use for ledgers, movement tables, and transaction histories.
      */
-    CurrencyFlow: ({ value, direction, currency = "CLP", digits = 0, showIcon = true, showSign = true, className, ...props }: ValueCellProps<number | string> & { direction: 'inflow' | 'outflow' | 'neutral', currency?: string, digits?: number, showIcon?: boolean, showSign?: boolean }) => {
+    CurrencyFlow: ({ value, direction, currency = "CLP", digits = 0, showIcon = true, showSign = true, className, size, intent, weight, ...props }: ValueCellProps<number | string> & { direction: 'inflow' | 'outflow' | 'neutral', currency?: string, digits?: number, showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight }) => {
         const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
         const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
         const textColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-foreground'
         const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
 
         return (
-            <div className={cn("flex items-center justify-center gap-1 font-mono text-sm font-semibold text-center", className)} {...props}>
+            <div className={cn("flex items-center justify-center gap-1 font-mono text-sm font-semibold text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>
                 {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
                 <span className={textColor}>{sign}{formatCurrency(value, currency, { maximumFractionDigits: digits })}</span>
             </div>
         )
     },
 
-    Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string, digits?: number }) => {
+    Variance: ({ value, currency = "CLP", className, digits = 0, size, intent, weight, ...props }: ValueCellProps<number> & { currency?: string, digits?: number, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight }) => {
         return (
-            <div className={cn("text-sm font-medium text-foreground flex justify-center items-center text-center", className)} {...props}>
+            <div className={cn("text-sm font-mono font-semibold text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} />
             </div>
         )
@@ -248,7 +248,7 @@ export const DataCell = {
      * Directional icons + semantic colors. Mirrors CurrencyFlow for quantities.
      * When `direction` is omitted, infers from sign (backward compatible).
      */
-    NumericFlow: ({ value, unit, direction: dirProp, showIcon = true, showSign = true, className, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean }) => {
+    NumericFlow: ({ value, unit, direction: dirProp, showIcon = true, showSign = true, className, size, intent, weight, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight }) => {
         if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center text-muted-foreground text-sm">-</div>
 
         const numValue = Number(value)
@@ -265,7 +265,7 @@ export const DataCell = {
         const formatted = Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
         return (
-            <div className={cn("flex items-center justify-center gap-1 font-mono text-sm font-semibold text-center", className)} {...props}>
+            <div className={cn("flex items-center justify-center gap-1 font-mono text-sm font-semibold text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>
                 {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
                 <span className={textColor}>{sign}{formatted}{unit && ` ${unit}`}</span>
             </div>
@@ -296,10 +296,10 @@ export const DataCell = {
     // --- Date Cells ---
 
     /** Standard date format */
-    Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
+    Date: ({ value, className, showTime = false, size, intent, weight, ...props }: ValueCellProps<string | Date> & { showTime?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight }) => {
         if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-sm text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-center text-sm font-medium text-foreground whitespace-nowrap", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-center text-sm font-mono font-semibold text-foreground whitespace-nowrap", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -328,7 +328,7 @@ export const DataCell = {
     },
 
     /** Chip for intent-based labels within table cells (wraps shared Chip component) */
-    Chip: ({ children, intent = "neutral", size = "xs", className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => (
+    Chip: ({ children, intent = "neutral", size = "sm", className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => (
         <div className={cn("flex justify-center items-center w-full", className)} {...props}>
             <ChipComponent intent={intent} size={size}>{children}</ChipComponent>
         </div>
@@ -447,7 +447,6 @@ export const DataCell = {
                             size="icon"
                             className={cn(
                                 "h-7 w-7 rounded-full transition-all duration-200",
-                                "opacity-0 group-hover:opacity-100",
                                 "hover:scale-110 active:scale-95",
                                 "hover:bg-accent hover:text-accent-foreground",
                                 className,
