@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { InventoryDocument } from './types'
 
 export interface InventoryDocumentActionsCtx {
@@ -10,12 +10,8 @@ export interface InventoryDocumentActionsCtx {
 export const documentActions = createEntityActions<
     InventoryDocument,
     InventoryDocumentActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action action="detail" onClick={() => ctx.onViewDetail(item.id)} />
-        <DataCell.Action action="print" onClick={() => ctx.onPrint(item)} />
-        {item.status === 'CONFIRMED' && (
-            <DataCell.Action action="annul" onClick={() => ctx.onAnnul(item)} />
-        )}
-    </>
-))
+>((item, ctx) => [
+    { action: "detail", onClick: () => ctx.onViewDetail(item.id) },
+    { action: "print", onClick: () => ctx.onPrint(item) },
+    { action: "annul", onClick: () => ctx.onAnnul(item), visible: item.status === 'CONFIRMED' },
+])

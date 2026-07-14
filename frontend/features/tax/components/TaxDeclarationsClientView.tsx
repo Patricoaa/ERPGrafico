@@ -237,7 +237,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                 )
             }
         },
-        taxDeclarationActions.column(taxDeclarationActionsCtx) as ColumnDef<TaxPeriod>
+        taxDeclarationActions.auto(taxDeclarationActionsCtx) as ColumnDef<TaxPeriod>
     ]
 
     return (

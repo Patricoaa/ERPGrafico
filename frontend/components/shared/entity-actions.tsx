@@ -1,5 +1,7 @@
 import { type ReactNode } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
+import type { LucideIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { createActionsColumn, DataCell, type ActionMenuItem } from "./DataTableCells"
 import type { RowActionKey } from "@/lib/row-actions"
 
@@ -21,6 +23,12 @@ export type StructuredAction =
         disabled?: boolean
         /** Override label from registry. */
         label?: string
+        /** Override icon from registry (for module-specific icons not in ROW_ACTIONS). */
+        icon?: LucideIcon
+        /** Semantic color token for the icon (e.g. "text-success", "text-destructive"). */
+        iconColor?: string
+        /** Extra CSS class applied to the action button. */
+        className?: string
     }
     | { separator: true }
 
@@ -54,8 +62,14 @@ export function renderActions<T, Ctx>(
         return (
             <DataCell.Action
                 action={a.action}
+                icon={'icon' in a ? a.icon : undefined}
+                title={'label' in a ? a.label : undefined}
+                color={'iconColor' in a ? a.iconColor : undefined}
                 onClick={a.onClick}
-                className={a.disabled ? "text-muted-foreground/30 pointer-events-none" : undefined}
+                className={cn(
+                    a.disabled ? "text-muted-foreground/30 pointer-events-none" : undefined,
+                    'className' in a ? a.className : undefined,
+                )}
             />
         )
     }
@@ -69,8 +83,14 @@ export function renderActions<T, Ctx>(
                         <DataCell.Action
                             key={`${a.action}-${i}`}
                             action={a.action}
+                            icon={'icon' in a ? a.icon : undefined}
+                            title={'label' in a ? a.label : undefined}
+                            color={'iconColor' in a ? a.iconColor : undefined}
                             onClick={a.onClick}
-                            className={a.disabled ? "text-muted-foreground/30 pointer-events-none" : undefined}
+                            className={cn(
+                                a.disabled ? "text-muted-foreground/30 pointer-events-none" : undefined,
+                                'className' in a ? a.className : undefined,
+                            )}
                         />
                     )
                 }
@@ -96,6 +116,7 @@ export function toMenuItems(actions: StructuredAction[]): ActionMenuItem[] {
                 onClick: a.onClick,
                 disabled: a.disabled,
                 label: a.label,
+                icon: a.icon,
             }
         })
 }
@@ -134,9 +155,17 @@ export function toMenuItems(actions: StructuredAction[]): ActionMenuItem[] {
  * const columns = [ myActions.column(ctx) ]
  * ```
  */
+export type EntityActionsReturn<T, Ctx> = {
+    column: (ctx: Ctx, headerLabel?: string) => ColumnDef<T>
+    auto: (ctx: Ctx, headerLabel?: string) => ColumnDef<T>
+    render: (item: T, ctx: Ctx) => ReactNode
+    single: (ctx: Ctx) => ColumnDef<T>
+    defaultAction: (ctx: Ctx) => ((item: T) => ((e: React.MouseEvent) => void) | null)
+}
+
 export function createEntityActions<T, Ctx = object>(
     render: (item: T, ctx: Ctx) => ReactNode | StructuredAction[],
-) {
+): EntityActionsReturn<T, Ctx> {
     /** Detect if render returns structured data (array) or JSX (ReactNode). */
     const isStructured = (result: unknown): result is StructuredAction[] =>
         Array.isArray(result)
@@ -206,5 +235,37 @@ export function createEntityActions<T, Ctx = object>(
             createActionsColumn({
                 renderActions: (item) => render(item, ctx) as ReactNode,
             }),
+
+        /**
+         * Returns the onClick handler of the first visible action for a given item,
+         * or null if there are 0 or 2+ visible actions.
+         *
+         * Use with DataTable `defaultAction` or EntityCard `defaultAction` to make
+         * row/card clicks execute the primary action directly.
+         *
+         * Usage:
+         * ```tsx
+         * const da = myActions.defaultAction(ctx)
+         *
+         * // DataTable
+         * <DataTable defaultAction={(row) => da(row)} ... />
+         *
+         * // EntityCard
+         * <EntityCard defaultAction={(e) => da(emp)?.(e)} ... />
+         * ```
+         */
+        defaultAction: (ctx: Ctx) => {
+            return (item: T) => {
+                const result = render(item, ctx)
+                if (!isStructured(result)) return null
+                const visible = (result as StructuredAction[]).filter(
+                    (a) => !('visible' in a) || a.visible !== false,
+                )
+                if (visible.length === 1 && 'action' in visible[0]) {
+                    return visible[0].onClick as (e: React.MouseEvent) => void
+                }
+                return null
+            }
+        },
     }
 }

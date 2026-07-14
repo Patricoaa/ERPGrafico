@@ -308,7 +308,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 )
             },
         },
-        treasuryMovementActions.column(actionsCtx)
+        treasuryMovementActions.auto(actionsCtx)
     ], [openEntity, handleViewDetails])
 
     return (

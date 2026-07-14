@@ -1,5 +1,5 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { ShieldAlert, LockOpen } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
+import { ShieldAlert } from 'lucide-react'
 import type { AccountingPeriod, FiscalYear } from '../../types'
 
 export interface FiscalYearRow {
@@ -16,23 +16,21 @@ export interface FiscalYearActionsCtx {
 export const fiscalYearActions = createEntityActions<FiscalYearRow, FiscalYearActionsCtx>((row, ctx) => {
     const status = row.fiscalYear?.status || 'OPEN'
     const isClosed = status === 'CLOSED'
-    return (
-        <>
-            {!isClosed ? (
-                <DataCell.Action
-                    icon={ShieldAlert}
-                    title="Ejecutar Cierre"
-                    onClick={() => ctx.onExecuteClosing(row.year)}
-                    disabled={row.periods.length === 0 || row.periods.some(p => p.status !== 'CLOSED')}
-                />
-            ) : (
-                <DataCell.Action
-                    icon={LockOpen}
-                    title="Reabrir Ejercicio"
-                    className="text-warning"
-                    onClick={() => ctx.onReopen(row.year)}
-                />
-            )}
-        </>
-    )
+    return [
+        {
+            action: "post",
+            icon: ShieldAlert,
+            label: "Ejecutar Cierre",
+            onClick: () => ctx.onExecuteClosing(row.year),
+            disabled: row.periods.length === 0 || row.periods.some(p => p.status !== 'CLOSED'),
+            visible: !isClosed,
+        },
+        {
+            action: "reopen",
+            label: "Reabrir Ejercicio",
+            className: "text-warning",
+            onClick: () => ctx.onReopen(row.year),
+            visible: isClosed,
+        },
+    ]
 })

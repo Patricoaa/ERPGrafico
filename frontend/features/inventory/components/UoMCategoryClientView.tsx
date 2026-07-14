@@ -130,7 +130,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                 </DataCell.Text>
             ),
         },
-        uomCategoryActions.column(actionsCtx),
+        uomCategoryActions.auto(actionsCtx),
     ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoMCategory>[]>(() => [

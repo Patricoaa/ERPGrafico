@@ -192,7 +192,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 </div>
             )
         },
-        bomManagerActions.column(bomManagerActionsCtx) as ColumnDef<BOM>
+        bomManagerActions.auto(bomManagerActionsCtx) as ColumnDef<BOM>
     ]
 
     return (

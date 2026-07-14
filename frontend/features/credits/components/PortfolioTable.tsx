@@ -286,6 +286,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                     variant="minimal"
                     columns={ledgerColumns}
                     data={ledger}
+                    noBorder
                 />
             ) : (
                 <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin documentos pendientes.</p>

@@ -200,7 +200,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
-        checkActions.column(actionsCtx),
+        checkActions.auto(actionsCtx),
     ]
 
     return (

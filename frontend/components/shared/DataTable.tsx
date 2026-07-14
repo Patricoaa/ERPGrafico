@@ -50,6 +50,12 @@ export interface DataTableProps<TData, TValue> {
     sortOptions?: boolean
     analyticsPanel?: AnalyticsPanelConfig
     onRowClick?: (row: TData) => void
+    /**
+     * Per-row default action executed when the user clicks anywhere on the row.
+     * Takes priority over `onRowClick` when provided.
+     * Use `createEntityActions().defaultAction(ctx)` to derive this from structured actions.
+     */
+    defaultAction?: (row: TData) => void
     /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
     variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'
     /** CSS Grid template class for compact variant. Required when variant='compact'. Example: "grid-cols-[2rem_1fr_auto_auto_auto]" */
@@ -171,6 +177,7 @@ export function DataTable<TData, TValue>({
     sortOptions,
     analyticsPanel,
     onRowClick,
+    defaultAction,
     variant,
     isLoading = false,
     isRefetching = false,
@@ -326,6 +333,16 @@ export function DataTable<TData, TValue>({
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
     const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
+
+    const handleRowClick = React.useCallback((row: TData) => {
+        if (defaultAction) {
+            defaultAction(row)
+        } else {
+            onRowClick?.(row)
+        }
+    }, [defaultAction, onRowClick])
+
+    const hasRowAction = !!defaultAction || !!onRowClick
 
     const dockNode = (() => {
         if (selectedRows.length === 0) return null
@@ -490,10 +507,10 @@ export function DataTable<TData, TValue>({
                                     key={row.id}
                                     className={cn(
                                         "table-row-hover border-b border-border/40 group",
-                                        onRowClick && "cursor-pointer",
+                                        hasRowAction && "cursor-pointer",
                                         getRowClassName?.(row)
                                     )}
-                                    onClick={() => onRowClick?.(row.original)}
+                                    onClick={() => handleRowClick(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id} className="table-cell">
@@ -583,10 +600,10 @@ export function DataTable<TData, TValue>({
                                     className={cn(
                                         "grid grid-cols-subgrid col-span-full",
                                         "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300 border-b border-border/60 last:border-b-0",
-                                        onRowClick && "cursor-pointer",
+                                        hasRowAction && "cursor-pointer",
                                         getRowClassName?.(row)
                                     )}
-                                    onClick={() => onRowClick?.(row.original)}
+                                    onClick={() => handleRowClick(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <div key={cell.id} role="cell">
@@ -626,11 +643,11 @@ export function DataTable<TData, TValue>({
                                     data-state={row.getIsSelected() && "selected"}
                                     className={cn(
                                         "group border-b border-border/40 table-row-hover transition-all",
-                                        onRowClick && "cursor-pointer",
+                                        hasRowAction && "cursor-pointer",
                                         row.getIsSelected() && "bg-primary/5",
                                         getRowClassName?.(row)
                                     )}
-                                    onClick={() => onRowClick?.(row.original)}
+                                    onClick={() => handleRowClick(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell
@@ -647,11 +664,11 @@ export function DataTable<TData, TValue>({
                                 data-state={row.getIsSelected() && "selected"}
                                 className={cn(
                                     "group border-b border-border/40 table-row-hover transition-all",
-                                    onRowClick && "cursor-pointer",
+                                    hasRowAction && "cursor-pointer",
                                     row.getIsSelected() && "bg-primary/5",
                                     getRowClassName?.(row)
                                 )}
-                                onClick={() => onRowClick?.(row.original)}
+                                onClick={() => handleRowClick(row.original)}
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell
@@ -842,10 +859,10 @@ export function DataTable<TData, TValue>({
                                                     data-state={row.getIsSelected() && "selected"}
                                                     className={cn(
                                                         "group table-row-hover",
-                                                        onRowClick && "cursor-pointer",
+                                                        hasRowAction && "cursor-pointer",
                                                         getRowClassName?.(row)
                                                     )}
-                                                    onClick={() => onRowClick?.(row.original)}
+                                                    onClick={() => handleRowClick(row.original)}
                                                 >
                                                     {row.getVisibleCells().map((cell) => (
                                                         <TableCell key={cell.id}>
@@ -862,10 +879,10 @@ export function DataTable<TData, TValue>({
                                                 data-state={row.getIsSelected() && "selected"}
                                                 className={cn(
                                                     "group table-row-hover",
-                                                    onRowClick && "cursor-pointer",
+                                                    hasRowAction && "cursor-pointer",
                                                     getRowClassName?.(row)
                                                 )}
-                                                onClick={() => onRowClick?.(row.original)}
+                                                onClick={() => handleRowClick(row.original)}
                                             >
                                                 {row.getVisibleCells().map((cell) => (
                                                     <TableCell key={cell.id}>

@@ -194,7 +194,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 </div>
             )
         },
-        paymentMethodActions.column(paymentMethodActionsCtx)
+        paymentMethodActions.auto(paymentMethodActionsCtx)
     ]
 
     const isFiltered = search.isFiltered || usageFilter.length > 0

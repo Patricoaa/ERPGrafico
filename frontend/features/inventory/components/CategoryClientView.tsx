@@ -141,7 +141,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
         },
-        categoryActions.column(actionsCtx),
+        categoryActions.auto(actionsCtx),
     ], [actionsCtx])
 
     // Sync external trigger (toolbar button) → create modal

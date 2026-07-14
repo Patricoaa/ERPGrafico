@@ -19,6 +19,7 @@ import {
     ArchiveRestore,
     Ban,
     Banknote,
+    CheckCircle,
     Copy,
     Download,
     Eye,
@@ -26,13 +27,16 @@ import {
     History,
     LayoutDashboard,
     Lock,
+    LockOpen,
     type LucideIcon,
     PackageCheck,
     Pencil,
     Power,
     Printer,
     RotateCcw,
+    Send,
     Share2,
+    SplitSquareHorizontal,
     Trash2,
     Truck,
     Unlock,
@@ -56,6 +60,10 @@ export type RowActionKey =
     | "lock"
     | "unlock"
     | "toggle_active"
+    | "post"
+    | "reopen"
+    | "disburse"
+    | "split"
     | "annul"
     | "delete"
     | "reverse"
@@ -93,6 +101,10 @@ export const ROW_ACTIONS: Record<RowActionKey, RowActionDef> = {
     lock:      { icon: Lock,             label: "Bloquear",             intent: "write" },
     unlock:    { icon: Unlock,           label: "Desbloquear",          intent: "write" },
     toggle_active: { icon: Power,        label: "Activar/Desactivar",   intent: "write" },
+    post:         { icon: CheckCircle,   label: "Confirmar",            intent: "write" },
+    reopen:       { icon: LockOpen,      label: "Reabrir",              intent: "write" },
+    disburse:     { icon: Send,          label: "Desembolsar",          intent: "write" },
+    split:        { icon: SplitSquareHorizontal, label: "Distribuir",   intent: "write" },
     annul:     { icon: Ban,              label: "Anular",               intent: "destructive", iconColorClass: "text-destructive" },
     delete:    { icon: Trash2,           label: "Eliminar",             intent: "destructive", iconColorClass: "text-destructive" },
     reverse:   { icon: RotateCcw,        label: "Reversar",             intent: "destructive", iconColorClass: "text-warning" },
@@ -124,6 +136,10 @@ export const ROW_ACTION_ORDER: RowActionKey[] = [
     "lock",
     "unlock",
     "toggle_active",
+    "post",
+    "reopen",
+    "disburse",
+    "split",
     "annul",
     "delete",
     "reverse",

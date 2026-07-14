@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { SalaryAdvance } from '@/types/hr'
 
 export interface SalaryAdvanceActionsCtx {
@@ -9,18 +9,14 @@ export interface SalaryAdvanceActionsCtx {
 export const salaryAdvanceActions = createEntityActions<
     SalaryAdvance,
     SalaryAdvanceActionsCtx
->((item, ctx) => (
-    <>
-        {!item.is_discounted && (
-            <DataCell.Action action="edit" onClick={() => ctx.onEdit(item)} />
-        )}
-        <DataCell.Action
-            action="delete"
-            onClick={() => {
-                if (confirm("¿Eliminar anticipo? Esta acción no se puede deshacer.")) {
-                    ctx.onDelete(item.id)
-                }
-            }}
-        />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item), visible: !item.is_discounted },
+    {
+        action: "delete",
+        onClick: () => {
+            if (confirm("¿Eliminar anticipo? Esta acción no se puede deshacer.")) {
+                ctx.onDelete(item.id)
+            }
+        },
+    },
+])

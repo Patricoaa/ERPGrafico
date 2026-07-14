@@ -160,7 +160,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 </DataCell.Secondary>
             ),
         },
-        warehouseActions.column(actionsCtx),
+        warehouseActions.auto(actionsCtx),
     ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [

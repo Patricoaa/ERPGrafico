@@ -210,7 +210,7 @@ export function StockReport() {
             },
         },
 
-        stockReportActions.column(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
+        stockReportActions.auto(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
     ], [setInsightsProduct, stockReportActionsCtx])
 
     return (

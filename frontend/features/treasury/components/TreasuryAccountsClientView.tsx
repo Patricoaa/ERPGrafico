@@ -239,7 +239,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                 )
             },
         },
-        treasuryAccountActions.column(actionsCtx),
+        treasuryAccountActions.auto(actionsCtx),
     ]
 
     return (

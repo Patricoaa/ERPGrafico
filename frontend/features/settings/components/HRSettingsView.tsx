@@ -141,7 +141,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 </div>
             )
         },
-        payrollConceptActions.column(payrollConceptActionsCtx),
+        payrollConceptActions.auto(payrollConceptActionsCtx),
     ]
 
     return (
