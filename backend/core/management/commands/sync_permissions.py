@@ -132,6 +132,23 @@ class Command(BaseCommand):
             "view_task",
             "add_task",
             "change_task",
+            # HR (read + basic write for operators)
+            "view_dashboard_hr",
+            "view_employee",
+            "add_employee",
+            "change_employee",
+            "view_payroll",
+            "view_payrollitem",
+            "view_payrollconcept",
+            "view_payrollpayment",
+            "view_absence",
+            "add_absence",
+            "change_absence",
+            "view_salaryadvance",
+            "add_salaryadvance",
+            "view_afp",
+            "view_employeconceptamount",
+            "view_globalhrsettings",
         ]
 
         # We use __in for codenames

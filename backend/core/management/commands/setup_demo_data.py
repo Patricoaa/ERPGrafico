@@ -3132,7 +3132,7 @@ class Command(BaseCommand):
 
         employees_data = [
             {
-                "tax_id": "11111111-1",
+                "tax_id": f"11111111-{compute_rut_dv('11111111')}",
                 "position": "Gerente de Operaciones",
                 "department": "Gerencia",
                 "base_salary": Decimal("1200000"),
@@ -3148,7 +3148,7 @@ class Command(BaseCommand):
                 "movilizacion": Decimal("45000"),
             },
             {
-                "tax_id": "22222222-7",
+                "tax_id": f"22222222-{compute_rut_dv('22222222')}",
                 "position": "Jefe de Ventas",
                 "department": "Ventas",
                 "base_salary": Decimal("950000"),
@@ -3164,7 +3164,7 @@ class Command(BaseCommand):
                 "movilizacion": Decimal("40000"),
             },
             {
-                "tax_id": "33333333-5",
+                "tax_id": f"33333333-{compute_rut_dv('33333333')}",
                 "position": "Operador de Máquina Offset",
                 "department": "Taller",
                 "base_salary": Decimal("650000"),
@@ -3180,7 +3180,7 @@ class Command(BaseCommand):
                 "movilizacion": Decimal("35000"),
             },
             {
-                "tax_id": "44444444-3",
+                "tax_id": f"44444444-{compute_rut_dv('44444444')}",
                 "position": "Encargado de Bodega",
                 "department": "Bodega",
                 "base_salary": Decimal("600000"),
@@ -3196,7 +3196,7 @@ class Command(BaseCommand):
                 "movilizacion": Decimal("30000"),
             },
             {
-                "tax_id": "55555555-1",
+                "tax_id": f"55555555-{compute_rut_dv('55555555')}",
                 "position": "Ejecutivo de Ventas",
                 "department": "Ventas",
                 "base_salary": Decimal("700000"),
@@ -3213,7 +3213,7 @@ class Command(BaseCommand):
                 "movilizacion": Decimal("40000"),
             },
             {
-                "tax_id": "66666666-K",
+                "tax_id": f"66666666-{compute_rut_dv('66666666')}",
                 "position": "Diseñador Gráfico",
                 "department": "Diseño",
                 "base_salary": Decimal("750000"),
@@ -3305,9 +3305,11 @@ class Command(BaseCommand):
                     )
                     payment_count += 2
                 except Exception as e:
-                    self.stdout.write(self.style.WARNING(
-                        f"    ⚠ Payroll {emp.code} {year}/{month:02d}: {str(e)[:80]}"
+                    import traceback
+                    self.stdout.write(self.style.ERROR(
+                        f"    ✗ Payroll {emp.code} {year}/{month:02d}: {str(e)[:120]}"
                     ))
+                    traceback.print_exc()
 
         self.stdout.write(
             f"    ✓ {len(created_employees)} empleados, "
