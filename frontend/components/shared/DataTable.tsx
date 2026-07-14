@@ -729,42 +729,35 @@ export function DataTable<TData, TValue>({
                             {renderCustomView(table)}
                         </div>
                     ) : (
-                        <>
-                            <div className={cn("shrink-0 z-10 border-b py-0", !noBorder && "bg-background rounded-t-sm")}>
-                                <table className="w-full text-sm">
-                                    <TableHeader>
-                                        {table.getHeaderGroups().map((headerGroup) => (
-                                            <TableRow
-                                                key={headerGroup.id}
-                                                className="border-none hover:bg-transparent"
-                                            >
-                                                {headerGroup.headers.map((header) => (
-                                                    <TableHead
-                                                        key={header.id}
-                                                        className="table-header"
-                                                    >
-                                                        {header.isPlaceholder
-                                                            ? null
-                                                            : flexRender(
-                                                                header.column.columnDef.header,
-                                                                header.getContext()
-                                                            )}
-                                                    </TableHead>
-                                                ))}
-                                            </TableRow>
-                                        ))}
-                                    </TableHeader>
-                                </table>
-                            </div>
-
-                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", isTableEmpty && "flex flex-col")}>
-                                <table className={cn("w-full text-sm", isTableEmpty && "h-full flex-1")}>
-                                    <TableBody>
-                                        {tableBody}
-                                    </TableBody>
-                                </table>
-                            </div>
-                        </>
+                        <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", isTableEmpty && "flex flex-col")}>
+                            <table className={cn("w-full text-sm", isTableEmpty && "h-full")}>
+                                <TableHeader className={cn("sticky top-0 bg-background z-10 border-b", !noBorder && "rounded-t-sm")}>
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow
+                                            key={headerGroup.id}
+                                            className="border-none hover:bg-transparent"
+                                        >
+                                            {headerGroup.headers.map((header) => (
+                                                <TableHead
+                                                    key={header.id}
+                                                    className="table-header"
+                                                >
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {tableBody}
+                                </TableBody>
+                            </table>
+                        </div>
                     )}
 
                     {!hidePagination && currentView !== 'analytics' && (
