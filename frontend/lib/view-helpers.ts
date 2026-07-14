@@ -44,6 +44,7 @@ export function createEntityCardView(
 ) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
   const layout = options.gridLayout ?? policy?.gridLayout ?? 'single-column'
+  const cardVariant = policy?.cardVariant ?? 'full'
 
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
@@ -78,7 +79,8 @@ export function createEntityCardView(
           const isChecked = row.getIsSelected()
 
           const injectedProps: Record<string, any> = {
-            key: (row.original as Record<string, unknown>).id as React.Key ?? row.id
+            key: (row.original as Record<string, unknown>).id as React.Key ?? row.id,
+            variant: cardVariant,
           }
 
           if (options.hasBulkActions) {
@@ -250,15 +252,23 @@ export function createCardGroupView<TData>(
  *   renderLoadingView={isCustomView ? createCardLoadingView('single-column', 8) : undefined}
  *   // With section control:
  *   renderLoadingView={createCardLoadingView('single-column', 6, { showBody: false, showFooter: true })}
+ *   // With cardVariant from registry:
+ *   renderLoadingView={createCardLoadingView('single-column', 8, undefined, 'compact')}
  */
 export function createCardLoadingView(
   layout: 'single-column' | 'multi-column' = 'single-column',
   count: number = 8,
-  skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+  skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>,
+  cardVariant?: 'compact' | 'full',
 ) {
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-1"
+
+  const isCompact = cardVariant === 'compact'
+  const effectiveSkeletonProps = isCompact
+    ? { ...skeletonProps, showBody: false, showFooter: false }
+    : skeletonProps
 
   const CardLoadingView = () =>
     React.createElement(
@@ -267,8 +277,8 @@ export function createCardLoadingView(
       Array.from({ length: count }).map((_, i) =>
         React.createElement(EntityCard.Skeleton, {
           key: i,
-          variant: layout === 'multi-column' ? 'compact' : undefined,
-          ...skeletonProps,
+          variant: isCompact || layout === 'multi-column' ? 'compact' : undefined,
+          ...effectiveSkeletonProps,
         })
       )
     )
@@ -290,6 +300,7 @@ export function createCardGroupLoadingView(
     itemsPerGroup?: number
     gridLayout?: 'single-column' | 'multi-column'
     skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+    cardVariant?: 'compact' | 'full'
   }
 ) {
   const {
@@ -297,7 +308,13 @@ export function createCardGroupLoadingView(
     itemsPerGroup = 2,
     gridLayout = 'single-column',
     skeletonProps,
+    cardVariant,
   } = options ?? {}
+
+  const isCompact = cardVariant === 'compact'
+  const effectiveSkeletonProps = isCompact
+    ? { ...skeletonProps, showBody: false, showFooter: false }
+    : skeletonProps
 
   const innerGridClass = gridLayout === "multi-column"
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"
@@ -336,8 +353,8 @@ export function createCardGroupLoadingView(
             Array.from({ length: itemsPerGroup }).map((_, j) =>
               React.createElement(EntityCard.Skeleton, {
                 key: `skel-card-${i}-${j}`,
-                variant: gridLayout === 'multi-column' ? 'compact' : undefined,
-                ...skeletonProps,
+                variant: isCompact || gridLayout === 'multi-column' ? 'compact' : undefined,
+                ...effectiveSkeletonProps,
               })
             ),
           ),
