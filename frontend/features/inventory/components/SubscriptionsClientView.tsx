@@ -257,7 +257,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 const sub = row.original;
                 return (
                     <div className="flex flex-col items-center gap-1 py-1 w-full">
-                        <DataCell.Text className="font-medium text-xs leading-tight text-center">{sub.product_name}</DataCell.Text>
+                        <DataCell.Text>{sub.product_name}</DataCell.Text>
                         <div className="flex flex-wrap justify-center gap-1 mt-1">
                             {sub.product_internal_code && (
                                 <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
@@ -278,11 +278,9 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
             cell: ({ row }) => {
                 const value = row.getValue("category_name") as string;
                 return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Text className="font-normal">
-                            {value || "Sin Categoría"}
-                        </DataCell.Text>
-                    </div>
+                    <DataCell.Secondary>
+                        {value || "Sin Categoría"}
+                    </DataCell.Secondary>
                 );
             },
         },
@@ -306,7 +304,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Monto" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Currency value={row.getValue("amount")} /></div>,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
         },
         {
             id: "frequency",
@@ -314,9 +312,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 <DataTableColumnHeader column={column} title="Frecuencia" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="text-center">
-                    <DataCell.Text className="font-normal">{getPaymentScheduleText(row.original)}</DataCell.Text>
-                </div>
+                <DataCell.Secondary>{getPaymentScheduleText(row.original)}</DataCell.Secondary>
             ),
         },
         {

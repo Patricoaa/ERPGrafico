@@ -129,9 +129,9 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Origen → Destino" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center gap-0.5 text-center">
-                    <DataCell.Text className="text-muted-foreground text-xs">{row.original.source_location_name}</DataCell.Text>
+                    <DataCell.Secondary>{row.original.source_location_name}</DataCell.Secondary>
                     <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                    <DataCell.Text className="text-xs font-medium">{row.original.destination_location_name}</DataCell.Text>
+                    <DataCell.Text>{row.original.destination_location_name}</DataCell.Text>
                 </div>
             ),
         },

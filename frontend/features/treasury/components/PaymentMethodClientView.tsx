@@ -161,7 +161,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 <div className="flex items-center justify-center gap-2 w-full">
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <div className="flex flex-col items-center">
-                        <DataCell.Text className="font-medium text-center">{row.original.name}</DataCell.Text>
+                        <DataCell.Text>{row.original.name}</DataCell.Text>
 
                     </div>
                 </div>
@@ -171,11 +171,9 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
             accessorKey: "method_type_display",
             header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Categoría Operativa" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text className="text-muted-foreground font-medium text-xs text-center uppercase tracking-tighter">
+                    <DataCell.Secondary>
                         {row.original.method_type_display || methodTypeLabels[row.original.method_type] || row.original.method_type}
-                    </DataCell.Text>
-                </div>
+                    </DataCell.Secondary>
             )
         },
         {
@@ -183,7 +181,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
             header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex flex-col items-center justify-center gap-1.5 w-full">
-                    <DataCell.Text className="font-normal">{row.original.treasury_account_name}</DataCell.Text>
+                    <DataCell.Text>{row.original.treasury_account_name}</DataCell.Text>
                     <div className="flex justify-center gap-1">
                         {row.original.allow_for_sales && (
                             <Chip size="xs" intent="success">Ventas</Chip>

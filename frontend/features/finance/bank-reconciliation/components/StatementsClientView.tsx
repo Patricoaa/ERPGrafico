@@ -217,9 +217,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.getValue("opening_balance")} className="text-muted-foreground" />
-                </div>
+                <DataCell.Currency value={row.getValue("opening_balance")} className="text-muted-foreground" />
             ),
         },
         {
@@ -228,9 +226,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 <DataTableColumnHeader column={column} title="Cierre" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.getValue("closing_balance")} className="font-bold text-foreground" />
-                </div>
+                <DataCell.Currency value={row.getValue("closing_balance")} />
             ),
         },
         {

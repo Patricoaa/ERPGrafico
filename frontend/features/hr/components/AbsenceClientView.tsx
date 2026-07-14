@@ -62,7 +62,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
         {
             accessorKey: "employee_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-bold">{row.getValue("employee_name")}</DataCell.Text></div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("employee_name")}</DataCell.Text>,
         },
         {
             accessorKey: "absence_type_display",
@@ -75,7 +75,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
         {
             accessorKey: "days",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-mono">{row.getValue("days")}</DataCell.Text></div>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("days")}</DataCell.Code>,
         },
         absenceActions.column(absenceActionsCtx),
     ]

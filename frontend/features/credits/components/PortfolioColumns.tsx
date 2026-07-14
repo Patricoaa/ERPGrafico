@@ -48,9 +48,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             const contact = row.original
             const limit = Number(contact.credit_limit || 0)
             return (
-                <div className="flex justify-center w-full" onClick={(e) => { e.stopPropagation(); onEdit(contact); }}>
-                    <DataCell.Currency value={limit} className="font-bold cursor-pointer hover:underline text-primary" />
-                </div>
+                <DataCell.Currency value={limit} className="font-bold cursor-pointer hover:underline text-primary" onClick={(e) => { e.stopPropagation(); onEdit(contact); }} />
             )
         },
     },
@@ -58,18 +56,14 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
         accessorKey: "credit_balance_used",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center w-full">
-                <DataCell.Currency value={row.original.credit_balance_used} className="text-info font-black" />
-            </div>
+            <DataCell.Currency value={row.original.credit_balance_used} className="text-info font-black" />
         ),
     },
     {
         id: "current",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Vigente" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center w-full">
-                <DataCell.Currency value={row.original.credit_aging.current} className="text-success" />
-            </div>
+            <DataCell.Currency value={row.original.credit_aging.current} className="text-success" />
         ),
     },
     {
@@ -78,14 +72,10 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
         cell: ({ row }) => {
             const aging = row.original.credit_aging
             const val = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus)
-            return (
-                <div className="flex justify-center w-full">
-                    {val > 0 ? (
-                        <DataCell.Currency value={val} className="text-destructive font-black" />
-                    ) : (
-                        <span className="text-muted-foreground/30">—</span>
-                    )}
-                </div>
+            return val > 0 ? (
+                <DataCell.Currency value={val} className="text-destructive font-black" />
+            ) : (
+                <span className="text-muted-foreground/30">—</span>
             )
         },
     },
@@ -157,9 +147,7 @@ export const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "effective_total",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center w-full">
-                <DataCell.Currency value={row.original.effective_total} className="font-black" />
-            </div>
+            <DataCell.Currency value={row.original.effective_total} className="font-black" />
         )
     },
     {
