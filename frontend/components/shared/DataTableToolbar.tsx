@@ -110,7 +110,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                             {effectiveColumnToggle && !unifiedSearch && (
                                 <DataTableColumnToggle table={table} />
                             )}
@@ -121,7 +121,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-9 w-9 shrink-0 bg-muted/50 hover:bg-muted rounded-md"
+                                            className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
                                         >
                                             <MoreVertical className="h-4 w-4" />
                                         </Button>
@@ -175,7 +175,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                             {effectiveColumnToggle && (
                                 <DataTableColumnToggle table={table} />
                             )}
@@ -252,7 +252,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-9 w-9 shrink-0 bg-muted/50 hover:bg-muted rounded-md"
+                                            className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
                                         >
                                             <MoreVertical className="h-4 w-4" />
                                         </Button>
