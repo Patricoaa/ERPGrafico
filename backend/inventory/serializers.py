@@ -283,6 +283,47 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return BillOfMaterialsSerializer(obj.boms.all(), many=True).data
 
+    class Meta:
+        model = Product
+        fields = [
+            "id", "internal_code", "code", "name", "category", "product_type",
+            "image", "image_thumbnail", "image_catalog",
+            "has_bom", "requires_advanced_manufacturing",
+            "mfg_auto_finalize", "mfg_enable_prepress", "mfg_enable_press",
+            "mfg_enable_postpress", "mfg_prepress_design", "mfg_prepress_specs",
+            "mfg_prepress_folio", "mfg_press_offset", "mfg_press_digital",
+            "mfg_press_special", "mfg_postpress_finishing", "mfg_postpress_binding",
+            "recurrence_period", "renewal_notice_days",
+            "is_variable_amount", "is_dynamic_pricing",
+            "track_inventory", "can_be_sold", "can_be_purchased",
+            "uom", "sale_uom", "purchase_uom", "allowed_sale_uoms",
+            "receiving_warehouse",
+            "sale_price", "sale_price_gross", "cost_price",
+            "is_favorite", "is_active",
+            "price_inheritance_mode", "price_surcharge", "effective_price_net",
+            "uom_prices", "preferred_supplier", "preferred_supplier_name",
+            "category_name", "uom_name", "uom_category",
+            "sale_uom_name", "purchase_uom_name", "receiving_warehouse_name",
+            "current_stock", "effective_price", "last_purchase_price",
+            "manufacturable_quantity", "bom_cost", "qty_reserved", "qty_available",
+            "boms",
+            "subscription_supplier", "subscription_supplier_name",
+            "subscription_amount", "subscription_start_date",
+            "auto_activate_subscription", "default_invoice_type", "is_indefinite",
+            "contract_end_date", "payment_day_type", "payment_day",
+            "payment_interval_days",
+            "attachments", "available_uoms",
+            "has_variants", "variants_count", "parent_template",
+            "attribute_values", "attribute_values_data", "variant_display_name",
+            "variants", "variant_generation_selection",
+            "has_active_bom", "active_bom_id", "requires_bom_validation",
+        ]
+
+    def get_variants(self, obj):
+        if hasattr(obj, '_prefetched_variants'):
+            return ProductSerializer(obj._prefetched_variants, many=True, context=self.context).data
+        return ProductSerializer(obj.variants.all(), many=True, context=self.context).data
+
 class ProductListSerializer(serializers.ModelSerializer):
     """Optimized serializer for list views."""
     category_name = serializers.CharField(source="category.name", read_only=True)
