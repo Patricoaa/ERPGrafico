@@ -169,7 +169,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
             ),
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text>{row.original.name}</DataCell.Text></div>,
+            cell: ({ row }) => <DataCell.Text>{row.original.name}</DataCell.Text>,
         },
         {
             accessorKey: "account_type",

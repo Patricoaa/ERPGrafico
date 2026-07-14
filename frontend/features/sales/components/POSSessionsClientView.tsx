@@ -125,18 +125,14 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
             accessorKey: "user_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cajero" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text>{row.getValue("user_name")}</DataCell.Text>
-                </div>
+                <DataCell.Text>{row.getValue("user_name")}</DataCell.Text>
             ),
         },
         {
             accessorKey: "opened_at",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("opened_at")} showTime />
-                </div>
+                <DataCell.Date value={row.getValue("opened_at")} showTime />
             ),
         },
         {
@@ -144,20 +140,14 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cierre" className="justify-center" />,
             cell: ({ row }) => {
                 const val = row.getValue("closed_at") as string
-                return (
-                    <div className="flex justify-center w-full">
-                        {val ? <DataCell.Date value={val} showTime /> : <span className="text-muted-foreground">-</span>}
-                    </div>
-                )
+                return val ? <DataCell.Date value={val} showTime /> : <span className="text-muted-foreground">-</span>
             },
         },
         {
             accessorKey: "start_amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fondo Inicial" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.getValue("start_amount")} className="text-muted-foreground" />
-                </div>
+                <DataCell.Currency value={row.getValue("start_amount")} className="text-muted-foreground" />
             ),
         },
         {

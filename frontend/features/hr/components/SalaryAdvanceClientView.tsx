@@ -93,18 +93,14 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
             accessorKey: "date",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
                     <DataCell.Date value={row.original.date} />
-                </div>
             )
         },
         {
             accessorKey: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
                     <DataCell.Currency value={parseFloat(row.original.amount)} className="text-warning font-bold" />
-                </div>
             )
         },
         {

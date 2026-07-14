@@ -79,11 +79,9 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Text>
-                            {emp.afp_detail?.name || 'No disp.'}
-                        </DataCell.Text>
-                    </div>
+                    <DataCell.Text>
+                        {emp.afp_detail?.name || 'No disp.'}
+                    </DataCell.Text>
                 );
             },
         },
@@ -93,11 +91,9 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Text>
-                            {emp.salud_type_display || 'No disp.'}
-                        </DataCell.Text>
-                    </div>
+                    <DataCell.Text>
+                        {emp.salud_type_display || 'No disp.'}
+                    </DataCell.Text>
                 );
             },
         },
@@ -118,9 +114,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
             accessorKey: "base_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Sueldo Base" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.getValue("base_salary") as string) || "0")} />
-                </div>
+                <DataCell.Currency value={parseFloat((row.getValue("base_salary") as string) || "0")} />
             ),
         },
         {

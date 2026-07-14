@@ -115,7 +115,7 @@ export function StockReport() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center py-1">
-                    <DataCell.Text className="text-center">{row.original.name}</DataCell.Text>
+                    <DataCell.Text>{row.original.name}</DataCell.Text>
                     <div className="flex gap-2 items-center justify-center">
                         {row.original.internal_code && (
                             <DataCell.Code>{row.original.internal_code}</DataCell.Code>

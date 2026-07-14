@@ -143,11 +143,9 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                 <DataTableColumnHeader column={column} title="Nombre de Cuenta" className="justify-center" />
             ),
             cell: ({ row }: { row: Row<TreasuryAccount> }) => (
-                <div className="flex justify-center w-full">
                     <DataCell.Text>
                         {row.original.name}
                     </DataCell.Text>
-                </div>
             ),
         },
         {
@@ -156,11 +154,9 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                 <DataTableColumnHeader column={column} title="Tipología" className="justify-center" />
             ),
             cell: ({ row }: { row: Row<TreasuryAccount> }) => (
-                <div className="flex justify-center w-full">
                     <DataCell.Text>
                         {row.original.account_type_display || typeLabels[row.original.account_type] || row.original.account_type}
                     </DataCell.Text>
-                </div>
             ),
         },
         {
