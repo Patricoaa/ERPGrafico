@@ -90,9 +90,9 @@
    * LAYER 2 — SEMANTIC INTENTS
    * Alias to Layer 1. Dark mode adaptation happens here.
    */
-  --primary-raw: var(--cyan-raw);
+  --primary-raw: 0 0 0;
   --primary: oklch(var(--primary-raw));
-  --primary-foreground-raw: 0.20 0.04 235;
+  --primary-foreground-raw: 0.99 0 0;
   --primary-foreground: oklch(var(--primary-foreground-raw));
 
   /*
@@ -180,13 +180,13 @@
    * lighter for perceptual contrast on the dark background. This is where the
    * dark-mode adaptation lives (Layer 1 = identity, Layer 2 = contrast).
    */
-  --primary-raw:     0.72 0.16 235;
+  --primary-raw:     0.99 0 0;
   --info-raw:        0.58 0.20 280;
   --success-raw:     0.68 0.16 145;
   --warning-raw:     0.94 0.15 95;
   --destructive-raw: 0.62 0.22 25;
 
-  --primary-foreground-raw: 0.10 0.02 235;
+  --primary-foreground-raw: 0 0 0;
   --info-foreground-raw: 0.99 0.01 280;
   --warning-foreground-raw: 0.20 0.04 85;
   --success-foreground-raw: 0.95 0.01 145;
@@ -294,7 +294,8 @@
   --color-liability: var(--warning);
   --color-liability-foreground: var(--warning-foreground);
 
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /*
    * FLUID TYPOGRAPHY — Override Tailwind defaults with viewport-scaled sizes.
@@ -350,7 +351,7 @@
   /* TABLE SYSTEM — Shared tokens for all table variants */
   /* Used by DataTable, FormLineItemsTable, ReportTable, and variant="minimal" */
   --table-cell-py: 0.75rem;
-  /* py-3 */
+  /* py-3 - Comfortable (default) */
   --table-cell-px: 1rem;
   /* px-4 */
   --table-header-h: 2.75rem;
@@ -360,6 +361,12 @@
   --table-footer-bg: oklch(var(--muted-raw) / 0.5);
   --table-expanded-bg: oklch(var(--muted-raw) / 0.3);
   --table-row-border: oklch(var(--border-raw) / 0.4);
+
+  /* DENSITY MODES — Compact for power users, Comfortable for mixed audiences */
+  --table-cell-py-compact: 0.5rem;
+  /* py-2 */
+  --table-header-h-compact: 2.25rem;
+  /* ~h-9 */
 
   --notched-pad-x: 0.75rem;
   /* Horizontal padding inside fieldset */
@@ -384,6 +391,7 @@
   --page-gap-left: clamp(0.5rem, 1.5vw, 1.5rem);
   --page-gap-right: clamp(0.5rem, 1.5vw, 1.5rem);
   --page-padding-top: calc(var(--header-height) + var(--page-gap-top));
+  --l4-tabs-height: 0px;
 
   /*
    * FLUID TYPOGRAPHY — Scales proportionally to viewport width.
@@ -679,6 +687,17 @@
 }
 .table-footer {
   background-color: var(--table-footer-bg);
+}
+
+/* Density modes for DataTable */
+.table-compact {
+  --table-cell-py: var(--table-cell-py-compact);
+  --table-header-h: var(--table-header-h-compact);
+}
+
+.table-comfortable {
+  --table-cell-py: 0.75rem;
+  --table-header-h: 2.75rem;
 }
 
 /* Table Input Alignment - Force precision radius (8px) on all table controls */
@@ -978,7 +997,7 @@ table [data-notched-field] {
   h4,
   h5,
   h6 {
-    @apply font-extrabold tracking-tighter uppercase;
+    @apply font-extrabold tracking-tighter;
   }
 
   /* Typography scale — default sizes (overridable per component via Tailwind classes) */
