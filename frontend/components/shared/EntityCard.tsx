@@ -30,6 +30,12 @@ interface EntityCardRootProps {
     variant?: "compact" | "full"
     isSelected?: boolean
     onClick?: () => void
+    /**
+     * Per-card default action handler. When provided, clicking the card fires
+     * this instead of `onClick`. Pass `null` to fall back to `onClick`.
+     * Use `createEntityActions().defaultAction(ctx)?.(item)` to derive this.
+     */
+    defaultAction?: ((e: React.MouseEvent) => void) | null
     className?: string
     children: React.ReactNode
     selectable?: boolean
@@ -42,6 +48,7 @@ function EntityCardRoot({
     variant = "full",
     isSelected = false,
     onClick,
+    defaultAction,
     className,
     children,
     selectable = false,
@@ -52,13 +59,23 @@ function EntityCardRoot({
     return (
         <EntityCardSelectionContext.Provider value={{ selectable, checked, onCheckedChange, isAnySelected }}>
             <div
-                role={onClick ? "button" : undefined}
-                tabIndex={onClick ? 0 : undefined}
-                onClick={onClick}
+                role={onClick || defaultAction ? "button" : undefined}
+                tabIndex={onClick || defaultAction ? 0 : undefined}
+                onClick={(e) => {
+                    if (defaultAction) {
+                        defaultAction(e)
+                    } else {
+                        onClick?.()
+                    }
+                }}
                 onKeyDown={(e) => {
-                    if (onClick && (e.key === "Enter" || e.key === " ")) {
+                    if ((onClick || defaultAction) && (e.key === "Enter" || e.key === " ")) {
                         e.preventDefault()
-                        onClick()
+                        if (defaultAction) {
+                            defaultAction(e as unknown as React.MouseEvent)
+                        } else {
+                            onClick?.()
+                        }
                     }
                 }}
                 className={cn(
@@ -67,7 +84,7 @@ function EntityCardRoot({
                     variant === "compact" ? "gap-1.5 p-3" : "gap-3 p-4",
                     isSelected && "accent-visible",
                     checked && "border-primary/40 bg-primary/5 shadow-sm",
-                    onClick && "cursor-pointer select-none",
+                    (onClick || defaultAction) && "cursor-pointer select-none",
                     className
                 )}
             >
@@ -86,6 +103,8 @@ interface EntityCardHeaderProps {
     subtitle?: React.ReactNode
     /** Status badge(s) or any trailing slot */
     trailing?: React.ReactNode
+    /** Action buttons rendered at the top-right of the header (DataCell.Action). Always stops propagation. */
+    actions?: React.ReactNode
     /** Optional centered slot between title and trailing */
     center?: React.ReactNode
     /** Optional icon rendered in a 32×32 rounded container before the title */
@@ -97,7 +116,7 @@ interface EntityCardHeaderProps {
     className?: string
 }
 
-function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, imageSrc, iconClassName, className }: EntityCardHeaderProps) {
+function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Icon, imageSrc, iconClassName, className }: EntityCardHeaderProps) {
     const { selectable, checked, onCheckedChange, isAnySelected } = React.useContext(EntityCardSelectionContext)
 
     const checkboxNode = selectable && (
@@ -146,8 +165,9 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, image
                 <div className="flex items-center justify-center self-center">
                     {center}
                 </div>
-                <div className="justify-self-end">
+                <div className="flex items-center gap-2 justify-self-end">
                     {trailing}
+                    {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
                 </div>
             </div>
         )
@@ -177,7 +197,12 @@ function EntityCardHeader({ title, subtitle, trailing, center, icon: Icon, image
                     )}
                 </div>
             </div>
-            {trailing && <div className="shrink-0">{trailing}</div>}
+            {(trailing || actions) && (
+                <div className="flex items-center gap-2 shrink-0">
+                    {trailing}
+                    {actions && <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>{actions}</div>}
+                </div>
+            )}
         </div>
     )
 }
@@ -189,6 +214,7 @@ interface EntityCardBodyProps {
     className?: string
     children?: React.ReactNode
     /**
+     * @deprecated Move actions to EntityCard.Header `actions` prop instead.
      * Action buttons rendered at the top-right of the body.
      * Uses stopPropagation so they don't trigger onClick on the card itself.
      */
