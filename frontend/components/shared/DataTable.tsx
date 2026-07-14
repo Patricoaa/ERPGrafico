@@ -722,7 +722,7 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25")} style={!noBorder ? { clipPath: 'inset(0 round 0.125rem)' } : undefined}>
+                <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25")}>
                     <div className={cn("flex-1 min-h-0 overflow-auto custom-scrollbar", renderCustomView && "overflow-x-auto")}>
                         {renderCustomView ? (
                             <div className="py-0">
@@ -730,7 +730,7 @@ export function DataTable<TData, TValue>({
                             </div>
                         ) : (
                             <table className={cn("w-full caption-bottom text-sm", isTableEmpty && "h-full")}>
-                                <TableHeader className="sticky top-0 bg-background z-10 border-b-2 py-1.5">
+                                <TableHeader className="sticky top-0 bg-background z-10 border-b-2 py-1.5 rounded-t-sm">
                                     {table.getHeaderGroups().map((headerGroup) => (
                                         <TableRow
                                             key={headerGroup.id}
@@ -765,7 +765,7 @@ export function DataTable<TData, TValue>({
                     </div>
 
                     {!hidePagination && currentView !== 'analytics' && (
-                        <div className="px-2 shrink-0 border-t border-border/40 py-1.5 bg-background">
+                        <div className="px-2 shrink-0 border-t border-border/40 py-1.5 bg-background rounded-b-sm">
                             <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                         </div>
                     )}
