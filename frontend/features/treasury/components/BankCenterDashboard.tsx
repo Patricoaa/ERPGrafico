@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { Skeleton, PageSectionHeader, StaleDataBanner } from "@/components/shared"
+import { EntityCard, PageSectionHeader, StaleDataBanner } from "@/components/shared"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
 import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
@@ -113,26 +113,30 @@ function OverviewSkeleton() {
             <div className="py-4">
                 <div className="flex flex-col lg:flex-row gap-5">
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        <Skeleton className="h-28" />
-                        <Skeleton className="h-28" />
+                        <div className="space-y-2">
+                            <EntityCard.Skeleton variant="compact" showBody />
+                            <EntityCard.Skeleton variant="compact" showBody />
+                        </div>
+                        <div className="space-y-2">
+                            <EntityCard.Skeleton variant="compact" showBody />
+                            <EntityCard.Skeleton variant="compact" showBody />
+                        </div>
                     </div>
                     <div className="w-full lg:w-[380px] shrink-0">
-                        <Skeleton className="h-48" />
+                        <div className="space-y-3">
+                            <EntityCard.Skeleton variant="compact" showBody />
+                            <EntityCard.Skeleton variant="compact" showBody />
+                        </div>
                     </div>
                 </div>
             </div>
             <div className="border-b border-border/40" />
             <div className="py-4">
-                <Skeleton className="h-4 w-64 mb-3" />
-                <Skeleton className="h-5 w-full mb-1" />
-                <Skeleton className="h-5 w-3/4" />
+                <EntityCard.ListItemSkeleton count={5} />
             </div>
             <div className="border-b border-border/40" />
             <div className="py-4">
-                <Skeleton className="h-4 w-48 mb-3" />
-                <Skeleton className="h-6 w-full mb-1" />
-                <Skeleton className="h-6 w-full mb-1" />
-                <Skeleton className="h-6 w-3/4" />
+                <EntityCard.ListItemSkeleton count={4} />
             </div>
         </div>
     )

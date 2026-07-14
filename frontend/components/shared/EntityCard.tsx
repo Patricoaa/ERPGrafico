@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { type VariantProps } from "class-variance-authority"
 import { type badgeVariants } from "@/components/ui/badge"
-import { type LucideIcon } from "lucide-react"
+import { type LucideIcon, ArrowRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -397,6 +397,82 @@ function EntityCardSkeleton({
     )
 }
 
+// ─── List Item ────────────────────────────────────────────────────────────────
+
+interface EntityCardListItemProps {
+    /** Icon rendered without background (left side) */
+    icon?: LucideIcon
+    /** Styling for the icon (e.g. "text-success") */
+    iconClassName?: string
+    /** Primary label text */
+    label: React.ReactNode
+    /** Optional sublabel below the label */
+    sublabel?: React.ReactNode
+    /** Right-side value content */
+    value?: React.ReactNode
+    /** Alternative right-side slot (replaces value) */
+    trailing?: React.ReactNode
+    /** Click handler */
+    onClick?: () => void
+    className?: string
+}
+
+function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value, trailing, onClick, className }: EntityCardListItemProps) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                "w-full flex items-center gap-3 py-2 px-2 text-left",
+                "card-base",
+                "transition-all group",
+                onClick && "cursor-pointer",
+                className
+            )}
+        >
+            {Icon && (
+                <Icon className={cn("h-3.5 w-3.5 shrink-0", iconClassName ?? "text-muted-foreground")} />
+            )}
+            <div className="flex-1 min-w-0">
+                <span className="text-xs font-medium truncate block">{label}</span>
+                {sublabel && (
+                    <span className="text-[10px] text-muted-foreground truncate block">{sublabel}</span>
+                )}
+            </div>
+            {trailing ?? (value != null && (
+                <span className="text-xs font-bold tabular-nums shrink-0">{value}</span>
+            ))}
+            {onClick && (
+                <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
+            )}
+        </button>
+    )
+}
+
+// ─── List Item Skeleton ───────────────────────────────────────────────────────
+
+interface EntityCardListItemSkeletonProps {
+    count?: number
+    className?: string
+}
+
+function EntityCardListItemSkeleton({ count = 3, className }: EntityCardListItemSkeletonProps) {
+    return (
+        <div className={cn("divide-y divide-border/40", className)}>
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2 px-1 animate-in fade-in duration-500">
+                    <Skeleton className="h-3.5 w-3.5 rounded-sm shrink-0" />
+                    <div className="flex-1 min-w-0">
+                        <Skeleton className="h-3 w-3/4" />
+                        <Skeleton className="h-2.5 w-1/2 mt-1 opacity-60" />
+                    </div>
+                    <Skeleton className="h-3 w-16 shrink-0" />
+                </div>
+            ))}
+        </div>
+    )
+}
+
 // ─── Composite export ─────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
@@ -406,6 +482,8 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     Footer: EntityCardFooter,
     Badge: EntityCardBadge,
     Skeleton: EntityCardSkeleton,
+    ListItem: EntityCardListItem,
+    ListItemSkeleton: EntityCardListItemSkeleton,
 })
 
 export type {
@@ -416,4 +494,6 @@ export type {
     EntityCardFieldProps,
     EntityCardFooterProps,
     EntityCardBadgeProps,
+    EntityCardListItemProps,
+    EntityCardListItemSkeletonProps,
 }

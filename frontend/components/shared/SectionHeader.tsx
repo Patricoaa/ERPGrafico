@@ -52,8 +52,10 @@ export function SectionHeader({
     if (href && variant === "card") {
         return (
             <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => router.push(href)}
-                className="w-full flex items-center justify-between group mb-3"
+                className="w-full flex items-center justify-between group mb-3 text-muted-foreground hover:text-foreground"
             >
                 {heading}
                 <span className="text-[10px] font-medium text-muted-foreground/0 group-hover:text-muted-foreground transition-all flex items-center gap-0.5">
@@ -68,6 +70,8 @@ export function SectionHeader({
             {heading}
             {href && (
                 <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => router.push(href)}
                     className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
