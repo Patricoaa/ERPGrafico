@@ -722,58 +722,59 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn("flex-1 min-h-0", !noBorder && "rounded-sm border border-border/25", renderCustomView ? "overflow-y-scroll custom-scrollbar overflow-x-auto" : "flex flex-col overflow-hidden")}>
-                    {renderCustomView ? (
-                        <div className="py-0">
-                            {renderCustomView(table)}
+                <div className={cn("flex flex-col min-h-0", !noBorder && "rounded-sm border border-border/25")}>
+                    <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-y-scroll custom-scrollbar overflow-x-auto" : "flex flex-col overflow-hidden")}>
+                        {renderCustomView ? (
+                            <div className="py-0">
+                                {renderCustomView(table)}
+                            </div>
+                        ) : (
+                            <Table
+                                className={cn(isTableEmpty && "h-full")}
+                                containerClassName={cn(
+                                    !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
+                                )}
+                            >
+                                <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 border-b-2 py-1.5" : "sticky top-0 bg-background z-10 border-b-2 py-1.5")}>
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow
+                                            key={headerGroup.id}
+                                            className="border-none hover:bg-transparent"
+                                        >
+                                            {headerGroup.headers.map((header) => (
+                                                <TableHead
+                                                    key={header.id}
+                                                    className="table-header"
+                                                >
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {tableBody}
+                                </TableBody>
+                                {renderFooter && (
+                                    <TableFooter className="table-footer border-t-2">
+                                        {renderFooter(table)}
+                                    </TableFooter>
+                                )}
+                            </Table>
+                        )}
+                    </div>
+
+                    {!hidePagination && currentView !== 'analytics' && (
+                        <div className="px-2 shrink-0 border-t border-border/40 py-1.5 bg-background">
+                            <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                         </div>
-                    ) : (
-                        <Table
-                            className={cn(isTableEmpty && "h-full")}
-                            containerClassName={cn(
-                                !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
-                            )}
-                        >
-                            <TableHeader className={cn(!isInModal ? "sticky top-0 bg-card z-10 border-b-2" : "sticky top-0 bg-card z-10 border-b-2")}>
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow
-                                        key={headerGroup.id}
-                                        className="border-none hover:bg-transparent"
-                                    >
-                                        {headerGroup.headers.map((header) => (
-                                            <TableHead
-                                                key={header.id}
-                                                className="table-header"
-                                            >
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody>
-                                {tableBody}
-                            </TableBody>
-                            {renderFooter && (
-                                <TableFooter className="table-footer border-t-2">
-                                    {renderFooter(table)}
-                                </TableFooter>
-                            )}
-                        </Table>
                     )}
                 </div>
-
-                {/* Pagination Section (Outside) */}
-                {!hidePagination && currentView !== 'analytics' && (
-                    <div className="px-1 shrink-0 border-t border-border/40 py-1">
-                        <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
-                    </div>
-                )}
 
                 {dockNode}
             </div>
