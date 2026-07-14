@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
-import { PageContainer, PageHeader, StaleDataBanner } from '@/components/shared'
+import { PageContainer, PageHeader, SkeletonShell, StaleDataBanner } from '@/components/shared'
 import { ProfileProvider, useProfile, ProfileSidePanel } from "@/features/profile"
 
 export function ProfileLayoutClient({ children }: { children: ReactNode }) {
@@ -85,11 +85,8 @@ export function ProfileLayoutClient({ children }: { children: ReactNode }) {
             <PageContainer className="flex flex-col">
                 <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
                 <div className="flex-1 min-h-0 flex flex-col">
-                    {isLoading ? (
-                        <div className="flex items-center justify-center h-64">
-                            <p className="text-muted-foreground text-sm">Cargando perfil...</p>
-                        </div>
-                    ) : !profile ? (
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil">
+                    {!profile ? (
                         <div className="flex flex-col items-center justify-center h-64 gap-4">
                             <p className="text-muted-foreground text-sm">
                                 Error al cargar el perfil. Intente nuevamente.
@@ -107,6 +104,7 @@ export function ProfileLayoutClient({ children }: { children: ReactNode }) {
                             {children}
                         </ProfileProvider>
                     )}
+                    </SkeletonShell>
                 </div>
             </PageContainer>
             <ProfileSidePanel profile={profile ?? null} open={panelOpen} onOpenChange={setPanelOpen} />
