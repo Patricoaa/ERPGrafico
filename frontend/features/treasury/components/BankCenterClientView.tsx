@@ -160,6 +160,7 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                                         variant={bank.is_active ? 'default' : 'secondary'}
                                     />
                                 }
+                                actions={bankActions.render(bank, bankActionsCtx)}
                             />
                             <EntityCard.Body>
                                 <EntityCard.Field label="Cuentas" value={overview?.summary.total_accounts ?? 0} />
@@ -167,15 +168,10 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                                 <EntityCard.Field label="Cheques" value={overview?.summary.issued_checks ?? 0} />
                                 <EntityCard.Field label="Préstamos" value={overview?.summary.active_loan_count ?? 0} />
                             </EntityCard.Body>
-                            <EntityCard.Footer>
-                                <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
-                                    {bankActions.render(bank, bankActionsCtx)}
-                                </div>
-                            </EntityCard.Footer>
                         </EntityCard>
                     )
                     }}
-                    cardSkeleton={{ showFooter: true }}
+                    cardSkeleton={{ showBody: true }}
                 />
 
             <BankCreationWizard
