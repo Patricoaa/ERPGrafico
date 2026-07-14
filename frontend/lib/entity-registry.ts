@@ -21,8 +21,8 @@ export interface ViewPolicy {
   availableViews: ('list' | 'card' | 'grid' | 'kanban' | 'timeline' | 'analytics')[];
   /** Default view when no ?view= param is present */
   defaultView: 'list' | 'card' | 'grid' | 'kanban';
-  /** Card component strategy: 'domain' = DomainCard (workflow entities), 'entity' = EntityCard, 'custom' = domain-specific */
-  cardComponent?: 'domain' | 'entity' | 'custom';
+  /** Card component strategy: 'entity' = EntityCard, 'custom' = domain-specific */
+  cardComponent?: 'entity' | 'custom';
   /** Grid layout for card/grid views */
   gridLayout?: 'single-column' | 'multi-column';
 }
@@ -53,6 +53,13 @@ export interface EntityMetadata {
   workflowType?: 'order' | 'invoice' | 'note';
   /** Declarative view mode policy */
   viewPolicy?: ViewPolicy;
+  /** Card rendering configuration for workflow entities */
+  cardConfig?: {
+    /** Dynamic icon className — static string or function(data) */
+    iconClassName?: string | ((data: Record<string, unknown>) => string | undefined)
+    /** Label for the date column ("Entrega" / "Recepción") */
+    dateLabel?: string | ((data: Record<string, unknown>) => string)
+  }
 }
 
 export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
@@ -78,7 +85,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
       return String(customerName ?? data.partner_name ?? '---')
     },
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    cardConfig: { dateLabel: 'Entrega' },
   },
   'sales.saledelivery': {
     label: 'sales.saledelivery',
@@ -125,7 +133,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/purchasing/orders/{id}',
     partnerField: 'supplier_name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    cardConfig: { iconClassName: 'text-info bg-info/10', dateLabel: 'Recepción' },
   },
   'billing.invoice': {
     label: 'billing.invoice',
@@ -143,7 +152,13 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/billing/invoices/{id}',
     partnerField: (data) => String(data.partner_name ?? data.customer_name ?? data.supplier_name ?? '---'),
     workflowType: 'invoice',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    cardConfig: {
+      iconClassName: (data) => ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(data.dte_type ?? ''))
+        ? 'text-warning bg-warning/10'
+        : undefined,
+      dateLabel: 'Entrega',
+    },
   },
   'production.workorder': {
     label: 'production.workorder',

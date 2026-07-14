@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react"
 import type { Table as ReactTable, Row, VisibilityState } from "@tanstack/react-table"
-import { DomainCard, EntityCard, EmptyState, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
+import { EntityCard, EmptyState, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
 import { Skeleton } from "@/components/ui/skeleton"
 import { groupByDate, groupItems, type Group } from "@/lib/group-utils"
 
@@ -20,77 +20,6 @@ import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 // Full-height centered wrapper so card-grid empty states fill the canvas,
 // matching the table empty-state behavior.
 const CARD_EMPTY_WRAPPER = "flex h-full min-h-[12rem] items-center justify-center"
-
-/**
- * Creates a renderCustomView function for entities that use DomainCard (workflow entities).
- * Eliminates the ~25 lines of duplicated renderCustomView boilerplate per consumer.
- *
- * Usage:
- *   renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', {
- *     onRowClick: handleRowClick,
- *     isSelected: (data) => hubConfig?.orderId === data.id,
- *     isHubOpen,
- *   }) : undefined}
- */
-export function createDomainCardView(
-  entityLabel: string,
-  options: {
-    onRowClick?: (data: Record<string, unknown>) => void
-    isSelected?: (data: Record<string, unknown>) => boolean
-    isHubOpen?: boolean
-    emptyState?: DataTableEmptyState
-    isFiltered?: boolean
-    hasBulkActions?: boolean
-  }
-) {
-  const DomainCardView = (table: ReactTable<Record<string, unknown>>) => {
-    const rows = table.getRowModel().rows
-    if (rows.length === 0) {
-      const resolved = resolveEmptyState(options.emptyState, options.isFiltered)
-      return React.createElement(
-        "div",
-        { className: CARD_EMPTY_WRAPPER },
-        React.createElement(EmptyState, {
-          context: resolved.context,
-          icon: resolved.icon,
-          title: resolved.title,
-          description: resolved.description,
-          action: resolved.action,
-          className: "h-full w-full",
-        })
-      )
-    }
-    const isAnySelected = table.getSelectedRowModel().rows.length > 0
-
-    return React.createElement(
-      "div",
-      { className: "grid gap-3 pt-1" },
-      rows.map((row) =>
-        React.createElement(DomainCard, {
-          key: row.original.id as React.Key,
-          label: entityLabel,
-          data: row.original,
-          isSelected: options.isSelected?.(row.original) ?? false,
-          isHubOpen: options.isHubOpen ?? false,
-          onClick: () => {
-            if (options.hasBulkActions && isAnySelected) {
-              row.toggleSelected()
-            } else {
-              options.onRowClick?.(row.original)
-            }
-          },
-          visibleColumns: table.getState().columnVisibility,
-          selectable: options.hasBulkActions,
-          checked: row.getIsSelected(),
-          onCheckedChange: (checked) => row.toggleSelected(checked),
-          isAnySelected,
-        })
-      )
-    )
-  }
-  DomainCardView.displayName = "DomainCardView"
-  return DomainCardView
-}
 
 /**
  * Creates a renderCustomView function for entities that use EntityCard.

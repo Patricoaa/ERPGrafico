@@ -53,6 +53,7 @@ export * from './SourceDocumentLink';
 export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';
 export * from './ReportTable';
+export * from './TreeReportTable';
 export * from './DataManagement';
 export * from './CommentSystem';
 export * from './AttachmentList';
@@ -134,7 +135,6 @@ export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
 
 export * from './EntityCard'
-export * from './DomainCard'
 export * from './CardActions'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system

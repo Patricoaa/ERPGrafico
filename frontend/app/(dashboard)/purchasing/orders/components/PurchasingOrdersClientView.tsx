@@ -3,12 +3,15 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, BarChart3, Building2 } from "lucide-react"
+import { ArrowRight, ArrowLeft, BarChart3, Building2, Calendar } from "lucide-react"
+import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
+import { formatPlainDate } from "@/lib/utils"
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderUnifiedSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { billingApi } from "@/features/billing"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
@@ -503,6 +506,80 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         variant="embedded"
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                         isRefetching={viewMode === 'orders' ? isRefetching : undefined}
+                        renderCard={(data: Record<string, unknown>) => {
+                            const label = viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice'
+                            const config = ENTITY_REGISTRY[label]?.cardConfig
+                            const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(data) : config?.iconClassName
+                            const total = parseFloat(String(data.total || data.effective_total || data.balance || 0))
+                            const pending = parseFloat(String(data.pending_amount || 0))
+                            const hasPending = total > 0 && pending > 0
+                            const dateLabel = typeof config?.dateLabel === 'function' ? config.dateLabel(data) : config?.dateLabel ?? 'Entrega'
+
+                            return (
+                                <EntityCard
+                                    onClick={() => toggleSelection(data.id as number)}
+                                    isSelected={viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id}
+                                    className={isHubOpen && (viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                >
+                                    <EntityCard.Header
+                                        icon={getEntityIcon(label)}
+                                        iconClassName={iconClassName}
+                                        title={getPartnerName(label, data)}
+                                        subtitle={
+                                            <span className="flex items-center gap-1.5 flex-wrap">
+                                                <span>{data.display_id as string}</span>
+                                                <span className="text-muted-foreground/20">·</span>
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="h-3 w-3 opacity-50" />
+                                                    {formatPlainDate(data.date as string)}
+                                                </span>
+                                            </span>
+                                        }
+                                        trailing={
+                                            <div className="flex items-center gap-4">
+                                                <div className="hidden sm:flex items-center gap-3">
+                                                    <DomainHubStatus label={label} data={data} />
+                                                </div>
+                                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
+                                            </div>
+                                        }
+                                    />
+                                    {((data.lines || data.items || []) as Array<Record<string, unknown>>).length > 0 && (
+                                        <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
+                                            <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
+                                                {((data.lines || data.items || []) as Array<Record<string, unknown>>).map((line, idx: number) => (
+                                                    <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                                                        <span>
+                                                            <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
+                                                            <span className="text-muted-foreground/40 mx-1">×</span>
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground truncate max-w-[220px]">{line.product_name as string || 'Producto'}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="flex items-start gap-4 shrink-0 pr-9">
+                                                {(data.delivery_date || data.receipt_date) ? (
+                                                    <div className="flex flex-col items-end min-w-[80px]">
+                                                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{dateLabel}</span>
+                                                        <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(String(data.delivery_date || data.receipt_date))}</span>
+                                                    </div>
+                                                ) : null}
+                                                {hasPending && (
+                                                    <div className="flex flex-col items-end min-w-[80px]">
+                                                        <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
+                                                        <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-col items-end min-w-[80px]">
+                                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
+                                                    <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                                                </div>
+                                            </div>
+                                        </EntityCard.Body>
+                                    )}
+                                </EntityCard>
+                            )
+                        }}
                         unifiedSearch={<UnifiedSearchBar
                             config={purchaseOrderUnifiedSearchDef}
                             chips={search.chips}
