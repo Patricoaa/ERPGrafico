@@ -78,6 +78,7 @@ export * from './FormSection';
 
 // Loading States
 export * from './LoadingFallback';
+export * from './StaleDataBanner';
 
 // Animations
 export * from './FadeIn';

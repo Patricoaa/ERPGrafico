@@ -23,5 +23,6 @@ export function useWorkOrderProducts(otType: 'LINKED' | 'NONE' | null, searchTer
     getNextPageParam: (lastPage, allPages) =>
       (lastPage.results?.length ?? 0) === 20 ? allPages.length + 1 : undefined,
     enabled: otType === "NONE",
+    placeholderData: (prev) => prev,
   })
 }

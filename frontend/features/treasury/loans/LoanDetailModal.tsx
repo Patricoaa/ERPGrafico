@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye, FileQuestion } from 'lucide-react'
 import {
     BaseModal, FormFooter, ActionSlideButton, StatCard,
-    Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell,
+    Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell, StaleDataBanner,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useLoan } from '../hooks/useLoans'
@@ -38,7 +38,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
             </div>
         </BaseModal>
     )
-    if (isError || !loan) return (
+    if (!loan) return (
         <BaseModal open={open} onOpenChange={onOpenChange} title="Error">
             <EmptyState
                 title="No se pudo cargar el crédito"
@@ -101,6 +101,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     ) : undefined
                 }
             >
+                {isError && <StaleDataBanner className="mx-4 mt-2" />}
                 <div className="space-y-6">
                     {/* KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

@@ -8,7 +8,7 @@ import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, SkeletonShell, EmptyState, EntityCard,
     ToolbarCreateButton,
-    UnifiedSearchBar, useUnifiedSearch,
+    UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useLoans } from '../hooks/useLoans'
@@ -92,16 +92,6 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         params.delete("modal")
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
-
-    if (isError) {
-        return (
-            <EmptyState
-                title="Error al cargar créditos"
-                description="Intente nuevamente más tarde."
-                icon={AlertTriangle}
-            />
-        )
-    }
 
     const registerAction = (
         <ToolbarCreateButton
@@ -188,11 +178,12 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
-        loanActions.column(actionsCtx),
+        loanActions.auto(actionsCtx),
     ]
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando créditos">
+        {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView

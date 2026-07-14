@@ -7,7 +7,7 @@ import { CreditCard, AlertTriangle, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, SkeletonShell, EmptyState, EntityCard,
-    UnifiedSearchBar, useUnifiedSearch,
+    UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCardStatements } from '../hooks/useCardStatements'
@@ -130,16 +130,6 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
 
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("costos")
 
-    if (isError) {
-        return (
-            <EmptyState
-                title="Error al cargar estados de cuenta"
-                description="Intente nuevamente más tarde."
-                icon={AlertTriangle}
-            />
-        )
-    }
-
     const actionsCtx: StatementActionsCtx = {
         onPay: (stmt) => openStatement(stmt.id, "pay"),
         onViewDetail: (id) => openStatement(id, "detail"),
@@ -188,11 +178,12 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
-        statementActions.column(actionsCtx),
+        statementActions.auto(actionsCtx),
     ]
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando estados de cuenta">
+        {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView

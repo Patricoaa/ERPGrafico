@@ -9,5 +9,6 @@ export function useAnalysis(params?: Record<string, unknown>) {
         queryFn: () => financeApi.getAnalysis(params),
         enabled,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }

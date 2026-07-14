@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER } from '@/components/shared'
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, EmptyState, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from '@/components/shared'
 import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
@@ -578,7 +578,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        statementLineActions.column(statementLineActionsCtx)
+        statementLineActions.auto(statementLineActionsCtx)
     ], [lineSuggestions, setActionDialog, setCreateMatchDialog])
 
     const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
@@ -687,17 +687,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        systemItemActions.column(systemItemActionsCtx)
+        systemItemActions.auto(systemItemActionsCtx)
     ], [suggestions])
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
-    if (isError) {
-        return <EmptyState context="finance" variant="compact" title="Error al cargar datos" description="No se pudieron cargar los datos de conciliación." />
-    }
-
     return (
         <SkeletonShell isLoading={loading} ariaLabel="Cargando conciliación">
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
             <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
                 {/* ─── Unified Workbench Toolbar ─── */}

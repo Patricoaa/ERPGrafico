@@ -7,7 +7,7 @@ import {
     DataTableView, DataTableColumnHeader, DataCell,
     StatusBadge, MoneyDisplay, SkeletonShell, EmptyState,
     ToolbarCreateButton,
-    UnifiedSearchBar, useUnifiedSearch,
+    UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { Button } from '@/components/ui/button'
@@ -51,16 +51,6 @@ export function CreditLinesClientView({ bankId }: Props) {
     }
 
 
-
-    if (isError) {
-        return (
-            <EmptyState
-                title="Error al cargar líneas de crédito"
-                description="Intente nuevamente más tarde."
-                icon={AlertTriangle}
-            />
-        )
-    }
 
     const columns: ColumnDef<CreditLine>[] = [
         {
@@ -137,6 +127,7 @@ export function CreditLinesClientView({ bankId }: Props) {
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando líneas de crédito">
+        {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <div className="space-y-4">
             <DataTableView
                 columns={columns}

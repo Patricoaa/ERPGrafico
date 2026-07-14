@@ -7,5 +7,6 @@ export function useBIAnalytics(params?: Record<string, unknown>) {
         queryKey: [...FINANCE_KEYS.all, 'bi-analytics', { params }] as const,
         queryFn: () => financeApi.getBIAnalytics(params),
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }
