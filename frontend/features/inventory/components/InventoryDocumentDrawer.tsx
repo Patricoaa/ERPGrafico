@@ -173,7 +173,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground text-xs block">Estado</span>
-                                    <p><StatusBadge status={document.status} /></p>
+                                    <p><StatusBadge status={document.status} variant="badge" /></p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground text-xs block">Fecha</span>

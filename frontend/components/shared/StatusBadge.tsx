@@ -3,15 +3,17 @@
 /**
  * StatusBadge — Semantic wrapper for business workflow states.
  *
- * Renders a colored dot + label text. The dot color reflects the resolved intent.
- * The hub variant is preserved for workflow dashboards (circular icon + progress ring).
+ * Two presentation modes:
+ *   - "default" / "dot" → compact dot + text (DataTable, card lists)
+ *   - "badge"            → pill badge with dot indicator (Modal, Drawer, detail views)
+ *   - "hub"              → circular icon badge (workflow dashboards, preserved)
  *
  * Rule (GOVERNANCE §18): StatusBadge is the ONLY authorized status renderer.
  * Do NOT use <Badge> or <Chip> directly for workflow states.
  *
  * @example
- * <StatusBadge status="PAID" />
- * <StatusBadge status={order.status} label="custom label" />
+ * <StatusBadge status="PAID" />                                   // dot + text
+ * <StatusBadge status="PAID" variant="badge" />                   // pill + dot
  * <StatusBadge status="IN_PROGRESS" variant="hub" icon={Activity} tooltip="En Proceso" />
  */
 
@@ -26,8 +28,8 @@ export interface StatusBadgeProps {
     status: string
     /** Override the resolved label */
     label?: string
-    /** Visual variant. 'hub' renders circular icon badge; everything else renders dot+text. */
-    variant?: 'default' | 'dot' | 'hub'
+    /** Visual variant. 'dot'=compact, 'badge'=pill+dot, 'hub'=circular icon. */
+    variant?: 'default' | 'dot' | 'badge' | 'hub'
     /** Icon — required for variant="hub", optional for default */
     icon?: LucideIcon
     /** Tooltip — used with variant="hub" */
@@ -88,6 +90,15 @@ export function StatusBadge({
                 progress={progress}
                 className={className}
             />
+        )
+    }
+
+    if (variant === 'badge') {
+        return (
+            <Badge intent={intent} size={size} tracking="tight" className={className}>
+                <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', DOT_COLORS[intent])} />
+                {displayLabel}
+            </Badge>
         )
     }
 

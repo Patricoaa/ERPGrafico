@@ -63,7 +63,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando nota de venta">
                     {order && (
                         <div className="p-4 space-y-4">
-                            <StatusBadge status={order.status} />
+                            <StatusBadge status={order.status} variant="badge" />
 
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
@@ -80,7 +80,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
                                 </div>
                                 <div>
                                     <span className="text-xs text-muted-foreground">Estado Entrega</span>
-                                    <StatusBadge status={order.delivery_status} />
+                                    <StatusBadge status={order.delivery_status} variant="badge" />
                                 </div>
                             </div>
 

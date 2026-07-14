@@ -45,7 +45,7 @@ export function AccountingPeriodDrawer({ periodId, open, onOpenChange }: Account
                         </div>
                         <div>
                             <span className="text-muted-foreground">Estado</span>
-                            <p><StatusBadge status={period.status} /></p>
+                            <p><StatusBadge status={period.status} variant="badge" /></p>
                         </div>
                         <div>
                             <span className="text-muted-foreground">Período Tributario</span>

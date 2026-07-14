@@ -326,7 +326,7 @@ export function JournalEntryDrawer({
                         <div className="col-span-3">
                             <fieldset className="notched-field pointer-events-none" aria-disabled="true">
                                 <legend>Estado</legend>
-                                <StatusBadge status={entryStatus} size="sm" />
+                                <StatusBadge status={entryStatus} size="sm" variant="badge" />
                             </fieldset>
                         </div>
                         <div className="col-span-3">

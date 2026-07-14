@@ -418,7 +418,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Estado</span>
-                                                            <StatusBadge status={creditLineData.status} />
+                                                            <StatusBadge status={creditLineData.status} variant="badge" />
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2 pt-2 border-t">

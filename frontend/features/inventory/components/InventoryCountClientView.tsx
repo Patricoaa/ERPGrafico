@@ -486,7 +486,7 @@ export function InventoryCountClientView() {
                 headerActions={
                     count ? (
                         <div className="flex items-center gap-2">
-                            <StatusBadge status={count.status} />
+                            <StatusBadge status={count.status} variant="badge" />
                             {isInProgress && (
                                 <>
                                     <ActionSlideButton

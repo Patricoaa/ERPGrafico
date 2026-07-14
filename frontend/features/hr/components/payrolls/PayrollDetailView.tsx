@@ -160,6 +160,7 @@ export function PayrollDetailView({
                         <StatusBadge
                             status={isPosted ? "posted" : "draft"}
                             size="md"
+                            variant="badge"
                         />
                     </div>
                 ),
@@ -276,6 +277,7 @@ export function PayrollDetailView({
                                     <StatusBadge
                                         status={isPosted ? "posted" : "draft"}
                                         size="md"
+                                        variant="badge"
                                     />
                                 </div>
                                 <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">

@@ -151,7 +151,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     />
                                                     <StatCard
                                                         label="Estado Actual"
-                                                        value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" />}
+                                                        value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" variant="badge" />}
                                                         variant="compact"
                                                         accent="success"
                                                     />
@@ -246,6 +246,7 @@ function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpen
                     <StatusBadge
                         status={row.original.status === 'PAID' || row.original.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
+                        variant="badge"
                     />
                 </div>
             ),
@@ -317,6 +318,7 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
                     <StatusBadge
                         status={row.original.status === 'PAID' || row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
+                        variant="badge"
                     />
                 </div>
             ),

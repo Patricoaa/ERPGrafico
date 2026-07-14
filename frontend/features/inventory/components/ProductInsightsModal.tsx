@@ -388,6 +388,7 @@ function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
                     <StatusBadge
                         status={m.type === 'IN' ? 'SUCCESS' : m.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'}
                         label={m.type === 'IN' ? 'Entrada' : m.type === 'OUT' ? 'Salida' : 'Ajuste'}
+                        variant="badge"
                     />
                 )
             },

@@ -40,7 +40,7 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Estado</span>
-                                    <p><StatusBadge status={check.status} /></p>
+                                    <p><StatusBadge status={check.status} variant="badge" /></p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Banco</span>
