@@ -35,15 +35,16 @@ Cualquier acción CRUD que aparezca en una fila de `DataTable`, en el footer de 
 ```mermaid
 graph TD
     A["¿Dónde renderizo la acción?"]
-    A -->|"Fila de DataTable"| B["createActionsColumn + DataCell.Action / DataCell.ActionMenu"]
+    A -->|"Fila de DataTable"| B{"¿Cuántas acciones?"}
     A -->|"Footer de EntityCard / tarjeta Kanban"| C["CardActions + CardActions.Item / CardActions.Menu"]
-    B --> D{"¿Cuántas acciones?"}
-    C --> D
-    D -->|"1–3"| E["Todas inline (action='<key>')"]
-    D -->|"4"| F["3 inline + 1 en kebab — o 4 inline si hay espacio"]
-    D -->|"5+"| G["2 read + edit inline · resto en DataCell.ActionMenu / CardActions.Menu"]
+    B -->|"1"| D["DataCell.ActionSingle — ArrowRight en hover, ejecuta la acción"]
+    B -->|"2+"| E["DataCell.ActionMenu — kebab MoreVertical siempre visible"]
+    C --> F["CardActions.Item + CardActions.Menu (iconos individuales)"]
 ```
 
+- **1 acción en DataTable:** `DataCell.ActionSingle` — icono `ArrowRight`, oculto por defecto, aparece en hover de la fila (`group-hover`). Ejecuta la acción definida al hacer click.
+- **2+ acciones en DataTable:** `DataCell.ActionMenu` — kebab (`MoreVertical`) siempre visible. Todas las acciones van al dropdown.
+- **Cards / Kanban:** sin cambios — `CardActions.Item` muestra iconos individuales + `CardActions.Menu` para overflow.
 - **Forma preferida:** `<DataCell.Action action="edit" onClick={…} />` — icono, tooltip y color salen del registry.
 - **Acciones específicas del módulo (no CRUD):** mismo componente, pasando `icon` + `title` propios — se conservan tamaño (h-7 w-7), tooltip (delay 400ms, paleta sidebar).
 - **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?hub` CollapsibleSheet). Para ver el detalle de una entidad, `openEntity(label, id)` con `mode='view'` ([component-entity-drawers.md](./component-entity-drawers.md), ADR-0028; `?detail` quedó deprecado). Nunca uses `?id`, `?edit` para edición de entidades — `?selected` es el canónico (ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)). `?modal` está reservado para apertura de wizards de creación/import (ver [list-modal-edit-pattern.md §9](./list-modal-edit-pattern.md#9-parámetro-modal-para-wizards-de-creaciónimport)). Reserva `?view` exclusivamente para el switch de viewMode.

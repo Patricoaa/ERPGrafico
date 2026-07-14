@@ -117,25 +117,34 @@ is responsible for ordering. Lint rule (future ADR) will enforce ordering automa
 
 ---
 
-## 4. Overflow rule — when to use `ActionMenu`
+## 4. Overflow rule — when to use `ActionSingle` vs `ActionMenu`
 
-| # of actions in the row/card | Layout |
-|------------------------------|--------|
-| 1 – 3                        | All inline, no kebab. |
-| 4                            | 3 inline + 1 in kebab, **or** all 4 inline if the table is wide enough. Caller decides. |
-| 5 +                          | Mandatory: keep the top **2 read actions** + `edit` inline (canonical primaries), move the rest into the kebab via `DataCell.ActionMenu`. |
+| # of actions in the row/card | DataTable layout | Cards layout |
+|------------------------------|------------------|--------------|
+| 1 | `DataCell.ActionSingle` — ArrowRight icon, hidden by default, revealed on row hover (`group-hover`). Executes the defined action on click. | `DataCell.Action` — icon always visible (current behavior). |
+| 2+ | `DataCell.ActionMenu` — kebab (`MoreVertical`) always visible. All actions go into the dropdown. | `DataCell.Action` icons + `DataCell.ActionMenu` for overflow (current behavior). |
+
+**DataTableViews (compact & normal):**
+- The actions column has no header label and a fixed width of 40px.
+- Row containers have the `group` class for `group-hover` to work.
+- `DataCell.ActionSingle` renders an `ArrowRight` icon with `opacity-0 group-hover:opacity-100`.
+- `DataCell.ActionMenu` renders the `MoreVertical` kebab, always visible.
+
+**Cards / Kanban:**
+- No changes — cards keep showing individual `DataCell.Action` icons as before.
+- `CardActions` continues to work with `CardActions.Item` + `CardActions.Menu`.
 
 The kebab itself uses the icon `MoreVertical` (lucide) and is always the **last** element of the
 `ActionGroup` / `CardActions` row.
 
-Anti-pattern: dropping `delete` into a hidden kebab when the row has only 3 actions — destructive
-actions must be visible (or one tap away inside a kebab that is itself visible).
+Anti-pattern: using `DataCell.Action` (individual icon) as the sole action in a DataTable row —
+use `DataCell.ActionSingle` instead.
 
 ---
 
 ## 5. Implementation contracts
 
-### 5.1 Table — `createActionsColumn` + `DataCell.Action` / `DataCell.ActionMenu`
+### 5.1 Table — `createActionsColumn` + `DataCell.ActionSingle` / `DataCell.ActionMenu`
 
 ```tsx
 import { createActionsColumn, DataCell } from "@/components/shared"
@@ -144,25 +153,36 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 const { openSelected, openDetail, openHub } = useEntityRouteActions()
 
-const columns = [
-  // ...data columns,
+// ── 1 action — ActionSingle (ArrowRight on hover) ──────────────────────
+const columnsSingle = [
   createActionsColumn<Product>({
     renderActions: (item) => (
-      <>
-        <DataCell.Action action="detail" onClick={() => openDetail(item.id)} />
-        <DataCell.Action action="edit"   onClick={() => openSelected(item.id)} />
-        <DataCell.ActionMenu
-          items={[
-            { action: "duplicate", onClick: () => duplicate(item) },
-            { action: "archive",   onClick: () => archive(item) },
-            { separator: true },
-            { action: "delete",    onClick: () => confirmDelete(item) },
-          ]}
-        />
-      </>
+      <DataCell.ActionSingle onClick={() => openSelected(item.id)} />
     ),
   }),
 ]
+
+// ── 2+ actions — ActionMenu (kebab always visible) ─────────────────────
+const columnsMulti = [
+  createActionsColumn<Product>({
+    renderActions: (item) => (
+      <DataCell.ActionMenu
+        items={[
+          { action: "edit",    onClick: () => openSelected(item.id) },
+          { action: "archive", onClick: () => archive(item) },
+          { separator: true },
+          { action: "delete",  onClick: () => confirmDelete(item) },
+        ]}
+      />
+    ),
+  }),
+]
+
+// ── via createEntityActions (preferred) ─────────────────────────────────
+// Single action:
+const columns = [ myActions.single(ctx) ]
+// Multiple actions:
+const columns = [ myActions.column(ctx) ]
 ```
 
 - `DataCell.Action action="<key>"` is the **preferred form**. It pulls icon + title + variant
@@ -264,6 +284,8 @@ setting local modal state). These are evaluated case-by-case.
 |--------------|---------|
 | Hand-rolled `<Button variant="ghost"><Pencil /></Button>` in a table row | `DataCell.Action action="edit"` |
 | `DataCell.Action icon={Edit2} title="Editar"` | `DataCell.Action action="edit"` — registry icon is `Pencil` |
+| `DataCell.Action action="edit"` as the sole action in a DataTable row | `DataCell.ActionSingle onClick={...}` — ArrowRight on hover, minimal column |
+| 2+ inline `DataCell.Action` icons in a DataTable row | `DataCell.ActionMenu items={[…]}` — kebab always visible |
 | Popover + custom button list for >2 row actions | `DataCell.ActionMenu items={[…]}` |
 | Card with actions in `EntityCard.Footer` instead of the `actions` prop | Prop `actions` on `<EntityCard>` (top-right corner) — Footer is for metadata, not CRUD actions |
 | Card with a single hidden `Pencil` reachable only on hover | Explicit `CardActions` row with at minimum `edit` + `delete` visible |
