@@ -441,7 +441,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 </div>
             ),
         },
-        productActions.column(actionsCtx),
+        productActions.auto(actionsCtx),
     ], [actionsCtx, expandedTemplates])
 
     const initialColumnVisibility = useMemo(() => ({ is_active: false }), [])

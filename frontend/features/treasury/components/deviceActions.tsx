@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { PaymentTerminalDevice } from '../hooks/useTerminalProviders'
 
 export interface DeviceActionsCtx {
@@ -9,9 +9,7 @@ export interface DeviceActionsCtx {
 export const deviceActions = createEntityActions<
     PaymentTerminalDevice,
     DeviceActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action action="edit" onClick={() => ctx.onEdit(item)} />
-        <DataCell.Action action="delete" onClick={() => ctx.onDelete(item)} />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item) },
+    { action: "delete", onClick: () => ctx.onDelete(item) },
+])

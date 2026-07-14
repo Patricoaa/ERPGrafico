@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { Absence } from '@/types/hr'
 
 export interface AbsenceActionsCtx {
@@ -9,9 +9,7 @@ export interface AbsenceActionsCtx {
 export const absenceActions = createEntityActions<
     Absence,
     AbsenceActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action action="edit" onClick={() => ctx.onEdit(item)} />
-        <DataCell.Action action="delete" onClick={() => ctx.onDelete(item.id)} />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item) },
+    { action: "delete", onClick: () => ctx.onDelete(item.id) },
+])

@@ -58,7 +58,7 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                 <DataTableColumnHeader column={column} title="Miembros" />
             ),
         },
-        groupActions.column(groupActionsCtx)
+        groupActions.auto(groupActionsCtx)
     ]
 
     return (

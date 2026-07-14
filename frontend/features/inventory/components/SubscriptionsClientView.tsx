@@ -335,7 +335,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 </div>
             ),
         },
-        subscriptionActions.column(actionsCtx),
+        subscriptionActions.auto(actionsCtx),
     ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Subscription>[]>(() => [

@@ -309,7 +309,7 @@ function LedgerContent({
                 )
             },
         },
-        ledgerMovementActions.column(ledgerMovementActionsCtx)
+        ledgerMovementActions.auto(ledgerMovementActionsCtx)
     ]
 
     const filteredMovements = useMemo(

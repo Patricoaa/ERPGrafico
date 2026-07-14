@@ -140,7 +140,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                 <DataCell.Number value={row.getValue("ratio")} />
             ),
         },
-        uomActions.column(actionsCtx),
+        uomActions.auto(actionsCtx),
     ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [

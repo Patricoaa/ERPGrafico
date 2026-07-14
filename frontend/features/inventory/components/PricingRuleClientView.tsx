@@ -214,7 +214,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                 </div>
             ),
         },
-        pricingRuleActions.column(actionsCtx),
+        pricingRuleActions.auto(actionsCtx),
     ], [actionsCtx])
 
     return (

@@ -1,5 +1,5 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { Wallet, Eye } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
+import { Wallet } from 'lucide-react'
 import type { CreditCardStatement } from './types'
 
 export interface StatementActionsCtx {
@@ -10,11 +10,7 @@ export interface StatementActionsCtx {
 export const statementActions = createEntityActions<
     CreditCardStatement,
     StatementActionsCtx
->((item, ctx) => (
-    <>
-        {item.status !== 'PAID' && item.status !== 'CANCELED' && (
-            <DataCell.Action icon={Wallet} title="Pagar" onClick={() => ctx.onPay(item)} />
-        )}
-        <DataCell.Action icon={Eye} title="Ver detalle" onClick={() => ctx.onViewDetail(item.id)} />
-    </>
-))
+>((item, ctx) => [
+    { action: "pay", icon: Wallet, onClick: () => ctx.onPay(item), visible: item.status !== 'PAID' && item.status !== 'CANCELED' },
+    { action: "detail", label: "Ver detalle", onClick: () => ctx.onViewDetail(item.id) },
+])

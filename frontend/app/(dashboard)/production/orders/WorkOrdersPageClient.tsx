@@ -249,7 +249,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
             cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
             meta: { title: "Fecha Entrega" },
         },
-        workOrderActions.column(workOrderActionsCtx) as ColumnDef<WorkOrder>,
+        workOrderActions.auto(workOrderActionsCtx) as ColumnDef<WorkOrder>,
     ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])
 
     const renderKanbanView = useCallback((table: Table<WorkOrder>) => (

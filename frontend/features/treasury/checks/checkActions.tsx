@@ -1,5 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { ArrowDownToLine, CheckCheck, XCircle, Ban, Eye } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
 import type { Check } from './types'
 
 export interface CheckActionsCtx {
@@ -16,23 +15,11 @@ export interface CheckActionsCtx {
 export const checkActions = createEntityActions<
     Check,
     CheckActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action icon={Eye} title="Ver detalle" onClick={() => ctx.onViewDetail(item.id)} />
-        {!ctx.isIssued && ctx.canDo('deposit', item) && (
-            <DataCell.Action icon={ArrowDownToLine} title="Depositar" onClick={() => ctx.onDeposit(item)} />
-        )}
-        {!ctx.isIssued && ctx.canDo('clear', item) && (
-            <DataCell.Action icon={CheckCheck} title="Marcar cobrado" onClick={() => ctx.onClear(item.id)} />
-        )}
-        {!ctx.isIssued && ctx.canDo('bounce', item) && (
-            <DataCell.Action icon={XCircle} title="Protestar" onClick={() => ctx.onBounce(item.id)} />
-        )}
-        {ctx.isIssued && ctx.canDo('mark_cashed', item) && (
-            <DataCell.Action icon={CheckCheck} title="Marcar cobrado por banco" onClick={() => ctx.onMarkCashed(item.id)} />
-        )}
-        {ctx.canDo('void', item) && (
-            <DataCell.Action icon={Ban} title="Anular" onClick={() => ctx.onVoid(item.id)} />
-        )}
-    </>
-))
+>((item, ctx) => [
+    { action: "detail", label: "Ver detalle", onClick: () => ctx.onViewDetail(item.id) },
+    { action: "pay", label: "Depositar", onClick: () => ctx.onDeposit(item), visible: !ctx.isIssued && ctx.canDo('deposit', item) },
+    { action: "post", label: "Marcar cobrado", onClick: () => ctx.onClear(item.id), visible: !ctx.isIssued && ctx.canDo('clear', item) },
+    { action: "delete", label: "Protestar", onClick: () => ctx.onBounce(item.id), visible: !ctx.isIssued && ctx.canDo('bounce', item) },
+    { action: "post", label: "Marcar cobrado por banco", onClick: () => ctx.onMarkCashed(item.id), visible: ctx.isIssued && ctx.canDo('mark_cashed', item) },
+    { action: "annul", onClick: () => ctx.onVoid(item.id), visible: ctx.canDo('void', item) },
+])

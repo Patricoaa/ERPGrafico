@@ -202,7 +202,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
             cell: ({ row }) => <DataCell.Text>{row.getValue("phone") || "-"}</DataCell.Text>,
         },
-        contactActions.column(actionsCtx),
+        contactActions.auto(actionsCtx),
     ]
 
     return (

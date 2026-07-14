@@ -166,7 +166,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                 ),
                 size: 100,
             },
-            documentActions.column(actionsCtx),
+            documentActions.auto(actionsCtx),
         )
 
         return cols

@@ -204,7 +204,7 @@ export function StatementDetailPanel({
                 )
             },
         },
-        statementLineUnmatchActions.column(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
+        statementLineUnmatchActions.auto(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
     ]
 
     if (!statement) {

@@ -162,7 +162,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                 <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
         },
-        userActions.column(actionsCtx)
+        userActions.auto(actionsCtx)
     ], [refetch])
 
     const usersCreateAction = useMemo(() => (

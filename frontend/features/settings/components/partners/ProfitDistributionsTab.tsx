@@ -248,7 +248,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 )
             }
         },
-        profitDistributionActions.column(actionsCtx)
+        profitDistributionActions.auto(actionsCtx)
     ], [])
 
     return (

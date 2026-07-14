@@ -124,7 +124,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                 </div>
             )
         },
-        salaryAdvanceActions.column(salaryAdvanceActionsCtx)
+        salaryAdvanceActions.auto(salaryAdvanceActionsCtx)
     ]
 
     return (

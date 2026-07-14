@@ -77,7 +77,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
             cell: ({ row }) => <DataCell.Code>{row.getValue("days")}</DataCell.Code>,
         },
-        absenceActions.column(absenceActionsCtx),
+        absenceActions.auto(absenceActionsCtx),
     ]
 
     return (
