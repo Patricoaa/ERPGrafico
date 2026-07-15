@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
+import { paymentMethodFields } from '@/features/treasury/paymentMethodFields'
 import { ActivitySidebar } from "@/features/audit"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm, type Resolver } from "react-hook-form"

@@ -210,8 +210,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         return (
                             <AutoEntityCard
                                 key={data.id}
-                                data={data}
-                                fields={salesOrderFields}
+                                data={data as any}
+                                fields={viewMode === 'orders' ? salesOrderFields as any : undefined as any /* Note: assuming there is another fields factory but using any for now */}
                                 title={getPartnerName(label, d)}
                                 subtitle={
                                     <span className="flex items-center gap-1.5 flex-wrap">

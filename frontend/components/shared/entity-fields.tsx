@@ -35,6 +35,8 @@ interface FieldDef<T> {
     get?: (entity: T) => unknown
     cellProps?: Record<string, unknown>
     surfaces?: FieldSurface[]
+    /** Override de posicionamiento en la tarjeta */
+    cardPlacement?: 'auto' | 'header-right' | 'body'
     tableOptions?: {
         width?: number
         enableSorting?: boolean
@@ -78,6 +80,7 @@ export interface CardField {
     key: string
     label: string
     value: ReactNode
+    cardPlacement?: 'auto' | 'header-right' | 'body'
 }
 
 export interface KanbanField {
@@ -496,6 +499,7 @@ export function createEntityFields<T>(): (
                     key: fieldKey,
                     label: def.label,
                     value: renderCardCell(def, entity),
+                    cardPlacement: def.cardPlacement,
                 }))
         },
 
