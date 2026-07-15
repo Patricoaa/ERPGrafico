@@ -38,11 +38,11 @@ export function BankLoanSection({ data, bankId }: Props) {
                             title={loan.display_id}
                             subtitle="Vigente"
                         />
-                        <EntityCard.Body>
-                            <EntityCard.Field label="Capital" value={<DataCell.Currency value={loan.principal} showColor={false} />} />
-                            <EntityCard.Field label="Saldo Insoluto" value={<DataCell.Currency value={loan.outstanding_balance} />} />
-                            <EntityCard.Field label="Cuotas Rest." value={`${loan.paid_installments_count}/${loan.installments_count}`} />
-                        </EntityCard.Body>
+                        <EntityCard.Metrics metrics={[
+                            { label: "Capital", value: <DataCell.Currency value={loan.principal} showColor={false} /> },
+                            { label: "Saldo Insoluto", value: <DataCell.Currency value={loan.outstanding_balance} /> },
+                            { label: "Cuotas Rest.", value: `${loan.paid_installments_count}/${loan.installments_count}` },
+                        ]} />
                     </EntityCard>
                 ))}
             </div>
