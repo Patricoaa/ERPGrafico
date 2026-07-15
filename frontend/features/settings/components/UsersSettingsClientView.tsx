@@ -180,7 +180,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
     ), [])
 
     return (
-        <div className="pt-4 h-full flex flex-col overflow-y-auto">
+        <div className="pt-4 flex-1 min-h-0 flex flex-col">
             <Tabs value={activeTab} className="h-full flex flex-col">
                 <FadeIn key={activeTab} className="flex-1 min-h-0">
                     <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
@@ -219,11 +219,12 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                     const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                                     const systemRole = groups.find(g => roles.includes(g))
                                     return (
-                                        <EntityCard key={user.id}>
+                                        <EntityCard key={user.id} onClick={() => actionsCtx.onEdit(user.id)}>
                                             <EntityCard.Header
                                                 title={user.username}
                                                 subtitle={user.email}
                                                 trailing={<DataCell.Status status={user.is_active ? "active" : "inactive"} />}
+                                                actions={userActions.render(user, actionsCtx)}
                                             />
                                             <EntityCard.Body>
                                                 <EntityCard.Field label="Nombre" value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || '—'} />
