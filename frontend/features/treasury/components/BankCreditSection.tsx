@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { CreditCard } from "lucide-react"
-import { EntityCard, MoneyDisplay, SectionHeader } from "@/components/shared"
+import { EntityCard, DataCell, SectionHeader } from "@/components/shared"
 import { useBranding } from "@/contexts/BrandingProvider"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
@@ -52,11 +52,11 @@ export function BankCreditSection({ data, bankId }: Props) {
                                 title={formatCardNumber(card.card_number || card.account_number || card.code)}
                                 subtitle={companyName || undefined}
                             />
-                            <EntityCard.Body className="flex flex-row items-stretch gap-3">
-                                <EntityCard.Field label="Cupo" value={<MoneyDisplay amount={card.credit_limit || 0} showColor={false} />} className="flex-1" />
-                                <EntityCard.Field label="Utilizado" value={<MoneyDisplay amount={Math.abs(card.current_balance)} showColor={false} />} className="flex-1" />
-                                <EntityCard.Field label="Disponible" value={<MoneyDisplay amount={available} showColor={false} />} className="flex-1" />
-                            </EntityCard.Body>
+                            <EntityCard.Metrics metrics={[
+                                { label: "Cupo", value: <DataCell.Currency value={card.credit_limit || 0} showColor={false} /> },
+                                { label: "Utilizado", value: <DataCell.Currency value={Math.abs(card.current_balance)} showColor={false} /> },
+                                { label: "Disponible", value: <DataCell.Currency value={available} showColor={false} /> },
+                            ]} />
                         </EntityCard>
                     )
                 })}

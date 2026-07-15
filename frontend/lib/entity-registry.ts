@@ -27,6 +27,16 @@ export interface ViewPolicy {
   gridLayout?: 'single-column' | 'multi-column';
   /** Card variant: 'compact' = header-only, 'full' = header + body + footer */
   cardVariant?: 'compact' | 'full';
+  /**
+   * Layout preset for EntityCard body area.
+   * - 'key-value': standard auto-fit grid with EntityCard.Field (default)
+   * - 'metrics': horizontal equal-width columns (financial dashboards)
+   * - 'dashboard': rich custom content wrapper (period grids, etc.)
+   * - 'hero': prominent image + accent (product cards)
+   * - 'workflow': line items + totals (orders, invoices)
+   * - 'custom': no preset, consumer provides their own body
+   */
+  cardLayout?: 'key-value' | 'metrics' | 'dashboard' | 'hero' | 'workflow' | 'custom';
 }
 
 export interface EntityMetadata {
@@ -87,7 +97,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
       return String(customerName ?? data.partner_name ?? '---')
     },
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'workflow' },
     cardConfig: { dateLabel: 'Entrega' },
   },
   'sales.saledelivery': {
@@ -135,7 +145,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/purchasing/orders/{id}',
     partnerField: 'supplier_name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'workflow' },
     cardConfig: { iconClassName: 'text-info bg-info/10', dateLabel: 'Recepción' },
   },
   'billing.invoice': {
@@ -154,7 +164,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/billing/invoices/{id}',
     partnerField: (data) => String(data.partner_name ?? data.customer_name ?? data.supplier_name ?? '---'),
     workflowType: 'invoice',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'workflow' },
     cardConfig: {
       iconClassName: (data) => ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(data.dte_type ?? ''))
         ? 'text-warning bg-warning/10'
@@ -232,7 +242,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'hero' },
   },
   'inventory.subscription': {
     label: 'inventory.subscription',

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
-import { EntityCard, MoneyDisplay, SectionHeader } from "@/components/shared"
+import { EntityCard, DataCell, SectionHeader } from "@/components/shared"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
@@ -45,9 +45,9 @@ export function BankCheckingSection({ data, bankId }: Props) {
                                 subtitle={acc.account_number ?? acc.code ?? "—"}
                             />
                             <EntityCard.Body>
-                                <EntityCard.Field label="Saldo" value={<MoneyDisplay amount={acc.current_balance} />} />
-                                <EntityCard.Field label="Línea" value={<MoneyDisplay amount={creditLine} showColor={false} />} />
-                                <EntityCard.Field label="Disponible" value={<MoneyDisplay amount={available} showColor={available >= 0} />} />
+                                <EntityCard.Field label="Saldo" value={<DataCell.Currency value={acc.current_balance} />} />
+                                <EntityCard.Field label="Línea" value={<DataCell.Currency value={creditLine} showColor={false} />} />
+                                <EntityCard.Field label="Disponible" value={<DataCell.Currency value={available} showColor={available >= 0} />} />
                             </EntityCard.Body>
                         </EntityCard>
                     )

@@ -137,7 +137,7 @@ export function FiscalYearCard({
                 }
             />
 
-            <div className="p-4 bg-muted/5 border-t border-border/50">
+            <EntityCard.Dashboard>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
                         const acct = periods.find(p => p.month === m);
@@ -162,7 +162,7 @@ export function FiscalYearCard({
                         );
                     })}
                 </div>
-            </div>
+            </EntityCard.Dashboard>
         </EntityCard>
     );
 }
