@@ -495,12 +495,19 @@ export function createEntityFields<T>(): (
             return Object.entries(defs)
                 .filter(([, def]) => isPresentOnSurface(def, "card"))
                 .filter(([fieldKey]) => !allowed || allowed.includes(fieldKey))
-                .map(([fieldKey, def]): CardField => ({
-                    key: fieldKey,
-                    label: def.label,
-                    value: renderCardCell(def, entity),
-                    cardPlacement: def.cardPlacement,
-                }))
+                .map(([fieldKey, def]): CardField => {
+                    let defaultPlacement: 'auto' | 'header-right' | 'body' = 'auto';
+                    if (["status", "currency", "currencyFlow", "numericFlow", "progress", "chip"].includes(def.type)) {
+                        defaultPlacement = 'header-right';
+                    }
+
+                    return {
+                        key: fieldKey,
+                        label: def.label,
+                        value: renderCardCell(def, entity),
+                        cardPlacement: def.cardPlacement || defaultPlacement,
+                    };
+                })
         },
 
         toKanbanFields: (entity: T, opts?: { only?: string[] }): KanbanField[] => {
