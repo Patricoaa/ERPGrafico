@@ -57,9 +57,15 @@ export function SessionCloseModal({
     const [accountingSettings, setAccountingSettings] = useState<AccountingSettings | null>(null)
     const [settingsLoading, setSettingsLoading] = useState(false)
 
+    // Fetch Accounting Settings and Full Report Data
+    const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
+    const [reportDataLoading, setReportDataLoading] = useState(false)
+
     // Derived values for validation and display
     const actual = parseFloat(actualCash) || 0
-    const expected = session.expected_cash
+    const expected = fullReportData
+        ? Number(fullReportData.opening_balance || 0) + Number(fullReportData.total_cash_sales || 0) + Number(fullReportData.total_manual_inflow || 0) - Number(fullReportData.total_manual_outflow || 0)
+        : session.expected_cash
     const diff = actual - expected
     const hasDiff = diff !== 0
 
@@ -67,7 +73,7 @@ export function SessionCloseModal({
     useEffect(() => {
         if (open && session) {
             requestAnimationFrame(() => {
-                setActualCash(session.expected_cash.toString())
+                setActualCash(expected.toString())
                 setCloseNotes("")
                 setJustifyReason("")
                 setJustifyTargetId(null)
@@ -77,11 +83,8 @@ export function SessionCloseModal({
                 setCashDestinationId(null) // Force user to pick a valid destination
             })
         }
-    }, [open, session])
+    }, [open, session, expected])
 
-    // Fetch Accounting Settings and Full Report Data
-    const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
-    const [reportDataLoading, setReportDataLoading] = useState(false)
     useEffect(() => {
         if (open && session) {
             let cancelled = false
@@ -226,7 +229,7 @@ export function SessionCloseModal({
                             <div className="md:hidden mb-4 p-3 bg-primary/10 rounded-md border border-primary/10">
                                 <div className="flex justify-between text-sm font-bold">
                                     <span>Efectivo Esperado:</span>
-                                    <span className="text-primary">{formatCurrency(session.expected_cash)}</span>
+                                    <span className="text-primary">{formatCurrency(expected)}</span>
                                 </div>
                             </div>
 
@@ -241,8 +244,8 @@ export function SessionCloseModal({
                                         className="w-full max-w-full shadow-none border-0 p-0"
                                         onConfirm={handleNext}
                                         confirmLabel="Confirmar Conteo"
-                                        onExactAmount={() => setActualCash(session.expected_cash.toString())}
-                                        exactAmountLabel={`Monto Exacto (${formatCurrency(session.expected_cash)})`}
+                                        onExactAmount={() => setActualCash(expected.toString())}
+                                        exactAmountLabel={`Monto Exacto (${formatCurrency(expected)})`}
                                     />
                                 </div>
                             </div>
