@@ -5,15 +5,19 @@ from treasury.models import POSSession
 
 class IsPOSSessionActive(permissions.BasePermission):
     """
-    Permite solo si la sesión POS referenciada en el request está OPEN.
+    Controla acceso a endpoints que operan sobre sesiones POS.
+
+    - Métodos seguros (GET/HEAD/OPTIONS): permite si la sesión existe (OPEN o cerrada).
+      Esto permite leer historial, reportes y auditorías de sesiones cerradas.
+    - Métodos inseguros (POST/PUT/PATCH/DELETE): requiere que la sesión esté OPEN.
+      Esto impide operar sobre sesiones ya cerradas.
 
     Busca el session_id en (por orden):
     1. request.data.pos_session_id
     2. request.query_params.pos_session_id
     3. view.kwargs.pk (cuando el viewset opera sobre sesiones, ej. POSSessionViewSet)
 
-    Si no encuentra referencia a una sesión, permite métodos seguros (GET/HEAD/OPTIONS)
-    y deniega métodos inseguros.
+    Si no encuentra referencia a una sesión, permite métodos seguros y deniega inseguros.
     """
 
     message = "La sesión de caja no está activa o ha sido cerrada."
@@ -36,6 +40,9 @@ class IsPOSSessionActive(permissions.BasePermission):
             pos_session_id = int(pos_session_id)
         except (TypeError, ValueError):
             return False
+
+        if request.method in permissions.SAFE_METHODS:
+            return POSSession.objects.filter(id=pos_session_id).exists()
 
         return POSSession.objects.filter(
             id=pos_session_id, status=POSSession.Status.OPEN,
