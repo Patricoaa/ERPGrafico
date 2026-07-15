@@ -154,6 +154,7 @@ export * from './ErrorBoundary'
 export * from './CmykRing'
 export * from './PrepressPanel'
 export * from './entity-actions'
+export * from './entity-fields'
 export * from './Numpad'
 
 export * from './PrintableReceipt'
