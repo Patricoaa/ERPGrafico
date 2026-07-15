@@ -25,7 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 
-import { DataCell, MoneyDisplay } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
@@ -528,7 +528,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 params.set('selected', String(product.id))
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}>
-                                <EntityCard.Header
+                                <EntityCard.Hero
                                     imageSrc={imageUrl}
                                     icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
                                     iconClassName="bg-muted"
@@ -542,12 +542,12 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                             />
                                         </div>
                                     }
-                                    trailing={
+                                    accent={
                                         <div className="flex flex-col items-end">
                                             <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">Total</span>
                                             {product.is_dynamic_pricing
                                                 ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                                : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary font-bold" />
+                                                : <DataCell.Currency value={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="font-bold" weight="bold" size="lg" />
                                             }
                                         </div>
                                     }

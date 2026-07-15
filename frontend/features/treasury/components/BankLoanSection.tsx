@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { HandCoins } from "lucide-react"
-import { EntityCard, MoneyDisplay, SectionHeader } from "@/components/shared"
+import { EntityCard, DataCell, SectionHeader } from "@/components/shared"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
@@ -39,8 +39,8 @@ export function BankLoanSection({ data, bankId }: Props) {
                             subtitle="Vigente"
                         />
                         <EntityCard.Body>
-                            <EntityCard.Field label="Capital" value={<MoneyDisplay amount={loan.principal} showColor={false} />} />
-                            <EntityCard.Field label="Saldo Insoluto" value={<MoneyDisplay amount={loan.outstanding_balance} />} />
+                            <EntityCard.Field label="Capital" value={<DataCell.Currency value={loan.principal} showColor={false} />} />
+                            <EntityCard.Field label="Saldo Insoluto" value={<DataCell.Currency value={loan.outstanding_balance} />} />
                             <EntityCard.Field label="Cuotas Rest." value={`${loan.paid_installments_count}/${loan.installments_count}`} />
                         </EntityCard.Body>
                     </EntityCard>

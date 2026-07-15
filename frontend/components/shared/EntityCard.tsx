@@ -533,6 +533,119 @@ function EntityCardListItemSkeleton({ count = 3, className }: EntityCardListItem
     )
 }
 
+// ─── Metrics ────────────────────────────────────────────────────────────────
+
+type MetricVariant = 'default' | 'primary' | 'success' | 'warning'
+
+interface EntityCardMetricItem {
+    /** Label above the value (e.g. "Cupo", "Utilizado", "Disponible") */
+    label: string
+    /** Value content — prefer DataCell.Currency or DataCell.Number for formatting */
+    value: React.ReactNode
+    /** Optional leading icon in the metric column */
+    icon?: LucideIcon
+    /** Semantic color intent — maps to Tailwind token colors */
+    variant?: MetricVariant
+}
+
+interface EntityCardMetricsProps {
+    /** Array of metric items to display as equal-width columns */
+    metrics: EntityCardMetricItem[]
+    /** Default variant applied to all items (overridden per-item) */
+    defaultVariant?: MetricVariant
+    className?: string
+}
+
+const METRIC_VARIANT_CLASSES: Record<MetricVariant, string> = {
+    default: 'text-foreground',
+    primary: 'text-primary',
+    success: 'text-success',
+    warning: 'text-warning',
+}
+
+function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: EntityCardMetricsProps) {
+    return (
+        <div className={cn("flex items-stretch gap-px border-t border-border/30 mt-1", className)}>
+            {metrics.map((item, idx) => {
+                const variant = item.variant ?? defaultVariant
+                return (
+                    <div
+                        key={idx}
+                        className={cn(
+                            "flex-1 flex flex-col gap-0.5 px-4 py-2",
+                            "relative after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-border/20 last:after:hidden"
+                        )}
+                    >
+                        {item.icon && (
+                            <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
+                        )}
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
+                            {item.label}
+                        </span>
+                        <span className={cn("text-sm font-bold tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
+                            {item.value}
+                        </span>
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
+// ─── Dashboard ──────────────────────────────────────────────────────────────
+
+interface EntityCardDashboardProps {
+    /** Rich custom content — typically a grid of sub-cards or complex widgets */
+    children: React.ReactNode
+    /** Optional title rendered above the content with section styling */
+    title?: React.ReactNode
+    className?: string
+}
+
+function EntityCardDashboard({ children, title, className }: EntityCardDashboardProps) {
+    return (
+        <div className={cn("border-t border-border/50 mt-1", className)}>
+            {title && (
+                <div className="px-4 pt-3 pb-1">
+                    {title}
+                </div>
+            )}
+            <div className="p-4 bg-muted/5">
+                {children}
+            </div>
+        </div>
+    )
+}
+
+// ─── Hero ───────────────────────────────────────────────────────────────────
+
+interface EntityCardHeroProps extends Pick<EntityCardHeaderProps, 'title' | 'subtitle' | 'actions'> {
+    /** Primary image — renders in a larger 64×64 icon slot */
+    imageSrc?: string
+    /** Fallback icon when no image is present */
+    icon?: LucideIcon
+    /** Styling for the icon container */
+    iconClassName?: string
+    /** Prominent accent element rendered as the trailing slot (e.g. price, status) */
+    accent?: React.ReactNode
+    className?: string
+}
+
+function EntityCardHero({ imageSrc, icon, iconClassName, accent, title, subtitle, actions, className }: EntityCardHeroProps) {
+    return (
+        <EntityCardHeader
+            imageSrc={imageSrc}
+            icon={icon}
+            iconClassName={cn("h-16 w-16 rounded-lg", iconClassName ?? "bg-accent text-muted-foreground")}
+            title={title}
+            subtitle={subtitle}
+            trailing={accent}
+            actions={actions}
+            className={className}
+        />
+    )
+}
+
 // ─── Composite export ─────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
@@ -545,6 +658,9 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     ListItem: EntityCardListItem,
     ListItemSkeleton: EntityCardListItemSkeleton,
     WorkflowBody: EntityCardWorkflowBody,
+    Metrics: EntityCardMetrics,
+    Dashboard: EntityCardDashboard,
+    Hero: EntityCardHero,
 })
 
 export type {
@@ -559,4 +675,8 @@ export type {
     EntityCardListItemSkeletonProps,
     EntityCardWorkflowBodyProps,
     EntityCardWorkflowLine,
+    EntityCardMetricsProps,
+    EntityCardMetricItem,
+    EntityCardDashboardProps,
+    EntityCardHeroProps,
 }
