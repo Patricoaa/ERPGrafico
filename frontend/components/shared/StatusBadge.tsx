@@ -34,7 +34,7 @@ export interface StatusBadgeProps {
     icon?: LucideIcon
     /** Tooltip — used with variant="hub" */
     tooltip?: string
-    /** Size — controls dot size and font size. Default: 'sm'. */
+    /** Size — controls dot size and font size. Default: 'md'. */
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
     /** Progress percentage (0-100) for hub variant — renders SVG progress ring */
     progress?: number
@@ -60,7 +60,7 @@ const DOT_SIZES: Record<string, string> = {
 }
 
 const TEXT_SIZES: Record<string, string> = {
-    xs: 'text-[10px]',
+    xs: 'text-xs',
     sm: 'text-xs',
     md: 'text-sm',
     lg: 'text-base',
@@ -73,7 +73,7 @@ export function StatusBadge({
     variant = 'default',
     icon: Icon,
     tooltip,
-    size = 'sm',
+    size = 'md',
     progress,
     className,
 }: StatusBadgeProps) {

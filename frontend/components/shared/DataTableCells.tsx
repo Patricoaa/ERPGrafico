@@ -332,13 +332,14 @@ export const DataCell = {
     // --- Status & Badges ---
 
     /** Mapped status badge - Internally uses the standardized StatusBadge */
-    Status: ({ status, label, variant = "default", className }: { status: string, label?: string, variant?: "default" | "hub" | "dot", className?: string }) => {
+    Status: ({ status, label, variant = "default", size = "md", className }: { status: string, label?: string, variant?: "default" | "hub" | "dot", size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
         return (
             <div className={cn("flex justify-center items-center w-full", className)}>
                 <StatusBadge
                     status={status}
                     label={label || translateStatus(status)}
                     variant={variant}
+                    size={size}
                     className={className}
                 />
             </div>
@@ -780,12 +781,12 @@ export function createContactColumn<TData>(
 export function createStatusColumn<TData>(
     accessorKey: string,
     title: string,
-    opts?: ColOpts<TData> & { variant?: "default" | "hub" | "dot"; label?: string }
+    opts?: ColOpts<TData> & { variant?: "default" | "hub" | "dot"; label?: string; size?: "xs" | "sm" | "md" | "lg" | "xl" }
 ): ColumnDef<TData> {
     return {
         accessorKey,
         header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
-        cell: ({ row }) => <DataCell.Status status={row.getValue(accessorKey) as string} variant={opts?.variant} label={opts?.label} />,
+        cell: ({ row }) => <DataCell.Status status={row.getValue(accessorKey) as string} variant={opts?.variant} label={opts?.label} size={opts?.size} />,
         enableSorting: opts?.enableSorting ?? true,
     }
 }
