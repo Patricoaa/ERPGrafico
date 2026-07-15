@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft, BarChart3, Building2, Calendar } from "lucide-react"
 import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
 import { formatPlainDate } from "@/lib/utils"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderUnifiedSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { billingApi } from "@/features/billing"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
@@ -545,37 +544,13 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                         }
                                     />
                                     {((data.lines || data.items || []) as Array<Record<string, unknown>>).length > 0 && (
-                                        <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
-                                            <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
-                                                {((data.lines || data.items || []) as Array<Record<string, unknown>>).map((line, idx: number) => (
-                                                    <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
-                                                        <span>
-                                                            <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
-                                                            <span className="text-muted-foreground/40 mx-1">×</span>
-                                                        </span>
-                                                        <span className="text-xs text-muted-foreground truncate max-w-[220px]">{line.product_name as string || 'Producto'}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="flex items-start gap-4 shrink-0 pr-9">
-                                                {(data.delivery_date || data.receipt_date) ? (
-                                                    <div className="flex flex-col items-end min-w-[80px]">
-                                                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{dateLabel}</span>
-                                                        <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(String(data.delivery_date || data.receipt_date))}</span>
-                                                    </div>
-                                                ) : null}
-                                                {hasPending && (
-                                                    <div className="flex flex-col items-end min-w-[80px]">
-                                                        <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
-                                                        <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col items-end min-w-[80px]">
-                                                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
-                                                    <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
-                                                </div>
-                                            </div>
-                                        </EntityCard.Body>
+                                        <EntityCard.WorkflowBody
+                                            lines={((data.lines || data.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
+                                            total={total}
+                                            pending={hasPending ? pending : undefined}
+                                            deliveryDate={(data.delivery_date || data.receipt_date) as string | undefined}
+                                            dateLabel={dateLabel}
+                                        />
                                     )}
                                 </EntityCard>
                             )

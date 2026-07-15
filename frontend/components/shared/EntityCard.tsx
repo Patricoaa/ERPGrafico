@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
+import { MoneyDisplay } from "./MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
 import { type VariantProps } from "class-variance-authority"
 import { type badgeVariants } from "@/components/ui/badge"
@@ -397,6 +398,65 @@ function EntityCardSkeleton({
     )
 }
 
+// ─── Workflow Body ────────────────────────────────────────────────────────────
+
+interface EntityCardWorkflowLine {
+    quantity: number | string
+    product_name?: string
+}
+
+interface EntityCardWorkflowBodyProps {
+    /** Order/invoice line items to display as qty × product */
+    lines: EntityCardWorkflowLine[]
+    /** Document total amount */
+    total: number
+    /** Pending amount — omitted from display when undefined */
+    pending?: number
+    /** Raw date string for delivery/receipt — omitted when undefined */
+    deliveryDate?: string
+    /** Label above the delivery date column (default: "Entrega") */
+    dateLabel?: string
+    className?: string
+}
+
+function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel = "Entrega", className }: EntityCardWorkflowBodyProps) {
+    if (lines.length === 0) return null
+
+    return (
+        <EntityCardBody className={cn("flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1", className)}>
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
+                {lines.map((line, idx) => (
+                    <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                        <span>
+                            <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
+                            <span className="text-muted-foreground/40 mx-1">×</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate max-w-[220px]">{line.product_name || 'Producto'}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="flex items-start gap-4 shrink-0 pr-9">
+                {deliveryDate ? (
+                    <div className="flex flex-col items-end min-w-[80px]">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{dateLabel}</span>
+                        <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
+                    </div>
+                ) : null}
+                {pending != null && pending > 0 && (
+                    <div className="flex flex-col items-end min-w-[80px]">
+                        <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
+                        <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                    </div>
+                )}
+                <div className="flex flex-col items-end min-w-[80px]">
+                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
+                    <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                </div>
+            </div>
+        </EntityCardBody>
+    )
+}
+
 // ─── List Item ────────────────────────────────────────────────────────────────
 
 interface EntityCardListItemProps {
@@ -484,6 +544,7 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     Skeleton: EntityCardSkeleton,
     ListItem: EntityCardListItem,
     ListItemSkeleton: EntityCardListItemSkeleton,
+    WorkflowBody: EntityCardWorkflowBody,
 })
 
 export type {
@@ -496,4 +557,6 @@ export type {
     EntityCardBadgeProps,
     EntityCardListItemProps,
     EntityCardListItemSkeletonProps,
+    EntityCardWorkflowBodyProps,
+    EntityCardWorkflowLine,
 }
