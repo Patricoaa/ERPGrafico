@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react"
 import { useGroups } from "../hooks"
 import { ActionConfirmModal, DataTableView, EntityCard } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Users } from "lucide-react"
 import { GroupDrawer } from "@/features/users"
 import { groupActions, type GroupActionsCtx } from './groupActions'
+import { groupFields } from '../groupFields'
 import type { Group } from "../api/types"
 
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -46,18 +46,7 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
     }
 
     const columns: ColumnDef<Group>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre del Grupo" />
-            ),
-        },
-        {
-            accessorKey: "user_count",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Miembros" />
-            ),
-        },
+        ...groupFields.toColumns(),
         groupActions.auto(groupActionsCtx)
     ]
 
@@ -90,12 +79,18 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                     onReset={search.clearAll}
                     createAction={createAction}
                     renderCard={(group: Group) => (
-                        <EntityCard key={group.id}>
+                        <EntityCard key={group.id} onClick={() => groupActionsCtx.onEdit(group)}>
                             <EntityCard.Header
                                 icon={Users}
                                 title={group.name}
                                 subtitle={`${group.user_count ?? 0} miembros`}
+                                actions={groupActions.render(group, groupActionsCtx)}
                             />
+                            <EntityCard.Body>
+                                {groupFields.toCardFields(group, { only: ["userCount"] }).map(f => (
+                                    <EntityCard.Field key={f.key} label={f.label} value={f.value} />
+                                ))}
+                            </EntityCard.Body>
                         </EntityCard>
                     )}
                     cardSkeleton={{ showBody: false }}
