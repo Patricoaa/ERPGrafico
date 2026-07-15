@@ -17,10 +17,18 @@ export interface AutoEntityCardProps<TData> {
     }
     /** Optional icon to render in the header */
     icon?: LucideIcon
+    /** Optional class name for the icon */
+    iconClassName?: string
     /** Optional actions to render in the header (usually from your actions factory) */
     actions?: React.ReactNode
-    /** Optional default action to trigger when the card is clicked */
+    /** Optional default action to trigger when the card is clicked (used by keyboard/accessibility) */
     defaultAction?: ((e: React.MouseEvent) => void) | null
+    /** Optional onClick handler for the entire card (takes precedence over defaultAction for the click target) */
+    onClick?: (e: React.MouseEvent) => void
+    /** Whether the card is visually selected */
+    isSelected?: boolean
+    /** Additional CSS classes for the card container */
+    className?: string
     /** Optional image URL to render in the header (takes precedence over icon) */
     imageSrc?: string
     /** Optional trailing slot to render in the header (e.g. badges, status) */
@@ -29,6 +37,8 @@ export interface AutoEntityCardProps<TData> {
     title?: React.ReactNode
     /** Optional explicit subtitle */
     subtitle?: React.ReactNode
+    /** Optional center slot to render in the header */
+    center?: React.ReactNode
     /** Optional children to render custom blocks like Metrics or Footer inside the card */
     children?: React.ReactNode
 }
@@ -45,9 +55,14 @@ export function AutoEntityCard<TData>({
     fields, 
     title,
     subtitle,
+    center,
     icon, 
+    iconClassName,
     actions, 
     defaultAction, 
+    onClick,
+    isSelected,
+    className,
     imageSrc, 
     trailing,
     children
@@ -60,12 +75,14 @@ export function AutoEntityCard<TData>({
     const restFields = hasOverrideTitle ? cardFields : cardFields.slice(2);
 
     return (
-        <EntityCard defaultAction={defaultAction}>
+        <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className}>
             <EntityCard.Header 
                 icon={icon}
+                iconClassName={iconClassName}
                 imageSrc={imageSrc}
                 title={displayTitle} 
                 subtitle={displaySubtitle} 
+                center={center}
                 actions={actions}
                 trailing={trailing}
             />

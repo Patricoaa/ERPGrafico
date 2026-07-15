@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTableView, DataCell, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell, QuantityDisplay } from '@/components/shared'
+import { DataTableView, DataCell, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell, QuantityDisplay } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
+import { inventoryCountFields } from "@/features/inventory/inventoryCountFields"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowRight, Plus, ClipboardCheck, Check, Equal } from "lucide-react"
@@ -325,28 +326,7 @@ export function InventoryCountClientView() {
     ], [isInProgress, handleCellCommit, getDifference])
 
     const listColumns: ColumnDef<InventoryCount>[] = [
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{`#${row.original.id}`}</DataCell.Code>,
-            size: 80,
-        },
-        {
-            accessorKey: "warehouse_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Almacén" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.warehouse_name}</DataCell.Text>,
-            size: 180,
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.status} />
-                </div>
-            ),
-            size: 120,
-        },
+        ...inventoryCountFields.toColumns(),
         {
             id: "progress",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Progreso" className="justify-center" />,
@@ -374,14 +354,6 @@ export function InventoryCountClientView() {
                 )
             },
             size: 120,
-        },
-        {
-            accessorKey: "created_by_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Creado por" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="text-center text-sm text-muted-foreground">{row.original.created_by_name ?? '-'}</div>
-            ),
-            size: 150,
         },
         {
             id: "actions",
@@ -450,26 +422,22 @@ export function InventoryCountClientView() {
                     description: "Crea un nuevo conteo para comparar el stock teórico con el stock real.",
                 }}
                 renderCard={(cnt: InventoryCount) => (
-                    <EntityCard
+                    <AutoEntityCard 
                         key={cnt.id}
+                        data={cnt}
+                        fields={inventoryCountFields}
+                        title={`Conteo #${cnt.id}`}
+                        subtitle={cnt.warehouse_name}
                         onClick={() => handleSelectCount(cnt.id)}
+                        trailing={<StatusBadge status={cnt.status} size="sm" />}
                     >
-                        <EntityCard.Header
-                            title={`Conteo #${cnt.id}`}
-                            subtitle={cnt.warehouse_name}
-                            trailing={<StatusBadge status={cnt.status} size="sm" />}
-                        />
-                        <EntityCard.Body>
-                            <EntityCard.Field label="Progreso" value={`${cnt.counted_products} / ${cnt.total_products}`} />
-                            {cnt.products_with_difference > 0 && (
-                                <EntityCard.Field
-                                    label="Diferencias"
-                                    value={<StatusBadge status="WARNING" label={`${cnt.products_with_difference} diferencias`} size="sm" />}
-                                />
-                            )}
-                            <EntityCard.Field label="Creado por" value={cnt.created_by_name ?? '-'} />
-                        </EntityCard.Body>
-                    </EntityCard>
+                        <EntityCard.Metrics metrics={[
+                            { label: 'Progreso', value: <DataCell.Number value={cnt.counted_products} /> },
+                            { label: 'Total', value: <DataCell.Number value={cnt.total_products} /> },
+                            ...(cnt.products_with_difference > 0 ? [{ label: 'Diferencias', value: <StatusBadge status="WARNING" label={`${cnt.products_with_difference} diferencias`} size="sm" /> }] : []),
+                            { label: 'Creado por', value: cnt.created_by_name ?? '-' },
+                        ]} />
+                    </AutoEntityCard>
                 )}
             />
 

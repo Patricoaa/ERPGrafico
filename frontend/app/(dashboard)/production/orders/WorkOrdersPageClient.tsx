@@ -4,8 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import type { Page } from '@/lib/pagination'
@@ -22,9 +21,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { workOrderUnifiedSearchDef } from "@/features/production"
+import { workOrderUnifiedSearchDef, workOrderFields } from "@/features/production"
 import { toast } from "sonner"
 
 import type { WorkOrder, WizardMode, StageId } from "@/features/production/types"
@@ -126,131 +124,78 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         onDelete: handleDelete,
     }
 
-    const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-            minSize: 40,
-        },
-        {
-            accessorKey: "number",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DataCell.Entity
-                        entityLabel="production.workorder"
-                        number={row.getValue("number")}
+    const columns = useMemo<ColumnDef<WorkOrder>[]>(() => {
+        const [, saleOrderCol, startDateCol, productDescCol, stageCol, dueDateCol] = workOrderFields.toColumns()
+        return [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                        className="translate-y-[2px]"
+                        variant="circle"
                     />
-                </div>
-            ),
-            meta: { title: "Folio" },
-        },
-        {
-            id: "sale_order_number",
-            accessorFn: (row) => row.sale_order_number ?? null,
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const nvNumber = row.original.sale_order_number
-                if (!nvNumber) return <div className="flex justify-center"></div>
-                return (
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        className="translate-y-[2px]"
+                        variant="circle"
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+                size: 40,
+                minSize: 40,
+            },
+            {
+                accessorKey: "number",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
+                ),
+                cell: ({ row }) => (
                     <div className="flex justify-center">
                         <DataCell.Entity
-                            entityLabel="sales.saleorder"
-                            number={nvNumber}
-
+                            entityLabel="production.workorder"
+                            number={row.getValue("number")}
                         />
                     </div>
-                )
+                ),
+                meta: { title: "Folio" },
             },
-            meta: { title: "NV Asociada" },
-        },
-        {
-            accessorKey: "start_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha Inicio" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("start_date")} /></div>,
-            meta: { title: "Fecha Inicio" },
-        },
-        {
-            accessorKey: "product_description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción del Trabajo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text className="text-center">{row.getValue("product_description")}</DataCell.Text>
-                </div>
-            ),
-            meta: { title: "Descripción del Trabajo" },
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const status = row.original.status
-                return (
-                <div className="flex justify-center gap-1.5 items-center flex-wrap">
-                    <DataCell.Status status={status} />
-                    {isWorkOrderOverdue(row.original) && (
-                        <Chip size="sm" intent="destructive">Atrasada</Chip>
-                    )}
-                </div>
-                )
+            saleOrderCol,
+            startDateCol,
+            productDescCol,
+            {
+                accessorKey: "status",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
+                ),
+                cell: ({ row }) => {
+                    const status = row.original.status
+                    return (
+                    <div className="flex justify-center gap-1.5 items-center flex-wrap">
+                        <DataCell.Status status={status} />
+                        {isWorkOrderOverdue(row.original) && (
+                            <Chip size="sm" intent="destructive">Atrasada</Chip>
+                        )}
+                    </div>
+                    )
+                },
+                filterFn: (row, id, value) => {
+                    return value.includes(row.getValue(id))
+                },
+                meta: { title: "Estado" },
             },
-            filterFn: (row, id, value) => {
-                return value.includes(row.getValue(id))
-            },
-            meta: { title: "Estado" },
-        },
-        {
-            accessorKey: "current_stage",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Etapa" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {translateProductionStage(row.original.current_stage)}
-                </DataCell.Text>
-            ),
-            meta: { title: "Etapa" },
-        },
-        {
-            accessorKey: "due_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha Entrega" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
-            meta: { title: "Fecha Entrega" },
-        },
-        workOrderActions.auto(workOrderActionsCtx) as ColumnDef<WorkOrder>,
-    ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])
+            stageCol,
+            dueDateCol,
+            workOrderActions.auto(workOrderActionsCtx) as ColumnDef<WorkOrder>,
+        ]
+    }, [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])
 
     const renderKanbanView = useCallback((table: Table<WorkOrder>) => (
         <div className="relative">

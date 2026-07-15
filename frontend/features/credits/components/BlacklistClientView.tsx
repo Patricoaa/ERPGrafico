@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input"
 
 import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { blacklistFields } from "../blacklistFields"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -213,6 +214,8 @@ export function BlacklistClientView() {
         return search.filterFn(result)
     }, [rawContacts, search.filterFn, search.filters.risk_level])
 
+    const [balanceCol, evaluatedCol] = blacklistFields.toColumns()
+
     const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
         createExpanderColumn<CreditContact>(),
         {
@@ -224,25 +227,9 @@ export function BlacklistClientView() {
                 </DataCell.ContactLink>
             ),
         },
-        {
-            accessorKey: "credit_balance_used",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda Actual" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.CurrencyFlow value={row.original.credit_balance_used} direction="outflow" showIcon={false} className="font-black" />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "credit_last_evaluated",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Bloqueado desde" className="justify-center text-muted-foreground" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.credit_last_evaluated} />
-                </div>
-            ),
-        }
-    ], [])
+        balanceCol,
+        evaluatedCol,
+    ], [balanceCol, evaluatedCol])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

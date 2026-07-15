@@ -7,14 +7,12 @@ import type { Terminal } from "@/features/treasury"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { ActionConfirmModal, DataTableView, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { Badge } from "@/components/ui/badge"
-
-import { DataTableColumnHeader } from '@/components/shared'
-import {DataCell} from '@/components/shared'
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { type ColumnDef } from "@tanstack/react-table"
+import { posTerminalFields } from "../posTerminalFields"
 import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -132,29 +130,8 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     }
 
     const columns: ColumnDef<Terminal>[] = [
-        {
-            accessorKey: "code",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Code>{row.getValue("code")}</DataCell.Code></div>,
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "location",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Ubicación" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("location")}</DataCell.Secondary>,
-        },
-        {
-            accessorKey: "is_active",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
-            ),
-        },
-        posTerminalActions.column(actionsCtx),
+        ...posTerminalFields.toColumns(),
+        posTerminalActions.auto(actionsCtx),
     ]
 
     return (
@@ -208,34 +185,31 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                         const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
 
                         return (
-                            <EntityCard key={terminal.id} onClick={() => openSelected(terminal.id)} defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
-                                <EntityCard.Header
-                                    title={terminal.name}
-                                    subtitle={terminal.code}
-                                    trailing={
-                                        <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                                    }
-                                    actions={posTerminalActions.render(terminal, actionsCtx)}
-                                />
+                            <AutoEntityCard 
+                                key={terminal.id} 
+                                data={terminal}
+                                fields={posTerminalFields}
+                                title={terminal.name}
+                                subtitle={terminal.code}
+                                onClick={() => openSelected(terminal.id)} 
+                                defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} 
+                                className={!terminal.is_active ? "grayscale bg-muted/20" : ""}
+                                trailing={
+                                    <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
+                                }
+                                actions={posTerminalActions.render(terminal, actionsCtx)}
+                            >
                                 <EntityCard.Body>
                                     <EntityCard.Field
                                         label="Ubicación"
-                                        value={
-                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                <MapPin className="h-3.5 w-3.5" />
-                                                {terminal.location || "No especificada"}
-                                            </div>
-                                        }
+                                        value={terminal.location || "No especificada"}
+                                        icon={MapPin}
                                     />
                                     {terminal.payment_terminal_device && (
                                         <EntityCard.Field
                                             label="Dispositivo"
-                                            value={
-                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
-                                                    <Smartphone className="h-3 w-3" />
-                                                    {terminal.payment_terminal_device_name || "Vinculado"}
-                                                </div>
-                                            }
+                                            value={terminal.payment_terminal_device_name || "Vinculado"}
+                                            icon={Smartphone}
                                         />
                                     )}
                                 </EntityCard.Body>
@@ -265,7 +239,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                                         </span>
                                     )}
                                 </EntityCard.Footer>
-                            </EntityCard>
+                            </AutoEntityCard>
                         )
                     }}
                     cardSkeleton={{ showFooter: true }}

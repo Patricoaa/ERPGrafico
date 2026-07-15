@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, EntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader } from '@/components/shared'
+import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowRight, ArrowLeft, Calendar } from "lucide-react"
 import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
@@ -84,12 +85,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     }, [isOverLimit, totalCount])
 
     const columns: ColumnDef<SaleOrder>[] = [
-        createCodeColumn<SaleOrder>("number", "Folio", {
-            render: (entity) => <DataCell.Code>{entity.display_id ?? entity.number}</DataCell.Code>,
-        }),
-        createDateColumn<SaleOrder>("date", "Fecha"),
-        createContactColumn<SaleOrder>("customer_name", "Cliente", "customer"),
-        createCurrencyColumn<SaleOrder>("total", "Total"),
+        ...salesOrderFields.toColumns(),
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
@@ -212,39 +208,40 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         const hasPending = total > 0 && pending > 0
 
                         return (
-                            <EntityCard
+                            <AutoEntityCard
+                                key={data.id}
+                                data={data}
+                                fields={salesOrderFields}
+                                title={getPartnerName(label, d)}
+                                subtitle={
+                                    <span className="flex items-center gap-1.5 flex-wrap">
+                                        <span>{d.display_id as string}</span>
+                                        <span className="text-muted-foreground/20">·</span>
+                                        <span className="flex items-center gap-1">
+                                            <Calendar className="h-3 w-3 opacity-50" />
+                                            {formatPlainDate(d.date as string)}
+                                        </span>
+                                        {viewMode === 'orders' && d.pos_session ? (
+                                            <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
+                                                #{String(d.pos_session)}
+                                            </span>
+                                        ) : null}
+                                    </span>
+                                }
                                 onClick={() => toggleSelection(data.id)}
                                 isSelected={getSelectionId(data)}
                                 className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
-                            >
-                                <EntityCard.Header
-                                    icon={getEntityIcon(label)}
-                                    iconClassName={iconClassName}
-                                    title={getPartnerName(label, d)}
-                                    subtitle={
-                                        <span className="flex items-center gap-1.5 flex-wrap">
-                                            <span>{d.display_id as string}</span>
-                                            <span className="text-muted-foreground/20">·</span>
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-3 w-3 opacity-50" />
-                                                {formatPlainDate(d.date as string)}
-                                            </span>
-                                            {viewMode === 'orders' && d.pos_session ? (
-                                                <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
-                                                    #{String(d.pos_session)}
-                                                </span>
-                                            ) : null}
-                                        </span>
-                                    }
-                                    trailing={
-                                        <div className="flex items-center gap-4">
-                                            <div className="hidden sm:flex items-center gap-3">
-                                                <DomainHubStatus label={label} data={d} />
-                                            </div>
-                                            <DataCell.ActionSingle onClick={() => toggleSelection(data.id)} title="Abrir" />
+                                icon={getEntityIcon(label)}
+                                iconClassName={iconClassName}
+                                trailing={
+                                    <div className="flex items-center gap-4">
+                                        <div className="hidden sm:flex items-center gap-3">
+                                            <DomainHubStatus label={label} data={d} />
                                         </div>
-                                    }
-                                />
+                                        <DataCell.ActionSingle onClick={() => toggleSelection(data.id)} title="Abrir" />
+                                    </div>
+                                }
+                            >
                                 {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
                                     <EntityCard.WorkflowBody
                                         lines={((d.lines || d.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
@@ -253,7 +250,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                         deliveryDate={d.delivery_date as string | undefined}
                                     />
                                 )}
-                            </EntityCard>
+                            </AutoEntityCard>
                         )
                     }}
                     manualPagination={!effectiveGrouping}

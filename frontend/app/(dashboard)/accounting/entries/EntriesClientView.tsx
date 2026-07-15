@@ -1,16 +1,14 @@
 "use client"
 
 import React, { useEffect, useState, useRef, useMemo } from "react"
-import {
-    type ColumnDef,
-} from "@tanstack/react-table"
 
 import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
 
-import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
-import { DataCell, Chip } from '@/components/shared'
+import { DataTableView, EntityCard } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { FileEdit, RotateCcw, FileText } from "lucide-react"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
+import { journalEntryFields } from './journalEntryFields'
 import { resolveStatus } from '@/lib/badge-resolvers'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -155,59 +153,10 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         onReverse: (id) => handleReverse(id),
     }
 
-    const columns: ColumnDef<JournalEntry>[] = useMemo(() => [
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
-            ),
-            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("date")} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    <span className="truncate max-w-[300px]">{row.getValue("description")}</span>
-                </DataCell.Text>
-            )
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) =>
-                <DataCell.Status status={row.getValue("status")} />,
-        },
-        {
-            id: "origin",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Origen" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const entry = row.original
-                if (entry.is_manual) return <Chip size="sm" intent="neutral">Manual</Chip>
-                if (entry.reversal_of) return <Chip size="sm" intent="warning">Reversión</Chip>
-                return <Chip size="sm" intent="info">Automático</Chip>
-            },
-            enableSorting: false,
-        },
+    const columns = useMemo(() => [
+        ...journalEntryFields.toColumns(),
         journalEntryActions.auto(journalEntryActionsCtx),
-    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse, journalEntryActionsCtx])
+    ], [journalEntryActionsCtx])
 
 
     return (
@@ -262,22 +211,23 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         const statusLabel = resolveStatus(m.status).label
                         return (
                             <EntityCard key={m.id} onClick={() => openDetail(m.id)}>
-                                <EntityCard.Header
-                                    icon={Icon}
-                                    iconClassName={iconStyle}
-                                    title={m.display_id}
-                                    subtitle={
-                                        <span className="text-xs text-muted-foreground/70">
-                                            {statusLabel} · {originLabel}
-                                        </span>
-                                    }
-                                    center={
-                                        <span className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
-                                            {m.description}
-                                        </span>
-                                    }
-                                    trailing={<DataCell.Currency value={total} />}
-                                />
+                            <EntityCard.Header
+                                icon={Icon}
+                                iconClassName={iconStyle}
+                                title={m.display_id}
+                                subtitle={
+                                    <span className="text-xs text-muted-foreground/70">
+                                        {statusLabel} · {originLabel}
+                                    </span>
+                                }
+                                center={
+                                    <span className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
+                                        {m.description}
+                                    </span>
+                                }
+                                trailing={<DataCell.Currency value={total} />}
+                                actions={journalEntryActions.render(m, journalEntryActionsCtx)}
+                            />
                             </EntityCard>
                         )
                     }}

@@ -26,7 +26,8 @@ import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 
 import { DataCell } from '@/components/shared'
-import { EntityCard } from "@/components/shared"
+import { AutoEntityCard, EntityCard } from "@/components/shared"
+import { productFields } from "@/features/inventory/productFields"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
@@ -264,28 +265,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             size: 40,
             minSize: 40,
         },
-        {
-            accessorKey: "internal_code",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Code>
-                    {row.getValue("internal_code")}
-                </DataCell.Code>
-            ),
-            size: 100,
-            minSize: 80,
-        },
-        {
-            accessorKey: "code",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="SKU" className="justify-center" />
-            ),
-            cell: ({ row }) => <DataCell.Code>{row.getValue("code")}</DataCell.Code>,
-            size: 100,
-            minSize: 80,
-        },
+        ...productFields.toColumns(),
         {
             accessorKey: "name",
             header: ({ column }) => (
@@ -342,13 +322,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     </div>
                 );
             },
-        },
-        {
-            accessorKey: "category_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
-            ),
-            cell: ({ row }) => <DataCell.Text>{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "is_active",
@@ -523,11 +496,17 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         const imageUrl = (product.image ?? product.image_thumbnail) ? resolveMediaUrl(product.image ?? product.image_thumbnail) ?? undefined : undefined
 
                         return (
-                            <EntityCard key={product.id} defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(product.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}>
+                            <AutoEntityCard 
+                                key={product.id}
+                                data={product}
+                                fields={productFields}
+                                defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
+                                onClick={() => {
+                                    const params = new URLSearchParams(searchParams.toString())
+                                    params.set('selected', String(product.id))
+                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                }}
+                            >
                                 <EntityCard.Hero
                                     imageSrc={imageUrl}
                                     icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
@@ -561,7 +540,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                         value={product.internal_code || <span className="text-muted-foreground/40">—</span>}
                                     />
                                 </EntityCard.Body>
-                            </EntityCard>
+                            </AutoEntityCard>
                         )
                     }}
                     bulkActions={bulkActions}

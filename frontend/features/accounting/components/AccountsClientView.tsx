@@ -224,7 +224,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 </div>
             ),
         },
-        accountActions.column(actionCtx),
+        accountActions.auto(actionCtx),
         ]
     }, [handleEditAccount, pathname, router, searchParams])
 

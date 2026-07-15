@@ -119,29 +119,30 @@ is responsible for ordering. Lint rule (future ADR) will enforce ordering automa
 
 ## 4. Overflow rule — auto-detection via structured data
 
-The `auto()` method on `createEntityActions` **automatically** chooses the correct layout
-based on the number of visible actions at runtime:
+The `auto()` and `render()` methods on `createEntityActions` **automatically** choose the correct layout
+based on the number of visible actions at runtime. The behavior is **unified across all surfaces**:
 
-| # visible actions | DataTable layout | Cards layout |
-|-------------------|------------------|--------------|
-| 0 | Empty cell | `null` |
-| 1 | `DataCell.ActionSingle` — ArrowRight icon, hidden by default, revealed on row hover | `DataCell.Action` — icon always visible |
-| 2+ | `DataCell.ActionMenu` — kebab (`MoreVertical`) always visible | Individual `DataCell.Action` icons |
+| # visible actions | Component | Visual |
+|-------------------|-----------|--------|
+| 0 | Empty cell / `null` | Nothing |
+| 1 | `DataCell.ActionSingle` | ArrowRight icon, subtle at rest (`opacity-20`), fully visible on hover (`group-hover:opacity-100`) |
+| 2+ | `DataCell.ActionMenu` | `MoreVertical` kebab, always visible, opens dropdown |
 
 **How it works:**
 - Action files define a `StructuredAction[]` with optional `visible` flags.
-- `auto()` filters `visible: false`, counts remaining, and picks the right component.
-- No manual decision needed — the system adapts per-row at runtime.
+- `auto()` (DataTable) and `render()` (Cards/Kanban) filter `visible: false`, count remaining, and pick the right component.
+- No manual decision needed — the system adapts per-row/card at runtime.
 
-**DataTableViews (compact & normal):**
+**DataTable (via `auto()`):**
 - The actions column has no header label and a fixed width of 40px.
 - Row containers have the `group` class for `group-hover` to work.
-- `DataCell.ActionSingle` renders an `ArrowRight` icon with `opacity-0 group-hover:opacity-100`.
+- `DataCell.ActionSingle` renders an `ArrowRight` icon with `opacity-20 group-hover:opacity-100`.
 - `DataCell.ActionMenu` renders the `MoreVertical` kebab, always visible.
 
-**Cards / Kanban:**
-- `render()` converts structured data → individual `DataCell.Action` icons.
-- `CardActions` continues to work with `CardActions.Item` + `CardActions.Menu`.
+**Cards / Kanban (via `render()`):**
+- Uses the same `ActionSingle` and `ActionMenu` components as DataTable.
+- `EntityCard.Root` has the `group` class, so hover-reveal works automatically.
+- Parent containers should have `group` class for `ActionSingle` hover-reveal.
 
 ---
 
@@ -225,7 +226,7 @@ top-right corner (absolute positioned) with `stopPropagation` so they never trig
 import { EntityCard } from "@/components/shared"
 import { myActions } from "./myActions"
 
-// render() converts structured actions → individual DataCell.Action icons
+// render() converts structured actions → ActionSingle (1) or ActionMenu (2+)
 <EntityCard onClick={() => openSelected(item.id)} actions={myActions.render(item, ctx)}>
   <EntityCard.Header title={item.name} />
   <EntityCard.Body>…</EntityCard.Body>
@@ -290,7 +291,7 @@ setting local modal state). These are evaluated case-by-case.
 | 2+ inline `DataCell.Action` icons in a DataTable row | `auto()` renders `DataCell.ActionMenu` automatically |
 | Popover + custom button list for >2 row actions | `DataCell.ActionMenu items={[…]}` |
 | Card with actions in `EntityCard.Footer` instead of the `actions` prop | Prop `actions` on `<EntityCard>` (top-right corner) — Footer is for metadata, not CRUD actions |
-| Card with a single hidden `Pencil` reachable only on hover | Explicit `CardActions` row with at minimum `edit` + `delete` visible |
+| Card with no `actions` prop despite having `createEntityActions` | Pass `actions={xxxActions.render(item, ctx)}` to `EntityCard.Header` |
 | `delete` placed before `edit` | Canonical order: `delete` always last |
 | `?id=42` / `?edit=42` / `?modal=42` to open the edit modal | `?selected=42` (ADR-0020) |
 | `?view=42` as a detail/detail param | `openEntity(label, 42)` (ADR-0028) — `?view=` is the viewMode switch |

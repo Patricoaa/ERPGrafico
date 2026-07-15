@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useGroups } from "../hooks"
-import { ActionConfirmModal, DataTableView, EntityCard } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Users } from "lucide-react"
 import { GroupDrawer } from "@/features/users"
@@ -79,19 +79,16 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                     onReset={search.clearAll}
                     createAction={createAction}
                     renderCard={(group: Group) => (
-                        <EntityCard key={group.id} onClick={() => groupActionsCtx.onEdit(group)}>
-                            <EntityCard.Header
-                                icon={Users}
-                                title={group.name}
-                                subtitle={`${group.user_count ?? 0} miembros`}
-                                actions={groupActions.render(group, groupActionsCtx)}
-                            />
-                            <EntityCard.Body>
-                                {groupFields.toCardFields(group, { only: ["userCount"] }).map(f => (
-                                    <EntityCard.Field key={f.key} label={f.label} value={f.value} />
-                                ))}
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard 
+                            key={group.id} 
+                            data={group}
+                            fields={groupFields}
+                            title={group.name}
+                            subtitle={`${group.user_count ?? 0} miembros`}
+                            onClick={() => groupActionsCtx.onEdit(group)}
+                            icon={Users}
+                            actions={groupActions.render(group, groupActionsCtx)}
+                        />
                     )}
                     cardSkeleton={{ showBody: false }}
                 />

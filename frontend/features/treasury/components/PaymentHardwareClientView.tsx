@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import {
     Building2,
@@ -16,14 +16,14 @@ import {
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { providerActions, type ProviderActionsCtx } from './providerActions'
 import { deviceActions, type DeviceActionsCtx } from './deviceActions'
 
 import { ProviderDrawer } from "./ProviderDrawer"
 import { DeviceDrawer } from "./DeviceDrawer"
+import { terminalProviderFields } from "@/features/treasury/terminalProviderFields"
+import { terminalDeviceFields } from "@/features/treasury/terminalDeviceFields"
 
 interface PaymentHardwareClientViewProps {
     externalDeviceOpen?: boolean
@@ -140,30 +140,8 @@ export function PaymentHardwareClientView({
     }
 
     const providerColumns: ColumnDef<PaymentTerminalProvider>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
-            cell: ({ row }) => <div className="font-semibold text-sm">{row.getValue("name")}</div>,
-        },
-        {
-            accessorKey: "supplier_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto" />,
-            cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("supplier_name") || "-"}</div>,
-        },
-        {
-            accessorKey: "receivable_account_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta Recaudación" />,
-            cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("receivable_account_name") || "-"}</div>,
-        },
-        {
-            accessorKey: "is_active",
-            id: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />,
-            filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
-        },
-        providerActions.column(providerActionsCtx)
+        ...terminalProviderFields.toColumns(),
+        providerActions.auto(providerActionsCtx)
     ]
 
     const deviceActionsCtx: DeviceActionsCtx = {
@@ -172,22 +150,8 @@ export function PaymentHardwareClientView({
     }
 
     const deviceColumns: ColumnDef<PaymentTerminalDevice>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
-            cell: ({ row }) => <div className="font-semibold text-sm">{row.getValue("name")}</div>,
-        },
-        {
-            accessorKey: "provider_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" />,
-            cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("provider_name")}</div>,
-        },
-        {
-            accessorKey: "serial_number",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="N° Serie" />,
-            cell: ({ row }) => <div className="font-mono text-muted-foreground">{row.getValue("serial_number")}</div>,
-        },
-        deviceActions.column(deviceActionsCtx)
+        ...terminalDeviceFields.toColumns(),
+        deviceActions.auto(deviceActionsCtx)
     ]
 
     return (
@@ -231,17 +195,17 @@ export function PaymentHardwareClientView({
                             </Button>
                         )}
                         renderCard={(provider: PaymentTerminalProvider) => (
-                            <EntityCard key={provider.id} onClick={() => openProviderSelected(provider.id)} defaultAction={providerActions.defaultAction(providerActionsCtx)?.(provider) ?? null}>
-                                <EntityCard.Header
-                                    title={
-                                        <div className="flex items-center gap-2">
-                                            <Building2 className="h-4 w-4 text-primary" />
-                                            {provider.name}
-                                        </div>
-                                    }
-                                    trailing={<StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />}
-                                    actions={providerActions.render(provider, providerActionsCtx)}
-                                />
+                            <AutoEntityCard
+                                key={provider.id}
+                                data={provider}
+                                fields={terminalProviderFields}
+                                title={provider.name}
+                                icon={Building2}
+                                trailing={<StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />}
+                                actions={providerActions.render(provider, providerActionsCtx)}
+                                onClick={() => openProviderSelected(provider.id)}
+                                defaultAction={providerActions.defaultAction(providerActionsCtx)?.(provider) ?? null}
+                            >
                                 <EntityCard.Body>
                                     <EntityCard.Field
                                         label="Recaudación"
@@ -256,7 +220,7 @@ export function PaymentHardwareClientView({
                                         />
                                     )}
                                 </EntityCard.Body>
-                            </EntityCard>
+                            </AutoEntityCard>
                         )}
                     />
                 </div>
@@ -299,17 +263,21 @@ export function PaymentHardwareClientView({
                             </Button>
                         )}
                         renderCard={(device: PaymentTerminalDevice) => (
-                            <EntityCard key={device.id} onClick={() => openDeviceSelected(device.id)} defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}>
-                                    <EntityCard.Header
-                                        title={
-                                            <div className="flex items-center gap-2">
-                                                <Smartphone className="h-4 w-4 text-info" />
-                                                {device.name}
-                                            </div>
-                                        }
-                                        actions={deviceActions.render(device, deviceActionsCtx)}
-                                    />
-                                    <EntityCard.Body>
+                            <AutoEntityCard
+                                key={device.id}
+                                data={device}
+                                fields={terminalDeviceFields}
+                                title={
+                                    <div className="flex items-center gap-2">
+                                        <Smartphone className="h-4 w-4 text-info" />
+                                        {device.name}
+                                    </div>
+                                }
+                                actions={deviceActions.render(device, deviceActionsCtx)}
+                                onClick={() => openDeviceSelected(device.id)}
+                                defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}
+                            >
+                                <EntityCard.Body>
                                     <EntityCard.Field
                                         label="Proveedor"
                                         value={device.provider_name || "Sin proveedor"}
@@ -335,7 +303,7 @@ export function PaymentHardwareClientView({
                                         )}
                                     </div>
                                 </EntityCard.Footer>
-                            </EntityCard>
+                            </AutoEntityCard>
                         )}
                         cardSkeleton={{ showFooter: true }}
                     />

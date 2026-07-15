@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, SkeletonShell,
+    MoneyDisplay, SkeletonShell,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
@@ -15,6 +15,7 @@ import { CreditLineDrawer } from './CreditLineDrawer'
 import type { CreditLine } from './types'
 import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
+import { creditLineFields } from './creditLineFields'
 
 interface Props {
     bankId?: number
@@ -52,16 +53,7 @@ export function CreditLinesClientView({ bankId }: Props) {
 
 
     const columns: ColumnDef<CreditLine>[] = [
-        {
-            accessorKey: 'code',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.code || '—'}</DataCell.Code>,
-        },
-        {
-            accessorKey: 'account_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.account_name}</DataCell.Text>,
-        },
+        ...creditLineFields.toColumns(),
         {
             accessorKey: 'credit_limit',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Límite" className="justify-end" />,
@@ -101,11 +93,6 @@ export function CreditLinesClientView({ bankId }: Props) {
                     </div>
                 )
             },
-        },
-        {
-            accessorKey: 'status',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
         {
             id: 'actions',

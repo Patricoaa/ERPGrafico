@@ -14,6 +14,7 @@ import {
     DataTableColumnHeader,
     DataCell,
     MoneyDisplay,
+    AutoEntityCard,
     EntityCard,
     StatusBadge,
     UnifiedSearchBar,
@@ -39,6 +40,7 @@ import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { unbilledChargeFields } from './unbilledChargeFields'
 
 interface UnbilledChargesClientViewProps {
     bankId: number
@@ -219,19 +221,10 @@ export function UnbilledChargesClientView({
         toast.success('Cargos facturados exitosamente')
     }
 
+    const [dateCol, amountCol] = unbilledChargeFields.toColumns()
+
     const columns: ColumnDef<UnbilledItemRow, unknown>[] = [
-        {
-            accessorKey: 'date',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.date} />
-                </div>
-            ),
-            sortingFn: 'datetime',
-        },
+        dateCol,
         {
             id: 'cuota',
             header: ({ column }) => (
@@ -295,10 +288,7 @@ export function UnbilledChargesClientView({
             enableSorting: false,
         },
         {
-            accessorKey: 'amount',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Monto" className="justify-center" />
-            ),
+            ...amountCol,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
@@ -308,7 +298,6 @@ export function UnbilledChargesClientView({
                     />
                 </div>
             ),
-            sortingFn: 'basic',
         },
         {
             id: 'tipo',
@@ -536,17 +525,19 @@ export function UnbilledChargesClientView({
                         description: 'Los cargos de esta tarjeta de crédito aparecerán aquí antes de ser facturados.',
                     }}
                     renderCard={(item: UnbilledItemRow) => (
-                        <EntityCard>
-                            <EntityCard.Header
-                                title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
-                                subtitle={item.date}
-                                trailing={
-                                    <StatusBadge
-                                        status={item.chargeType || item.source}
-                                        label={item.chargeTypeDisplay || item.source}
-                                    />
-                                }
-                            />
+                        <AutoEntityCard 
+                            key={item.id || item.date + item.amount}
+                            data={item}
+                            fields={unbilledChargeFields}
+                            title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
+                            subtitle={item.date}
+                            trailing={
+                                <StatusBadge
+                                    status={item.chargeType || item.source}
+                                    label={item.chargeTypeDisplay || item.source}
+                                />
+                            }
+                        >
                             <EntityCard.Body>
                                 {item.source === 'pending' && item.notes && (
                                     <EntityCard.Field label="Descripción" value={item.notes} full />
@@ -563,7 +554,7 @@ export function UnbilledChargesClientView({
                                     size="lg"
                                 />
                             </EntityCard.Footer>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                     cardSkeleton={{ showFooter: true }}
                 />

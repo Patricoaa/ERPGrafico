@@ -146,7 +146,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                 </div>
             ),
         },
-        budgetActions.column(actionsCtx),
+        budgetActions.auto(actionsCtx),
     ]
 
     return (

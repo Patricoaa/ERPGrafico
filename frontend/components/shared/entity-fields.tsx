@@ -24,6 +24,9 @@ type FieldType =
 
 type FieldSurface = "table" | "card" | "kanban"
 
+type ChipIntent = "neutral" | "primary" | "success" | "warning" | "destructive" | "info"
+type FlowDirection = "inflow" | "outflow" | "neutral"
+
 interface FieldDef<T> {
     key: keyof T & string
     type: FieldType
@@ -40,6 +43,35 @@ interface FieldDef<T> {
     kanbanOptions?: {
         priority?: "primary" | "secondary"
     }
+
+    // ── Per-row dynamic props ──────────────────────────────────────────────
+    // Static value OR callback resolved per-row by the factory.
+    // Callbacks return scalars only, never JSX.
+
+    /** Conditional className — resolves per row via (parsedValue, entity). */
+    className?: string | ((value: unknown, entity: T) => string)
+
+    // Currency / CurrencyFlow
+    /** Currency code — static or derived per entity. */
+    currency?: string | ((entity: T) => string)
+    /** Show zero values as dash — static or based on parsed numeric value. */
+    showZeroAsDash?: boolean | ((value: number) => boolean)
+
+    // Status
+    /** Dynamic label override for the StatusBadge (replaces translateStatus). */
+    getLabel?: (entity: T) => string
+
+    // Chip
+    /** Chip intent — static or derived from entity fields. */
+    intent?: ChipIntent | ((entity: T) => ChipIntent)
+
+    // CurrencyFlow / NumericFlow
+    /** Flow direction — static or derived from entity. */
+    direction?: FlowDirection | ((entity: T) => FlowDirection)
+
+    // Number / Text
+    /** Suffix text — static or derived per entity (e.g. uom_name, "%"). */
+    suffix?: string | ((entity: T) => string)
 }
 
 export interface CardField {
@@ -72,43 +104,108 @@ function resolveValue<T>(def: FieldDef<T>, entity: T): unknown {
     return def.get ? def.get(entity) : entity[def.key]
 }
 
+function resolveDyn<TContext>(
+    prop: unknown,
+    context: TContext,
+): unknown {
+    return typeof prop === "function" ? (prop as (ctx: TContext) => unknown)(context) : prop
+}
+
 // ─── Cell Renderers ──────────────────────────────────────────────────────────
 
 function renderCellValue<T>(def: FieldDef<T>, entity: T): ReactNode {
     const value = resolveValue(def, entity)
     const extra = def.cellProps ?? {}
+    const resolvedClassName = typeof def.className === "function"
+        ? def.className(value, entity)
+        : def.className
 
     switch (def.type) {
-        case "text":
-            return <DataCell.Text {...extra}>{(value as string) ?? "-"}</DataCell.Text>
+        case "text": {
+            const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
+            const text = (value as string) ?? "-"
+            return <DataCell.Text className={resolvedClassName} {...extra}>{suffixValue ? `${text}${suffixValue}` : text}</DataCell.Text>
+        }
         case "code":
-            return <DataCell.Code {...extra}>{(value as string) ?? "-"}</DataCell.Code>
+            return <DataCell.Code className={resolvedClassName} {...extra}>{(value as string) ?? "-"}</DataCell.Code>
         case "date":
-            return <DataCell.Date value={value as string | Date} {...extra} />
-        case "currency":
-            return <DataCell.Currency value={value as number | string} {...extra} />
-        case "status":
-            return <DataCell.Status status={value as string} {...extra} />
-        case "number":
-            return <DataCell.Number value={value as number | string} {...extra} />
+            return <DataCell.Date value={value as string | Date} className={resolvedClassName} {...extra} />
+        case "currency": {
+            const currencyValue = typeof def.currency === "function" ? def.currency(entity) : def.currency
+            const showZeroAsDashValue = typeof def.showZeroAsDash === "function"
+                ? def.showZeroAsDash(value as number)
+                : def.showZeroAsDash
+            return (
+                <DataCell.Currency
+                    value={value as number | string}
+                    className={resolvedClassName}
+                    {...(currencyValue !== undefined && { currency: currencyValue })}
+                    {...(showZeroAsDashValue !== undefined && { showZeroAsDash: showZeroAsDashValue })}
+                    {...extra}
+                />
+            )
+        }
+        case "status": {
+            const labelValue = def.getLabel ? def.getLabel(entity) : undefined
+            return (
+                <DataCell.Status
+                    status={value as string}
+                    className={resolvedClassName}
+                    {...(labelValue !== undefined && { label: labelValue })}
+                    {...extra}
+                />
+            )
+        }
+        case "number": {
+            const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
+            return (
+                <DataCell.Number
+                    value={value as number | string}
+                    className={resolvedClassName}
+                    {...(suffixValue !== undefined && { suffix: suffixValue })}
+                    {...extra}
+                />
+            )
+        }
         case "secondary":
-            return <DataCell.Secondary {...extra}>{(value as string) ?? "-"}</DataCell.Secondary>
+            return <DataCell.Secondary className={resolvedClassName} {...extra}>{(value as string) ?? "-"}</DataCell.Secondary>
         case "contact":
-            return <DataCell.ContactLink contactId={value as number | string}>{(value as string) ?? "-"}</DataCell.ContactLink>
-        case "chip":
-            return <DataCell.Chip {...extra}>{String(value ?? "")}</DataCell.Chip>
+            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{(value as string) ?? "-"}</DataCell.ContactLink>
+        case "chip": {
+            const intentValue = typeof def.intent === "function" ? def.intent(entity) : def.intent
+            return (
+                <DataCell.Chip
+                    className={resolvedClassName}
+                    {...(intentValue !== undefined && { intent: intentValue })}
+                    {...extra}
+                >
+                    {String(value ?? "")}
+                </DataCell.Chip>
+            )
+        }
         case "icon": {
             const icon = extra.icon as LucideIcon | undefined
-            return icon ? <DataCell.Icon icon={icon} {...extra} /> : null
+            return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} {...extra} /> : null
         }
         case "progress":
-            return <DataCell.Progress value={value as number} {...extra} />
+            return <DataCell.Progress value={value as number} className={resolvedClassName} {...extra} />
         case "numericFlow":
-            return <DataCell.NumericFlow value={value as number | string} {...extra} />
-        case "currencyFlow":
-            return <DataCell.CurrencyFlow value={value as number | string} direction="neutral" {...extra} />
+            return <DataCell.NumericFlow value={value as number | string} className={resolvedClassName} {...extra} />
+        case "currencyFlow": {
+            const directionValue = typeof def.direction === "function" ? def.direction(entity) : def.direction
+            const currencyValue = typeof def.currency === "function" ? def.currency(entity) : def.currency
+            return (
+                <DataCell.CurrencyFlow
+                    value={value as number | string}
+                    direction={directionValue ?? "neutral"}
+                    className={resolvedClassName}
+                    {...(currencyValue !== undefined && { currency: currencyValue })}
+                    {...extra}
+                />
+            )
+        }
         default:
-            return <DataCell.Text>{String(value ?? "-")}</DataCell.Text>
+            return <DataCell.Text className={resolvedClassName}>{String(value ?? "-")}</DataCell.Text>
     }
 }
 
@@ -119,38 +216,101 @@ function renderCardCell<T>(def: FieldDef<T>, entity: T): ReactNode {
 function renderKanbanCell<T>(def: FieldDef<T>, entity: T): ReactNode {
     const value = resolveValue(def, entity)
     const base = def.cellProps ?? {}
+    const resolvedClassName = typeof def.className === "function"
+        ? def.className(value, entity)
+        : def.className
 
     switch (def.type) {
-        case "text":
-            return <DataCell.Text size="sm" {...base}>{(value as string) ?? "-"}</DataCell.Text>
+        case "text": {
+            const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
+            const text = (value as string) ?? "-"
+            return <DataCell.Text size="sm" className={resolvedClassName} {...base}>{suffixValue ? `${text}${suffixValue}` : text}</DataCell.Text>
+        }
         case "code":
-            return <DataCell.Code size="sm" {...base}>{(value as string) ?? "-"}</DataCell.Code>
+            return <DataCell.Code size="sm" className={resolvedClassName} {...base}>{(value as string) ?? "-"}</DataCell.Code>
         case "date":
-            return <DataCell.Date value={value as string | Date} size="sm" {...base} />
-        case "currency":
-            return <DataCell.Currency value={value as number | string} size="sm" {...base} />
-        case "status":
-            return <DataCell.Status status={value as string} variant="dot" {...base} />
-        case "number":
-            return <DataCell.Number value={value as number | string} size="sm" {...base} />
+            return <DataCell.Date value={value as string | Date} size="sm" className={resolvedClassName} {...base} />
+        case "currency": {
+            const currencyValue = typeof def.currency === "function" ? def.currency(entity) : def.currency
+            const showZeroAsDashValue = typeof def.showZeroAsDash === "function"
+                ? def.showZeroAsDash(value as number)
+                : def.showZeroAsDash
+            return (
+                <DataCell.Currency
+                    value={value as number | string}
+                    size="sm"
+                    className={resolvedClassName}
+                    {...(currencyValue !== undefined && { currency: currencyValue })}
+                    {...(showZeroAsDashValue !== undefined && { showZeroAsDash: showZeroAsDashValue })}
+                    {...base}
+                />
+            )
+        }
+        case "status": {
+            const labelValue = def.getLabel ? def.getLabel(entity) : undefined
+            return (
+                <DataCell.Status
+                    status={value as string}
+                    variant="dot"
+                    className={resolvedClassName}
+                    {...(labelValue !== undefined && { label: labelValue })}
+                    {...base}
+                />
+            )
+        }
+        case "number": {
+            const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
+            return (
+                <DataCell.Number
+                    value={value as number | string}
+                    size="sm"
+                    className={resolvedClassName}
+                    {...(suffixValue !== undefined && { suffix: suffixValue })}
+                    {...base}
+                />
+            )
+        }
         case "secondary":
-            return <DataCell.Secondary size="sm" {...base}>{(value as string) ?? "-"}</DataCell.Secondary>
+            return <DataCell.Secondary size="sm" className={resolvedClassName} {...base}>{(value as string) ?? "-"}</DataCell.Secondary>
         case "contact":
             return <DataCell.ContactLink contactId={value as number | string}>{(value as string) ?? "-"}</DataCell.ContactLink>
-        case "chip":
-            return <DataCell.Chip size="xs" {...base}>{String(value ?? "")}</DataCell.Chip>
+        case "chip": {
+            const intentValue = typeof def.intent === "function" ? def.intent(entity) : def.intent
+            return (
+                <DataCell.Chip
+                    size="xs"
+                    className={resolvedClassName}
+                    {...(intentValue !== undefined && { intent: intentValue })}
+                    {...base}
+                >
+                    {String(value ?? "")}
+                </DataCell.Chip>
+            )
+        }
         case "icon": {
             const icon = base.icon as LucideIcon | undefined
-            return icon ? <DataCell.Icon icon={icon} {...base} /> : null
+            return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} {...base} /> : null
         }
         case "progress":
-            return <DataCell.Progress value={value as number} {...base} />
+            return <DataCell.Progress value={value as number} className={resolvedClassName} {...base} />
         case "numericFlow":
-            return <DataCell.NumericFlow value={value as number | string} size="sm" {...base} />
-        case "currencyFlow":
-            return <DataCell.CurrencyFlow value={value as number | string} size="sm" direction="neutral" {...base} />
+            return <DataCell.NumericFlow value={value as number | string} size="sm" className={resolvedClassName} {...base} />
+        case "currencyFlow": {
+            const directionValue = typeof def.direction === "function" ? def.direction(entity) : def.direction
+            const currencyValue = typeof def.currency === "function" ? def.currency(entity) : def.currency
+            return (
+                <DataCell.CurrencyFlow
+                    value={value as number | string}
+                    size="sm"
+                    direction={directionValue ?? "neutral"}
+                    className={resolvedClassName}
+                    {...(currencyValue !== undefined && { currency: currencyValue })}
+                    {...base}
+                />
+            )
+        }
         default:
-            return <DataCell.Text size="sm">{String(value ?? "-")}</DataCell.Text>
+            return <DataCell.Text size="sm" className={resolvedClassName}>{String(value ?? "-")}</DataCell.Text>
     }
 }
 
@@ -159,38 +319,96 @@ function renderKanbanCell<T>(def: FieldDef<T>, entity: T): ReactNode {
 function renderRowCell<T>(def: FieldDef<T>, rowOriginal: T, rowGetValue: (key: string) => unknown): ReactNode {
     const value = def.get ? def.get(rowOriginal) : rowGetValue(def.key)
     const extra = def.cellProps ?? {}
+    const resolvedClassName = typeof def.className === "function"
+        ? def.className(value, rowOriginal)
+        : def.className
 
     switch (def.type) {
-        case "text":
-            return <DataCell.Text {...extra}>{(value as string) ?? "-"}</DataCell.Text>
+        case "text": {
+            const suffixValue = typeof def.suffix === "function" ? def.suffix(rowOriginal) : def.suffix
+            const text = (value as string) ?? "-"
+            return <DataCell.Text className={resolvedClassName} {...extra}>{suffixValue ? `${text}${suffixValue}` : text}</DataCell.Text>
+        }
         case "code":
-            return <DataCell.Code {...extra}>{(value as string) ?? "-"}</DataCell.Code>
+            return <DataCell.Code className={resolvedClassName} {...extra}>{(value as string) ?? "-"}</DataCell.Code>
         case "date":
-            return <DataCell.Date value={value as string | Date} {...extra} />
-        case "currency":
-            return <DataCell.Currency value={value as number | string} {...extra} />
-        case "status":
-            return <DataCell.Status status={value as string} {...extra} />
-        case "number":
-            return <DataCell.Number value={value as number | string} {...extra} />
+            return <DataCell.Date value={value as string | Date} className={resolvedClassName} {...extra} />
+        case "currency": {
+            const currencyValue = typeof def.currency === "function" ? def.currency(rowOriginal) : def.currency
+            const showZeroAsDashValue = typeof def.showZeroAsDash === "function"
+                ? def.showZeroAsDash(value as number)
+                : def.showZeroAsDash
+            return (
+                <DataCell.Currency
+                    value={value as number | string}
+                    className={resolvedClassName}
+                    {...(currencyValue !== undefined && { currency: currencyValue })}
+                    {...(showZeroAsDashValue !== undefined && { showZeroAsDash: showZeroAsDashValue })}
+                    {...extra}
+                />
+            )
+        }
+        case "status": {
+            const labelValue = def.getLabel ? def.getLabel(rowOriginal) : undefined
+            return (
+                <DataCell.Status
+                    status={value as string}
+                    className={resolvedClassName}
+                    {...(labelValue !== undefined && { label: labelValue })}
+                    {...extra}
+                />
+            )
+        }
+        case "number": {
+            const suffixValue = typeof def.suffix === "function" ? def.suffix(rowOriginal) : def.suffix
+            return (
+                <DataCell.Number
+                    value={value as number | string}
+                    className={resolvedClassName}
+                    {...(suffixValue !== undefined && { suffix: suffixValue })}
+                    {...extra}
+                />
+            )
+        }
         case "secondary":
-            return <DataCell.Secondary {...extra}>{(value as string) ?? "-"}</DataCell.Secondary>
+            return <DataCell.Secondary className={resolvedClassName} {...extra}>{(value as string) ?? "-"}</DataCell.Secondary>
         case "contact":
-            return <DataCell.ContactLink contactId={value as number | string}>{(value as string) ?? "-"}</DataCell.ContactLink>
-        case "chip":
-            return <DataCell.Chip {...extra}>{String(value ?? "")}</DataCell.Chip>
+            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{(value as string) ?? "-"}</DataCell.ContactLink>
+        case "chip": {
+            const intentValue = typeof def.intent === "function" ? def.intent(rowOriginal) : def.intent
+            return (
+                <DataCell.Chip
+                    className={resolvedClassName}
+                    {...(intentValue !== undefined && { intent: intentValue })}
+                    {...extra}
+                >
+                    {String(value ?? "")}
+                </DataCell.Chip>
+            )
+        }
         case "icon": {
             const icon = extra.icon as LucideIcon | undefined
-            return icon ? <DataCell.Icon icon={icon} {...extra} /> : null
+            return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} {...extra} /> : null
         }
         case "progress":
-            return <DataCell.Progress value={value as number} {...extra} />
+            return <DataCell.Progress value={value as number} className={resolvedClassName} {...extra} />
         case "numericFlow":
-            return <DataCell.NumericFlow value={value as number | string} {...extra} />
-        case "currencyFlow":
-            return <DataCell.CurrencyFlow value={value as number | string} direction="neutral" {...extra} />
+            return <DataCell.NumericFlow value={value as number | string} className={resolvedClassName} {...extra} />
+        case "currencyFlow": {
+            const directionValue = typeof def.direction === "function" ? def.direction(rowOriginal) : def.direction
+            const currencyValue = typeof def.currency === "function" ? def.currency(rowOriginal) : def.currency
+            return (
+                <DataCell.CurrencyFlow
+                    value={value as number | string}
+                    direction={directionValue ?? "neutral"}
+                    className={resolvedClassName}
+                    {...(currencyValue !== undefined && { currency: currencyValue })}
+                    {...extra}
+                />
+            )
+        }
         default:
-            return <DataCell.Text>{String(value ?? "-")}</DataCell.Text>
+            return <DataCell.Text className={resolvedClassName}>{String(value ?? "-")}</DataCell.Text>
     }
 }
 
@@ -202,6 +420,15 @@ function renderRowCell<T>(def: FieldDef<T>, rowOriginal: T, rowGetValue: (key: s
  *
  * Defines fields once and generates the correct representation for each surface,
  * eliminating the DRY violation of re-mapping the same data → DataCell per view.
+ *
+ * Supports per-row dynamic props via callbacks:
+ * - `className`: conditional styling based on value/entity
+ * - `getLabel`: dynamic StatusBadge label
+ * - `intent`: dynamic Chip intent
+ * - `direction`: dynamic CurrencyFlow/NumericFlow direction
+ * - `suffix`: dynamic Number/Text suffix (e.g. UoM, "%")
+ * - `showZeroAsDash`: dynamic zero handling
+ * - `currency`: dynamic currency code
  *
  * Usage:
  * ```tsx

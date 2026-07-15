@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { ActionConfirmModal, Chip, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, AutoEntityCard, Chip, EntityCard, StatusBadge } from '@/components/shared'
 import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
@@ -429,13 +429,17 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                 description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
                             }}
                             renderCard={(sub: Subscription) => (
-                                <EntityCard key={sub.id} onClick={() => openSubscription(sub.id, "edit")} defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}>
-                                    <EntityCard.Header
-                                        title={sub.product_name}
-                                        subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
-                                        trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
-                                        actions={subscriptionActions.render(sub, actionsCtx)}
-                                    />
+                                <AutoEntityCard 
+                                    key={sub.id} 
+                                    data={sub}
+                                    fields={subscriptionFields}
+                                    title={sub.product_name}
+                                    subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
+                                    onClick={() => openSubscription(sub.id, "edit")} 
+                                    defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
+                                    trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
+                                    actions={subscriptionActions.render(sub, actionsCtx)}
+                                >
                                     <EntityCard.Body>
                                         <EntityCard.Field label="Categoría" value={sub.category_name || '-'} />
                                         <EntityCard.Field label="Proveedor" value={sub.supplier_name || '-'} />
@@ -443,7 +447,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                             <EntityCard.Field label="Próximo Pago" value={sub.next_payment_date} />
                                         )}
                                     </EntityCard.Body>
-                                </EntityCard>
+                                </AutoEntityCard>
                             )}
                         />
                     </div>

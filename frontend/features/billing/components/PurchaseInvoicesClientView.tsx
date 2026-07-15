@@ -14,8 +14,9 @@ import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal } from "@/features/purchasing"
 import { UnifiedNoteWizard } from '@/features/notes'
 
-import { DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createContactColumn, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, createCodeColumn, DataTableColumnHeader, AutoEntityCard } from '@/components/shared'
 import { DataCell } from '@/components/shared'
+import { purchaseInvoiceFields } from "@/features/billing/purchaseInvoiceFields"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -115,7 +116,7 @@ export function PurchaseInvoicesClientView() {
         createCodeColumn<Invoice>("number", "Folio", {
             render: (row) => <>{row.display_id ?? row.number}</>,
         }),
-        createDateColumn<Invoice>("date", "Fecha"),
+        ...purchaseInvoiceFields.toColumns(),
         {
             accessorKey: "dte_type",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
@@ -137,8 +138,6 @@ export function PurchaseInvoicesClientView() {
                 )
             },
         },
-        createContactColumn<Invoice>("partner_name", "Proveedor", "partner"),
-        createCurrencyColumn<Invoice>("total", "Total"),
         {
             id: "payment_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Pagado/Devuelto" className="justify-center" />,
@@ -238,6 +237,32 @@ export function PurchaseInvoicesClientView() {
                         description: "Los documentos de compra registrados aparecerán aquí.",
                     }}
                     cardGroupBy={{ field: 'date', sort: 'desc' }}
+                    renderCard={(data: Invoice) => {
+                        const d = data as unknown as Record<string, unknown>
+                        return (
+                            <AutoEntityCard
+                                key={data.id}
+                                data={data}
+                                fields={purchaseInvoiceFields}
+                                title={d.partner_name as string ?? d.reference as string ?? `Documento #${data.id}`}
+                                subtitle={d.date as string}
+                                isSelected={hubConfig?.invoiceId === data.id}
+                                onClick={() => {
+                                    const isSelected = hubConfig?.invoiceId === data.id
+                                    if (isSelected && isHubOpen) {
+                                        closeHub()
+                                    } else {
+                                        openHub({
+                                            orderId: data.purchase_order || null,
+                                            invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type) ? data.id : null,
+                                            type: 'purchase',
+                                            onActionSuccess: fetchDocuments
+                                        })
+                                    }
+                                }}
+                            />
+                        )
+                    }}
                 />
             </div>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number ?? '', document_attachment: null }} />}
