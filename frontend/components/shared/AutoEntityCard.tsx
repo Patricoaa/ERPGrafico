@@ -41,6 +41,8 @@ export interface AutoEntityCardProps<TData> {
     center?: React.ReactNode
     /** Optional children to render custom blocks like Metrics or Footer inside the card */
     children?: React.ReactNode
+    /** Card display variant. Default is "default" (body with labels). "compact" hides body and puts values in subtitle. */
+    variant?: "default" | "compact"
 }
 
 /**
@@ -65,7 +67,8 @@ export function AutoEntityCard<TData>({
     className,
     imageSrc, 
     trailing,
-    children
+    children,
+    variant = "default"
 }: AutoEntityCardProps<TData>) {
     const cardFields = fields.toCardFields(data);
     
@@ -74,19 +77,32 @@ export function AutoEntityCard<TData>({
     const displaySubtitle = hasOverrideTitle ? subtitle : cardFields[1]?.value;
     const restFields = hasOverrideTitle ? cardFields : cardFields.slice(2);
 
+    const compactSubtitle = variant === "compact" && restFields.length > 0 ? (
+        <div className="flex items-center gap-2 overflow-hidden text-xs text-muted-foreground mt-0.5">
+            {displaySubtitle && <span className="truncate shrink-0">{displaySubtitle}</span>}
+            {displaySubtitle && <span className="opacity-40 shrink-0">•</span>}
+            {restFields.map((field, i) => (
+                <React.Fragment key={field.key}>
+                    <span className="truncate shrink-0">{field.value ?? <span className="opacity-40">—</span>}</span>
+                    {i < restFields.length - 1 && <span className="opacity-40 shrink-0">•</span>}
+                </React.Fragment>
+            ))}
+        </div>
+    ) : displaySubtitle;
+
     return (
-        <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className}>
+        <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={variant === "compact" ? "compact" : "full"}>
             <EntityCard.Header 
                 icon={icon}
                 iconClassName={iconClassName}
                 imageSrc={imageSrc}
                 title={displayTitle} 
-                subtitle={displaySubtitle} 
+                subtitle={compactSubtitle} 
                 center={center}
                 actions={actions}
                 trailing={trailing}
             />
-            {restFields.length > 0 && (
+            {variant !== "compact" && restFields.length > 0 && (
                 <EntityCard.Body>
                     {restFields.map(field => (
                         <EntityCard.Field 
