@@ -34,7 +34,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
                     risk === 'HIGH' ? 'Alto' : 'Crítico'
 
             return (
-                <DataCell.Text weight="black" uppercase size="sm" intent={intent}>
+                <DataCell.Text weight="bold" uppercase size="sm" intent={intent}>
                     {label}
                 </DataCell.Text>
             )
@@ -47,7 +47,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             const contact = row.original
             const limit = Number(contact.credit_limit || 0)
             return (
-                <DataCell.Currency value={limit} weight="bold" intent="primary" interactive onClick={(e) => { e.stopPropagation(); onEdit(contact); }} />
+                <DataCell.Currency value={limit} weight="bold" intent="muted" interactive onClick={(e) => { e.stopPropagation(); onEdit(contact); }} />
             )
         },
     },
@@ -55,14 +55,14 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
         accessorKey: "credit_balance_used",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-center" />,
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.credit_balance_used} intent="info" weight="black" />
+            <DataCell.Currency value={row.original.credit_balance_used} intent="muted" weight="bold" />
         ),
     },
     {
         id: "current",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Vigente" className="justify-center" />,
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.credit_aging.current} intent="success" />
+            <DataCell.Currency value={row.original.credit_aging.current} intent="muted" />
         ),
     },
     {
@@ -72,7 +72,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             const aging = row.original.credit_aging
             const val = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus)
             return val > 0 ? (
-                <DataCell.Currency value={val} intent="destructive" weight="black" />
+                <DataCell.Currency value={val} intent="muted" weight="bold" />
             ) : (
                 <span className="text-muted-foreground/30">—</span>
             )
@@ -146,7 +146,7 @@ export const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "effective_total",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.effective_total} weight="black" />
+            <DataCell.Currency value={row.original.effective_total} weight="bold" />
         )
     },
     {

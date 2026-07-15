@@ -9,7 +9,7 @@ import { toast } from "sonner"
 
 import { BaseModal, DataTableView, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { DataCell, Chip } from '@/components/shared'
 import { attributeActions, type AttributeActionsCtx } from './attributeActions'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -200,7 +200,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
             cell: ({ row }) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     <Tag className="h-4 w-4 text-primary opacity-70" />
-                    <DataCell.Text weight="black" uppercase size="md">
+                    <DataCell.Text weight="bold" uppercase size="md">
                         {row.getValue("name")}
                     </DataCell.Text>
                 </div>
@@ -253,7 +253,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                 )
             },
         },
-        attributeActions.column(attributeActionsCtx) as ColumnDef<ProductAttribute>,
+        attributeActions.auto(attributeActionsCtx) as ColumnDef<ProductAttribute>,
     ], [handleDeleteValue, handleDeleteAttribute, attributeActionsCtx])
 
     const bulkActions = useMemo<BulkAction<ProductAttribute>[]>(() => [
@@ -308,10 +308,15 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                                 icon={Tag}
                                 title={attr.name}
                                 subtitle={`${attr.values?.length ?? 0} valores`}
+                                actions={attributeActions.render(attr, attributeActionsCtx)}
                             />
                             <EntityCard.Body>
                                 {attr.values && attr.values.length > 0 && (
-                                    <EntityCard.Field label="Valores" value={attr.values.map(v => v.value).join(', ')} />
+                                    <EntityCard.Field label="Valores" value={
+                                        <div className="flex flex-wrap gap-1">
+                                            {attr.values.map(v => <Chip key={v.id}>{v.value}</Chip>)}
+                                        </div>
+                                    } />
                                 )}
                             </EntityCard.Body>
                         </EntityCard>
