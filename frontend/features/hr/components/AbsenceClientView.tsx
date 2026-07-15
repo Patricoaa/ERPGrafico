@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, EntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, EntityCard, AutoEntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -111,18 +111,15 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                         description: "Las ausencias, permisos y licencias que registres aparecerán aquí.",
                     }}
                     renderCard={(absence: Absence) => (
-                        <EntityCard key={absence.id} onClick={() => openSelected(absence.id)} defaultAction={absenceActions.defaultAction(absenceActionsCtx)?.(absence) ?? null}>
-                            <EntityCard.Header
-                                title={absence.employee_name}
-                                subtitle={absence.absence_type_display}
-                                actions={absenceActions.render(absence, absenceActionsCtx)}
-                            />
-                            <EntityCard.Body>
-                                {absenceFields.toCardFields(absence, { only: ["startDate", "endDate", "days"] }).map(f => (
-                                    <EntityCard.Field key={f.key} label={f.label} value={f.value} />
-                                ))}
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={absence.id}
+                            data={absence}
+                            fields={absenceFields}
+                            title={absence.employee_name}
+                            subtitle={absence.absence_type_display}
+                            actions={absenceActions.render(absence, absenceActionsCtx)}
+                            defaultAction={absenceActions.defaultAction(absenceActionsCtx)?.(absence) ?? (() => openSelected(absence.id))}
+                        />
                     )}
                 />
             </div>

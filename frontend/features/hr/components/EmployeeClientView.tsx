@@ -5,14 +5,14 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, AutoEntityCard } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr"
 import { employeeUnifiedSearchDef } from "../unifiedSearchDef"
+import { employeeFields } from "../employeeFields"
 
 interface EmployeeClientViewProps {
     initialEmployees?: Employee[]
@@ -54,78 +54,65 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
         },
     }
 
-    const columns: ColumnDef<Employee>[] = [
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div><DataCell.Code>{row.getValue("display_id")}</DataCell.Code></div>,
-        },
-        {
-            accessorFn: (row) => row.contact_detail?.name || "",
-            id: "contact",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto" className="justify-center" />,
-            cell: ({ row }) => {
-                const emp = row.original;
-                return (
-                    <div>
-                        <DataCell.ContactLink contactId={emp.contact}>{emp.contact_detail?.name}</DataCell.ContactLink>
-                    </div>
-                );
+    const columns: ColumnDef<Employee>[] = (() => {
+        const [displayIdCol, , baseSalaryCol, statusCol] = employeeFields.toColumns()
+        return [
+            displayIdCol,
+            {
+                accessorFn: (row) => row.contact_detail?.name || "",
+                id: "contact",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto" className="justify-center" />,
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <div>
+                            <DataCell.ContactLink contactId={emp.contact}>{emp.contact_detail?.name}</DataCell.ContactLink>
+                        </div>
+                    );
+                },
             },
-        },
-        {
-            id: "prevision",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Previsión" className="justify-center" />,
-            cell: ({ row }) => {
-                const emp = row.original;
-                return (
-                    <DataCell.Text>
-                        {emp.afp_detail?.name || 'No disp.'}
-                    </DataCell.Text>
-                );
+            {
+                id: "prevision",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Previsión" className="justify-center" />,
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <DataCell.Text>
+                            {emp.afp_detail?.name || 'No disp.'}
+                        </DataCell.Text>
+                    );
+                },
             },
-        },
-        {
-            id: "salud",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Salud" className="justify-center" />,
-            cell: ({ row }) => {
-                const emp = row.original;
-                return (
-                    <DataCell.Text>
-                        {emp.salud_type_display || 'No disp.'}
-                    </DataCell.Text>
-                );
+            {
+                id: "salud",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Salud" className="justify-center" />,
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <DataCell.Text>
+                            {emp.salud_type_display || 'No disp.'}
+                        </DataCell.Text>
+                    );
+                },
             },
-        },
-        {
-            accessorKey: "position",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cargo" className="justify-center" />,
-            cell: ({ row }) => {
-                const emp = row.original;
-                return (
-                    <div className="flex flex-col items-center justify-center w-full">
-                        <DataCell.Text>{emp.position || '—'}</DataCell.Text>
-                        <DataCell.Secondary>{emp.department}</DataCell.Secondary>
-                    </div>
-                );
+            {
+                accessorKey: "position",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Cargo" className="justify-center" />,
+                cell: ({ row }) => {
+                    const emp = row.original;
+                    return (
+                        <div className="flex flex-col items-center justify-center w-full">
+                            <DataCell.Text>{emp.position || '—'}</DataCell.Text>
+                            <DataCell.Secondary>{emp.department}</DataCell.Secondary>
+                        </div>
+                    );
+                },
             },
-        },
-        {
-            accessorKey: "base_salary",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Sueldo Base" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Currency value={parseFloat((row.getValue("base_salary") as string) || "0")} />
-            ),
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Status status={row.getValue("status") as string} label={row.original.status_display} />
-            ),
-        },
-        employeeActions.column(actionsCtx),
-    ]
+            baseSalaryCol,
+            statusCol,
+            employeeActions.auto(actionsCtx),
+        ]
+    })()
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -169,30 +156,31 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                         description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
                     }}
                     renderCard={(emp: Employee) => (
-                        <EntityCard key={emp.id} defaultAction={employeeActions.defaultAction(actionsCtx)?.(emp) ?? null} onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(emp.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
-                            <EntityCard.Header
-                                title={emp.contact_detail?.name || "Sin nombre"}
-                                subtitle={emp.contact_detail?.tax_id || emp.display_id}
-                                trailing={
-                                    <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
-                                }
-                                actions={employeeActions.render(emp, actionsCtx)}
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Cargo" value={emp.position || '—'} />
-                                <EntityCard.Field label="Dpto." value={emp.department || '—'} />
-                                <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />
-                                <EntityCard.Field label="Salud" value={emp.salud_type_display || 'N/A'} />
-                            </EntityCard.Body>
+                        <AutoEntityCard
+                            key={emp.id}
+                            data={emp}
+                            fields={employeeFields}
+                            title={emp.contact_detail?.name || "Sin nombre"}
+                            subtitle={emp.contact_detail?.tax_id || emp.display_id}
+                            trailing={<StatusBadge status={emp.status} label={emp.status_display} size="sm" />}
+                            actions={employeeActions.render(emp, actionsCtx)}
+                            defaultAction={employeeActions.defaultAction(actionsCtx)?.(emp) ?? (() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(emp.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            })}
+                        >
+                            <EntityCard.Metrics metrics={[
+                                { label: 'Cargo', value: emp.position || '—' },
+                                { label: 'Dpto.', value: emp.department || '—' },
+                                { label: 'Previsión', value: `AFP: ${emp.afp_detail?.name || 'N/A'}` },
+                                { label: 'Salud', value: emp.salud_type_display || 'N/A' },
+                            ]} />
                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
                                 <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} weight="bold" size="lg" />
                             </EntityCard.Footer>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                     cardSkeleton={{ showFooter: true }}
                 />

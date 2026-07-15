@@ -29,6 +29,8 @@ export interface AutoEntityCardProps<TData> {
     title?: React.ReactNode
     /** Optional explicit subtitle */
     subtitle?: React.ReactNode
+    /** Optional children to render custom blocks like Metrics or Footer inside the card */
+    children?: React.ReactNode
 }
 
 /**
@@ -47,7 +49,8 @@ export function AutoEntityCard<TData>({
     actions, 
     defaultAction, 
     imageSrc, 
-    trailing 
+    trailing,
+    children
 }: AutoEntityCardProps<TData>) {
     const cardFields = fields.toCardFields(data);
     
@@ -77,6 +80,7 @@ export function AutoEntityCard<TData>({
                     ))}
                 </EntityCard.Body>
             )}
+            {children}
         </EntityCard>
     );
 }

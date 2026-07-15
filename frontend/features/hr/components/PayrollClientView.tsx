@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, createCodeColumn, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, DataCell, AutoEntityCard, EntityCard, StatusBadge, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
@@ -15,6 +15,7 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr"
 import { useServerDate } from "@/hooks/useServerDate"
 import { payrollUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
+import { payrollFields } from '../payrollFields'
 
 interface PayrollClientViewProps {
     initialPayrolls?: Payroll[]
@@ -132,23 +133,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
     }
 
     const columns: ColumnDef<Payroll>[] = [
-        createCodeColumn<Payroll>("display_id", "Número"),
-        {
-            accessorFn: (row) => row.employee_name || "",
-            id: "employee",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.employee_name}</DataCell.Text>,
-        },
-        {
-            accessorKey: "period_label",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("period_label") as string}</DataCell.Secondary>,
-        },
-        {
-            accessorKey: "total_haberes",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} />,
-        },
+        ...payrollFields.toColumns(),
         {
             accessorKey: "legal_deductions_worker",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
@@ -169,15 +154,8 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" className="justify-center" />,
             cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).advances_total || "0")} />,
         },
-        {
-            accessorKey: "net_salary",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Líquido" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={parseFloat(row.getValue("net_salary"))} />,
-        },
-        createStatusColumn<Payroll>("status", "Estado"),
-        createStatusColumn<Payroll>("remuneration_paid_status", "Remuneración"),
         createStatusColumn<Payroll>("previred_paid_status", "Previred"),
-        payrollActions.column(actionsCtx, "Acciones"),
+        payrollActions.auto(actionsCtx, "Acciones"),
     ]
 
     return (
@@ -224,6 +202,23 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                         title: "Aún no hay nóminas",
                         description: "Genera una nómina para liquidar los sueldos del período.",
                     }}
+                    renderCard={(payroll: Payroll) => (
+                        <AutoEntityCard
+                            key={payroll.id}
+                            data={payroll}
+                            fields={payrollFields}
+                            title={(payroll as Payroll & Record<string, unknown>).employee_name as string || '---'}
+                            subtitle={payroll.period_label || payroll.display_id}
+                            trailing={<StatusBadge status={payroll.status} label={payroll.status_display} size="sm" />}
+                            actions={payrollActions.render(payroll, actionsCtx)}
+                            defaultAction={() => openDetail(payroll.id)}
+                        >
+                            <EntityCard.Metrics metrics={[
+                                { label: 'Haberes', value: <DataCell.Currency value={parseFloat((payroll as Payroll & Record<string, string>).total_haberes || '0')} /> },
+                                { label: 'Líquido', value: <DataCell.Currency value={parseFloat((payroll as Payroll & Record<string, string>).net_salary || '0')} />, variant: 'success' },
+                            ]} />
+                        </AutoEntityCard>
+                    )}
                 />
             </div>
 
