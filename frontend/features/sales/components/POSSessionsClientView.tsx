@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, DataCell, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
+import { posSessionFields } from "../posSessionFields"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
 import { toast } from "sonner"
 import { POSReport, type POSReportData } from "@/features/pos"
@@ -112,49 +112,8 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     }
 
     const columns: ColumnDef<POSSession>[] = [
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="ID" className="justify-center" />,
-            cell: ({ row }) => (
-                    <DataCell.Code>SES-{row.original.id}</DataCell.Code>
-            ),
-        },
-        {
-            accessorKey: "user_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cajero" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.getValue("user_name")}</DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: "opened_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Date value={row.getValue("opened_at")} showTime />
-            ),
-        },
-        {
-            accessorKey: "closed_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cierre" className="justify-center" />,
-            cell: ({ row }) => {
-                const val = row.getValue("closed_at") as string
-                return val ? <DataCell.Date value={val} showTime /> : <span className="text-muted-foreground">-</span>
-            },
-        },
-        {
-            accessorKey: "start_amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fondo Inicial" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("start_amount")} intent="muted" />
-            ),
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={row.original.status} />,
-        },
-        posSessionActions.column(actionsCtx),
+        ...posSessionFields.toColumns(),
+        posSessionActions.auto(actionsCtx),
     ]
 
     return (
@@ -191,26 +150,29 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                         description: "Las sesiones del punto de venta aparecerán aquí al abrir caja.",
                     }}
                     renderCard={(session: POSSession) => (
-                        <EntityCard defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(session.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
-                            <EntityCard.Header
-                                title={session.id_display}
-                                subtitle={session.user_name}
-                                trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
-                                actions={posSessionActions.render(session, actionsCtx)}
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Cuenta" value={session.treasury_account_name} />
-                                <EntityCard.Field label="Apertura" value={<DataCell.Date value={session.opened_at} showTime />} />
-                            </EntityCard.Body>
+                        <AutoEntityCard
+                            data={session}
+                            fields={posSessionFields}
+                            title={session.id_display}
+                            subtitle={session.user_name}
+                            trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
+                            actions={posSessionActions.render(session, actionsCtx)}
+                            defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} 
+                            onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(session.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}
+                        >
+                            <EntityCard.Metrics metrics={[
+                                { label: 'Cuenta', value: session.treasury_account_name },
+                                { label: 'Apertura', value: <DataCell.Date value={session.opened_at} showTime /> },
+                            ]} />
                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
                                 <span className="text-[10px] font-black text-muted-foreground uppercase">Ventas</span>
                                 <DataCell.Currency value={(session.total_cash_sales ?? 0) + (session.total_card_sales ?? 0)} className="font-bold" />
                             </EntityCard.Footer>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                     cardSkeleton={{ showFooter: true }}
                 />

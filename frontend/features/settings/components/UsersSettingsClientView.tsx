@@ -2,13 +2,13 @@
 
 import {useState, useEffect, useMemo} from "react"
 
-import { DataTableView, ToolbarCreateButton, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, ToolbarCreateButton, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
+import { DataCell } from '@/components/shared'
 import { FadeIn, Chip } from "@/components/shared"
 import { userActions, type UserActionsCtx } from './userActions'
+import { userFields } from '../userFields'
 
 import { Users } from "lucide-react"
 import { UserDrawer } from "@/features/users"
@@ -78,19 +78,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
     }
 
     const columns: ColumnDef<AppUser>[] = useMemo(() => [
-        {
-            accessorKey: "username",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Usuario" />
-            ),
-            cell: ({ row }) => <DataCell.Text>{row.getValue("username")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "email",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Email" />
-            ),
-        },
+        ...userFields.toColumns(),
         {
             id: "contact",
             header: "Contacto",
@@ -107,9 +95,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
         {
             accessorKey: "groups",
             id: "role",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Rol" />
-            ),
+            header: "Rol",
             cell: ({ row }) => {
                 const groups = (row.original.groups || []).map(g => typeof g === 'string' ? g : g.name)
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
@@ -134,9 +120,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
         {
             accessorKey: "groups",
             id: "functional_groups",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Grupos" />
-            ),
+            header: "Grupos",
             cell: ({ row }) => {
                 const groups = (row.original.groups || []).map(g => typeof g === 'string' ? g : g.name)
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
@@ -154,13 +138,6 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                     </div>
                 )
             },
-        },
-        {
-            accessorKey: "is_active",
-            header: "Estado",
-            cell: ({ row }) => (
-                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
-            ),
         },
         userActions.auto(actionsCtx)
     ], [refetch])
@@ -219,18 +196,21 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                     const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                                     const systemRole = groups.find(g => roles.includes(g))
                                     return (
-                                        <EntityCard key={user.id} onClick={() => actionsCtx.onEdit(user.id)}>
-                                            <EntityCard.Header
-                                                title={user.username}
-                                                subtitle={user.email}
-                                                trailing={<DataCell.Status status={user.is_active ? "active" : "inactive"} />}
-                                                actions={userActions.render(user, actionsCtx)}
-                                            />
+                                        <AutoEntityCard 
+                                            key={user.id} 
+                                            data={user}
+                                            fields={userFields}
+                                            title={user.username}
+                                            subtitle={user.email}
+                                            onClick={() => actionsCtx.onEdit(user.id)}
+                                            trailing={<DataCell.Status status={user.is_active ? "active" : "inactive"} />}
+                                            actions={userActions.render(user, actionsCtx)}
+                                        >
                                             <EntityCard.Body>
                                                 <EntityCard.Field label="Nombre" value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || '—'} />
                                                 {systemRole && <EntityCard.Field label="Rol" value={systemRole} />}
                                             </EntityCard.Body>
-                                        </EntityCard>
+                                        </AutoEntityCard>
                                     )
                                 }}
                             />

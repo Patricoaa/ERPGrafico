@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, SkeletonShell, EntityCard,
+    MoneyDisplay, SkeletonShell, AutoEntityCard, EntityCard, StatusBadge,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -20,6 +20,7 @@ import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
 import { parseDateOnly } from '@/lib/utils'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { cardStatementFields } from './cardStatementFields'
 
 interface StatementsClientViewProps {
     bankId: number
@@ -135,6 +136,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         onViewDetail: (id) => openStatement(id, "detail"),
     }
 
+    const [periodCol, dueDateCol, statusCol] = cardStatementFields.toColumns()
+
     const columns: ColumnDef<CreditCardStatement>[] = [
         {
             accessorKey: 'display_id',
@@ -146,15 +149,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                 </div>
             ),
         },
-        {
-            accessorKey: 'period',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {String(row.original.period_month).padStart(2, '0')}/{row.original.period_year}
-                </DataCell.Text>
-            ),
-        },
+        periodCol,
         {
             accessorKey: 'billed_amount',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Facturado" className="justify-end" />,
@@ -164,20 +159,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                 </div>
             ),
         },
-        {
-            accessorKey: 'due_date',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Vencimiento" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {parseDateOnly(row.original.due_date).toLocaleDateString('es-CL')}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'status',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
-        },
+        dueDateCol,
+        statusCol,
         statementActions.auto(actionsCtx),
     ]
 
@@ -290,13 +273,17 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                         description: 'Los estados de cuenta de la tarjeta de crédito aparecerán aquí.',
                     }}
                     renderCard={(stmt: CreditCardStatement) => (
-                        <EntityCard onClick={() => openStatement(stmt.id, "detail")} defaultAction={statementActions.defaultAction(actionsCtx)?.(stmt) ?? null}>
-                            <EntityCard.Header
-                                title={stmt.display_id}
-                                subtitle={stmt.card_account_name}
-                                trailing={<StatusBadge status={stmt.status} />}
-                                actions={statementActions.render(stmt, actionsCtx)}
-                            />
+                        <AutoEntityCard 
+                            key={stmt.id} 
+                            data={stmt}
+                            fields={cardStatementFields}
+                            title={stmt.display_id}
+                            subtitle={stmt.card_account_name}
+                            onClick={() => openStatement(stmt.id, "detail")} 
+                            defaultAction={statementActions.defaultAction(actionsCtx)?.(stmt) ?? null}
+                            trailing={<StatusBadge status={stmt.status} />}
+                            actions={statementActions.render(stmt, actionsCtx)}
+                        >
                             <EntityCard.Body>
                                 <EntityCard.Field
                                     label="Período"
@@ -311,7 +298,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                     value={parseDateOnly(stmt.due_date).toLocaleDateString('es-CL')}
                                 />
                             </EntityCard.Body>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                 />
             </div>

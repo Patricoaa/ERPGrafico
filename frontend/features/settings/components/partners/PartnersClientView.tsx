@@ -14,7 +14,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { usePartners } from "@/features/contacts"
 import type { Partner } from "@/features/contacts"
-import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
 import {
     SkeletonShell,
@@ -25,6 +24,7 @@ import {
 } from "@/components/shared"
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
+import { partnerFields } from '../../partnerFields'
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
     SubscriptionMovementModal,
@@ -410,106 +410,7 @@ export function PartnersClientView({
                 </div>
             )
         },
-        {
-            accessorKey: "partner_equity_percentage",
-            header: () => <div className="text-center">Part. %</div>,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.getValue("partner_equity_percentage")}%
-                </DataCell.Text>
-            )
-        },
-        {
-            accessorKey: "partner_total_contributions",
-            header: () => <div className="text-center whitespace-nowrap">C. Suscrito</div>,
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("partner_total_contributions")} className="text-right font-mono text-[11px] font-bold opacity-80" />
-            )
-        },
-        {
-            accessorKey: "partner_total_paid_in",
-            header: () => <div className="text-center whitespace-nowrap">C. Enterado</div>,
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("partner_total_paid_in")} className="text-right font-mono text-[11px] font-black text-success" />
-            )
-        },
-        {
-            accessorKey: "partner_pending_capital",
-            header: () => <div className="text-center">Pendiente</div>,
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("partner_pending_capital"))
-                return (
-                    <DataCell.Currency
-                        value={val}
-                        className={cn(
-                            "text-right font-mono text-[11px] font-bold",
-                            val > 0 ? 'text-warning' : 'text-muted-foreground/30'
-                        )}
-                    />
-                )
-            }
-        },
-        {
-            accessorKey: "partner_provisional_withdrawals_balance",
-            header: () => <div className="text-center whitespace-nowrap">R. Provisorios</div>,
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("partner_provisional_withdrawals_balance"))
-                return (
-                    <DataCell.Currency
-                        value={val > 0 ? val : 0}
-                        showZeroAsDash={val <= 0}
-                        className={cn(
-                            "text-right font-mono text-[11px] font-bold",
-                            val > 0 ? 'text-destructive' : 'text-muted-foreground/30'
-                        )}
-                    />
-                )
-            }
-        },
-        {
-            accessorKey: "partner_earnings_balance",
-            header: () => <div className="text-center whitespace-nowrap">Utilidades</div>,
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("partner_earnings_balance"))
-                return (
-                    <DataCell.Currency
-                        value={val > 0 ? val : 0}
-                        showZeroAsDash={val <= 0}
-                        className={cn(
-                            "text-right font-mono text-[11px] font-bold",
-                            val > 0 ? 'text-success' : 'text-muted-foreground/30'
-                        )}
-                    />
-                )
-            }
-        },
-        {
-            accessorKey: "partner_dividends_payable_balance",
-            header: () => <div className="text-center whitespace-nowrap">D. por Pagar</div>,
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("partner_dividends_payable_balance"))
-                return (
-                    <DataCell.Currency
-                        value={val > 0 ? val : 0}
-                        showZeroAsDash={val <= 0}
-                        className={cn(
-                            "text-right font-mono text-[11px] font-bold",
-                            val > 0 ? 'text-warning' : 'text-muted-foreground/30'
-                        )}
-                    />
-                )
-            }
-        },
-        {
-            accessorKey: "partner_net_equity",
-            header: () => <div className="text-center whitespace-nowrap">Patrimonio</div>,
-            cell: ({ row }) => (
-                <DataCell.Currency
-                    value={row.getValue("partner_net_equity")}
-                    className="text-right font-mono text-[12px] font-black"
-                />
-            )
-        },
+        ...partnerFields.toColumns(),
         partnerActions.auto(partnerActionsCtx)
     ]
 

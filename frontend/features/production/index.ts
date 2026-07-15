@@ -54,3 +54,4 @@ export type {
 export type { WorkOrder, BOM, ProductMinimal } from './types'
 
 export { bomUnifiedSearchDef, workOrderUnifiedSearchDef } from './unifiedSearchDef'
+export { workOrderFields } from './workOrderFields'

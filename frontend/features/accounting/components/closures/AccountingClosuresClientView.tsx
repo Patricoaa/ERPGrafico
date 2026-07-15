@@ -375,7 +375,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 return <div className="text-muted-foreground">F29: {taxCount} · Contable: {acctCount}</div>;
             },
         },
-        fiscalYearActions.column(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
+        fiscalYearActions.auto(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
     ];
 
     return (

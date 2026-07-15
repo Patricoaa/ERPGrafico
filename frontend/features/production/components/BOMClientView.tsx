@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge, Chip } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, EntityCard, StatusBadge, Chip } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { Layers } from "lucide-react"
 import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
@@ -159,7 +159,7 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
             ),
             meta: { title: "Estado" },
         },
-        bomActions.column(actionsCtx),
+        bomActions.auto(actionsCtx),
     ]
 
     return (
@@ -200,20 +200,23 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                         description: "Crea una lista de materiales (BOM) para definir cómo se fabrica un producto.",
                     }}
                     renderCard={(bom: BOMListItem) => (
-                        <EntityCard onClick={() => bom.id != null && handleEdit(bom.id)} defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? null}>
-                            <EntityCard.Header
-                                title={bom.name}
-                                subtitle={bom.product_name}
-                                trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
-                                actions={bomActions.render(bom, actionsCtx)}
-                            />
+                        <AutoEntityCard
+                            key={bom.id}
+                            data={bom}
+                            fields={bomFields}
+                            title={bom.name}
+                            subtitle={bom.product_name}
+                            trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
+                            actions={bomActions.render(bom, actionsCtx)}
+                            defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? (() => bom.id != null && handleEdit(bom.id))}
+                        >
                             <EntityCard.Body>
                                 {bom.product_internal_code && (
                                     <EntityCard.Field label="Código" value={<DataCell.Code>{bom.product_internal_code}</DataCell.Code>} />
                                 )}
                                 <EntityCard.Field label="Componentes" value={<DataCell.Number value={bom.lines_count} />} />
                             </EntityCard.Body>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                 />
             </div>

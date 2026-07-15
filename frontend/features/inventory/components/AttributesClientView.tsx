@@ -7,7 +7,7 @@ import { Plus, Trash2, Tag, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { BaseModal, DataTableView, EntityCard } from '@/components/shared'
+import { BaseModal, DataTableView, AutoEntityCard, EntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, Chip } from '@/components/shared'
 import { attributeActions, type AttributeActionsCtx } from './attributeActions'
@@ -18,6 +18,7 @@ import { ActivitySidebar } from "@/features/audit"
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { CancelButton, SubmitButton, IconButton, LabeledInput, MultiTagInput, ActionConfirmModal, FormFooter } from "@/components/shared"
+import { attributeFields } from "../attributeFields"
 
 interface ProductAttribute {
     id: number
@@ -303,13 +304,15 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                         description: "Crea atributos (color, talla…) para generar variantes de producto.",
                     }}
                     renderCard={(attr: ProductAttribute) => (
-                        <EntityCard key={attr.id}>
-                            <EntityCard.Header
-                                icon={Tag}
-                                title={attr.name}
-                                subtitle={`${attr.values?.length ?? 0} valores`}
-                                actions={attributeActions.render(attr, attributeActionsCtx)}
-                            />
+                        <AutoEntityCard 
+                            key={attr.id}
+                            data={attr}
+                            fields={attributeFields}
+                            title={attr.name}
+                            subtitle={`${attr.values?.length ?? 0} valores`}
+                            icon={Tag}
+                            actions={attributeActions.render(attr, attributeActionsCtx)}
+                        >
                             <EntityCard.Body>
                                 {attr.values && attr.values.length > 0 && (
                                     <EntityCard.Field label="Valores" value={
@@ -319,7 +322,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                                     } />
                                 )}
                             </EntityCard.Body>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                 />
             </div>

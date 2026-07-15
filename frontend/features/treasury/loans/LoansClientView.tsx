@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { FileText } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, SkeletonShell, EntityCard,
+    MoneyDisplay, SkeletonShell, AutoEntityCard, EntityCard, StatusBadge,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
@@ -19,6 +19,7 @@ import { LoanDetailModal } from './LoanDetailModal'
 import { loanActions, type LoanActionsCtx } from './loanActions'
 import type { BankLoan } from './types'
 import { parseDateOnly } from '@/lib/utils'
+import { loanFields } from './loanFields'
 
 export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
     const searchParams = useSearchParams()
@@ -110,12 +111,10 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         onDisburse: (loan) => openLoan(loan.id, "disburse"),
     }
 
+    const [displayIdCol, interestRateCol, termMonthsCol, nextDueDateCol, statusCol] = loanFields.toColumns()
+
     const columns: ColumnDef<BankLoan>[] = [
-        {
-            accessorKey: 'display_id',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="ID Interno" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id}</DataCell.Code>,
-        },
+        displayIdCol,
         {
             accessorKey: 'currency',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Moneda" />,
@@ -134,22 +133,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 </div>
             ),
         },
-        {
-            accessorKey: 'interest_rate',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tasa" className="justify-end" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {parseFloat(row.original.interest_rate).toFixed(2)}% {row.original.rate_basis_display.toLowerCase()}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'term_months',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Plazo" className="justify-end" />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.term_months} meses</DataCell.Text>
-            ),
-        },
+        interestRateCol,
+        termMonthsCol,
         {
             accessorKey: 'outstanding_balance',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo Insoluto" className="justify-end" />,
@@ -162,22 +147,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 </div>
             ),
         },
-        {
-            accessorKey: 'next_due_date',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Próx. Vencimiento" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.original.next_due_date
-                        ? parseDateOnly(row.original.next_due_date).toLocaleDateString('es-CL')
-                        : '—'}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'status',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
-        },
+        nextDueDateCol,
+        statusCol,
         loanActions.auto(actionsCtx),
     ]
 
@@ -216,13 +187,17 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                         description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
                     }}
                     renderCard={(loan: BankLoan) => (
-                        <EntityCard onClick={() => openLoan(loan.id, "detail")} defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}>
-                            <EntityCard.Header
-                                title={loan.display_id}
-                                subtitle={loan.loan_number || undefined}
-                                trailing={<StatusBadge status={loan.status} />}
-                                actions={loanActions.render(loan, actionsCtx)}
-                            />
+                        <AutoEntityCard 
+                            key={loan.id}
+                            data={loan}
+                            fields={loanFields}
+                            title={loan.display_id}
+                            subtitle={loan.loan_number || undefined}
+                            onClick={() => openLoan(loan.id, "detail")} 
+                            defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
+                            trailing={<StatusBadge status={loan.status} />}
+                            actions={loanActions.render(loan, actionsCtx)}
+                        >
                             <EntityCard.Body>
                                 <EntityCard.Field label="Banco" value={loan.lender_name} />
                                 <EntityCard.Field
@@ -250,7 +225,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                                         : '—'}
                                 />
                             </EntityCard.Body>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                 />
             </div>

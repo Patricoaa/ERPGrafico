@@ -43,11 +43,12 @@ export type StructuredActions<T, Ctx> = (item: T, ctx: Ctx) => StructuredAction[
 /**
  * Converts structured actions to JSX for card surfaces (EntityCard, Kanban).
  *
+ * Uses the same components as DataTable for consistent behavior:
  * - 0 visible → null
- * - 1 visible → single `DataCell.Action` icon
- * - 2+ visible → `CardActions` with `CardActions.Item` for each action
+ * - 1 visible → `DataCell.ActionSingle` — ArrowRight, hidden by default, revealed on hover
+ * - 2+ visible → `DataCell.ActionMenu` — kebab (`MoreVertical`) always visible
  *
- * Disabled actions render with dimmed CSS (`text-muted-foreground/30 pointer-events-none`).
+ * Parent must have the `group` class for `ActionSingle` hover-reveal to work.
  */
 export function renderActions<T, Ctx>(
     structuredActions: StructuredAction[],
@@ -60,43 +61,17 @@ export function renderActions<T, Ctx>(
     if (visible.length === 1 && 'action' in visible[0]) {
         const a = visible[0]
         return (
-            <DataCell.Action
-                action={a.action}
-                icon={'icon' in a ? a.icon : undefined}
-                title={'label' in a ? a.label : undefined}
-                color={'iconColor' in a ? a.iconColor : undefined}
+            <DataCell.ActionSingle
                 onClick={a.onClick}
-                className={cn(
-                    a.disabled ? "text-muted-foreground/30 pointer-events-none" : undefined,
-                    'className' in a ? a.className : undefined,
-                )}
+                title={'label' in a ? a.label : undefined}
             />
         )
     }
 
     return (
-        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-            {visible.map((a, i) => {
-                if ('separator' in a && a.separator) return null
-                if ('action' in a) {
-                    return (
-                        <DataCell.Action
-                            key={`${a.action}-${i}`}
-                            action={a.action}
-                            icon={'icon' in a ? a.icon : undefined}
-                            title={'label' in a ? a.label : undefined}
-                            color={'iconColor' in a ? a.iconColor : undefined}
-                            onClick={a.onClick}
-                            className={cn(
-                                a.disabled ? "text-muted-foreground/30 pointer-events-none" : undefined,
-                                'className' in a ? a.className : undefined,
-                            )}
-                        />
-                    )
-                }
-                return null
-            })}
-        </div>
+        <DataCell.ActionMenu
+            items={toMenuItems(structuredActions)}
+        />
     )
 }
 

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataTableView } from '@/components/shared'
+import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
 import { ActivitySidebar } from "@/features/audit"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -122,24 +122,28 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
         const Icon = methodTypeIcons[method.method_type] || CreditCard
         const iconStyle = methodTypeIconStyles[method.method_type] || "text-muted-foreground bg-muted/50"
         return (
-            <EntityCard key={method.id} onClick={() => openEdit(method)} defaultAction={paymentMethodActions.defaultAction(paymentMethodActionsCtx)?.(method) ?? null}>
-                <EntityCard.Header
-                    icon={Icon}
-                    iconClassName={iconStyle}
-                    title={method.name}
-                    subtitle={
-                        <span className="flex items-center gap-1.5 flex-wrap">
-                            {method.method_type_display || methodTypeLabels[method.method_type] || method.method_type}
-                        </span>
-                    }
-                    trailing={
-                        <div className="flex flex-col gap-0.5 items-end">
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Cta. Tesorería</span>
-                            <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">{method.treasury_account_name}</span>
-                        </div>
-                    }
-                    actions={paymentMethodActions.render(method, paymentMethodActionsCtx)}
-                />
+            <AutoEntityCard 
+                key={method.id} 
+                data={method}
+                fields={paymentMethodFields}
+                title={method.name}
+                subtitle={
+                    <span className="flex items-center gap-1.5 flex-wrap">
+                        {method.method_type_display || methodTypeLabels[method.method_type] || method.method_type}
+                    </span>
+                }
+                onClick={() => openEdit(method)} 
+                defaultAction={paymentMethodActions.defaultAction(paymentMethodActionsCtx)?.(method) ?? null}
+                icon={Icon}
+                iconClassName={iconStyle}
+                trailing={
+                    <div className="flex flex-col gap-0.5 items-end">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Cta. Tesorería</span>
+                        <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">{method.treasury_account_name}</span>
+                    </div>
+                }
+                actions={paymentMethodActions.render(method, paymentMethodActionsCtx)}
+            >
                 <EntityCard.Body>
                     <EntityCard.Field
                         label="Permitido"
@@ -155,7 +159,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                         }
                     />
                 </EntityCard.Body>
-            </EntityCard>
+            </AutoEntityCard>
         )
     }
 

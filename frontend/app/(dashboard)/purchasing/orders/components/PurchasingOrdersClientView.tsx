@@ -5,6 +5,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
+import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
 import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -372,30 +373,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     })
 
     const columns: ColumnDef<PurchaseOrder>[] = [
-        {
-            accessorKey: "number",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" />
-            ),
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-            meta: { title: "Folio" },
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
-            ),
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
-            meta: { title: "Fecha" },
-        },
-        {
-            accessorKey: "supplier_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Proveedor" />
-            ),
-            cell: ({ row }) => <DataCell.Text>{row.getValue("supplier_name")}</DataCell.Text>,
-            meta: { title: "Proveedor" },
-        },
+        ...(purchaseOrderFields.toColumns() as ColumnDef<PurchaseOrder>[]),
         {
             accessorKey: "warehouse_name",
             header: ({ column }) => (
@@ -403,14 +381,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("warehouse_name")}</DataCell.Secondary>,
             meta: { title: "Almacén" },
-        },
-        {
-            accessorKey: "total",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Total" />
-            ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
-            meta: { title: "Total" },
         },
         {
             accessorKey: "status",

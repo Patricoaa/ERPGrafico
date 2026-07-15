@@ -1,5 +1,5 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { Eye, ClipboardList, Send } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
+import { ClipboardList, Send } from 'lucide-react'
 import type { BankLoan } from './types'
 
 export interface LoanActionsCtx {
@@ -11,14 +11,8 @@ export interface LoanActionsCtx {
 export const loanActions = createEntityActions<
     BankLoan,
     LoanActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action icon={Eye} title="Ver detalle" onClick={() => ctx.onViewDetail(item.id)} />
-        {item.status !== 'DRAFT' && (
-            <DataCell.Action icon={ClipboardList} title="Tabla de amortización" onClick={() => ctx.onAmortization(item.id)} />
-        )}
-        {item.status === 'DRAFT' && (
-            <DataCell.Action icon={Send} title="Desembolsar" onClick={() => ctx.onDisburse(item)} />
-        )}
-    </>
-))
+>((item, ctx) => [
+    { action: "detail", label: "Ver detalle", onClick: () => ctx.onViewDetail(item.id) },
+    { action: "report", icon: ClipboardList, label: "Tabla de amortización", onClick: () => ctx.onAmortization(item.id), visible: item.status !== 'DRAFT' },
+    { action: "disburse", icon: Send, onClick: () => ctx.onDisburse(item), visible: item.status === 'DRAFT' },
+])

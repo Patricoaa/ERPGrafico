@@ -465,7 +465,7 @@ export const DataCell = {
                             size="icon"
                             className={cn(
                                 "h-7 w-7 rounded-full transition-all duration-200",
-                                "opacity-0 group-hover:opacity-100",
+                                "opacity-20 group-hover:opacity-100",
                                 "hover:scale-110 active:scale-95",
                                 "hover:bg-accent hover:text-accent-foreground",
                                 className,

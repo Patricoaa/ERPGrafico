@@ -2,11 +2,10 @@
 
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import type { ColumnDef } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, SkeletonShell, EntityCard,
+    StatusBadge, MoneyDisplay, SkeletonShell, AutoEntityCard, EntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
@@ -15,6 +14,7 @@ import { useChecks, useCheckMutations } from '../hooks/useChecks'
 import { CheckDepositModal } from './CheckDepositModal'
 import { checkActions, type CheckActionsCtx } from './checkActions'
 import { useBanks } from '@/features/treasury'
+import { checkFields } from './checkFields'
 import type { Check, CheckDirection } from './types'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
@@ -138,40 +138,13 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
         onVoid: (id) => voidCheck({ id }),
     }
 
-    const columns: ColumnDef<Check>[] = [
-        {
-            accessorKey: 'check_number',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="N° Cheque" />,
-            cell: ({ row }) => (
-                <DataCell.Code>{row.original.check_number}</DataCell.Code>
-            ),
-        },
-        {
-            accessorKey: 'bank_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Banco" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.bank_name}</DataCell.Text>,
-        },
-        {
-            accessorKey: 'counterparty_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title={isIssued ? 'Beneficiario' : 'Girador'} />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.counterparty_name ?? row.original.drawer_name ?? '—'}</DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={parseFloat(row.original.amount)} className="font-bold" />
-                </div>
-            ),
-        },
+    const columns = [
+        ...checkFields.toColumns(),
         {
             id: 'sale_order',
-            accessorFn: (row) => row.sale_order_display?.number ?? null,
-            header: ({ column }) => <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />,
-            cell: ({ row }) => {
+            accessorFn: (row: Check) => row.sale_order_display?.number ?? null,
+            header: ({ column }: { column: import('@tanstack/react-table').Column<Check> }) => <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />,
+            cell: ({ row }: { row: import('@tanstack/react-table').Row<Check> }) => {
                 const so = row.original.sale_order_display
                 if (!so) return null
                 return (
@@ -180,25 +153,6 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                     </div>
                 )
             },
-        },
-        {
-            accessorKey: 'due_date',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Vencimiento" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center gap-0.5">
-                    <DataCell.Text>{row.original.due_date}</DataCell.Text>
-                    {row.original.is_overdue && (
-                        <span className="flex items-center gap-1 text-[11px] text-destructive font-bold">
-                            <AlertTriangle className="h-3 w-3" /> Vencido
-                        </span>
-                    )}
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'status',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
         checkActions.auto(actionsCtx),
     ]
@@ -237,17 +191,16 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                     showReset={isFiltered}
                     onReset={handleReset}
                     renderCard={(check: Check) => (
-                        <EntityCard>
-                            <EntityCard.Header
-                                title={check.check_number}
-                                trailing={<StatusBadge status={check.status} />}
-                                actions={checkActions.render(check, actionsCtx)}
-                            />
+                        <AutoEntityCard 
+                            key={check.id}
+                            data={check}
+                            fields={checkFields}
+                            title={check.check_number}
+                            subtitle={check.counterparty_name ?? check.drawer_name ?? '—'}
+                            trailing={<StatusBadge status={check.status} />}
+                            actions={checkActions.render(check, actionsCtx)}
+                        >
                             <EntityCard.Body>
-                                <EntityCard.Field
-                                    label={isIssued ? 'Beneficiario' : 'Girador'}
-                                    value={check.counterparty_name ?? check.drawer_name ?? '—'}
-                                />
                                 <EntityCard.Field
                                     label="Monto"
                                     value={<MoneyDisplay amount={parseFloat(check.amount)} className="font-bold" />}
@@ -266,7 +219,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                                     }
                                 />
                             </EntityCard.Body>
-                        </EntityCard>
+                        </AutoEntityCard>
                     )}
                 />
             </div>
