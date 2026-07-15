@@ -3,13 +3,14 @@
 import { showApiError } from "@/lib/errors"
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import {ActionConfirmModal, DataCell, DataTableColumnHeader, DataTableView} from '@/components/shared'
+import {ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard} from '@/components/shared'
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseDrawer } from "./WarehouseDrawer"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { warehouseFields } from "../warehouseFields"
 
 import type { BulkAction } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -108,60 +109,46 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         onDelete: (warehouse) => handleDelete(warehouse),
     }
 
-    const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center py-1">
-                    <DataCell.Text>{row.original.name}</DataCell.Text>
-                    <DataCell.Secondary>Ubicación Física</DataCell.Secondary>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "code",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Code>
-                    {row.original.code}
-                </DataCell.Code>
-            ),
-            size: 120,
-        },
-        {
-            accessorKey: "address",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Secondary>
-                    {row.original.address || "-"}
-                </DataCell.Secondary>
-            ),
-        },
-        warehouseActions.auto(actionsCtx),
-    ], [actionsCtx])
+    const columns = useMemo<ColumnDef<Warehouse>[]>(() => {
+        const [, codeCol, addressCol] = warehouseFields.toColumns()
+        return [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                        variant="circle"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        variant="circle"
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+                size: 40,
+            },
+            {
+                accessorKey: "name",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" className="justify-center" />,
+                cell: ({ row }) => (
+                    <div className="flex flex-col items-center py-1">
+                        <span className="text-sm font-medium">{row.original.name}</span>
+                        <span className="text-[10px] text-muted-foreground">Ubicación Física</span>
+                    </div>
+                ),
+            },
+            codeCol,
+            addressCol,
+            warehouseActions.auto(actionsCtx),
+        ]
+    }, [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [
         {
@@ -208,6 +195,17 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                         title: "Aún no hay almacenes",
                         description: "Crea un almacén para gestionar ubicaciones y existencias de inventario.",
                     }}
+                    renderCard={(warehouse: Warehouse) => (
+                        <AutoEntityCard
+                            key={warehouse.id}
+                            data={warehouse}
+                            fields={warehouseFields}
+                            title={warehouse.name}
+                            subtitle={warehouse.code}
+                            actions={warehouseActions.render(warehouse, actionsCtx)}
+                            defaultAction={warehouseActions.defaultAction(actionsCtx)?.(warehouse) ?? (() => openSelected(warehouse.id))}
+                        />
+                    )}
                 />
             </div>
 

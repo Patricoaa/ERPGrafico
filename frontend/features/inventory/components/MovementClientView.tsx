@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, EntityCard } from '@/components/shared'
+import { DataCell, EntityCard, AutoEntityCard } from '@/components/shared'
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { type ColumnDef } from "@tanstack/react-table"
 
@@ -135,7 +135,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                 </div>
             ),
         },
-        stockMoveActions.column(actionsCtx),
+        stockMoveActions.auto(actionsCtx),
     ], [actionsCtx])
 
     return (
@@ -179,27 +179,26 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                     }}
                     renderCard={(move: StockMove) => {
                         return (
-                            <EntityCard
+                            <AutoEntityCard
                                 key={move.id}
-                                defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? null}
-                                onClick={() => {
+                                data={move}
+                                fields={{ toCardFields: () => [] }}
+                                title={move.product_name}
+                                subtitle={move.display_id ?? String(move.id)}
+                                actions={stockMoveActions.render(move, actionsCtx)}
+                                defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => {
                                     const params = new URLSearchParams(searchParams.toString())
                                     params.set('selected', String(move.id))
                                     router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                }}
-                                >
-                                <EntityCard.Header
-                                    title={move.product_name}
-                                    subtitle={move.display_id ?? String(move.id)}
-                                    actions={stockMoveActions.render(move, actionsCtx)}
-                                />
+                                })}
+                            >
                                 <EntityCard.Body>
                                     <EntityCard.Field label="Fecha" value={<DataCell.Date value={move.date} />} />
                                     <EntityCard.Field label="Origen" value={move.source_location_name} />
                                     <EntityCard.Field label="Destino" value={move.destination_location_name} />
                                     <EntityCard.Field label="Cantidad" value={<DataCell.NumericFlow value={move.quantity} unit={move.uom_name} showSign />} />
                                 </EntityCard.Body>
-                            </EntityCard>
+                            </AutoEntityCard>
                         )
                     }}
                 />

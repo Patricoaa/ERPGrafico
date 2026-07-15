@@ -4,9 +4,10 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, StatusBadge } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
+import { pricingRuleFields } from "@/features/inventory/pricingRuleFields"
 // useDeletePricingRule consumido vía usePricingRules.
 import { PricingRuleDrawer } from "@/features/sales"
 import { pricingRuleActions, type PricingRuleActionsCtx } from "@/features/inventory/pricingRuleActions"
@@ -95,17 +96,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
     }
 
     const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("id")}</DataCell.Code>,
-            size: 80,
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
-        },
+        ...(pricingRuleFields.toColumns() as ColumnDef<PricingRule>[]),
         {
             id: "applies_to",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Aplica a" className="justify-center" />,
@@ -168,11 +159,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
             ),
         },
         {
-            accessorKey: "rule_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("rule_type_display")}</DataCell.Text>,
-        },
-        {
             id: "value",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Valor" className="justify-center" />,
             cell: ({ row }) => {
@@ -201,18 +187,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
             accessorKey: "priority",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Prioridad" className="justify-center" />,
             cell: ({ row }) => <div className="flex justify-center w-full text-center">{row.getValue("priority")}</div>,
-        },
-        {
-            accessorKey: "active",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge
-                        status={row.getValue("active") ? "SUCCESS" : "ERROR"}
-                        label={row.getValue("active") ? "Activo" : "Inactivo"}
-                    />
-                </div>
-            ),
         },
         pricingRuleActions.auto(actionsCtx),
     ], [actionsCtx])
@@ -261,27 +235,16 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Crea reglas para automatizar descuentos y precios por producto o categoría.",
                     }}
                     renderCard={(rule: PricingRule) => (
-                        <EntityCard onClick={() => openSelected(rule.id)} defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? null}>
-                            <EntityCard.Header
-                                title={rule.name}
-                                subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
-                                trailing={<StatusBadge status={rule.active ? 'active' : 'inactive'} size="sm" />}
-                                actions={pricingRuleActions.render(rule, actionsCtx)}
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Tipo" value={rule.rule_type_display} />
-                                <EntityCard.Field
-                                    label="Precio"
-                                    value={
-                                        rule.fixed_price
-                                            ? <DataCell.Currency value={rule.fixed_price} />
-                                            : rule.discount_percentage
-                                                ? <DataCell.Number value={rule.discount_percentage} suffix="%" />
-                                                : '—'
-                                    }
-                                />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={rule.id}
+                            data={rule}
+                            fields={pricingRuleFields}
+                            title={rule.name}
+                            subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
+                            trailing={<StatusBadge status={rule.active ? 'active' : 'inactive'} size="sm" />}
+                            actions={pricingRuleActions.render(rule, actionsCtx)}
+                            defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? (() => openSelected(rule.id))}
+                        />
                     )}
                 />
             </div>
