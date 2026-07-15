@@ -3,11 +3,12 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
-import { DataCell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
+import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
+import { categoryFields } from "../categoryFields"
 
 import { toast } from "sonner"
 
@@ -106,43 +107,33 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         onDelete: (category) => handleDelete(category),
     }
 
-    const columns = useMemo<ColumnDef<Category>[]>(() => [
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("id")}</DataCell.Code>,
-            size: 80,
-        },
-        {
-            id: "icon",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" className="justify-center" />,
-            cell: ({ row }) => {
-                const iconName = row.original.icon
-                if (!iconName) return <div className="flex justify-center w-full">-</div>
-                return (
-                    <div className="flex items-center justify-center w-full">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
-                            {(() => {
-                                const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
-                                return <Icon className="h-4 w-4 text-muted-foreground/70" />
-                            })()}
+    const columns = useMemo<ColumnDef<Category>[]>(() => {
+        const [idCol, nameCol, parentCol] = categoryFields.toColumns()
+        return [
+            idCol,
+            {
+                id: "icon",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" className="justify-center" />,
+                cell: ({ row }) => {
+                    const iconName = row.original.icon
+                    if (!iconName) return <div className="flex justify-center w-full">-</div>
+                    return (
+                        <div className="flex items-center justify-center w-full">
+                            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
+                                {(() => {
+                                    const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
+                                    return <Icon className="h-4 w-4 text-muted-foreground/70" />
+                                })()}
+                            </div>
                         </div>
-                    </div>
-                )
+                    )
+                },
             },
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "parent_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
-        },
-        categoryActions.auto(actionsCtx),
-    ], [actionsCtx])
+            nameCol,
+            parentCol,
+            categoryActions.auto(actionsCtx),
+        ]
+    }, [actionsCtx])
 
     // Sync external trigger (toolbar button) → create modal
     React.useEffect(() => {
@@ -184,14 +175,15 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                         description: "Crea categorías para organizar y clasificar tu catálogo de productos.",
                     }}
                     renderCard={(category: Category) => (
-                        <EntityCard onClick={() => openSelected(category.id)} defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? null}>
-                            <EntityCard.Header
-                                title={category.name}
-                                subtitle={category.parent_name ?? 'Categoría raíz'}
-                                actions={categoryActions.render(category, actionsCtx)}
-                            />
-                            <EntityCard.Body />
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={category.id}
+                            data={category}
+                            fields={categoryFields}
+                            title={category.name}
+                            subtitle={category.parent_name ?? 'Categoría raíz'}
+                            actions={categoryActions.render(category, actionsCtx)}
+                            defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? (() => openSelected(category.id))}
+                        />
                     )}
                 />
             </div>
