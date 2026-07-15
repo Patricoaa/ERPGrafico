@@ -3,31 +3,17 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
 
-import { DataCell, DataTableView, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataCell, DataTableView, AutoEntityCard, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
+
 
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 import { useCategories, useWarehouses } from '@/features/inventory'
 import { stockReportUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-
-interface StockReportItem {
-    id: number | string
-    name?: string
-    code?: string
-    internal_code?: string
-    category_id?: number | string
-    category_name?: string
-    stock_qty?: number | string
-    qty_reserved?: number | string
-    qty_available?: number | string
-    uom_name?: string
-    unit_cost?: number | string
-    total_value?: number | string
-}
+import { stockReportFields, type StockReportItem } from "@/features/inventory/stockReportFields"
 
 export function StockReport() {
     const { categories } = useCategories()
@@ -129,71 +115,7 @@ export function StockReport() {
                 </div>
             ),
         },
-        {
-            accessorKey: "category_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.getValue("category_name")}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: "stock_qty",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Físico" className="justify-center" />,
-            cell: ({ row }) => {
-                const qty = Number(row.getValue("stock_qty"))
-                return (
-                    <div className="flex flex-col items-center">
-                        <DataCell.Number
-                            value={qty}
-                            className={cn(
-                                "text-[14px]",
-                                qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
-                            )}
-                        />
-                        <DataCell.Secondary className="text-[10px] opacity-50 uppercase tracking-tighter">
-                            {row.original.uom_name}
-                        </DataCell.Secondary>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "qty_reserved",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.Number
-                        value={row.getValue("qty_reserved")}
-                    />
-                    <DataCell.Secondary className="text-[10px] opacity-50 uppercase tracking-tighter">
-                        {row.original.uom_name}
-                    </DataCell.Secondary>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "qty_available",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-center" />,
-            cell: ({ row }) => {
-                const qty = Number(row.getValue("qty_available"))
-                return (
-                    <div className="flex flex-col items-center">
-                        <DataCell.Number
-                            value={qty}
-                            className={cn(
-                                "text-[14px]",
-                                qty <= 0 ? "text-destructive" : "text-primary font-black"
-                            )}
-                        />
-                        <DataCell.Secondary className="text-[10px] opacity-50 uppercase tracking-tighter">
-                            {row.original.uom_name}
-                        </DataCell.Secondary>
-                    </div>
-                )
-            },
-        },
+        ...stockReportFields.toColumns(),
         {
             accessorKey: "total_value",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,
@@ -247,17 +169,20 @@ export function StockReport() {
                         description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
                     }}
                     renderCard={(item: StockReportItem) => (
-                        <EntityCard key={item.id}>
-                            <EntityCard.Header
-                                title={item.name}
-                                subtitle={item.category_name}
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Stock" value={`${item.stock_qty ?? 0} ${item.uom_name ?? ''}`} />
-                                <EntityCard.Field label="Disponible" value={`${item.qty_available ?? 0} ${item.uom_name ?? ''}`} />
-                                <EntityCard.Field label="Valorización" value={<DataCell.Currency value={item.total_value} />} />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={item.id}
+                            data={item}
+                            fields={stockReportFields}
+                            title={item.name}
+                            subtitle={item.category_name}
+                            actions={stockReportActions.render(item, stockReportActionsCtx)}
+                        >
+                            <EntityCard.Metrics metrics={[
+                                { label: 'Stock', value: <DataCell.Number value={item.stock_qty ?? 0} /> },
+                                { label: 'Disponible', value: <DataCell.Number value={item.qty_available ?? 0} /> },
+                                { label: 'Valorización', value: <DataCell.Currency value={item.total_value} intent="primary" />, variant: 'primary' },
+                            ]} />
+                        </AutoEntityCard>
                     )}
                 />
             </div>

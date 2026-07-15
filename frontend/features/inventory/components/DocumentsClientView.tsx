@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Chip, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, EntityCard } from '@/components/shared'
+import { DataCell, AutoEntityCard, EntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -12,6 +12,7 @@ import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/u
 import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
 import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
 import type { InventoryDocument } from "../types"
+import { inventoryDocumentFields } from "../inventoryDocumentFields"
 import { toast } from "sonner"
 import React from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -111,6 +112,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
     }), [openSelected, handlePrint, handleAnnul])
 
     const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
+        const [dateCol, statusCol] = inventoryDocumentFields.toColumns()
         const cols: ColumnDef<InventoryDocument>[] = [
             {
                 id: "folio",
@@ -120,14 +122,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                 ),
                 size: 90,
             },
-            {
-                accessorKey: "date",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-                cell: ({ row }) => (
-                    <DataCell.Date value={row.original.date} />
-                ),
-                size: 90,
-            },
+            dateCol,
         ]
 
         if (!documentTypeFilter) {
@@ -158,14 +153,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
         })
 
         cols.push(
-            {
-                accessorKey: "status",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-                cell: ({ row }) => (
-                    <DataCell.Status status={row.original.status} />
-                ),
-                size: 100,
-            },
+            statusCol,
             documentActions.auto(actionsCtx),
         )
 
@@ -214,20 +202,21 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                     renderCard={(doc: InventoryDocument) => {
                         const typeConfig = DOCUMENT_TYPE_MAP[doc.document_type] || { intent: 'neutral' as const, label: doc.document_type }
                         return (
-                            <EntityCard
+                            <AutoEntityCard
                                 key={doc.id}
-                                onClick={() => openSelected(doc.id)}
+                                data={doc}
+                                fields={inventoryDocumentFields}
+                                title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
+                                subtitle={doc.date}
+                                trailing={<StatusBadge status={doc.status} size="sm" />}
+                                actions={documentActions.render(doc, actionsCtx)}
+                                defaultAction={() => openSelected(doc.id)}
                             >
-                                <EntityCard.Header
-                                    title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
-                                    subtitle={doc.date}
-                                />
                                 <EntityCard.Body>
                                     <EntityCard.Field label="Tipo" value={<Chip intent={typeConfig.intent} size="sm">{typeConfig.label}</Chip>} />
-                                    <EntityCard.Field label="Estado" value={<StatusBadge status={doc.status} size="sm" />} />
                                     {doc.reference && <EntityCard.Field label="Referencia" value={doc.reference} />}
                                 </EntityCard.Body>
-                            </EntityCard>
+                            </AutoEntityCard>
                         )
                     }}
                 />
