@@ -44,11 +44,11 @@ export function BankCheckingSection({ data, bankId }: Props) {
                                 title={acc.name}
                                 subtitle={acc.account_number ?? acc.code ?? "—"}
                             />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Saldo" value={<DataCell.Currency value={acc.current_balance} />} />
-                                <EntityCard.Field label="Línea" value={<DataCell.Currency value={creditLine} showColor={false} />} />
-                                <EntityCard.Field label="Disponible" value={<DataCell.Currency value={available} showColor={available >= 0} />} />
-                            </EntityCard.Body>
+                            <EntityCard.Metrics metrics={[
+                                { label: "Saldo", value: <DataCell.Currency value={acc.current_balance} /> },
+                                { label: "Línea", value: <DataCell.Currency value={creditLine} showColor={false} /> },
+                                { label: "Disponible", value: <DataCell.Currency value={available} showColor={available >= 0} /> },
+                            ]} />
                         </EntityCard>
                     )
                 })}
