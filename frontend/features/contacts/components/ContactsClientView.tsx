@@ -9,7 +9,8 @@ import { formatRUT } from "@/lib/utils/format"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, Chip, EntityCard } from '@/components/shared'
+import { DataCell, Chip, EntityCard, AutoEntityCard } from '@/components/shared'
+import { contactFields } from "@/features/contacts/contactFields"
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -102,11 +103,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
     }
 
     const columns: ColumnDef<Contact>[] = [
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id}</DataCell.Code>,
-        },
+        ...contactFields.toColumns(),
         {
             accessorKey: "tax_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
@@ -192,16 +189,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                 )
             },
         },
-        {
-            accessorKey: "email",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Email" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("email") || "-"}</DataCell.Text>,
-        },
-        {
-            accessorKey: "phone",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("phone") || "-"}</DataCell.Text>,
-        },
         contactActions.auto(actionsCtx),
     ]
 
@@ -243,33 +230,28 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                             description: "Crea tu primer cliente o proveedor para empezar a operar.",
                         }}
                         renderCard={(contact: Contact) => (
-                            <EntityCard key={contact.id} onClick={() => openSelected(contact.id)} defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? null}>
-                                <EntityCard.Header
-                                    title={contact.name}
-                                    subtitle={contact.tax_id || 'S/Rut'}
-                                    trailing={
-                                        <div className="flex flex-col items-end gap-1">
-                                            <div className="flex gap-1 flex-wrap justify-end">
-                                                {contact.active_roles?.map(role => (
-                                                    <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
-                                                ))}
-                                            </div>
-                                            <div className="flex gap-1">
-                                                {contact.is_default_customer && <Chip size="xs" intent="primary" icon={UserIcon}>Cliente</Chip>}
-                                                {contact.is_default_vendor && <Chip size="xs" intent="success" icon={Building2}>Proveedor</Chip>}
-                                            </div>
+                            <AutoEntityCard 
+                                key={contact.id}
+                                data={contact}
+                                fields={contactFields}
+                                title={contact.name}
+                                subtitle={contact.tax_id || 'S/Rut'}
+                                actions={contactActions.render(contact, actionsCtx)}
+                                defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
+                                trailing={
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="flex gap-1 flex-wrap justify-end">
+                                            {contact.active_roles?.map(role => (
+                                                <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
+                                            ))}
                                         </div>
-                                    }
-                                    actions={contactActions.render(contact, actionsCtx)}
-                                />
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Email" value={contact.email || '-'} />
-                                    <EntityCard.Field label="Teléfono" value={contact.phone || '-'} />
-                                    {Number(contact.credit_limit || 0) > 0 && (
-                                        <EntityCard.Field label="Crédito" value={`${formatCurrency(Number(contact.credit_limit))} (${contact.credit_days}d)`} />
-                                    )}
-                                </EntityCard.Body>
-                            </EntityCard>
+                                        <div className="flex gap-1">
+                                            {contact.is_default_customer && <Chip size="xs" intent="primary" icon={UserIcon}>Cliente</Chip>}
+                                            {contact.is_default_vendor && <Chip size="xs" intent="success" icon={Building2}>Proveedor</Chip>}
+                                        </div>
+                                    </div>
+                                }
+                            />
                         )}
                     />
             </div>

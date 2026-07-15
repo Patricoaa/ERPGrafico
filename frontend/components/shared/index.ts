@@ -135,6 +135,7 @@ export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
 
 export * from './EntityCard'
+export * from './AutoEntityCard'
 export * from './CardActions'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
