@@ -206,8 +206,6 @@ export function PaymentMethodSelector({
             onPaymentDataChange({
                 ...paymentData,
                 amount: finalAmount,
-                treasuryAccountId: pendingTreasuryAccountId,
-                paymentMethodId: pendingPaymentMethodId,
             })
         }
     }
@@ -303,7 +301,7 @@ export function PaymentMethodSelector({
         if (!method) return false
         if (method === 'CHECK') return true
         if (method === 'CREDIT_CARD') return true
-        if (['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER'].includes(method)) {
+        if (['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER', 'DEBIT_CARD'].includes(method)) {
             return methodsForType.filter(m => m.treasury_account != null).length > 1
         }
         return false
@@ -369,7 +367,7 @@ export function PaymentMethodSelector({
                     <p className="text-xs text-muted-foreground">Débito directo desde la cuenta vinculada.</p>
                 )}
 
-                {(method === 'CREDIT_CARD' || method === 'DEBIT_CARD' || methodsForType.filter(m => m.treasury_account != null).length > 1) && (
+                {methodsForType.filter(m => m.treasury_account != null).length > 1 && (
                     <LabeledSelect
                         label={method === 'TRANSFER' ? 'Banco / Cuenta' : method === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : method === 'DEBIT_CARD' ? 'Tarjeta Débito' : 'Cuenta'}
                         value={currentAlloc.treasuryAccountId || ""}
@@ -390,7 +388,7 @@ export function PaymentMethodSelector({
         )
     }
 
-    const methodCardClass = "card-base bg-card p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start"
+    const methodCardClass = "card-base bg-card text-card-foreground p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start"
 
     const renderMethodGrid = () => {
         if (!isMultiPayment) {
@@ -418,6 +416,7 @@ export function PaymentMethodSelector({
                             <Button
                                 key={m.id}
                                 type="button"
+                                variant="ghost"
                                 onClick={() => {
                                     if (isMultiCard) {
                                         enterMultiMode()
@@ -442,7 +441,6 @@ export function PaymentMethodSelector({
                                 className={cn(
                                     methodCardClass,
                                     isSingleSelected ? "border-2 border-primary accent-visible" : undefined,
-                                    isMultiCard && "hover:border-primary",
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
                             >
@@ -620,6 +618,7 @@ export function PaymentMethodSelector({
                             <Button
                                 key={m.id}
                                 type="button"
+                                variant="ghost"
                                 onClick={() => handlePaymentMethodSelect(m.id)}
                                 disabled={!m.isAllowed}
                                 className={cn(
