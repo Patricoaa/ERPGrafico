@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, EntityCard, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DataCell, EntityCard, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import {IconButton, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus} from "@/components/shared"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
@@ -200,7 +200,7 @@ export function SalesInvoicesClientView() {
                                                 )}
                                                 <DomainHubStatus label={label} data={d} />
                                             </div>
-                                            <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
+                                            <DataCell.ActionSingle onClick={() => toggleSelection(data)} title="Abrir" />
                                         </div>
                                     }
                                 />

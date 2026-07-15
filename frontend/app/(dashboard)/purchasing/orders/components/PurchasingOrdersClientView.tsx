@@ -539,7 +539,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 <div className="hidden sm:flex items-center gap-3">
                                                     <DomainHubStatus label={label} data={data} />
                                                 </div>
-                                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus:opacity-100 group-focus-within:opacity-100" />
+                                                <DataCell.ActionSingle onClick={() => toggleSelection(data.id as number)} title="Abrir" />
                                             </div>
                                         }
                                     />
