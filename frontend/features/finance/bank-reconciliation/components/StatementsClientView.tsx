@@ -269,7 +269,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 </div>
             ),
         },
-        statementActions.column(actionsCtx)
+        statementActions.auto(actionsCtx)
     ]
 
     const internalImportButton = accounts !== undefined ? (
@@ -318,21 +318,16 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                                 subtitle={stmt.treasury_account_name}
                                 trailing={<StatusBadge status={stmt.state} label={stmt.state_display} />}
                             />
-                            <EntityCard.Body>
-                                <div className="flex items-start justify-between gap-4">
-                                    <EntityCard.Field label="Apertura" value={<DataCell.Currency value={stmt.opening_balance} />} />
-                                    <EntityCard.Field label="Cierre" value={<DataCell.Currency value={stmt.closing_balance} />} />
-                                    <EntityCard.Field
-                                        label="Progreso"
-                                        value={
-                                            <div className="flex items-center gap-2 min-w-[100px]">
-                                                <Progress value={stmt.reconciliation_progress} className="h-1.5 w-16" />
-                                                <span className="text-xs font-mono font-bold">{Math.round(stmt.reconciliation_progress)}%</span>
-                                            </div>
-                                        }
-                                    />
-                                </div>
-                            </EntityCard.Body>
+                            <EntityCard.Metrics metrics={[
+                                { label: 'Apertura', value: <DataCell.Currency value={stmt.opening_balance} /> },
+                                { label: 'Cierre', value: <DataCell.Currency value={stmt.closing_balance} /> },
+                                { label: 'Progreso', value: (
+                                    <div className="flex items-center gap-2 min-w-[100px]">
+                                        <Progress value={stmt.reconciliation_progress} className="h-1.5 w-16" />
+                                        <span className="text-xs font-mono font-bold">{Math.round(stmt.reconciliation_progress)}%</span>
+                                    </div>
+                                ) },
+                            ]} />
                             <EntityCard.Footer>
                                 <div className="flex items-center gap-2">
                                     {stmt.state !== 'CONFIRMED' && stmt.reconciliation_progress < 100 && (
@@ -384,7 +379,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     })
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.bankstatement"
