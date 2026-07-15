@@ -9,6 +9,7 @@ import { DataCell } from '@/components/shared'
 import { Layers } from "lucide-react"
 import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
 import { bomActions, type BOMActionsCtx } from "./bomActions"
+import { bomFields } from "@/features/production/bomFields"
 
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"

@@ -13,5 +13,6 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         type: "status",
         label: "Estado",
         tableOptions: { width: 100 },
+        cardPlacement: "header-right",
     },
 })

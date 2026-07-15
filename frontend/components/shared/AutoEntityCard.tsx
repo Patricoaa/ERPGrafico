@@ -13,6 +13,7 @@ export interface AutoEntityCardProps<TData> {
             key: string
             label: string
             value: React.ReactNode
+            cardPlacement?: 'auto' | 'header-right' | 'body'
         }>
     }
     /** Optional icon to render in the header */
@@ -24,7 +25,7 @@ export interface AutoEntityCardProps<TData> {
     /** Optional default action to trigger when the card is clicked (used by keyboard/accessibility) */
     defaultAction?: ((e: React.MouseEvent) => void) | null
     /** Optional onClick handler for the entire card (takes precedence over defaultAction for the click target) */
-    onClick?: (e: React.MouseEvent) => void
+    onClick?: () => void
     /** Whether the card is visually selected */
     isSelected?: boolean
     /** Additional CSS classes for the card container */
@@ -41,8 +42,8 @@ export interface AutoEntityCardProps<TData> {
     center?: React.ReactNode
     /** Optional children to render custom blocks like Metrics or Footer inside the card */
     children?: React.ReactNode
-    /** Card display variant. Default is "default" (body with labels). "compact" hides body and puts values in subtitle. */
-    variant?: "default" | "compact"
+    /** Card display variant. Default is "auto" (heuristic). "compact" forces no body. */
+    variant?: "auto" | "compact"
 }
 
 /**
@@ -50,7 +51,9 @@ export interface AutoEntityCardProps<TData> {
  * 
  * Automatically generates the EntityCard layout using the fields defined in `createEntityFields`.
  * - If `title` is NOT provided, the first field is used as the Title, and the second as Subtitle.
- * - If `title` IS provided, all fields are rendered in the Card Body.
+ * - If `title` IS provided, all fields are evaluated for placement.
+ * - Uses `cardPlacement` metadata ('header-right', 'body') to position fields.
+ * - Fields with 'auto' placement use a heuristic: <= 2 fields go to header-right, >= 3 go to body.
  */
 export function AutoEntityCard<TData>({ 
     data, 
@@ -68,7 +71,7 @@ export function AutoEntityCard<TData>({
     imageSrc, 
     trailing,
     children,
-    variant = "default"
+    variant = "auto"
 }: AutoEntityCardProps<TData>) {
     const cardFields = fields.toCardFields(data);
     
@@ -77,34 +80,64 @@ export function AutoEntityCard<TData>({
     const displaySubtitle = hasOverrideTitle ? subtitle : cardFields[1]?.value;
     const restFields = hasOverrideTitle ? cardFields : cardFields.slice(2);
 
-    const compactSubtitle = variant === "compact" && restFields.length > 0 ? (
-        <div className="flex items-center gap-2 overflow-hidden text-xs text-muted-foreground mt-0.5">
-            {displaySubtitle && <span className="truncate shrink-0">{displaySubtitle}</span>}
-            {displaySubtitle && <span className="opacity-40 shrink-0">•</span>}
-            {restFields.map((field, i) => (
-                <React.Fragment key={field.key}>
-                    <span className="truncate shrink-0">{field.value ?? <span className="opacity-40">—</span>}</span>
-                    {i < restFields.length - 1 && <span className="opacity-40 shrink-0">•</span>}
-                </React.Fragment>
+    // 1. Separate fields based on explicit placement
+    const explicitHeaderRight = restFields.filter(f => f.cardPlacement === 'header-right');
+    const explicitBody = restFields.filter(f => f.cardPlacement === 'body');
+    const autoFields = restFields.filter(f => !f.cardPlacement || f.cardPlacement === 'auto');
+
+    // 2. Apply heuristics for 'auto' fields
+    let finalHeaderRight = [...explicitHeaderRight];
+    let finalBody = [...explicitBody];
+
+    if (variant === "compact") {
+        // Force all auto fields to header-right (inline style)
+        finalHeaderRight = [...finalHeaderRight, ...autoFields];
+    } else {
+        // Heuristic: If <= 2 auto fields, put them in header right. Else, put in body.
+        if (autoFields.length <= 2) {
+            finalHeaderRight = [...finalHeaderRight, ...autoFields];
+        } else {
+            finalBody = [...finalBody, ...autoFields];
+        }
+    }
+
+    // 3. Build Header Right content
+    const headerRightContent = finalHeaderRight.length > 0 && (
+        <div className="flex items-center gap-4">
+            {finalHeaderRight.map(f => (
+                <div key={f.key} className="flex flex-col items-end">
+                    <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>
+                    <span className="text-xs font-semibold">{f.value ?? <span className="opacity-40">—</span>}</span>
+                </div>
             ))}
         </div>
-    ) : displaySubtitle;
+    );
+
+    const combinedTrailing = (headerRightContent || trailing) ? (
+        <div className="flex items-center gap-4">
+            {headerRightContent}
+            {trailing}
+        </div>
+    ) : undefined;
+
+    // 4. Determine Card Variant (minimal padding if no body)
+    const cardVariant = finalBody.length === 0 ? "compact" : "full";
 
     return (
-        <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={variant === "compact" ? "compact" : "full"}>
+        <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={cardVariant}>
             <EntityCard.Header 
                 icon={icon}
                 iconClassName={iconClassName}
                 imageSrc={imageSrc}
                 title={displayTitle} 
-                subtitle={compactSubtitle} 
+                subtitle={displaySubtitle} 
                 center={center}
                 actions={actions}
-                trailing={trailing}
+                trailing={combinedTrailing}
             />
-            {variant !== "compact" && restFields.length > 0 && (
+            {finalBody.length > 0 && (
                 <EntityCard.Body>
-                    {restFields.map(field => (
+                    {finalBody.map(field => (
                         <EntityCard.Field 
                             key={field.key} 
                             label={field.label} 
