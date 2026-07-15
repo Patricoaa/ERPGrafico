@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils"
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { subscriptionUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { subscriptionFields } from "../subscriptionFields"
 
 // Subscription type imported from useSubscriptions hook
 
@@ -224,119 +225,97 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         },
     }), [subscriptions, handlePause, handleResume, openSubscription])
 
-    const columns = useMemo<ColumnDef<Subscription>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        {
-            id: "product",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
-            ),
-            accessorFn: (row) => row.product_name,
-            cell: ({ row }) => {
-                const sub = row.original;
-                return (
-                    <div className="flex flex-col items-center gap-1 py-1 w-full">
-                        <DataCell.Text>{sub.product_name}</DataCell.Text>
-                        <div className="flex flex-wrap justify-center gap-1 mt-1">
-                            {sub.product_internal_code && (
-                                <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
-                            )}
-                            {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                <Chip size="xs" intent="primary" className="opacity-80">{sub.product_code}</Chip>
-                            )}
-                        </div>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: "category_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const value = row.getValue("category_name") as string;
-                return (
-                    <DataCell.Secondary>
-                        {value || "Sin Categoría"}
-                    </DataCell.Secondary>
-                );
-            },
-        },
-        {
-            accessorKey: "supplier_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.ContactLink
-                        contactId={row.original.supplier_id}
-                    >
-                        {row.getValue("supplier_name")}
-                    </DataCell.ContactLink>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "amount",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Monto" className="justify-center" />
-            ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
-        },
-        {
-            id: "frequency",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Frecuencia" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Secondary>{getPaymentScheduleText(row.original)}</DataCell.Secondary>
-            ),
-        },
-        {
-            accessorKey: "next_payment_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Próximo Pago" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("next_payment_date")} /></div>,
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge
-                        status={row.getValue("status")}
+    const columns = useMemo<ColumnDef<Subscription>[]>(() => {
+        const [categoryCol, amountCol, nextPaymentCol] = subscriptionFields.toColumns()
+        return [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                        variant="circle"
                     />
-                </div>
-            ),
-        },
-        subscriptionActions.auto(actionsCtx),
-    ], [actionsCtx])
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        variant="circle"
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+                size: 40,
+            },
+            {
+                id: "product",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
+                ),
+                accessorFn: (row) => row.product_name,
+                cell: ({ row }) => {
+                    const sub = row.original;
+                    return (
+                        <div className="flex flex-col items-center gap-1 py-1 w-full">
+                            <DataCell.Text>{sub.product_name}</DataCell.Text>
+                            <div className="flex flex-wrap justify-center gap-1 mt-1">
+                                {sub.product_internal_code && (
+                                    <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
+                                )}
+                                {sub.product_code && sub.product_code !== sub.product_internal_code && (
+                                    <Chip size="xs" intent="primary" className="opacity-80">{sub.product_code}</Chip>
+                                )}
+                            </div>
+                        </div>
+                    );
+                },
+            },
+            categoryCol,
+            {
+                accessorKey: "supplier_name",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />
+                ),
+                cell: ({ row }) => (
+                    <div className="flex justify-center w-full">
+                        <DataCell.ContactLink
+                            contactId={row.original.supplier_id}
+                        >
+                            {row.getValue("supplier_name")}
+                        </DataCell.ContactLink>
+                    </div>
+                ),
+            },
+            amountCol,
+            {
+                id: "frequency",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Frecuencia" className="justify-center" />
+                ),
+                cell: ({ row }) => (
+                    <DataCell.Secondary>{getPaymentScheduleText(row.original)}</DataCell.Secondary>
+                ),
+            },
+            nextPaymentCol,
+            {
+                accessorKey: "status",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
+                ),
+                cell: ({ row }) => (
+                    <div className="flex justify-center">
+                        <StatusBadge
+                            status={row.getValue("status")}
+                        />
+                    </div>
+                ),
+            },
+            subscriptionActions.auto(actionsCtx),
+        ]
+    }, [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Subscription>[]>(() => [
         {
@@ -387,7 +366,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     ], [pauseSubscription, resumeSubscription, updateProduct])
 
     return (
-        <PageContainer className={cn("h-full flex flex-col", hideHeader && "pt-0")}>
+        <PageContainer className={cn("flex flex-col", hideHeader && "pt-0")}>
             {!hideHeader && (
                 <PageHeader
                     title="Suscripciones y Recurrentes"

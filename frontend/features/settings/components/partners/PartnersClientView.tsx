@@ -510,12 +510,12 @@ export function PartnersClientView({
                 />
             )
         },
-        partnerActions.column(partnerActionsCtx)
+        partnerActions.auto(partnerActionsCtx)
     ]
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando composición societaria">
-            <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
                 {error && (
                     <div className="mx-4 mt-2 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                         Error al cargar socios: {error.message}

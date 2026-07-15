@@ -6,11 +6,12 @@ import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, EntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch, createDateColumn } from '@/components/shared'
+import { DataTableView, EntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { absenceFields } from '../absenceFields'
 
 interface AbsenceClientViewProps {
     initialAbsences?: Absence[]
@@ -59,29 +60,12 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     }
 
     const columns: ColumnDef<Absence>[] = [
-        {
-            accessorKey: "employee_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("employee_name")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "absence_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={row.original.absence_type} label={row.original.absence_type_display} />,
-        },
-        createDateColumn<Absence>("start_date", "Inicio"),
-        createDateColumn<Absence>("end_date", "Fin"),
-        {
-            accessorKey: "days",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("days")}</DataCell.Code>,
-        },
+        ...absenceFields.toColumns(),
         absenceActions.auto(absenceActionsCtx),
     ]
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
 
             <AbsenceDrawer
                 open={dialogOpen}
@@ -134,9 +118,9 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                                 actions={absenceActions.render(absence, absenceActionsCtx)}
                             />
                             <EntityCard.Body>
-                                <EntityCard.Field label="Inicio" value={absence.start_date} />
-                                <EntityCard.Field label="Fin" value={absence.end_date} />
-                                <EntityCard.Field label="Días" value={String(absence.days)} />
+                                {absenceFields.toCardFields(absence, { only: ["startDate", "endDate", "days"] }).map(f => (
+                                    <EntityCard.Field key={f.key} label={f.label} value={f.value} />
+                                ))}
                             </EntityCard.Body>
                         </EntityCard>
                     )}
