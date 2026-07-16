@@ -1,6 +1,6 @@
 
 import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
-import { ArrowRight, ArrowUpRight, ArrowDownLeft, History, ExternalLink, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
+import { ArrowRight, ArrowUpRight, ArrowDownLeft, History, ExternalLink, User, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -173,8 +173,8 @@ export const DataCell = {
                     className={cn("flex justify-center items-center gap-1.5 text-sm font-sans font-medium hover:underline hover:text-cyan transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
                     {...props}
                 >
+                    <User className="h-3 w-3 text-cyan/50 group-hover:text-cyan transition-colors flex-shrink-0" />
                     <span className="truncate">{children}</span>
-                    <ExternalLink className="h-3 w-3 text-cyan/50 group-hover:text-cyan transition-colors flex-shrink-0" />
                 </Button>
             </div>
         )
