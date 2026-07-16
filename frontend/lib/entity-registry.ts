@@ -25,16 +25,24 @@ export interface ViewPolicy {
   cardComponent?: 'entity' | 'custom';
   /** Grid layout for card/grid views */
   gridLayout?: 'single-column' | 'multi-column';
-  /** Card variant: 'compact' = header-only, 'full' = header + body + footer */
-  cardVariant?: 'compact' | 'full';
   /**
-   * Layout preset for EntityCard body area.
-   * - 'key-value': standard auto-fit grid with EntityCard.Field (default)
-   * - 'metrics': horizontal equal-width columns (financial dashboards)
-   * - 'dashboard': rich custom content wrapper (period grids, etc.)
-   * - 'hero': prominent image + accent (product cards)
-   * - 'workflow': line items + totals (orders, invoices)
-   * - 'custom': no preset, consumer provides their own body
+   * Unified card variant — controls layout zones, field placement, and root styling.
+   * - 'highlights': dashboard/summary — header only (icon + title + subtitle + trailing + actions)
+   * - 'minimal': management, dense — header + body fields WITHOUT labels
+   * - 'compact': management, inline fields — header only with fields inline (header-right)
+   * - 'full': management, complete — header + body + metrics + footer + workflow
+   * - 'hero': products, visual — Hero header (image 64×64) + body
+   * - 'flow': transfers, directional — header with center (source → dest arrow)
+   */
+  cardVariant?: 'highlights' | 'minimal' | 'compact' | 'full' | 'hero' | 'flow';
+  /**
+   * @deprecated Use cardVariant instead. Will be removed after full migration.
+   * Legacy card variant for backward compatibility.
+   */
+  legacyCardVariant?: 'compact' | 'full';
+  /**
+   * @deprecated Use cardVariant instead. Will be removed after full migration.
+   * Legacy layout preset for EntityCard body area.
    */
   cardLayout?: 'key-value' | 'metrics' | 'dashboard' | 'hero' | 'workflow' | 'custom';
 }
@@ -71,6 +79,25 @@ export interface EntityMetadata {
     iconClassName?: string | ((data: Record<string, unknown>) => string | undefined)
     /** Label for the date column ("Entrega" / "Recepción") */
     dateLabel?: string | ((data: Record<string, unknown>) => string)
+    /** Static icon override (when the entity variant needs a different icon than ENTITY_REGISTRY) */
+    icon?: string
+    /** Workflow body configuration for variant 'full' */
+    workflow?: {
+      /** Key in entity data that holds line items array */
+      linesKey?: string
+      /** Key for the total label (e.g. "Total neto", "Total") */
+      totalKey?: string
+      /** Whether the total is computed client-side or read from a field */
+      totalComputed?: boolean
+      /** Key for pending count */
+      pendingKey?: string
+      /** Key for delivery/receipt date */
+      deliveryDateKey?: string
+      /** Label for delivery date ("Entrega") */
+      dateLabel?: string
+      /** Header label for the workflow section */
+      headerLabel?: string
+    }
   }
 }
 
@@ -1111,6 +1138,89 @@ export function renderEntitySubtitleSuffix(label: string, data?: Record<string, 
     return templateFromData(template, data);
   }
   return undefined;
+}
+
+/**
+ * Structured subtitle item — used by AutoEntityCard subtitle rendering
+ * and by useDrawerIdentity for drawer subtitles (same source of truth).
+ */
+export type SubtitleItem =
+  | { kind: 'text'; content: string }
+  | { kind: 'date'; value: string | Date }
+  | { kind: 'currency'; value: number; currency?: string }
+  | { kind: 'status'; label: string; status: string }
+  | { kind: 'separator' }
+
+/**
+ * Builds a structured SubtitleItem[] from subtitleTemplate + subtitleSuffixTemplate.
+ * Used by AutoEntityCard and useDrawerIdentity — single source of truth for card subtitles.
+ */
+export function renderEntitySubtitleItems(
+  label: string,
+  data?: Record<string, unknown> | null
+): SubtitleItem[] {
+  if (!data) {
+    const desc = ENTITY_REGISTRY[label]?.description;
+    return desc ? [{ kind: 'text', content: desc }] : [];
+  }
+
+  const config = getEntityConfig(label);
+  const entity = ENTITY_REGISTRY[label];
+  const mainTemplate = config?.subtitleTemplate ?? entity?.subtitleTemplate;
+  const suffixTemplate = config?.subtitleSuffixTemplate ?? entity?.subtitleSuffixTemplate;
+
+  const items: SubtitleItem[] = [];
+
+  if (mainTemplate) {
+    items.push(...parseTemplateToItems(mainTemplate, data));
+  }
+
+  if (suffixTemplate) {
+    const suffixItems = parseTemplateToItems(suffixTemplate, data);
+    if (suffixItems.length > 0) {
+      items.push({ kind: 'separator' });
+      items.push(...suffixItems);
+    }
+  }
+
+  if (items.length === 0) {
+    const desc = entity?.description;
+    if (desc) items.push({ kind: 'text', content: desc });
+  }
+
+  return items;
+}
+
+function parseTemplateToItems(template: string, data: Record<string, unknown>): SubtitleItem[] {
+  const items: SubtitleItem[] = [];
+  const segments = template.split(/\s*·\s*/);
+  for (const seg of segments) {
+    const trimmed = seg.trim();
+    if (!trimmed) continue;
+    const match = trimmed.match(/^\{([^}]+)\}$/);
+    if (match) {
+      const [path, format] = match[1].split(':');
+      let value: unknown = data;
+      for (const part of path.split('.')) {
+        if (value !== null && typeof value === 'object') {
+          value = (value as Record<string, unknown>)[part];
+        } else {
+          value = undefined;
+        }
+      }
+      if (value === undefined || value === null) continue;
+      if (format === 'date') {
+        items.push({ kind: 'date', value: String(value) });
+      } else if (format === 'currency') {
+        items.push({ kind: 'currency', value: Number(value) });
+      } else {
+        items.push({ kind: 'text', content: String(value) });
+      }
+    } else {
+      items.push({ kind: 'text', content: trimmed });
+    }
+  }
+  return items;
 }
 
 export function getEntityIcon(label: string) {
