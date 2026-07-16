@@ -160,6 +160,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                             key={emp.id}
                             data={emp}
                             fields={employeeFields}
+                            entityLabel="hr.employee"
                             title={emp.contact_detail?.name || "Sin nombre"}
                             subtitle={emp.contact_detail?.tax_id || emp.display_id}
                             trailing={<StatusBadge status={emp.status} label={emp.status_display} size="sm" />}
@@ -169,6 +170,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                                 params.set('selected', String(emp.id))
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             })}
+                            variant="full"
                         >
                             <EntityCard.Metrics metrics={[
                                 { label: 'Cargo', value: emp.position || '—' },
