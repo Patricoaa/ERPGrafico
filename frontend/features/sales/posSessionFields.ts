@@ -33,9 +33,9 @@ export const posSessionFields = createEntityFields<POSSession>()({
     },
     startAmount: {
         key: "start_amount",
-        type: "currency",
+        type: "secondary",
         label: "Fondo Inicial",
-        cellProps: { intent: "muted" },
+        cardPlacement: "detail",
     },
     totalSales: {
         key: "total_sales",
