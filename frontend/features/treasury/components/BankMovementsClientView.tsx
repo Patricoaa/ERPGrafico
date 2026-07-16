@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { DataTableView, AutoEntityCard, EntityCard, DataCell, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
+import { ArrowRight, ArrowDown } from "lucide-react"
+import { resolveTreasuryMovementIcon } from "@/lib/movement-icons"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -198,26 +199,8 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                     }}
                     renderCard={(m) => {
                         const type = m.movement_type
-                        const isWriteOff = m.payment_method === 'WRITE_OFF'
                         const isTransferOrAdj = type === 'TRANSFER' || type === 'ADJUSTMENT'
-
-                        const Icon = isWriteOff
-                            ? Ban
-                            : type === 'INBOUND'
-                                ? ArrowDownToLine
-                                : type === 'OUTBOUND'
-                                    ? ArrowUpFromLine
-                                    : type === 'TRANSFER'
-                                        ? ArrowLeftRight
-                                        : Scale
-
-                        const iconStyle = isWriteOff
-                            ? "text-muted-foreground/50 bg-muted/50"
-                            : type === 'INBOUND'
-                                ? "text-success bg-success/10"
-                                : type === 'OUTBOUND'
-                                    ? "text-destructive bg-destructive/10"
-                                    : "text-warning bg-warning/10"
+                        const { icon, iconClassName } = resolveTreasuryMovementIcon(m)
 
                         let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
                         let destLabel = m.to_account_name || m.partner_name || 'Destino'
@@ -243,8 +226,8 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                                 title={m.display_id}
                                 subtitle={m.payment_method_display}
                                 onClick={() => handleViewDetails(m.id)}
-                                icon={Icon}
-                                iconClassName={iconStyle}
+                                icon={icon}
+                                iconClassName={iconClassName}
                                 center={
                                     <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
                                         <span>{sourceLabel}</span>

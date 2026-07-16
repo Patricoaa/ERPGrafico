@@ -80,7 +80,7 @@ export function createEntityCardView(
 
           const injectedProps: Record<string, any> = {
             key: (row.original as Record<string, unknown>).id as React.Key ?? row.id,
-            variant: cardVariant,
+            entityLabel,
           }
 
           if (options.hasBulkActions) {
@@ -259,13 +259,13 @@ export function createCardLoadingView(
   layout: 'single-column' | 'multi-column' = 'single-column',
   count: number = 8,
   skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>,
-  cardVariant?: 'compact' | 'full',
+  cardVariant?: 'highlights' | 'minimal' | 'compact' | 'full' | 'hero' | 'flow',
 ) {
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-1"
 
-  const isCompact = cardVariant === 'compact'
+  const isCompact = cardVariant === 'compact' || cardVariant === 'highlights'
   const effectiveSkeletonProps = isCompact
     ? { ...skeletonProps, showBody: false, showFooter: false }
     : skeletonProps
@@ -300,7 +300,7 @@ export function createCardGroupLoadingView(
     itemsPerGroup?: number
     gridLayout?: 'single-column' | 'multi-column'
     skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
-    cardVariant?: 'compact' | 'full'
+    cardVariant?: 'highlights' | 'minimal' | 'compact' | 'full' | 'hero' | 'flow'
   }
 ) {
   const {
@@ -311,7 +311,7 @@ export function createCardGroupLoadingView(
     cardVariant,
   } = options ?? {}
 
-  const isCompact = cardVariant === 'compact'
+  const isCompact = cardVariant === 'compact' || cardVariant === 'highlights'
   const effectiveSkeletonProps = isCompact
     ? { ...skeletonProps, showBody: false, showFooter: false }
     : skeletonProps
