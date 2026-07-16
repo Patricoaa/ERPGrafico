@@ -162,6 +162,7 @@ export function SalesInvoicesClientView() {
                                 key={data.id}
                                 data={data}
                                 fields={salesInvoiceFields}
+                                entityLabel={label}
                                 title={getPartnerName(label, d)}
                                 subtitle={
                                     <span className="flex items-center gap-1.5 flex-wrap">
@@ -178,41 +179,50 @@ export function SalesInvoicesClientView() {
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={iconClassName}
-                                trailing={
-                                    <div className="flex items-center gap-4">
-                                        <div className="hidden sm:flex items-center gap-3">
-                                            {adjustments.length > 0 && (
-                                                <div className="flex items-center gap-1.5">
-                                                    {adjustments.map((adj) => (
-                                                        <span
-                                                            key={adj.id as number}
-                                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/10 cursor-pointer hover:bg-primary/10"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                openHub({ invoiceId: adj.id as number, type: 'sale' })
-                                                            }}
-                                                        >
-                                                            <GitBranch className="h-3 w-3" />
-                                                            {formatEntityDisplay(label, d)}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <DomainHubStatus label={label} data={d} />
-                                        </div>
-                                        <DataCell.ActionSingle onClick={() => toggleSelection(data)} title="Abrir" />
+                                hubStatusRenderer={(hubData) => {
+                                    const hubD = hubData as unknown as Record<string, unknown>
+                                    return (
+                                    <div className="hidden sm:flex items-center gap-3">
+                                        {adjustments.length > 0 && (
+                                            <div className="flex items-center gap-1.5">
+                                                {adjustments.map((adj) => (
+                                                    <span
+                                                        key={adj.id as number}
+                                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/10 cursor-pointer hover:bg-primary/10"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            openHub({ invoiceId: adj.id as number, type: 'sale' })
+                                                        }}
+                                                    >
+                                                        <GitBranch className="h-3 w-3" />
+                                                        {formatEntityDisplay(label, hubD)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <DomainHubStatus label={label} data={hubD} />
                                     </div>
+                                    )
+                                }}
+                                trailing={
+                                    <DataCell.ActionSingle onClick={() => toggleSelection(data)} title="Abrir" />
                                 }
-                            >
-                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
-                                    <EntityCard.WorkflowBody
-                                        lines={((d.lines || d.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
-                                        total={total}
-                                        pending={hasPending ? pending : undefined}
-                                        deliveryDate={d.delivery_date as string | undefined}
-                                    />
-                                )}
-                            </AutoEntityCard>
+                                workflowRenderer={(wfData) => {
+                                    const wd = wfData as unknown as Record<string, unknown>
+                                    const wfTotal = parseFloat(String(wd.total || 0))
+                                    const wfPending = parseFloat(String(wd.pending_amount || 0))
+                                    const wfHasPending = wfTotal > 0 && wfPending > 0
+                                    return ((wd.lines || wd.items || []) as Array<Record<string, unknown>>).length > 0 ? (
+                                        <EntityCard.WorkflowBody
+                                            lines={((wd.lines || wd.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
+                                            total={wfTotal}
+                                            pending={wfHasPending ? wfPending : undefined}
+                                            deliveryDate={wd.delivery_date as string | undefined}
+                                        />
+                                    ) : null
+                                }}
+                                variant="full"
+                            />
                         )
                     }}
                     unifiedSearch={<UnifiedSearchBar
