@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, EntityCard, AutoEntityCard } from '@/components/shared'
@@ -11,6 +10,8 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowRightLeft } from "lucide-react"
 
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 export interface StockMove {
     id: number
@@ -64,33 +65,21 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
     }, [isOverLimit, totalCount])
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string } | null>(null)
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<StockMove>({
+        endpoint: '/inventory/stock-moves'
+    })
+    const { openView } = useEntityRouteActions()
 
-    // Open detail modal if ?selected= is present (ADR-0020)
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId && !viewingTransaction) {
+        if (selectedFromUrl && !viewingTransaction) {
             requestAnimationFrame(() => {
-                setViewingTransaction({ type: 'inventory', id: selectedId })
+                setViewingTransaction({ type: 'inventory', id: selectedFromUrl.id })
             })
         }
-    }, [searchParams, viewingTransaction])
-
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+    }, [selectedFromUrl, viewingTransaction])
 
     const actionsCtx: StockMoveActionsCtx = {
-        onViewDetails: (id) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('selected', String(id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onViewDetails: (id) => openView(id),
     }
 
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
@@ -186,11 +175,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                 title={move.product_name}
                                 subtitle={move.display_id ?? String(move.id)}
                                 actions={stockMoveActions.render(move, actionsCtx)}
-                                defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => {
-                                    const params = new URLSearchParams(searchParams.toString())
-                                    params.set('selected', String(move.id))
-                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                })}
+                                defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
                             >
                                 <EntityCard.Body>
                                     <EntityCard.Field label="Fecha" value={<DataCell.Date value={move.date} />} />

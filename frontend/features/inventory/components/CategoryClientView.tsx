@@ -18,6 +18,7 @@ import { useCategories, type Category } from "@/features/inventory/hooks/useCate
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import * as LucideIcons from "lucide-react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface CategoryClientViewProps {
     externalOpen?: boolean
@@ -34,13 +35,14 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
 
+    const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Category>({
         endpoint: '/inventory/categories'
     })
+    const { openSelected } = useEntityRouteActions()
 
     // Open edit form if ?selected= is present (ADR-0020).
     // Depends ONLY on selectedFromUrl — NOT on isFormOpen/editingCategory.
@@ -75,12 +77,6 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
-    }
-
-    const openSelected = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleDelete = useCallback(async (category: Category | null, isConfirmed = false) => {

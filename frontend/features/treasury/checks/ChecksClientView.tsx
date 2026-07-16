@@ -16,6 +16,7 @@ import { checkActions, type CheckActionsCtx } from './checkActions'
 import { useBanks } from '@/features/treasury'
 import { checkFields } from './checkFields'
 import type { Check, CheckDirection } from './types'
+import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
     deposit:     ['IN_PORTFOLIO'],
@@ -86,6 +87,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
     const isDepositOpen = !!selectedId && action === "deposit"
+    const { openAction, clearActions } = useEntityRouteActions()
 
     const depositCheck = useMemo(
         () => isDepositOpen ? checks.find(c => c.id === selectedId) ?? null : null,
@@ -93,15 +95,8 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     )
 
     const clearModalParams = useCallback(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        const changed = params.has("selected") || params.has("action")
-        params.delete("selected")
-        params.delete("action")
-        if (changed) {
-            const query = params.toString()
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        }
-    }, [router, pathname, searchParams])
+        clearActions()
+    }, [clearActions])
 
     const isFiltered = search.isFiltered
 
@@ -126,12 +121,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
         isIssued,
         canDo,
         onViewDetail: handleViewDetail,
-        onDeposit: (check) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set("selected", String(check.id))
-            params.set("action", "deposit")
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onDeposit: (check) => openAction(check.id, "deposit"),
         onClear: (id) => clear(id),
         onBounce: (id) => bounce({ id }),
         onMarkCashed: (id) => markCashed(id),

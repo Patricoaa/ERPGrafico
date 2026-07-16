@@ -21,6 +21,7 @@ import { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
 import { parseDateOnly } from '@/lib/utils'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
 import { cardStatementFields } from './cardStatementFields'
+import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 interface StatementsClientViewProps {
     bankId: number
@@ -106,23 +107,15 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         return result
     }, [statements, search.filterFn, search.filters])
 
+    const { openAction, clearActions } = useEntityRouteActions()
+
     const clearAll = useCallback(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        const changed = params.has("selected") || params.has("action")
-        params.delete("selected")
-        params.delete("action")
-        if (changed) {
-            const query = params.toString()
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        }
-    }, [router, pathname, searchParams])
+        clearActions()
+    }, [clearActions])
 
     const openStatement = useCallback((id: number, actionType: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        params.set("action", actionType)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
+        openAction(id, actionType)
+    }, [openAction])
 
     const selectedStatement = useMemo(
         () => selectedId ? statements.find(s => s.id === selectedId) ?? null : null,

@@ -9,7 +9,6 @@ import { FileEdit, RotateCcw, FileText } from "lucide-react"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
 import { journalEntryFields } from './journalEntryFields'
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -53,34 +52,30 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     // Guard for async operations
     const isMounted = useRef(true)
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
     const { entity: selectedFromUrl } = useSelectedEntity<JournalEntry>({
         endpoint: '/accounting/entries'
     })
-    const { detailId, openSelected, openDetail, clearActions } = useEntityRouteActions()
+    const { selectedId, viewAction, openSelected, openView, clearActions } = useEntityRouteActions()
 
-    // ?selected=<id> → abre el form de edición
+    // ?selected=<id> (sin action o action distinto de 'view') → abre el form de edición
     useEffect(() => {
-        if (!selectedFromUrl) return
+        if (!selectedFromUrl || viewAction === 'view') return
         requestAnimationFrame(() => {
             setEditingEntry(selectedFromUrl)
             setIsFormOpen(true)
             setViewingTransaction(null)
         })
-    }, [selectedFromUrl])
+    }, [selectedFromUrl, viewAction])
 
-    // ?detail=<id> → abre el visor de transacción (read-only)
+    // ?selected=<id>&action=view → abre el visor de transacción (read-only)
     useEffect(() => {
-        if (!detailId) return
+        if (!selectedId || viewAction !== 'view') return
         requestAnimationFrame(() => {
-            setViewingTransaction({ type: 'journal_entry', id: Number(detailId) })
+            setViewingTransaction({ type: 'journal_entry', id: Number(selectedId) })
             setIsFormOpen(false)
             setEditingEntry(null)
         })
-    }, [detailId])
+    }, [selectedId, viewAction])
 
     const clearSelection = () => {
         clearActions()
@@ -109,16 +104,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         if (!open) {
             setEditingEntry(null)
             onExternalOpenChange?.(false)
-            // Clean all action params + modal so URL doesn't stay ?modal=new forever
-            const params = new URLSearchParams(searchParams.toString())
-            let changed = false
-            for (const p of ['selected', 'detail', 'hub', 'modal'] as const) {
-                if (params.has(p)) { params.delete(p); changed = true }
-            }
-            if (changed) {
-                const query = params.toString()
-                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-            }
+            clearActions()
         }
     }
 
@@ -145,7 +131,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
     const journalEntryActionsCtx: JournalEntryActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDetail: (id) => openDetail(id),
+        onView: (id) => openView(id),
         onPublish: (id) => handlePost(id),
         onDelete: (id) => handleDelete(id),
         onReverse: (id) => handleReverse(id),
@@ -196,7 +182,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         description: "Los asientos se registran al confirmar operaciones o puedes crear uno manualmente.",
                     }}
                     currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    onRowClick={(m) => openDetail(m.id)}
+                    onRowClick={(m) => openView(m.id)}
                     renderCard={(m) => {
                         const Icon = m.is_manual ? FileEdit : m.reversal_of ? RotateCcw : FileText
                         const iconStyle = m.is_manual
@@ -212,7 +198,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                                 icon={Icon}
                                 iconClassName={iconStyle}
                                 actions={journalEntryActions.render(m, journalEntryActionsCtx)}
-                                defaultAction={(e) => { e.stopPropagation(); openDetail(m.id) }}
+                                defaultAction={(e) => { e.stopPropagation(); openView(m.id) }}
                             />
                         )
                     }}

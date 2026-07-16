@@ -33,6 +33,7 @@ import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { Chip, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -128,6 +129,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
         endpoint: '/inventory/products'
     })
+    const { openSelected } = useEntityRouteActions()
 
     const handleCloseModal = () => {
         setIsFormOpen(false)
@@ -227,11 +229,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
 
     const actionsCtx: ProductActionsCtx = {
-        onEdit: (id) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('selected', String(id))
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onEdit: (id) => openSelected(id),
         onArchive: (product) => handleArchive(product),
     }
 
@@ -501,11 +499,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 data={product}
                                 fields={productFields}
                                 defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
-                                onClick={() => {
-                                    const params = new URLSearchParams(searchParams.toString())
-                                    params.set('selected', String(product.id))
-                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                }}
+                                onClick={() => openSelected(product.id)}
                             >
                                 <EntityCard.Hero
                                     imageSrc={imageUrl}
