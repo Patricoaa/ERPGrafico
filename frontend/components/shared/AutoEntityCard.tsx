@@ -42,8 +42,8 @@ export interface AutoEntityCardProps<TData> {
     center?: React.ReactNode
     /** Optional children to render custom blocks like Metrics or Footer inside the card */
     children?: React.ReactNode
-    /** Card display variant. Default is "auto" (heuristic). "compact" forces no body. */
-    variant?: "auto" | "compact"
+    /** Card display variant. Default is "auto" (heuristic). "compact" forces no body, "minimal" forces all to body and hides icon. */
+    variant?: "auto" | "compact" | "minimal"
 }
 
 /**
@@ -92,6 +92,9 @@ export function AutoEntityCard<TData>({
     if (variant === "compact") {
         // Force all auto fields to header-right (inline style)
         finalHeaderRight = [...finalHeaderRight, ...autoFields];
+    } else if (variant === "minimal") {
+        // Force all auto fields to body
+        finalBody = [...finalBody, ...autoFields];
     } else {
         // Heuristic: If <= 2 auto fields, put them in header right. Else, put in body.
         if (autoFields.length <= 2) {
@@ -126,7 +129,7 @@ export function AutoEntityCard<TData>({
     return (
         <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={cardVariant}>
             <EntityCard.Header 
-                icon={icon}
+                icon={variant === "minimal" ? undefined : icon}
                 iconClassName={iconClassName}
                 imageSrc={imageSrc}
                 title={displayTitle} 
