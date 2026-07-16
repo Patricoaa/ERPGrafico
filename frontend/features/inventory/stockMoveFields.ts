@@ -41,7 +41,6 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         key: 'quantity',
         type: 'numericFlow',
         label: 'Cantidad',
-        cardPlacement: 'detail',
         get: (m) => ({ value: Number(m.quantity), unit: m.uom_name, showSign: true }),
     },
 })

@@ -21,7 +21,6 @@ export const checkFields = createEntityFields<Check>()({
         key: "amount",
         type: "currency",
         label: "Monto",
-        cardPlacement: "detail",
         get: (c) => parseFloat(c.amount) || 0,
         cellProps: { weight: "bold" },
     },
