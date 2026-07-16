@@ -153,6 +153,7 @@ export function TerminalBatchesClientView({
                             key={batch.id}
                             data={batch}
                             fields={terminalBatchFields}
+                            entityLabel="treasury.terminalbatch"
                             title={batch.batch_number}
                             subtitle={batch.provider_name ?? 'Sin proveedor'}
                             onClick={() => setOpenCreate(true)}

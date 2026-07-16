@@ -185,6 +185,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             key={check.id}
                             data={check}
                             fields={checkFields}
+                            entityLabel="treasury.check"
                             title={check.check_number}
                             subtitle={check.counterparty_name ?? check.drawer_name ?? '—'}
                             trailing={<StatusBadge status={check.status} />}

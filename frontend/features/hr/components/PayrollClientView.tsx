@@ -207,6 +207,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                             key={payroll.id}
                             data={payroll}
                             fields={payrollFields}
+                            entityLabel="hr.payroll"
                             title={(payroll as Payroll & Record<string, unknown>).employee_name as string || '---'}
                             subtitle={payroll.period_label || payroll.display_id}
                             trailing={<StatusBadge status={payroll.status} label={payroll.status_display} size="sm" />}

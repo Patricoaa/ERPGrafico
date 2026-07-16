@@ -153,6 +153,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                         <AutoEntityCard
                             data={session}
                             fields={posSessionFields}
+                            entityLabel="sales.possession"
                             title={session.id_display}
                             subtitle={session.user_name}
                             trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}

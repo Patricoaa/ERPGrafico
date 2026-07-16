@@ -205,6 +205,7 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                             key={bom.id}
                             data={bom}
                             fields={bomFields}
+                            entityLabel="production.bom"
                             title={bom.name}
                             subtitle={bom.product_name}
                             trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}

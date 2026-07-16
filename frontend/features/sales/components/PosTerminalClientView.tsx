@@ -189,6 +189,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                                 key={terminal.id} 
                                 data={terminal}
                                 fields={posTerminalFields}
+                                entityLabel="sales.posterminal"
                                 title={terminal.name}
                                 subtitle={terminal.code}
                                 onClick={() => openSelected(terminal.id)} 

@@ -199,6 +199,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                                 key={doc.id}
                                 data={doc}
                                 fields={inventoryDocumentFields}
+                                entityLabel="inventory.inventorydocument"
                                 title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
                                 subtitle={doc.date}
                                 trailing={<StatusBadge status={doc.status} size="sm" />}
