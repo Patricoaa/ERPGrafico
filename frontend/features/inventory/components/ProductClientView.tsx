@@ -498,8 +498,11 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 key={product.id}
                                 data={product}
                                 fields={productFields}
+                                entityLabel="inventory.product"
+                                imageSrc={imageUrl}
                                 defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
                                 onClick={() => openSelected(product.id)}
+                                variant="hero"
                             >
                                 <EntityCard.Hero
                                     imageSrc={imageUrl}

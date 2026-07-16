@@ -239,11 +239,13 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                             key={rule.id}
                             data={rule}
                             fields={pricingRuleFields}
+                            entityLabel="inventory.pricingrule"
                             title={rule.name}
                             subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
                             trailing={<StatusBadge status={rule.active ? 'active' : 'inactive'} size="sm" />}
                             actions={pricingRuleActions.render(rule, actionsCtx)}
                             defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? (() => openSelected(rule.id))}
+                            variant="highlights"
                         />
                     )}
                 />

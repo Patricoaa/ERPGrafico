@@ -461,8 +461,10 @@ export function PartnersClientView({
                                 key={partner.id}
                                 data={partner}
                                 fields={partnerFields}
+                                entityLabel="settings.partner"
                                 title={partner.name}
                                 actions={partnerActions.render(partner, partnerActionsCtx)}
+                                variant="highlights"
                             />
                         )}
                     />

@@ -223,6 +223,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                                 key={m.id} 
                                 data={m}
                                 fields={movementFields}
+                                entityLabel="treasury.bankmovement"
                                 title={m.display_id}
                                 subtitle={m.payment_method_display}
                                 onClick={() => handleViewDetails(m.id)}
@@ -237,6 +238,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                                 }
                                 trailing={<DataCell.CurrencyFlow value={amount} direction={type === 'OUTBOUND' ? 'outflow' : 'inflow'} />}
                                 actions={treasuryMovementActions.render(m, { onDetail: (id) => handleViewDetails(id) })}
+                                variant="flow"
                             />
                         )
                     }}

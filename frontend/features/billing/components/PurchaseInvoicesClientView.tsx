@@ -244,6 +244,7 @@ export function PurchaseInvoicesClientView() {
                                 key={data.id}
                                 data={data}
                                 fields={purchaseInvoiceFields}
+                                entityLabel="billing.purchaseinvoice"
                                 title={d.partner_name as string ?? d.reference as string ?? `Documento #${data.id}`}
                                 subtitle={d.date as string}
                                 isSelected={hubConfig?.invoiceId === data.id}
@@ -260,6 +261,7 @@ export function PurchaseInvoicesClientView() {
                                         })
                                     }
                                 }}
+                                variant="highlights"
                             />
                         )
                     }}
