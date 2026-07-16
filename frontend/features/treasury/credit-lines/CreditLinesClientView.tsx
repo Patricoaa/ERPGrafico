@@ -7,6 +7,7 @@ import {
     MoneyDisplay, SkeletonShell,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
+    AutoEntityCard
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { Button } from '@/components/ui/button'
@@ -55,46 +56,6 @@ export function CreditLinesClientView({ bankId }: Props) {
     const columns: ColumnDef<CreditLine>[] = [
         ...creditLineFields.toColumns(),
         {
-            accessorKey: 'credit_limit',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Límite" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.credit_limit)} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'used_amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.used_amount)} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'available_amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.available_amount)} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'utilization_rate',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Uso %" className="justify-end" />,
-            cell: ({ row }) => {
-                const rate = row.original.utilization_rate
-                if (rate === null) return <DataCell.Text>—</DataCell.Text>
-                return (
-                    <div className="flex justify-end">
-                        <DataCell.Text>{Number(rate).toFixed(1)}%</DataCell.Text>
-                    </div>
-                )
-            },
-        },
-        {
             id: 'actions',
             cell: ({ row }) => (
                 <div className="flex justify-end gap-1">
@@ -142,6 +103,26 @@ export function CreditLinesClientView({ bankId }: Props) {
                     paramValues={search.paramValues}
                     placeholder="Buscar por código, cuenta o límite..."
                 />}
+                renderCard={(line) => (
+                    <AutoEntityCard 
+                        key={line.id}
+                        data={line}
+                        fields={creditLineFields}
+                        title={line.account_name}
+                        subtitle={line.code}
+                    >
+                        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border/50">
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingLine(line); setDrawerOpen(true) }}>
+                                Editar
+                            </Button>
+                            {line.status === 'ACTIVE' && (
+                                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); remove.mutate(line.id) }}>
+                                    Archivar
+                                </Button>
+                            )}
+                        </div>
+                    </AutoEntityCard>
+                )}
             />
 
             <CreditLineDrawer

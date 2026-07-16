@@ -20,7 +20,8 @@ import {
     DataTableView,
     DataCell,
     UnifiedSearchBar,
-    useUnifiedSearch
+    useUnifiedSearch,
+    AutoEntityCard
 } from "@/components/shared"
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
@@ -455,6 +456,15 @@ export function PartnersClientView({
                                     { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
                                 ]
                         }
+                        renderCard={(partner) => (
+                            <AutoEntityCard 
+                                key={partner.id}
+                                data={partner}
+                                fields={partnerFields}
+                                title={partner.name}
+                                actions={partnerActions.card(partnerActionsCtx)}
+                            />
+                        )}
                     />
                 </div>
 
