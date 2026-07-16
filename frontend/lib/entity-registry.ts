@@ -27,14 +27,12 @@ export interface ViewPolicy {
   gridLayout?: 'single-column' | 'multi-column';
   /**
    * Unified card variant — controls layout zones, field placement, and root styling.
-   * - 'highlights': dashboard/summary — header only (icon + title + subtitle + trailing + actions)
-   * - 'minimal': management, dense — header + body fields WITHOUT labels
-   * - 'compact': management, inline fields — header only with fields inline (header-right)
-   * - 'full': management, complete — header + body + metrics + footer + workflow
-   * - 'hero': products, visual — Hero header (image 64×64) + body
-   * - 'flow': transfers, directional — header with center (source → dest arrow)
+   * - 'highlights': dashboard/summary — header only, auto fields hidden, actions on right
+   * - 'minimal': management, dense — icon (optional, no bg) + header-right fields without labels
+   * - 'compact': management, inline — icon + header-right (no labels) + center area
+   * - 'full': management, complete — header + body + metrics + footer + workflow (DEFAULT)
    */
-  cardVariant?: 'highlights' | 'minimal' | 'compact' | 'full' | 'hero' | 'flow';
+  cardVariant?: 'highlights' | 'summary' | 'full';
   /**
    * @deprecated Use cardVariant instead. Will be removed after full migration.
    * Legacy card variant for backward compatibility.
@@ -395,7 +393,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'TES-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'compact' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'summary' },
   },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',
@@ -447,7 +445,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'compact' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'summary' },
   },
   'tax.taxperiod': {
     label: 'tax.taxperiod',
@@ -607,7 +605,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'compact' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'summary' },
   },
   'settings.partner': {
     label: 'settings.partner',
