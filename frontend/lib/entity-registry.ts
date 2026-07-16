@@ -200,7 +200,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'BOM-{id}',
     listUrl: '/production/boms',
     detailUrlPattern: '/production/boms/{id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'inventory.stockmove': {
     label: 'inventory.stockmove',
@@ -230,6 +230,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/inventory/operations/documents',
     detailUrlPattern: '/inventory/operations/documents/{id}',
     printable: true,
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.product': {
     label: 'inventory.product',
@@ -257,7 +258,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/inventory/products/subscriptions',
     detailUrlPattern: '/inventory/products/{id}',
     partnerField: 'customer_name',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'inventory.warehouse': {
     label: 'inventory.warehouse',
@@ -271,7 +272,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/inventory/stock/warehouses',
     detailUrlPattern: '/inventory/warehouses/{id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.attribute': {
     label: 'inventory.attribute',
@@ -340,7 +341,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?statement={id}',
     partnerField: (data) => String(data.card_account_name ?? '---'),
-    viewPolicy: { availableViews: ['card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'treasury.unbilled-charge': {
     label: 'treasury.unbilled-charge',
@@ -353,7 +354,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CNF-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?charge={id}',
-    viewPolicy: { availableViews: ['list', 'analytics'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'list', cardComponent: 'entity' },
   },
   'treasury.treasurymovement': {
     label: 'treasury.treasurymovement',
@@ -367,7 +368,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'TES-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'compact' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'compact' },
   },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',
@@ -380,7 +381,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'EJ-{year}',
     listUrl: '/accounting/closures',
     detailUrlPattern: '/accounting/closures/{id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'custom' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'accounting.account': {
     label: 'accounting.account',
@@ -406,7 +407,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'BUD-{id}',
     listUrl: '/finance/budgets',
     detailUrlPattern: '/finance/budgets/{id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'accounting.journalentry': {
     label: 'accounting.journalentry',
@@ -432,7 +433,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{month_display}-{year}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/periods/{id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'custom', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom', gridLayout: 'single-column' },
   },
   'contacts.contact': {
     label: 'contacts.contact',
@@ -487,7 +488,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'hr.salaryadvance': {
     label: 'hr.salaryadvance',
@@ -680,7 +681,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center/{id}/overview',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'multi-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'multi-column' },
   },
   'treasury.paymentmethod': {
     label: 'treasury.paymentmethod',
@@ -707,7 +708,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center/{id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'treasury.bankstatement': {
     label: 'treasury.bankstatement',
@@ -721,7 +722,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CAR-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?statement={id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'custom' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.check': {
     label: 'treasury.check',
@@ -734,7 +735,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CHQ-{number}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?check={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'treasury.bankloan': {
     label: 'treasury.bankloan',
@@ -747,7 +748,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CRE-{code}',
     listUrl: '/treasury/loans',
     detailUrlPattern: '/treasury/loans?selected={id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'treasury.creditline': {
     label: 'treasury.creditline',
@@ -761,7 +762,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CL-{code}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'treasury.cardpendingcharge': {
     label: 'treasury.cardpendingcharge',
@@ -786,7 +787,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?terminal={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'treasury.terminalprovider': {
     label: 'treasury.terminalprovider',
@@ -799,7 +800,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?provider={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'treasury.terminaldevice': {
     label: 'treasury.terminaldevice',
@@ -812,7 +813,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'DEV-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?device={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'treasury.terminalbatch': {
     label: 'treasury.terminalbatch',
@@ -826,7 +827,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LOT-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?batch={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'treasury.transfer': {
     label: 'treasury.transfer',
@@ -881,7 +882,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CAT-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products?category={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.uom': {
     label: 'inventory.uom',
@@ -895,7 +896,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/inventory/products/units',
     detailUrlPattern: '/inventory/products/units?selected={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.uomcategory': {
     label: 'inventory.uomcategory',
@@ -909,6 +910,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/inventory/products/units',
     detailUrlPattern: '/inventory/products/units',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.pricingrule': {
     label: 'inventory.pricingrule',
@@ -922,7 +924,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'REG-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products?rule={id}',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
 
   // ── Contacts (partner entities) ────────────────────────────────────────
@@ -954,7 +956,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'POS-{id}',
     listUrl: '/pos/sessions',
     detailUrlPattern: '/pos/sessions?selected={id}',
-    viewPolicy: { availableViews: ['card'], defaultView: 'card', cardComponent: 'entity' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity' },
   },
   'pos.terminal': {
     label: 'pos.terminal',
