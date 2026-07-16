@@ -1,5 +1,5 @@
 import { createEntityActions } from '@/components/shared'
-import type { StockMove } from './components/MovementClientView'
+import type { StockMove } from './stockMoveFields'
 
 export interface StockMoveActionsCtx {
     onViewDetails: (id: number) => void
