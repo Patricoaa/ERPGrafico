@@ -27,13 +27,11 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
             return "info"
         },
         tableOptions: { enableSorting: false },
-        cardPlacement: "header",
     },
     date: {
         key: "date",
         type: "date",
         label: "Fecha",
-        cardPlacement: "header",
     },
     description: {
         key: "description",

@@ -9,14 +9,12 @@ export const paymentMethodFields = createEntityFields<PaymentMethod>()({
         key: 'allow_for_sales',
         type: 'chip',
         label: 'Permitido',
-        cardPlacement: 'detail',
         get: (m) => m.allow_for_sales ? 'Ventas' : null,
     },
     allowForPurchases: {
         key: 'allow_for_purchases',
         type: 'chip',
         label: '',
-        cardPlacement: 'detail',
         get: (m) => m.allow_for_purchases ? 'Compras' : null,
     },
 })

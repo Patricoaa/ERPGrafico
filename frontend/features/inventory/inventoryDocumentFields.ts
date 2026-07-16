@@ -20,7 +20,6 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         key: "document_type",
         type: "chip",
         label: "Tipo",
-        cardPlacement: "detail",
         get: (d) => DOCUMENT_TYPE_MAP[d.document_type]?.label ?? d.document_type,
         intent: (d) => DOCUMENT_TYPE_MAP[d.document_type]?.intent ?? 'neutral',
     },

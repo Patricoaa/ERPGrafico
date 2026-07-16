@@ -56,6 +56,5 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
         key: 'total_value',
         type: 'currency',
         label: 'Valorización',
-        cardPlacement: 'metric',
     },
 })

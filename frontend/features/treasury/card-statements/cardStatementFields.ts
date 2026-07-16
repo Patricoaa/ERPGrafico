@@ -12,7 +12,6 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
         key: 'billed_amount',
         type: 'currency',
         label: 'Facturado',
-        cardPlacement: 'detail',
         get: (s) => parseFloat(s.billed_amount) || 0,
     },
     dueDate: {
