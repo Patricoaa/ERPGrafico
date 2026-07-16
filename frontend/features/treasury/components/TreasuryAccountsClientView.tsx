@@ -258,6 +258,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                         key={acc.id} 
                                         data={acc}
                                         fields={accountFields}
+                                        entityLabel="treasury.treasuryaccount"
                                         title={acc.name}
                                         subtitle={
                                             <span className="flex items-center gap-1.5 flex-wrap">
@@ -278,6 +279,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                             <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
                                         }
                                         actions={treasuryAccountActions.render(acc, actionsCtx)}
+                                        variant="full"
                                     >
                                         <EntityCard.Metrics metrics={[
                                             ...(name ? [{
