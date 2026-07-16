@@ -2,7 +2,7 @@
 
 import {useState, useEffect, useMemo} from "react"
 
-import { DataTableView, ToolbarCreateButton, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, ToolbarCreateButton, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
@@ -191,29 +191,20 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                 rowCount={page?.count ?? 0}
                                 pagination={pageState}
                                 onPaginationChange={setPageState as unknown as (updater: ((prev: typeof pageState) => typeof pageState) | typeof pageState) => void}
-                                renderCard={(user: AppUser) => {
-                                    const groups = (user.groups || []).map(g => typeof g === 'string' ? g : g.name)
-                                    const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                                    const systemRole = groups.find(g => roles.includes(g))
-                                    return (
+                                renderCard={(user: AppUser) => (
                                         <AutoEntityCard 
                                             key={user.id} 
                                             data={user}
                                             fields={userFields}
+                                            variant="full"
                                             entityLabel="settings.user"
                                             title={user.username}
                                             subtitle={user.email}
                                             onClick={() => actionsCtx.onEdit(user.id)}
                                             trailing={<DataCell.Status status={user.is_active ? "active" : "inactive"} />}
                                             actions={userActions.render(user, actionsCtx)}
-                                        >
-                                            <EntityCard.Body>
-                                                <EntityCard.Field label="Nombre" value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || '—'} />
-                                                {systemRole && <EntityCard.Field label="Rol" value={systemRole} />}
-                                            </EntityCard.Body>
-                                        </AutoEntityCard>
-                                    )
-                                }}
+                                        />
+                                )}
                             />
                         </div>
                         {isUserModalOpen && (

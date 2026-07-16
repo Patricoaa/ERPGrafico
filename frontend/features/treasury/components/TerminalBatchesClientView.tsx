@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { BaseModal, DataTableView, AutoEntityCard, EntityCard, StatusBadge, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
+import { BaseModal, DataTableView, AutoEntityCard, StatusBadge, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef, Row } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
@@ -153,6 +153,7 @@ export function TerminalBatchesClientView({
                             key={batch.id}
                             data={batch}
                             fields={terminalBatchFields}
+                            variant="full"
                             entityLabel="treasury.terminalbatch"
                             title={batch.batch_number}
                             subtitle={batch.provider_name ?? 'Sin proveedor'}
@@ -164,12 +165,7 @@ export function TerminalBatchesClientView({
                                     size="sm"
                                 />
                             }
-                        >
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Transacciones" value={<DataCell.Number value={batch.transaction_count} />} />
-                                <EntityCard.Field label="Neto" value={<DataCell.Currency value={batch.net_amount} />} />
-                            </EntityCard.Body>
-                        </AutoEntityCard>
+                        />
                     )}
                 />
             </div>

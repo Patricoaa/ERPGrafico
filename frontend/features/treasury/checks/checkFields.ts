@@ -12,16 +12,19 @@ export const checkFields = createEntityFields<Check>()({
         type: "text",
         label: "# Cheque",
     },
-    date: {
+    dueDate: {
         key: "due_date",
         type: "date",
-        label: "Fecha",
+        label: "Vencimiento",
+        cardPlacement: "body",
     },
     amount: {
         key: "amount",
         type: "currency",
         label: "Monto",
-        tableOptions: { align: "right" },
+        cardPlacement: "body",
+        get: (c) => parseFloat(c.amount) || 0,
+        cellProps: { weight: "bold" },
     },
     status: {
         key: "status",

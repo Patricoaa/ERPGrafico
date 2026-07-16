@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, SkeletonShell, AutoEntityCard, EntityCard,
+    StatusBadge, MoneyDisplay, SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
@@ -185,32 +185,13 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             key={check.id}
                             data={check}
                             fields={checkFields}
+                            variant="full"
                             entityLabel="treasury.check"
                             title={check.check_number}
                             subtitle={check.counterparty_name ?? check.drawer_name ?? '—'}
                             trailing={<StatusBadge status={check.status} />}
                             actions={checkActions.render(check, actionsCtx)}
-                        >
-                            <EntityCard.Body>
-                                <EntityCard.Field
-                                    label="Monto"
-                                    value={<MoneyDisplay amount={parseFloat(check.amount)} className="font-bold" />}
-                                />
-                                <EntityCard.Field
-                                    label="Vencimiento"
-                                    value={
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <span>{check.due_date}</span>
-                                            {check.is_overdue && (
-                                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-destructive uppercase">
-                                                    <AlertTriangle className="h-3 w-3" /> Vencido
-                                                </span>
-                                            )}
-                                        </span>
-                                    }
-                                />
-                            </EntityCard.Body>
-                        </AutoEntityCard>
+                        />
                     )}
                 />
             </div>

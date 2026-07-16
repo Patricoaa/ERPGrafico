@@ -15,7 +15,7 @@ export interface AutoEntityCardProps<TData> {
             key: string
             label: string
             value: React.ReactNode
-            cardPlacement?: 'auto' | 'header-right' | 'center' | 'body'
+            cardPlacement?: 'auto' | 'header-right' | 'center' | 'body' | 'metrics'
             cardSize?: 'xs' | 'sm' | 'md' | 'lg'
             cardClassName?: string
         }>
@@ -72,15 +72,16 @@ export interface AutoEntityCardProps<TData> {
 
 /**
  * Classifies card fields into layout zones based on variant.
- * Returns { headerRight, center, body } buckets.
+ * Returns { headerRight, center, body, metrics } buckets.
  */
 function classifyFieldsByVariant<TData>(
     fields: ReturnType<AutoEntityCardProps<TData>['fields']['toCardFields']>,
     variant: AutoEntityCardProps<TData>['variant']
-): { headerRight: typeof fields; center: typeof fields; body: typeof fields } {
+): { headerRight: typeof fields; center: typeof fields; body: typeof fields; metrics: typeof fields } {
     const explicitHeaderRight = fields.filter(f => f.cardPlacement === 'header-right')
     const explicitBody = fields.filter(f => f.cardPlacement === 'body')
     const explicitCenter = fields.filter(f => f.cardPlacement === 'center')
+    const explicitMetrics = fields.filter(f => f.cardPlacement === 'metrics')
     const autoFields = fields.filter(f => !f.cardPlacement || f.cardPlacement === 'auto')
 
     let headerRight = [...explicitHeaderRight]
@@ -116,7 +117,7 @@ function classifyFieldsByVariant<TData>(
             break
     }
 
-    return { headerRight, center, body }
+    return { headerRight, center, body, metrics: explicitMetrics }
 }
 
 /**
@@ -184,7 +185,7 @@ export function AutoEntityCard<TData>({
     const restFields = hasOverrideTitle ? cardFields : cardFields.slice(2);
 
     // 1. Classify fields by variant
-    const { headerRight, center: declarativeCenter, body } = classifyFieldsByVariant(restFields, variant)
+    const { headerRight, center: declarativeCenter, body, metrics } = classifyFieldsByVariant(restFields, variant)
 
     // 2. Build subtitle from registry or explicit
     const subtitleItems = buildSubtitleItems(entityLabel, data, subtitle, title, cardFields[0])
@@ -265,6 +266,12 @@ export function AutoEntityCard<TData>({
                             : <EntityCard.Field key={field.key} label={field.label} value={field.value} />
                     ))}
                 </EntityCard.Body>
+            )}
+            {metrics.length > 0 && variant !== 'minimal' && (
+                <EntityCard.Metrics metrics={metrics.map(f => ({
+                    label: f.label,
+                    value: f.value,
+                }))} />
             )}
             {children}
             {variant === 'full' && workflowRenderer && (

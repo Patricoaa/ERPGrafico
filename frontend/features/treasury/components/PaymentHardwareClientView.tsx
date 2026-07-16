@@ -199,6 +199,7 @@ export function PaymentHardwareClientView({
                                 key={provider.id}
                                 data={provider}
                                 fields={terminalProviderFields}
+                                variant="full"
                                 entityLabel="treasury.paymentterminalprovider"
                                 title={provider.name}
                                 icon={Building2}
@@ -206,22 +207,7 @@ export function PaymentHardwareClientView({
                                 actions={providerActions.render(provider, providerActionsCtx)}
                                 onClick={() => openProviderSelected(provider.id)}
                                 defaultAction={providerActions.defaultAction(providerActionsCtx)?.(provider) ?? null}
-                            >
-                                <EntityCard.Body>
-                                    <EntityCard.Field
-                                        label="Recaudación"
-                                        value={provider.receivable_account_name || "No configurada"}
-                                        icon={Building2}
-                                    />
-                                    {provider.supplier_name && (
-                                        <EntityCard.Field
-                                            label="Contacto"
-                                            value={provider.supplier_name}
-                                            icon={UserIcon}
-                                        />
-                                    )}
-                                </EntityCard.Body>
-                            </AutoEntityCard>
+                            />
                         )}
                     />
                 </div>
@@ -268,6 +254,7 @@ export function PaymentHardwareClientView({
                                 key={device.id}
                                 data={device}
                                 fields={terminalDeviceFields}
+                                variant="full"
                                 entityLabel="treasury.paymentterminaldevice"
                                 title={
                                     <div className="flex items-center gap-2">
@@ -279,18 +266,6 @@ export function PaymentHardwareClientView({
                                 onClick={() => openDeviceSelected(device.id)}
                                 defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}
                             >
-                                <EntityCard.Body>
-                                    <EntityCard.Field
-                                        label="Proveedor"
-                                        value={device.provider_name || "Sin proveedor"}
-                                        icon={Building2}
-                                    />
-                                    <EntityCard.Field
-                                        label="N° Serie"
-                                        value={<span className="font-mono">{device.serial_number}</span>}
-                                        icon={CreditCard}
-                                    />
-                                </EntityCard.Body>
                                 <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
                                     <div className="flex items-center gap-1.5 w-full">
                                         <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>

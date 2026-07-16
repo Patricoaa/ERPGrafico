@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    MoneyDisplay, SkeletonShell, AutoEntityCard, EntityCard, StatusBadge,
+    MoneyDisplay, SkeletonShell, AutoEntityCard, StatusBadge,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -270,6 +270,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             key={stmt.id} 
                             data={stmt}
                             fields={cardStatementFields}
+                            variant="full"
                             entityLabel="treasury.cardstatement"
                             title={stmt.display_id}
                             subtitle={stmt.card_account_name}
@@ -277,22 +278,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             defaultAction={statementActions.defaultAction(actionsCtx)?.(stmt) ?? null}
                             trailing={<StatusBadge status={stmt.status} />}
                             actions={statementActions.render(stmt, actionsCtx)}
-                        >
-                            <EntityCard.Body>
-                                <EntityCard.Field
-                                    label="Período"
-                                    value={`${String(stmt.period_month).padStart(2, '0')}/${stmt.period_year}`}
-                                />
-                                <EntityCard.Field
-                                    label="Facturado"
-                                    value={<MoneyDisplay amount={parseFloat(stmt.billed_amount)} />}
-                                />
-                                <EntityCard.Field
-                                    label="Vencimiento"
-                                    value={parseDateOnly(stmt.due_date).toLocaleDateString('es-CL')}
-                                />
-                            </EntityCard.Body>
-                        </AutoEntityCard>
+                        />
                     )}
                 />
             </div>

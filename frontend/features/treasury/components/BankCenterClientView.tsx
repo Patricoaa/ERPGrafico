@@ -125,6 +125,7 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                             key={bank.id}
                             data={bank}
                             fields={bankCenterFields}
+                            variant="full"
                             title={bank.name}
                             subtitle={
                                 bank.code || bank.swift_code

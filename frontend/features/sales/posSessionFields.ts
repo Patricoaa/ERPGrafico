@@ -13,6 +13,12 @@ export const posSessionFields = createEntityFields<POSSession>()({
         type: "text",
         label: "Cajero",
     },
+    treasuryAccountName: {
+        key: "treasury_account_name",
+        type: "text",
+        label: "Cuenta",
+        cardPlacement: "body",
+    },
     openedAt: {
         key: "opened_at",
         type: "date",
@@ -30,6 +36,13 @@ export const posSessionFields = createEntityFields<POSSession>()({
         type: "currency",
         label: "Fondo Inicial",
         cellProps: { intent: "muted" },
+    },
+    totalSales: {
+        key: "total_sales",
+        type: "currency",
+        label: "Ventas",
+        cardPlacement: "metrics",
+        get: (s) => (s.total_cash_sales ?? 0) + (s.total_card_sales ?? 0),
     },
     status: {
         key: "status",

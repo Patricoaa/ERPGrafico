@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo } from "react"
 
-import { DataCell, DataTableView, AutoEntityCard, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataCell, DataTableView, AutoEntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 
@@ -173,16 +173,11 @@ export function StockReport() {
                             key={item.id}
                             data={item}
                             fields={stockReportFields}
+                            variant="full"
                             title={item.name}
                             subtitle={item.category_name}
                             actions={stockReportActions.render(item, stockReportActionsCtx)}
-                        >
-                            <EntityCard.Metrics metrics={[
-                                { label: 'Stock', value: <DataCell.Number value={item.stock_qty ?? 0} /> },
-                                { label: 'Disponible', value: <DataCell.Number value={item.qty_available ?? 0} /> },
-                                { label: 'Valorización', value: <DataCell.Currency value={item.total_value} intent="primary" />, variant: 'primary' },
-                            ]} />
-                        </AutoEntityCard>
+                        />
                     )}
                 />
             </div>

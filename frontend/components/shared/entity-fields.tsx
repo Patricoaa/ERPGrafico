@@ -36,7 +36,7 @@ interface FieldDef<T> {
     cellProps?: Record<string, unknown>
     surfaces?: FieldSurface[]
     /** Override de posicionamiento en la tarjeta */
-    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body'
+    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body' | 'metrics'
     /** Visual sizing for card variant: 'xs' (badge/chip), 'sm' (status/text), 'md' (label/value), 'lg' (hero primary) */
     cardSize?: 'xs' | 'sm' | 'md' | 'lg'
     /** Custom className applied to the DataCell in card rendering */
@@ -84,7 +84,7 @@ export interface CardField {
     key: string
     label: string
     value: ReactNode
-    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body'
+    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body' | 'metrics'
 }
 
 export interface KanbanField {
@@ -494,6 +494,14 @@ export function createEntityFields<T>(): (
                 })
         },
 
+        /**
+         * Converts field definitions into CardField[] for card rendering.
+         *
+         * Default type → placement mapping (explicit cardPlacement always wins):
+         *   header-right: status, currency, currencyFlow, numericFlow, progress, chip, icon
+         *   auto:         text, code, date, number, secondary, contact
+         *   metrics:      opt-in only — use cardPlacement: 'metrics' for computed/aggregate fields
+         */
         toCardFields: (entity: T, opts?: { only?: string[] }): CardField[] => {
             const allowed = opts?.only
             return Object.entries(defs)
@@ -501,7 +509,7 @@ export function createEntityFields<T>(): (
                 .filter(([fieldKey]) => !allowed || allowed.includes(fieldKey))
                 .map(([fieldKey, def]): CardField => {
                     let defaultPlacement: 'auto' | 'header-right' | 'body' = 'auto';
-                    if (["status", "currency", "currencyFlow", "numericFlow", "progress", "chip"].includes(def.type)) {
+                    if (["status", "currency", "currencyFlow", "numericFlow", "progress", "chip", "icon"].includes(def.type)) {
                         defaultPlacement = 'header-right';
                     }
 

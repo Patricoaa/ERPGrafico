@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { Chip, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, AutoEntityCard, EntityCard } from '@/components/shared'
+import { DataCell, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -192,27 +192,20 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                         title: "No se encontraron documentos",
                         description: "Los documentos de inventario registran y respaldan todas las transacciones físicas.",
                     }}
-                    renderCard={(doc: InventoryDocument) => {
-                        const typeConfig = DOCUMENT_TYPE_MAP[doc.document_type] || { intent: 'neutral' as const, label: doc.document_type }
-                        return (
+                    renderCard={(doc: InventoryDocument) => (
                             <AutoEntityCard
                                 key={doc.id}
                                 data={doc}
                                 fields={inventoryDocumentFields}
+                                variant="full"
                                 entityLabel="inventory.inventorydocument"
                                 title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
                                 subtitle={doc.date}
                                 trailing={<StatusBadge status={doc.status} size="sm" />}
                                 actions={documentActions.render(doc, actionsCtx)}
                                 defaultAction={() => openSelected(doc.id)}
-                            >
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Tipo" value={<Chip intent={typeConfig.intent} size="sm">{typeConfig.label}</Chip>} />
-                                    {doc.reference && <EntityCard.Field label="Referencia" value={doc.reference} />}
-                                </EntityCard.Body>
-                            </AutoEntityCard>
-                        )
-                    }}
+                            />
+                    )}
                 />
             </div>
 

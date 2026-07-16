@@ -127,6 +127,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 key={method.id} 
                 data={method}
                 fields={paymentMethodFields}
+                variant="full"
                 entityLabel="treasury.paymentmethod"
                 title={method.name}
                 subtitle={
@@ -145,23 +146,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                     </div>
                 }
                 actions={paymentMethodActions.render(method, paymentMethodActionsCtx)}
-            >
-                <EntityCard.Body>
-                    <EntityCard.Field
-                        label="Permitido"
-                        value={
-                            <div className="flex items-center gap-1.5">
-                                {method.allow_for_sales && (
-                                    <Chip size="xs" intent="success">Ventas</Chip>
-                                )}
-                                {method.allow_for_purchases && (
-                                    <Chip size="xs" intent="info">Compras</Chip>
-                                )}
-                            </div>
-                        }
-                    />
-                </EntityCard.Body>
-            </AutoEntityCard>
+            />
         )
     }
 

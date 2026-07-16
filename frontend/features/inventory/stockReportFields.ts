@@ -23,7 +23,8 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
     stock_qty: {
         key: 'stock_qty',
         type: 'number',
-        label: 'Físico',
+        label: 'Stock',
+        cardPlacement: 'metrics',
         className: (value) => {
             const qty = Number(value)
             return cn(
@@ -43,6 +44,7 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
         key: 'qty_available',
         type: 'number',
         label: 'Disponible',
+        cardPlacement: 'metrics',
         className: (value) => {
             const qty = Number(value)
             return cn(
@@ -51,5 +53,11 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
             )
         },
         suffix: (entity) => entity.uom_name ?? "",
+    },
+    total_value: {
+        key: 'total_value',
+        type: 'currency',
+        label: 'Valorización',
+        cardPlacement: 'metrics',
     },
 })

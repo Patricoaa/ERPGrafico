@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataCell, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, DataCell, AutoEntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { posSessionFields } from "../posSessionFields"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
@@ -153,6 +153,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                         <AutoEntityCard
                             data={session}
                             fields={posSessionFields}
+                            variant="full"
                             entityLabel="sales.possession"
                             title={session.id_display}
                             subtitle={session.user_name}
@@ -164,16 +165,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                                 params.set('selected', String(session.id))
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
-                        >
-                            <EntityCard.Metrics metrics={[
-                                { label: 'Cuenta', value: session.treasury_account_name },
-                                { label: 'Apertura', value: <DataCell.Date value={session.opened_at} showTime /> },
-                            ]} />
-                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                <span className="text-[10px] font-black text-muted-foreground uppercase">Ventas</span>
-                                <DataCell.Currency value={(session.total_cash_sales ?? 0) + (session.total_card_sales ?? 0)} className="font-bold" />
-                            </EntityCard.Footer>
-                        </AutoEntityCard>
+                        />
                     )}
                     cardSkeleton={{ showFooter: true }}
                 />
