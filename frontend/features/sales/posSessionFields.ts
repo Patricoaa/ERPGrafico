@@ -40,7 +40,6 @@ export const posSessionFields = createEntityFields<POSSession>()({
         key: "total_sales",
         type: "currency",
         label: "Ventas",
-        cardPlacement: "metric",
         get: (s) => (s.total_cash_sales ?? 0) + (s.total_card_sales ?? 0),
     },
     status: {

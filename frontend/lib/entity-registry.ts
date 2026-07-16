@@ -1188,24 +1188,41 @@ export function renderEntitySubtitleItems(
   return items;
 }
 
+function resolvePath(path: string, data: Record<string, unknown>): unknown {
+  let value: unknown = data;
+  for (const part of path.split('.')) {
+    if (value !== null && typeof value === 'object') {
+      value = (value as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
+  }
+  return value;
+}
+
 function parseTemplateToItems(template: string, data: Record<string, unknown>): SubtitleItem[] {
   const items: SubtitleItem[] = [];
   const segments = template.split(/\s*·\s*/);
   for (const seg of segments) {
     const trimmed = seg.trim();
     if (!trimmed) continue;
-    const match = trimmed.match(/^\{([^}]+)\}$/);
-    if (match) {
-      const [path, format] = match[1].split(':');
-      let value: unknown = data;
-      for (const part of path.split('.')) {
-        if (value !== null && typeof value === 'object') {
-          value = (value as Record<string, unknown>)[part];
-        } else {
-          value = undefined;
-        }
+    // Support mixed patterns like "POS-{id}" or "EMP-{code} {contact.tax_id}"
+    const regex = /\{([^}]+)\}/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    let hasPlaceholder = false;
+    while ((match = regex.exec(trimmed)) !== null) {
+      hasPlaceholder = true;
+      // Push literal text before this placeholder
+      if (match.index > lastIndex) {
+        items.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
       }
-      if (value === undefined || value === null) continue;
+      const [path, format] = match[1].split(':');
+      const value = resolvePath(path, data);
+      if (value === undefined || value === null) {
+        lastIndex = regex.lastIndex;
+        continue;
+      }
       if (format === 'date') {
         items.push({ kind: 'date', value: String(value) });
       } else if (format === 'currency') {
@@ -1213,8 +1230,14 @@ function parseTemplateToItems(template: string, data: Record<string, unknown>): 
       } else {
         items.push({ kind: 'text', content: String(value) });
       }
-    } else {
+      lastIndex = regex.lastIndex;
+    }
+    if (!hasPlaceholder) {
+      // Pure literal text (no placeholders at all)
       items.push({ kind: 'text', content: trimmed });
+    } else if (lastIndex < trimmed.length) {
+      // Trailing literal text after last placeholder
+      items.push({ kind: 'text', content: trimmed.slice(lastIndex) });
     }
   }
   return items;
