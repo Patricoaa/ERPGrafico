@@ -166,9 +166,11 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                             key={budget.id}
                             data={budget}
                             fields={budgetFields}
+                            entityLabel="accounting.budget"
                             title={budget.name}
                             subtitle={`${budget.start_date} - ${budget.end_date}`}
                             actions={budgetActions.render(budget, actionsCtx)}
+                            variant="highlights"
                         />
                     )}
                 />

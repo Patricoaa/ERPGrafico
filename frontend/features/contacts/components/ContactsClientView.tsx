@@ -234,6 +234,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 key={contact.id}
                                 data={contact}
                                 fields={contactFields}
+                                entityLabel="contacts.contact"
                                 title={contact.name}
                                 subtitle={contact.tax_id || 'S/Rut'}
                                 actions={contactActions.render(contact, actionsCtx)}
@@ -251,6 +252,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                         </div>
                                     </div>
                                 }
+                                variant="highlights"
                             />
                         )}
                     />

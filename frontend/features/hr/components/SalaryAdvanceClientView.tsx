@@ -136,6 +136,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                             key={advance.id}
                             data={advance}
                             fields={salaryAdvanceFields}
+                            entityLabel="hr.salaryadvance"
                             title={advance.employee_name || '---'}
                             subtitle={`Anticipo ${advance.employee_display_id || ''}`}
                             trailing={
@@ -146,6 +147,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                             }
                             actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}
                             defaultAction={salaryAdvanceActions.defaultAction(salaryAdvanceActionsCtx)?.(advance) ?? (() => openSelected(advance.id))}
+                            variant="highlights"
                         />
                     )}
                 />

@@ -175,10 +175,12 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                             key={category.id}
                             data={category}
                             fields={categoryFields}
+                            entityLabel="inventory.category"
                             title={category.name}
                             subtitle={category.parent_name ?? 'Categoría raíz'}
                             actions={categoryActions.render(category, actionsCtx)}
                             defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? (() => openSelected(category.id))}
+                            variant="highlights"
                         />
                     )}
                 />

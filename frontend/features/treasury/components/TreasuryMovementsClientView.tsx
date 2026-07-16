@@ -292,6 +292,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 key={m.id} 
                                 data={m}
                                 fields={movementFields}
+                                entityLabel="treasury.cashmovement"
                                 title={m.display_id}
                                 subtitle={m.payment_method_display}
                                 onClick={() => handleViewDetails(m.id)}
@@ -306,6 +307,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 }
                                 trailing={<DataCell.CurrencyFlow value={amount} direction={type === 'OUTBOUND' ? 'outflow' : 'inflow'} />}
                                 actions={treasuryMovementActions.render(m, { onDetail: (id) => handleViewDetails(id) })}
+                                variant="flow"
                             />
                         )
                     }}

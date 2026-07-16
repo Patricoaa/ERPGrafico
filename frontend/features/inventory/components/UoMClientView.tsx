@@ -170,6 +170,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                             key={uom.id}
                             data={uom}
                             fields={uomFields}
+                            entityLabel="inventory.uom"
                             title={uom.name}
                             subtitle={uom.category_name}
                             trailing={
@@ -181,6 +182,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                             }
                             actions={uomActions.render(uom, actionsCtx)}
                             defaultAction={uomActions.defaultAction(actionsCtx)?.(uom) ?? (() => openSelected(uom.id))}
+                            variant="highlights"
                         />
                     )}
                 />
