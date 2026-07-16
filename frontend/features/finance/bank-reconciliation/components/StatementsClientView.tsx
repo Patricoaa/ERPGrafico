@@ -8,7 +8,7 @@ import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
-import { DataTableView, StatusBadge, UnifiedSearchBar, useUnifiedSearch, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal } from '@/components/shared'
+import { DataTableView, StatusBadge, UnifiedSearchBar, useUnifiedSearch, AutoEntityCard, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
@@ -260,22 +260,14 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                     const stmt = row.original
                     const isExpanded = expandedStmtId === stmt.id
                     return (
-                        <EntityCard key={stmt.id} className="overflow-hidden">
-                            <EntityCard.Header
-                                title={stmt.display_id}
-                                subtitle={stmt.treasury_account_name}
-                                trailing={<StatusBadge status={stmt.state} label={stmt.state_display} />}
-                            />
-                            <EntityCard.Metrics metrics={[
-                                { label: 'Apertura', value: <DataCell.Currency value={stmt.opening_balance} /> },
-                                { label: 'Cierre', value: <DataCell.Currency value={stmt.closing_balance} /> },
-                                { label: 'Progreso', value: (
-                                    <div className="flex items-center gap-2 min-w-[100px]">
-                                        <Progress value={stmt.reconciliation_progress} className="h-1.5 w-16" />
-                                        <span className="text-xs font-mono font-bold">{Math.round(stmt.reconciliation_progress)}%</span>
-                                    </div>
-                                ) },
-                            ]} />
+                        <AutoEntityCard 
+                            key={stmt.id} 
+                            data={stmt} 
+                            fields={statementFields}
+                            className="overflow-hidden"
+                            title={stmt.display_id}
+                            subtitle={stmt.treasury_account_name}
+                        >
                             <EntityCard.Footer>
                                 <div className="flex items-center gap-2">
                                     {stmt.state !== 'CONFIRMED' && stmt.reconciliation_progress < 100 && (
@@ -304,7 +296,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                                     />
                                 </div>
                             )}
-                        </EntityCard>
+                        </AutoEntityCard>
                     )
                 })}
             </div>

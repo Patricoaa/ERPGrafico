@@ -23,6 +23,8 @@ import { DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@
 import { type ColumnDef } from "@tanstack/react-table"
 import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
 import { cn } from "@/lib/utils"
+import { taxPeriodFields } from '../taxPeriodFields'
+import { AutoEntityCard } from '@/components/shared'
 
 import { type TaxPeriod, type TaxDeclaration, type TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -346,64 +348,50 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                                     const canOpenChecklist = period.status === 'OPEN'
 
                                     return (
-                                        <EntityCard
+                                        <AutoEntityCard
                                             key={period.id}
                                             variant="compact"
+                                            data={period}
+                                            fields={taxPeriodFields}
+                                            title={period.month_display + " " + period.year}
                                             className={cn(
-                                                "flex flex-row items-center justify-between",
+                                                "flex flex-col justify-between",
                                                 canOpenChecklist ? "cursor-pointer" : "cursor-default"
                                             )}
                                             onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10 shrink-0">
-                                                    <span className="text-[9px] font-bold text-primary/60">{period.year}</span>
-                                                    <span className="text-xs font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-semibold">{period.month_display} {period.year}</span>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <StatusBadge status={period.status} size="sm" />
-                                                        {summary && (
-                                                            <span className="text-[10px] text-muted-foreground font-medium">
-                                                                {formatCurrency(summary.vat_to_pay)}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
                                                 {showPaymentButton && (
                                                     <Button
                                                         variant="ghost"
-                                                        size="icon"
-                                                        className={cn("h-8 w-8 rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
+                                                        size="sm"
+                                                        className={cn("rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleOpenPayment(period);
                                                         }}
                                                         title={isFullyPaid ? "Ver Pagos" : "Pagar"}
                                                     >
-                                                        {isFullyPaid ? <HistoryIcon className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
+                                                        {isFullyPaid ? <HistoryIcon className="h-4 w-4 mr-2" /> : <DollarSign className="h-4 w-4 mr-2" />}
+                                                        {isFullyPaid ? "Ver Pagos" : "Pagar F29"}
                                                     </Button>
                                                 )}
                                                 {canOpenChecklist && (
                                                     <Button
                                                         variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 rounded-sm"
+                                                        size="sm"
+                                                        className="rounded-sm"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleOpenWizard(period);
                                                         }}
                                                         title="Iniciar declaración/cierre F29"
                                                     >
-                                                        <ArrowRight className="h-4 w-4 text-primary" />
+                                                        Continuar F29 <ArrowRight className="h-4 w-4 ml-2 text-primary" />
                                                     </Button>
                                                 )}
                                             </div>
-                                        </EntityCard>
+                                        </AutoEntityCard>
                                     )
                                 })}
                             </div>
