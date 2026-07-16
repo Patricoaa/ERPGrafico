@@ -8,12 +8,10 @@ export const budgetFields = createEntityFields<Budget>()({
         type: "text", 
         label: "Periodo",
         get: (e: Budget) => `${e.start_date} - ${e.end_date}`,
-        cardPlacement: "detail"
     },
     description: { 
         key: "description", 
         type: "text", 
         label: "Descripción",
-        cardPlacement: "detail"
     }
 })

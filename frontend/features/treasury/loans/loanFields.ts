@@ -11,7 +11,6 @@ export const loanFields = createEntityFields<BankLoan>()({
         key: 'lender_name',
         type: 'text',
         label: 'Banco',
-        cardPlacement: 'detail',
     },
     principal: {
         key: 'principal',

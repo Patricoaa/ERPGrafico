@@ -1,4 +1,5 @@
 import { createEntityFields } from "@/components/shared"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { POSSession } from "./components/POSSessionsClientView"
 
 export const posSessionFields = createEntityFields<POSSession>()({
@@ -6,7 +7,7 @@ export const posSessionFields = createEntityFields<POSSession>()({
         key: "id",
         type: "code",
         label: "ID",
-        get: (s) => `SES-${s.id}`,
+        get: (s) => formatEntityDisplay("pos.session", s as unknown as Record<string, unknown>),
     },
     userName: {
         key: "user_name",
@@ -17,7 +18,6 @@ export const posSessionFields = createEntityFields<POSSession>()({
         key: "treasury_account_name",
         type: "text",
         label: "Cuenta",
-        cardPlacement: "detail",
     },
     openedAt: {
         key: "opened_at",
@@ -35,7 +35,6 @@ export const posSessionFields = createEntityFields<POSSession>()({
         key: "start_amount",
         type: "secondary",
         label: "Fondo Inicial",
-        cardPlacement: "detail",
     },
     totalSales: {
         key: "total_sales",

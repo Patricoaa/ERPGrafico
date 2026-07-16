@@ -26,19 +26,16 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         key: 'date',
         type: 'date',
         label: 'Fecha',
-        cardPlacement: 'detail',
     },
     sourceLocation: {
         key: 'source_location_name',
         type: 'text',
         label: 'Origen',
-        cardPlacement: 'detail',
     },
     destinationLocation: {
         key: 'destination_location_name',
         type: 'text',
         label: 'Destino',
-        cardPlacement: 'detail',
     },
     quantity: {
         key: 'quantity',
