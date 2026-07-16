@@ -20,6 +20,7 @@ import { loanActions, type LoanActionsCtx } from './loanActions'
 import type { BankLoan } from './types'
 import { parseDateOnly } from '@/lib/utils'
 import { loanFields } from './loanFields'
+import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
     const searchParams = useSearchParams()
@@ -60,6 +61,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
     const isCreateOpen = searchParams.get("modal") === "new"
+    const { openAction, clearActions } = useEntityRouteActions()
 
     const isDetailOpen = !!selectedId && (action === "detail" || !action)
     const isDisburseOpen = !!selectedId && action === "disburse"
@@ -71,28 +73,22 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     )
 
     const clearAll = useCallback(() => {
+        clearActions()
         const params = new URLSearchParams(searchParams.toString())
-        const changed = params.has("selected") || params.has("action") || params.has("modal")
-        params.delete("selected")
-        params.delete("action")
-        params.delete("modal")
-        if (changed) {
+        if (params.has("modal")) {
+            params.delete("modal")
             const query = params.toString()
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
-    }, [router, pathname, searchParams])
+    }, [clearActions, router, pathname, searchParams])
 
     const handleReset = useCallback(() => {
         search.clearAll()
     }, [search.clearAll])
 
     const openLoan = useCallback((id: number, actionType: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        params.set("action", actionType)
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
+        openAction(id, actionType)
+    }, [openAction])
 
     const registerAction = (
         <ToolbarCreateButton

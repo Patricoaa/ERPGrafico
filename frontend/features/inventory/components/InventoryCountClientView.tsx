@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTableView, DataCell, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell, QuantityDisplay } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { inventoryCountFields } from "@/features/inventory/inventoryCountFields"
@@ -11,6 +10,8 @@ import { ArrowRight, Plus, ClipboardCheck, Check, Equal } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { useInventoryCounts, useInventoryCount, useInventoryCountMutations } from "../hooks/useInventoryCounts"
 import { useWarehouses } from "../hooks/useWarehouses"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { inventoryCountUnifiedSearchDef, inventoryCountLineSearchDef } from "@/features/inventory/unifiedSearchDef"
 import type { InventoryCount, InventoryCountLine } from "../types"
 import { toast } from "sonner"
@@ -108,11 +109,6 @@ function EditableQtyCell({
 }
 
 export function InventoryCountClientView() {
-    const searchParams = useSearchParams()
-    const pathname = usePathname()
-    const router = useRouter()
-
-    const selectedCountId = searchParams.get('selected')
     const [showNewDialog, setShowNewDialog] = useState(false)
     const search = useUnifiedSearch(inventoryCountUnifiedSearchDef)
     const lineSearch = useUnifiedSearch(inventoryCountLineSearchDef)
@@ -124,8 +120,10 @@ export function InventoryCountClientView() {
         page_size: pageState.pageSize,
     })
 
+    const { selectedId, openSelected, clearActions } = useEntityRouteActions()
+
     const { data: selectedCount, isLoading: isLoadingCount } = useInventoryCount(
-        selectedCountId ? Number(selectedCountId) : null
+        selectedId ? Number(selectedId) : null
     )
 
     const { createCount, saveLines, applyCount, isCreating, isSaving, isApplying } = useInventoryCountMutations()
@@ -135,17 +133,12 @@ export function InventoryCountClientView() {
 
     const handleSelectCount = useCallback((id: number) => {
         setEditedLines(new Map())
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [searchParams, pathname, router])
+        openSelected(id)
+    }, [openSelected])
 
     const handleCloseDrawer = useCallback(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }, [searchParams, pathname, router])
+        clearActions()
+    }, [clearActions])
 
     const handleCellCommit = useCallback((lineId: number, value: number | null) => {
         setEditedLines(prev => {
@@ -170,7 +163,7 @@ export function InventoryCountClientView() {
     }, [selectedCount])
 
     const handleSaveAll = useCallback(async () => {
-        if (!selectedCountId || editedLines.size === 0) return
+        if (!selectedId || editedLines.size === 0) return
 
         const lines = Array.from(editedLines.entries()).map(([line_id, counted_qty]) => ({
             line_id,
@@ -178,16 +171,16 @@ export function InventoryCountClientView() {
         }))
 
         try {
-            await saveLines({ id: Number(selectedCountId), lines })
+            await saveLines({ id: Number(selectedId), lines })
             setEditedLines(new Map())
             toast.success("Cantidades guardadas correctamente")
         } catch (error) {
             showApiError(error, "Error al guardar las cantidades")
         }
-    }, [selectedCountId, editedLines, saveLines])
+    }, [selectedId, editedLines, saveLines])
 
     const handleApply = useCallback(async () => {
-        if (!selectedCountId) return
+        if (!selectedId) return
 
         if (editedLines.size > 0) {
             const lines = Array.from(editedLines.entries()).map(([line_id, counted_qty]) => ({
@@ -195,7 +188,7 @@ export function InventoryCountClientView() {
                 counted_qty,
             }))
             try {
-                await saveLines({ id: Number(selectedCountId), lines })
+                await saveLines({ id: Number(selectedId), lines })
             } catch (error) {
                 showApiError(error, "Error al guardar las cantidades antes de aplicar")
                 return
@@ -203,7 +196,7 @@ export function InventoryCountClientView() {
         }
 
         try {
-            const result = await applyCount(Number(selectedCountId))
+            const result = await applyCount(Number(selectedId))
             if (result.document_id) {
                 toast.success(`Conteo aplicado. Documento de ajuste #${result.document_id} generado.`)
             } else {
@@ -214,7 +207,7 @@ export function InventoryCountClientView() {
         } catch (error) {
             showApiError(error, "Error al aplicar el conteo")
         }
-    }, [selectedCountId, editedLines, saveLines, applyCount, refetchCounts])
+    }, [selectedId, editedLines, saveLines, applyCount, refetchCounts])
 
     const handleCreateCount = useCallback(async (values: NewCountFormValues) => {
         try {
@@ -249,7 +242,7 @@ export function InventoryCountClientView() {
         }).length
     }, [selectedCount, getCountedQty])
 
-    const drawerIsOpen = !!selectedCountId
+    const drawerIsOpen = !!selectedId
     const isDrawerLoading = drawerIsOpen && isLoadingCount
     const count = selectedCount
     const isInProgress = count?.status === 'IN_PROGRESS'

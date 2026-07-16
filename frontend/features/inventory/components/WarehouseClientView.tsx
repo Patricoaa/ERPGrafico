@@ -2,7 +2,8 @@
 
 import { showApiError } from "@/lib/errors"
 import { useEffect, useState, useMemo } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import {ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard} from '@/components/shared'
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { type ColumnDef } from "@tanstack/react-table"
@@ -19,7 +20,6 @@ import React from "react"
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { warehouseUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface WarehouseClientViewProps {
     externalOpen?: boolean
@@ -46,14 +46,11 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         }
     })
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
     // T-106: clearSelection viene directamente del hook — no re-declarar localmente (ADR-0020)
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Warehouse>({
         endpoint: '/inventory/warehouses'
     })
+    const { openSelected } = useEntityRouteActions()
 
     // Open edit form if ?selected= is present (ADR-0020).
     // Depends ONLY on selectedFromUrl — see CategoryList for explanation
@@ -77,12 +74,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         setEditingWarehouse(null)
         onExternalOpenChange?.(false)
         clearSelection()
-    }
-
-    const openSelected = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleDelete = async (warehouse: Warehouse | null, isConfirmed = false) => {

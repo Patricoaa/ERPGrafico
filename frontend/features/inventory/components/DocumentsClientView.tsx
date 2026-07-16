@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
-import { useRouter, usePathname } from "next/navigation"
 import { Chip, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, AutoEntityCard, EntityCard } from '@/components/shared'
@@ -16,6 +15,7 @@ import { inventoryDocumentFields } from "../inventoryDocumentFields"
 import { toast } from "sonner"
 import React from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { showApiError } from "@/lib/errors"
 import { useRef } from "react"
 import { useReactToPrint } from "react-to-print"
@@ -35,9 +35,6 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
 }
 
 export function DocumentsClientView({ documentTypeFilter, createAction }: DocumentsClientViewProps) {
-    const pathname = usePathname()
-    const router = useRouter()
-
     const search = useUnifiedSearch(documentUnifiedSearchDef)
     const allFilters = useMemo(() => ({
         ...search.filters,
@@ -84,11 +81,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
         clearSelection()
     }
 
-    const openSelected = useCallback((id: number) => {
-        const params = new URLSearchParams()
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname])
+    const { openSelected } = useEntityRouteActions()
 
     const { annulDocument } = useInventoryDocumentMutations()
 

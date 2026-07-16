@@ -44,6 +44,7 @@ import {
 
 export type RowActionKey =
     | "detail"
+    | "view"
     | "hub"
     | "history"
     | "edit"
@@ -85,6 +86,7 @@ export interface RowActionDef {
 
 export const ROW_ACTIONS: Record<RowActionKey, RowActionDef> = {
     detail:    { icon: Eye,              label: "Ver detalle",          intent: "read"  },
+    view:      { icon: Eye,              label: "Ver",                   intent: "read"  },
     hub:       { icon: LayoutDashboard,  label: "Abrir HUB",            intent: "read"  },
     history:   { icon: History,          label: "Ver historial",        intent: "read"  },
     edit:      { icon: Pencil,           label: "Editar",               intent: "write" },
@@ -120,6 +122,7 @@ export const ROW_ACTIONS: Record<RowActionKey, RowActionDef> = {
  */
 export const ROW_ACTION_ORDER: RowActionKey[] = [
     "detail",
+    "view",
     "hub",
     "history",
     "edit",
