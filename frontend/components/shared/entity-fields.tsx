@@ -37,6 +37,10 @@ interface FieldDef<T> {
     surfaces?: FieldSurface[]
     /** Override de posicionamiento en la tarjeta */
     cardPlacement?: 'auto' | 'header-right' | 'center' | 'body'
+    /** Visual sizing for card variant: 'xs' (badge/chip), 'sm' (status/text), 'md' (label/value), 'lg' (hero primary) */
+    cardSize?: 'xs' | 'sm' | 'md' | 'lg'
+    /** Custom className applied to the DataCell in card rendering */
+    cardClassName?: string
     tableOptions?: {
         width?: number
         enableSorting?: boolean
