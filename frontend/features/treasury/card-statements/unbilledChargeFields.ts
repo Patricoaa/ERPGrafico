@@ -11,7 +11,6 @@ export const unbilledChargeFields = createEntityFields<UnbilledItemRow>()({
         key: 'notes',
         type: 'text',
         label: 'Descripción',
-        cardPlacement: 'detail',
     },
     amount: {
         key: 'amount',

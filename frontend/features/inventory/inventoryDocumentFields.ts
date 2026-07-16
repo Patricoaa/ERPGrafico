@@ -28,13 +28,11 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         key: "reference",
         type: "text",
         label: "Referencia",
-        cardPlacement: "detail",
     },
     status: {
         key: "status",
         type: "status",
         label: "Estado",
         tableOptions: { width: 100 },
-        cardPlacement: "header",
     },
 })

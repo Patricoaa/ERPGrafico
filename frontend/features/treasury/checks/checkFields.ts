@@ -16,7 +16,6 @@ export const checkFields = createEntityFields<Check>()({
         key: "due_date",
         type: "date",
         label: "Vencimiento",
-        cardPlacement: "detail",
     },
     amount: {
         key: "amount",

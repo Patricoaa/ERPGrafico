@@ -6,7 +6,6 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
         key: 'period_month',
         type: 'text',
         label: 'Período',
-        cardPlacement: 'detail',
         get: (s) => `${String(s.period_month).padStart(2, '0')}/${s.period_year}`,
     },
     billedAmount: {
@@ -20,7 +19,6 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
         key: 'due_date',
         type: 'text',
         label: 'Vencimiento',
-        cardPlacement: 'detail',
         get: (s) => s.due_date
             ? new Date(s.due_date + 'T00:00:00').toLocaleDateString('es-CL')
             : '—',

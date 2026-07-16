@@ -10,19 +10,16 @@ export const inventoryCountFields = createEntityFields<InventoryCount>()({
         key: 'counted_products',
         type: 'number',
         label: 'Progreso',
-        cardPlacement: 'metric',
     },
     total_products: {
         key: 'total_products',
         type: 'number',
         label: 'Total',
-        cardPlacement: 'metric',
     },
     products_with_difference: {
         key: 'products_with_difference',
         type: 'number',
         label: 'Diferencias',
-        cardPlacement: 'metric',
         get: (c) => c.products_with_difference > 0 ? c.products_with_difference : null,
     },
 })

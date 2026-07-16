@@ -18,14 +18,12 @@ export const userFields = createEntityFields<AppUser>()({
         key: "full_name",
         type: "text",
         label: "Nombre",
-        cardPlacement: "detail",
         get: (u) => `${u.first_name || ''} ${u.last_name || ''}`.trim() || '—',
     },
     role: {
         key: "role",
         type: "text",
         label: "Rol",
-        cardPlacement: "detail",
         get: (u) => {
             const groups = (u.groups || []).map(g => typeof g === 'string' ? g : g.name)
             return groups.find(g => SYSTEM_ROLES.includes(g as typeof SYSTEM_ROLES[number])) ?? null
