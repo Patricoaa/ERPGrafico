@@ -4,10 +4,10 @@ import type { Budget } from "./api/financeApi"
 export const budgetFields = createEntityFields<Budget>()({
     name: { key: "name", type: "text", label: "Presupuesto" },
     period: { 
-        key: "period", 
+        key: "start_date", 
         type: "text", 
         label: "Periodo",
-        getValue: (e) => `${e.start_date} - ${e.end_date}`,
+        get: (e: Budget) => `${e.start_date} - ${e.end_date}`,
         cardPlacement: "body"
     },
     description: { 

@@ -168,7 +168,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                             fields={budgetFields}
                             title={budget.name}
                             subtitle={`${budget.start_date} - ${budget.end_date}`}
-                            actions={budgetActions.card(actionsCtx)}
+                            actions={budgetActions.render(budget, actionsCtx)}
                         />
                     )}
                 />
