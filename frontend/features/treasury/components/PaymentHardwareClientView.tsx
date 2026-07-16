@@ -199,6 +199,7 @@ export function PaymentHardwareClientView({
                                 key={provider.id}
                                 data={provider}
                                 fields={terminalProviderFields}
+                                entityLabel="treasury.paymentterminalprovider"
                                 title={provider.name}
                                 icon={Building2}
                                 trailing={<StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />}
@@ -267,6 +268,7 @@ export function PaymentHardwareClientView({
                                 key={device.id}
                                 data={device}
                                 fields={terminalDeviceFields}
+                                entityLabel="treasury.paymentterminaldevice"
                                 title={
                                     <div className="flex items-center gap-2">
                                         <Smartphone className="h-4 w-4 text-info" />

@@ -195,6 +195,8 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                                 key={m.id}
                                 data={m}
                                 fields={journalEntryFields}
+                                entityLabel="accounting.journalentry"
+                                variant="highlights"
                                 icon={Icon}
                                 iconClassName={iconStyle}
                                 actions={journalEntryActions.render(m, journalEntryActionsCtx)}

@@ -200,6 +200,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                             key={user.id} 
                                             data={user}
                                             fields={userFields}
+                                            entityLabel="settings.user"
                                             title={user.username}
                                             subtitle={user.email}
                                             onClick={() => actionsCtx.onEdit(user.id)}

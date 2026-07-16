@@ -108,6 +108,7 @@ export function CreditLinesClientView({ bankId }: Props) {
                         key={line.id}
                         data={line}
                         fields={creditLineFields}
+                        entityLabel="treasury.creditline"
                         title={line.account_name}
                         subtitle={line.code}
                     >

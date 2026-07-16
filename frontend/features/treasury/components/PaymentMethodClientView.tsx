@@ -127,6 +127,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 key={method.id} 
                 data={method}
                 fields={paymentMethodFields}
+                entityLabel="treasury.paymentmethod"
                 title={method.name}
                 subtitle={
                     <span className="flex items-center gap-1.5 flex-wrap">
