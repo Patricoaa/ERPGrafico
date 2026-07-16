@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, EntityCard, AutoEntityCard } from '@/components/shared'
+import { DataCell, AutoEntityCard } from '@/components/shared'
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { type ColumnDef } from "@tanstack/react-table"
 
@@ -12,27 +12,7 @@ import { ArrowRightLeft } from "lucide-react"
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-
-export interface StockMove {
-    id: number
-    display_id?: string
-    date: string
-    product_name: string
-    product_internal_code?: string
-    product_code?: string
-    source_location: number
-    source_location_name: string
-    destination_location: number
-    destination_location_name: string
-    quantity: string
-    uom_name: string
-    description: string
-    related_documents: Array<{
-        type: string
-        id: number | string
-        name: string
-    }>
-}
+import { stockMoveFields, type StockMove } from "@/features/inventory/stockMoveFields"
 interface MovementClientViewProps {
     createAction?: React.ReactNode
 }
@@ -171,19 +151,14 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                             <AutoEntityCard
                                 key={move.id}
                                 data={move}
-                                fields={{ toCardFields: () => [] }}
+                                fields={stockMoveFields}
+                                entityLabel="inventory.stockmove"
                                 title={move.product_name}
                                 subtitle={move.display_id ?? String(move.id)}
                                 actions={stockMoveActions.render(move, actionsCtx)}
                                 defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
-                            >
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Fecha" value={<DataCell.Date value={move.date} />} />
-                                    <EntityCard.Field label="Origen" value={move.source_location_name} />
-                                    <EntityCard.Field label="Destino" value={move.destination_location_name} />
-                                    <EntityCard.Field label="Cantidad" value={<DataCell.NumericFlow value={move.quantity} unit={move.uom_name} showSign />} />
-                                </EntityCard.Body>
-                            </AutoEntityCard>
+                                variant="minimal"
+                            />
                         )
                     }}
                 />

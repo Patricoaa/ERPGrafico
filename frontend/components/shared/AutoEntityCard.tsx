@@ -261,7 +261,7 @@ export function AutoEntityCard<TData>({
                 <EntityCard.Body>
                     {body.map(field => (
                         variant === 'minimal'
-                            ? <EntityCard.Field key={field.key} label={field.label} value={field.value} />
+                            ? <div key={field.key} className="text-xs text-muted-foreground">{field.value}</div>
                             : <EntityCard.Field key={field.key} label={field.label} value={field.value} />
                     ))}
                 </EntityCard.Body>

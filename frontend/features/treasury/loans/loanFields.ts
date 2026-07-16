@@ -7,6 +7,27 @@ export const loanFields = createEntityFields<BankLoan>()({
         type: 'code',
         label: 'ID Interno',
     },
+    lenderName: {
+        key: 'lender_name',
+        type: 'text',
+        label: 'Banco',
+        cardPlacement: 'body',
+    },
+    principal: {
+        key: 'principal',
+        type: 'currency',
+        label: 'Capital',
+        cardPlacement: 'body',
+        get: (l) => parseFloat(l.principal),
+    },
+    outstandingBalance: {
+        key: 'outstanding_balance',
+        type: 'currency',
+        label: 'Saldo Insoluto',
+        cardPlacement: 'body',
+        get: (l) => parseFloat(l.outstanding_balance),
+        className: (v, entity) => (entity as BankLoan).status === 'ACTIVE' ? 'font-bold' : 'text-muted-foreground',
+    },
     interestRate: {
         key: 'interest_rate',
         type: 'text',

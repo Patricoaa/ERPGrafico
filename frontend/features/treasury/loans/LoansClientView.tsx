@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { FileText } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    MoneyDisplay, SkeletonShell, AutoEntityCard, EntityCard, StatusBadge,
+    MoneyDisplay, SkeletonShell, AutoEntityCard, StatusBadge,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
@@ -18,7 +18,6 @@ import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
 import { loanActions, type LoanActionsCtx } from './loanActions'
 import type { BankLoan } from './types'
-import { parseDateOnly } from '@/lib/utils'
 import { loanFields } from './loanFields'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
@@ -187,41 +186,15 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                             key={loan.id}
                             data={loan}
                             fields={loanFields}
+                            entityLabel="treasury.bankloan"
                             title={loan.display_id}
                             subtitle={loan.loan_number || undefined}
                             onClick={() => openLoan(loan.id, "detail")} 
                             defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
                             trailing={<StatusBadge status={loan.status} />}
                             actions={loanActions.render(loan, actionsCtx)}
-                        >
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Banco" value={loan.lender_name} />
-                                <EntityCard.Field
-                                    label="Capital"
-                                    value={<MoneyDisplay amount={parseFloat(loan.principal)} />}
-                                />
-                                <EntityCard.Field
-                                    label="Saldo Insoluto"
-                                    value={
-                                        <MoneyDisplay
-                                            amount={parseFloat(loan.outstanding_balance)}
-                                            className={loan.status === 'ACTIVE' ? 'font-bold' : 'text-muted-foreground'}
-                                        />
-                                    }
-                                />
-                                <EntityCard.Field
-                                    label="Tasa"
-                                    value={`${parseFloat(loan.interest_rate).toFixed(2)}% ${loan.rate_basis_display.toLowerCase()}`}
-                                />
-                                <EntityCard.Field label="Plazo" value={`${loan.term_months} meses`} />
-                                <EntityCard.Field
-                                    label="Próx. Vencimiento"
-                                    value={loan.next_due_date
-                                        ? parseDateOnly(loan.next_due_date).toLocaleDateString('es-CL')
-                                        : '—'}
-                                />
-                            </EntityCard.Body>
-                        </AutoEntityCard>
+                            variant="minimal"
+                        />
                     )}
                 />
             </div>
