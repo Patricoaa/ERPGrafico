@@ -129,6 +129,69 @@ describe("createEntityFields", () => {
             expect(cardFields).toHaveLength(1)
             expect(cardFields[0].key).toBe("name")
         })
+
+        it("resolves cardPlacement and fieldRole for all fields", () => {
+            const fields = testFields.toCardFields(sampleEntity)
+            fields.forEach((f) => {
+                expect(f.cardPlacement).toBeDefined()
+                expect(f.fieldRole).toBeDefined()
+                expect(["title", "header", "detail", "metric"]).toContain(f.cardPlacement)
+            })
+        })
+
+        it("auto-detects title from identifier field with id/number/code in key", () => {
+            const fields = testFields.toCardFields(sampleEntity)
+            const codeField = fields.find(f => f.key === "code")
+            expect(codeField).toBeDefined()
+            expect(codeField!.cardPlacement).toBe("title")
+        })
+
+        it("assigns status to header zone", () => {
+            const fields = testFields.toCardFields(sampleEntity)
+            const statusField = fields.find(f => f.key === "status")
+            expect(statusField).toBeDefined()
+            expect(statusField!.cardPlacement).toBe("header")
+            expect(statusField!.fieldRole).toBe("status")
+        })
+
+        it("assigns currency to header zone", () => {
+            const fields = testFields.toCardFields(sampleEntity)
+            const totalField = fields.find(f => f.key === "total")
+            expect(totalField).toBeDefined()
+            expect(totalField!.cardPlacement).toBe("header")
+            expect(totalField!.fieldRole).toBe("primary-value")
+        })
+
+        it("assigns text fields to detail zone", () => {
+            const fields = testFields.toCardFields(sampleEntity)
+            const nameField = fields.find(f => f.key === "name")
+            expect(nameField).toBeDefined()
+            expect(nameField!.cardPlacement).toBe("detail")
+        })
+
+        it("respects explicit cardPlacement override", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre", cardPlacement: "header" },
+            }).toCardFields(sampleEntity)
+            const nameField = fields.find(f => f.key === "name")
+            expect(nameField!.cardPlacement).toBe("header")
+        })
+
+        it("respects explicit fieldRole override", () => {
+            const fields = createEntityFields<TestEntity>()({
+                name: { key: "name", type: "text", label: "Nombre", fieldRole: "relation" },
+            }).toCardFields(sampleEntity)
+            const nameField = fields[0]
+            expect(nameField.fieldRole).toBe("relation")
+            expect(nameField.cardPlacement).toBe("detail")
+        })
+
+        it("ensures exactly one title field", () => {
+            const fields = testFields.toCardFields(sampleEntity)
+            const titles = fields.filter(f => f.cardPlacement === "title")
+            expect(titles).toHaveLength(1)
+        })
     })
 
     describe("toKanbanFields", () => {
