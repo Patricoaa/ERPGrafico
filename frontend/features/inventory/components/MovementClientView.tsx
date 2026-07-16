@@ -157,7 +157,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                 subtitle={move.display_id ?? String(move.id)}
                                 actions={stockMoveActions.render(move, actionsCtx)}
                                 defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
-                                variant="minimal"
+                                variant="summary"
                             />
                         )
                     }}

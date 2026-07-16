@@ -27,20 +27,20 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
             return "info"
         },
         tableOptions: { enableSorting: false },
-        cardPlacement: "header-right",
+        cardPlacement: "header",
     },
     date: {
         key: "date",
         type: "date",
         label: "Fecha",
-        cardPlacement: "header-right",
+        cardPlacement: "header",
     },
     description: {
         key: "description",
         type: "text",
         label: "Descripción",
         cellProps: { className: "truncate max-w-[300px]" },
-        cardPlacement: "center",
+        cardPlacement: "detail",
     },
     totalDebit: {
         key: "total_debit",
@@ -48,6 +48,6 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
         label: "Total Débito",
         get: (e) => e.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0,
         surfaces: ["card"],
-        cardPlacement: "header-right",
+        cardPlacement: "header",
     },
 })
