@@ -154,9 +154,9 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                             data={session}
                             fields={posSessionFields}
                             variant="full"
-                            entityLabel="sales.possession"
-                            title={session.id_display}
-                            subtitle={session.user_name}
+                            entityLabel="pos.session"
+                            title={session.user_name}
+                            subtitle={session.id_display}
                             trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
                             actions={posSessionActions.render(session, actionsCtx)}
                             defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} 
