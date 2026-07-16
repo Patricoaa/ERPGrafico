@@ -19,4 +19,5 @@ export const statementFields = createEntityFields<BankStatement>()({
         tableOptions: { align: "right" },
     },
     state: { key: "state", type: "status", label: "Estado", getLabel: (e) => e.state_display },
+    reconciliation_progress: { key: "reconciliation_progress", type: "progress", label: "Progreso" },
 })
