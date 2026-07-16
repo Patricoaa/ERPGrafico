@@ -40,7 +40,7 @@ export const creditLineFields = createEntityFields<CreditLine>()({
         key: 'utilization_rate',
         type: 'text',
         label: 'Uso %',
-        getValue: (c) => c.utilization_rate !== null ? `${Number(c.utilization_rate).toFixed(1)}%` : '—',
+        get: (c: CreditLine) => c.utilization_rate !== null ? `${Number(c.utilization_rate).toFixed(1)}%` : '—',
         tableOptions: { align: 'right' }
     }
 })

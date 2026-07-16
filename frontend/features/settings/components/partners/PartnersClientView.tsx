@@ -462,7 +462,7 @@ export function PartnersClientView({
                                 data={partner}
                                 fields={partnerFields}
                                 title={partner.name}
-                                actions={partnerActions.card(partnerActionsCtx)}
+                                actions={partnerActions.render(partner, partnerActionsCtx)}
                             />
                         )}
                     />
