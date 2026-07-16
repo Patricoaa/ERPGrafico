@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { ActionConfirmModal, AutoEntityCard, Chip, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, AutoEntityCard, Chip, StatusBadge } from '@/components/shared'
 import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
@@ -433,6 +433,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                     key={sub.id} 
                                     data={sub}
                                     fields={subscriptionFields}
+                                    variant="full"
                                     entityLabel="inventory.subscription"
                                     title={sub.product_name}
                                     subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
@@ -440,15 +441,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                     defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
                                     trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
                                     actions={subscriptionActions.render(sub, actionsCtx)}
-                                >
-                                    <EntityCard.Body>
-                                        <EntityCard.Field label="Categoría" value={sub.category_name || '-'} />
-                                        <EntityCard.Field label="Proveedor" value={sub.supplier_name || '-'} />
-                                        {sub.next_payment_date && (
-                                            <EntityCard.Field label="Próximo Pago" value={sub.next_payment_date} />
-                                        )}
-                                    </EntityCard.Body>
-                                </AutoEntityCard>
+                                />
                             )}
                         />
                     </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback } from "react"
-import { DataTableView, DataCell, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell, QuantityDisplay } from '@/components/shared'
+import { DataTableView, DataCell, AutoEntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch, LabeledSelect, LabeledInput, Drawer, SkeletonShell, QuantityDisplay } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { inventoryCountFields } from "@/features/inventory/inventoryCountFields"
 import { Button } from "@/components/ui/button"
@@ -419,19 +419,13 @@ export function InventoryCountClientView() {
                         key={cnt.id}
                         data={cnt}
                         fields={inventoryCountFields}
+                        variant="full"
                         entityLabel="inventory.inventorycount"
                         title={`Conteo #${cnt.id}`}
                         subtitle={cnt.warehouse_name}
                         onClick={() => handleSelectCount(cnt.id)}
                         trailing={<StatusBadge status={cnt.status} size="sm" />}
-                    >
-                        <EntityCard.Metrics metrics={[
-                            { label: 'Progreso', value: <DataCell.Number value={cnt.counted_products} /> },
-                            { label: 'Total', value: <DataCell.Number value={cnt.total_products} /> },
-                            ...(cnt.products_with_difference > 0 ? [{ label: 'Diferencias', value: <StatusBadge status="WARNING" label={`${cnt.products_with_difference} diferencias`} size="sm" /> }] : []),
-                            { label: 'Creado por', value: cnt.created_by_name ?? '-' },
-                        ]} />
-                    </AutoEntityCard>
+                    />
                 )}
             />
 

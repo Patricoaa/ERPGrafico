@@ -22,12 +22,14 @@ export const payrollFields = createEntityFields<Payroll>()({
         key: "total_haberes",
         type: "currency",
         label: "Haberes",
+        cardPlacement: "metrics",
         get: (p) => parseFloat(p.total_haberes as unknown as string) || 0,
     },
     netSalary: {
         key: "net_salary",
         type: "currency",
         label: "Líquido",
+        cardPlacement: "metrics",
         get: (p) => parseFloat(p.net_salary as unknown as string) || 0,
     },
     status: {

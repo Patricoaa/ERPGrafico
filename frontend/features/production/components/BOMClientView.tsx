@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, EntityCard, StatusBadge, Chip } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, StatusBadge, Chip } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { Layers } from "lucide-react"
 import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
@@ -205,20 +205,14 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                             key={bom.id}
                             data={bom}
                             fields={bomFields}
+                            variant="full"
                             entityLabel="production.bom"
                             title={bom.name}
                             subtitle={bom.product_name}
                             trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
                             actions={bomActions.render(bom, actionsCtx)}
                             defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? (() => bom.id != null && handleEdit(bom.id))}
-                        >
-                            <EntityCard.Body>
-                                {bom.product_internal_code && (
-                                    <EntityCard.Field label="Código" value={<DataCell.Code>{bom.product_internal_code}</DataCell.Code>} />
-                                )}
-                                <EntityCard.Field label="Componentes" value={<DataCell.Number value={bom.lines_count} />} />
-                            </EntityCard.Body>
-                        </AutoEntityCard>
+                        />
                     )}
                 />
             </div>

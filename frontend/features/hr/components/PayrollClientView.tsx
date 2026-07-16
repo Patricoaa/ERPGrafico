@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, AutoEntityCard, EntityCard, StatusBadge, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, DataCell, AutoEntityCard, StatusBadge, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
@@ -207,18 +207,14 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                             key={payroll.id}
                             data={payroll}
                             fields={payrollFields}
+                            variant="full"
                             entityLabel="hr.payroll"
                             title={(payroll as Payroll & Record<string, unknown>).employee_name as string || '---'}
                             subtitle={payroll.period_label || payroll.display_id}
                             trailing={<StatusBadge status={payroll.status} label={payroll.status_display} size="sm" />}
                             actions={payrollActions.render(payroll, actionsCtx)}
                             defaultAction={() => openDetail(payroll.id)}
-                        >
-                            <EntityCard.Metrics metrics={[
-                                { label: 'Haberes', value: <DataCell.Currency value={parseFloat((payroll as Payroll & Record<string, string>).total_haberes || '0')} /> },
-                                { label: 'Líquido', value: <DataCell.Currency value={parseFloat((payroll as Payroll & Record<string, string>).net_salary || '0')} />, variant: 'success' },
-                            ]} />
-                        </AutoEntityCard>
+                        />
                     )}
                 />
             </div>

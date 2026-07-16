@@ -7,6 +7,11 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         type: "secondary",
         label: "Categoría",
     },
+    supplierName: {
+        key: "supplier_name",
+        type: "secondary",
+        label: "Proveedor",
+    },
     amount: {
         key: "amount",
         type: "currency",

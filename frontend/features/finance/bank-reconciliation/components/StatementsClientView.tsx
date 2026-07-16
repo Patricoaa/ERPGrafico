@@ -264,6 +264,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                             key={stmt.id} 
                             data={stmt} 
                             fields={statementFields}
+                            variant="full"
                             className="overflow-hidden"
                             title={stmt.display_id}
                             subtitle={stmt.treasury_account_name}

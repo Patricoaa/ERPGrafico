@@ -529,6 +529,7 @@ export function UnbilledChargesClientView({
                             key={item.id || item.date + item.amount}
                             data={item}
                             fields={unbilledChargeFields}
+                            variant="full"
                             entityLabel="treasury.unbilledcharge"
                             title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
                             subtitle={item.date}
@@ -539,11 +540,6 @@ export function UnbilledChargesClientView({
                                 />
                             }
                         >
-                            <EntityCard.Body>
-                                {item.source === 'pending' && item.notes && (
-                                    <EntityCard.Field label="Descripción" value={item.notes} full />
-                                )}
-                            </EntityCard.Body>
                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">
                                     Monto

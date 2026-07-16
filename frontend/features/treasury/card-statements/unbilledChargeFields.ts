@@ -7,6 +7,12 @@ export const unbilledChargeFields = createEntityFields<UnbilledItemRow>()({
         type: 'date',
         label: 'Fecha',
     },
+    notes: {
+        key: 'notes',
+        type: 'text',
+        label: 'Descripción',
+        cardPlacement: 'body',
+    },
     amount: {
         key: 'amount',
         type: 'currency',
