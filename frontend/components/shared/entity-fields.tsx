@@ -21,11 +21,81 @@ type FieldType =
     | "progress"
     | "numericFlow"
     | "currencyFlow"
+    | "sourceDest"
 
 type FieldSurface = "table" | "card" | "kanban"
 
 type ChipIntent = "neutral" | "primary" | "success" | "warning" | "destructive" | "info"
 type FlowDirection = "inflow" | "outflow" | "neutral"
+
+// ─── Card Placement System ────────────────────────────────────────────────────
+
+/**
+ * Card zones — the 4 layout regions in an EntityCard.
+ * - `title`: replaces the auto-generated title (identifier field)
+ * - `header`: compact badges/values in the header trailing area
+ * - `detail`: label:value grid in EntityCard.Body
+ * - `metric`: equal-width columns in EntityCard.Metrics
+ */
+export type CardPlacement = 'title' | 'header' | 'detail' | 'metric'
+
+/**
+ * Semantic role of a field — determines its default CardPlacement.
+ * Each FieldType maps to a FieldRole via TYPE_TO_ROLE.
+ */
+export type FieldRole =
+    | 'identifier'       // code field with key containing id/number/code
+    | 'primary-label'    // text field with key containing 'name'
+    | 'status'           // status badge
+    | 'tag'              // chip / icon
+    | 'primary-value'    // currency (main financial value)
+    | 'secondary-value'  // currency (secondary), number metrics
+    | 'flow'             // currencyFlow, numericFlow
+    | 'relation'         // text (related entity name)
+    | 'temporal'         // date field
+    | 'descriptive'      // text (description, notes)
+    | 'supplementary'    // secondary text
+    | 'progress'         // progress bar
+
+/**
+ * FieldType → FieldRole mapping.
+ * Used by toCardFields() when no explicit fieldRole is set.
+ */
+const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
+    'text':          'descriptive',
+    'code':          'identifier',
+    'date':          'temporal',
+    'currency':      'primary-value',
+    'status':        'status',
+    'number':        'secondary-value',
+    'secondary':     'supplementary',
+    'contact':       'relation',
+    'chip':          'tag',
+    'icon':          'tag',
+    'progress':      'progress',
+    'numericFlow':   'flow',
+    'currencyFlow':  'flow',
+    'sourceDest':    'descriptive',
+}
+
+/**
+ * FieldRole → default CardPlacement mapping.
+ * Explicit cardPlacement in FieldDef always overrides this.
+ */
+const ROLE_TO_PLACEMENT: Record<FieldRole, CardPlacement> = {
+    'identifier':       'header',
+    'primary-label':    'detail',
+    'status':           'header',
+    'tag':              'header',
+    'primary-value':    'header',
+    'secondary-value':  'metric',
+    'flow':             'header',
+    'relation':         'detail',
+    'temporal':         'detail',
+    'descriptive':      'detail',
+    'supplementary':    'detail',
+    'progress':         'metric',
+}
 
 interface FieldDef<T> {
     key: (keyof T & string) | (string & {}) // allow virtual keys when `get` is provided
@@ -35,9 +105,11 @@ interface FieldDef<T> {
     get?: (entity: T) => unknown
     cellProps?: Record<string, unknown>
     surfaces?: FieldSurface[]
-    /** Override de posicionamiento en la tarjeta */
-    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body' | 'metrics'
-    /** Visual sizing for card variant: 'xs' (badge/chip), 'sm' (status/text), 'md' (label/value), 'lg' (hero primary) */
+    /** Override de posicionamiento en la tarjeta (defaults from ROLE_TO_PLACEMENT) */
+    cardPlacement?: CardPlacement
+    /** Override del rol semántico del campo (defaults from TYPE_TO_ROLE) */
+    fieldRole?: FieldRole
+    /** Visual sizing for card variant: 'xs' (badge/chip), 'sm' (status/text), 'md' (label/value), 'lg' (accent) */
     cardSize?: 'xs' | 'sm' | 'md' | 'lg'
     /** Custom className applied to the DataCell in card rendering */
     cardClassName?: string
@@ -84,7 +156,12 @@ export interface CardField {
     key: string
     label: string
     value: ReactNode
-    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body' | 'metrics'
+    /** Always resolved — from explicit cardPlacement or ROLE_TO_PLACEMENT fallback */
+    cardPlacement: CardPlacement
+    /** Always resolved — from explicit fieldRole or TYPE_TO_ROLE fallback */
+    fieldRole: FieldRole
+    /** Optional custom className for the card field container */
+    cardClassName?: string
 }
 
 export interface KanbanField {
@@ -211,6 +288,10 @@ function renderCellValue<T>(def: FieldDef<T>, entity: T): ReactNode {
                 />
             )
         }
+        case "sourceDest": {
+            const v = value as { source: string; dest: string; sourceEntity?: { label: string; entityLabel: string; id: number }; destEntity?: { label: string; entityLabel: string; id: number } }
+            return <DataCell.SourceDest {...v} className={resolvedClassName} {...extra} />
+        }
         default:
             return <DataCell.Text className={resolvedClassName}>{String(value ?? "-")}</DataCell.Text>
     }
@@ -316,6 +397,10 @@ function renderKanbanCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                 />
             )
         }
+        case "sourceDest": {
+            const v = value as { source: string; dest: string; sourceEntity?: { label: string; entityLabel: string; id: number }; destEntity?: { label: string; entityLabel: string; id: number } }
+            return <DataCell.SourceDest {...v} size="sm" className={resolvedClassName} {...base} />
+        }
         default:
             return <DataCell.Text size="sm" className={resolvedClassName}>{String(value ?? "-")}</DataCell.Text>
     }
@@ -414,6 +499,10 @@ function renderRowCell<T>(def: FieldDef<T>, rowOriginal: T, rowGetValue: (key: s
                 />
             )
         }
+        case "sourceDest": {
+            const v = value as { source: string; dest: string; sourceEntity?: { label: string; entityLabel: string; id: number }; destEntity?: { label: string; entityLabel: string; id: number } }
+            return <DataCell.SourceDest {...v} className={resolvedClassName} {...extra} />
+        }
         default:
             return <DataCell.Text className={resolvedClassName}>{String(value ?? "-")}</DataCell.Text>
     }
@@ -497,29 +586,43 @@ export function createEntityFields<T>(): (
         /**
          * Converts field definitions into CardField[] for card rendering.
          *
-         * Default type → placement mapping (explicit cardPlacement always wins):
-         *   header-right: status, currency, currencyFlow, numericFlow, progress, chip, icon
-         *   auto:         text, code, date, number, secondary, contact
-         *   metrics:      opt-in only — use cardPlacement: 'metrics' for computed/aggregate fields
+         * Each field gets a resolved cardPlacement and fieldRole:
+         * - Explicit fieldRole overrides TYPE_TO_ROLE
+         * - Explicit cardPlacement overrides ROLE_TO_PLACEMENT
+         * - Title field (identifier with id/number/code key) gets 'title' placement
          */
         toCardFields: (entity: T, opts?: { only?: string[] }): CardField[] => {
             const allowed = opts?.only
-            return Object.entries(defs)
+            const fields = Object.entries(defs)
                 .filter(([, def]) => isPresentOnSurface(def, "card"))
                 .filter(([fieldKey]) => !allowed || allowed.includes(fieldKey))
                 .map(([fieldKey, def]): CardField => {
-                    let defaultPlacement: 'auto' | 'header-right' | 'body' = 'auto';
-                    if (["status", "currency", "currencyFlow", "numericFlow", "progress", "chip", "icon"].includes(def.type)) {
-                        defaultPlacement = 'header-right';
+                    const role: FieldRole = def.fieldRole ?? TYPE_TO_ROLE[def.type]
+                    let placement: CardPlacement = def.cardPlacement ?? ROLE_TO_PLACEMENT[role]
+
+                    // Auto-detect title: identifier field with id/number/code in key
+                    if (placement !== 'title' && role === 'identifier' && /id|number|code/i.test(fieldKey)) {
+                        placement = 'title'
                     }
 
                     return {
                         key: fieldKey,
                         label: def.label,
                         value: renderCardCell(def, entity),
-                        cardPlacement: def.cardPlacement || defaultPlacement,
-                    };
+                        cardPlacement: placement,
+                        fieldRole: role,
+                        ...(def.cardClassName && { cardClassName: def.cardClassName }),
+                    }
                 })
+
+            // Ensure exactly one title — if none found, first identifier or first field
+            const hasTitle = fields.some(f => f.cardPlacement === 'title')
+            if (!hasTitle && fields.length > 0) {
+                const titleCandidate = fields.find(f => f.fieldRole === 'identifier') ?? fields[0]
+                titleCandidate.cardPlacement = 'title'
+            }
+
+            return fields
         },
 
         toKanbanFields: (entity: T, opts?: { only?: string[] }): KanbanField[] => {

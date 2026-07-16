@@ -17,7 +17,7 @@ export const posSessionFields = createEntityFields<POSSession>()({
         key: "treasury_account_name",
         type: "text",
         label: "Cuenta",
-        cardPlacement: "body",
+        cardPlacement: "detail",
     },
     openedAt: {
         key: "opened_at",
@@ -41,7 +41,7 @@ export const posSessionFields = createEntityFields<POSSession>()({
         key: "total_sales",
         type: "currency",
         label: "Ventas",
-        cardPlacement: "metrics",
+        cardPlacement: "metric",
         get: (s) => (s.total_cash_sales ?? 0) + (s.total_card_sales ?? 0),
     },
     status: {

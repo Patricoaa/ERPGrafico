@@ -6,13 +6,13 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
         key: "transaction_count",
         type: "number",
         label: "Transacciones",
-        cardPlacement: "body",
+        cardPlacement: "detail",
     },
     netAmount: {
         key: "net_amount",
         type: "currency",
         label: "Depósito Neto",
-        cardPlacement: "body",
+        cardPlacement: "detail",
     },
     status: {
         key: "status",

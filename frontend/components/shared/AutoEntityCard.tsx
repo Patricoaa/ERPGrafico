@@ -5,20 +5,14 @@ import { EntityCard } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { renderEntitySubtitleItems, type SubtitleItem } from "@/lib/entity-registry"
+import type { CardField } from "@/components/shared"
 
 export interface AutoEntityCardProps<TData> {
     /** The raw entity data */
     data: TData
     /** The fields factory returned by createEntityFields() */
     fields: {
-        toCardFields: (data: TData, opts?: { only?: string[] }) => Array<{
-            key: string
-            label: string
-            value: React.ReactNode
-            cardPlacement?: 'auto' | 'header-right' | 'center' | 'body' | 'metrics'
-            cardSize?: 'xs' | 'sm' | 'md' | 'lg'
-            cardClassName?: string
-        }>
+        toCardFields: (data: TData, opts?: { only?: string[] }) => CardField[]
     }
     /** Entity label for registry lookups (e.g. 'sales.order') — used for auto-subtitle and hub status */
     entityLabel?: string
@@ -36,7 +30,7 @@ export interface AutoEntityCardProps<TData> {
     isSelected?: boolean
     /** Additional CSS classes for the card container */
     className?: string
-    /** Optional image URL to render in the header (takes precedence over icon) — used by hero variant */
+    /** Optional image URL to render in the header icon slot (takes precedence over icon) */
     imageSrc?: string
     /** Optional trailing slot to render in the header (e.g. badges, status) */
     trailing?: React.ReactNode
@@ -50,16 +44,13 @@ export interface AutoEntityCardProps<TData> {
     children?: React.ReactNode
     /**
      * Unified card variant — controls layout zones, field placement, and root styling.
-     * - 'highlights': dashboard/summary — header only (icon + title + subtitle + trailing + actions)
-     * - 'minimal': management, dense — header + body fields WITHOUT labels
-     * - 'compact': management, inline fields — header only with fields inline (header-right)
-     * - 'full': management, complete — header + body + metrics + footer + workflow
-     * - 'hero': products, visual — Hero header (image 64×64) + body
-     * - 'flow': transfers, directional — header with center (source → dest arrow)
+     * - 'highlights': dashboard/summary — header only, detail/metric fields hidden
+     * - 'summary': management, dense — header + metrics, detail hidden
+     * - 'full': management, complete — header + detail + metrics (DEFAULT)
      */
-    variant?: 'highlights' | 'minimal' | 'compact' | 'full' | 'hero' | 'flow'
+    variant?: 'highlights' | 'summary' | 'full'
     /**
-     * Hub status renderer — called for compact/full variants to render domain-specific
+     * Hub status renderer — called for summary/full variants to render domain-specific
      * status content in the header center area.
      */
     hubStatusRenderer?: (data: TData) => React.ReactNode
@@ -70,54 +61,62 @@ export interface AutoEntityCardProps<TData> {
     workflowRenderer?: (data: TData) => React.ReactNode
 }
 
+// ─── Field Classification ─────────────────────────────────────────────────────
+
+interface ClassifiedFields {
+    title: CardField | undefined
+    subtitle: CardField | undefined
+    header: CardField[]
+    detail: CardField[]
+    metric: CardField[]
+}
+
 /**
- * Classifies card fields into layout zones based on variant.
- * Returns { headerRight, center, body, metrics } buckets.
+ * Classifies card fields into layout zones based on their resolved cardPlacement.
+ * Applies variant-based visibility rules.
  */
-function classifyFieldsByVariant<TData>(
-    fields: ReturnType<AutoEntityCardProps<TData>['fields']['toCardFields']>,
-    variant: AutoEntityCardProps<TData>['variant']
-): { headerRight: typeof fields; center: typeof fields; body: typeof fields; metrics: typeof fields } {
-    const explicitHeaderRight = fields.filter(f => f.cardPlacement === 'header-right')
-    const explicitBody = fields.filter(f => f.cardPlacement === 'body')
-    const explicitCenter = fields.filter(f => f.cardPlacement === 'center')
-    const explicitMetrics = fields.filter(f => f.cardPlacement === 'metrics')
-    const autoFields = fields.filter(f => !f.cardPlacement || f.cardPlacement === 'auto')
+function classifyFields<TData>(
+    fields: CardField[],
+    variant: AutoEntityCardProps<TData>['variant'],
+): ClassifiedFields {
+    const title = fields.find(f => f.cardPlacement === 'title')
+    const subtitle = fields.find(f => f.fieldRole === 'primary-label' && /name/i.test(f.key))
+        ?? fields.find(f => f.fieldRole === 'primary-label')
 
-    let headerRight = [...explicitHeaderRight]
-    let body = [...explicitBody]
-    const center = [...explicitCenter]
+    // Fields that are not title or subtitle candidate
+    const rest = fields.filter(f =>
+        f.cardPlacement !== 'title' &&
+        f.key !== subtitle?.key
+    )
 
+    let detail = rest.filter(f => f.cardPlacement === 'detail')
+    let metric = rest.filter(f => f.cardPlacement === 'metric')
+    const header = rest.filter(f => f.cardPlacement === 'header')
+
+    // Apply variant visibility
     switch (variant) {
         case 'highlights':
-            // Dashboard/summary — only header fields, no body
-            headerRight = [...headerRight, ...autoFields]
+            // Header only — hide detail and metric
+            detail = []
+            metric = []
             break
 
-        case 'minimal':
-            // Dense management — all fields to body, no labels
-            body = [...body, ...autoFields]
-            break
-
-        case 'compact':
-            // Inline fields — force all to header-right (no labels)
-            headerRight = [...headerRight, ...autoFields]
+        case 'summary':
+            // Header + metric — hide detail
+            detail = []
             break
 
         case 'full':
-        case 'hero':
-        case 'flow':
         default:
-            // Default heuristic: <= 2 auto → header-right, else body
-            if (autoFields.length <= 2) {
-                headerRight = [...headerRight, ...autoFields]
-            } else {
-                body = [...body, ...autoFields]
+            // All zones visible — balance header if too many
+            if (header.length > 3) {
+                const excess = header.splice(3)
+                detail.unshift(...excess)
             }
             break
     }
 
-    return { headerRight, center, body, metrics: explicitMetrics }
+    return { title, subtitle, header, detail, metric }
 }
 
 /**
@@ -151,9 +150,9 @@ function buildSubtitleItems<TData>(
  * AutoEntityCard - A standardized card component for Master Data entities.
  * 
  * Automatically generates the EntityCard layout using the fields defined in `createEntityFields`.
- * - Uses `cardPlacement` metadata ('header-right', 'center', 'body') to position fields.
- * - Uses `variant` to control layout zones and field placement.
- * - Supports `hubStatusRenderer` for compact/full variants.
+ * - Uses `cardPlacement` metadata ('title', 'header', 'detail', 'metric') to position fields.
+ * - Uses `variant` to control which layout zones are visible.
+ * - Supports `hubStatusRenderer` for summary/full variants.
  * - Supports `workflowRenderer` for full variant.
  * - Auto-generates subtitle from registry when no explicit subtitle is provided.
  */
@@ -161,8 +160,8 @@ export function AutoEntityCard<TData>({
     data, 
     fields, 
     entityLabel,
-    title,
-    subtitle,
+    title: explicitTitle,
+    subtitle: explicitSubtitle,
     center,
     icon, 
     iconClassName,
@@ -178,53 +177,44 @@ export function AutoEntityCard<TData>({
     hubStatusRenderer,
     workflowRenderer,
 }: AutoEntityCardProps<TData>) {
-    const cardFields = fields.toCardFields(data);
+    const cardFields = fields.toCardFields(data)
     
-    const hasOverrideTitle = title !== undefined;
-    const displayTitle = hasOverrideTitle ? title : (cardFields[0]?.value ?? '---');
-    const restFields = hasOverrideTitle ? cardFields : cardFields.slice(2);
+    // 1. Classify fields into layout zones
+    const classified = classifyFields(cardFields, variant)
 
-    // 1. Classify fields by variant
-    const { headerRight, center: declarativeCenter, body, metrics } = classifyFieldsByVariant(restFields, variant)
+    // 2. Determine display title
+    const displayTitle = explicitTitle ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
 
-    // 2. Build subtitle from registry or explicit
-    const subtitleItems = buildSubtitleItems(entityLabel, data, subtitle, title, cardFields[0])
+    // 3. Build subtitle from registry or explicit
+    const subtitleItems = buildSubtitleItems(entityLabel, data, explicitSubtitle, explicitTitle, cardFields[0])
 
-    // 3. Build Header Right content with proper sizing
-    const headerRightContent = headerRight.length > 0 && (
+    // 4. Build Header trailing content (header fields + explicit trailing)
+    const headerContent = classified.header.length > 0 && (
         <div className="flex items-center gap-4">
-            {headerRight.map(f => (
+            {classified.header.map(f => (
                 <div key={f.key} className={cn("flex flex-col items-end", f.cardClassName)}>
                     <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>
                     <span className="text-xs font-semibold">{f.value ?? <span className="opacity-40">—</span>}</span>
                 </div>
             ))}
         </div>
-    );
+    )
 
-    const combinedTrailing = (headerRightContent || trailing) ? (
+    const combinedTrailing = (headerContent || trailing) ? (
         <div className="flex items-center gap-4">
-            {headerRightContent}
+            {headerContent}
             {trailing}
         </div>
-    ) : undefined;
+    ) : undefined
 
-    // 4. Build Center content from explicit prop, declarative fields, or hubStatusRenderer
+    // 5. Build Center content from explicit prop, or hubStatusRenderer
     const centerContent = center ?? (
-        declarativeCenter.length > 0
-            ? declarativeCenter.map(f => (
-                <div key={f.key} className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
-                    {f.value}
-                </div>
-            ))
-            : undefined
-    ) ?? (
-        hubStatusRenderer && (variant === 'compact' || variant === 'full')
+        hubStatusRenderer && (variant === 'summary' || variant === 'full')
             ? hubStatusRenderer(data)
             : undefined
     )
 
-    // 5. Render subtitle items
+    // 6. Render subtitle items
     const subtitleNode = subtitleItems.length > 0
         ? subtitleItems.map((item, i) => {
             if (item.kind === 'separator') return <React.Fragment key={i}> · </React.Fragment>
@@ -236,39 +226,30 @@ export function AutoEntityCard<TData>({
         })
         : undefined
 
-    // 6. Root className for hero/flow variants
-    const rootClassName = cn(
-        variant === 'hero' && 'border-l-4 border-l-primary',
-        variant === 'flow' && 'border-l-4 border-l-accent',
-        className
-    )
-
-    // 7. Determine EntityCard variant (minimal padding if no body)
-    const entityCardVariant = body.length === 0 ? "compact" : "full"
+    // 7. Determine EntityCard variant (compact padding if no detail/metric)
+    const entityCardVariant = (classified.detail.length === 0 && classified.metric.length === 0) ? "compact" : "full"
 
     return (
-        <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={rootClassName} variant={entityCardVariant}>
+        <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={entityCardVariant}>
             <EntityCard.Header 
-                icon={variant === 'hero' ? undefined : (variant === 'minimal' ? undefined : icon)}
+                icon={icon}
                 iconClassName={iconClassName}
-                imageSrc={variant === 'hero' ? (imageSrc ?? undefined) : undefined}
+                imageSrc={imageSrc ?? undefined}
                 title={displayTitle} 
                 subtitle={subtitleNode}
                 center={centerContent}
                 actions={actions}
                 trailing={combinedTrailing}
             />
-            {body.length > 0 && (
+            {classified.detail.length > 0 && (
                 <EntityCard.Body>
-                    {body.map(field => (
-                        variant === 'minimal'
-                            ? <div key={field.key} className="text-xs text-muted-foreground">{field.value}</div>
-                            : <EntityCard.Field key={field.key} label={field.label} value={field.value} />
+                    {classified.detail.map(field => (
+                        <EntityCard.Field key={field.key} label={field.label} value={field.value} />
                     ))}
                 </EntityCard.Body>
             )}
-            {metrics.length > 0 && variant !== 'minimal' && (
-                <EntityCard.Metrics metrics={metrics.map(f => ({
+            {classified.metric.length > 0 && (
+                <EntityCard.Metrics metrics={classified.metric.map(f => ({
                     label: f.label,
                     value: f.value,
                 }))} />

@@ -193,7 +193,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                             defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
                             trailing={<StatusBadge status={loan.status} />}
                             actions={loanActions.render(loan, actionsCtx)}
-                            variant="minimal"
+                            variant="summary"
                         />
                     )}
                 />
