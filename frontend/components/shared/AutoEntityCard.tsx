@@ -67,13 +67,19 @@ interface ClassifiedFields {
     title: CardField | undefined
     subtitle: CardField | undefined
     header: CardField[]
-    detail: CardField[]
+    centerDetail: CardField[]
+    bodyDetail: CardField[]
     metric: CardField[]
 }
 
 /**
  * Classifies card fields into layout zones based on their resolved cardPlacement.
  * Applies variant-based visibility rules.
+ *
+ * Detail field routing:
+ * - Flow fields (numericFlow/currencyFlow) → center of header
+ * - Other detail fields → center of header UNLESS flow fields are present,
+ *   in which case they stay in body.
  */
 function classifyFields<TData>(
     fields: CardField[],
@@ -91,7 +97,8 @@ function classifyFields<TData>(
 
     let detail = rest.filter(f => f.cardPlacement === 'detail')
     let metric = rest.filter(f => f.cardPlacement === 'metric')
-    const header = rest.filter(f => f.cardPlacement === 'header')
+    const flows = rest.filter(f => f.fieldRole === 'flow')
+    const header = rest.filter(f => f.cardPlacement === 'header' && f.fieldRole !== 'flow')
 
     // Apply variant visibility
     switch (variant) {
@@ -116,7 +123,11 @@ function classifyFields<TData>(
             break
     }
 
-    return { title, subtitle, header, detail, metric }
+    // Center routing: flow fields or detail fields go to header center
+    const centerDetail = flows.length > 0 ? flows : detail
+    const bodyDetail = flows.length > 0 ? detail : []
+
+    return { title, subtitle, header, centerDetail, bodyDetail, metric }
 }
 
 /**
@@ -207,11 +218,22 @@ export function AutoEntityCard<TData>({
         </div>
     ) : undefined
 
-    // 5. Build Center content from explicit prop, or hubStatusRenderer
+    // 5. Build Center content: explicit prop → hubStatusRenderer → centerDetail fields
+    const centerDetailNode = classified.centerDetail.length > 0 && (
+        <div className="flex items-center gap-4">
+            {classified.centerDetail.map(f => (
+                <div key={f.key} className={cn("flex flex-col items-end", f.cardClassName)}>
+                    <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>
+                    <span className="text-xs font-semibold">{f.value ?? <span className="opacity-40">—</span>}</span>
+                </div>
+            ))}
+        </div>
+    )
+
     const centerContent = center ?? (
         hubStatusRenderer && (variant === 'summary' || variant === 'full')
             ? hubStatusRenderer(data)
-            : undefined
+            : centerDetailNode || undefined
     )
 
     // 6. Render subtitle items
@@ -226,8 +248,8 @@ export function AutoEntityCard<TData>({
         })
         : undefined
 
-    // 7. Determine EntityCard variant (compact padding if no detail/metric)
-    const entityCardVariant = (classified.detail.length === 0 && classified.metric.length === 0) ? "compact" : "full"
+    // 7. Determine EntityCard variant (compact padding if no body detail/metric)
+    const entityCardVariant = (classified.bodyDetail.length === 0 && classified.metric.length === 0) ? "compact" : "full"
 
     return (
         <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={entityCardVariant}>
@@ -241,9 +263,9 @@ export function AutoEntityCard<TData>({
                 actions={actions}
                 trailing={combinedTrailing}
             />
-            {classified.detail.length > 0 && (
+            {classified.bodyDetail.length > 0 && (
                 <EntityCard.Body>
-                    {classified.detail.map(field => (
+                    {classified.bodyDetail.map(field => (
                         <EntityCard.Field key={field.key} label={field.label} value={field.value} />
                     ))}
                 </EntityCard.Body>
