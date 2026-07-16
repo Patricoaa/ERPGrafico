@@ -13,7 +13,7 @@ export interface AutoEntityCardProps<TData> {
             key: string
             label: string
             value: React.ReactNode
-            cardPlacement?: 'auto' | 'header-right' | 'body'
+            cardPlacement?: 'auto' | 'header-right' | 'center' | 'body'
         }>
     }
     /** Optional icon to render in the header */
@@ -52,7 +52,7 @@ export interface AutoEntityCardProps<TData> {
  * Automatically generates the EntityCard layout using the fields defined in `createEntityFields`.
  * - If `title` is NOT provided, the first field is used as the Title, and the second as Subtitle.
  * - If `title` IS provided, all fields are evaluated for placement.
- * - Uses `cardPlacement` metadata ('header-right', 'body') to position fields.
+ * - Uses `cardPlacement` metadata ('header-right', 'center', 'body') to position fields.
  * - Fields with 'auto' placement use a heuristic: <= 2 fields go to header-right, >= 3 go to body.
  */
 export function AutoEntityCard<TData>({ 
@@ -83,6 +83,7 @@ export function AutoEntityCard<TData>({
     // 1. Separate fields based on explicit placement
     const explicitHeaderRight = restFields.filter(f => f.cardPlacement === 'header-right');
     const explicitBody = restFields.filter(f => f.cardPlacement === 'body');
+    const explicitCenter = restFields.filter(f => f.cardPlacement === 'center');
     const autoFields = restFields.filter(f => !f.cardPlacement || f.cardPlacement === 'auto');
 
     // 2. Apply heuristics for 'auto' fields
@@ -123,7 +124,18 @@ export function AutoEntityCard<TData>({
         </div>
     ) : undefined;
 
-    // 4. Determine Card Variant (minimal padding if no body)
+    // 4. Build Center content from explicit prop or declarative fields
+    const centerContent = center ?? (
+        explicitCenter.length > 0
+            ? explicitCenter.map(f => (
+                <div key={f.key} className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
+                    {f.value}
+                </div>
+            ))
+            : undefined
+    );
+
+    // 5. Determine Card Variant (minimal padding if no body)
     const cardVariant = finalBody.length === 0 ? "compact" : "full";
 
     return (
@@ -134,7 +146,7 @@ export function AutoEntityCard<TData>({
                 imageSrc={imageSrc}
                 title={displayTitle} 
                 subtitle={displaySubtitle} 
-                center={center}
+                center={centerContent}
                 actions={actions}
                 trailing={combinedTrailing}
             />

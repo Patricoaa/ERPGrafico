@@ -4,12 +4,10 @@ import React, { useEffect, useState, useRef, useMemo } from "react"
 
 import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
 
-import { DataTableView, EntityCard } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { FileEdit, RotateCcw, FileText } from "lucide-react"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
 import { journalEntryFields } from './journalEntryFields'
-import { resolveStatus } from '@/lib/badge-resolvers'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting"
@@ -206,29 +204,16 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                             : m.reversal_of
                                 ? "text-warning bg-warning/10"
                                 : "text-success bg-success/10"
-                        const total = m.items?.reduce((sum: number, item) => sum + (Number(item.debit) || 0), 0) || 0
-                        const originLabel = m.is_manual ? 'Manual' : m.reversal_of ? 'Reversión' : 'Automático'
-                        const statusLabel = resolveStatus(m.status).label
                         return (
-                            <EntityCard key={m.id} onClick={() => openDetail(m.id)}>
-                            <EntityCard.Header
+                            <AutoEntityCard
+                                key={m.id}
+                                data={m}
+                                fields={journalEntryFields}
                                 icon={Icon}
                                 iconClassName={iconStyle}
-                                title={m.display_id}
-                                subtitle={
-                                    <span className="text-xs text-muted-foreground/70">
-                                        {statusLabel} · {originLabel}
-                                    </span>
-                                }
-                                center={
-                                    <span className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
-                                        {m.description}
-                                    </span>
-                                }
-                                trailing={<DataCell.Currency value={total} />}
                                 actions={journalEntryActions.render(m, journalEntryActionsCtx)}
+                                defaultAction={(e) => { e.stopPropagation(); openDetail(m.id) }}
                             />
-                            </EntityCard>
                         )
                     }}
                     cardSkeleton={{ showBody: false }}

@@ -28,7 +28,7 @@ type ChipIntent = "neutral" | "primary" | "success" | "warning" | "destructive" 
 type FlowDirection = "inflow" | "outflow" | "neutral"
 
 interface FieldDef<T> {
-    key: keyof T & string
+    key: (keyof T & string) | (string & {}) // allow virtual keys when `get` is provided
     type: FieldType
     label: string
     header?: string
@@ -36,7 +36,7 @@ interface FieldDef<T> {
     cellProps?: Record<string, unknown>
     surfaces?: FieldSurface[]
     /** Override de posicionamiento en la tarjeta */
-    cardPlacement?: 'auto' | 'header-right' | 'body'
+    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body'
     tableOptions?: {
         width?: number
         enableSorting?: boolean
@@ -80,7 +80,7 @@ export interface CardField {
     key: string
     label: string
     value: ReactNode
-    cardPlacement?: 'auto' | 'header-right' | 'body'
+    cardPlacement?: 'auto' | 'header-right' | 'center' | 'body'
 }
 
 export interface KanbanField {
@@ -104,7 +104,7 @@ function isPresentOnSurface<T>(def: FieldDef<T>, surface: FieldSurface): boolean
 }
 
 function resolveValue<T>(def: FieldDef<T>, entity: T): unknown {
-    return def.get ? def.get(entity) : entity[def.key]
+    return def.get ? def.get(entity) : entity[def.key as keyof T]
 }
 
 function resolveDyn<TContext>(
