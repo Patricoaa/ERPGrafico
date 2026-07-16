@@ -18,4 +18,29 @@ export const creditLineFields = createEntityFields<CreditLine>()({
         type: 'status',
         label: 'Estado',
     },
+    creditLimit: {
+        key: 'credit_limit',
+        type: 'currency',
+        label: 'Límite',
+        tableOptions: { align: 'right' }
+    },
+    usedAmount: {
+        key: 'used_amount',
+        type: 'currency',
+        label: 'Utilizado',
+        tableOptions: { align: 'right' }
+    },
+    availableAmount: {
+        key: 'available_amount',
+        type: 'currency',
+        label: 'Disponible',
+        tableOptions: { align: 'right' }
+    },
+    utilizationRate: {
+        key: 'utilization_rate',
+        type: 'text',
+        label: 'Uso %',
+        getValue: (c) => c.utilization_rate !== null ? `${Number(c.utilization_rate).toFixed(1)}%` : '—',
+        tableOptions: { align: 'right' }
+    }
 })

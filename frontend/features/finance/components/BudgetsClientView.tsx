@@ -10,10 +10,11 @@ import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/
 import { toast } from "sonner"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
-import { DataCell } from '@/components/shared'
+
+import { DataCell, AutoEntityCard } from '@/components/shared'
 import { budgetActions, type BudgetActionsCtx } from "@/features/finance/budgetActions"
+import { budgetFields } from "@/features/finance/budgetFields"
 
 import { useSearchParams, usePathname } from "next/navigation"
 
@@ -160,6 +161,16 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                     isLoading={isLoading}
                     entityLabel="accounting.budget"
                     createAction={createAction}
+                    renderCard={(budget) => (
+                        <AutoEntityCard 
+                            key={budget.id}
+                            data={budget}
+                            fields={budgetFields}
+                            title={budget.name}
+                            subtitle={`${budget.start_date} - ${budget.end_date}`}
+                            actions={budgetActions.card(actionsCtx)}
+                        />
+                    )}
                 />
             </div>
 
