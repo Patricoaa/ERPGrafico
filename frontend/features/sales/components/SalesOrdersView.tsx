@@ -211,7 +211,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                             <AutoEntityCard
                                 key={data.id}
                                 data={data as any}
-                                fields={viewMode === 'orders' ? salesOrderFields as any : undefined as any /* Note: assuming there is another fields factory but using any for now */}
+                                fields={viewMode === 'orders' ? salesOrderFields as any : undefined as any}
+                                entityLabel={label}
                                 title={getPartnerName(label, d)}
                                 subtitle={
                                     <span className="flex items-center gap-1.5 flex-wrap">
@@ -233,24 +234,30 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={iconClassName}
-                                trailing={
-                                    <div className="flex items-center gap-4">
-                                        <div className="hidden sm:flex items-center gap-3">
-                                            <DomainHubStatus label={label} data={d} />
-                                        </div>
-                                        <DataCell.ActionSingle onClick={() => toggleSelection(data.id)} title="Abrir" />
+                                hubStatusRenderer={(hubData) => (
+                                    <div className="hidden sm:flex items-center gap-3">
+                                        <DomainHubStatus label={label} data={hubData as Record<string, unknown>} />
                                     </div>
-                                }
-                            >
-                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
-                                    <EntityCard.WorkflowBody
-                                        lines={((d.lines || d.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
-                                        total={total}
-                                        pending={hasPending ? pending : undefined}
-                                        deliveryDate={d.delivery_date as string | undefined}
-                                    />
                                 )}
-                            </AutoEntityCard>
+                                trailing={
+                                    <DataCell.ActionSingle onClick={() => toggleSelection(data.id)} title="Abrir" />
+                                }
+                                workflowRenderer={(wfData) => {
+                                    const wd = wfData as unknown as Record<string, unknown>
+                                    const wfTotal = parseFloat(String(wd.total || wd.effective_total || wd.balance || 0))
+                                    const wfPending = parseFloat(String(wd.pending_amount || 0))
+                                    const wfHasPending = wfTotal > 0 && wfPending > 0
+                                    return ((wd.lines || wd.items || []) as Array<Record<string, unknown>>).length > 0 ? (
+                                        <EntityCard.WorkflowBody
+                                            lines={((wd.lines || wd.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
+                                            total={wfTotal}
+                                            pending={wfHasPending ? wfPending : undefined}
+                                            deliveryDate={wd.delivery_date as string | undefined}
+                                        />
+                                    ) : null
+                                }}
+                                variant="full"
+                            />
                         )
                     }}
                     manualPagination={!effectiveGrouping}

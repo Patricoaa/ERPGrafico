@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal, DomainHubStatus, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
 import type { AnalyticsPanelConfig } from '@/components/shared'
@@ -485,44 +485,52 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                             const dateLabel = typeof config?.dateLabel === 'function' ? config.dateLabel(data) : config?.dateLabel ?? 'Entrega'
 
                             return (
-                                <EntityCard
+                                <AutoEntityCard
+                                    key={data.id as number}
+                                    data={data}
+                                    fields={viewMode === 'orders' ? purchaseOrderFields as any : undefined as any}
+                                    entityLabel={label}
+                                    title={getPartnerName(label, data)}
+                                    subtitle={
+                                        <span className="flex items-center gap-1.5 flex-wrap">
+                                            <span>{data.display_id as string}</span>
+                                            <span className="text-muted-foreground/20">·</span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3 opacity-50" />
+                                                {formatPlainDate(data.date as string)}
+                                            </span>
+                                        </span>
+                                    }
                                     onClick={() => toggleSelection(data.id as number)}
                                     isSelected={viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id}
                                     className={isHubOpen && (viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
-                                >
-                                    <EntityCard.Header
-                                        icon={getEntityIcon(label)}
-                                        iconClassName={iconClassName}
-                                        title={getPartnerName(label, data)}
-                                        subtitle={
-                                            <span className="flex items-center gap-1.5 flex-wrap">
-                                                <span>{data.display_id as string}</span>
-                                                <span className="text-muted-foreground/20">·</span>
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="h-3 w-3 opacity-50" />
-                                                    {formatPlainDate(data.date as string)}
-                                                </span>
-                                            </span>
-                                        }
-                                        trailing={
-                                            <div className="flex items-center gap-4">
-                                                <div className="hidden sm:flex items-center gap-3">
-                                                    <DomainHubStatus label={label} data={data} />
-                                                </div>
-                                                <DataCell.ActionSingle onClick={() => toggleSelection(data.id as number)} title="Abrir" />
-                                            </div>
-                                        }
-                                    />
-                                    {((data.lines || data.items || []) as Array<Record<string, unknown>>).length > 0 && (
-                                        <EntityCard.WorkflowBody
-                                            lines={((data.lines || data.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
-                                            total={total}
-                                            pending={hasPending ? pending : undefined}
-                                            deliveryDate={(data.delivery_date || data.receipt_date) as string | undefined}
-                                            dateLabel={dateLabel}
-                                        />
+                                    icon={getEntityIcon(label)}
+                                    iconClassName={iconClassName}
+                                    hubStatusRenderer={(hubData) => (
+                                        <div className="hidden sm:flex items-center gap-3">
+                                            <DomainHubStatus label={label} data={hubData as Record<string, unknown>} />
+                                        </div>
                                     )}
-                                </EntityCard>
+                                    trailing={
+                                        <DataCell.ActionSingle onClick={() => toggleSelection(data.id as number)} title="Abrir" />
+                                    }
+                                    workflowRenderer={(wfData) => {
+                                        const wd = wfData as Record<string, unknown>
+                                        const wfTotal = parseFloat(String(wd.total || wd.effective_total || wd.balance || 0))
+                                        const wfPending = parseFloat(String(wd.pending_amount || 0))
+                                        const wfHasPending = wfTotal > 0 && wfPending > 0
+                                        return ((wd.lines || wd.items || []) as Array<Record<string, unknown>>).length > 0 ? (
+                                            <EntityCard.WorkflowBody
+                                                lines={((wd.lines || wd.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
+                                                total={wfTotal}
+                                                pending={wfHasPending ? wfPending : undefined}
+                                                deliveryDate={(wd.delivery_date || wd.receipt_date) as string | undefined}
+                                                dateLabel={dateLabel}
+                                            />
+                                        ) : null
+                                    }}
+                                    variant="full"
+                                />
                             )
                         }}
                         unifiedSearch={<UnifiedSearchBar
