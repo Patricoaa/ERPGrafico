@@ -27,10 +27,9 @@ export interface ViewPolicy {
   gridLayout?: 'single-column' | 'multi-column';
   /**
    * Unified card variant — controls layout zones, field placement, and root styling.
-   * - 'highlights': dashboard/summary — header only, auto fields hidden, actions on right
-   * - 'minimal': management, dense — icon (optional, no bg) + header-right fields without labels
-   * - 'compact': management, inline — icon + header-right (no labels) + center area
-   * - 'full': management, complete — header + body + metrics + footer + workflow (DEFAULT)
+   * - 'highlights': dashboard/summary — header only, detail/metric fields hidden
+   * - 'summary': management, dense — header + metrics, detail hidden
+   * - 'full': management, complete — header + detail + metrics (DEFAULT)
    */
   cardVariant?: 'highlights' | 'summary' | 'full';
   /**
