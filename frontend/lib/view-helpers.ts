@@ -259,13 +259,13 @@ export function createCardLoadingView(
   layout: 'single-column' | 'multi-column' = 'single-column',
   count: number = 8,
   skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>,
-  cardVariant?: 'highlights' | 'minimal' | 'compact' | 'full' | 'hero' | 'flow',
+  cardVariant?: 'highlights' | 'summary' | 'full',
 ) {
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-1"
 
-  const isCompact = cardVariant === 'compact' || cardVariant === 'highlights'
+  const isCompact = cardVariant === 'highlights' || cardVariant === 'summary'
   const effectiveSkeletonProps = isCompact
     ? { ...skeletonProps, showBody: false, showFooter: false }
     : skeletonProps
@@ -300,7 +300,7 @@ export function createCardGroupLoadingView(
     itemsPerGroup?: number
     gridLayout?: 'single-column' | 'multi-column'
     skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
-    cardVariant?: 'highlights' | 'minimal' | 'compact' | 'full' | 'hero' | 'flow'
+    cardVariant?: 'highlights' | 'summary' | 'full'
   }
 ) {
   const {
@@ -311,7 +311,7 @@ export function createCardGroupLoadingView(
     cardVariant,
   } = options ?? {}
 
-  const isCompact = cardVariant === 'compact' || cardVariant === 'highlights'
+  const isCompact = cardVariant === 'highlights' || cardVariant === 'summary'
   const effectiveSkeletonProps = isCompact
     ? { ...skeletonProps, showBody: false, showFooter: false }
     : skeletonProps
