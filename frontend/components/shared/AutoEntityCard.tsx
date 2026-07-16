@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { EntityCard } from "@/components/shared/EntityCard"
+import { EntityCard } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { renderEntitySubtitleItems, type SubtitleItem } from "@/lib/entity-registry"
