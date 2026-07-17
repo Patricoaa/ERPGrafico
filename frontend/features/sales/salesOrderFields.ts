@@ -24,4 +24,10 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
         label: "Estado",
         surfaces: ["card", "kanban"],
     },
+    channel: {
+        key: "channel_display",
+        type: "chip",
+        label: "Canal",
+        surfaces: ["card", "kanban"],
+    },
 })

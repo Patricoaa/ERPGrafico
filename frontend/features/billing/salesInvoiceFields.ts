@@ -30,4 +30,10 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         label: "Estado",
         surfaces: ["card", "kanban"],
     },
+    dteType: {
+        key: "dte_type_display",
+        type: "chip",
+        label: "Tipo DTE",
+        surfaces: ["card", "kanban"],
+    },
 })
