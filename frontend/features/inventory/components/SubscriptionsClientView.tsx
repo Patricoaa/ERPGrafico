@@ -439,7 +439,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                     subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
                                     onClick={() => openSubscription(sub.id, "edit")} 
                                     defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
-                                    trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
+
                                     actions={subscriptionActions.render(sub, actionsCtx)}
                                 />
                             )}

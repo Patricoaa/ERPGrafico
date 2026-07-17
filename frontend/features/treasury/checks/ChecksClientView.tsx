@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { AlertTriangle } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, SkeletonShell, AutoEntityCard,
+    MoneyDisplay, SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
@@ -189,7 +189,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             entityLabel="treasury.check"
                             title={check.check_number}
                             subtitle={check.counterparty_name ?? check.drawer_name ?? '—'}
-                            trailing={<StatusBadge status={check.status} />}
+
                             actions={checkActions.render(check, actionsCtx)}
                         />
                     )}

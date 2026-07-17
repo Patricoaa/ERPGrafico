@@ -18,5 +18,6 @@ export const employeeFields = createEntityFields<Employee>()({
         type: "status",
         label: "Estado",
         get: (e) => e.status,
+        getLabel: (e) => (e as Employee & { status_display?: string }).status_display ?? e.status,
     },
 })

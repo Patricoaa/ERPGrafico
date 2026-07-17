@@ -1,6 +1,12 @@
 import { createEntityFields } from "@/components/shared"
 import type { UoM } from "./hooks/useUoMs"
 
+const UOM_STATUS_MAP: Record<UoM['uom_type'], { status: string; label: string }> = {
+    REFERENCE: { status: 'INFO',    label: 'Referencia' },
+    BIGGER:    { status: 'SUCCESS', label: 'Mayor'      },
+    SMALLER:   { status: 'WARNING', label: 'Menor'      },
+}
+
 export const uomFields = createEntityFields<UoM>()({
     id: {
         key: "id",
@@ -22,5 +28,7 @@ export const uomFields = createEntityFields<UoM>()({
         key: "uom_type",
         type: "status",
         label: "Tipo",
+        get: (u) => UOM_STATUS_MAP[u.uom_type]?.status || 'NEUTRAL',
+        getLabel: (u) => UOM_STATUS_MAP[u.uom_type]?.label || u.uom_type,
     },
 })

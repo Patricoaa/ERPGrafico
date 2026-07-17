@@ -533,12 +533,6 @@ export function UnbilledChargesClientView({
                             entityLabel="treasury.unbilledcharge"
                             title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
                             subtitle={item.date}
-                            trailing={
-                                <StatusBadge
-                                    status={item.chargeType || item.source}
-                                    label={item.chargeTypeDisplay || item.source}
-                                />
-                            }
                         >
                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">

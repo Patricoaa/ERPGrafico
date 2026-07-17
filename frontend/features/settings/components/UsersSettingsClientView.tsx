@@ -201,7 +201,6 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                             title={user.username}
                                             subtitle={user.email}
                                             onClick={() => actionsCtx.onEdit(user.id)}
-                                            trailing={<DataCell.Status status={user.is_active ? "active" : "inactive"} />}
                                             actions={userActions.render(user, actionsCtx)}
                                         />
                                 )}

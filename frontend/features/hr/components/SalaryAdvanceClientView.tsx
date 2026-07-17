@@ -139,12 +139,6 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                             entityLabel="hr.salaryadvance"
                             title={advance.employee_name || '---'}
                             subtitle={`Anticipo ${advance.employee_display_id || ''}`}
-                            trailing={
-                                <DataCell.Status
-                                    status={advance.is_discounted ? "DISCOUNTED" : "PENDING"}
-                                    label={advance.is_discounted ? "Descontado" : "Pendiente"}
-                                />
-                            }
                             actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}
                             defaultAction={salaryAdvanceActions.defaultAction(salaryAdvanceActionsCtx)?.(advance) ?? (() => openSelected(advance.id))}
                             variant="highlights"

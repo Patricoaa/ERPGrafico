@@ -47,5 +47,6 @@ export const posSessionFields = createEntityFields<POSSession>()({
         type: "status",
         label: "Estado",
         get: (s) => s.status,
+        getLabel: (s) => s.status_display,
     },
 })

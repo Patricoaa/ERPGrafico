@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { FileText } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    MoneyDisplay, SkeletonShell, AutoEntityCard, StatusBadge,
+    MoneyDisplay, SkeletonShell, AutoEntityCard,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
@@ -191,7 +191,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                             subtitle={loan.loan_number || undefined}
                             onClick={() => openLoan(loan.id, "detail")} 
                             defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
-                            trailing={<StatusBadge status={loan.status} />}
+
                             actions={loanActions.render(loan, actionsCtx)}
                             variant="summary"
                         />

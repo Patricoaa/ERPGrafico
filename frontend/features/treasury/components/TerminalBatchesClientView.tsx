@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { BaseModal, DataTableView, AutoEntityCard, StatusBadge, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
+import { BaseModal, DataTableView, AutoEntityCard, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef, Row } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
@@ -158,13 +158,6 @@ export function TerminalBatchesClientView({
                             title={batch.batch_number}
                             subtitle={batch.provider_name ?? 'Sin proveedor'}
                             onClick={() => setOpenCreate(true)}
-                            trailing={
-                                <StatusBadge
-                                    status={batch.is_settled ? 'settled' : 'pending'}
-                                    label={batch.is_settled ? 'Liquidado' : 'Pendiente'}
-                                    size="sm"
-                                />
-                            }
                         />
                     )}
                 />

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
-import { Chip, DataTableView, StatusBadge } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -201,7 +201,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                                 entityLabel="inventory.inventorydocument"
                                 title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
                                 subtitle={doc.date}
-                                trailing={<StatusBadge status={doc.status} size="sm" />}
+
                                 actions={documentActions.render(doc, actionsCtx)}
                                 defaultAction={() => openSelected(doc.id)}
                             />

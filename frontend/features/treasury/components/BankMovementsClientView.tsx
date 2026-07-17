@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { DataTableView, AutoEntityCard, EntityCard, DataCell, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowRight, ArrowDown } from "lucide-react"
+import { ArrowDown } from "lucide-react"
 import { resolveTreasuryMovementIcon } from "@/lib/movement-icons"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
@@ -218,6 +218,13 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
 
                         const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
 
+                        const sourceEntity = type === 'INBOUND'
+                            ? (m.partner_id ? { label: sourceLabel, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
+                            : (m.from_account ? { label: sourceLabel, entityLabel: 'treasury.treasuryaccount', id: m.from_account } : undefined)
+                        const destEntity = type === 'OUTBOUND'
+                            ? (m.partner_id ? { label: destLabel, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
+                            : (m.to_account ? { label: destLabel, entityLabel: 'treasury.treasuryaccount', id: m.to_account } : undefined)
+
                         return (
                             <AutoEntityCard 
                                 key={m.id} 
@@ -229,16 +236,8 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                                 onClick={() => handleViewDetails(m.id)}
                                 icon={icon}
                                 iconClassName={iconClassName}
-                                center={
-                                    <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
-                                        <span>{sourceLabel}</span>
-                                        <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
-                                        <span>{destLabel}</span>
-                                    </div>
-                                }
-                                trailing={<DataCell.CurrencyFlow value={amount} direction={type === 'OUTBOUND' ? 'outflow' : 'inflow'} />}
                                 actions={treasuryMovementActions.render(m, { onDetail: (id) => handleViewDetails(id) })}
-                                variant="flow"
+                                variant="full"
                             />
                         )
                     }}

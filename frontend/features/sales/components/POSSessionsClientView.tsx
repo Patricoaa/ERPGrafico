@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataCell, AutoEntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, DataCell, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { posSessionFields } from "../posSessionFields"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
@@ -157,7 +157,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                             entityLabel="pos.session"
                             title={session.user_name}
                             subtitle={session.id_display}
-                            trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
+
                             actions={posSessionActions.render(session, actionsCtx)}
                             defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} 
                             onClick={() => {

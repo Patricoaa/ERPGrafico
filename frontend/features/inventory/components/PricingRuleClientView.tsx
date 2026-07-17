@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { pricingRuleFields } from "@/features/inventory/pricingRuleFields"
@@ -242,7 +242,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                             entityLabel="inventory.pricingrule"
                             title={rule.name}
                             subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
-                            trailing={<StatusBadge status={rule.active ? 'active' : 'inactive'} size="sm" />}
+
                             actions={pricingRuleActions.render(rule, actionsCtx)}
                             defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? (() => openSelected(rule.id))}
                             variant="highlights"

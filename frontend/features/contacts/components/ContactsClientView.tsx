@@ -239,19 +239,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 subtitle={contact.tax_id || 'S/Rut'}
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
-                                trailing={
-                                    <div className="flex flex-col items-end gap-1">
-                                        <div className="flex gap-1 flex-wrap justify-end">
-                                            {contact.active_roles?.map(role => (
-                                                <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
-                                            ))}
-                                        </div>
-                                        <div className="flex gap-1">
-                                            {contact.is_default_customer && <Chip size="xs" intent="primary" icon={UserIcon}>Cliente</Chip>}
-                                            {contact.is_default_vendor && <Chip size="xs" intent="success" icon={Building2}>Proveedor</Chip>}
-                                        </div>
-                                    </div>
-                                }
                                 variant="highlights"
                             />
                         )}

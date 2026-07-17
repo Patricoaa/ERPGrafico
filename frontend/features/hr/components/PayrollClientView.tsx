@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, AutoEntityCard, StatusBadge, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, DataCell, AutoEntityCard, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
@@ -211,7 +211,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                             entityLabel="hr.payroll"
                             title={(payroll as Payroll & Record<string, unknown>).employee_name as string || '---'}
                             subtitle={payroll.period_label || payroll.display_id}
-                            trailing={<StatusBadge status={payroll.status} label={payroll.status_display} size="sm" />}
+
                             actions={payrollActions.render(payroll, actionsCtx)}
                             defaultAction={() => openDetail(payroll.id)}
                         />

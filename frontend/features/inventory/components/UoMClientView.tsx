@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
@@ -173,13 +173,6 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                             entityLabel="inventory.uom"
                             title={uom.name}
                             subtitle={uom.category_name}
-                            trailing={
-                                <StatusBadge
-                                    status={UOM_TYPE_CONFIG[uom.uom_type]?.status || 'NEUTRAL'}
-                                    label={UOM_TYPE_CONFIG[uom.uom_type]?.label || uom.uom_type}
-                                    size="sm"
-                                />
-                            }
                             actions={uomActions.render(uom, actionsCtx)}
                             defaultAction={uomActions.defaultAction(actionsCtx)?.(uom) ?? (() => openSelected(uom.id))}
                             variant="highlights"

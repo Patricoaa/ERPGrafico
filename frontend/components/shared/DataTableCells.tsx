@@ -575,6 +575,55 @@ export const DataCell = {
             </Tooltip>
         </TooltipProvider>
     ),
+
+    /**
+     * Source → Destination flow display with navigable entity links.
+     * Renders two clickable chips separated by an arrow icon.
+     * Each side can be a plain text or a navigable entity link (via entityLabel + id).
+     */
+    SourceDest: ({
+        source,
+        dest,
+        sourceEntity,
+        destEntity,
+        className,
+        size,
+        ...props
+    }: HTMLAttributes<HTMLDivElement> & {
+        source: string
+        dest: string
+        sourceEntity?: { label: string; entityLabel: string; id: number }
+        destEntity?: { label: string; entityLabel: string; id: number }
+        size?: DataCellSize
+    }) => {
+        const { openEntity } = useGlobalModals()
+
+        const EntityLink = ({ label, entityLabel, id }: { label: string; entityLabel?: string; id?: number }) => {
+            if (!entityLabel || !id) {
+                return <span className="text-xs text-muted-foreground">{label}</span>
+            }
+            return (
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        openEntity(entityLabel, id)
+                    }}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
+                >
+                    {label}
+                </button>
+            )
+        }
+
+        return (
+            <div className={cn("flex items-center justify-center gap-1.5", size && SIZE_MAP[size], className)} {...props}>
+                <EntityLink label={source} entityLabel={sourceEntity?.entityLabel} id={sourceEntity?.id} />
+                <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
+                <EntityLink label={dest} entityLabel={destEntity?.entityLabel} id={destEntity?.id} />
+            </div>
+        )
+    },
 }
 
 // ─── ActionMenu item types ────────────────────────────────────────────────────

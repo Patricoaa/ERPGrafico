@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, StatusBadge, Chip } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard, Chip } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { Layers } from "lucide-react"
 import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
@@ -209,7 +209,7 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                             entityLabel="production.bom"
                             title={bom.name}
                             subtitle={bom.product_name}
-                            trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
+
                             actions={bomActions.render(bom, actionsCtx)}
                             defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? (() => bom.id != null && handleEdit(bom.id))}
                         />

@@ -36,6 +36,33 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
         label: "Método",
         get: (m) => m.payment_method_display ?? m.payment_method ?? "",
     },
+    sourceDest: {
+        key: "from_account",
+        type: "sourceDest",
+        label: "Origen / Destino",
+        get: (m) => {
+            const isTransferOrAdj = m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT'
+            let source = m.from_account_name || m.partner_name || 'Origen'
+            let dest = m.to_account_name || m.partner_name || 'Destino'
+            if (m.movement_type === 'INBOUND') {
+                source = m.partner_name || 'Particular'
+                dest = m.to_account_name || 'Caja'
+            } else if (m.movement_type === 'OUTBOUND') {
+                source = m.from_account_name || 'Caja'
+                dest = m.partner_name || 'Particular'
+            } else if (isTransferOrAdj) {
+                source = m.from_account_name || 'Origen'
+                dest = m.to_account_name || 'Destino'
+            }
+            const sourceEntity = m.movement_type === 'INBOUND'
+                ? (m.partner_id ? { label: source, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
+                : (m.from_account ? { label: source, entityLabel: 'treasury.treasuryaccount', id: m.from_account } : undefined)
+            const destEntity = m.movement_type === 'OUTBOUND'
+                ? (m.partner_id ? { label: dest, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
+                : (m.to_account ? { label: dest, entityLabel: 'treasury.treasuryaccount', id: m.to_account } : undefined)
+            return { source, dest, sourceEntity, destEntity }
+        },
+    },
     amount: {
         key: "amount",
         type: "currencyFlow",
