@@ -16,6 +16,7 @@ export const pricingRuleFields = createEntityFields<PricingRule>()({
         key: 'active',
         type: 'status',
         label: 'Estado',
-        get: (r) => r.active ? 'SUCCESS' : 'ERROR',
+        get: (r) => r.active ? 'active' : 'inactive',
+        getLabel: (r) => r.active ? 'Activo' : 'Inactivo',
     },
 })

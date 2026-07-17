@@ -7,7 +7,7 @@ import type { Terminal } from "@/features/treasury"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { ActionConfirmModal, DataTableView, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { Badge } from "@/components/ui/badge"
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
@@ -196,9 +196,6 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                                 onClick={() => openSelected(terminal.id)} 
                                 defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} 
                                 className={!terminal.is_active ? "grayscale bg-muted/20" : ""}
-                                trailing={
-                                    <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                                }
                                 actions={posTerminalActions.render(terminal, actionsCtx)}
                             >
                                 <EntityCard.Body>

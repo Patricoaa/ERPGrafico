@@ -204,9 +204,6 @@ export function SalesInvoicesClientView() {
                                     </div>
                                     )
                                 }}
-                                trailing={
-                                    <DataCell.ActionSingle onClick={() => toggleSelection(data)} title="Abrir" />
-                                }
                                 workflowRenderer={(wfData) => {
                                     const wd = wfData as unknown as Record<string, unknown>
                                     const wfTotal = parseFloat(String(wd.total || 0))

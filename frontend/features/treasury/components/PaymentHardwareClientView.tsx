@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, AutoEntityCard, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import {
     Building2,
@@ -203,7 +203,7 @@ export function PaymentHardwareClientView({
                                 entityLabel="treasury.paymentterminalprovider"
                                 title={provider.name}
                                 icon={Building2}
-                                trailing={<StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />}
+
                                 actions={providerActions.render(provider, providerActionsCtx)}
                                 onClick={() => openProviderSelected(provider.id)}
                                 defaultAction={providerActions.defaultAction(providerActionsCtx)?.(provider) ?? null}

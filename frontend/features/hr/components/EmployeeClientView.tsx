@@ -5,7 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, AutoEntityCard } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard, AutoEntityCard } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -163,7 +163,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                             entityLabel="hr.employee"
                             title={emp.contact_detail?.name || "Sin nombre"}
                             subtitle={emp.contact_detail?.tax_id || emp.display_id}
-                            trailing={<StatusBadge status={emp.status} label={emp.status_display} size="sm" />}
+
                             actions={employeeActions.render(emp, actionsCtx)}
                             defaultAction={employeeActions.defaultAction(actionsCtx)?.(emp) ?? (() => {
                                 const params = new URLSearchParams(searchParams.toString())

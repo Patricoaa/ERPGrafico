@@ -12,4 +12,25 @@ export const contactFields = createEntityFields<Contact>()({
         get: (c) => Number(c.credit_limit || 0) > 0 ? Number(c.credit_limit) : null,
         suffix: (c) => Number(c.credit_limit || 0) > 0 ? ` (${c.credit_days}d)` : ''
     },
+    activeRoles: {
+        key: 'active_roles',
+        type: 'chip-category',
+        label: 'Roles',
+        domain: 'contact_type',
+        get: (c) => c.active_roles ?? [],
+    },
+    isDefaultCustomer: {
+        key: 'is_default_customer',
+        type: 'chip',
+        label: '',
+        get: (c) => c.is_default_customer ? 'Cliente' : null,
+        intent: 'primary',
+    },
+    isDefaultVendor: {
+        key: 'is_default_vendor',
+        type: 'chip',
+        label: '',
+        get: (c) => c.is_default_vendor ? 'Proveedor' : null,
+        intent: 'success',
+    },
 })

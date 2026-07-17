@@ -24,7 +24,7 @@ export const salaryAdvanceFields = createEntityFields<SalaryAdvance>()({
         type: "status",
         label: "Estado",
         get: (a) => a.is_discounted ? "DISCOUNTED" : "PENDING",
-        cellProps: { label: undefined },
+        getLabel: (a) => a.is_discounted ? "Descontado" : "Pendiente",
     },
     payrollDisplayId: {
         key: "payroll_display_id",

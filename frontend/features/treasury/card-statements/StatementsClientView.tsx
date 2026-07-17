@@ -6,7 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, Receipt } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    MoneyDisplay, SkeletonShell, AutoEntityCard, StatusBadge,
+    MoneyDisplay, SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -276,7 +276,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             subtitle={stmt.card_account_name}
                             onClick={() => openStatement(stmt.id, "detail")} 
                             defaultAction={statementActions.defaultAction(actionsCtx)?.(stmt) ?? null}
-                            trailing={<StatusBadge status={stmt.status} />}
+
                             actions={statementActions.render(stmt, actionsCtx)}
                         />
                     )}

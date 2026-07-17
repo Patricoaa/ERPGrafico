@@ -22,6 +22,7 @@ export const posTerminalFields = createEntityFields<Terminal>()({
         type: "status",
         label: "Estado",
         get: (t) => t.is_active ? "active" : "inactive",
+        getLabel: (t) => t.is_active ? "Activo" : "Inactivo",
         tableOptions: { enableSorting: false },
     },
 })

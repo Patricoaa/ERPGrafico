@@ -424,7 +424,7 @@ export function InventoryCountClientView() {
                         title={`Conteo #${cnt.id}`}
                         subtitle={cnt.warehouse_name}
                         onClick={() => handleSelectCount(cnt.id)}
-                        trailing={<StatusBadge status={cnt.status} size="sm" />}
+
                     />
                 )}
             />

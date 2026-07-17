@@ -26,7 +26,7 @@ import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 
 import { DataCell } from '@/components/shared'
-import { AutoEntityCard, EntityCard } from "@/components/shared"
+import { AutoEntityCard } from "@/components/shared"
 import { productFields } from "@/features/inventory/productFields"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
@@ -500,44 +500,23 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 fields={productFields}
                                 entityLabel="inventory.product"
                                 imageSrc={imageUrl}
+                                icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
+                                iconClassName="bg-muted"
+                                title={product.name}
+                                subtitle={
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-xs">{product.code}</span>
+                                        <StatusBadge
+                                            status={product.is_active ? "active" : "inactive"}
+                                            size="sm"
+                                        />
+                                    </div>
+                                }
+                                actions={productActions.render(product, actionsCtx)}
                                 defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
                                 onClick={() => openSelected(product.id)}
-                                variant="hero"
-                            >
-                                <EntityCard.Hero
-                                    imageSrc={imageUrl}
-                                    icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
-                                    iconClassName="bg-muted"
-                                    title={product.name}
-                                    subtitle={
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-xs">{product.code}</span>
-                                            <StatusBadge
-                                                status={product.is_active ? "active" : "inactive"}
-                                                size="sm"
-                                            />
-                                        </div>
-                                    }
-                                    accent={
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">Total</span>
-                                            {product.is_dynamic_pricing
-                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
-                                                : <DataCell.Currency value={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="font-bold" weight="bold" size="lg" />
-                                            }
-                                        </div>
-                                    }
-                                    actions={productActions.render(product, actionsCtx)}
-                                />
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
-                                    <EntityCard.Field label="Categoría" value={product.category_name} />
-                                    <EntityCard.Field
-                                        label="Código Interno"
-                                        value={product.internal_code || <span className="text-muted-foreground/40">—</span>}
-                                    />
-                                </EntityCard.Body>
-                            </AutoEntityCard>
+                                variant="full"
+                            />
                         )
                     }}
                     bulkActions={bulkActions}

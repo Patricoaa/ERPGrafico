@@ -275,9 +275,6 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                         defaultAction={treasuryAccountActions.defaultAction(actionsCtx)?.(acc) ?? null}
                                         icon={Icon}
                                         iconClassName={iconStyle}
-                                        trailing={
-                                            <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
-                                        }
                                         actions={treasuryAccountActions.render(acc, actionsCtx)}
                                         variant="full"
                                     >

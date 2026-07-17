@@ -139,12 +139,6 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 defaultAction={paymentMethodActions.defaultAction(paymentMethodActionsCtx)?.(method) ?? null}
                 icon={Icon}
                 iconClassName={iconStyle}
-                trailing={
-                    <div className="flex flex-col gap-0.5 items-end">
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Cta. Tesorería</span>
-                        <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">{method.treasury_account_name}</span>
-                    </div>
-                }
                 actions={paymentMethodActions.render(method, paymentMethodActionsCtx)}
             />
         )

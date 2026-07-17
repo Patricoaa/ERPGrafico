@@ -16,5 +16,7 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
         key: "status",
         type: "status",
         label: "Estado",
+        get: (b) => b.is_settled ? 'settled' : 'pending',
+        getLabel: (b) => b.is_settled ? 'Liquidado' : 'Pendiente',
     },
 })

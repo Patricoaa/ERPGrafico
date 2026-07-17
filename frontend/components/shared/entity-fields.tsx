@@ -2,6 +2,7 @@ import { type ReactNode } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 import { DataCell } from "./DataTableCells"
+import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
 import type { LucideIcon } from "lucide-react"
 
@@ -22,11 +23,13 @@ type FieldType =
     | "numericFlow"
     | "currencyFlow"
     | "sourceDest"
+    | "chip-category"
 
 type FieldSurface = "table" | "card" | "kanban"
 
 type ChipIntent = "neutral" | "primary" | "success" | "warning" | "destructive" | "info"
 type FlowDirection = "inflow" | "outflow" | "neutral"
+type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type'
 
 // ─── Card Placement System ────────────────────────────────────────────────────
 
@@ -76,6 +79,7 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
     'numericFlow':   'flow',
     'currencyFlow':  'flow',
     'sourceDest':    'descriptive',
+    'chip-category': 'tag',
 }
 
 /**
@@ -142,6 +146,10 @@ interface FieldDef<T> {
     // Chip
     /** Chip intent — static or derived from entity fields. */
     intent?: ChipIntent | ((entity: T) => ChipIntent)
+
+    // Chip.Category
+    /** Domain registry for category-based color resolution. Required for chip-category type. */
+    domain?: CategoryDomain | ((entity: T) => CategoryDomain)
 
     // CurrencyFlow / NumericFlow
     /** Flow direction — static or derived from entity. */
@@ -267,6 +275,17 @@ function renderCellValue<T>(def: FieldDef<T>, entity: T): ReactNode {
                 </DataCell.Chip>
             )
         }
+        case "chip-category": {
+            const domainValue = (typeof def.domain === "function" ? def.domain(entity) : def.domain) as CategoryDomain
+            const values = (Array.isArray(value) ? value : value ? [value] : []) as string[]
+            return (
+                <div className={cn("flex gap-1 flex-wrap", resolvedClassName)}>
+                    {values.map((v, i) => (
+                        <Chip.Category key={i} domain={domainValue} value={v} size="sm" />
+                    ))}
+                </div>
+            )
+        }
         case "icon": {
             const icon = extra.icon as LucideIcon | undefined
             return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} {...extra} /> : null
@@ -375,6 +394,17 @@ function renderKanbanCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                 </DataCell.Chip>
             )
         }
+        case "chip-category": {
+            const domainValue = (typeof def.domain === "function" ? def.domain(entity) : def.domain) as CategoryDomain
+            const values = (Array.isArray(value) ? value : value ? [value] : []) as string[]
+            return (
+                <div className={cn("flex gap-1 flex-wrap", resolvedClassName)}>
+                    {values.map((v, i) => (
+                        <Chip.Category key={i} domain={domainValue} value={v} size="xs" />
+                    ))}
+                </div>
+            )
+        }
         case "icon": {
             const icon = base.icon as LucideIcon | undefined
             return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} {...base} /> : null
@@ -476,6 +506,17 @@ function renderRowCell<T>(def: FieldDef<T>, rowOriginal: T, rowGetValue: (key: s
                 >
                     {String(value ?? "")}
                 </DataCell.Chip>
+            )
+        }
+        case "chip-category": {
+            const domainValue = (typeof def.domain === "function" ? def.domain(rowOriginal) : def.domain) as CategoryDomain
+            const values = (Array.isArray(value) ? value : value ? [value] : []) as string[]
+            return (
+                <div className={cn("flex gap-1 flex-wrap", resolvedClassName)}>
+                    {values.map((v, i) => (
+                        <Chip.Category key={i} domain={domainValue} value={v} size="sm" />
+                    ))}
+                </div>
             )
         }
         case "icon": {

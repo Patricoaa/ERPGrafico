@@ -135,12 +135,6 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                             }
                             onClick={() => router.push(`/treasury/bank-center/${bank.id}/overview`)}
                             icon={Landmark}
-                            trailing={
-                                <EntityCard.Badge
-                                    label={bank.is_active ? 'Activo' : 'Archivado'}
-                                    variant={bank.is_active ? 'default' : 'secondary'}
-                                />
-                            }
                             actions={bankActions.render(bank, bankActionsCtx)}
                         >
                             <EntityCard.Metrics metrics={[
