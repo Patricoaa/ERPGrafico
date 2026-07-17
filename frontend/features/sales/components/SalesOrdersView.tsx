@@ -2,18 +2,15 @@
 
 import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createHubTriggerColumn } from '@/components/shared'
 import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowRight, ArrowLeft, Calendar } from "lucide-react"
-import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
-import { formatPlainDate } from "@/lib/utils"
+import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
 import { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 interface SalesOrdersViewProps {
@@ -92,30 +89,10 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
             cell: ({ row }) => <div className="flex justify-center items-center"><DomainHubStatus label="sales.saleorder" data={row.original} /></div>,
             meta: { title: "Estado" },
         },
-        {
-            id: "hub_trigger",
-            header: () => null,
-            enableHiding: false,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.orderId === item.id && isHubOpen)
-                return (
-                    <div className="flex justify-end pr-2">
-                        <DataCell.Action
-                            icon={isSelected ? ArrowLeft : ArrowRight}
-                            title={isSelected ? "Cerrar Panel" : "Abrir Panel"}
-                            className={cn(
-                                "transition-all",
-                                isSelected
-                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
-                                    : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
-                            )}
-                            onClick={() => toggleSelection(item.id)}
-                        />
-                    </div>
-                )
-            },
-        }
+        createHubTriggerColumn<SaleOrder>({
+            isSelected: (item) => onSelectOrder ? selectedId === item.id : (hubConfig?.orderId === item.id && isHubOpen),
+            onToggle: (item) => toggleSelection(item.id),
+        }),
     ]
 
     const noteColumns: ColumnDef<SaleNote>[] = [
@@ -152,30 +129,10 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                 </div>
             ),
         },
-        {
-            id: "hub_trigger",
-            header: () => null,
-            enableHiding: false,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.invoiceId === item.id && isHubOpen)
-                return (
-                    <div className="flex justify-end pr-2">
-                        <DataCell.Action
-                            icon={isSelected && isHubOpen ? ArrowLeft : ArrowRight}
-                            title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
-                            className={cn(
-                                "transition-all",
-                                isSelected && isHubOpen
-                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
-                                    : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
-                            )}
-                            onClick={() => toggleSelection(item.id)}
-                        />
-                    </div>
-                )
-            },
-        }
+        createHubTriggerColumn<SaleNote>({
+            isSelected: (item) => onSelectOrder ? selectedId === item.id : (hubConfig?.invoiceId === item.id && isHubOpen),
+            onToggle: (item) => toggleSelection(item.id),
+        }),
     ]
 
     // Determine entity label based on tab
@@ -213,22 +170,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 data={data as any}
                                 fields={viewMode === 'orders' ? salesOrderFields as any : undefined as any}
                                 entityLabel={label}
-                                title={getPartnerName(label, d)}
-                                subtitle={
-                                    <span className="flex items-center gap-1.5 flex-wrap">
-                                        <span>{d.display_id as string}</span>
-                                        <span className="text-muted-foreground/20">·</span>
-                                        <span className="flex items-center gap-1">
-                                            <Calendar className="h-3 w-3 opacity-50" />
-                                            {formatPlainDate(d.date as string)}
-                                        </span>
-                                        {viewMode === 'orders' && d.pos_session ? (
-                                            <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
-                                                #{String(d.pos_session)}
-                                            </span>
-                                        ) : null}
-                                    </span>
-                                }
+                                title={d.display_id as string}
                                 onClick={() => toggleSelection(data.id)}
                                 isSelected={getSelectionId(data)}
                                 className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}

@@ -3,12 +3,11 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DataCell, AutoEntityCard, EntityCard, createCodeColumn, createSecondaryColumn } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DataCell, AutoEntityCard, EntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus, createHubTriggerColumn } from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { type ColumnDef } from "@tanstack/react-table"
-import {IconButton, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus} from "@/components/shared"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
-import { ArrowRight, ArrowLeft, Calendar, GitBranch } from "lucide-react"
+import { GitBranch } from "lucide-react"
 import { treasuryApi } from "@/features/treasury"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
@@ -18,8 +17,8 @@ import { PaymentModal } from "@/features/treasury"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { ENTITY_REGISTRY, getEntityIcon, getPartnerName, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
-import { formatPlainDate } from "@/lib/utils"
+import { ENTITY_REGISTRY, getEntityIcon, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
+
 
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
@@ -110,29 +109,10 @@ export function SalesInvoicesClientView() {
         }),
         ...salesInvoiceFields.toColumns(),
         createSecondaryColumn<Invoice>("dte_type_display", "Tipo"),
-        {
-            id: "hub_trigger",
-            header: () => null,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = hubConfig?.invoiceId === item.id
-                return (
-                    <div className="flex justify-end pr-2">
-                        <IconButton
-                            circular
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => toggleSelection(item)}
-                        >
-                            {isSelected && isHubOpen ? (
-                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </IconButton>
-                    </div>
-                )
-            },
-        },
+        createHubTriggerColumn<Invoice>({
+            isSelected: (item) => hubConfig?.invoiceId === item.id,
+            onToggle: (item) => toggleSelection(item),
+        }),
     ]
 
     return (
@@ -163,17 +143,7 @@ export function SalesInvoicesClientView() {
                                 data={data}
                                 fields={salesInvoiceFields}
                                 entityLabel={label}
-                                title={getPartnerName(label, d)}
-                                subtitle={
-                                    <span className="flex items-center gap-1.5 flex-wrap">
-                                        <span>{d.display_id as string}</span>
-                                        <span className="text-muted-foreground/20">·</span>
-                                        <span className="flex items-center gap-1">
-                                            <Calendar className="h-3 w-3 opacity-50" />
-                                            {formatPlainDate(d.date as string)}
-                                        </span>
-                                    </span>
-                                }
+                                title={d.display_id as string}
                                 onClick={() => toggleSelection(data)}
                                 isSelected={hubConfig?.invoiceId === data.id}
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
