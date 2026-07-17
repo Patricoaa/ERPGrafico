@@ -99,7 +99,7 @@ describe("createEntityFields", () => {
 
         it("uses get transform when provided", () => {
             const fields = testFields.toCardFields(sampleEntity)
-            const totalField = fields.find((f) => f.key === "total")
+            const totalField = fields.find((f) => f.key === "amount")
             expect(totalField).toBeDefined()
             // The value is a ReactNode from DataCell.Currency
             expect(totalField!.value).toBeTruthy()
@@ -205,10 +205,10 @@ describe("createEntityFields", () => {
         })
 
         it("filters by only option", () => {
-            const fields = testFields.toKanbanFields(sampleEntity, { only: ["status", "total"] })
+            const fields = testFields.toKanbanFields(sampleEntity, { only: ["status", "amount"] })
             expect(fields).toHaveLength(2)
             expect(fields[0].key).toBe("status")
-            expect(fields[1].key).toBe("total")
+            expect(fields[1].key).toBe("amount")
         })
 
         it("excludes fields not on 'kanban' surface", () => {

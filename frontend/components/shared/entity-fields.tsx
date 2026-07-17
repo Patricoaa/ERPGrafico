@@ -398,18 +398,18 @@ export function createEntityFields<T>(): (
             const allowed = opts?.only
             const fields = Object.entries(defs)
                 .filter(([, def]) => isPresentOnSurface(def, "card"))
-                .filter(([fieldKey]) => !allowed || allowed.includes(fieldKey))
-                .map(([fieldKey, def]): CardField => {
+                .filter(([, def]) => !allowed || allowed.includes(def.key))
+                .map(([, def]): CardField => {
                     const role: FieldRole = def.fieldRole ?? TYPE_TO_ROLE[def.type]
                     let placement: CardPlacement = def.cardPlacement ?? ROLE_TO_PLACEMENT[role]
 
                     // Auto-detect title: identifier field with id/number/code in key
-                    if (placement !== 'title' && role === 'identifier' && /id|number|code/i.test(fieldKey)) {
+                    if (placement !== 'title' && role === 'identifier' && /id|number|code/i.test(def.key)) {
                         placement = 'title'
                     }
 
                     return {
-                        key: fieldKey,
+                        key: def.key,
                         label: def.label,
                         value: renderCell(def, entity),
                         cardPlacement: placement,
@@ -432,9 +432,9 @@ export function createEntityFields<T>(): (
             const allowed = opts?.only
             return Object.entries(defs)
                 .filter(([, def]) => isPresentOnSurface(def, "kanban"))
-                .filter(([fieldKey]) => !allowed || allowed.includes(fieldKey))
-                .map(([fieldKey, def]): KanbanField => ({
-                    key: fieldKey,
+                .filter(([, def]) => !allowed || allowed.includes(def.key))
+                .map(([, def]): KanbanField => ({
+                    key: def.key,
                     label: def.label,
                     value: renderCell(def, entity),
                 }))
