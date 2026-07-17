@@ -32,16 +32,6 @@ export interface ViewPolicy {
    * - 'full': management, complete — header + detail + metrics (DEFAULT)
    */
   cardVariant?: 'highlights' | 'summary' | 'full';
-  /**
-   * @deprecated Use cardVariant instead. Will be removed after full migration.
-   * Legacy card variant for backward compatibility.
-   */
-  legacyCardVariant?: 'compact' | 'full';
-  /**
-   * @deprecated Use cardVariant instead. Will be removed after full migration.
-   * Legacy layout preset for EntityCard body area.
-   */
-  cardLayout?: 'key-value' | 'metrics' | 'dashboard' | 'hero' | 'workflow' | 'custom';
 }
 
 export interface EntityMetadata {
@@ -121,7 +111,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
       return String(customerName ?? data.partner_name ?? '---')
     },
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'workflow' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
     cardConfig: { dateLabel: 'Entrega' },
   },
   'sales.saledelivery': {
@@ -171,7 +161,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/purchasing/orders/{id}',
     partnerField: 'supplier_name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'workflow' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
     cardConfig: { iconClassName: 'text-info bg-info/10', dateLabel: 'Recepción' },
   },
   'billing.invoice': {
@@ -190,7 +180,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/billing/invoices/{id}',
     partnerField: (data) => String(data.partner_name ?? data.customer_name ?? data.supplier_name ?? '---'),
     workflowType: 'invoice',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'workflow' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
     cardConfig: {
       iconClassName: (data) => ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(data.dte_type ?? ''))
         ? 'text-warning bg-warning/10'
@@ -269,7 +259,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardLayout: 'hero' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'inventory.subscription': {
     label: 'inventory.subscription',
@@ -394,7 +384,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'TES-{id}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?selected={id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'summary' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',
@@ -607,7 +597,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'summary' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'settings.partner': {
     label: 'settings.partner',

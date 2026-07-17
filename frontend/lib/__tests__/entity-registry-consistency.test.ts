@@ -124,4 +124,50 @@ describe('entity registry consistency', () => {
     }
     expect(invalid).toEqual([]);
   });
+
+  it('no entity has deprecated cardLayout or legacyCardVariant', () => {
+    const blocks = extractEntityBlocks(registrySrc);
+    const violations: string[] = [];
+    for (const [key, block] of blocks) {
+      if (block.includes('cardLayout:') || block.includes('legacyCardVariant:')) {
+        violations.push(key);
+      }
+    }
+    if (violations.length > 0) {
+      console.log('Entities with deprecated properties:', violations);
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it('every explicit cardVariant value is valid', () => {
+    const validVariants = ['highlights', 'summary', 'full'];
+    const blocks = extractEntityBlocks(registrySrc);
+    const invalid: Array<{ key: string; value: string }> = [];
+    for (const [key, block] of blocks) {
+      const match = block.match(/cardVariant:\s*'([^']+)'/);
+      if (match && !validVariants.includes(match[1])) {
+        invalid.push({ key, value: match[1] });
+      }
+    }
+    if (invalid.length > 0) {
+      console.log('Entities with invalid cardVariant:', invalid);
+    }
+    expect(invalid).toEqual([]);
+  });
+
+  it('workflowType entities must not have reduced cardVariant', () => {
+    const blocks = extractEntityBlocks(registrySrc);
+    const violations: string[] = [];
+    for (const [key, block] of blocks) {
+      if (!block.includes('workflowType:')) continue;
+      const match = block.match(/cardVariant:\s*'([^']+)'/);
+      if (match && match[1] !== 'full') {
+        violations.push(`${key} (cardVariant: '${match[1]}')`);
+      }
+    }
+    if (violations.length > 0) {
+      console.log('Workflow entities with reduced cardVariant:', violations);
+    }
+    expect(violations).toEqual([]);
+  });
 });
