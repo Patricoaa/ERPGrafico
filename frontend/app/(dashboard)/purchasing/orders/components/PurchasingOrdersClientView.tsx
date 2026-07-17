@@ -9,9 +9,8 @@ import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
 import type { AnalyticsPanelConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, BarChart3, Building2, Calendar } from "lucide-react"
-import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
-import { formatPlainDate } from "@/lib/utils"
+import { ArrowRight, ArrowLeft, BarChart3, Building2 } from "lucide-react"
+import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderUnifiedSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { billingApi } from "@/features/billing"
 import type { PurchaseOrderAPI } from "@/features/purchasing"
@@ -490,17 +489,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                     data={data}
                                     fields={viewMode === 'orders' ? purchaseOrderFields as any : undefined as any}
                                     entityLabel={label}
-                                    title={getPartnerName(label, data)}
-                                    subtitle={
-                                        <span className="flex items-center gap-1.5 flex-wrap">
-                                            <span>{data.display_id as string}</span>
-                                            <span className="text-muted-foreground/20">·</span>
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-3 w-3 opacity-50" />
-                                                {formatPlainDate(data.date as string)}
-                                            </span>
-                                        </span>
-                                    }
+                                    title={data.display_id as string}
                                     onClick={() => toggleSelection(data.id as number)}
                                     isSelected={viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id}
                                     className={isHubOpen && (viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
