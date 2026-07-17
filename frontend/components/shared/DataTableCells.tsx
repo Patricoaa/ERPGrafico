@@ -708,6 +708,52 @@ export function createActionsColumn<TData>({
     }
 }
 
+// ─── Hub Trigger Column Factory ────────────────────────────────────────────────
+
+interface HubTriggerColumnConfig<TData> {
+    /** Check if a row is currently selected/hub-open */
+    isSelected: (row: TData) => boolean
+    /** Toggle handler — called with the row data */
+    onToggle: (row: TData) => void
+}
+
+/**
+ * Creates a hub-trigger column for DataTable rows that open/close a side panel (HUB).
+ *
+ * Renders `DataCell.Action action="hub"` with visual feedback:
+ * - Selected: ArrowLeft icon, `text-primary`, slide-in animation
+ * - Not selected: ArrowRight icon, `text-muted-foreground/30`, hover translate
+ *
+ * @contract docs/20-contracts/component-row-actions.md
+ */
+export function createHubTriggerColumn<TData>({
+    isSelected,
+    onToggle,
+}: HubTriggerColumnConfig<TData>): ColumnDef<TData, unknown> {
+    return {
+        id: "hub_trigger",
+        header: () => null,
+        enableHiding: false,
+        cell: ({ row }) => {
+            const selected = isSelected(row.original)
+            return (
+                <div className="flex justify-end pr-2">
+                    <DataCell.Action
+                        action="hub"
+                        className={cn(
+                            "transition-all",
+                            selected
+                                ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
+                                : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5",
+                        )}
+                        onClick={() => onToggle(row.original)}
+                    />
+                </div>
+            )
+        },
+    }
+}
+
 // ─── Standard Column Factories ─────────────────────────────────────────────────
 // Eliminate the 5-line `header: ({column}) => <DataTableColumnHeader ...>` + cell
 // boilerplate that repeats identically across every DataTable definition.

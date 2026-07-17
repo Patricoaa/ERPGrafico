@@ -9,7 +9,8 @@ import {
     AlertCircle,
     CheckCircle2,
 } from "lucide-react"
-import { CardActions, CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
+import { CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
+import { workOrderActions, type WorkOrderActionsCtx } from "@/features/production"
 import { type WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
@@ -29,17 +30,13 @@ interface KanbanProps extends KanbanCardHandlers {
 
 const STAGES = STAGES_ORDERED.filter(s => s.showInKanban)
 
-// Stage / status guards mirrored from production/orders/page.tsx
-const EDITABLE_STAGES = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS']
-const NON_ANNULLABLE_STATUSES = ['DRAFT', 'FINISHED', 'CANCELLED']
-
 function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order: WorkOrder } & KanbanCardHandlers) {
-    const canDelete = !!onDelete && EDITABLE_STAGES.includes(order.current_stage)
-    const canAnnul = !!onAnnul && !NON_ANNULLABLE_STATUSES.includes(order.status)
-    const overflowItems = [
-        ...(canAnnul ? [{ action: 'annul' as const, onClick: () => onAnnul?.(order.id) }] : []),
-        ...(canDelete ? [{ action: 'delete' as const, onClick: () => onDelete?.(order.id) }] : []),
-    ]
+    const actionsCtx: WorkOrderActionsCtx = {
+        onEdit: onManage,
+        onDuplicate: onDuplicate ?? (() => {}),
+        onAnnul: onAnnul ?? (() => {}),
+        onDelete: onDelete ?? (() => {}),
+    }
 
     return (
         <Card
@@ -97,15 +94,7 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
                     </div>
                 )}
                 <div className="pt-2 flex justify-end border-t border-dashed">
-                    <CardActions>
-                        <CardActions.Item action="hub" onClick={() => onManage(order.id)} />
-                        {onDuplicate && (
-                            <CardActions.Item action="duplicate" onClick={() => onDuplicate(order.id)} />
-                        )}
-                        {overflowItems.length > 0 && (
-                            <CardActions.Menu items={overflowItems} />
-                        )}
-                    </CardActions>
+                    {workOrderActions.render(order, actionsCtx)}
                 </div>
             </CardContent>
         </Card>
