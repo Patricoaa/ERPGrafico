@@ -1302,6 +1302,32 @@ export function getViewOptions(label: string) {
   }));
 }
 
+/**
+ * Extracts top-level field keys referenced by subtitleTemplate + subtitleSuffixTemplate.
+ * Used by AutoEntityCard to exclude subtitle fields from other layout zones,
+ * preventing duplicate rendering (e.g. customer_name in subtitle AND body).
+ *
+ * Checks API config first (getEntityConfig), then falls back to ENTITY_REGISTRY.
+ */
+export function getSubtitleFieldKeys(label: string): Set<string> {
+  const config = getEntityConfig(label)
+  const entity = ENTITY_REGISTRY[label]
+  const mainTemplate = config?.subtitleTemplate ?? entity?.subtitleTemplate
+  const suffixTemplate = config?.subtitleSuffixTemplate ?? entity?.subtitleSuffixTemplate
+
+  const keys = new Set<string>()
+  for (const tpl of [mainTemplate, suffixTemplate]) {
+    if (!tpl) continue
+    const regex = /\{([^}]+)\}/g
+    let match: RegExpExecArray | null
+    while ((match = regex.exec(tpl)) !== null) {
+      const [path] = match[1].split(':')
+      keys.add(path.split('.')[0])
+    }
+  }
+  return keys
+}
+
 
 
 

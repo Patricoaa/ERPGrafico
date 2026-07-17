@@ -4,7 +4,7 @@ import React from "react"
 import { EntityCard } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { renderEntitySubtitleItems, getEntityMetadata, type SubtitleItem } from "@/lib/entity-registry"
+import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, type SubtitleItem } from "@/lib/entity-registry"
 import type { CardField } from "@/components/shared"
 
 export interface AutoEntityCardProps<TData> {
@@ -76,7 +76,6 @@ export interface AutoEntityCardProps<TData> {
 
 interface ClassifiedFields {
     title: CardField | undefined
-    subtitle: CardField | undefined
     header: CardField[]
     centerDetail: CardField[]
     bodyDetail: CardField[]
@@ -87,6 +86,9 @@ interface ClassifiedFields {
  * Classifies card fields into layout zones based on their resolved cardPlacement.
  * Applies variant-based visibility rules.
  *
+ * Fields referenced by subtitle templates (via subtitleFieldKeys) are excluded
+ * from all zones to prevent duplicate rendering with the subtitle.
+ *
  * Detail field routing:
  * - Flow fields (numericFlow/currencyFlow) → center of header
  * - Other detail fields → center of header UNLESS flow fields are present,
@@ -95,15 +97,14 @@ interface ClassifiedFields {
 function classifyFields<TData>(
     fields: CardField[],
     variant: AutoEntityCardProps<TData>['variant'],
+    subtitleFieldKeys: Set<string>,
 ): ClassifiedFields {
     const title = fields.find(f => f.cardPlacement === 'title')
-    const subtitle = fields.find(f => f.fieldRole === 'primary-label' && /name/i.test(f.key))
-        ?? fields.find(f => f.fieldRole === 'primary-label')
 
-    // Fields that are not title or subtitle candidate
+    // Exclude title and subtitle-referenced fields from layout zones
     const rest = fields.filter(f =>
         f.cardPlacement !== 'title' &&
-        f.key !== subtitle?.key
+        !subtitleFieldKeys.has(f.key)
     )
 
     let detail = rest.filter(f => f.cardPlacement === 'detail')
@@ -137,7 +138,7 @@ function classifyFields<TData>(
     const centerDetail = flows.length > 0 ? flows : detail
     const bodyDetail = flows.length > 0 ? detail : []
 
-    return { title, subtitle, header, centerDetail, bodyDetail, metric }
+    return { title, header, centerDetail, bodyDetail, metric }
 }
 
 /**
@@ -203,10 +204,13 @@ export function AutoEntityCard<TData>({
     const registryVariant = entityLabel ? getEntityMetadata(entityLabel)?.viewPolicy?.cardVariant : undefined
     const effectiveVariant = variant ?? registryVariant ?? 'full'
 
+    // Resolve subtitle field keys from registry templates to exclude from layout zones
+    const subtitleFieldKeys = entityLabel ? getSubtitleFieldKeys(entityLabel) : new Set<string>()
+
     const cardFields = fields.toCardFields(data)
     
     // 1. Classify fields into layout zones
-    const classified = classifyFields(cardFields, effectiveVariant)
+    const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys)
 
     // 2. Determine display title
     const displayTitle = explicitTitle ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
