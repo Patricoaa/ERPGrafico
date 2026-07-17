@@ -55,7 +55,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
     }
 
     const columns: ColumnDef<Employee>[] = (() => {
-        const [displayIdCol, , baseSalaryCol, statusCol] = employeeFields.toColumns()
+        const [displayIdCol, baseSalaryCol, statusCol] = employeeFields.toColumns()
         return [
             displayIdCol,
             {
