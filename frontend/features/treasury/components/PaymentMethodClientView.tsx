@@ -27,7 +27,6 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { type Column } from "@tanstack/react-table"
 import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
 import type { PaymentMethod, PaymentMethodCreatePayload, PaymentMethodUpdatePayload } from "@/features/treasury/types"
-import { EntityCard } from "@/components/shared"
 import {
     DropdownMenu,
     DropdownMenuTrigger,
