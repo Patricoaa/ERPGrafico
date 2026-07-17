@@ -188,7 +188,6 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             variant="full"
                             entityLabel="treasury.check"
                             title={check.check_number}
-                            subtitle={check.counterparty_name ?? check.drawer_name ?? '—'}
 
                             actions={checkActions.render(check, actionsCtx)}
                         />

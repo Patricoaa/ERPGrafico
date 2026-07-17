@@ -241,7 +241,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                             fields={pricingRuleFields}
                             entityLabel="inventory.pricingrule"
                             title={rule.name}
-                            subtitle={rule.product_name ?? rule.category_name ?? 'Sin producto/categoría'}
 
                             actions={pricingRuleActions.render(rule, actionsCtx)}
                             defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? (() => openSelected(rule.id))}

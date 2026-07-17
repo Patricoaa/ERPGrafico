@@ -422,7 +422,6 @@ export function InventoryCountClientView() {
                         variant="full"
                         entityLabel="inventory.inventorycount"
                         title={`Conteo #${cnt.id}`}
-                        subtitle={cnt.warehouse_name}
                         onClick={() => handleSelectCount(cnt.id)}
 
                     />

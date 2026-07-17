@@ -236,7 +236,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 fields={contactFields}
                                 entityLabel="contacts.contact"
                                 title={contact.name}
-                                subtitle={contact.tax_id || 'S/Rut'}
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
                                 variant="highlights"

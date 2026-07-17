@@ -257,17 +257,6 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                         fields={accountFields}
                                         entityLabel="treasury.treasuryaccount"
                                         title={acc.name}
-                                        subtitle={
-                                            <span className="flex items-center gap-1.5 flex-wrap">
-                                                <span>{acc.account_type_display || typeLabels[typeKey] || acc.account_type}</span>
-                                                {acc.bank_name && (
-                                                    <>
-                                                        <span className="text-muted-foreground/20">·</span>
-                                                        <span>{acc.bank_name}</span>
-                                                    </>
-                                                )}
-                                            </span>
-                                        }
                                         onClick={() => handleEdit(acc)} 
                                         defaultAction={treasuryAccountActions.defaultAction(actionsCtx)?.(acc) ?? null}
                                         icon={Icon}

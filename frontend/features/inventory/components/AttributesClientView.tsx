@@ -311,7 +311,6 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                             variant="full"
                             entityLabel="inventory.attribute"
                             title={attr.name}
-                            subtitle={`${attr.values?.length ?? 0} valores`}
                             icon={Tag}
                             actions={attributeActions.render(attr, attributeActionsCtx)}
                         />

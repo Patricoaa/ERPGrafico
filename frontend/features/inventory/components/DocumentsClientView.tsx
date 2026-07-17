@@ -200,7 +200,6 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                                 variant="full"
                                 entityLabel="inventory.inventorydocument"
                                 title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
-                                subtitle={doc.date}
 
                                 actions={documentActions.render(doc, actionsCtx)}
                                 defaultAction={() => openSelected(doc.id)}

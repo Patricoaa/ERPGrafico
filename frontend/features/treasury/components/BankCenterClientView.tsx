@@ -127,12 +127,7 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                             fields={bankCenterFields}
                             variant="full"
                             title={bank.name}
-                            subtitle={
-                                bank.code || bank.swift_code
-                                    ? [bank.code && `Código: ${bank.code}`, bank.swift_code && `SWIFT: ${bank.swift_code}`]
-                                        .filter(Boolean).join(' · ')
-                                    : undefined
-                            }
+                            entityLabel="treasury.bank"
                             onClick={() => router.push(`/treasury/bank-center/${bank.id}/overview`)}
                             icon={Landmark}
                             actions={bankActions.render(bank, bankActionsCtx)}

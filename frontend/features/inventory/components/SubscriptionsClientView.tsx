@@ -436,7 +436,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                     variant="full"
                                     entityLabel="inventory.subscription"
                                     title={sub.product_name}
-                                    subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
                                     onClick={() => openSubscription(sub.id, "edit")} 
                                     defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
 

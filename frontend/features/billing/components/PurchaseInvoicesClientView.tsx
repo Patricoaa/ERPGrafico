@@ -234,7 +234,6 @@ export function PurchaseInvoicesClientView() {
                                 fields={purchaseInvoiceFields}
                                 entityLabel="billing.purchaseinvoice"
                                 title={d.partner_name as string ?? d.reference as string ?? `Documento #${data.id}`}
-                                subtitle={d.date as string}
                                 isSelected={hubConfig?.invoiceId === data.id}
                                 onClick={() => {
                                     const isSelected = hubConfig?.invoiceId === data.id
@@ -248,6 +247,22 @@ export function PurchaseInvoicesClientView() {
                                             onActionSuccess: fetchDocuments
                                         })
                                     }
+                                }}
+                                hubTrigger={{
+                                    isSelected: hubConfig?.invoiceId === data.id,
+                                    onToggle: () => {
+                                        const isSelected = hubConfig?.invoiceId === data.id
+                                        if (isSelected && isHubOpen) {
+                                            closeHub()
+                                        } else {
+                                            openHub({
+                                                orderId: data.purchase_order || null,
+                                                invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(data.dte_type) ? data.id : null,
+                                                type: 'purchase',
+                                                onActionSuccess: fetchDocuments
+                                            })
+                                        }
+                                    },
                                 }}
                                 variant="highlights"
                             />

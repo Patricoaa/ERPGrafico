@@ -129,11 +129,6 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 variant="full"
                 entityLabel="treasury.paymentmethod"
                 title={method.name}
-                subtitle={
-                    <span className="flex items-center gap-1.5 flex-wrap">
-                        {method.method_type_display || methodTypeLabels[method.method_type] || method.method_type}
-                    </span>
-                }
                 onClick={() => openEdit(method)} 
                 defaultAction={paymentMethodActions.defaultAction(paymentMethodActionsCtx)?.(method) ?? null}
                 icon={Icon}
