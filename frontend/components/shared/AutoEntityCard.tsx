@@ -219,7 +219,7 @@ function buildSubtitleItems<TData>(
     firstField: { value: React.ReactNode } | undefined
 ): SubtitleItem[] {
     if (explicitSubtitle !== undefined) {
-        return [{ kind: 'text', content: String(explicitSubtitle) }]
+        return [{ kind: 'text', content: explicitSubtitle }]
     }
     if (entityLabel && typeof data === 'object' && data !== null) {
         const items = renderEntitySubtitleItems(entityLabel, data as Record<string, unknown>)

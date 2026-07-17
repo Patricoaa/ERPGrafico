@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { 
   ReceiptText, Truck, Undo2, FileText,
   Wrench, Package, ArrowLeftRight, ArrowRightLeft, Landmark, BookOpen, 
@@ -1165,7 +1166,7 @@ export function renderEntitySubtitleSuffix(label: string, data?: Record<string, 
  * and by useDrawerIdentity for drawer subtitles (same source of truth).
  */
 export type SubtitleItem =
-  | { kind: 'text'; content: string }
+  | { kind: 'text'; content: ReactNode }
   | { kind: 'date'; value: string | Date }
   | { kind: 'currency'; value: number; currency?: string }
   | { kind: 'status'; label: string; status: string }
