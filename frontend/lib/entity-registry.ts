@@ -138,6 +138,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/sales/deliveries',
     detailUrlPattern: '/sales/deliveries/{id}',
     partnerField: 'partner_name',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'sales.salereturn': {
     label: 'sales.salereturn',
@@ -152,6 +153,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/sales/returns',
     detailUrlPattern: '/sales/returns/{id}',
     partnerField: 'partner_name',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'purchasing.purchaseorder': {
     label: 'purchasing.purchaseorder',
@@ -419,6 +421,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/accounting/ledger',
     detailUrlPattern: '/accounting/accounts/{id}/ledger',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'accounting.budget': {
     label: 'accounting.budget',
@@ -634,6 +637,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/purchasing/receipts',
     detailUrlPattern: '/purchasing/receipts/{id}',
     partnerField: 'supplier_name',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'purchasing.purchasereturn': {
     label: 'purchasing.purchasereturn',
@@ -648,6 +652,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/returns/{id}',
     partnerField: 'supplier_name',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
 
   // ── Tax ────────────────────────────────────────────────────────────────
@@ -662,6 +667,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PER-{id}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/periods/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'tax.f29declaration': {
     label: 'tax.f29declaration',
@@ -675,6 +681,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'F29-{id}',
     listUrl: '/tax/declarations',
     detailUrlPattern: '/tax/declarations/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
 
   // ── Contacts (partner entities) ────────────────────────────────────────
@@ -691,6 +698,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'RD-{id}',
     listUrl: '/finances/partners',
     detailUrlPattern: '/finances/partners/distributions',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
 
   // ── Treasury (missing entities) ────────────────────────────────────────
@@ -879,6 +887,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CON-LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/settings/concepts',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
 
   // ── Inventory (missing entities) ───────────────────────────────────────
@@ -893,6 +902,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CF-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/custom-fields',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.category': {
     label: 'inventory.category',
@@ -994,6 +1004,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'POS-{name}',
     listUrl: '/pos/sessions',
     detailUrlPattern: '/pos/sessions',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
 };
 
