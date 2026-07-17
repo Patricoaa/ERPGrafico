@@ -16,6 +16,14 @@ export const posTerminalFields = createEntityFields<Terminal>()({
         key: "location",
         type: "secondary",
         label: "Ubicación",
+        cardPlacement: 'detail',
+    },
+    device: {
+        key: "payment_terminal_device_name",
+        type: "text",
+        label: "Dispositivo",
+        get: (t) => t.payment_terminal_device_name || (t.payment_terminal_device ? 'Vinculado' : undefined),
+        cardPlacement: 'detail',
     },
     isActive: {
         key: "is_active",

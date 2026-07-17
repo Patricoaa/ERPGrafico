@@ -7,9 +7,9 @@ import { Plus, Trash2, Tag, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { BaseModal, DataTableView, AutoEntityCard, EntityCard } from '@/components/shared'
+import { BaseModal, DataTableView, AutoEntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, Chip } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { attributeActions, type AttributeActionsCtx } from './attributeActions'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -314,17 +314,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                             subtitle={`${attr.values?.length ?? 0} valores`}
                             icon={Tag}
                             actions={attributeActions.render(attr, attributeActionsCtx)}
-                        >
-                            <EntityCard.Body>
-                                {attr.values && attr.values.length > 0 && (
-                                    <EntityCard.Field label="Valores" value={
-                                        <div className="flex flex-wrap gap-1">
-                                            {attr.values.map(v => <Chip key={v.id}>{v.value}</Chip>)}
-                                        </div>
-                                    } />
-                                )}
-                            </EntityCard.Body>
-                        </AutoEntityCard>
+                        />
                     )}
                 />
             </div>

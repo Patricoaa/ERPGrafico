@@ -5,7 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, EntityCard, AutoEntityCard } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, AutoEntityCard } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -171,18 +171,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             })}
                             variant="full"
-                        >
-                            <EntityCard.Metrics metrics={[
-                                { label: 'Cargo', value: emp.position || '—' },
-                                { label: 'Dpto.', value: emp.department || '—' },
-                                { label: 'Previsión', value: `AFP: ${emp.afp_detail?.name || 'N/A'}` },
-                                { label: 'Salud', value: emp.salud_type_display || 'N/A' },
-                            ]} />
-                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
-                                <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} weight="bold" size="lg" />
-                            </EntityCard.Footer>
-                        </AutoEntityCard>
+                        />
                     )}
                     cardSkeleton={{ showFooter: true }}
                 />

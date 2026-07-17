@@ -259,7 +259,7 @@ export function createCardLoadingView(
   layout: 'single-column' | 'multi-column' = 'single-column',
   count: number = 8,
   skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>,
-  cardVariant?: 'highlights' | 'summary' | 'full',
+  cardVariant?: 'highlights' | 'summary' | 'full' | 'workflow',
 ) {
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
@@ -300,7 +300,7 @@ export function createCardGroupLoadingView(
     itemsPerGroup?: number
     gridLayout?: 'single-column' | 'multi-column'
     skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
-    cardVariant?: 'highlights' | 'summary' | 'full'
+    cardVariant?: 'highlights' | 'summary' | 'full' | 'workflow'
   }
 ) {
   const {

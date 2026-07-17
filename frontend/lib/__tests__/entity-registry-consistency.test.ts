@@ -140,7 +140,7 @@ describe('entity registry consistency', () => {
   });
 
   it('every explicit cardVariant value is valid', () => {
-    const validVariants = ['highlights', 'summary', 'full'];
+    const validVariants = ['highlights', 'summary', 'full', 'workflow'];
     const blocks = extractEntityBlocks(registrySrc);
     const invalid: Array<{ key: string; value: string }> = [];
     for (const [key, block] of blocks) {
@@ -161,7 +161,7 @@ describe('entity registry consistency', () => {
     for (const [key, block] of blocks) {
       if (!block.includes('workflowType:')) continue;
       const match = block.match(/cardVariant:\s*'([^']+)'/);
-      if (match && match[1] !== 'full') {
+      if (match && match[1] !== 'full' && match[1] !== 'workflow') {
         violations.push(`${key} (cardVariant: '${match[1]}')`);
       }
     }
