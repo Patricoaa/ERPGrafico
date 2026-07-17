@@ -239,11 +239,11 @@ export function AutoEntityCard<TData>({
 
     // 5. Build Center content: explicit prop → hubStatusRenderer → centerDetail fields
     const centerDetailNode = classified.centerDetail.length > 0 && (
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
             {classified.centerDetail.map(f => (
-                <div key={f.key} className={cn("flex flex-col items-end", f.cardClassName)}>
-                    <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>
-                    <span className="text-xs font-semibold">{f.value ?? <span className="opacity-40">—</span>}</span>
+                <div key={f.key} className={cn("flex flex-col items-end min-w-0", f.cardClassName)}>
+                    <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>
+                    <span className="text-xs font-semibold truncate min-w-0">{f.value ?? <span className="opacity-40">—</span>}</span>
                 </div>
             ))}
         </div>
@@ -261,7 +261,7 @@ export function AutoEntityCard<TData>({
             if (item.kind === 'separator') return <React.Fragment key={i}> · </React.Fragment>
             if (item.kind === 'text') return <React.Fragment key={i}>{item.content}</React.Fragment>
             if (item.kind === 'date') return <React.Fragment key={i}>{formatPlainDate(String(item.value))}</React.Fragment>
-            if (item.kind === 'currency') return <React.Fragment key={i}>{item.value}</React.Fragment>
+            if (item.kind === 'currency') return <React.Fragment key={i}>{new Intl.NumberFormat('es-CL').format(item.value)}</React.Fragment>
             if (item.kind === 'status') return <React.Fragment key={i}>{item.label}</React.Fragment>
             return null
         })
