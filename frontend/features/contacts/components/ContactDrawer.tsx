@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
-import { ActionConfirmModal, DomainHubStatus, Drawer, EntityCard, StatCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DomainHubStatus, Drawer, StatCard, StatusBadge } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import {
     Form,
@@ -29,9 +29,6 @@ import { PrintableLayout } from "@/features/_shared"
 import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
-import { ENTITY_REGISTRY, getEntityIcon, getPartnerName } from "@/lib/entity-registry"
-import { formatPlainDate } from "@/lib/utils"
-import { Calendar } from "lucide-react"
 
 import { DataTable } from '@/components/shared'
 
@@ -77,7 +74,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     const [activeTab, setActiveTab] = useState("profile")
     const c = contact
     const { createContact, updateContact } = useContactMutations()
-    const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
+    const { data: insightsData, isLoading: loadingInsights } = useContactInsights(c?.id)
     const ins = insightsData
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
@@ -127,12 +124,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         }
     }, [contactDetails, form])
 
-    const { data: ledgerData = [], isLoading: loadingLedger, refetch: fetchLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
-
-    const handleActionSuccess = () => {
-        refetchInsights()
-        fetchLedger()
-    }
+    const { data: ledgerData = [], isLoading: loadingLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
 
     useEffect(() => {
         if (!open) {
@@ -498,7 +490,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="sale"
                                         title="Historial de Ventas (NV)"
                                         icon={ShoppingCart}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -508,7 +499,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="purchase"
                                         title="Historial de Compras (OC)"
                                         icon={Package}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -518,11 +508,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="work_order"
                                         title="Historial de Órdenes de Trabajo"
                                         icon={Wand2}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
                                 <TabBarContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
+                                    <CreditLedgerTable data={ledgerData} loading={loadingLedger} />
                                 </TabBarContent>
                             </TabBar>
                         </FormSplitLayout>
@@ -565,10 +554,9 @@ interface InsightsTableProps {
     type: 'sale' | 'purchase' | 'work_order'
     title: string
     icon: LucideIcon
-    onActionSuccess?: () => void
 }
 
-function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: InsightsTableProps) {
+function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     const { openEntity } = useGlobalModals()
     const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
@@ -629,71 +617,6 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 return data
         }
     }, [data, activeFilter])
-
-    const cardView = useMemo(() => {
-        const label = type === 'sale' ? 'sales.saleorder' : type === 'purchase' ? 'purchasing.purchaseorder' : 'production.workorder'
-        const handleClick = (data: Record<string, unknown>) => {
-            if (type === 'work_order') {
-                openEntity('production.workorder', data.id as number)
-            } else {
-                openHub({ orderId: data.id as number, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
-            }
-        }
-        const config = ENTITY_REGISTRY[label]?.cardConfig
-        return (table: { getRowModel: () => { rows: Array<{ original: Record<string, unknown>; id: string | number }> }; getState: () => { columnVisibility: Record<string, boolean> } }) => {
-            const rows = table.getRowModel().rows
-            if (rows.length === 0) {
-                                return <div className="flex h-full min-h-[12rem] items-center justify-center"><EmptyState context="generic" /></div>
-            }
-            const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName : config?.iconClassName
-            const dateLabel = typeof config?.dateLabel === 'function' ? config.dateLabel : config?.dateLabel ?? 'Entrega'
-            return (
-                <div className="grid gap-3 pt-1">
-                    {rows.map((row) => {
-                        const d = row.original
-                        const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
-                        const pending = parseFloat(String(d.pending_amount || 0))
-                        const hasPending = total > 0 && pending > 0
-                        return (
-                            <EntityCard key={row.id} onClick={() => handleClick(d)}>
-                                <EntityCard.Header
-                                    icon={getEntityIcon(label)}
-                                    iconClassName={typeof iconClassName === 'function' ? iconClassName(d) : iconClassName}
-                                    title={getPartnerName(label, d)}
-                                    subtitle={
-                                        <span className="flex items-center gap-1.5 flex-wrap">
-                                            <span>{d.display_id as string}</span>
-                                            <span className="text-muted-foreground/20">·</span>
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="h-3 w-3 opacity-50" />
-                                                {formatPlainDate(d.date as string)}
-                                            </span>
-                                        </span>
-                                    }
-                                    trailing={
-                                        <div className="flex items-center gap-4">
-                                            <div className="hidden sm:flex items-center gap-3">
-                                                <DomainHubStatus label={label} data={d} />
-                                            </div>
-                                        </div>
-                                    }
-                                />
-                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
-                                    <EntityCard.WorkflowBody
-                                        lines={((d.lines || d.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
-                                        total={total}
-                                        pending={hasPending ? pending : undefined}
-                                        deliveryDate={(d.delivery_date || d.receipt_date) as string | undefined}
-                                        dateLabel={typeof dateLabel === 'function' ? dateLabel(d) : dateLabel}
-                                    />
-                                )}
-                            </EntityCard>
-                        )
-                    })}
-                </div>
-            )
-        }
-    }, [type, openEntity, openHub, onActionSuccess])
 
     const contactDocumentActionsCtx: ContactDocumentActionsCtx = {
         onHub: (item) => {
@@ -805,16 +728,14 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                         data={filteredData}
                         variant="embedded"
                         defaultPageSize={10}
-                        currentView="card"
-                        renderCustomView={cardView}
+                        currentView="list"
                     />
             </div>
         </div>
     )
 }
 
-function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<string, unknown>[], loading: boolean, onActionSuccess?: () => void }) {
-    const { openHub } = useHubPanel()
+function CreditLedgerTable({ data, loading }: { data: Record<string, unknown>[], loading: boolean }) {
 
     // Placeholder tipado para el ledger - sigue el patrón del contrato
     const LEDGER_SKELETON: Record<string, unknown>[] = Array.from({ length: 5 }, (_, i) => ({
@@ -887,55 +808,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<st
                         data={loading ? LEDGER_SKELETON : data}
                         variant="embedded"
                         defaultPageSize={10}
-                        currentView="card"
-                        renderCustomView={(table) => {
-                            const rows = table.getRowModel().rows
-                            if (rows.length === 0) {
-                                return <div className="flex h-full min-h-[12rem] items-center justify-center"><EmptyState context="finance" /></div>
-                            }
-                            return (
-                                <div className="grid gap-3 pt-1">
-                                    {rows.map((row) => {
-                                        const d = row.original as Record<string, unknown>
-                                        const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
-                                        const pending = parseFloat(String(d.pending_amount || 0))
-                                        const hasPending = total > 0 && pending > 0
-                                        return (
-                                            <EntityCard key={row.id} onClick={() => openHub({ orderId: d.id as number, type: 'sale', onActionSuccess })}>
-                                                <EntityCard.Header
-                                                    icon={getEntityIcon('sales.saleorder')}
-                                                    title={getPartnerName('sales.saleorder', d)}
-                                                    subtitle={
-                                                        <span className="flex items-center gap-1.5 flex-wrap">
-                                                            <span>{d.display_id as string}</span>
-                                                            <span className="text-muted-foreground/20">·</span>
-                                                            <span className="flex items-center gap-1">
-                                                                <Calendar className="h-3 w-3 opacity-50" />
-                                                                {formatPlainDate(d.date as string)}
-                                                            </span>
-                                                        </span>
-                                                    }
-                                                    trailing={
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="hidden sm:flex items-center gap-3">
-                                                                <DomainHubStatus label="sales.saleorder" data={d} />
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                />
-                                                {((d.lines || d.items || []) as Array<Record<string, unknown>>).length > 0 && (
-                                                    <EntityCard.WorkflowBody
-                                                        lines={((d.lines || d.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
-                                                        total={total}
-                                                        pending={hasPending ? pending : undefined}
-                                                    />
-                                                )}
-                                            </EntityCard>
-                                        )
-                                    })}
-                                </div>
-                            )
-                        }}
+                        currentView="list"
                     />
                 </div>
             </div>
