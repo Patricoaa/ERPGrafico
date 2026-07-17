@@ -24,12 +24,6 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         type: "text",
         label: "Cliente",
     },
-    totalWithTax: {
-        key: "total",
-        type: "currency",
-        label: "Total",
-        cellProps: { intent: "success" },
-    },
     status: {
         key: "status",
         type: "status",
