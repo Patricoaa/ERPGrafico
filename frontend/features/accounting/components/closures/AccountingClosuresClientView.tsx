@@ -18,7 +18,7 @@ import { type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
 import { fiscalYearActions, type FiscalYearActionsCtx } from './fiscalYearActions';
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
-import { ClosuresSkeleton } from './ClosuresSkeleton';
+import { SkeletonShell } from '@/components/shared';
 import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
 import { toast } from 'sonner';
 
@@ -317,7 +317,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     }, [groupedData, search.filters.status, search.filterFn, search])
 
     if (isLoading) {
-        return <ClosuresSkeleton />;
+        return <SkeletonShell isLoading ariaLabel="Cargando ejercicios..." />;
     }
 
     if (groupedData.length === 0) {
