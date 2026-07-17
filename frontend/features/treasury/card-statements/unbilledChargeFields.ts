@@ -24,6 +24,5 @@ export const unbilledChargeFields = createEntityFields<UnbilledItemRow>()({
         type: 'currency',
         label: 'Monto',
         cellProps: { weight: 'bold' },
-        cardPlacement: 'footer',
     },
 })
