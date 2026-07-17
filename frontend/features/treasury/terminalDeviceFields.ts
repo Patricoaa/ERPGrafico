@@ -15,7 +15,6 @@ export const terminalDeviceFields = createEntityFields<PaymentTerminalDevice>()(
         type: 'chip-category',
         domain: 'payment_method',
         label: 'Métodos Soportados',
-        cardPlacement: 'detail',
         get: (d) => (d.supported_payment_methods ?? [])
             .map(id => DEVICE_METHOD_MAP[id])
             .filter(Boolean),

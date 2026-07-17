@@ -27,21 +27,18 @@ export const posTerminalFields = createEntityFields<Terminal>()({
         key: "location",
         type: "secondary",
         label: "Ubicación",
-        cardPlacement: 'detail',
     },
     device: {
         key: "payment_terminal_device_name",
         type: "text",
         label: "Dispositivo",
         get: (t) => t.payment_terminal_device_name || (t.payment_terminal_device ? 'Vinculado' : undefined),
-        cardPlacement: 'detail',
     },
     payment_methods: {
         key: "payment_methods",
         type: "chip-category",
         domain: "payment_method",
         label: "Métodos",
-        cardPlacement: 'detail',
         get: (t) => {
             const types = new Set<string>()
             for (const m of t.allowed_payment_methods) {

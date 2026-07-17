@@ -11,33 +11,28 @@ export const employeeFields = createEntityFields<Employee>()({
         key: "position",
         type: "text",
         label: "Cargo",
-        cardPlacement: 'metric',
     },
     department: {
         key: "department",
         type: "text",
         label: "Dpto.",
-        cardPlacement: 'metric',
     },
     afp: {
         key: "afp_detail",
         type: "text",
         label: "Previsión",
         get: (e) => `AFP: ${(e as unknown as Record<string, unknown>).afp_detail ? ((e as unknown as Record<string, unknown>).afp_detail as Record<string, unknown>).name ?? 'N/A' : 'N/A'}`,
-        cardPlacement: 'metric',
     },
     salud: {
         key: "salud_type_display",
         type: "text",
         label: "Salud",
-        cardPlacement: 'metric',
     },
     baseSalary: {
         key: "base_salary",
         type: "currency",
         label: "Sueldo Base",
         get: (e) => parseFloat((e.base_salary as string) || "0"),
-        cardPlacement: 'footer',
     },
     status: {
         key: "status",
