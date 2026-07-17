@@ -3,7 +3,7 @@
 import React from "react"
 import { EntityCard } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import { renderEntitySubtitleItems, type SubtitleItem } from "@/lib/entity-registry"
 import type { CardField } from "@/components/shared"
 
@@ -241,7 +241,7 @@ export function AutoEntityCard<TData>({
         ? subtitleItems.map((item, i) => {
             if (item.kind === 'separator') return <React.Fragment key={i}> · </React.Fragment>
             if (item.kind === 'text') return <React.Fragment key={i}>{item.content}</React.Fragment>
-            if (item.kind === 'date') return <React.Fragment key={i}>{String(item.value)}</React.Fragment>
+            if (item.kind === 'date') return <React.Fragment key={i}>{formatPlainDate(String(item.value))}</React.Fragment>
             if (item.kind === 'currency') return <React.Fragment key={i}>{item.value}</React.Fragment>
             if (item.kind === 'status') return <React.Fragment key={i}>{item.label}</React.Fragment>
             return null
