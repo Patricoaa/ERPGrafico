@@ -7,7 +7,7 @@ import { MoneyDisplay } from "./MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
 import { type VariantProps } from "class-variance-authority"
 import { type badgeVariants } from "@/components/ui/badge"
-import { type LucideIcon, ArrowRight } from "lucide-react"
+import { type LucideIcon, ArrowRight, ArrowLeft } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -153,7 +153,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                         </div>
                     ) : null}
                     <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold leading-tight tracking-tight">
+                        <div className="truncate text-sm font-semibold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                             {title}
                         </div>
                         {subtitle && (
@@ -188,7 +188,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                     </div>
                 ) : null}
                 <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold leading-tight tracking-tight">
+                    <div className="truncate text-sm font-semibold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                         {title}
                     </div>
                     {subtitle && (
@@ -646,6 +646,47 @@ function EntityCardHero({ imageSrc, icon, iconClassName, accent, title, subtitle
     )
 }
 
+// ─── Hub Trigger ──────────────────────────────────────────────────────────────
+
+interface EntityCardHubTriggerProps {
+    /** Whether the hub is currently open for this card */
+    isSelected: boolean
+    /** Toggle handler — called when the hub trigger button is clicked */
+    onToggle: () => void
+    className?: string
+}
+
+/**
+ * Renders a hub-trigger button inside an EntityCard header.
+ * Mirrors the visual feedback of `createHubTriggerColumn` for DataTable rows:
+ * - Selected: ArrowLeft icon, `text-primary`, slide-in animation
+ * - Not selected: ArrowRight icon, `text-muted-foreground/30`, hover translate
+ */
+function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHubTriggerProps) {
+    return (
+        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+                type="button"
+                onClick={onToggle}
+                className={cn(
+                    "inline-flex items-center justify-center h-7 w-7 rounded-full transition-all duration-200",
+                    "hover:scale-105 active:scale-95 hover:bg-accent hover:text-accent-foreground",
+                    isSelected
+                        ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
+                        : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5",
+                    className,
+                )}
+            >
+                {isSelected ? (
+                    <ArrowLeft className="h-4 w-4" />
+                ) : (
+                    <ArrowRight className="h-4 w-4" />
+                )}
+            </button>
+        </div>
+    )
+}
+
 // ─── Composite export ─────────────────────────────────────────────────────────
 
 export const EntityCard = Object.assign(EntityCardRoot, {
@@ -661,6 +702,7 @@ export const EntityCard = Object.assign(EntityCardRoot, {
     Metrics: EntityCardMetrics,
     Dashboard: EntityCardDashboard,
     Hero: EntityCardHero,
+    HubTrigger: EntityCardHubTrigger,
 })
 
 export type {
@@ -679,4 +721,5 @@ export type {
     EntityCardMetricItem,
     EntityCardDashboardProps,
     EntityCardHeroProps,
+    EntityCardHubTriggerProps,
 }
