@@ -140,7 +140,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
 
     if (center) {
         return (
-            <div className={cn("grid grid-cols-[1fr_minmax(auto,2fr)_auto] items-start gap-2", className)}>
+            <div className={cn("grid grid-cols-[1fr_minmax(auto,3fr)_auto] items-start gap-2", className)}>
                 <div className="flex items-start gap-3 min-w-0">
                     {checkboxNode}
                     {imageSrc ? (
