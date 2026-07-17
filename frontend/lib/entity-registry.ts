@@ -440,11 +440,11 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Hash,
     iconName: 'Hash',
     description: 'Registro contable de movimientos',
-    subtitleTemplate: 'AS-{number}',
     shortTemplate: 'AS-{number}',
+    subtitleSuffixTemplate: '{date:date}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'summary' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
   },
   'tax.taxperiod': {
     label: 'tax.taxperiod',
@@ -1175,7 +1175,9 @@ export function renderEntitySubtitleItems(
   if (suffixTemplate) {
     const suffixItems = parseTemplateToItems(suffixTemplate, data);
     if (suffixItems.length > 0) {
-      items.push({ kind: 'separator' });
+      if (items.length > 0) {
+        items.push({ kind: 'separator' });
+      }
       items.push(...suffixItems);
     }
   }

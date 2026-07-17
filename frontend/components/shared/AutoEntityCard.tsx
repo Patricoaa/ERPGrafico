@@ -4,7 +4,7 @@ import React from "react"
 import { EntityCard } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { renderEntitySubtitleItems, type SubtitleItem } from "@/lib/entity-registry"
+import { renderEntitySubtitleItems, getEntityMetadata, type SubtitleItem } from "@/lib/entity-registry"
 import type { CardField } from "@/components/shared"
 
 export interface AutoEntityCardProps<TData> {
@@ -59,6 +59,17 @@ export interface AutoEntityCardProps<TData> {
      * (line items, totals, pending, delivery date).
      */
     workflowRenderer?: (data: TData) => React.ReactNode
+    /**
+     * Hub trigger config — when provided, renders a hub-trigger button
+     * (ArrowLeft/ArrowRight) in the header actions slot.
+     * Mirrors the visual feedback of `createHubTriggerColumn` for DataTable rows.
+     */
+    hubTrigger?: {
+        /** Whether the hub is currently open for this card */
+        isSelected: boolean
+        /** Toggle handler */
+        onToggle: () => void
+    }
 }
 
 // ─── Field Classification ─────────────────────────────────────────────────────
@@ -103,8 +114,7 @@ function classifyFields<TData>(
     // Apply variant visibility
     switch (variant) {
         case 'highlights':
-            // Header only — hide detail and metric
-            detail = []
+            // Header + center — detail fields route to center via centerDetail, hide metric
             metric = []
             break
 
@@ -187,11 +197,16 @@ export function AutoEntityCard<TData>({
     variant = 'full',
     hubStatusRenderer,
     workflowRenderer,
+    hubTrigger,
 }: AutoEntityCardProps<TData>) {
+    // Resolve variant: explicit prop > entity registry > default 'full'
+    const registryVariant = entityLabel ? getEntityMetadata(entityLabel)?.viewPolicy?.cardVariant : undefined
+    const effectiveVariant = variant ?? registryVariant ?? 'full'
+
     const cardFields = fields.toCardFields(data)
     
     // 1. Classify fields into layout zones
-    const classified = classifyFields(cardFields, variant)
+    const classified = classifyFields(cardFields, effectiveVariant)
 
     // 2. Determine display title
     const displayTitle = explicitTitle ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
@@ -231,7 +246,7 @@ export function AutoEntityCard<TData>({
     )
 
     const centerContent = center ?? (
-        hubStatusRenderer && (variant === 'summary' || variant === 'full')
+        hubStatusRenderer && (effectiveVariant === 'summary' || effectiveVariant === 'full')
             ? hubStatusRenderer(data)
             : centerDetailNode || undefined
     )
@@ -251,6 +266,21 @@ export function AutoEntityCard<TData>({
     // 7. Determine EntityCard variant (compact padding if no body detail/metric)
     const entityCardVariant = (classified.bodyDetail.length === 0 && classified.metric.length === 0) ? "compact" : "full"
 
+    // 8. Build combined actions: existing actions + hub trigger
+    const hubTriggerNode = hubTrigger ? (
+        <EntityCard.HubTrigger
+            isSelected={hubTrigger.isSelected}
+            onToggle={hubTrigger.onToggle}
+        />
+    ) : null
+
+    const combinedActions = hubTriggerNode ? (
+        <>
+            {actions}
+            {hubTriggerNode}
+        </>
+    ) : actions
+
     return (
         <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={entityCardVariant}>
             <EntityCard.Header 
@@ -260,7 +290,7 @@ export function AutoEntityCard<TData>({
                 title={displayTitle} 
                 subtitle={subtitleNode}
                 center={centerContent}
-                actions={actions}
+                actions={combinedActions}
                 trailing={combinedTrailing}
             />
             {classified.bodyDetail.length > 0 && (
@@ -277,7 +307,7 @@ export function AutoEntityCard<TData>({
                 }))} />
             )}
             {children}
-            {variant === 'full' && workflowRenderer && (
+            {effectiveVariant === 'full' && workflowRenderer && (
                 <EntityCard.Body>
                     {workflowRenderer(data)}
                 </EntityCard.Body>
