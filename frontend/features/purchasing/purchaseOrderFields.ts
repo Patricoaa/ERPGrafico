@@ -24,17 +24,6 @@ export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
         label: "Entrega Esperada",
         surfaces: ["card", "kanban"],
     },
-    totalWithTax: {
-        key: "total",
-        type: "currency",
-        label: "Total",
-    },
-    totalWithTaxLocal: {
-        key: "total",
-        type: "currency",
-        label: "Total (Local)",
-        surfaces: ["card", "kanban"],
-    },
     status: {
         key: "status",
         type: "status",

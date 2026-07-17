@@ -18,11 +18,6 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
         type: "date",
         label: "Fecha",
     },
-    totalWithTax: {
-        key: "total",
-        type: "currency",
-        label: "Total",
-    },
     status: {
         key: "status",
         type: "status",
