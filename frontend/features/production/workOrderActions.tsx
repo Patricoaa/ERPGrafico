@@ -1,5 +1,5 @@
 import { createEntityActions } from '@/components/shared'
-import type { WorkOrder } from '@/features/production'
+import type { WorkOrder } from './types'
 
 export interface WorkOrderActionsCtx {
     onEdit: (id: number) => void

@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
-import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
+import { workOrderActions, type WorkOrderActionsCtx } from '@/features/production'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import type { Page } from '@/lib/pagination'
 

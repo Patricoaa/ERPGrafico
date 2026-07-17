@@ -5,9 +5,8 @@ import { useState, useEffect } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
 import { ActionConfirmModal, Chip, DocumentCompletionModal, MoneyDisplay } from '@/components/shared'
-import { FileBadge, History, FileEdit, MoreVertical } from "lucide-react"
+import { FileBadge } from "lucide-react"
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
@@ -23,7 +22,7 @@ import { StatusBadge, UnifiedSearchBar, useUnifiedSearch } from "@/components/sh
 import { getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { usePurchaseInvoices, purchaseInvoiceUnifiedSearchDef } from "@/features/billing"
+import { usePurchaseInvoices, purchaseInvoiceUnifiedSearchDef, purchaseInvoiceActions, type PurchaseInvoiceActionsCtx } from "@/features/billing"
 
 interface PurchaseDocument {
     id: number
@@ -185,6 +184,23 @@ export default function PurchasesPageClient() {
         }
     }
 
+    const purchaseInvoiceActionsCtx: PurchaseInvoiceActionsCtx = {
+        onDetail: (doc) => openTransaction(doc.id, 'invoice'),
+        onPay: (doc) => setPayingDoc(doc as unknown as PurchaseDocument),
+        onHub: (doc) => openHub({
+            orderId: doc.purchase_order,
+            invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
+            type: 'purchase',
+            onActionSuccess: refetch,
+        }),
+        onReceive: (doc) => setReceivingDoc(doc as unknown as PurchaseDocument),
+        onCompleteFolio: (doc) => setCompletingDoc(doc as unknown as PurchaseDocument),
+        onCreateNote: (doc) => setNotingDoc(doc as unknown as PurchaseDocument),
+        onPaymentHistory: (doc) => openTransaction(doc.id, 'invoice'),
+        onDelete: (id) => handleDelete(id),
+        onAnnul: (id) => handleAnnul(id),
+    }
+
     const columns: ColumnDef<PurchaseDocument>[] = [
         {
             accessorKey: "number",
@@ -291,70 +307,7 @@ export default function PurchasesPageClient() {
                 )
             },
         },
-        {
-            id: "actions",
-            header: "Acciones",
-            cell: ({ row }) => {
-                const doc = row.original
-                const isNote = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type)
-
-                return (
-                    <div className="flex justify-center space-x-1">
-                        {doc.purchase_order ? (
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => openHub({
-                                    orderId: doc.purchase_order,
-                                    invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
-                                    type: 'purchase',
-                                    onActionSuccess: refetch
-                                })}
-                                title="Gestionar Orden"
-                                className="h-8 px-3"
-                            >
-                                <MoreVertical className="h-4 w-4 mr-1" />
-                                Gestionar
-                            </Button>
-                        ) : (
-                            (() => {
-                                const canPay = (doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status)
-                                const canReceive = (doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED'
-                                const canCompleteFolio = doc.status === 'DRAFT'
-                                const canCreateNote = !isNote && doc.number && doc.status !== 'DRAFT'
-                                const hasPayments = (doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0
-                                const canDelete = doc.status === 'DRAFT'
-                                const canAnnul = doc.status !== 'DRAFT' && doc.status !== 'CANCELLED'
-
-                                const overflow = [
-                                    ...(canCompleteFolio ? [{ icon: FileEdit, label: 'Completar Folio', onClick: () => setCompletingDoc(doc) }] : []),
-                                    ...(canReceive ? [{ action: 'receive' as const, label: doc.dte_type === 'NOTA_CREDITO' ? 'Devolución Mercadería' : 'Recibir Mercadería', onClick: () => setReceivingDoc(doc) }] : []),
-                                    ...(canCreateNote ? [{ icon: FileBadge, label: 'Registrar Nota Crédito/Débito', onClick: () => setNotingDoc(doc) }] : []),
-                                    ...(hasPayments ? [{ icon: History, label: 'Historial de Pagos', onClick: () => openTransaction(doc.id, 'invoice') }] : []),
-                                    ...((canAnnul || canDelete) ? [{ separator: true } as const] : []),
-                                    ...(canDelete ? [{ action: 'delete' as const, onClick: () => handleDelete(doc.id) }] : []),
-                                    ...(canAnnul ? [{ action: 'annul' as const, onClick: () => handleAnnul(doc.id) }] : []),
-                                ]
-
-                                return (
-                                    <>
-                                        <DataCell.Action action="detail" title="Ver Detalle" onClick={() => openTransaction(doc.id, 'invoice')} />
-                                        {canPay && (
-                                            <DataCell.Action
-                                                action="pay"
-                                                title={doc.dte_type === 'NOTA_CREDITO' ? 'Registrar Devolución Dinero' : 'Registrar Pago'}
-                                                onClick={() => setPayingDoc(doc)}
-                                            />
-                                        )}
-                                        {overflow.length > 0 && <DataCell.ActionMenu items={overflow} />}
-                                    </>
-                                )
-                            })()
-                        )}
-                    </div>
-                )
-            },
-        },
+        purchaseInvoiceActions.auto(purchaseInvoiceActionsCtx) as ColumnDef<PurchaseDocument>,
     ]
 
     return (
