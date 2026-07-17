@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTableView, AutoEntityCard, EntityCard, DataCell, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, AutoEntityCard, DataCell, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban } from "lucide-react"
 

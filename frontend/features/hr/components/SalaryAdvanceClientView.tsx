@@ -8,7 +8,7 @@ import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/featu
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { DataCell, EntityCard, AutoEntityCard } from '@/components/shared'
+import { DataCell, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"

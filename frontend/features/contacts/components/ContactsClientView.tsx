@@ -9,7 +9,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, Chip, EntityCard, AutoEntityCard } from '@/components/shared'
+import { DataCell, Chip, AutoEntityCard } from '@/components/shared'
 import { contactFields } from "@/features/contacts/contactFields"
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"

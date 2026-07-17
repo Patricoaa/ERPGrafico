@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, EntityCard, AutoEntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, AutoEntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"

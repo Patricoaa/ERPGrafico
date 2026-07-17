@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { DataTableView, AutoEntityCard, EntityCard, DataCell, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, AutoEntityCard, DataCell, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { ArrowDown } from "lucide-react"
 import { resolveTreasuryMovementIcon } from "@/lib/movement-icons"
