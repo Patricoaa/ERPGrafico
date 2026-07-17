@@ -162,7 +162,6 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                             fields={employeeFields}
                             entityLabel="hr.employee"
                             title={emp.contact_detail?.name || "Sin nombre"}
-                            subtitle={emp.contact_detail?.tax_id || emp.display_id}
 
                             actions={employeeActions.render(emp, actionsCtx)}
                             defaultAction={employeeActions.defaultAction(actionsCtx)?.(emp) ?? (() => {

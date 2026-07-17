@@ -301,7 +301,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 fields={movementFields}
                                 entityLabel="treasury.cashmovement"
                                 title={m.display_id}
-                                subtitle={m.payment_method_display}
                                 onClick={() => handleViewDetails(m.id)}
                                 icon={Icon}
                                 iconClassName={iconStyle}

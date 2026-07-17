@@ -175,7 +175,7 @@ export function StockReport() {
                             fields={stockReportFields}
                             variant="full"
                             title={item.name}
-                            subtitle={item.category_name}
+                            entityLabel="inventory.stockreport"
                             actions={stockReportActions.render(item, stockReportActionsCtx)}
                         />
                     )}

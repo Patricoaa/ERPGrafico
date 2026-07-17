@@ -156,7 +156,6 @@ export function TerminalBatchesClientView({
                             variant="full"
                             entityLabel="treasury.terminalbatch"
                             title={batch.batch_number}
-                            subtitle={batch.provider_name ?? 'Sin proveedor'}
                             onClick={() => setOpenCreate(true)}
                         />
                     )}

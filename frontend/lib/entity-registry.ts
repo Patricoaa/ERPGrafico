@@ -49,10 +49,17 @@ export interface EntityMetadata {
   feminine?: boolean;
     /** Default drawer subtitle / description for this entity */
     description?: string;
-    /** Template string for dynamic subtitle (e.g. "{code} · {name}"). Rendered with entity data. */
+    /** Template string for dynamic subtitle (e.g. "{code} · {name}"). Rendered with entity data.
+     *  Supports: {field}, {field:date}, {field:currency}, {f1|f2|'default'} (fallback), {?field} (conditional). */
     subtitleTemplate?: string;
-    /** Template string appended to subtitle after " · " separator. Supports {field:date} format. */
+    /** Template string appended to subtitle after " · " separator. Same syntax as subtitleTemplate. */
     subtitleSuffixTemplate?: string;
+    /** Function-based subtitle renderer — overrides subtitleTemplate when defined.
+     *  Used for complex subtitles (JSX components, computed values) that can't be expressed as templates. */
+    subtitleRenderer?: (data: Record<string, unknown>) => SubtitleItem[];
+    /** Explicit field keys excluded from card layout zones when this entity's subtitle is rendered.
+     *  Required when subtitleRenderer is used (can't extract keys from a function). */
+    subtitleKeys?: string[];
     /** Whether the entity drawer shows a print button in the header */
     printable?: boolean;
   /** Field to use for the main partner name in cards/headers */
@@ -235,7 +242,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ClipboardList',
     feminine: true,
     description: 'Lista de materiales y componentes',
-    subtitleTemplate: 'BOM-{id}',
+    subtitleTemplate: '{product_name}',
     shortTemplate: 'BOM-{id}',
     listUrl: '/production/boms',
     detailUrlPattern: '/production/boms/{id}',
@@ -248,8 +255,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: ArrowLeftRight,
     iconName: 'ArrowLeftRight',
     description: 'Entrada o salida de existencias',
-    subtitleTemplate: '{product_name}',
-    subtitleSuffixTemplate: '{move_type} · {date:date}',
+    subtitleTemplate: '{display_id}',
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/stock/movements',
     detailUrlPattern: '/inventory/stock-moves/{id}',
@@ -263,8 +269,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'FileText',
     feminine: true,
     description: 'Recepción, entrega o transferencia de mercadería',
-    subtitleTemplate: '{document_type_display} #{id}',
-    subtitleSuffixTemplate: '{status_display}',
+    subtitleTemplate: '{date:date}',
     shortTemplate: 'DOC-{id}',
     listUrl: '/inventory/operations/documents',
     detailUrlPattern: '/inventory/operations/documents/{id}',
@@ -278,7 +283,11 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Package,
     iconName: 'Package',
     description: 'Bien o servicio comercializable',
-    subtitleTemplate: '{code} · {name}',
+    subtitleKeys: ['code', 'is_active'],
+    subtitleRenderer: (data) => [
+      { kind: 'text', content: String(data.code ?? '') },
+      { kind: 'status', status: data.is_active ? 'active' : 'inactive', label: data.is_active ? 'Activo' : 'Inactivo' },
+    ],
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
@@ -292,7 +301,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Repeat',
     feminine: true,
     description: 'Contrato recurrente de producto o servicio',
-    subtitleTemplate: '{customer_name}',
+    subtitleTemplate: '{recurrence_display}{?amount} - ${amount}',
     shortTemplate: 'SUB-{id}',
     listUrl: '/inventory/products/subscriptions',
     detailUrlPattern: '/inventory/products/{id}',
@@ -307,7 +316,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Building2',
     feminine: true,
     description: 'Ubicación física de almacenaje',
-    subtitleTemplate: '{code} · {name}',
+    subtitleTemplate: '{code}',
     shortTemplate: '{code}',
     listUrl: '/inventory/stock/warehouses',
     detailUrlPattern: '/inventory/warehouses/{id}',
@@ -320,7 +329,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Tag,
     iconName: 'Tag',
     description: 'Propiedad variable de un producto',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{values.length} valores',
     shortTemplate: '{name}',
     listUrl: '/inventory/stock/products/attributes',
     detailUrlPattern: '/inventory/stock/products/attributes',
@@ -443,7 +452,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: PieChart,
     iconName: 'PieChart',
     description: 'Proyección financiera',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{start_date} - {end_date}',
     shortTemplate: 'BUD-{id}',
     listUrl: '/finance/budgets',
     detailUrlPattern: '/finance/budgets/{id}',
@@ -482,7 +491,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Users,
     iconName: 'Users',
     description: 'Persona o entidad del registro de partners',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{tax_id|S/Rut}',
     shortTemplate: 'CON-{id}',
     listUrl: '/contacts',
     detailUrlPattern: '/contacts/{id}',
@@ -495,7 +504,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: UserCheck,
     iconName: 'UserCheck',
     description: 'Trabajador registrado en RRHH',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{contact_detail.tax_id|display_id}',
     shortTemplate: 'EMP-{id}',
     listUrl: '/hr/employees',
     detailUrlPattern: '/hr/employees/{id}',
@@ -509,7 +518,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'CalendarX2',
     feminine: true,
     description: 'Ausencia o permiso del empleado',
-    subtitleTemplate: '{employee_name}',
+    subtitleTemplate: '{absence_type_display}',
     shortTemplate: 'AUS-{id}',
     listUrl: '/hr/absences',
     detailUrlPattern: '/hr/absences/{id}',
@@ -524,7 +533,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Receipt',
     feminine: true,
     description: 'Cálculo mensual de remuneraciones',
-    subtitleTemplate: 'LIQ-{id}',
+    subtitleTemplate: '{period_label|display_id}',
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
@@ -537,7 +546,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: HandCoins,
     iconName: 'HandCoins',
     description: 'Adelanto de sueldo al empleado',
-    subtitleTemplate: 'ANT-{id}',
+    subtitleTemplate: 'Anticipo {?employee_display_id}',
     shortTemplate: 'ANT-{id}',
     listUrl: '/hr/advances',
     detailUrlPattern: '/hr/advances/{id}',
@@ -616,7 +625,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Users,
     iconName: 'Users',
     description: 'Conjunto de usuarios con permisos comunes',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{user_count} miembros',
     shortTemplate: '{name}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
@@ -722,7 +731,18 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Landmark,
     iconName: 'Landmark',
     description: 'Institución financiera registrada',
-    subtitleTemplate: '{name}',
+    subtitleKeys: ['code', 'swift_code'],
+    subtitleRenderer: (data) => {
+      const items: SubtitleItem[] = [];
+      const segments: SubtitleItem[] = [];
+      if (data.code) segments.push({ kind: 'text', content: `Código: ${String(data.code)}` });
+      if (data.swift_code) segments.push({ kind: 'text', content: `SWIFT: ${String(data.swift_code)}` });
+      for (let i = 0; i < segments.length; i++) {
+        if (i > 0) items.push({ kind: 'separator' });
+        items.push(segments[i]);
+      }
+      return items;
+    },
     shortTemplate: '{name}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center/{id}/overview',
@@ -735,7 +755,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: CreditCard,
     iconName: 'CreditCard',
     description: 'Forma de pago configurada',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{method_type_display|method_type}',
     shortTemplate: '{name}',
     listUrl: '/treasury/operaciones/methods',
     detailUrlPattern: '/treasury/operaciones/methods?selected={id}',
@@ -749,7 +769,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Landmark',
     feminine: true,
     description: 'Cuenta bancaria o de efectivo',
-    subtitleTemplate: '{code} · {name}',
+    subtitleKeys: ['account_type_display', 'account_type', 'bank_name'],
+    subtitleRenderer: (data) => {
+      const items: SubtitleItem[] = [];
+      const typeDisplay = data.account_type_display || data.account_type || '---';
+      items.push({ kind: 'text', content: String(typeDisplay) });
+      if (data.bank_name) {
+        items.push({ kind: 'separator' });
+        items.push({ kind: 'text', content: String(data.bank_name) });
+      }
+      return items;
+    },
     shortTemplate: '{code}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center/{id}',
@@ -776,7 +806,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: FileText,
     iconName: 'FileText',
     description: 'Documento de pago diferido',
-    subtitleTemplate: '{bank_name}',
+    subtitleTemplate: '{counterparty_name|drawer_name|—}',
     shortTemplate: 'CHQ-{number}',
     listUrl: '/treasury/operaciones/movements',
     detailUrlPattern: '/treasury/operaciones/movements?check={id}',
@@ -789,7 +819,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: HandCoins,
     iconName: 'HandCoins',
     description: 'Préstamo otorgado por una entidad financiera',
-    subtitleTemplate: '{status_display} · {currency}',
+    subtitleTemplate: '{loan_number}',
     shortTemplate: 'CRE-{code}',
     listUrl: '/treasury/loans',
     detailUrlPattern: '/treasury/loans?selected={id}',
@@ -803,7 +833,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ScrollText',
     feminine: true,
     description: 'Límite de financiamiento disponible',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{code}',
     shortTemplate: 'CL-{code}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center',
@@ -867,8 +897,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: ClipboardCheck,
     iconName: 'ClipboardCheck',
     description: 'Lote de liquidación de transacciones',
-    subtitleTemplate: 'LOT-{id}',
-    subtitleSuffixTemplate: '{provider_name}',
+    subtitleTemplate: '{provider_name|Sin proveedor}',
     shortTemplate: 'LOT-{id}',
     listUrl: '/treasury/bank-center',
     detailUrlPattern: '/treasury/bank-center?batch={id}',
@@ -925,7 +954,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'LayoutGrid',
     feminine: true,
     description: 'Agrupación de productos',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{parent_name|Categoría raíz}',
     shortTemplate: 'CAT-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products?category={id}',
@@ -939,7 +968,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Ruler',
     feminine: true,
     description: 'Unidad de medida para productos',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{category_name}',
     shortTemplate: '{name}',
     listUrl: '/inventory/products/units',
     detailUrlPattern: '/inventory/products/units?selected={id}',
@@ -967,7 +996,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Percent',
     feminine: true,
     description: 'Regla de cálculo de precio',
-    subtitleTemplate: '{name}',
+    subtitleTemplate: '{product_name|category_name|Sin producto/categoría}',
     shortTemplate: 'REG-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products?rule={id}',
@@ -999,7 +1028,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'ShoppingCart',
     feminine: true,
     description: 'Jornada de caja registradora',
-    subtitleTemplate: 'POS-{id}',
+    subtitleTemplate: '{id_display}',
     shortTemplate: 'POS-{id}',
     listUrl: '/pos/sessions',
     detailUrlPattern: '/pos/sessions?selected={id}',
@@ -1018,6 +1047,107 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/pos/sessions',
     detailUrlPattern: '/pos/sessions',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+
+  // ── Missing entity labels (subtitle centralization) ──────────────────────
+  'settings.user': {
+    label: 'settings.user',
+    title: 'Usuario',
+    titlePlural: 'Usuarios',
+    icon: User,
+    iconName: 'User',
+    description: 'Usuario del sistema',
+    subtitleTemplate: '{email}',
+    shortTemplate: '{username}',
+    listUrl: '/settings/users',
+    detailUrlPattern: '/settings/users',
+  },
+  'billing.purchaseinvoice': {
+    label: 'billing.purchaseinvoice',
+    title: 'Factura de Compra',
+    titlePlural: 'Facturas de Compra',
+    icon: Receipt,
+    iconName: 'Receipt',
+    feminine: true,
+    description: 'Factura emitida por un proveedor',
+    subtitleTemplate: '{date:date}',
+    shortTemplate: 'FC-{id}',
+    listUrl: '/billing/purchase-invoices',
+    detailUrlPattern: '/billing/purchase-invoices/{id}',
+  },
+  'treasury.cashmovement': {
+    label: 'treasury.cashmovement',
+    title: 'Movimiento de Caja',
+    titlePlural: 'Movimientos de Caja',
+    icon: HandCoins,
+    iconName: 'HandCoins',
+    description: 'Entrada o salida de efectivo',
+    subtitleTemplate: '{payment_method_display}',
+    shortTemplate: 'MC-{id}',
+    listUrl: '/treasury/operaciones/movements',
+    detailUrlPattern: '/treasury/operaciones/movements',
+  },
+  'sales.posterminal': {
+    label: 'sales.posterminal',
+    title: 'Caja POS',
+    titlePlural: 'Cajas POS',
+    icon: Monitor,
+    iconName: 'Monitor',
+    feminine: true,
+    description: 'Punto de venta configurable',
+    subtitleTemplate: '{code}',
+    shortTemplate: 'POS-{name}',
+    listUrl: '/pos/sessions',
+    detailUrlPattern: '/pos/sessions',
+  },
+  'treasury.bankmovement': {
+    label: 'treasury.bankmovement',
+    title: 'Movimiento Bancario',
+    titlePlural: 'Movimientos Bancarios',
+    icon: ArrowLeftRight,
+    iconName: 'ArrowLeftRight',
+    description: 'Transacción bancaria registrada',
+    subtitleTemplate: '{payment_method_display}',
+    shortTemplate: 'MB-{id}',
+    listUrl: '/treasury/operaciones/movements',
+    detailUrlPattern: '/treasury/operaciones/movements',
+  },
+  'inventory.inventorycount': {
+    label: 'inventory.inventorycount',
+    title: 'Conteo de Inventario',
+    titlePlural: 'Conteos de Inventario',
+    icon: ClipboardCheck,
+    iconName: 'ClipboardCheck',
+    description: 'Conteo físico de existencias',
+    subtitleTemplate: '{warehouse_name}',
+    shortTemplate: 'CI-{id}',
+    listUrl: '/inventory/stock/count',
+    detailUrlPattern: '/inventory/stock/count/{id}',
+  },
+  'treasury.unbilledcharge': {
+    label: 'treasury.unbilledcharge',
+    title: 'Cargo No Facturado',
+    titlePlural: 'Cargos No Facturados',
+    icon: CreditCard,
+    iconName: 'CreditCard',
+    description: 'Cargo pendiente de facturación en tarjeta',
+    subtitleTemplate: '{date:date}',
+    shortTemplate: 'CHG-{id}',
+    listUrl: '/treasury/card-statements',
+    detailUrlPattern: '/treasury/card-statements',
+  },
+  'treasury.cardstatement': {
+    label: 'treasury.cardstatement',
+    title: 'Estado de Cuenta Tarjeta',
+    titlePlural: 'Estados de Cuenta Tarjeta',
+    icon: CreditCard,
+    iconName: 'CreditCard',
+    feminine: true,
+    description: 'Resumen de movimientos de tarjeta',
+    subtitleTemplate: '{card_account_name}',
+    shortTemplate: 'ECT-{id}',
+    listUrl: '/treasury/card-statements',
+    detailUrlPattern: '/treasury/card-statements/{id}',
   },
 };
 
@@ -1187,6 +1317,12 @@ export function renderEntitySubtitleItems(
 
   const config = getEntityConfig(label);
   const entity = ENTITY_REGISTRY[label];
+
+  // Priority 1: subtitleRenderer function (for complex JSX/computed subtitles)
+  if (entity?.subtitleRenderer) {
+    return entity.subtitleRenderer(data);
+  }
+
   const mainTemplate = config?.subtitleTemplate ?? entity?.subtitleTemplate;
   const suffixTemplate = config?.subtitleSuffixTemplate ?? entity?.subtitleSuffixTemplate;
 
@@ -1230,29 +1366,46 @@ function parseTemplateToItems(template: string, data: Record<string, unknown>): 
   const items: SubtitleItem[] = [];
   const trimmed = template.trim();
   if (!trimmed) return items;
-  // Support mixed patterns like "POS-{id}" or "EMP-{code} {contact.tax_id}"
-  const regex = /\{([^}]+)\}/g;
+  // Support: {field}, {?field} (conditional), {f1|f2|'default'} (fallback), {field:date}, {field:currency}
+  const regex = /\{(\??)([^}]+)\}/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let hasPlaceholder = false;
   while ((match = regex.exec(trimmed)) !== null) {
     hasPlaceholder = true;
-    // Push literal text before this placeholder
-    if (match.index > lastIndex) {
-      items.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
+    const isConditional = match[1] === '?';
+    const inner = match[2];
+    const [rawPath, format] = inner.split(':');
+    // Fallback chain: split by '|', try each in order, skip quoted literals
+    const alternatives = rawPath.split('|');
+    let resolved: unknown = undefined;
+    for (const alt of alternatives) {
+      const a = alt.trim();
+      if (a.startsWith("'") && a.endsWith("'")) {
+        if (resolved == null || resolved === undefined) resolved = a.slice(1, -1);
+      } else {
+        const v = resolvePath(a, data);
+        if (v != null) { resolved = v; break; }
+      }
     }
-    const [path, format] = match[1].split(':');
-    const value = resolvePath(path, data);
-    if (value === undefined || value === null) {
+    if (resolved == null || resolved === undefined) {
+      // Conditional placeholder: also suppress the preceding literal
+      if (isConditional && items.length > 0 && items[items.length - 1].kind === 'text') {
+        items.pop();
+      }
       lastIndex = regex.lastIndex;
       continue;
     }
+    // Push literal text before this placeholder (skip if conditional and no value)
+    if (match.index > lastIndex && !(isConditional && (resolved == null || resolved === undefined))) {
+      items.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
+    }
     if (format === 'date') {
-      items.push({ kind: 'date', value: String(value) });
+      items.push({ kind: 'date', value: String(resolved) });
     } else if (format === 'currency') {
-      items.push({ kind: 'currency', value: Number(value) });
+      items.push({ kind: 'currency', value: Number(resolved) });
     } else {
-      items.push({ kind: 'text', content: String(value) });
+      items.push({ kind: 'text', content: String(resolved) });
     }
     lastIndex = regex.lastIndex;
   }
@@ -1322,17 +1475,36 @@ export function getViewOptions(label: string) {
 export function getSubtitleFieldKeys(label: string): Set<string> {
   const config = getEntityConfig(label)
   const entity = ENTITY_REGISTRY[label]
+
+  // Priority 1: explicit subtitleKeys (required when subtitleRenderer is used)
+  if (entity?.subtitleKeys) {
+    return new Set(entity.subtitleKeys)
+  }
+
+  // Priority 2: subtitleRenderer without subtitleKeys — can't extract keys, return empty
+  if (entity?.subtitleRenderer) {
+    return new Set<string>()
+  }
+
+  // Priority 3: parse keys from template strings
   const mainTemplate = config?.subtitleTemplate ?? entity?.subtitleTemplate
   const suffixTemplate = config?.subtitleSuffixTemplate ?? entity?.subtitleSuffixTemplate
 
   const keys = new Set<string>()
   for (const tpl of [mainTemplate, suffixTemplate]) {
     if (!tpl) continue
-    const regex = /\{([^}]+)\}/g
+    const regex = /\{(\??)([^}]+)\}/g
     let match: RegExpExecArray | null
     while ((match = regex.exec(tpl)) !== null) {
-      const [path] = match[1].split(':')
-      keys.add(path.split('.')[0])
+      const inner = match[2]
+      const [rawPath] = inner.split(':')
+      // Fallback chains: split by '|', skip quoted literals, take top-level key
+      const alternatives = rawPath.split('|')
+      for (const alt of alternatives) {
+        const a = alt.trim()
+        if (a.startsWith("'") && a.endsWith("'")) continue // skip literal fallbacks
+        keys.add(a.split('.')[0])
+      }
     }
   }
   return keys

@@ -210,7 +210,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                             variant="full"
                             entityLabel="hr.payroll"
                             title={(payroll as Payroll & Record<string, unknown>).employee_name as string || '---'}
-                            subtitle={payroll.period_label || payroll.display_id}
 
                             actions={payrollActions.render(payroll, actionsCtx)}
                             defaultAction={() => openDetail(payroll.id)}

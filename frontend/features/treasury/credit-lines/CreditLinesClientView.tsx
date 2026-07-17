@@ -111,7 +111,6 @@ export function CreditLinesClientView({ bankId }: Props) {
                         variant="full"
                         entityLabel="treasury.creditline"
                         title={line.account_name}
-                        subtitle={line.code}
                     >
                         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border/50">
                             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingLine(line); setDrawerOpen(true) }}>

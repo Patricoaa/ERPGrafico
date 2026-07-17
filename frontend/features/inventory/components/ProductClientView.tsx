@@ -503,15 +503,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
                                 iconClassName="bg-muted"
                                 title={product.name}
-                                subtitle={
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-mono text-xs">{product.code}</span>
-                                        <StatusBadge
-                                            status={product.is_active ? "active" : "inactive"}
-                                            size="sm"
-                                        />
-                                    </div>
-                                }
                                 actions={productActions.render(product, actionsCtx)}
                                 defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
                                 onClick={() => openSelected(product.id)}
