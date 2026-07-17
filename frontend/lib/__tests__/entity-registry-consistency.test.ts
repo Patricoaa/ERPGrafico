@@ -45,6 +45,25 @@ function extractRegistryKeys(src: string): string[] {
   return keys.sort();
 }
 
+/**
+ * Returns a Map<key, blockText> for each entity in the registry.
+ * The block text spans from the entity opening to just before the next entity (or EOF).
+ */
+function extractEntityBlocks(src: string): Map<string, string> {
+  const re = /'([a-z]+\.[a-z]+)':\s*\{/g;
+  const blocks = new Map<string, string>();
+  const starts: Array<{ key: string; start: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src)) !== null) {
+    starts.push({ key: m[1], start: m.index });
+  }
+  for (let i = 0; i < starts.length; i++) {
+    const end = i + 1 < starts.length ? starts[i + 1].start : src.length;
+    blocks.set(starts[i].key, src.slice(starts[i].start, end));
+  }
+  return blocks;
+}
+
 describe('entity registry consistency', () => {
   const drawerLabels = extractDrawerKeys(drawersSrc);
   const registryLabels = extractRegistryKeys(registrySrc);
@@ -72,5 +91,37 @@ describe('entity registry consistency', () => {
   it('registers at least one entity', () => {
     expect(registryLabels.length).toBeGreaterThan(0);
     expect(drawerLabels.length).toBeGreaterThan(0);
+  });
+
+  it('every entity with card view has viewPolicy defined', () => {
+    const blocks = extractEntityBlocks(registrySrc);
+    const missing: string[] = [];
+    for (const [key, block] of blocks) {
+      if (block.includes("'card'") && !block.includes('viewPolicy:')) {
+        missing.push(key);
+      }
+    }
+    if (missing.length > 0) {
+      console.log('Entities with card view but no viewPolicy:', missing);
+    }
+    expect(missing).toEqual([]);
+  });
+
+  it('every viewPolicy has availableViews and defaultView', () => {
+    const blocks = extractEntityBlocks(registrySrc);
+    const invalid: Array<{ key: string; missing: string[] }> = [];
+    for (const [key, block] of blocks) {
+      if (!block.includes('viewPolicy:')) continue;
+      const missing: string[] = [];
+      if (!block.includes('availableViews:')) missing.push('availableViews');
+      if (!block.includes('defaultView:')) missing.push('defaultView');
+      if (missing.length > 0) {
+        invalid.push({ key, missing });
+      }
+    }
+    if (invalid.length > 0) {
+      console.log('Entities with incomplete viewPolicy:', invalid);
+    }
+    expect(invalid).toEqual([]);
   });
 });
