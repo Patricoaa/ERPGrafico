@@ -4,12 +4,10 @@ import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { ActionConfirmModal, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import {
     Building2,
-    Smartphone,
-    CreditCard,
     User as UserIcon
 } from "lucide-react"
 
@@ -256,34 +254,12 @@ export function PaymentHardwareClientView({
                                 fields={terminalDeviceFields}
                                 variant="full"
                                 entityLabel="treasury.paymentterminaldevice"
-                                title={
-                                    <div className="flex items-center gap-2">
-                                        <Smartphone className="h-4 w-4 text-info" />
-                                        {device.name}
-                                    </div>
-                                }
+                                title={device.name}
                                 actions={deviceActions.render(device, deviceActionsCtx)}
                                 onClick={() => openDeviceSelected(device.id)}
                                 defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}
-                            >
-                                {/* Escape hatch: custom footer with payment method badges, label prefix, and empty state */}
-                                <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
-                                    <div className="flex items-center gap-1.5 w-full">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>
-                                        {device.supported_payment_methods?.includes(2) && (
-                                            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
-                                        )}
-                                        {device.supported_payment_methods?.includes(1) && (
-                                            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
-                                        )}
-                                        {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
-                                            <span className="text-[10px] italic opacity-50">SIN CONFIG</span>
-                                        )}
-                                    </div>
-                                </EntityCard.Footer>
-                            </AutoEntityCard>
+                            />
                         )}
-                        cardSkeleton={{ showFooter: true }}
                     />
                 </div>
             )}

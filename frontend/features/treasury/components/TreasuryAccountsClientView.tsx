@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
-import { AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { treasuryAccountUnifiedSearchDef } from "../unifiedSearchDef"
 import {
     type ColumnDef,
@@ -247,9 +247,6 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                 description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
                             }}
                             renderCard={(acc: TreasuryAccount) => {
-                                const name = acc.account_name
-                                const providers = acc.terminal_providers ?? []
-                                const hasBank = !!acc.bank
                                 const typeKey = acc.account_type?.toUpperCase()
                                 const Icon = accountTypeIcons[typeKey]
                                 const iconStyle = accountTypeIconStyles[typeKey]
@@ -277,28 +274,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                         iconClassName={iconStyle}
                                         actions={treasuryAccountActions.render(acc, actionsCtx)}
                                         variant="full"
-                                    >
-                                        {/* Escape hatch: combined metrics (account_code + name) — custom multi-value rendering */}
-                                        <EntityCard.Metrics metrics={[
-                                            ...(name ? [{
-                                                label: 'Cta. Contable',
-                                                value: (
-                                                    <span className="flex items-center gap-1.5">
-                                                        <DataCell.Code>{acc.account_code}</DataCell.Code>
-                                                        <span className="text-muted-foreground/20">·</span>
-                                                        <DataCell.Text>{name}</DataCell.Text>
-                                                    </span>
-                                                ),
-                                            }] : [{
-                                                label: 'Cta. Contable',
-                                                value: <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>,
-                                            }]),
-                                            ...(hasBank ? [{
-                                                label: 'Entidad Externa',
-                                                value: <DataCell.Text>{acc.bank_name}</DataCell.Text>,
-                                            }] : []),
-                                        ]} />
-                                    </AutoEntityCard>
+                                    />
                                 )
                             }}
                         />
