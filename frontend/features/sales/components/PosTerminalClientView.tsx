@@ -4,69 +4,19 @@ import { useMemo } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { usePosTerminals } from "@/features/sales"
 import type { Terminal } from "@/features/treasury"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { ActionConfirmModal, DataTableView, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { Badge } from "@/components/ui/badge"
+import { ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { type ColumnDef } from "@tanstack/react-table"
 import { posTerminalFields } from "../posTerminalFields"
-import { Plus, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
+import { Plus } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
-
-const PAYMENT_TYPE_ORDER = ['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER', 'CHECK', 'OTHER'] as const
-
-type PaymentTypeMeta = {
-    label: string
-    Icon: typeof Banknote
-    iconColorClass: string
-    badgeVariant: "default" | "secondary" | "info" | "warning" | "success" | "outline"
-}
-
-const PAYMENT_TYPE_META: Record<string, PaymentTypeMeta> = {
-    CASH: {
-        label: "Efectivo",
-        Icon: Banknote,
-        iconColorClass: "text-success",
-        badgeVariant: "outline",
-    },
-    CARD: {
-        label: "Tarjeta",
-        Icon: CreditCard,
-        iconColorClass: "text-info",
-        badgeVariant: "outline",
-    },
-    CARD_TERMINAL: {
-        label: "Terminal",
-        Icon: Smartphone,
-        iconColorClass: "text-primary",
-        badgeVariant: "outline",
-    },
-    TRANSFER: {
-        label: "Transferencia",
-        Icon: Landmark,
-        iconColorClass: "text-primary",
-        badgeVariant: "outline",
-    },
-    CHECK: {
-        label: "Cheque",
-        Icon: FileCheck,
-        iconColorClass: "text-warning",
-        badgeVariant: "outline",
-    },
-    OTHER: {
-        label: "Otros",
-        Icon: MoreHorizontal,
-        iconColorClass: "text-muted-foreground",
-        badgeVariant: "outline",
-    },
-}
 
 interface PosTerminalClientViewProps {
     externalOpen?: boolean
@@ -170,21 +120,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                             <Plus className="mr-2 h-4 w-4" /> Crear Caja
                         </Button>
                     )}
-                    renderCard={(terminal: Terminal) => {
-                        const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
-                            let type = method.method_type
-                            if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
-                                type = 'CARD'
-                            }
-                            if (!acc[type]) acc[type] = 0
-                            acc[type]++
-                            return acc
-                        }, {} as Record<string, number>)
-
-                        const orderedTypes = PAYMENT_TYPE_ORDER.filter(t => methodsByType[t] !== undefined)
-                        const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
-
-                        return (
+                    renderCard={(terminal: Terminal) => (
                             <AutoEntityCard 
                                 key={terminal.id} 
                                 data={terminal}
@@ -197,38 +133,8 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                                 defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} 
                                 className={!terminal.is_active ? "grayscale bg-muted/20" : ""}
                                 actions={posTerminalActions.render(terminal, actionsCtx)}
-                            >
-                                {/* Escape hatch: custom footer with payment method badges, empty state, and count */}
-                                <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t gap-2">
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                        {orderedTypes.map(type => {
-                                            const meta = PAYMENT_TYPE_META[type]
-                                            const Icon = meta.Icon
-                                            return (
-                                                <Badge
-                                                    key={type}
-                                                    variant={meta.badgeVariant}
-                                                    className="h-5 gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-wide"
-                                                >
-                                                    <Icon className={cn("h-3 w-3", meta.iconColorClass)} />
-                                                    {meta.label}
-                                                </Badge>
-                                            )
-                                        })}
-                                        {totalMethods === 0 && (
-                                            <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
-                                        )}
-                                    </div>
-                                    {totalMethods > 0 && (
-                                        <span className="text-[10px] font-semibold text-muted-foreground/70 whitespace-nowrap">
-                                            {totalMethods} {totalMethods === 1 ? "método" : "métodos"}
-                                        </span>
-                                    )}
-                                </EntityCard.Footer>
-                            </AutoEntityCard>
-                        )
-                    }}
-                    cardSkeleton={{ showFooter: true }}
+                            />
+                        )}
                 />
             </div>
 

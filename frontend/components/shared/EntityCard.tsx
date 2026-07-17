@@ -263,7 +263,7 @@ function EntityCardField({ label, value, full, className, icon: Icon }: EntityCa
             <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
                 {label}
             </span>
-            <span className="flex items-center gap-1 truncate text-xs font-medium text-foreground/80">
+            <span className="flex items-center gap-1 text-xs font-medium text-foreground/80">
                 {Icon && <Icon className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
                 {value ?? <span className="text-muted-foreground/40">—</span>}
             </span>

@@ -2,15 +2,11 @@
 import { formatCurrency } from "@/lib/money";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
     CheckCircle2,
     AlertCircle,
-    ArrowRight,
-    DollarSign,
     Package,
-    History as HistoryIcon
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -342,15 +338,12 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                             <div className="grid gap-3 pt-2">
                                 {rows.map((row: Row<TaxPeriod>) => {
                                     const period = row.original
-                                    const summary = period.declaration_summary
-                                    const isFullyPaid = summary?.is_fully_paid
-                                    const showPaymentButton = !!summary || period.status === 'CLOSED'
                                     const canOpenChecklist = period.status === 'OPEN'
 
-                                    return (
+                                        return (
                                         <AutoEntityCard
                                             key={period.id}
-variant="summary"
+                                            variant="summary"
                                             data={period}
                                             fields={taxPeriodFields}
                                             title={period.month_display + " " + period.year}
@@ -359,39 +352,8 @@ variant="summary"
                                                 canOpenChecklist ? "cursor-pointer" : "cursor-default"
                                             )}
                                             onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
-                                        >
-                                            <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/50">
-                                                {showPaymentButton && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className={cn("rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleOpenPayment(period);
-                                                        }}
-                                                        title={isFullyPaid ? "Ver Pagos" : "Pagar"}
-                                                    >
-                                                        {isFullyPaid ? <HistoryIcon className="h-4 w-4 mr-2" /> : <DollarSign className="h-4 w-4 mr-2" />}
-                                                        {isFullyPaid ? "Ver Pagos" : "Pagar F29"}
-                                                    </Button>
-                                                )}
-                                                {canOpenChecklist && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="rounded-sm"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleOpenWizard(period);
-                                                        }}
-                                                        title="Iniciar declaración/cierre F29"
-                                                    >
-                                                        Continuar F29 <ArrowRight className="h-4 w-4 ml-2 text-primary" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </AutoEntityCard>
+                                            actions={taxDeclarationActions.render(period, taxDeclarationActionsCtx)}
+                                        />
                                     )
                                 })}
                             </div>

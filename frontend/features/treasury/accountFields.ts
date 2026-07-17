@@ -16,4 +16,25 @@ export const accountFields = createEntityFields<TreasuryAccount>()({
         currency: (e) => e.currency,
         tableOptions: { align: "right" },
     },
+    account_code: {
+        key: "account_code",
+        type: "code",
+        label: "Cta. Contable",
+        get: (e) => e.account_code,
+        cardPlacement: 'footer',
+    },
+    account_name: {
+        key: "account_name",
+        type: "text",
+        label: "Nombre Cuenta",
+        get: (e) => e.account_name,
+        cardPlacement: 'footer',
+    },
+    bank_name: {
+        key: "bank_name",
+        type: "text",
+        label: "Entidad",
+        get: (e) => e.bank_name,
+        cardPlacement: 'footer',
+    },
 })
