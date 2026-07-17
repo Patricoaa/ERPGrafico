@@ -190,10 +190,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                             : m.reversal_of
                                 ? "text-warning bg-warning/10"
                                 : "text-success bg-success/10"
+                        const totalDebit = m.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0
                         return (
                             <AutoEntityCard
                                 key={m.id}
-                                data={m}
+                                data={{ ...m, total_debit: totalDebit }}
                                 fields={journalEntryFields}
                                 entityLabel="accounting.journalentry"
                                 icon={Icon}

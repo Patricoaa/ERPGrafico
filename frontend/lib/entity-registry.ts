@@ -434,7 +434,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     iconName: 'Hash',
     description: 'Registro contable de movimientos',
     shortTemplate: 'AS-{number}',
-    subtitleSuffixTemplate: '{date:date}',
+    subtitleSuffixTemplate: '{date:date} · {total_debit}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
