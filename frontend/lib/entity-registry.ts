@@ -1205,43 +1205,40 @@ function resolvePath(path: string, data: Record<string, unknown>): unknown {
 
 function parseTemplateToItems(template: string, data: Record<string, unknown>): SubtitleItem[] {
   const items: SubtitleItem[] = [];
-  const segments = template.split(/\s*·\s*/);
-  for (const seg of segments) {
-    const trimmed = seg.trim();
-    if (!trimmed) continue;
-    // Support mixed patterns like "POS-{id}" or "EMP-{code} {contact.tax_id}"
-    const regex = /\{([^}]+)\}/g;
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    let hasPlaceholder = false;
-    while ((match = regex.exec(trimmed)) !== null) {
-      hasPlaceholder = true;
-      // Push literal text before this placeholder
-      if (match.index > lastIndex) {
-        items.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
-      }
-      const [path, format] = match[1].split(':');
-      const value = resolvePath(path, data);
-      if (value === undefined || value === null) {
-        lastIndex = regex.lastIndex;
-        continue;
-      }
-      if (format === 'date') {
-        items.push({ kind: 'date', value: String(value) });
-      } else if (format === 'currency') {
-        items.push({ kind: 'currency', value: Number(value) });
-      } else {
-        items.push({ kind: 'text', content: String(value) });
-      }
+  const trimmed = template.trim();
+  if (!trimmed) return items;
+  // Support mixed patterns like "POS-{id}" or "EMP-{code} {contact.tax_id}"
+  const regex = /\{([^}]+)\}/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let hasPlaceholder = false;
+  while ((match = regex.exec(trimmed)) !== null) {
+    hasPlaceholder = true;
+    // Push literal text before this placeholder
+    if (match.index > lastIndex) {
+      items.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
+    }
+    const [path, format] = match[1].split(':');
+    const value = resolvePath(path, data);
+    if (value === undefined || value === null) {
       lastIndex = regex.lastIndex;
+      continue;
     }
-    if (!hasPlaceholder) {
-      // Pure literal text (no placeholders at all)
-      items.push({ kind: 'text', content: trimmed });
-    } else if (lastIndex < trimmed.length) {
-      // Trailing literal text after last placeholder
-      items.push({ kind: 'text', content: trimmed.slice(lastIndex) });
+    if (format === 'date') {
+      items.push({ kind: 'date', value: String(value) });
+    } else if (format === 'currency') {
+      items.push({ kind: 'currency', value: Number(value) });
+    } else {
+      items.push({ kind: 'text', content: String(value) });
     }
+    lastIndex = regex.lastIndex;
+  }
+  if (!hasPlaceholder) {
+    // Pure literal text (no placeholders at all)
+    items.push({ kind: 'text', content: trimmed });
+  } else if (lastIndex < trimmed.length) {
+    // Trailing literal text after last placeholder
+    items.push({ kind: 'text', content: trimmed.slice(lastIndex) });
   }
   return items;
 }
