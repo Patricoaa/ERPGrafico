@@ -24,4 +24,11 @@ export const attributeFields = createEntityFields<ProductAttribute>()({
         label: "Valores",
         get: (a) => `${a.values?.length ?? 0} valores`,
     },
+    values: {
+        key: "values",
+        type: "chip",
+        label: "Valores",
+        get: (a) => a.values?.map(v => v.value).join(', ') ?? '',
+        cardPlacement: 'detail',
+    },
 })

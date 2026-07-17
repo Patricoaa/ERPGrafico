@@ -15,7 +15,6 @@ import {
     DataCell,
     MoneyDisplay,
     AutoEntityCard,
-    EntityCard,
     StatusBadge,
     UnifiedSearchBar,
     useUnifiedSearch,
@@ -533,19 +532,7 @@ export function UnbilledChargesClientView({
                             entityLabel="treasury.unbilledcharge"
                             title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
                             subtitle={item.date}
-                        >
-                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                                    Monto
-                                </span>
-                                <DataCell.Currency
-                                    value={item.amount}
-                                    currency={currency}
-                                    weight="bold"
-                                    size="lg"
-                                />
-                            </EntityCard.Footer>
-                        </AutoEntityCard>
+                        />
                     )}
                     cardSkeleton={{ showFooter: true }}
                 />

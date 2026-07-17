@@ -29,18 +29,19 @@ type FieldSurface = "table" | "card" | "kanban"
 
 type ChipIntent = "neutral" | "primary" | "success" | "warning" | "destructive" | "info"
 type FlowDirection = "inflow" | "outflow" | "neutral"
-type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type'
+type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method'
 
 // ─── Card Placement System ────────────────────────────────────────────────────
 
 /**
- * Card zones — the 4 layout regions in an EntityCard.
+ * Card zones — the 5 layout regions in an EntityCard.
  * - `title`: replaces the auto-generated title (identifier field)
  * - `header`: compact badges/values in the header trailing area
  * - `detail`: label:value grid in EntityCard.Body
  * - `metric`: equal-width columns in EntityCard.Metrics
+ * - `footer`: summary row in EntityCard.Footer (always explicit)
  */
-export type CardPlacement = 'title' | 'header' | 'detail' | 'metric'
+export type CardPlacement = 'title' | 'header' | 'detail' | 'metric' | 'footer'
 
 /**
  * Semantic role of a field — determines its default CardPlacement.

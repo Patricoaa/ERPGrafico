@@ -13,7 +13,7 @@ import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { type ColumnDef } from "@tanstack/react-table"
 import { posTerminalFields } from "../posTerminalFields"
-import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
+import { Plus, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -198,20 +198,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                                 className={!terminal.is_active ? "grayscale bg-muted/20" : ""}
                                 actions={posTerminalActions.render(terminal, actionsCtx)}
                             >
-                                <EntityCard.Body>
-                                    <EntityCard.Field
-                                        label="Ubicación"
-                                        value={terminal.location || "No especificada"}
-                                        icon={MapPin}
-                                    />
-                                    {terminal.payment_terminal_device && (
-                                        <EntityCard.Field
-                                            label="Dispositivo"
-                                            value={terminal.payment_terminal_device_name || "Vinculado"}
-                                            icon={Smartphone}
-                                        />
-                                    )}
-                                </EntityCard.Body>
+                                {/* Escape hatch: custom footer with payment method badges, empty state, and count */}
                                 <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t gap-2">
                                     <div className="flex flex-wrap items-center gap-1.5">
                                         {orderedTypes.map(type => {

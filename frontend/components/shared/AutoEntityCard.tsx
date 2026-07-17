@@ -40,21 +40,23 @@ export interface AutoEntityCardProps<TData> {
     subtitle?: React.ReactNode
     /** Optional center slot to render in the header */
     center?: React.ReactNode
-    /** Optional children to render custom blocks like Metrics or Footer inside the card */
+    /** Optional children to render custom blocks inside the card (escape hatch for content not expressible as fields) */
     children?: React.ReactNode
     /**
      * Unified card variant — controls layout zones, field placement, and root styling.
      * - 'highlights': dashboard/summary — header only, detail/metric fields hidden
      * - 'summary': management, dense — header + metrics, detail hidden
      * - 'full': management, complete — header + detail + metrics (DEFAULT)
+     * - 'workflow': documents with line items — header + detail + metrics + workflow body (driven by cardConfig.workflow in entity-registry)
      */
-    variant?: 'highlights' | 'summary' | 'full'
+    variant?: 'highlights' | 'summary' | 'full' | 'workflow'
     /**
-     * Hub status renderer — called for summary/full variants to render domain-specific
+     * Hub status renderer — called for summary/full/workflow variants to render domain-specific
      * status content in the header center area.
      */
     hubStatusRenderer?: (data: TData) => React.ReactNode
     /**
+     * @deprecated Use variant="workflow" instead. AutoEntityCard reads cardConfig.workflow from entity-registry.
      * Workflow renderer — called for full variant to render workflow body content
      * (line items, totals, pending, delivery date).
      */
@@ -72,6 +74,67 @@ export interface AutoEntityCardProps<TData> {
     }
 }
 
+// ─── Workflow Data Extraction ─────────────────────────────────────────────────
+
+interface WorkflowConfig {
+    linesKey?: string | ((data: Record<string, unknown>) => Array<Record<string, unknown>>)
+    totalKey?: string | ((data: Record<string, unknown>) => number)
+    pendingKey?: string | ((data: Record<string, unknown>) => number | undefined)
+    deliveryDateKey?: string | ((data: Record<string, unknown>) => string | undefined)
+    dateLabel?: string
+}
+
+interface WorkflowData {
+    lines: Array<{ quantity: number | string; product_name?: string }>
+    total: number
+    pending?: number
+    deliveryDate?: string
+    dateLabel: string
+}
+
+function resolveKey<T>(value: T | ((data: Record<string, unknown>) => T), data: Record<string, unknown>): T {
+    return typeof value === 'function' ? (value as (d: Record<string, unknown>) => T)(data) : value
+}
+
+function extractWorkflowData(
+    data: unknown,
+    workflowConfig: WorkflowConfig | undefined,
+    fallbackDateLabel: string,
+): WorkflowData | null {
+    if (!workflowConfig) return null
+
+    const d = (typeof data === 'object' && data !== null ? data : {}) as Record<string, unknown>
+
+    const linesRaw = typeof workflowConfig.linesKey === 'function'
+        ? workflowConfig.linesKey(d)
+        : (d[workflowConfig.linesKey ?? 'lines'] as Array<Record<string, unknown>> | undefined)
+    const lines = (Array.isArray(linesRaw) ? linesRaw : []).map(l => ({
+        quantity: l.quantity as number | string,
+        product_name: l.product_name as string | undefined,
+    }))
+
+    if (lines.length === 0) return null
+
+    const total = typeof workflowConfig.totalKey === 'function'
+        ? workflowConfig.totalKey(d)
+        : parseFloat(String(d[workflowConfig.totalKey ?? 'total'] ?? 0))
+
+    const pending = typeof workflowConfig.pendingKey === 'function'
+        ? workflowConfig.pendingKey(d)
+        : (() => {
+            const raw = d[workflowConfig.pendingKey ?? 'pending_amount']
+            return raw != null ? parseFloat(String(raw)) : undefined
+        })()
+
+    const deliveryDate = typeof workflowConfig.deliveryDateKey === 'function'
+        ? workflowConfig.deliveryDateKey(d)
+        : (d[workflowConfig.deliveryDateKey ?? 'delivery_date'] as string | undefined)
+
+    const dateLabel = workflowConfig.dateLabel ?? fallbackDateLabel
+
+    return { lines, total, pending: pending != null && pending > 0 ? pending : undefined, deliveryDate: deliveryDate || undefined, dateLabel }
+}
+
 // ─── Field Classification ─────────────────────────────────────────────────────
 
 interface ClassifiedFields {
@@ -80,6 +143,7 @@ interface ClassifiedFields {
     centerDetail: CardField[]
     bodyDetail: CardField[]
     metric: CardField[]
+    footer: CardField[]
 }
 
 /**
@@ -111,6 +175,7 @@ function classifyFields<TData>(
     let metric = rest.filter(f => f.cardPlacement === 'metric')
     const flows = rest.filter(f => f.fieldRole === 'flow')
     const header = rest.filter(f => f.cardPlacement === 'header' && f.fieldRole !== 'flow')
+    const footer = rest.filter(f => f.cardPlacement === 'footer')
 
     // Apply variant visibility
     switch (variant) {
@@ -124,6 +189,7 @@ function classifyFields<TData>(
             detail = []
             break
 
+        case 'workflow':
         case 'full':
         default:
             // All zones visible — balance header if too many
@@ -138,7 +204,7 @@ function classifyFields<TData>(
     const centerDetail = flows.length > 0 ? flows : detail
     const bodyDetail = flows.length > 0 ? detail : []
 
-    return { title, header, centerDetail, bodyDetail, metric }
+    return { title, header, centerDetail, bodyDetail, metric, footer }
 }
 
 /**
@@ -170,29 +236,28 @@ function buildSubtitleItems<TData>(
 
 /**
  * AutoEntityCard - A standardized card component for Master Data entities.
- * 
+ *
  * Automatically generates the EntityCard layout using the fields defined in `createEntityFields`.
- * - Uses `cardPlacement` metadata ('title', 'header', 'detail', 'metric') to position fields.
+ * - Uses `cardPlacement` metadata ('title', 'header', 'detail', 'metric', 'footer') to position fields.
  * - Uses `variant` to control which layout zones are visible.
- * - Supports `hubStatusRenderer` for summary/full variants.
- * - Supports `workflowRenderer` for full variant.
+ * - `variant='workflow'` automatically renders the workflow body from cardConfig.workflow in entity-registry.
  * - Auto-generates subtitle from registry when no explicit subtitle is provided.
  */
-export function AutoEntityCard<TData>({ 
-    data, 
-    fields, 
+export function AutoEntityCard<TData>({
+    data,
+    fields,
     entityLabel,
     title: explicitTitle,
     subtitle: explicitSubtitle,
     center,
-    icon, 
+    icon,
     iconClassName,
-    actions, 
-    defaultAction, 
+    actions,
+    defaultAction,
     onClick,
     isSelected,
     className,
-    imageSrc, 
+    imageSrc,
     trailing,
     children,
     variant = 'full',
@@ -208,7 +273,7 @@ export function AutoEntityCard<TData>({
     const subtitleFieldKeys = entityLabel ? getSubtitleFieldKeys(entityLabel) : new Set<string>()
 
     const cardFields = fields.toCardFields(data)
-    
+
     // 1. Classify fields into layout zones
     const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys)
 
@@ -250,7 +315,7 @@ export function AutoEntityCard<TData>({
     )
 
     const centerContent = center ?? (
-        hubStatusRenderer && (effectiveVariant === 'summary' || effectiveVariant === 'full')
+        hubStatusRenderer && (effectiveVariant === 'summary' || effectiveVariant === 'full' || effectiveVariant === 'workflow')
             ? hubStatusRenderer(data)
             : centerDetailNode || undefined
     )
@@ -267,8 +332,9 @@ export function AutoEntityCard<TData>({
         })
         : undefined
 
-    // 7. Determine EntityCard variant (compact padding if no body detail/metric)
-    const entityCardVariant = (classified.bodyDetail.length === 0 && classified.metric.length === 0) ? "compact" : "full"
+    // 7. Determine EntityCard variant (compact padding if no body detail/metric and no footer/workflow)
+    const hasBodyContent = classified.bodyDetail.length > 0 || classified.metric.length > 0 || classified.footer.length > 0
+    const entityCardVariant = hasBodyContent ? "full" : "compact"
 
     // 8. Build combined actions: existing actions + hub trigger
     const hubTriggerNode = hubTrigger ? (
@@ -285,13 +351,21 @@ export function AutoEntityCard<TData>({
         </>
     ) : actions
 
+    // 9. Extract workflow data for workflow variant (from entity-registry cardConfig)
+    const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
+    const workflowConfig = entityMetadata?.cardConfig?.workflow
+    const fallbackDateLabel = typeof entityMetadata?.cardConfig?.dateLabel === 'function'
+        ? entityMetadata.cardConfig.dateLabel({})
+        : entityMetadata?.cardConfig?.dateLabel ?? 'Entrega'
+    const workflowData = effectiveVariant === 'workflow' ? extractWorkflowData(data, workflowConfig, fallbackDateLabel) : null
+
     return (
         <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={entityCardVariant}>
-            <EntityCard.Header 
+            <EntityCard.Header
                 icon={icon}
                 iconClassName={iconClassName}
                 imageSrc={imageSrc ?? undefined}
-                title={displayTitle} 
+                title={displayTitle}
                 subtitle={subtitleNode}
                 center={centerContent}
                 actions={combinedActions}
@@ -310,8 +384,27 @@ export function AutoEntityCard<TData>({
                     value: f.value,
                 }))} />
             )}
+            {classified.footer.length > 0 && (
+                <EntityCard.Footer>
+                    {classified.footer.map(field => (
+                        <div key={field.key} className={cn("flex flex-col items-end", field.cardClassName)}>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{field.label}</span>
+                            {field.value}
+                        </div>
+                    ))}
+                </EntityCard.Footer>
+            )}
             {children}
-            {effectiveVariant === 'full' && workflowRenderer && (
+            {workflowData && (
+                <EntityCard.WorkflowBody
+                    lines={workflowData.lines}
+                    total={workflowData.total}
+                    pending={workflowData.pending}
+                    deliveryDate={workflowData.deliveryDate}
+                    dateLabel={workflowData.dateLabel}
+                />
+            )}
+            {!workflowData && effectiveVariant === 'full' && workflowRenderer && (
                 <EntityCard.Body>
                     {workflowRenderer(data)}
                 </EntityCard.Body>

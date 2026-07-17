@@ -266,6 +266,7 @@ export function PaymentHardwareClientView({
                                 onClick={() => openDeviceSelected(device.id)}
                                 defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}
                             >
+                                {/* Escape hatch: custom footer with payment method badges, label prefix, and empty state */}
                                 <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
                                     <div className="flex items-center gap-1.5 w-full">
                                         <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>

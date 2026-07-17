@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, EntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createHubTriggerColumn } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createHubTriggerColumn } from '@/components/shared'
 import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
@@ -176,26 +176,16 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={iconClassName}
+                                hubTrigger={{
+                                    isSelected: getSelectionId(data),
+                                    onToggle: () => toggleSelection(data.id),
+                                }}
                                 hubStatusRenderer={(hubData) => (
                                     <div className="hidden sm:flex items-center gap-3">
                                         <DomainHubStatus label={label} data={hubData as Record<string, unknown>} />
                                     </div>
                                 )}
-                                workflowRenderer={(wfData) => {
-                                    const wd = wfData as unknown as Record<string, unknown>
-                                    const wfTotal = parseFloat(String(wd.total || wd.effective_total || wd.balance || 0))
-                                    const wfPending = parseFloat(String(wd.pending_amount || 0))
-                                    const wfHasPending = wfTotal > 0 && wfPending > 0
-                                    return ((wd.lines || wd.items || []) as Array<Record<string, unknown>>).length > 0 ? (
-                                        <EntityCard.WorkflowBody
-                                            lines={((wd.lines || wd.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
-                                            total={wfTotal}
-                                            pending={wfHasPending ? wfPending : undefined}
-                                            deliveryDate={wd.delivery_date as string | undefined}
-                                        />
-                                    ) : null
-                                }}
-                                variant="full"
+                                variant="workflow"
                             />
                         )
                     }}

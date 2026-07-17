@@ -137,6 +137,7 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                             icon={Landmark}
                             actions={bankActions.render(bank, bankActionsCtx)}
                         >
+                            {/* Escape hatch: metrics from external DTO (overview.summary), not Bank entity fields */}
                             <EntityCard.Metrics metrics={[
                                 { label: 'Cuentas', value: <DataCell.Number value={overview?.summary.total_accounts ?? 0} /> },
                                 { label: 'Tarjetas', value: <DataCell.Number value={overview?.summary.card_count ?? 0} /> },

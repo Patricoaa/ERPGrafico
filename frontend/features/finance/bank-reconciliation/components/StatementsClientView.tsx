@@ -269,6 +269,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                             title={stmt.display_id}
                             subtitle={stmt.treasury_account_name}
                         >
+                            {/* Escape hatch: action buttons (Reconciliar, Ver Detalle) — not expressible as fields */}
                             <EntityCard.Footer>
                                 <div className="flex items-center gap-2">
                                     {stmt.state !== 'CONFIRMED' && stmt.reconciliation_progress < 100 && (

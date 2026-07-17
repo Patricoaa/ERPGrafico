@@ -278,6 +278,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                         actions={treasuryAccountActions.render(acc, actionsCtx)}
                                         variant="full"
                                     >
+                                        {/* Escape hatch: combined metrics (account_code + name) — custom multi-value rendering */}
                                         <EntityCard.Metrics metrics={[
                                             ...(name ? [{
                                                 label: 'Cta. Contable',

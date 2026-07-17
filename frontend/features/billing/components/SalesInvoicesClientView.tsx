@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DataCell, AutoEntityCard, EntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus, createHubTriggerColumn } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DataCell, AutoEntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus, createHubTriggerColumn } from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
@@ -149,6 +149,10 @@ export function SalesInvoicesClientView() {
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={iconClassName}
+                                hubTrigger={{
+                                    isSelected: hubConfig?.invoiceId === data.id,
+                                    onToggle: () => toggleSelection(data),
+                                }}
                                 hubStatusRenderer={(hubData) => {
                                     const hubD = hubData as unknown as Record<string, unknown>
                                     return (
@@ -174,21 +178,7 @@ export function SalesInvoicesClientView() {
                                     </div>
                                     )
                                 }}
-                                workflowRenderer={(wfData) => {
-                                    const wd = wfData as unknown as Record<string, unknown>
-                                    const wfTotal = parseFloat(String(wd.total || 0))
-                                    const wfPending = parseFloat(String(wd.pending_amount || 0))
-                                    const wfHasPending = wfTotal > 0 && wfPending > 0
-                                    return ((wd.lines || wd.items || []) as Array<Record<string, unknown>>).length > 0 ? (
-                                        <EntityCard.WorkflowBody
-                                            lines={((wd.lines || wd.items || []) as Array<Record<string, unknown>>).map(l => ({ quantity: l.quantity as number | string, product_name: l.product_name as string }))}
-                                            total={wfTotal}
-                                            pending={wfHasPending ? wfPending : undefined}
-                                            deliveryDate={wd.delivery_date as string | undefined}
-                                        />
-                                    ) : null
-                                }}
-                                variant="full"
+                                variant="workflow"
                             />
                         )
                     }}

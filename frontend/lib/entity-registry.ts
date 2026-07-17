@@ -31,7 +31,7 @@ export interface ViewPolicy {
    * - 'summary': management, dense — header + metrics, detail hidden
    * - 'full': management, complete — header + detail + metrics (DEFAULT)
    */
-  cardVariant?: 'highlights' | 'summary' | 'full';
+  cardVariant?: 'highlights' | 'summary' | 'full' | 'workflow';
 }
 
 export interface EntityMetadata {
@@ -68,22 +68,18 @@ export interface EntityMetadata {
     dateLabel?: string | ((data: Record<string, unknown>) => string)
     /** Static icon override (when the entity variant needs a different icon than ENTITY_REGISTRY) */
     icon?: string
-    /** Workflow body configuration for variant 'full' */
+    /** Workflow body configuration for variant 'workflow' */
     workflow?: {
-      /** Key in entity data that holds line items array */
-      linesKey?: string
-      /** Key for the total label (e.g. "Total neto", "Total") */
-      totalKey?: string
-      /** Whether the total is computed client-side or read from a field */
-      totalComputed?: boolean
-      /** Key for pending count */
-      pendingKey?: string
-      /** Key for delivery/receipt date */
-      deliveryDateKey?: string
+      /** Key or resolver for line items array */
+      linesKey?: string | ((data: Record<string, unknown>) => Array<Record<string, unknown>>)
+      /** Key or resolver for the total value */
+      totalKey?: string | ((data: Record<string, unknown>) => number)
+      /** Key or resolver for pending amount */
+      pendingKey?: string | ((data: Record<string, unknown>) => number | undefined)
+      /** Key or resolver for delivery/receipt date */
+      deliveryDateKey?: string | ((data: Record<string, unknown>) => string | undefined)
       /** Label for delivery date ("Entrega") */
       dateLabel?: string
-      /** Header label for the workflow section */
-      headerLabel?: string
     }
   }
 }
@@ -111,8 +107,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
       return String(customerName ?? data.partner_name ?? '---')
     },
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
-    cardConfig: { dateLabel: 'Entrega' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'workflow' },
+    cardConfig: {
+      dateLabel: 'Entrega',
+      workflow: {
+        linesKey: 'lines',
+        totalKey: (d) => parseFloat(String(d.total || 0)),
+        pendingKey: (d) => { const t = parseFloat(String(d.total || 0)); const p = parseFloat(String(d.pending_amount || 0)); return t > 0 && p > 0 ? p : undefined },
+        deliveryDateKey: 'delivery_date',
+        dateLabel: 'Entrega',
+      },
+    },
   },
   'sales.saledelivery': {
     label: 'sales.saledelivery',
@@ -161,8 +166,18 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/purchasing/orders/{id}',
     partnerField: 'supplier_name',
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
-    cardConfig: { iconClassName: 'text-info bg-info/10', dateLabel: 'Recepción' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'workflow' },
+    cardConfig: {
+      iconClassName: 'text-info bg-info/10',
+      dateLabel: 'Recepción',
+      workflow: {
+        linesKey: 'lines',
+        totalKey: (d) => parseFloat(String(d.total || d.effective_total || d.balance || 0)),
+        pendingKey: (d) => { const t = parseFloat(String(d.total || d.effective_total || d.balance || 0)); const p = parseFloat(String(d.pending_amount || 0)); return t > 0 && p > 0 ? p : undefined },
+        deliveryDateKey: (d) => String(d.delivery_date || d.receipt_date || ''),
+        dateLabel: 'Recepción',
+      },
+    },
   },
   'billing.invoice': {
     label: 'billing.invoice',
@@ -180,12 +195,19 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/billing/invoices/{id}',
     partnerField: (data) => String(data.partner_name ?? data.customer_name ?? data.supplier_name ?? '---'),
     workflowType: 'invoice',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'workflow' },
     cardConfig: {
       iconClassName: (data) => ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(data.dte_type ?? ''))
         ? 'text-warning bg-warning/10'
         : undefined,
       dateLabel: 'Entrega',
+      workflow: {
+        linesKey: 'lines',
+        totalKey: (d) => parseFloat(String(d.total || 0)),
+        pendingKey: (d) => { const t = parseFloat(String(d.total || 0)); const p = parseFloat(String(d.pending_amount || 0)); return t > 0 && p > 0 ? p : undefined },
+        deliveryDateKey: 'delivery_date',
+        dateLabel: 'Entrega',
+      },
     },
   },
   'production.workorder': {
