@@ -24,6 +24,7 @@ type FieldType =
     | "currencyFlow"
     | "sourceDest"
     | "chip-category"
+    | "computed"
 
 type FieldSurface = "table" | "card" | "kanban"
 
@@ -81,6 +82,7 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
     'currencyFlow':  'flow',
     'sourceDest':    'descriptive',
     'chip-category': 'tag',
+    'computed':      'descriptive',
 }
 
 /**
@@ -122,6 +124,12 @@ interface FieldDef<T> {
         width?: number
         enableSorting?: boolean
         align?: "left" | "center" | "right"
+        /** Custom sorting function — overrides default alphanumeric sort */
+        sortingFn?: (rowA: { original: T }, rowB: { original: T }, columnId: string) => number
+        /** Custom filter function — for multi-select or complex filters */
+        filterFn?: (row: { original: T }, id: string, value: unknown) => boolean
+        /** Custom accessor function — overrides accessorKey for computed/nested values */
+        accessorFn?: (row: T) => unknown
     }
     kanbanOptions?: {
         priority?: "primary" | "secondary"
@@ -159,6 +167,18 @@ interface FieldDef<T> {
     // Number / Text
     /** Suffix text — static or derived per entity (e.g. uom_name, "%"). */
     suffix?: string | ((entity: T) => string)
+
+    // Icon prefix (text, code, secondary, chip)
+    /** Optional icon prepended to the cell content. Ignored for card header rendering. */
+    icon?: LucideIcon | ((entity: T) => LucideIcon)
+
+    // Chip icon
+    /** Optional icon rendered inside Chip cells. */
+    chipIcon?: LucideIcon | ((entity: T) => LucideIcon)
+
+    // Computed type
+    /** Custom render callback — only used when type is 'computed'. Returns arbitrary ReactNode. */
+    render?: (entity: T) => ReactNode
 }
 
 export interface CardField {
@@ -206,21 +226,49 @@ function resolveDyn<TContext>(
 
 // ─── Cell Renderers ──────────────────────────────────────────────────────────
 
+function resolveIcon<T>(def: FieldDef<T>, entity: T): LucideIcon | undefined {
+    if (!def.icon) return undefined
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- T is unconstrained; icon is always LucideIcon | ((entity: T) => LucideIcon)
+    return typeof def.icon === 'function' ? (def.icon as (e: T) => LucideIcon)(entity) : def.icon
+}
+
+function IconPrefix({ icon: Icon }: { icon?: LucideIcon }) {
+    if (!Icon) return null
+    return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+}
+
 function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
     const value = resolveValue(def, entity)
     const extra = def.cellProps ?? {}
     const resolvedClassName = typeof def.className === "function"
         ? def.className(value, entity)
         : def.className
+    const icon = resolveIcon(def, entity)
 
     switch (def.type) {
+        case "computed":
+            return def.render ? def.render(entity) : null
         case "text": {
             const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
             const text = (value as string) ?? "-"
-            return <DataCell.Text className={resolvedClassName} {...extra}>{suffixValue ? `${text}${suffixValue}` : text}</DataCell.Text>
+            return (
+                <DataCell.Text className={resolvedClassName} {...extra}>
+                    <span className="flex items-center gap-1.5 justify-center">
+                        <IconPrefix icon={icon} />
+                        {suffixValue ? `${text}${suffixValue}` : text}
+                    </span>
+                </DataCell.Text>
+            )
         }
         case "code":
-            return <DataCell.Code className={resolvedClassName} {...extra}>{(value as string) ?? "-"}</DataCell.Code>
+            return (
+                <DataCell.Code className={resolvedClassName} {...extra}>
+                    <span className="flex items-center gap-1.5 justify-center">
+                        <IconPrefix icon={icon} />
+                        {(value as string) ?? "-"}
+                    </span>
+                </DataCell.Code>
+            )
         case "date":
             return <DataCell.Date value={value as string | Date} className={resolvedClassName} {...extra} />
         case "currency": {
@@ -239,6 +287,9 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
             )
         }
         case "status": {
+            if (value === null || value === undefined || value === "") {
+                return <DataCell.Text className={resolvedClassName} {...extra}>-</DataCell.Text>
+            }
             const labelValue = def.getLabel ? def.getLabel(entity) : undefined
             return (
                 <DataCell.Status
@@ -261,15 +312,26 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
             )
         }
         case "secondary":
-            return <DataCell.Secondary className={resolvedClassName} {...extra}>{(value as string) ?? "-"}</DataCell.Secondary>
+            return (
+                <DataCell.Secondary className={resolvedClassName} {...extra}>
+                    <span className="flex items-center gap-1.5 justify-center">
+                        <IconPrefix icon={icon} />
+                        {(value as string) ?? "-"}
+                    </span>
+                </DataCell.Secondary>
+            )
         case "contact":
             return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{(value as string) ?? "-"}</DataCell.ContactLink>
         case "chip": {
             const intentValue = typeof def.intent === "function" ? def.intent(entity) : def.intent
+            const chipIconValue = typeof def.chipIcon === "function"
+                ? (def.chipIcon as (e: T) => LucideIcon)(entity)
+                : def.chipIcon
             return (
                 <DataCell.Chip
                     className={resolvedClassName}
                     {...(intentValue !== undefined && { intent: intentValue })}
+                    {...(chipIconValue != null && { icon: chipIconValue })}
                     {...extra}
                 >
                     {String(value ?? "")}
@@ -370,9 +432,13 @@ export function createEntityFields<T>(): (
                     const enableSorting = def.tableOptions?.enableSorting ?? true
                     const align = def.tableOptions?.align ?? "center"
                     const headerAlign = align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
+                    const hasAccessorFn = !!def.tableOptions?.accessorFn
 
                     return {
-                        accessorKey: def.key,
+                        ...(hasAccessorFn
+                            ? { id: fieldKey, accessorFn: (row: T) => def.tableOptions!.accessorFn!(row) }
+                            : { accessorKey: def.key }
+                        ),
                         header: ({ column }) => (
                             <DataTableColumnHeader
                                 column={column}
@@ -383,6 +449,8 @@ export function createEntityFields<T>(): (
                         cell: ({ row }) => renderCell(def, row.original),
                         enableSorting,
                         size: def.tableOptions?.width,
+                        ...(def.tableOptions?.sortingFn && { sortingFn: def.tableOptions.sortingFn as never }),
+                        ...(def.tableOptions?.filterFn && { filterFn: def.tableOptions.filterFn as never }),
                     }
                 })
         },

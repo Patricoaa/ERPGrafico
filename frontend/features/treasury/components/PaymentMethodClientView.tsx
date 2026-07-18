@@ -1,13 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
     CreditCard, Lock, ChevronDown, Wallet, ArrowRightLeft, HandCoins, Monitor, FileText, CircleSlash, type LucideIcon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { DataCell } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
 import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { paymentMethodActions, type PaymentMethodActionsCtx } from './paymentMethodActions'
 import { paymentMethodFields } from '@/features/treasury/paymentMethodFields'
@@ -20,11 +18,10 @@ import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
     BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    UnifiedSearchBar, useUnifiedSearch, Chip
+    UnifiedSearchBar, useUnifiedSearch
 } from "@/components/shared"
 import { paymentMethodUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import { type Column } from "@tanstack/react-table"
 import { usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
 import type { PaymentMethod, PaymentMethodCreatePayload, PaymentMethodUpdatePayload } from "@/features/treasury/types"
 import {
@@ -138,48 +135,10 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
         )
     }
 
-    const columns = [
-        {
-            accessorKey: "name",
-            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }: { row: { original: PaymentMethod } }) => (
-                <div className="flex items-center justify-center gap-2 w-full">
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    <div className="flex flex-col items-center">
-                        <DataCell.Text>{row.original.name}</DataCell.Text>
-
-                    </div>
-                </div>
-            )
-        },
-        {
-            accessorKey: "method_type_display",
-            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Categoría Operativa" className="justify-center" />,
-            cell: ({ row }: { row: { original: PaymentMethod } }) => (
-                    <DataCell.Secondary>
-                        {row.original.method_type_display || methodTypeLabels[row.original.method_type] || row.original.method_type}
-                    </DataCell.Secondary>
-            )
-        },
-        {
-            accessorKey: "treasury_account_name",
-            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
-            cell: ({ row }: { row: { original: PaymentMethod } }) => (
-                <div className="flex flex-col items-center justify-center gap-1.5 w-full">
-                    <DataCell.Text>{row.original.treasury_account_name}</DataCell.Text>
-                    <div className="flex justify-center gap-1">
-                        {row.original.allow_for_sales && (
-                            <Chip size="xs" intent="success">Ventas</Chip>
-                        )}
-                        {row.original.allow_for_purchases && (
-                            <Chip size="xs" intent="info">Compras</Chip>
-                        )}
-                    </div>
-                </div>
-            )
-        },
-        paymentMethodActions.auto(paymentMethodActionsCtx)
-    ]
+    const columns = useMemo(() => [
+        ...paymentMethodFields.toColumns(),
+        paymentMethodActions.auto(paymentMethodActionsCtx),
+    ], [])
 
     const isFiltered = search.isFiltered || usageFilter.length > 0
     const filteredMethods = React.useMemo(() => {

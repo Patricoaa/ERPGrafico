@@ -101,10 +101,98 @@ Hooks import from `./api/[name]Api`, never from `@/lib/api` directly. See [front
 
 ### 4. Write components
 
+- **Field definitions first**: Create `features/[name]/[name]Fields.ts` (or `.tsx` if using `computed`) with `createEntityFields()`. This is the single source of truth for list/card views. Use `toColumns()` for DataTable columns and `toCardFields()` for cards.
 - Three states mandatory: loading (Skeleton), empty (EmptyState), error (toast handled by hook).
 - Status: `StatusBadge` only.
 - Forms: `react-hook-form` + `zodResolver(schema)`. El patrón canónico de edición desde lista es `useSelectedEntity` + modal local. Ver [list-modal-edit-pattern.md](../20-contracts/list-modal-edit-pattern.md).
 - Colors: semantic tokens only.
+
+### 4b. Template: Drawer CRUD Canónico
+
+Si la entidad requiere un Drawer para Crear/Editar, este es el esqueleto obligatorio (ver [component-entity-drawers.md](../20-contracts/component-entity-drawers.md) y [component-state-sync.md](../20-contracts/component-state-sync.md)):
+
+```tsx
+"use client"
+
+import { useRef } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Drawer, FormSplitLayout, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { ActivitySidebar } from "@/features/audit"
+import { useDrawerMode, useDrawerIdentity, type DrawerBaseProps } from "@/features/_shared"
+import { formDrawerWidth } from "@/lib/form-widths"
+import { useEntityMutations } from "../hooks/useEntityMutations"
+import { entitySchema, type EntityFormValues } from "./schema"
+import type { Entity } from "@/types"
+
+interface EntityDrawerProps extends DrawerBaseProps {
+  initialData?: Entity
+}
+
+export function EntityDrawer({
+  open, onOpenChange, initialData, onSuccess, mode: modeProp
+}: EntityDrawerProps) {
+  const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })
+  const identity = useDrawerIdentity('domain.entity', mode, initialData)
+  const width = formDrawerWidth("medium", !!initialData?.id)
+
+  const form = useForm<EntityFormValues>({
+    resolver: zodResolver(entitySchema),
+    defaultValues: { name: "" },
+  })
+
+  // 🔴 Reset pattern: "Adjust state during render" (no useEffect)
+  const prevResetKeyRef = useRef<string>("")
+  const resetKey = open ? (initialData?.id?.toString() ?? "__new__") : "__closed__"
+  
+  if (resetKey !== prevResetKeyRef.current) {
+    prevResetKeyRef.current = resetKey
+    if (open) {
+      form.reset(initialData ? mapEntityToForm(initialData) : defaultFormValues)
+    }
+  }
+
+  const { saveEntity, isSaving } = useEntityMutations()
+
+  const onSubmit = async (values: EntityFormValues) => {
+    await saveEntity({ id: initialData?.id ?? null, payload: values })
+    onSuccess?.()
+    onOpenChange(false)
+  }
+
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      side="left"
+      defaultSize={width}
+      icon={identity.icon}
+      title={identity.title}
+      subtitle={identity.subtitle}
+      contentClassName={initialData ? "p-0" : undefined}
+      footer={isView ? undefined : (
+        <FormFooter actions={<>
+          <CancelButton onClick={() => onOpenChange(false)} />
+          <ActionSlideButton type="submit" form="entity-form" loading={isSaving}>
+            {mode === 'create' ? "Crear" : "Guardar Cambios"}
+          </ActionSlideButton>
+        </>} />
+      )}
+    >
+      <FormSplitLayout
+        sidebar={<ActivitySidebar entityId={initialData?.id!} entityType="entity" />}
+        showSidebar={!!initialData?.id}
+      >
+        <form id="entity-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-4">
+          <fieldset disabled={isView} className="contents">
+            {/* campos */}
+          </fieldset>
+        </form>
+      </FormSplitLayout>
+    </Drawer>
+  )
+}
+```
 
 ### 5. Write barrel
 

@@ -232,3 +232,11 @@ The `sideStyles` table in `components/shared/Drawer.tsx` keeps the `rounded-xl` 
 The `border-{side}-0` removes the border on the side that touches the parent container (the screen edge, or the `<main>` shell), so the panel appears flush with that edge while keeping the other three borders at `border-border/10`. The shadow and background are inherited from `panel-surface`.
 
 > **Do not** pass `border`, `shadow`, `rounded-*` or `bg-*` overrides via `className` on `Drawer`. If a variant is needed, add a new prop that composes with `panel-surface` and `sideStyles` instead of replacing them.
+
+## Excepciones Documentadas
+
+### Formularios con Layout Custom (Fichas Maestras de Múltiples Tabs)
+
+Aunque `FormSplitLayout` es el estándar para edición, existen formularios muy complejos (fichas maestras como `ContactDrawer`) que requieren múltiples tabs a nivel raíz, donde el `ActivitySidebar` solo tiene sentido dentro del primer tab. 
+
+**Regla de excepción:** Si el formulario tiene excesivas secciones que justifican un sistema de navegación por tabs primario, está permitido prescindir de `FormSplitLayout` en el Drawer y colocar el `ActivitySidebar` manualmente dentro de la primera pestaña (`TabBarContent`). Esta es una excepción arquitectural aceptada, documentada y reservada solo para *Master Drawers* que superan las capacidades del Split Layout genérico.

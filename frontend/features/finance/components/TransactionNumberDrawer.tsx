@@ -1,9 +1,9 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Hash, Printer } from "lucide-react"
+import { Hash } from "lucide-react"
 import {
     Form,
     FormControl,
@@ -11,12 +11,9 @@ import {
     FormItem,
 } from "@/components/ui/form"
 import { showApiError } from "@/lib/errors"
-import { Button } from "@/components/ui/button"
 import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, FormFooter, FormSplitLayout, CancelButton, ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -46,8 +43,7 @@ export function TransactionNumberDrawer({
 }: TransactionNumberDrawerProps) {
     const mode: DrawerMode = modeProp ?? 'edit'
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
     const [loading, setLoading] = useState(false)
 
     const form = useForm<FormData>({
@@ -86,6 +82,8 @@ export function TransactionNumberDrawer({
             ? `Ficha de Transacción${paymentId ? ` #${paymentId}` : ""}`
             : "Registrar N° de Transacción",
         overrideSubtitle: "Ingrese el número de comprobante o transacción bancaria.",
+        printable: (mode === 'view' || mode === 'edit') && !!paymentId,
+        onPrint: handlePrint,
     })
 
     return (
@@ -109,7 +107,7 @@ export function TransactionNumberDrawer({
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && paymentId && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

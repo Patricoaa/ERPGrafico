@@ -11,9 +11,7 @@ import {
 
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -97,8 +95,7 @@ export function BOMDrawer({
 
     const mode: DrawerMode = modeProp ?? (bomToEdit ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)

@@ -58,21 +58,14 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     }, [isOverLimit, totalCount])
 
     const [openModal, setOpenModal] = useState(false)
-    const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
+
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
     })
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setSelectedMovementId(selectedFromUrl.id)
-                setDetailsOpen(true)
-            })
-        }
-    }, [selectedFromUrl])
+    const detailsOpen = !!selectedFromUrl
+    const selectedMovementId = selectedFromUrl?.id ?? null
 
     // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
     useEffect(() => {
@@ -318,7 +311,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     id={selectedMovementId}
                     open={detailsOpen}
                     onOpenChange={(open) => {
-                        setDetailsOpen(open)
                         if (!open) clearSelection()
                     }}
                 />

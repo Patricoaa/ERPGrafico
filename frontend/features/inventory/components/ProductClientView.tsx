@@ -110,8 +110,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
     }, [isOverLimit, totalCount])
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
+
 
     // Restrictions state
     const [restrictions, setRestrictions] = useState<Restriction[]>([])
@@ -131,18 +130,21 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     })
     const { openSelected } = useEntityRouteActions()
 
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingProduct(null)
-        onExternalOpenChange?.(false)
-        clearUrlSelection()
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isEditOpen = !!selectedFromUrl
+    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
 
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            params.delete("action")
-            params.delete("id")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    const handleCloseModal = (open: boolean = false) => {
+        if (!open) {
+            onExternalOpenChange?.(false)
+            if (isEditOpen) clearUrlSelection()
+            if (isCreateOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                params.delete("action")
+                params.delete("id")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            }
         }
     }
 
@@ -211,21 +213,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         }
     }
 
-    // Initial fetch handled by Suspense
-
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setEditingProduct(selectedFromUrl)
-                setIsFormOpen(true)
-            })
-        } else {
-            requestAnimationFrame(() => {
-                setIsFormOpen(false)
-                setEditingProduct(null)
-            })
-        }
-    }, [selectedFromUrl])
 
 
     const actionsCtx: ProductActionsCtx = {
@@ -522,15 +509,9 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             </div>
 
             <ProductDrawer
-                open={isFormOpen || !!externalOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
-                    }
-                }}
-                initialData={(editingProduct || undefined) as ProductInitialData | undefined}
+                open={drawerOpen}
+                onOpenChange={handleCloseModal}
+                initialData={(selectedFromUrl || undefined) as ProductInitialData | undefined}
                 onSuccess={refetch}
             />
 

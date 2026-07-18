@@ -45,6 +45,12 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 22. Do not modify `components/ui/` (Shadcn base). Extend in `components/shared/`.
 23. Promotion to `components/shared/` requires ≥3 consumers + contract entry.
 
+## 4.1 Field definitions
+
+24. **`*Fields.ts` is the single source of truth** for entity list/card/kanban fields. Table columns must use `*Fields.toColumns()` as primary source.
+25. Use `computed` type only when standard types (`text`, `currency`, `status`, `chip`, etc.) cannot express the rendering. Prefer standard types.
+26. Fields files with JSX (using `computed`, `icon`, or `chipIcon` with JSX callbacks) must use `.tsx` extension.
+
 ## 5. Hook rules
 
 24. Hook names: `use[Entity][Action]`. Return domain-named properties (`orders`, not `data`).

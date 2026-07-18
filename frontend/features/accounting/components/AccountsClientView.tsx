@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState } from "react"
 import {
     type ColumnDef
 } from "@tanstack/react-table"
@@ -34,18 +34,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const search = useUnifiedSearch(accountUnifiedSearchDef)
     const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingAccount, setEditingAccount] = useState<Account | null>(null)
     const [formParentId, setFormParentId] = useState<string | null>(null)
     const [ledgerTarget, setLedgerTarget] = useState<{ id: number; name: string; code: string } | null>(null)
 
-    // Guard for async operations during mount/unmount
-    const isMounted = useRef(false)
-
-    useEffect(() => {
-        isMounted.current = true
-        return () => { isMounted.current = false }
-    }, [])
 
     const accounts = React.useMemo(() => {
         if (flatAccounts.length > 0) {
@@ -62,43 +53,20 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         endpoint: '/accounting/accounts'
     })
 
-    // Open edit form if ?selected= is present (ADR-0020).
-    // Depends ONLY on selectedFromUrl — see CategoryList for explanation
-    // of why isFormOpen/editingAccount must NOT be in the dependency array.
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            if (selectedFromUrl) {
-                setEditingAccount(selectedFromUrl)
-                setIsFormOpen(true)
-            } else {
-                setIsFormOpen(false)
-                setEditingAccount(null)
-            }
-        })
-    }, [selectedFromUrl])
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isFormOpen = isCreateOpen || !!selectedFromUrl
+    const editingAccount = selectedFromUrl ?? null
 
     const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingAccount(null)
         setFormParentId(null)
         onExternalOpenChange?.(false)
         clearSelection()
-    }
-
-
-
-    const handleEditAccount = React.useCallback((account: Account) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(account.id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [pathname, router, searchParams])
-
-    // Synchronize external modal trigger
-    useEffect(() => {
-        if (externalOpen && isMounted.current) {
-            requestAnimationFrame(() => setIsFormOpen(true))
+        if (isCreateOpen) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
-    }, [externalOpen])
+    }
 
 
 
@@ -121,7 +89,11 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                 setLedgerTarget({ id: account.id, name: account.name, code: account.code })
             },
-            onEdit: handleEditAccount,
+            onEdit: (account) => {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set('selected', String(account.id))
+                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+            },
             onDelete: (id) => setDeleteTarget(id),
         }
         return [
@@ -226,7 +198,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         },
         accountActions.auto(actionCtx),
         ]
-    }, [handleEditAccount, pathname, router, searchParams])
+    }, [pathname, router, searchParams])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

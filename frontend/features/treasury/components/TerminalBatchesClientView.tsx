@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import React, { useState, lazy, Suspense, useMemo, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { BaseModal, DataTableView, AutoEntityCard, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef, Row } from "@tanstack/react-table"
@@ -20,23 +20,19 @@ const LazyTerminalBatchSelectionModal = lazy(() => import("./TerminalBatchSelect
 const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 
 interface TerminalBatchesClientViewProps {
-    externalOpenBatch?: boolean
-    externalOpenInvoice?: boolean
     createAction?: React.ReactNode
 }
 
 export function TerminalBatchesClientView({
-    externalOpenBatch,
-    externalOpenInvoice,
     createAction
 }: TerminalBatchesClientViewProps) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const search = useUnifiedSearch(terminalBatchUnifiedSearchDef)
     const { batches, isLoading, refetch } = useTerminalBatches(search.filters)
     const filteredBatches = search.filterFn(batches)
-    const [openCreate, setOpenCreate] = useState(false)
-    const [openInvoice, setOpenInvoice] = useState(false)
-    const [isMounted, setIsMounted] = useState(false)
+    const openCreate = searchParams.get('modal') === 'batch'
+    const openInvoice = searchParams.get('modal') === 'invoice'
 
     const clearModalParam = useCallback(() => {
         const searchParams = new URLSearchParams(window.location.search)
@@ -47,21 +43,7 @@ export function TerminalBatchesClientView({
         }
     }, [router])
 
-    useEffect(() => {
-        requestAnimationFrame(() => setIsMounted(true))
-    }, [])
 
-    useEffect(() => {
-        if (isMounted && externalOpenBatch) {
-            requestAnimationFrame(() => setOpenCreate(true))
-        }
-    }, [isMounted, externalOpenBatch])
-
-    useEffect(() => {
-        if (isMounted && externalOpenInvoice) {
-            requestAnimationFrame(() => setOpenInvoice(true))
-        }
-    }, [isMounted, externalOpenInvoice])
 
     const columns = useMemo<ColumnDef<TerminalBatch>[]>(() => {
         const [netAmountCol, statusCol] = terminalBatchFields.toColumns()
@@ -156,7 +138,11 @@ export function TerminalBatchesClientView({
                             variant="full"
                             entityLabel="treasury.terminalbatch"
                             title={batch.batch_number}
-                            onClick={() => setOpenCreate(true)}
+                            onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('modal', 'batch')
+                                router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
+                            }}
                         />
                     )}
                 />
@@ -167,11 +153,9 @@ export function TerminalBatchesClientView({
                      <TerminalBatchModal
                      open={openCreate}
                      onOpenChange={(open: boolean) => {
-                         setOpenCreate(open)
                          if (!open) clearModalParam()
                      }}
                      onSuccess={() => {
-                         setOpenCreate(false)
                          clearModalParam()
                          refetch()
                      }}
@@ -184,7 +168,6 @@ export function TerminalBatchesClientView({
                      <MonthlyInvoiceModal
                      open={openInvoice}
                      onOpenChange={(open: boolean) => {
-                         setOpenInvoice(open)
                          if (!open) clearModalParam()
                      }}
                  />

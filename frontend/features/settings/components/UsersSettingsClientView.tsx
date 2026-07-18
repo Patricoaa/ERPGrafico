@@ -57,17 +57,10 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
         endpoint: '/core/users'
     })
 
-    const [isUserModalOpen, setIsUserModalOpen] = useState(false)
-    const [userToEdit, setUserToEdit] = useState<AppUser | null>(null)
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setUserToEdit(selectedFromUrl)
-                setIsUserModalOpen(true)
-            })
-        }
-    }, [selectedFromUrl])
+
+    const isUserModalOpen = !!selectedFromUrl
+    const userToEdit = selectedFromUrl ?? null
 
     const actionsCtx: UserActionsCtx = {
         onEdit: (id) => {
@@ -205,25 +198,19 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                 )}
                             />
                         </div>
-                        {isUserModalOpen && (
                             <UserDrawer
                                 open={isUserModalOpen}
                                 onOpenChange={(open) => {
-                                    setIsUserModalOpen(open)
                                     if (!open) {
-                                        setUserToEdit(null)
                                         clearSelection()
                                     }
                                 }}
                                 initialData={userToEdit || undefined}
                                 onSuccess={() => {
                                     refetch()
-                                    setIsUserModalOpen(false)
-                                    setUserToEdit(null)
                                     clearSelection()
                                 }}
                             />
-                        )}
                     </TabsContent>
 
                     <TabsContent value="groups" className="mt-0 outline-none flex-1 min-h-0">

@@ -247,7 +247,39 @@ if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
 
 ---
 
-## 6. Migración: Cómo Refactorizar los 3 Escenarios
+## 6. Variante 4: Drawer Form Reset (Adjust During Render)
+
+### Cuándo
+
+Un Drawer CRUD recibe `initialData` (objeto) o vacío y necesita limpiar/rellenar su `react-hook-form` cada vez que se abre, evitando renders en cascada y bugs de limpieza. No usar `useEffect` con `form.reset`.
+
+### Patrón canónico
+
+La "clave de reset" cambia cuando el drawer abre con datos nuevos O se abre en creación. 
+
+```tsx
+const prevResetKeyRef = useRef<string>("")
+
+const resetKey = open 
+    ? (initialData?.id?.toString() ?? "__new__") 
+    : "__closed__"
+
+if (resetKey !== prevResetKeyRef.current) {
+    prevResetKeyRef.current = resetKey
+    if (open) {
+        form.reset(initialData ? mapEntityToForm(initialData) : defaultFormValues)
+    }
+}
+```
+
+**Beneficios:**
+- Un solo ref (frente a `wasOpen` + `lastResetId`).
+- Sincrónico, libre de flashes, sin `requestAnimationFrame`.
+- Compliant con React Compiler ([ADR-0051](../10-architecture/adr/0051-adjust-state-during-render.md)).
+
+---
+
+## 7. Migración: Cómo Refactorizar los Escenarios
 
 ### Escenario A: Form initialization (10 ocurrencias)
 
@@ -315,7 +347,7 @@ const dialogOpen = isNewModalOpen
 
 ---
 
-## 7. Forbidden Patterns
+## 8. Forbidden Patterns
 
 - ❌ **`useEffect { setState(...) }`** para sincronizar props/URL → estado local. Usar adjust-during-render o derivación directa.
 - ❌ **`useEffect { form.reset(...) }`** para inicializar formularios. Usar `useInitializeForm` o adjust-during-render.

@@ -2,6 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useEffect, useState, useMemo } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import {ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard} from '@/components/shared'
@@ -31,10 +32,12 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     const { warehouses, isLoading, refetch, deleteWarehouse } = useWarehouses()
     const search = useUnifiedSearch(warehouseUnifiedSearchDef)
 
-    const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
+
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
 
     const bulkDeleteConfirm = useConfirmAction<Warehouse[]>(async (items) => {
         try {
@@ -52,28 +55,20 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     })
     const { openSelected } = useEntityRouteActions()
 
-    // Open edit form if ?selected= is present (ADR-0020).
-    // Depends ONLY on selectedFromUrl — see CategoryList for explanation
-    // of why isFormOpen/editingWarehouse must NOT be in the dependency array.
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setEditingWarehouse(selectedFromUrl)
-                setIsFormOpen(true)
-            })
-        } else {
-            requestAnimationFrame(() => {
-                setIsFormOpen(false)
-                setEditingWarehouse(null)
-            })
-        }
-    }, [selectedFromUrl])
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isEditOpen = !!selectedFromUrl
+    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
 
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingWarehouse(null)
-        onExternalOpenChange?.(false)
-        clearSelection()
+    const handleCloseModal = (open: boolean = false) => {
+        if (!open) {
+            onExternalOpenChange?.(false)
+            if (isEditOpen) clearSelection()
+            if (isCreateOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            }
+        }
     }
 
     const handleDelete = async (warehouse: Warehouse | null, isConfirmed = false) => {
@@ -203,15 +198,9 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
 
             <WarehouseDrawer
                 onSuccess={refetch}
-                open={isFormOpen || !!externalOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
-                    }
-                }}
-                initialData={editingWarehouse || undefined}
+                open={drawerOpen}
+                onOpenChange={handleCloseModal}
+                initialData={selectedFromUrl || undefined}
             />
 
             <ActionConfirmModal

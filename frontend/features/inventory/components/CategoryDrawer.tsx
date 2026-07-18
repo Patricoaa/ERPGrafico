@@ -24,9 +24,7 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ActivitySidebar } from "@/features/audit"
 
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const ICON_OPTIONS = [
     // Imprenta y Diseño
@@ -189,13 +187,12 @@ export function CategoryDrawer({
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const isView = (modeProp ?? (initialData ? "view" : "create")) === "view"
-    const mode: DrawerMode = modeProp ?? (initialData ? "view" : "create")
+    const isView = (modeProp ?? (initialData ? "edit" : "create")) === "view"
+    const mode: DrawerMode = modeProp ?? (initialData ? "edit" : "create")
 
     const { saveCategory } = useCategoryMutations()
     const [loading, setLoading] = useState(false)
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),

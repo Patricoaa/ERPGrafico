@@ -1,5 +1,5 @@
 "use client"
-import { formatCurrency } from "@/lib/money";
+import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect, useCallback, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -13,9 +13,10 @@ import { es } from "date-fns/locale"
 import { toast } from "sonner"
 import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
+
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { DataTableView, EntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { taxDeclarationActions, type TaxDeclarationActionsCtx } from './taxDeclarationActions'
 import { cn } from "@/lib/utils"
@@ -27,7 +28,6 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { type Row, type Table } from "@tanstack/react-table"
 import { SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-
 import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
 import { useCreateTaxPayment } from "../hooks/useTaxMutations"
 
@@ -174,69 +174,10 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
         onWizard: (period) => handleOpenWizard(period as TaxPeriod),
     }
 
-    const columns: ColumnDef<TaxPeriod>[] = [
-        {
-            accessorKey: "period_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Período" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-3 w-full">
-                    <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
-                        <span className="text-[9px] font-bold text-primary/60">{row.original.year}</span>
-                        <span className="text-xs font-bold text-primary">{row.original.month_display?.substring(0, 3)}</span>
-                    </div>
-                    <div>
-                        <span className="font-medium">{row.original.month_display || ''} {row.original.year}</span>
-                    </div>
-                </div>
-            ),
-            sortingFn: (rowA, rowB, columnId) => {
-                if (rowA.original.year !== rowB.original.year) {
-                    return rowA.original.year - rowB.original.year
-                }
-                return rowA.original.month - rowB.original.month
-            }
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><StatusBadge status={row.original.status} /></div>,
-            filterFn: (row, id, value) => value.includes(row.getValue(id))
-        },
-        {
-            id: "vat_to_pay",
-            accessorFn: (row) => row.declaration_summary?.vat_to_pay || 0,
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Impuesto Determinado" className="justify-center" />,
-            cell: ({ row }) => {
-                const amount = row.getValue("vat_to_pay") as number
-                return (
-                    <div className="flex justify-center w-full font-mono">
-                        {formatCurrency(amount)}
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "payment_status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado Pago" className="justify-center" />,
-            cell: ({ row }) => {
-                const summary = row.original.declaration_summary
-                return (
-                    <div className="flex justify-center w-full">
-                        {!summary ? (
-                            <span className="text-muted-foreground">-</span>
-                        ) : summary.is_fully_paid ? (
-                            <StatusBadge status="PAID" label="Pagado" size="sm" />
-                        ) : summary.vat_to_pay > 0 && row.original.status === 'CLOSED' ? (
-                            <StatusBadge status="VOIDED" label="Pendiente" size="sm" />
-                        ) : (
-                            <span className="text-muted-foreground">-</span>
-                        )}
-                    </div>
-                )
-            }
-        },
-        taxDeclarationActions.auto(taxDeclarationActionsCtx) as ColumnDef<TaxPeriod>
-    ]
+    const columns: ColumnDef<TaxPeriod>[] = useMemo(() => [
+        ...taxPeriodFields.toColumns(),
+        taxDeclarationActions.auto(taxDeclarationActionsCtx) as ColumnDef<TaxPeriod>,
+    ], [])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

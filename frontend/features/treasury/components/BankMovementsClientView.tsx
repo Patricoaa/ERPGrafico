@@ -51,21 +51,14 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
         }
     }, [isOverLimit, totalCount])
 
-    const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
+
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
     })
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setSelectedMovementId(selectedFromUrl.id)
-                setDetailsOpen(true)
-            })
-        }
-    }, [selectedFromUrl])
+    const detailsOpen = !!selectedFromUrl
+    const selectedMovementId = selectedFromUrl?.id ?? null
 
     const handleViewDetails = React.useCallback((id: number) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -249,7 +242,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                     id={selectedMovementId}
                     open={detailsOpen}
                     onOpenChange={(open) => {
-                        setDetailsOpen(open)
                         if (!open) clearSelection()
                     }}
                 />

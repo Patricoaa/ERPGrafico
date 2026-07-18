@@ -58,26 +58,13 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
         }
     }, [isOverLimit, totalCount])
 
-    const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null)
-
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<InventoryDocument>({
         endpoint: '/inventory/documents'
     })
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setSelectedDocumentId(selectedFromUrl.id)
-            })
-        } else {
-            requestAnimationFrame(() => {
-                setSelectedDocumentId(null)
-            })
-        }
-    }, [selectedFromUrl])
+    const selectedDocumentId = selectedFromUrl?.id ?? null
 
     const handleCloseDrawer = () => {
-        setSelectedDocumentId(null)
         clearSelection()
     }
 

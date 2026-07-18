@@ -36,8 +36,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
         filters: search.filters as ContactFilters,
         initialData: initialContacts,
     })
-    const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
-    const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
     const router = useRouter()
@@ -48,33 +46,14 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
         endpoint: '/contacts'
     })
 
-    // Sync modal with props from URL
-    useEffect(() => {
-        if (isNewModalOpen) {
-            requestAnimationFrame(() => {
-                setSelectedContact(null)
-                setModalOpen(true)
-            })
-        }
-    }, [isNewModalOpen])
-
-    // Sync modal with selected entity from URL (deep-link)
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setSelectedContact(selectedFromUrl)
-                setModalOpen(true)
-            })
-        }
-    }, [selectedFromUrl])
+    const isCreateOpen = searchParams.get("modal") === "new" || isNewModalOpen
+    const isEditOpen = !!selectedFromUrl
+    const drawerOpen = isCreateOpen || isEditOpen
 
     const handleCloseModal = (open: boolean) => {
-        setModalOpen(open)
         if (!open) {
-            setSelectedContact(null)
-            clearSelection()
-            // Clear URL params if it was a 'new' modal
-            if (searchParams.get("modal") === "new") {
+            if (isEditOpen) clearSelection()
+            if (isCreateOpen && searchParams.get("modal") === "new") {
                 const params = new URLSearchParams(searchParams.toString())
                 params.delete("modal")
                 router.push(`?${params.toString()}`)
@@ -246,9 +225,9 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
 
             <Suspense fallback={<LoadingFallback />}>
                 <ContactDrawer
-                    open={modalOpen}
+                    open={drawerOpen}
                     onOpenChange={handleCloseModal}
-                    contact={selectedContact}
+                    contact={selectedFromUrl ?? undefined}
                     onSuccess={() => {
                         handleCloseModal(false)
                         // Automatic invalidation handles refetch

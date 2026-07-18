@@ -1,16 +1,14 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
 
-import { Landmark, CreditCard, Lock, Printer, ScrollText, Plus, Pencil, Archive } from "lucide-react"
+import { Landmark, CreditCard, Lock, ScrollText, Plus, Pencil, Archive } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit"
 import { useTreasuryAccounts, treasuryApi, useCreditLineMutations, CreditLineDrawer } from "@/features/treasury"
@@ -72,8 +70,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
     const mode: DrawerMode = modeProp ?? (accountId ? 'edit' : 'create')
     const isView = mode === 'view' || isSystemManaged
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -179,6 +176,8 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
             : accountId
                 ? "Modifique los detalles de la cuenta y revise su historial."
                 : "Complete la información para registrar una nueva cuenta.",
+        printable: (mode === 'view' || mode === 'edit') && !!accountId,
+        onPrint: handlePrint,
     })
 
     return (
@@ -217,12 +216,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                     </span>
                 }
                 icon={identity.icon}
-                headerActions={(mode === 'view' || mode === 'edit') && accountId && (
-                    <Button variant="outline" size="sm" onClick={() => handlePrint()}>
-                        <Printer className="h-4 w-4 mr-2" />
-                        Imprimir
-                    </Button>
-                )}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

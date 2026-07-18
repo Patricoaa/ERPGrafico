@@ -91,7 +91,7 @@ last_review: 2026-06-19
 
 ## Global invariants (violate = PR rejected)
 
-> Headline list. The **authoritative** rules live in [GOVERNANCE.md](90-governance/GOVERNANCE.md); the same 12 appear in the root [CLAUDE.md](../CLAUDE.md). Keep all three in sync.
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](90-governance/GOVERNANCE.md); the same 13 appear in the root [CLAUDE.md](../CLAUDE.md). Keep all three in sync.
 
 1. **Zero `any`** — Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`) — semantic tokens only (`bg-primary`).

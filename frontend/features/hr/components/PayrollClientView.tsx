@@ -53,16 +53,8 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
         endpoint: '/hr/payrolls'
     })
 
-    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
-    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
-    const [prevSelectedFromUrl, setPrevSelectedFromUrl] = useState(selectedFromUrl)
-
-    // Adjust state during render: sync URL-driven entity to local state
-    if (selectedFromUrl && selectedFromUrl !== prevSelectedFromUrl) {
-        setPrevSelectedFromUrl(selectedFromUrl)
-        setActivePayrollId(selectedFromUrl.id)
-        setDetailSheetOpen(true)
-    }
+    const detailSheetOpen = !!selectedFromUrl
+    const activePayrollId = selectedFromUrl?.id ?? null
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     // Derive from URL directly — no useState + useEffect needed
@@ -222,7 +214,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                 payrollId={activePayrollId}
                 open={detailSheetOpen}
                 onOpenChange={(open) => {
-                    setDetailSheetOpen(open)
                     if (!open) clearSelection()
                 }}
                 onUpdate={fetchPayrolls}

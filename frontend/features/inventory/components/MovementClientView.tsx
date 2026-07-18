@@ -2,12 +2,9 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, AutoEntityCard } from '@/components/shared'
+import { AutoEntityCard } from '@/components/shared'
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { type ColumnDef } from "@tanstack/react-table"
-
-import { ArrowRightLeft } from "lucide-react"
 
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -43,67 +40,19 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
     }, [isOverLimit, totalCount])
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string } | null>(null)
-
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<StockMove>({
         endpoint: '/inventory/stock-moves'
     })
     const { openView } = useEntityRouteActions()
 
-    useEffect(() => {
-        if (selectedFromUrl && !viewingTransaction) {
-            requestAnimationFrame(() => {
-                setViewingTransaction({ type: 'inventory', id: selectedFromUrl.id })
-            })
-        }
-    }, [selectedFromUrl, viewingTransaction])
+    const viewingTransaction = selectedFromUrl ? { type: 'inventory' as TransactionType, id: selectedFromUrl.id } : null
 
     const actionsCtx: StockMoveActionsCtx = {
         onViewDetails: (id) => openView(id),
     }
 
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
-        {
-            id: "folio",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center gap-0.5">
-                    <DataCell.Code>{row.original.display_id ?? String(row.original.id)}</DataCell.Code>
-                    <DataCell.Date value={row.original.date} />
-                </div>
-            ),
-            size: 100,
-        },
-        {
-            accessorKey: "product_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center py-1 w-full">
-                    <DataCell.Text>{row.original.product_name}</DataCell.Text>
-                    <div className="flex gap-2 items-center justify-center">
-                        {row.original.product_internal_code && (
-                            <DataCell.Code>{row.original.product_internal_code}</DataCell.Code>
-                        )}
-                        {row.original.product_code && row.original.product_code !== row.original.product_internal_code && (
-                            <DataCell.Code>
-                                {row.original.product_code}
-                            </DataCell.Code>
-                        )}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            id: "flow",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Origen → Destino" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center gap-0.5 text-center">
-                    <DataCell.Secondary>{row.original.source_location_name}</DataCell.Secondary>
-                    <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                    <DataCell.Text>{row.original.destination_location_name}</DataCell.Text>
-                </div>
-            ),
-        },
+        ...stockMoveFields.toColumns(),
         stockMoveActions.auto(actionsCtx),
     ], [actionsCtx])
 
@@ -170,7 +119,6 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                     open={!!viewingTransaction}
                     onOpenChange={(open) => {
                         if (!open) {
-                            setViewingTransaction(null)
                             clearSelection()
                         }
                     }}
