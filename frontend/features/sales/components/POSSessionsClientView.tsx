@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -57,42 +58,27 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     })
 
     const [selectedSession, setSelectedSession] = useState<POSSession | null>(null)
-    const [reportDialogOpen, setReportDialogOpen] = useState(false)
-    const [reportData, setReportData] = useState<Record<string, unknown> | null>(null)
-    const [reportType, setReportType] = useState<"X" | "Z">("X")
+    const [manualReportData, setManualReportData] = useState<Record<string, unknown> | null>(null)
+    const [manualReportType, setManualReportType] = useState<"X" | "Z">("X")
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 
-    const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
-        try {
-            const data = await fetchPOSSessionSummary<Record<string, unknown>>(session.id)
-            setReportData(data)
-            setReportType(type)
-            setReportDialogOpen(true)
-        } catch (error) {
-            console.error("Error fetching report:", error)
-            toast.error("Error al generar el reporte")
-        }
-    }
+    const reportSessionId = selectedFromUrl ? selectedFromUrl.id : null
+    const { data: queryReportData } = useQuery({
+        queryKey: ['pos-session-summary', reportSessionId],
+        queryFn: () => fetchPOSSessionSummary<Record<string, unknown>>(reportSessionId!),
+        enabled: !!reportSessionId
+    })
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setSelectedSession(selectedFromUrl)
-                // Decide what to open. If it's closed, maybe show report Z.
-                // If it's open, maybe show report X.
-                // For now, let's just open report X by default if selected.
-                handleShowReport(selectedFromUrl, selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X')
-            })
-        }
-    }, [selectedFromUrl])
+    const isReportDialogOpen = !!selectedFromUrl || manualReportData !== null
+    const finalReportData = selectedFromUrl ? queryReportData : manualReportData
+    const finalReportType = selectedFromUrl ? (selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X') : manualReportType
 
     const handleCloseSuccess = async () => {
         if (!selectedSession) return
         try {
             const data = await fetchPOSSessionSummary<Record<string, unknown>>(selectedSession.id)
-            setReportData(data)
-            setReportType("Z")
-            setReportDialogOpen(true)
+            setManualReportData(data)
+            setManualReportType("Z")
             refetch()
         } catch (error) {
             console.error("Error fetching Z report:", error)
@@ -171,17 +157,20 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
             </div>
 
             {/* Custom Overlay for POS Reports (X and Z) - Consistency with POS */}
-            {reportDialogOpen && (
+            {isReportDialogOpen && (
                 <div className="fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
                     <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
-                        {reportData && (
+                        {finalReportData && (
                             <POSReport
-                                data={reportData as unknown as POSReportData}
-                                type={reportType}
-                                title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                                data={finalReportData as unknown as POSReportData}
+                                type={finalReportType}
+                                title={finalReportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
                                 onClose={() => {
-                                    setReportDialogOpen(false)
-                                    clearSelection()
+                                    if (selectedFromUrl) {
+                                        clearSelection()
+                                    } else {
+                                        setManualReportData(null)
+                                    }
                                 }}
                             />
                         )}
