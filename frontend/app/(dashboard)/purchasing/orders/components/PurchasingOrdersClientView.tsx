@@ -76,7 +76,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
-    const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice] = useState<{ id: number, type: string } | null>(null)
 
@@ -272,12 +271,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
-    useEffect(() => {
-        if (externalOpenCheckout) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setCheckoutOpen(true)
-        }
-    }, [externalOpenCheckout])
 
     const filteredOrders = orders
     const filteredNotes = notes
@@ -583,9 +576,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             }
 
             <PurchaseCheckoutWizard
-                open={checkoutOpen || !!checkoutOrderId}
+                open={!!externalOpenCheckout || !!checkoutOrderId}
                 onOpenChange={(open) => {
-                    setCheckoutOpen(open)
                     if (!open) {
                         setCheckoutOrderId(null)
                         const params = new URLSearchParams(searchParams.toString())
@@ -600,7 +592,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 total={0}
                 onComplete={() => {
                     fetchOrders()
-                    setCheckoutOpen(false)
                     setCheckoutOrderId(null)
                     const params = new URLSearchParams(searchParams.toString())
                     params.delete('modal')
