@@ -347,9 +347,9 @@ export const DataCell = {
     },
 
     /** Chip for intent-based labels within table cells (wraps shared Chip component) */
-    Chip: ({ children, intent = "neutral", size = "sm", className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => (
+    Chip: ({ children, intent = "neutral", size = "sm", icon, className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", icon?: LucideIcon, className?: string } & HTMLAttributes<HTMLDivElement>) => (
         <div className={cn("flex justify-center items-center w-full", className)} {...props}>
-            <ChipComponent intent={intent} size={size}>{children}</ChipComponent>
+            <ChipComponent intent={intent} size={size} icon={icon}>{children}</ChipComponent>
         </div>
     ),
 

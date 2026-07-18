@@ -10,9 +10,7 @@ import { Drawer, CancelButton, LabeledInput, FormFooter, LabeledCheckbox, Action
 import { formDrawerWidth } from "@/lib/form-widths"
 import {Form, FormField} from "@/components/ui/form"
 
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { partnersApi } from "@/features/contacts"
 import type { Contact } from "@/types/entities"
 
@@ -36,8 +34,7 @@ interface PartnerEditDrawerProps {
 export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode: modeProp }: PartnerEditDrawerProps) {
     const mode: DrawerMode = modeProp ?? (contact ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
     const [submitting, setSubmitting] = useState(false)
 
     const formValues = contact ? {

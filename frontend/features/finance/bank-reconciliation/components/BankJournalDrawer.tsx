@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -9,15 +9,11 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { Printer } from "lucide-react"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -44,8 +40,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [loading, setLoading] = useState(false)
     const width = formDrawerWidth("simple", !!initialData)
@@ -108,6 +103,8 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 ? "Crear Caja o Banco"
                 : "Editar Caja/Banco",
         overrideSubtitle: initialData ? `${(initialData?.code as string) || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco",
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
     })
 
     return (
@@ -138,7 +135,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

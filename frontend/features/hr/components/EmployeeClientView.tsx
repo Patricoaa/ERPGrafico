@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
@@ -30,13 +30,11 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
     })
 
     const isNewModalOpen = searchParams.get("modal") === "new"
-    const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-    const activeEmployee = selectedFromUrl || editingEmployee
+    const activeEmployee = selectedFromUrl ?? null
     const dialogOpen = isNewModalOpen || !!activeEmployee
 
     const setDialogOpen = (open: boolean) => {
         if (!open) {
-            setEditingEmployee(null)
             clearSelection()
             if (isNewModalOpen) {
                 const params = new URLSearchParams(searchParams.toString())

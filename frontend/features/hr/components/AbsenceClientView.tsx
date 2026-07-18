@@ -1,13 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableView, AutoEntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
+import { useAbsences, deleteAbsence, absenceActions, type AbsenceActionsCtx, useEmployees } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
@@ -25,7 +25,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     const search = useUnifiedSearch(absenceUnifiedSearchDef)
     const { absences, isLoading: loading, isRefetching, refetch: fetchAbsences } = useAbsences(search.filters, initialAbsences)
     const filteredAbsences = search.filterFn(absences)
-    const [employees, setEmployees] = useState<Employee[]>([])
+    const { employees } = useEmployees()
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Absence>({ endpoint: '/hr/absences' })
@@ -41,9 +41,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
         }
     }
 
-    useEffect(() => {
-        getEmployees().then(setEmployees).catch(() => { })
-    }, [])
+
 
     const absenceActionsCtx: AbsenceActionsCtx = {
         onEdit: (absence) => openSelected(absence.id),

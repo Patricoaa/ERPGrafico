@@ -15,16 +15,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
+import { ChevronDown, Search, Check, Plus } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -51,8 +49,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const { categories, isLoading: isCategoriesLoading, saveUoM, isSaving, refetch } = useUoMs()
     const isFetchingInitialData = open && isCategoriesLoading
@@ -131,6 +128,8 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const identity = useDrawerIdentity('inventory.uom', mode, initialData, {
         overrideSubtitle: initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión.",
+        onPrint: handlePrint,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
     })
 
     return (
@@ -166,7 +165,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

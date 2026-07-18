@@ -4,23 +4,18 @@ import React, { useState, useEffect, useMemo } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
 import { AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { treasuryAccountUnifiedSearchDef } from "../unifiedSearchDef"
-import {
-    type ColumnDef,
-    type Row,
-} from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
 
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankCenterClientView, PaymentMethodClientView } from "@/features/treasury"
 import { TreasuryAccountWizard } from "./TreasuryAccountWizard"
 
-import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell, FadeIn, EntityBadge } from '@/components/shared'
+import { TreasuryAccountDrawer } from "./TreasuryAccountDrawer"
+import { FadeIn } from '@/components/shared'
 import { accountFields } from "../accountFields"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Wallet, Landmark, CreditCard, HandCoins, ArrowRightLeft, FileText, type LucideIcon } from "lucide-react"
 
@@ -32,12 +27,12 @@ interface TreasuryAccountsClientViewProps {
 }
 
 export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProps> = ({ activeTab, externalOpen, createAction }) => {
-    const { openEntity } = useGlobalModalActions()
     const search = useUnifiedSearch(treasuryAccountUnifiedSearchDef)
     const { accounts, isLoading, deleteAccount, refetch } = useTreasuryAccounts({ filters: search.filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
+
 
     const router = useRouter()
     const pathname = usePathname()
@@ -47,11 +42,8 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         endpoint: '/treasury/accounts'
     })
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            openEntity('treasury.treasuryaccount', selectedFromUrl.id, selectedFromUrl)
-        }
-    }, [selectedFromUrl, openEntity])
+    const detailsOpen = !!selectedFromUrl
+    const selectedAccountId = selectedFromUrl?.id ?? null
 
     const handleCloseModal = () => {
         setIsBankModalOpen(false)
@@ -137,77 +129,10 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         onDelete: (id) => handleDelete(id),
     }
 
-    const columns = useMemo<ColumnDef<TreasuryAccount>[]>(() => {
-        const [nameCol, typeCol, balanceCol] = accountFields.toColumns()
-        return [
-            nameCol,
-            typeCol,
-            {
-                accessorKey: "account_name",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Cuenta Contable" className="justify-center" />
-                ),
-                cell: ({ row }: { row: Row<TreasuryAccount> }) => {
-                    const acctName = row.original.account_name
-                    if (!acctName) return <DataCell.Secondary className="italic text-center">No vinculada</DataCell.Secondary>
-                    return (
-                        <div className="flex flex-col items-center justify-center w-full">
-                            <DataCell.Code>{row.original.account_code}</DataCell.Code>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DataCell.Secondary>{acctName}</DataCell.Secondary>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">{row.original.account_code || ''} - {acctName}</TooltipContent>
-                            </Tooltip>
-                        </div>
-                    )
-                }
-            },
-            {
-                accessorKey: "bank",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Entidad Externa" className="justify-center" />
-                ),
-                cell: ({ row }: { row: Row<TreasuryAccount> }) => {
-                    const bankId = row.original.bank
-                    const bankName = row.original.bank_name
-                    const providers = row.original.terminal_providers ?? []
-                    const hasBank = !!bankId
-                    const hasProviders = providers.length > 0
-                    if (!hasBank && !hasProviders) {
-                        return (
-                            <div className="flex justify-center w-full">
-                                <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
-                            </div>
-                        )
-                    }
-                    return (
-                        <div className="flex flex-col items-center justify-center gap-1 w-full">
-                            {hasBank && (
-                                <EntityBadge
-                                    label="treasury.bank"
-                                    data={{ id: bankId, name: bankName }}
-                                    size="sm"
-                                    showIcon
-                                />
-                            )}
-                            {providers.map((p: NonNullable<TreasuryAccount['terminal_providers']>[number]) => (
-                                <EntityBadge
-                                    key={p.id}
-                                    label="treasury.terminalprovider"
-                                    data={p}
-                                    size="sm"
-                                    showIcon
-                                />
-                            ))}
-                        </div>
-                    )
-                },
-            },
-            balanceCol,
-            treasuryAccountActions.auto(actionsCtx),
-        ]
-    }, [])
+    const columns = useMemo<ColumnDef<TreasuryAccount>[]>(() => [
+        ...accountFields.toColumns(),
+        treasuryAccountActions.auto(actionsCtx),
+    ], [])
 
     return (
         <>
@@ -304,6 +229,18 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
             </TabsContent>
 
         </Tabs>
+
+        <TreasuryAccountDrawer
+            accountId={selectedAccountId}
+            open={detailsOpen}
+            onOpenChange={(open) => {
+                if (!open) clearSelection()
+            }}
+            onSuccess={() => {
+                clearSelection()
+                refetch()
+            }}
+        />
 
         <TreasuryAccountWizard
             open={isLocalAccountModalOpen}

@@ -3,14 +3,12 @@
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Printer } from "lucide-react"
-import { useDrawerIdentity } from "@/features/_shared"
+import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator } from "lucide-react"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
 import { DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, StatCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatCurrency } from "@/lib/money"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -58,8 +56,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
         }
     }
 
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
 
@@ -82,6 +79,8 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
 
     const identity = useDrawerIdentity('accounting.account', 'view', { code: accountCode, name: accountName }, {
         overrideTitle: "Libro Mayor",
+        onPrint: handlePrint,
+        printable: open && !!data,
     })
 
     return (
@@ -161,10 +160,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                 defaultSize={formDrawerWidth("master", false)}
                 mode="view"
                 contentClassName="p-0"
-                headerActions={(
-                    // eslint-disable-next-line no-restricted-syntax -- header action, not a row/card action
-                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>
-                )}
+                headerActions={identity.headerActions}
             >
                  {open && dateRange && (
                      <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full">

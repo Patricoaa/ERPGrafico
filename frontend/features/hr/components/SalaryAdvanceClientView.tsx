@@ -1,18 +1,18 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AdvanceDrawer } from "@/features/hr"
-import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
+import { createAdvance, deleteAdvance } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
-import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
+import type { SalaryAdvance } from "@/types/hr"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx } from "@/features/hr"
+import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees, usePayrolls } from "@/features/hr"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
@@ -30,8 +30,8 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     const search = useUnifiedSearch(salaryAdvanceUnifiedSearchDef)
     const { advances, isLoading: loading, isRefetching, refetch: refetchAdvances } = useSalaryAdvances(search.filters, initialAdvances)
     const filteredAdvances = search.filterFn(advances)
-    const [employees, setEmployees] = useState<Employee[]>([])
-    const [payrolls, setPayrolls] = useState<Payroll[]>([])
+    const { employees } = useEmployees()
+    const { payrolls } = usePayrolls()
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<SalaryAdvance>({ endpoint: '/hr/advances' })
@@ -49,22 +49,6 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
-
-    useEffect(() => {
-        let cancelled = false
-        ;(async () => {
-            try {
-                const [emps, pays] = await Promise.all([getEmployees(), getPayrolls()])
-                if (!cancelled) {
-                    setEmployees(emps)
-                    setPayrolls(pays)
-                }
-            } catch {
-                if (!cancelled) toast.error("Error al cargar datos")
-            }
-        })()
-        return () => { cancelled = true }
-    }, [])
 
     const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
         onEdit: (advance) => openSelected(advance.id),

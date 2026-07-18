@@ -73,7 +73,7 @@ interface UnbilledSummary {
 export function UnbilledChargesClientView({
     bankId,
 }: UnbilledChargesClientViewProps) {
-    const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
+
     const [showBillCharges, setShowBillCharges] = useState(false)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("cupo")
     const queryClient = useQueryClient()
@@ -175,13 +175,7 @@ export function UnbilledChargesClientView({
         return result
     }, [mergedRows, search.filterFn, search.filters])
 
-    // ── Sync URL params with drawer state (adjust during render) ──
-    if (selectedId && chargeToEdit && !chargeDrawerOpen) {
-        setChargeDrawerOpen(true)
-    }
-    if (isNewModal && !chargeDrawerOpen) {
-        setChargeDrawerOpen(true)
-    }
+    const chargeDrawerOpen = isNewModal || !!(selectedId && chargeToEdit)
 
     // Side effect only: clear URL when selectedId points to a missing charge
     useEffect(() => {
@@ -191,7 +185,6 @@ export function UnbilledChargesClientView({
     }, [selectedId, chargeToEdit, clearActions])
 
     const handleChargeDrawerOpenChange = (open: boolean) => {
-        setChargeDrawerOpen(open)
         if (!open) {
             clearActions()
             if (isNewModal) {

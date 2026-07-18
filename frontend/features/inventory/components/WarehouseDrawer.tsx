@@ -15,13 +15,10 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
-import { Printer } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -48,8 +45,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const { saveWarehouse } = useWarehouseMutations()
     const [loading, setLoading] = useState(false)
@@ -182,6 +178,8 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
         overrideSubtitle: form.watch("name")
             ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
             : (initialData ? undefined : "Nuevo Almacén"),
+        onPrint: handlePrint,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
     })
 
     if (inline) {
@@ -220,7 +218,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

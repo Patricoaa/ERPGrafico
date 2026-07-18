@@ -69,7 +69,7 @@ Before writing any code, verify:
 
 ## Global invariants (violate = PR rejected)
 
-> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 12 appear in [docs/README.md](docs/README.md). Keep all three in sync.
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 13 appear in [docs/README.md](docs/README.md). Keep all three in sync.
 
 1. **Zero `any`** in TypeScript — use Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](docs/90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`, `text-blue-600`) — semantic tokens only (`bg-primary`, `text-muted-foreground`).
@@ -83,6 +83,7 @@ Before writing any code, verify:
 10. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
 11. **Component suffix matches surface** — `Drawer`/`Modal`/`Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` prohibited. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
+13. **`*Fields.ts` is the single source of truth** for entity list/card/kanban fields. Table columns must use `*Fields.toColumns()`. Inline columns only via `computed` type.
 
 ## Rule precedence
 

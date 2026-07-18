@@ -24,9 +24,7 @@ import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefault
 import { ActivitySidebar } from "@/features/audit"
 
 import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Printer} from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
 
@@ -68,13 +66,12 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
     const mode: DrawerMode = modeProp ?? (contact ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [activeTab, setActiveTab] = useState("profile")
     const c = contact
     const { createContact, updateContact } = useContactMutations()
-    const { data: insightsData, isLoading: loadingInsights } = useContactInsights(c?.id)
+    const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
     const ins = insightsData
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
@@ -124,7 +121,12 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         }
     }, [contactDetails, form])
 
-    const { data: ledgerData = [], isLoading: loadingLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
+    const { data: ledgerData = [], isLoading: loadingLedger, refetch: fetchLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
+
+    const handleActionSuccess = () => {
+        refetchInsights()
+        fetchLedger()
+    }
 
     useEffect(() => {
         if (!open) {
@@ -490,6 +492,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="sale"
                                         title="Historial de Ventas (NV)"
                                         icon={ShoppingCart}
+                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -499,6 +502,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="purchase"
                                         title="Historial de Compras (OC)"
                                         icon={Package}
+                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -508,6 +512,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="work_order"
                                         title="Historial de Órdenes de Trabajo"
                                         icon={Wand2}
+                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
                                 <TabBarContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
@@ -554,9 +559,10 @@ interface InsightsTableProps {
     type: 'sale' | 'purchase' | 'work_order'
     title: string
     icon: LucideIcon
+    onActionSuccess?: () => void
 }
 
-function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
+function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: InsightsTableProps) {
     const { openEntity } = useGlobalModals()
     const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')

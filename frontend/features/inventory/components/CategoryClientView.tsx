@@ -29,9 +29,6 @@ interface CategoryClientViewProps {
 export function CategoryClientView({ externalOpen, onExternalOpenChange, createAction }: CategoryClientViewProps) {
     const { categories, isLoading, refetch, deleteCategory } = useCategories()
     const search = useUnifiedSearch(categoryUnifiedSearchDef)
-    const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-    const [isCreateOpen, setIsCreateOpen] = useState(false)  // create modal
-    const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
 
@@ -44,38 +41,19 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     })
     const { openSelected } = useEntityRouteActions()
 
-    // Open edit form if ?selected= is present (ADR-0020).
-    // Depends ONLY on selectedFromUrl — NOT on isFormOpen/editingCategory.
-    // Reason: clearSelection() calls router.replace() which is async; the URL
-    // update arrives one tick later, so selectedFromUrl is still non-null when
-    // isFormOpen first flips to false. If we depend on isFormOpen, the effect
-    // re-fires and sees (selectedFromUrl=entity, isFormOpen=false) → re-opens
-    // the form. Depending only on selectedFromUrl avoids this race.
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setEditingCategory(selectedFromUrl)
-                setIsFormOpen(true)
-            })
-        } else {
-            requestAnimationFrame(() => {
-                setIsFormOpen(false)
-                setEditingCategory(null)
-            })
-        }
-    }, [selectedFromUrl])
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isEditOpen = !!selectedFromUrl
+    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
 
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setIsCreateOpen(false)
-        setEditingCategory(null)
-        onExternalOpenChange?.(false)
-        clearSelection()
-
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    const handleCloseModal = (open: boolean = false) => {
+        if (!open) {
+            onExternalOpenChange?.(false)
+            if (isEditOpen) clearSelection()
+            if (isCreateOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            }
         }
     }
 
@@ -131,10 +109,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         ]
     }, [actionsCtx])
 
-    // Sync external trigger (toolbar button) → create modal
-    React.useEffect(() => {
-        if (externalOpen) requestAnimationFrame(() => setIsCreateOpen(true))
-    }, [externalOpen])
+
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -188,16 +163,10 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             {/* Unified Modal — CategoryDrawer keeps rich selectors + audit for both create and edit */}
             <CategoryDrawer
                 onSuccess={() => { void refetch() }}
-                open={isFormOpen || isCreateOpen}
-                onOpenChange={(open) => {
-                    if (!open) { handleCloseModal() }
-                    else {
-                        if (isCreateOpen) setIsCreateOpen(true)
-                        if (isFormOpen) setIsFormOpen(true)
-                    }
-                }}
-                initialData={editingCategory || undefined}
-                mode={editingCategory ? "edit" : "create"}
+                open={drawerOpen}
+                onOpenChange={handleCloseModal}
+                initialData={selectedFromUrl || undefined}
+                // mode is handled internally by CategoryDrawer via useDrawerMode
             />
 
             <ActionConfirmModal
