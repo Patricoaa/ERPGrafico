@@ -62,9 +62,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const { reopenPeriod: reopenTaxPeriod, isReopeningPeriod: isReopeningTaxPeriod } = useReopenTaxPeriod();
     const isLoadingTaxAction = isClosingTaxPeriod || isReopeningTaxPeriod;
 
-    const [previewModalOpen, setPreviewModalOpen] = useState(false);
-    const [newFYModalOpen, setNewFYModalOpen] = useState(false);
-    const [previewData, setPreviewData] = useState<FiscalYearPreviewResult | null>(null);
     const [activeYearToClose, setActiveYearToClose] = useState<number | null>(null);
     const [declarationTarget, setDeclarationTarget] = useState<{ id?: number; year?: number; month?: number } | undefined>(undefined);
     const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
@@ -86,14 +83,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
     const isLoading = isLoadingYr || isLoadingPeriods || isLoadingTax;
 
-    useEffect(() => {
-        if (externalOpen) {
-            requestAnimationFrame(() => setNewFYModalOpen(true));
-        }
-    }, [externalOpen]);
+    // Derivado de URL: abrir nuevo año fiscal si ?modal=new o externalOpen
+    const newFYModalOpen = externalOpen || searchParams.get('modal') === 'new';
+
+    // Derivado de URL: abrir preview wizard si hay ?selected= con datos
+    const previewModalOpen = !!selectedFromUrl;
+    const previewData = selectedFromUrl ?? null;
 
     const handleCloseNewFY = () => {
-        setNewFYModalOpen(false);
         onExternalOpenChange?.(false);
 
         const params = new URLSearchParams(searchParams.toString());
@@ -105,18 +102,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
         clearUrlSelection();
     };
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            const year = selectedFromUrl.year;
-            if (!previewModalOpen && activeYearToClose !== year) {
-                requestAnimationFrame(() => {
-                    setActiveYearToClose(year);
-                    setPreviewData(selectedFromUrl);
-                    setPreviewModalOpen(true);
-                })
-            }
-        }
-    }, [selectedFromUrl, previewModalOpen, activeYearToClose]);
 
     const handleCreateFY = async (year: number) => {
         try {
@@ -166,8 +151,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const handleConfirmClosing = async () => {
         if (activeYearToClose) {
             await closeFiscalYear(activeYearToClose);
-            setPreviewModalOpen(false);
-            setActiveYearToClose(null);
             clearSelection();
             fetchPeriods();
             refetchTaxPeriods();
@@ -444,11 +427,10 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
             <FiscalYearClosingWizard
                 isOpen={previewModalOpen}
                 onClose={() => {
-                    setPreviewModalOpen(false);
                     clearSelection();
                 }}
                 onConfirm={handleConfirmClosing}
-                year={activeYearToClose || 0}
+                year={activeYearToClose || (selectedFromUrl?.year ?? 0)}
                 preview={previewData}
                 isLoading={!previewData && previewModalOpen}
             />

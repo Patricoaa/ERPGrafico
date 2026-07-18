@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useRef, useMemo } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 
 import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
 
@@ -45,64 +45,26 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         }
     }, [isOverLimit, totalCount])
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
-
-    // Guard for async operations
-    const isMounted = useRef(true)
-
     const { entity: selectedFromUrl } = useSelectedEntity<JournalEntry>({
         endpoint: '/accounting/entries'
     })
     const { selectedId, viewAction, openSelected, openView, clearActions } = useEntityRouteActions()
 
-    // ?selected=<id> (sin action o action distinto de 'view') → abre el form de edición
-    useEffect(() => {
-        if (!selectedFromUrl || viewAction === 'view') return
-        requestAnimationFrame(() => {
-            setEditingEntry(selectedFromUrl)
-            setIsFormOpen(true)
-            setViewingTransaction(null)
-        })
-    }, [selectedFromUrl, viewAction])
-
     // ?selected=<id>&action=view → abre el visor de transacción (read-only)
-    useEffect(() => {
-        if (!selectedId || viewAction !== 'view') return
-        requestAnimationFrame(() => {
-            setViewingTransaction({ type: 'journal_entry', id: Number(selectedId) })
-            setIsFormOpen(false)
-            setEditingEntry(null)
-        })
-    }, [selectedId, viewAction])
+    const viewingTransaction = selectedId && viewAction === 'view'
+        ? { type: 'journal_entry' as const, id: Number(selectedId) }
+        : null
+
+    // ?selected=<id> (sin action=view) → abre el form de edición
+    const editingEntry = selectedFromUrl && viewAction !== 'view' ? selectedFromUrl : null
+    const isFormOpen = (!!editingEntry) || !!externalOpen
 
     const clearSelection = () => {
         clearActions()
     }
 
-    // Initialize/Cleanup mount guard
-    useEffect(() => {
-        isMounted.current = true
-        return () => { isMounted.current = false }
-    }, [])
-
-    // Synchronize external modal trigger (guard against repeated opens)
-    const didOpenExternal = useRef(false)
-    useEffect(() => {
-        if (externalOpen && !didOpenExternal.current) {
-            didOpenExternal.current = true
-            setIsFormOpen(true)
-        }
-        if (!externalOpen) {
-            didOpenExternal.current = false
-        }
-    }, [externalOpen])
-
     const handleFormOpenChange = (open: boolean) => {
-        setIsFormOpen(open)
         if (!open) {
-            setEditingEntry(null)
             onExternalOpenChange?.(false)
             clearActions()
         }
@@ -225,7 +187,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         open={!!viewingTransaction}
                         onOpenChange={(open) => {
                             if (!open) {
-                                setViewingTransaction(null)
                                 clearSelection()
                             }
                         }}
