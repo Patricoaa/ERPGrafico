@@ -363,31 +363,45 @@ Reemplazar mecánicamente:
 
 ---
 
-## 9. Filas expandibles — `renderSubComponent` vs `ExpandableTableRow` (deprecado)
+## 9. Filas expandibles — `renderSubComponent` + `createExpanderColumn`
 
-DataTable soporta filas expandibles de dos formas:
+DataTable soporta filas expandibles mediante el slot `renderSubComponent` que renderiza un panel debajo de la fila cuando se expande (vía chevron en la columna `createExpanderColumn`).
 
-### 9.1 `renderSubComponent` — Camino preferido (nuevos desarrollos)
-
-DataTable nativo ya incluye un slot `renderSubComponent` que renderiza un panel debajo de la fila cuando se expande (vía chevron en la columna o `onRowClick`). Desde la Fase 1 de centralización, incluye animación framer-motion (`AnimatePresence` + `motion.tr`).
+### 9.1 Patrón estándar
 
 ```tsx
+import { DataTable, createExpanderColumn } from '@/components/shared'
+
+const expanderCol = createExpanderColumn<MyRow>({
+  canExpand: (row) => row.hasDetails,  // optional
+})
+
 <DataTable
-    columns={columns}
+    columns={[expanderCol, ...otherColumns]}
     data={data}
-    renderSubComponent={createExpandableRowView({
-        lazyLoad: (row) => fetchDetail(row.id),
-        renderDetail: (row, detail) => <DetailPanel data={detail} />,
-    })}
+    renderSubComponent={(row) => <DetailPanel data={row.original} />}
 />
 ```
-
-Ver helper `createExpandableRowView` en `@/lib/view-helpers`.
 
 **Cuándo usar:**
 - Nuevos desarrollos que requieran detalle inline
 - El detalle se carga bajo demanda (lazy fetch)
 - Se quiere mantener la tabla como DataTable estándar sin custom views
+
+### 9.2 Árbol jerárquico — `getSubRows`
+
+Para datos jerárquicos (tree), usar `getSubRows` en lugar de `renderSubComponent`. El expander se implementa inline en una columna custom (no `createExpanderColumn`).
+
+```tsx
+<DataTable
+    columns={columns}  // una columna custom con row.toggleExpanded()
+    data={treeData}
+    getSubRows={(row) => row.children}
+    autoExpand
+/>
+```
+
+**Consumers:** `AccountsClientView` (plan de cuentas).
 
 ---
 
@@ -787,7 +801,7 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] `variant="minimal"` no recibe props de toolbar, paginación ni bulk actions
 - [ ] `variant="compact"` siempre declara `gridTemplate`
 - [ ] `variant="compact"` con `renderRowActions`: `gridTemplate` tiene `columns.length + 1` tracks
-- [ ] Expandable rows nuevos usan `renderSubComponent` o `createExpandableRowView` — **no** `ExpandableTableRow`
+- [ ] Expandable rows nuevos usan `renderSubComponent` + `createExpanderColumn` — **no** `ExpandableTableRow`
 - [ ] Si se usa `cardGroupBy`: `dateField` requerido; `amountField` opcional
 - [ ] `cardGroupBy` compatible con `cardComponent: 'domain'` y `cardComponent: 'entity'`
 - [ ] `createCardGroupView` usa `renderCard` con firma `(data: TData) => ReactNode` (no recibe `row`)

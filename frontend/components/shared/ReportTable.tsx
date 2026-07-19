@@ -13,7 +13,6 @@ import {
 import { ChevronRight, ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared';
-import { Skeleton } from "@/components/ui/skeleton";
 
 export interface ReportNode {
     id: number | string;
@@ -162,29 +161,6 @@ const SKELETON_DATA: ReportNode[] = Array.from({ length: 6 }, (_, i) => ({
     comp_balance: 0,
     variance: 0,
 }));
-
-export const ReportTableSkeleton = ({ showComparison }: { showComparison?: boolean }) => (
-    <div className="space-y-4 p-4 animate-in fade-in duration-500">
-        <div className="h-10 w-1/3 bg-muted/50 rounded-sm mb-6" />
-        {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="flex justify-between items-center py-3 border-b border-muted/30">
-                <div className="flex gap-4 items-center">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-40" />
-                </div>
-                <div className="flex gap-12">
-                    <Skeleton className="h-4 w-24" />
-                    {showComparison && (
-                        <>
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-4 w-16" />
-                        </>
-                    )}
-                </div>
-            </div>
-        ))}
-    </div>
-);
 
 const accentBorderColor: Record<NonNullable<ReportTableProps['accentColor']>, string> = {
     primary: "border-primary/20",

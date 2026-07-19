@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import React from "react"
 import type { Table as ReactTable, Row, VisibilityState } from "@tanstack/react-table"
 import { EntityCard, EmptyState, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -363,76 +363,6 @@ export function createCardGroupLoadingView(
     )
   CardGroupLoadingView.displayName = "CardGroupLoadingView"
   return CardGroupLoadingView
-}
-
-/**
- * Creates a renderSubComponent callback for DataTable with optional lazy-loading
- * and a built-in loading state. Eliminates the boilerplate of managing expand
- * state + fetch-on-expand per consumer.
- *
- * Usage:
- *   renderSubComponent={createExpandableRowView({
- *     lazyLoad: (row) => fetchDetail(row.id),
- *     renderDetail: (row, detail) => <DetailPanel data={detail} />,
- *   })}
- */
-export function createExpandableRowView<TData, TDetail = unknown>(
-  config: {
-    /** Called when the row expands for the first time. Return a promise for lazy data. */
-    lazyLoad?: (row: TData) => Promise<TDetail>
-    /** Renders the expanded detail panel. Receives the row data and optional lazy-loaded detail. */
-    renderDetail: (row: TData, detail: TDetail | null) => React.ReactNode
-    /** Skeleton rows to show while lazyLoad is in-flight. @default 2 */
-    skeletonRows?: number
-  }
-) {
-  const cache = new Map<string | number, TDetail | null>()
-
-  function ExpandableRowRenderer({ row }: { row: Row<TData> }) {
-    const [detail, setDetail] = useState<TDetail | null>(null)
-    const [loading, setLoading] = useState(false)
-    const id = (row.original as Record<string, unknown>).id as string | number
-
-    const handleExpand = useCallback(async () => {
-      if (!config.lazyLoad) return
-      if (cache.has(id)) {
-        const cached = cache.get(id)
-        if (cached !== undefined) setDetail(cached)
-        return
-      }
-      setLoading(true)
-      try {
-        const result = await config.lazyLoad(row.original)
-        cache.set(id, result)
-        setDetail(result)
-      } finally {
-        setLoading(false)
-      }
-    }, [id, row.original])
-
-    React.useEffect(() => {
-      handleExpand()
-    }, [handleExpand])
-
-    if (loading) {
-      const skeletonCount = config.skeletonRows ?? 2
-      return React.createElement("div", { className: "p-4 space-y-3" },
-        Array.from({ length: skeletonCount }).map((_, i) =>
-          React.createElement("div", {
-            key: i,
-            className: "h-8 bg-muted/30 rounded animate-pulse"
-          })
-        )
-      )
-    }
-
-    return config.renderDetail(row.original, detail)
-  }
-  ExpandableRowRenderer.displayName = "ExpandableRowRenderer"
-
-  const ExpandableRowView = (row: Row<TData>) => React.createElement(ExpandableRowRenderer, { row })
-  ExpandableRowView.displayName = "ExpandableRowView"
-  return ExpandableRowView
 }
 
 /**
