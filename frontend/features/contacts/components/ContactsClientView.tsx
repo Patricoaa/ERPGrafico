@@ -1,22 +1,21 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import React, { useState, useEffect, lazy, Suspense } from "react"
+import React, {useState, lazy, Suspense} from "react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Building2, User as UserIcon, Banknote } from "lucide-react"
+import { Building2, User as UserIcon } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, Chip, AutoEntityCard } from '@/components/shared'
+import { DataCell, AutoEntityCard } from '@/components/shared'
 import { contactFields } from "@/features/contacts/contactFields"
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { contactsUnifiedSearchDef } from "@/features/contacts/unifiedSearchDef"
 import type { ContactFilters } from "@/features/contacts/types"
-import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
@@ -141,34 +140,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                             <div className="flex items-center justify-center gap-2 w-full">
                                 <ContactRoleIcons contact={contact} />
                                 <DataCell.Text>{contact.name}</DataCell.Text>
-                                {(Number(contact.credit_limit || 0) > 0 || Number(contact.credit_balance_used || 0) > 0) && !contact.credit_blocked && (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Chip
-                                                    size="xs"
-                                                    intent={Number(contact.credit_balance_used || 0) > 0 ? "warning" : "success"}
-                                                    icon={Banknote}
-                                                    className="cursor-help shrink-0"
-                                                >
-                                                    Crédito
-                                                </Chip>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="rounded-sm">
-                                                <div className="flex flex-col gap-1">
-                                                    {Number(contact.credit_limit || 0) > 0 && (
-                                                        <span>Límite de Crédito: {formatCurrency(Number(contact.credit_limit || 0))} ({contact.credit_days} días)</span>
-                                                    )}
-                                                    {Number(contact.credit_balance_used || 0) > 0 && (
-                                                        <span className="font-bold text-warning">
-                                                            Deuda Activa: {formatCurrency(Number(contact.credit_balance_used || 0))}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                )}
                             </div>
                         )
                     }
@@ -177,7 +148,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
             
             return col;
         }) as ColumnDef<Contact>[],
-
 
         contactActions.auto(actionsCtx),
     ] as ColumnDef<Contact>[], [actionsCtx])
