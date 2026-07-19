@@ -24,6 +24,41 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 const ContactDrawer = lazy(() => import("./ContactDrawer"))
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
 
+function ContactRoleIcons({ contact }: { contact: Contact }) {
+    const hasCustomer = contact.is_default_customer
+    const hasVendor = contact.is_default_vendor
+    if (!hasCustomer && !hasVendor) return null
+
+    return (
+        <div className="flex items-center gap-1 shrink-0">
+            {hasCustomer && (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
+                                <UserIcon className="h-3 w-3" />
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="rounded-sm">Cliente por defecto</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+            {hasVendor && (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/15 text-success">
+                                <Building2 className="h-3 w-3" />
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="rounded-sm">Proveedor por defecto</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+        </div>
+    )
+}
+
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
     createAction?: React.ReactNode
@@ -81,95 +116,71 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
         onDelete: (contact) => handleDelete(contact),
     }
 
-    const columns: ColumnDef<Contact>[] = [
-        ...contactFields.toColumns(),
-        {
-            accessorKey: "tax_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
-            cell: ({ row }) => {
-                const taxId = row.getValue("tax_id") as string | null
-                return <DataCell.Text>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Text>
-            },
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => {
-                const contact = row.original as Contact
-                return (
-                    <div className="flex items-center justify-center gap-2 w-full">
-                        <DataCell.Text>{contact.name}</DataCell.Text>
-                        <div className="flex gap-1 shrink-0">
-                            {contact.is_default_customer && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Chip size="xs" intent="primary" icon={UserIcon} className="cursor-help shrink-0">Cliente</Chip>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="rounded-sm">Cliente por defecto</TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
-                            {contact.is_default_vendor && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Chip size="xs" intent="success" icon={Building2} className="cursor-help shrink-0">Proveedor</Chip>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="rounded-sm">Proveedor por defecto</TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
-                            {(Number(contact.credit_limit || 0) > 0 || Number(contact.credit_balance_used || 0) > 0) && !contact.credit_blocked && (
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Chip
-                                                size="xs"
-                                                intent={Number(contact.credit_balance_used || 0) > 0 ? "warning" : "success"}
-                                                icon={Banknote}
-                                                className="cursor-help shrink-0"
-                                            >
-                                                Crédito
-                                            </Chip>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="rounded-sm">
-                                            <div className="flex flex-col gap-1">
-                                                {Number(contact.credit_limit || 0) > 0 && (
-                                                    <span>Límite de Crédito: {formatCurrency(Number(contact.credit_limit || 0))} ({contact.credit_days} días)</span>
-                                                )}
-                                                {Number(contact.credit_balance_used || 0) > 0 && (
-                                                    <span className="font-bold text-warning">
-                                                        Deuda Activa: {formatCurrency(Number(contact.credit_balance_used || 0))}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            )}
-                        </div>
-                    </div>
-                )
-            },
-        },
+    const columns = React.useMemo<ColumnDef<Contact>[]>(() => [
+        ...contactFields.toColumns().map(col => {
+            const key = col.id || (col as any).accessorKey;
+            
+            if (key === 'tax_id') {
+                return {
+                    ...col,
+                    header: ({ column }: any) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
+                    cell: ({ row }: any) => {
+                        const taxId = row.getValue("tax_id") as string | null
+                        return <DataCell.Text>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Text>
+                    },
+                }
+            }
 
-        {
-            accessorKey: "active_roles",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Roles" className="justify-center" />,
-            cell: ({ row }) => {
-                const roles = row.original.active_roles || []
-                return (
-                    <div className="flex flex-wrap gap-1 justify-center w-full">
-                        {roles.map(role => (
-                            <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
-                        ))}
-                    </div>
-                )
-            },
-        },
+            if (key === 'name') {
+                return {
+                    ...col,
+                    header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
+                    cell: ({ row }: any) => {
+                        const contact = row.original as Contact
+                        return (
+                            <div className="flex items-center justify-center gap-2 w-full">
+                                <ContactRoleIcons contact={contact} />
+                                <DataCell.Text>{contact.name}</DataCell.Text>
+                                {(Number(contact.credit_limit || 0) > 0 || Number(contact.credit_balance_used || 0) > 0) && !contact.credit_blocked && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Chip
+                                                    size="xs"
+                                                    intent={Number(contact.credit_balance_used || 0) > 0 ? "warning" : "success"}
+                                                    icon={Banknote}
+                                                    className="cursor-help shrink-0"
+                                                >
+                                                    Crédito
+                                                </Chip>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="rounded-sm">
+                                                <div className="flex flex-col gap-1">
+                                                    {Number(contact.credit_limit || 0) > 0 && (
+                                                        <span>Límite de Crédito: {formatCurrency(Number(contact.credit_limit || 0))} ({contact.credit_days} días)</span>
+                                                    )}
+                                                    {Number(contact.credit_balance_used || 0) > 0 && (
+                                                        <span className="font-bold text-warning">
+                                                            Deuda Activa: {formatCurrency(Number(contact.credit_balance_used || 0))}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                )}
+                            </div>
+                        )
+                    }
+                }
+            }
+            
+            return col;
+        }) as ColumnDef<Contact>[],
+
+
         contactActions.auto(actionsCtx),
-    ]
+    ] as ColumnDef<Contact>[], [actionsCtx])
 
     return (
 
@@ -214,7 +225,12 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 data={contact}
                                 fields={contactFields}
                                 entityLabel="contacts.contact"
-                                title={contact.name}
+                                title={
+                                    <span className="flex items-center gap-1.5">
+                                        <ContactRoleIcons contact={contact} />
+                                        {contact.name}
+                                    </span>
+                                }
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
                                 variant="highlights"
