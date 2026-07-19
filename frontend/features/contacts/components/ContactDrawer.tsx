@@ -24,14 +24,18 @@ import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefault
 import { ActivitySidebar } from "@/features/audit"
 
 import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Printer} from "lucide-react"
-import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
+import { salesOrderFields } from "@/features/sales/salesOrderFields"
+import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
+import { workOrderFields } from "@/features/production/workOrderFields"
 
 import { DataTable } from '@/components/shared'
 
 import { type ColumnDef } from "@tanstack/react-table"
 import { type LucideIcon } from "lucide-react"
+import { contactCreditDocumentFields, type ContactCreditDocument } from '../contactCreditDocumentFields'
 
 import { getHubStatuses } from '@/features/orders'
 import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
@@ -64,8 +68,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
 
-    const mode: DrawerMode = modeProp ?? (contact ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: contact })
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const [activeTab, setActiveTab] = useState("profile")
@@ -356,9 +359,13 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
 
                                             <LabeledContainer label="Roles del Contacto">
                                                 <div className="flex flex-wrap gap-1.5">
-                                                    {(["CUSTOMER", "SUPPLIER", "RELATED", "PARTNER", "EMPLOYEE", "USER"] as const).map(value => (
-                                                        <Chip.Category key={value} domain="contact_type" value={value} size="sm" />
-                                                    ))}
+                                                    {c?.id && (c.active_roles ?? []).length > 0 ? (
+                                                        (c.active_roles ?? []).map(value => (
+                                                            <Chip.Category key={value} domain="contact_type" value={value} size="sm" />
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">Sin roles asignados</span>
+                                                    )}
                                                 </div>
                                             </LabeledContainer>
                                         </div>
@@ -634,44 +641,22 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         },
     }
 
-    const columns: ColumnDef<Record<string, unknown>>[] = [
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
-        },
-        {
-            accessorKey: "display_id",
-            header: "Número",
-            cell: ({ row }) => {
-                let label = 'sales.saleorder';
-                if (type === 'purchase') label = 'purchasing.purchaseorder';
-                else if (type === 'work_order') label = 'production.workorder';
+    const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => {
+        let baseColumns: any[] = []
+        if (type === 'sale') {
+            baseColumns = salesOrderFields.toColumns({ exclude: ['contactDisplayName', 'channel'] })
+        } else if (type === 'purchase') {
+            baseColumns = purchaseOrderFields.toColumns({ exclude: ['contactDisplayName'] })
+        } else if (type === 'work_order') {
+            baseColumns = workOrderFields.toColumns({ exclude: ['contactDisplayName'] })
+        }
 
-                return <DataCell.Entity label={label} data={row.original} />;
-            },
-        },
-        ...(type !== 'work_order' ? [
-            {
-                accessorKey: "total",
-                header: "Total",
-                cell: ({ row }: { row: { original: Record<string, unknown> } }) => <DataCell.Currency value={row.original.total as number} className="text-left font-bold" />,
-            }
-        ] : []),
-        {
-            id: "status",
-            header: "Estados",
-            cell: ({ row }) => {
-                if (type === 'work_order') {
-                    return (
-                        <StatusBadge status={row.original.status as string} size="sm" variant="badge" />
-                    )
-                }
-                return <DomainHubStatus data={row.original} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
-            }
-        },
-        contactDocumentActions.auto(contactDocumentActionsCtx)
-    ]
+        return [
+            ...baseColumns,
+            contactDocumentActions.auto(contactDocumentActionsCtx)
+        ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [type])
 
     return (
         <div className="flex flex-col h-full">
@@ -741,10 +726,10 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     )
 }
 
-function CreditLedgerTable({ data, loading }: { data: Record<string, unknown>[], loading: boolean }) {
+function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], loading: boolean }) {
 
     // Placeholder tipado para el ledger - sigue el patrón del contrato
-    const LEDGER_SKELETON: Record<string, unknown>[] = Array.from({ length: 5 }, (_, i) => ({
+    const LEDGER_SKELETON: ContactCreditDocument[] = Array.from({ length: 5 }, (_, i) => ({
         id: i + 1,
         display_id: "————————————",
         number: "————————————",
@@ -782,28 +767,32 @@ function CreditLedgerTable({ data, loading }: { data: Record<string, unknown>[],
         )
     }
 
-    const columns: ColumnDef<Record<string, unknown>>[] = [
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
-        },
-        {
-            accessorKey: "number",
-            header: "Número",
-            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
-        },
-        {
-            accessorKey: "balance",
-            header: "Saldo",
-            cell: ({ row }) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
-        },
+    const columns = useMemo<ColumnDef<ContactCreditDocument>[]>(() => [
+        ...contactCreditDocumentFields.toColumns().map(col => {
+            const key = col.id || (col as any).accessorKey;
+
+            if (key === 'number') {
+                return {
+                    ...col,
+                    cell: ({ row }: any) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
+                }
+            }
+
+            if (key === 'balance') {
+                return {
+                    ...col,
+                    cell: ({ row }: any) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
+                }
+            }
+
+            return col;
+        }),
         {
             id: "status",
             header: "Estados",
-            cell: ({ row }) => <DomainHubStatus data={row.original} label="sales.saleorder" />
-        }
-    ]
+            cell: ({ row }: any) => <DomainHubStatus data={row.original} label="sales.saleorder" />
+        } as ColumnDef<ContactCreditDocument>
+    ], [])
 
     return (
         <SkeletonShell isLoading={loading} ariaLabel="Cargando libro de cuenta">
