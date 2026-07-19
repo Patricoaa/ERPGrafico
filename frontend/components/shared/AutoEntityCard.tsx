@@ -150,8 +150,8 @@ interface ClassifiedFields {
  * Classifies card fields into layout zones based on their resolved cardPlacement.
  * Applies variant-based visibility rules.
  *
- * Fields referenced by subtitle templates (via subtitleFieldKeys) are excluded
- * from all zones to prevent duplicate rendering with the subtitle.
+ * Fields referenced by subtitle templates (via subtitleFieldKeys) or the title field
+ * are excluded from all zones to prevent duplicate rendering.
  *
  * Detail field routing:
  * - Flow fields (numericFlow/currencyFlow) → center of header
@@ -162,12 +162,14 @@ function classifyFields<TData>(
     fields: CardField[],
     variant: AutoEntityCardProps<TData>['variant'],
     subtitleFieldKeys: Set<string>,
+    titleFieldKey?: string,
 ): ClassifiedFields {
     const title = fields.find(f => f.cardPlacement === 'title')
 
-    // Exclude title and subtitle-referenced fields from layout zones
+    // Exclude title field and subtitle-referenced fields from layout zones
     const rest = fields.filter(f =>
         f.cardPlacement !== 'title' &&
+        f.key !== titleFieldKey &&
         !subtitleFieldKeys.has(f.key)
     )
 
@@ -260,7 +262,7 @@ export function AutoEntityCard<TData>({
     imageSrc,
     trailing,
     children,
-    variant = 'full',
+    variant,
     hubStatusRenderer,
     workflowRenderer,
     hubTrigger,
@@ -272,13 +274,18 @@ export function AutoEntityCard<TData>({
     // Resolve subtitle field keys from registry templates to exclude from layout zones
     const subtitleFieldKeys = entityLabel ? getSubtitleFieldKeys(entityLabel) : new Set<string>()
 
+    // Resolve title field key from registry
+    const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
+    const titleFieldKey = entityMetadata?.titleField
+
     const cardFields = fields.toCardFields(data)
 
     // 1. Classify fields into layout zones
-    const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys)
+    const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys, titleFieldKey)
 
-    // 2. Determine display title
-    const displayTitle = explicitTitle ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
+    // 2. Determine display title — use explicit titleField from registry, then explicit prop, then first field
+    const titleField = titleFieldKey ? cardFields.find(f => f.key === titleFieldKey) : undefined
+    const displayTitle = explicitTitle ?? titleField?.value ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
 
     // 3. Build subtitle from registry or explicit
     const subtitleItems = buildSubtitleItems(entityLabel, data, explicitSubtitle, explicitTitle, cardFields[0])
@@ -352,7 +359,6 @@ export function AutoEntityCard<TData>({
     ) : actions
 
     // 9. Extract workflow data for workflow variant (from entity-registry cardConfig)
-    const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
     const workflowConfig = entityMetadata?.cardConfig?.workflow
     const fallbackDateLabel = typeof entityMetadata?.cardConfig?.dateLabel === 'function'
         ? entityMetadata.cardConfig.dateLabel({})
