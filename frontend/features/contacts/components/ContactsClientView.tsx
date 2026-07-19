@@ -233,7 +233,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 }
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
-                                variant="highlights"
+
                             />
                         )}
                     />

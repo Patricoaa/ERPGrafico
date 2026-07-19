@@ -264,7 +264,7 @@ export function PurchaseInvoicesClientView() {
                                         }
                                     },
                                 }}
-                                variant="highlights"
+
                             />
                         )
                     }}

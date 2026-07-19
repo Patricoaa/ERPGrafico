@@ -229,7 +229,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                                 icon={icon}
                                 iconClassName={iconClassName}
                                 actions={treasuryMovementActions.render(m, { onDetail: (id) => handleViewDetails(id) })}
-                                variant="full"
+
                             />
                         )
                     }}

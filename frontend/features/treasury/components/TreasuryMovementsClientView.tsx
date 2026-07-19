@@ -298,7 +298,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 icon={Icon}
                                 iconClassName={iconStyle}
                                 actions={treasuryMovementActions.render(m, { onDetail: (id) => handleViewDetails(id) })}
-                                variant="full"
+
                             />
                         )
                     }}

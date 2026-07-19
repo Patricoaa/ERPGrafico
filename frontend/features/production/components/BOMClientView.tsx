@@ -118,7 +118,7 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                             key={bom.id}
                             data={bom}
                             fields={bomFields}
-                            variant="full"
+
                             entityLabel="production.bom"
                             title={bom.name}
 

@@ -174,7 +174,7 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                             title={cat.name}
                             actions={uomCategoryActions.render(cat, actionsCtx)}
                             defaultAction={uomCategoryActions.defaultAction(actionsCtx)?.(cat) ?? (() => openSelected(cat.id))}
-                            variant="highlights"
+
                         />
                     )}
                 />

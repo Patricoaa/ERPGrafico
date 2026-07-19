@@ -464,7 +464,7 @@ export function PartnersClientView({
                                 entityLabel="settings.partner"
                                 title={partner.name}
                                 actions={partnerActions.render(partner, partnerActionsCtx)}
-                                variant="highlights"
+
                             />
                         )}
                     />

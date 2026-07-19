@@ -284,7 +284,7 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
                                         return (
                                         <AutoEntityCard
                                             key={period.id}
-                                            variant="summary"
+
                                             data={period}
                                             fields={taxPeriodFields}
                                             title={period.month_display + " " + period.year}

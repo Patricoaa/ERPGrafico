@@ -174,7 +174,7 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                             title={uom.name}
                             actions={uomActions.render(uom, actionsCtx)}
                             defaultAction={uomActions.defaultAction(actionsCtx)?.(uom) ?? (() => openSelected(uom.id))}
-                            variant="highlights"
+
                         />
                     )}
                 />

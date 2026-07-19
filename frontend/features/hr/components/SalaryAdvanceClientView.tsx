@@ -124,7 +124,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                             title={advance.employee_name || '---'}
                             actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}
                             defaultAction={salaryAdvanceActions.defaultAction(salaryAdvanceActionsCtx)?.(advance) ?? (() => openSelected(advance.id))}
-                            variant="highlights"
+
                         />
                     )}
                 />

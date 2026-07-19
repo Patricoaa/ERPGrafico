@@ -521,7 +521,7 @@ export function UnbilledChargesClientView({
                             key={item.id || item.date + item.amount}
                             data={item}
                             fields={unbilledChargeFields}
-                            variant="full"
+
                             entityLabel="treasury.unbilledcharge"
                             title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
                         />

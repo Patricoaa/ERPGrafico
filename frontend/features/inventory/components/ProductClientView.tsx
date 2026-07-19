@@ -493,7 +493,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 actions={productActions.render(product, actionsCtx)}
                                 defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
                                 onClick={() => openSelected(product.id)}
-                                variant="full"
+
                             />
                         )
                     }}

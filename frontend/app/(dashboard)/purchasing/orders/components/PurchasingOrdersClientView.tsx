@@ -500,7 +500,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                     trailing={
                                         <DataCell.ActionSingle onClick={() => toggleSelection(data.id as number)} title="Abrir" />
                                     }
-                                    variant="workflow"
+
                                 />
                             )
                         }}

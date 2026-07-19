@@ -190,7 +190,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                             title={warehouse.name}
                             actions={warehouseActions.render(warehouse, actionsCtx)}
                             defaultAction={warehouseActions.defaultAction(actionsCtx)?.(warehouse) ?? (() => openSelected(warehouse.id))}
-                            variant="highlights"
+
                         />
                     )}
                 />
