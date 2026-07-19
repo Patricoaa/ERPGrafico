@@ -72,6 +72,7 @@ def list_contacts(*, params: dict) -> QuerySet:
     from purchasing.models import PurchaseOrder
     from production.models import WorkOrder
     from hr.models import Employee
+    from core.models import User
     from treasury.models import TreasuryMovement as _TM
 
     credit_additions_sq = (
@@ -101,6 +102,7 @@ def list_contacts(*, params: dict) -> QuerySet:
         _has_purchases=Exists(PurchaseOrder.objects.filter(supplier=OuterRef("pk"))),
         _has_work_orders=Exists(WorkOrder.objects.filter(related_contact=OuterRef("pk"))),
         _has_employees=Exists(Employee.objects.filter(contact=OuterRef("pk"))),
+        _has_system_user=Exists(User.objects.filter(contact=OuterRef("pk"))),
         _credit_balance_additions=Coalesce(
             Subquery(credit_additions_sq, output_field=Df()), Value(Decimal("0"), output_field=Df())
         ),

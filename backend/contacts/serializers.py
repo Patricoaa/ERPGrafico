@@ -211,6 +211,8 @@ class ContactListSerializer(serializers.ModelSerializer):
             roles.add("PARTNER")
         if self._bool(obj, "_has_employees"):
             roles.add("EMPLOYEE")
+        if self._bool(obj, "_has_system_user"):
+            roles.add("USER")
         return list(roles) if roles else ["NONE"]
 
     def get_credit_balance_used(self, obj):
