@@ -135,7 +135,7 @@ export function TerminalBatchesClientView({
                             key={batch.id}
                             data={batch}
                             fields={terminalBatchFields}
-                            variant="full"
+
                             entityLabel="treasury.terminalbatch"
                             title={batch.batch_number}
                             onClick={() => {

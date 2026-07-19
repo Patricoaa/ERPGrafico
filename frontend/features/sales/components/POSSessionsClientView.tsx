@@ -139,7 +139,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                         <AutoEntityCard
                             data={session}
                             fields={posSessionFields}
-                            variant="full"
+
                             entityLabel="pos.session"
                             title={session.user_name}
 

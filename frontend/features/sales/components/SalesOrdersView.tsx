@@ -185,7 +185,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                         <DomainHubStatus label={label} data={hubData as Record<string, unknown>} />
                                     </div>
                                 )}
-                                variant="workflow"
+
                             />
                         )
                     }}

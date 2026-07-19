@@ -167,7 +167,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                                 params.set('selected', String(emp.id))
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             })}
-                            variant="full"
+
                         />
                     )}
                     cardSkeleton={{ showFooter: true }}

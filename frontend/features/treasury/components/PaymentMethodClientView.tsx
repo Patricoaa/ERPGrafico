@@ -123,7 +123,7 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 key={method.id} 
                 data={method}
                 fields={paymentMethodFields}
-                variant="full"
+
                 entityLabel="treasury.paymentmethod"
                 title={method.name}
                 onClick={() => openEdit(method)} 

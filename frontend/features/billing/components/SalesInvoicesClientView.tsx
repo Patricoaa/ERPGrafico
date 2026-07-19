@@ -178,7 +178,7 @@ export function SalesInvoicesClientView() {
                                     </div>
                                     )
                                 }}
-                                variant="workflow"
+
                             />
                         )
                     }}

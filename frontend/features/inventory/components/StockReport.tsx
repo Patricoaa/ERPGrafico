@@ -173,7 +173,7 @@ export function StockReport() {
                             key={item.id}
                             data={item}
                             fields={stockReportFields}
-                            variant="full"
+
                             title={item.name}
                             entityLabel="inventory.stockreport"
                             actions={stockReportActions.render(item, stockReportActionsCtx)}

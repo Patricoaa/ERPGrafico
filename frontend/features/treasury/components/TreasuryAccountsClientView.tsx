@@ -187,7 +187,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                         icon={Icon}
                                         iconClassName={iconStyle}
                                         actions={treasuryAccountActions.render(acc, actionsCtx)}
-                                        variant="full"
+
                                     />
                                 )
                             }}

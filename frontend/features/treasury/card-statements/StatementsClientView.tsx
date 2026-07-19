@@ -270,7 +270,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             key={stmt.id} 
                             data={stmt}
                             fields={cardStatementFields}
-                            variant="full"
+
                             entityLabel="treasury.cardstatement"
                             title={stmt.display_id}
                             onClick={() => openStatement(stmt.id, "detail")} 

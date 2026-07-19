@@ -184,7 +184,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                                 key={doc.id}
                                 data={doc}
                                 fields={inventoryDocumentFields}
-                                variant="full"
+
                                 entityLabel="inventory.inventorydocument"
                                 title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
 

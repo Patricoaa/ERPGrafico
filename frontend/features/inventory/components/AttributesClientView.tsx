@@ -308,7 +308,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                             key={attr.id}
                             data={attr}
                             fields={attributeFields}
-                            variant="full"
+
                             entityLabel="inventory.attribute"
                             title={attr.name}
                             icon={Tag}

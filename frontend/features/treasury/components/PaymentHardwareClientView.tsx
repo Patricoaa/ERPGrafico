@@ -197,7 +197,6 @@ export function PaymentHardwareClientView({
                                 key={provider.id}
                                 data={provider}
                                 fields={terminalProviderFields}
-                                variant="full"
                                 entityLabel="treasury.paymentterminalprovider"
                                 title={provider.name}
                                 icon={Building2}
@@ -252,7 +251,6 @@ export function PaymentHardwareClientView({
                                 key={device.id}
                                 data={device}
                                 fields={terminalDeviceFields}
-                                variant="full"
                                 entityLabel="treasury.paymentterminaldevice"
                                 title={device.name}
                                 actions={deviceActions.render(device, deviceActionsCtx)}

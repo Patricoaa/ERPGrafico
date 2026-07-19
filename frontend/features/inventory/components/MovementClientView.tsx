@@ -105,7 +105,7 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                 title={move.product_name}
                                 actions={stockMoveActions.render(move, actionsCtx)}
                                 defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
-                                variant="summary"
+
                             />
                         )
                     }}

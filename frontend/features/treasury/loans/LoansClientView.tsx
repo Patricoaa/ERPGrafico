@@ -192,7 +192,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                             defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
 
                             actions={loanActions.render(loan, actionsCtx)}
-                            variant="summary"
+
                         />
                     )}
                 />

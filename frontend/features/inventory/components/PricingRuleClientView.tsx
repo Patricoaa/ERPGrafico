@@ -244,7 +244,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
 
                             actions={pricingRuleActions.render(rule, actionsCtx)}
                             defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? (() => openSelected(rule.id))}
-                            variant="highlights"
+
                         />
                     )}
                 />

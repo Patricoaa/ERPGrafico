@@ -154,7 +154,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                             title={category.name}
                             actions={categoryActions.render(category, actionsCtx)}
                             defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? (() => openSelected(category.id))}
-                            variant="highlights"
+
                         />
                     )}
                 />

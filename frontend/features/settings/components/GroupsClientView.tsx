@@ -88,7 +88,7 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                             onClick={() => groupActionsCtx.onEdit(group)}
                             icon={Users}
                             actions={groupActions.render(group, groupActionsCtx)}
-                            variant="highlights"
+
                         />
                     )}
                     cardSkeleton={{ showBody: false }}

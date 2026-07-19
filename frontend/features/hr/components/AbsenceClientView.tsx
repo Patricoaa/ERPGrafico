@@ -117,7 +117,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                             title={absence.employee_name}
                             actions={absenceActions.render(absence, absenceActionsCtx)}
                             defaultAction={absenceActions.defaultAction(absenceActionsCtx)?.(absence) ?? (() => openSelected(absence.id))}
-                            variant="highlights"
+
                         />
                     )}
                 />

@@ -199,7 +199,7 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                             key={payroll.id}
                             data={payroll}
                             fields={payrollFields}
-                            variant="full"
+
                             entityLabel="hr.payroll"
                             title={(payroll as Payroll & Record<string, unknown>).employee_name as string || '---'}
 

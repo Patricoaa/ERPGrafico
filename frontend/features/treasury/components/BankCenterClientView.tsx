@@ -125,7 +125,7 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                             key={bank.id}
                             data={bank}
                             fields={bankCenterFields}
-                            variant="full"
+
                             title={bank.name}
                             entityLabel="treasury.bank"
                             onClick={() => router.push(`/treasury/bank-center/${bank.id}/overview`)}
