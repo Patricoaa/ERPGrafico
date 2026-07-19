@@ -109,20 +109,20 @@ return <DataTable ... />
 Cuando un componente necesita su propio fallback para un `<Suspense>` (ej. modal lazy, panel pesado), define la propiedad estática `.Skeleton` en el mismo archivo.
 
 ```tsx
-// BudgetVarianceTable.tsx
-function BudgetVarianceTableBase({ data, loading }: Props) { ... }
+// MyHeavyComponent.tsx
+function MyHeavyComponentBase({ data, loading }: Props) { ... }
 
-BudgetVarianceTableBase.Skeleton = function BudgetVarianceTableSkeleton() {
-    return <TableSkeleton rows={8} columns={7} ariaLabel="Cargando variación presupuestal" />
+MyHeavyComponentBase.Skeleton = function MyHeavyComponentSkeleton() {
+    return <TableSkeleton rows={8} columns={7} ariaLabel="Cargando datos" />
 }
 
-export const BudgetVarianceTable = BudgetVarianceTableBase
+export const MyHeavyComponent = MyHeavyComponentBase
 ```
 
 ```tsx
 // En el consumidor
-<Suspense fallback={<BudgetVarianceTable.Skeleton />}>
-    <BudgetVarianceTable data={data} />
+<Suspense fallback={<MyHeavyComponent.Skeleton />}>
+    <MyHeavyComponent data={data} />
 </Suspense>
 ```
 

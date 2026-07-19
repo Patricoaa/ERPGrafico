@@ -13,15 +13,16 @@ import {
 import { ChevronRight, ChevronDown, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-;
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {DataCell, EmptyState, SkeletonShell} from '@/components/shared';
+import {DataCell, SkeletonShell} from '@/components/shared';
+
+export type BudgetVarianceAccountType = 'INCOME' | 'EXPENSE';
 
 export interface BudgetVarianceNode {
     id: number;
     code: string;
     name: string;
-    type: string;
+    type: BudgetVarianceAccountType;
     month_actual: number;
     month_budget: number;
     month_variance: number;
@@ -56,7 +57,7 @@ const BUDGET_VARIANCE_SKELETON_ROWS: BudgetVarianceNode[] = Array.from({ length:
     children: [],
 }))
 
-const VarianceCell = ({ value, percentage, type }: { value: number, percentage: number, type: string }) => {
+const VarianceCell = ({ value, percentage, type }: { value: number, percentage: number, type: BudgetVarianceAccountType }) => {
     // Logic for "good" vs "bad" variance depends on account type
     // Income: Actual > Budget is GOOD (+ variance)
     // Expense: Actual > Budget is BAD (+ variance)
@@ -157,10 +158,6 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
 };
 
 function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
-    if (!loading && !data.length) {
-        return <EmptyState context="finance" variant="full" title="Sin datos presupuestarios" description="No se encontraron datos para el periodo seleccionado." />
-    }
-
     const rows = loading ? BUDGET_VARIANCE_SKELETON_ROWS : data
 
     return (
@@ -191,10 +188,6 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
             </div>
         </SkeletonShell>
     );
-}
-
-BudgetVarianceTableBase.Skeleton = function BudgetVarianceTableSkeleton() {
-    return <SkeletonShell isLoading ariaLabel="Cargando variación presupuestal" />
 }
 
 export const BudgetVarianceTable = BudgetVarianceTableBase

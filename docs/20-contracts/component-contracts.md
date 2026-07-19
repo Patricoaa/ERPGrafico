@@ -632,6 +632,7 @@ Hierarchical accounting report table. Supports tree expand/collapse and comparis
   totalLabel="Total Activos"
   totalValue={5000000}
   showComparison
+  varianceDirection="higher-is-better"
   periodLabel="Abr 2026"
   compPeriodLabel="Abr 2025"
   accentColor="primary"
@@ -659,15 +660,78 @@ interface ReportNode {
 | `totalValueComp` | `number` | ❌ | — | Footer comparison balance |
 | `showComparison` | `boolean` | ❌ | `false` | Adds comp column + variance |
 | `embedded` | `boolean` | ❌ | `false` | Removes card wrapper |
-| `isLoading` | `boolean` | ❌ | `false` | Shows `ReportTableSkeleton` |
+| `isLoading` | `boolean` | ❌ | `false` | Shows skeleton loading state |
 | `periodLabel` | `string` | ❌ | — | Column header |
 | `compPeriodLabel` | `string` | ❌ | — | Comparison column header |
 | `mode` | `'tree' \| 'flat'` | ❌ | `'tree'` | Flat disables expand |
-| `accentColor` | `'primary' \| 'success' \| 'info' \| 'destructive'` | ❌ | `'primary'` | Total row accent |
+| `accentColor` | `'primary' \| 'success' \| 'info' \| 'destructive' \| 'income' \| 'expense' \| 'asset' \| 'liability'` | ❌ | `'primary'` | Total row accent |
+| `varianceDirection` | `'higher-is-better' \| 'lower-is-better'` | ❌ | `'higher-is-better'` | Controls variance color polarity |
 
-Also exports `ReportTableSkeleton` for suspense boundaries.
+States handled: loading (isLoading → skeleton), empty (EmptyState), populated.
 
-States handled: loading (isLoading → ReportTableSkeleton), empty (EmptyState), populated.
+---
+
+## BudgetVarianceTable 🟢 (feature-local)
+
+Budget variance report table with hierarchical account expansion. Located in `features/finance/components/`. Not exported from shared — internal to the finance feature.
+
+```tsx
+<BudgetVarianceTable data={varianceData} loading={isLoading} />
+```
+
+```typescript
+type BudgetVarianceAccountType = 'INCOME' | 'EXPENSE'
+
+interface BudgetVarianceNode {
+  id: number
+  code: string
+  name: string
+  type: BudgetVarianceAccountType
+  month_actual: number
+  month_budget: number
+  month_variance: number
+  month_percentage: number
+  ytd_actual: number
+  ytd_budget: number
+  ytd_variance: number
+  ytd_percentage: number
+  is_unbudgeted: boolean
+  children: BudgetVarianceNode[]
+}
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `data` | `BudgetVarianceNode[]` | ✅ | — | Tree data from `useBudgetVariance` |
+| `loading` | `boolean` | ❌ | `false` | Shows skeleton rows |
+
+States handled: loading (SkeletonShell), empty (handled by parent view), populated.
+
+---
+
+## createExpanderColumn 🟢
+
+Factory function that creates an expander column for `DataTable` rows. Renders a chevron toggle button. Paired with `renderSubComponent` on DataTable for flat row expansion.
+
+```tsx
+import { createExpanderColumn } from '@/components/shared'
+
+const expanderCol = createExpanderColumn<CreditContact>({
+  canExpand: (row) => row.hasDetails,  // optional: hide button for non-expandable rows
+})
+
+<DataTable
+  columns={[expanderCol, ...otherColumns]}
+  data={data}
+  renderSubComponent={(row) => <DetailPanel data={row.original} />}
+/>
+```
+
+| param | type | required | notes |
+|-------|------|----------|-------|
+| `canExpand` | `(row: TData) => boolean` | ❌ | When returns false, cell renders null (hidden button) |
+
+Consumers: `ProfileView` (settlements), `PortfolioTable` (credits), `BlacklistClientView` (blacklist).
 
 ---
 
