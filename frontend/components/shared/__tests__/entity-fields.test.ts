@@ -242,6 +242,149 @@ describe("createEntityFields", () => {
         })
     })
 
+    describe("order", () => {
+        it("sorts columns by order property (lower first)", () => {
+            const fields = createEntityFields<TestEntity>()({
+                c: { key: "code", type: "code", label: "C", order: 30 },
+                a: { key: "name", type: "text", label: "A", order: 10 },
+                b: { key: "date", type: "date", label: "B", order: 20 },
+            })
+            const columns = fields.toColumns()
+            expect(getAccessorKey(columns[0])).toBe("name")
+            expect(getAccessorKey(columns[1])).toBe("date")
+            expect(getAccessorKey(columns[2])).toBe("code")
+        })
+
+        it("sorts fields without order last", () => {
+            const fields = createEntityFields<TestEntity>()({
+                c: { key: "code", type: "code", label: "C" },
+                a: { key: "name", type: "text", label: "A", order: 10 },
+            })
+            const columns = fields.toColumns()
+            expect(getAccessorKey(columns[0])).toBe("name")
+            expect(getAccessorKey(columns[1])).toBe("code")
+        })
+    })
+
+    describe("meta.title", () => {
+        it("resolveTitle uses meta.title.field", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre" },
+            }, {
+                title: { field: "name" },
+            })
+            const title = fields.resolveTitle(sampleEntity)
+            expect(title).toBeTruthy()
+        })
+
+        it("resolveTitle uses meta.title.template", () => {
+            const fields = createEntityFields<{ month: string; year: string }>()({
+                m: { key: "month", type: "text", label: "Month" },
+                y: { key: "year", type: "text", label: "Year" },
+            }, {
+                title: { field: "month", template: "{month} {year}" },
+            })
+            const title = fields.resolveTitle({ month: "Enero", year: "2026" })
+            expect(title).toBe("Enero 2026")
+        })
+
+        it("resolveTitle falls back to cardPlacement:'title' field", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio", cardPlacement: "title" },
+                name: { key: "name", type: "text", label: "Nombre" },
+            })
+            const title = fields.resolveTitle(sampleEntity)
+            expect(title).toBeTruthy()
+        })
+
+        it("resolveTitle falls back to first field when no meta or cardPlacement", () => {
+            const fields = createEntityFields<TestEntity>()({
+                name: { key: "name", type: "text", label: "Nombre" },
+            })
+            const title = fields.resolveTitle(sampleEntity)
+            expect(title).toBeTruthy()
+        })
+    })
+
+    describe("meta.subtitle", () => {
+        it("resolveSubtitle uses meta.subtitle.field", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre" },
+            }, {
+                subtitle: { field: "name" },
+            })
+            const subtitle = fields.resolveSubtitle(sampleEntity)
+            expect(subtitle).toHaveLength(1)
+            expect(subtitle[0].kind).toBe("text")
+        })
+
+        it("resolveSubtitle uses meta.subtitle.template", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre" },
+            }, {
+                subtitle: { template: "{code} · {name}" },
+            })
+            const subtitle = fields.resolveSubtitle(sampleEntity)
+            expect(subtitle.length).toBeGreaterThan(0)
+        })
+
+        it("resolveSubtitle returns empty when no meta", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+            })
+            const subtitle = fields.resolveSubtitle(sampleEntity)
+            expect(subtitle).toHaveLength(0)
+        })
+
+        it("resolveSubtitle excludes null fields from template", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre" },
+            }, {
+                subtitle: { template: "{code} · {?name}" },
+            })
+            const entityNoName = { ...sampleEntity, name: "" }
+            const subtitle = fields.resolveSubtitle(entityNoName)
+            expect(subtitle.length).toBeGreaterThan(0)
+        })
+    })
+
+    describe("getSubtitleExcludeKeys", () => {
+        it("returns field keys from meta.subtitle.field", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre" },
+            }, {
+                subtitle: { field: "name" },
+            })
+            const keys = fields.getSubtitleExcludeKeys()
+            expect(keys.has("name")).toBe(true)
+        })
+
+        it("returns keys from meta.subtitle.template", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre" },
+            }, {
+                subtitle: { template: "{code} · {name}" },
+            })
+            const keys = fields.getSubtitleExcludeKeys()
+            expect(keys.has("code")).toBe(true)
+            expect(keys.has("name")).toBe(true)
+        })
+
+        it("returns empty set when no meta", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+            })
+            const keys = fields.getSubtitleExcludeKeys()
+            expect(keys.size).toBe(0)
+        })
+    })
+
     describe("all field types", () => {
         const allTypeFields = createEntityFields<Record<string, unknown>>()({
             f_text: { key: "text", type: "text", label: "Text" },
