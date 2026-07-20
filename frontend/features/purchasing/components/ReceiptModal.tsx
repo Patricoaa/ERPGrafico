@@ -15,7 +15,7 @@ import {
 import { purchasingApi } from "../api/purchasingApi"
 import { useReceiptData } from "../hooks/useReceiptData"
 import { toast } from "sonner"
-import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
+import {Package, AlertTriangle, CheckCircle2} from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useServerDate } from "@/hooks/useServerDate"

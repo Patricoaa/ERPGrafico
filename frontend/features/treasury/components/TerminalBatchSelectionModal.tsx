@@ -43,7 +43,7 @@ interface TerminalBatchFormProps {
     onFooterStateChange?: (state: { isValid: boolean; isCreating: boolean; providerId: string; depositMethodId: string }) => void
 }
 
-export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterStateChange }: TerminalBatchFormProps) {
+export function TerminalBatchSelectionModal({ onSuccess, onCancel, onFooterStateChange }: TerminalBatchFormProps) { // eslint-disable-line @typescript-eslint/no-unused-vars
     const { providers, isLoading: isProvidersLoading } = useTerminalProviders()
     const { methods, isLoading: isMethodsLoading } = usePaymentMethods()
     const { createBatch, isCreating } = useTerminalBatchMutations()
@@ -411,21 +411,6 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
         }
         requestAnimationFrame(() => setSelectedIds(next))
     }, [open, movements, initialSelectedIds, dateRange])
-
-    const toggleAll = () => {
-        if (selectedIds.size === movements.length) {
-            setSelectedIds(new Set())
-        } else {
-            setSelectedIds(new Set(movements.map(m => m.id)))
-        }
-    }
-
-    const toggleOne = (id: number) => {
-        const next = new Set(selectedIds)
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
-        setSelectedIds(next)
-    }
 
     const totalSelected = movements
         .filter(m => selectedIds.has(m.id))

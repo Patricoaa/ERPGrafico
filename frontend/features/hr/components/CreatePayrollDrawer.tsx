@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -42,7 +41,7 @@ export interface CreatePayrollDrawerProps {
     trigger?: React.ReactNode
 }
 
-export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: CreatePayrollDrawerProps) {
+export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayrollDrawerProps) {
     const { savePayroll, isSaving: saving } = usePayrollMutations()
     const [employees, setEmployees] = useState<Employee[]>([])
     const [isFetchingEmployees, setIsFetchingEmployees] = useState(false)

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { toast } from "sonner"
+import {useEffect} from "react"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -9,11 +8,8 @@ import * as z from "zod"
 import { useAbsenceMutations } from '../hooks/useAbsenceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import type { Absence, Employee } from "@/types/hr"
-import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
-import { Printer } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
@@ -40,7 +36,7 @@ export interface AbsenceDrawerProps {
     mode?: DrawerMode
 }
 
-export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, trigger, mode: modeProp }: AbsenceDrawerProps) {
+export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, mode: modeProp }: AbsenceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
     const mode: DrawerMode = modeProp ?? (absence ? 'edit' : 'create')

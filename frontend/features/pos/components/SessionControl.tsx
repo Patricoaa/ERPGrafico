@@ -16,7 +16,7 @@ import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
-import { BaseModal, Numpad } from '@/components/shared'
+import { ActionSlideButton, BaseModal, Numpad, SubmitButton } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { forwardRef, useImperativeHandle } from "react"
 
@@ -739,19 +739,18 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                         <div className="flex gap-2">
                             <Button variant="ghost" onClick={handlePrevStep} className="flex-1">Corregir</Button>
-                            <Button
+                            <SubmitButton
                                 onClick={handleOpenSession}
-                                className="flex-[2]"
+                                loading={submitting}
                                 disabled={
-                                    submitting ||
                                     (openingDiff !== 0 && !openingJustifyReason) ||
                                     (openingJustifyReason === 'TRANSFER' && !openingJustifyTargetId) ||
                                     openingInsufficientFunds
                                 }
+                                className="flex-[2]"
                             >
-                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Confirmar Apertura
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </div>
                 )
@@ -794,10 +793,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     if (loading) {
         return (
-            <Button variant="default" disabled className="gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
+            <ActionSlideButton variant="muted" loading className="gap-2">
                 Cargando...
-            </Button>
+            </ActionSlideButton>
         )
     }
 

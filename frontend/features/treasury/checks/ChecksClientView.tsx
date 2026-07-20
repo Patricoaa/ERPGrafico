@@ -1,11 +1,10 @@
 "use client"
 
 import React, { useMemo, useCallback } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { AlertTriangle } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    MoneyDisplay, SkeletonShell, AutoEntityCard,
+    SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
@@ -32,8 +31,6 @@ interface ChecksClientViewProps {
 }
 
 export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = {}) {
-    const router = useRouter()
-    const pathname = usePathname()
     const searchParams = useSearchParams()
 
     const { openEntity } = useGlobalModals()

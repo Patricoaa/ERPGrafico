@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax */
+ 
 "use client"
 
 import { showApiError } from "@/lib/errors"

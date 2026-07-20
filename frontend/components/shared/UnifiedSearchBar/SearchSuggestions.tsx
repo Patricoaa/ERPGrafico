@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
 import type { TextFieldDef } from '@/types/unified-search'
 
@@ -25,31 +26,33 @@ export function SearchSuggestions({
 
   return (
     <div className="py-1">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => handleSelect('search', inputValue.trim())}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent/50 transition-colors text-left"
+        className="w-full justify-start gap-2 px-3 py-2 text-xs"
       >
         <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         <span className="text-foreground">
           Buscar <span className="font-semibold text-primary">&ldquo;{inputValue.trim()}&rdquo;</span> en{' '}
           <span className="font-medium">General</span>
         </span>
-      </button>
+      </Button>
 
       {searchFields.map((field) => (
-        <button
+        <Button
           key={field.key}
-          type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => handleSelect(field.serverParam, inputValue.trim())}
-          className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent/50 transition-colors text-left"
+          className="w-full justify-start gap-2 px-3 py-2 text-xs"
         >
           <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <span className="text-foreground">
             Buscar <span className="font-semibold text-primary">&ldquo;{inputValue.trim()}&rdquo;</span> en{' '}
             <span className="font-medium">{field.label}</span>
           </span>
-        </button>
+        </Button>
       ))}
     </div>
   )

@@ -49,7 +49,7 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
 
                         if (hasSubTabs) {
                             // Filter subtabs by permission too
-                            const visibleSubTabs = item.subTabs!.filter(sub => !sub.permission || hasPermission(sub.permission))
+                            const visibleSubTabs = (item.subTabs ?? []).filter(sub => !sub.permission || hasPermission(sub.permission))
                             
                             return (
                                 <NavigationMenuItem key={item.value}>
@@ -139,7 +139,7 @@ const ListItem = React.forwardRef<
       <NavigationMenuLink asChild>
         <Link
           ref={ref}
-          href={href!}
+          href={href ?? '#'}
           className={cn(
             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-muted focus:bg-muted",
             isActive && "bg-primary/5 text-primary hover:bg-primary/10",

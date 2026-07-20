@@ -151,29 +151,6 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
         }
     }
 
-    const toggleAccountSelection = (accountId: number, currentSelections: number[], onChange: (val: number[]) => void, defaultAccountValue: string | null | undefined, setDefaultAccount: (val: string) => void) => {
-        const account = treasuryAccounts.find(a => a.id === accountId)
-        const isSelected = currentSelections.includes(accountId)
-
-        if (!isSelected) {
-            if (account?.allows_cash) {
-                const hasCashDetails = treasuryAccounts
-                    .filter(a => currentSelections.includes(a.id) && a.allows_cash)
-
-                if (hasCashDetails.length > 0) {
-                    toast.warning("Solo se permite una cuenta de efectivo por terminal.")
-                    return
-                }
-            }
-            onChange([...currentSelections, accountId])
-        } else {
-            if (defaultAccountValue === accountId.toString()) {
-                setDefaultAccount("")
-            }
-            onChange(currentSelections.filter(id => id !== accountId))
-        }
-    }
-
     const onSubmit = async (data: FormValues) => {
         if (data.allowed_treasury_account_ids.length === 0) {
             toast.error("Seleccione al menos una cuenta de tesorería")

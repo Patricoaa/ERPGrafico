@@ -12,4 +12,6 @@ export const groupFields = createEntityFields<Group>()({
         type: "number",
         label: "Miembros",
     },
+}, {
+    title: { field: 'name' },
 })

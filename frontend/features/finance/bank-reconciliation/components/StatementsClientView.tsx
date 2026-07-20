@@ -2,16 +2,15 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { Upload, Activity, ChevronDown, CheckCircle2, Loader2 } from "lucide-react"
+import { Upload, Activity, ChevronDown, CheckCircle2 } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
-import { DataTableView, StatusBadge, UnifiedSearchBar, useUnifiedSearch, AutoEntityCard, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal } from '@/components/shared'
+import {DataTableView, UnifiedSearchBar, useUnifiedSearch, AutoEntityCard, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal, ActionSlideButton} from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
 import { statementFields } from "../statementFields"
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import { Progress } from "@/components/ui/progress"
@@ -380,17 +379,15 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 contentClassName="p-0 flex flex-col overflow-hidden"
                 headerActions={
                     workbenchStatement && workbenchStatement.reconciliation_progress === 100 && workbenchStatement.state !== 'CONFIRMED' ? (
-                        <Button
+                        <ActionSlideButton
                             onClick={() => confirmAction.requestConfirm()}
-                            disabled={confirmAction.isConfirming}
+                            loading={confirmAction.isConfirming}
+                            icon={CheckCircle2}
+                            variant="success"
                             className="bg-success hover:bg-success/90 shadow-card px-5 font-bold text-sm"
                         >
-                            {confirmAction.isConfirming ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finalizando...</>
-                            ) : (
-                                <><CheckCircle2 className="mr-2 h-4 w-4" />Confirmar Cartola</>
-                            )}
-                        </Button>
+                            {confirmAction.isConfirming ? 'Finalizando...' : 'Confirmar Cartola'}
+                        </ActionSlideButton>
                     ) : undefined
                 }
             >

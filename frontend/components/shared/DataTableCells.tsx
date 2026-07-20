@@ -603,16 +603,17 @@ export const DataCell = {
                 return <span className="text-xs text-muted-foreground">{label}</span>
             }
             return (
-                <button
-                    type="button"
+                <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={(e) => {
                         e.stopPropagation()
                         openEntity(entityLabel, id)
                     }}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
+                    className="h-auto px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
                 >
                     {label}
-                </button>
+                </Button>
             )
         }
 

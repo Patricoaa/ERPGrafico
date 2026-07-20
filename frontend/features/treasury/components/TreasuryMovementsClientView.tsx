@@ -17,7 +17,6 @@ import { toast } from "sonner"
 import type { TreasuryMovement } from "@/features/treasury/types"
 import { movementFields } from "@/features/treasury/movementFields"
 
-
 // Lazy load heavy components
 import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -58,7 +57,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     }, [isOverLimit, totalCount])
 
     const [openModal, setOpenModal] = useState(false)
-
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
@@ -277,15 +275,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                             sourceLabel = m.from_account_name || 'Origen'
                             destLabel = m.to_account_name || 'Destino'
                         }
-
-                        const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
-
-                        const sourceEntity = type === 'INBOUND'
-                            ? (m.partner_id ? { label: sourceLabel, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
-                            : (m.from_account ? { label: sourceLabel, entityLabel: 'treasury.treasuryaccount', id: m.from_account } : undefined)
-                        const destEntity = type === 'OUTBOUND'
-                            ? (m.partner_id ? { label: destLabel, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
-                            : (m.to_account ? { label: destLabel, entityLabel: 'treasury.treasuryaccount', id: m.to_account } : undefined)
 
                         return (
                             <AutoEntityCard 

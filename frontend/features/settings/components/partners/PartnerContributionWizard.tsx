@@ -7,7 +7,6 @@ import {
     Wallet,
     Package,
     Users,
-    Warehouse as WarehouseIcon,
     ArrowDownCircle,
     Banknote
 } from "lucide-react"
@@ -70,7 +69,7 @@ export function PartnerContributionWizard({
     })
 
     // Product details for assets
-    const [productDetails, setProductDetails] = useState<Product | null>(null)
+    const [, setProductDetails] = useState<Product | null>(null)
     const [productUoMs, setProductUoMs] = useState<UoM[]>([])
 
     // Load initial data
@@ -147,9 +146,6 @@ export function PartnerContributionWizard({
 
     // Helpers
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
-    const selectedUoM = productUoMs.find(u => u.id.toString() === assetData.uomId)
-    const baseUoM = typeof productDetails?.uom === 'object' ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
-
     const assetTotalValue = (Number(assetData.quantity) || 0) * (Number(assetData.unitCost) || 0)
 
     const handleComplete = async () => {

@@ -1,10 +1,9 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, {useState, useEffect, useMemo} from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
-    MoneyDisplay, SkeletonShell,
+    DataTableView, SkeletonShell,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
     AutoEntityCard
@@ -50,8 +49,6 @@ export function CreditLinesClientView({ bankId }: Props) {
         setEditingLine(null)
         setDrawerOpen(true)
     }
-
-
 
     const columns: ColumnDef<CreditLine>[] = [
         ...creditLineFields.toColumns(),

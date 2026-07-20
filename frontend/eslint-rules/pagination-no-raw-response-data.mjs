@@ -162,7 +162,7 @@ const rule = {
         }
 
         return {
-            ':function'(node) {
+            ':function'() {
                 pushScope()
             },
             ':function:exit'() {

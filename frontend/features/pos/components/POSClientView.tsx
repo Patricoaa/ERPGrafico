@@ -482,6 +482,7 @@ export function POSClientView() {
                                             ) : (
                                                 (!isWaitingPayment || currentDraftId === d.id) && d.id
                                             )}
+                                            {/* eslint-disable-next-line no-restricted-syntax -- inline spinner in draft tab selector, not a submit/action button */}
                                             {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
                                         </Button>
                                     )

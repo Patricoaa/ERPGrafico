@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useEffect, useState, useMemo, useCallback } from "react"
+import React, {useEffect, useState, useMemo} from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
@@ -251,7 +251,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         ],
                     },
 
-
                 ],
             },
         }
@@ -270,7 +269,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         const query = params.toString()
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
-
 
     const filteredOrders = orders
     const filteredNotes = notes
@@ -471,11 +469,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                             const label = viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice'
                             const config = ENTITY_REGISTRY[label]?.cardConfig
                             const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(data) : config?.iconClassName
-                            const total = parseFloat(String(data.total || data.effective_total || data.balance || 0))
-                            const pending = parseFloat(String(data.pending_amount || 0))
-                            const hasPending = total > 0 && pending > 0
-                            const dateLabel = typeof config?.dateLabel === 'function' ? config.dateLabel(data) : config?.dateLabel ?? 'Entrega'
-
                             return (
                                 <AutoEntityCard
                                     key={data.id as number}

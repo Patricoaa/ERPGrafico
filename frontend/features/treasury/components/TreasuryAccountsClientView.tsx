@@ -94,16 +94,6 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         }
     }
 
-    const typeLabels: Record<string, string> = {
-        CASH: "Caja Física (Efectivo)",
-        CHECKING: "Cuenta Bancaria",
-        CREDIT_CARD: "T. Crédito Empresa",
-        LOAN: "Préstamo Bancario",
-        BRIDGE: "Puente",
-        CHECK_PORTFOLIO: "Cheques en Cartera",
-        ISSUED_CHECKS: "Cheques Girados por Pagar",
-    }
-
     const accountTypeIcons: Record<string, LucideIcon> = {
         CASH: Wallet,
         CHECKING: Landmark,

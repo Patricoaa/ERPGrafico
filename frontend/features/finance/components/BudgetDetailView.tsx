@@ -48,7 +48,7 @@ const SKELETON_BUDGET: Budget = {
 
 const SKELETON_EXECUTION: BudgetExecutionData = {
     summary: { total_budgeted: 0, total_actual: 0, total_variance: 0 },
-    items: Array.from({ length: 6 }, (_, i) => ({
+    items: Array.from({ length: 6 }, () => ({
         account_name: '——————————————————',
         account_code: '————',
         budgeted: 0,

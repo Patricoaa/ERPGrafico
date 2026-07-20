@@ -7,7 +7,6 @@ import {
     Wallet,
     Package,
     Users,
-    Warehouse as WarehouseIcon,
     ArrowUpCircle,
     Banknote,
     AlertTriangle
@@ -148,8 +147,6 @@ export function PartnerWithdrawalWizard({
 
     // Helpers
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
-    const assetTotalValue = (Number(assetData.quantity) || 0) * (Number(assetData.unitCost) || 0)
-
     const handleComplete = async () => {
         setIsCompleting(true)
         try {

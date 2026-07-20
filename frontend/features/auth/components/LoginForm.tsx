@@ -34,7 +34,7 @@ export function LoginForm() {
         },
     })
 
-    const { login, isLoggingIn } = useAuthLogin()
+    const { login } = useAuthLogin()
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")

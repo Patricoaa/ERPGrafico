@@ -21,7 +21,7 @@
  */
 
 import { showApiError } from '@/lib/errors'
-import { ChevronLeft, ChevronRight, CheckCircle2, FileText, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -154,7 +154,6 @@ export function UnifiedNoteWizard({
         isPeriodValid,
         setIsPeriodValid,
         currentStepId,
-        stepsSequence,
         currentStepIndex,
         totalStepsCount,
         isLastStep,
@@ -345,17 +344,14 @@ export function UnifiedNoteWizard({
                     </Button>
 
                     {!isLastStep ? (
-                        <Button
+                        <ActionSlideButton
                             onClick={handleNext}
+                            loading={submitting || initializing}
                             className="w-40 h-12 font-bold shadow-elevated transition-all"
-                            disabled={nextDisabled}
                         >
-                            {(submitting || initializing) && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />
-                        </Button>
+                        </ActionSlideButton>
                     ) : (
                         <ActionSlideButton
                             onClick={handleFinish}

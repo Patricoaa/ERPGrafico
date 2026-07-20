@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Loader2, AlertTriangle, Search, ChevronDown, Check } from "lucide-react"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
-import { BaseModal, Numpad } from '@/components/shared'
+import { ActionSlideButton, BaseModal, Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 
 import { LabeledContainer } from "@/components/shared"
@@ -305,6 +305,7 @@ export function SessionCloseModal({
                                                 disabled={settingsLoading}
                                             >
                                                 {settingsLoading ? (
+                                                    /* eslint-disable-next-line no-restricted-syntax -- inline spinner in combobox trigger, not a submit/action button */
                                                     <><Loader2 className="h-4 w-4 animate-spin mr-2" />Cargando...</>
                                                 ) : (
                                                     <>{selectedLabel || "Seleccione motivo..."}</>
@@ -442,21 +443,15 @@ export function SessionCloseModal({
                                 <span className="font-bold">Sí, realizar retiro/traspaso</span>
                                 <span className="text-xs text-muted-foreground">Configurar monto y destino</span>
                             </Button>
-                            <Button
-                                variant="outline"
+                            <ActionSlideButton
+                                variant="success"
                                 className="h-20 flex flex-col items-center justify-center border-2 hover:border-success hover:bg-success/5 group"
                                 onClick={() => handleCloseSession({ withdrawal_amount: 0 })}
-                                disabled={submitting}
+                                loading={submitting}
                             >
-                                {submitting ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                ) : (
-                                    <>
-                                        <span className="font-bold">No, cerrar sin retirar</span>
-                                        <span className="text-xs text-muted-foreground">Finaliza la sesión ahora</span>
-                                    </>
-                                )}
-                            </Button>
+                                <span className="font-bold">No, cerrar sin retirar</span>
+                                <span className="text-xs text-muted-foreground">Finaliza la sesión ahora</span>
+                            </ActionSlideButton>
                         </div>
 
                         <div className="flex gap-2">

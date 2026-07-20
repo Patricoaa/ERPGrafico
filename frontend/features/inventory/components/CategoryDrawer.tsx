@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, {useState, useEffect} from "react"
 import { type ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
@@ -494,4 +494,3 @@ export function CategoryDrawer({
         </>
     )
 }
-

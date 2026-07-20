@@ -160,10 +160,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         const d = data as unknown as Record<string, unknown>
                         const config = ENTITY_REGISTRY[label]?.cardConfig
                         const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(d) : config?.iconClassName
-                        const total = parseFloat(String(d.total || d.effective_total || d.balance || 0))
-                        const pending = parseFloat(String(d.pending_amount || 0))
-                        const hasPending = total > 0 && pending > 0
-
                         return (
                             <AutoEntityCard
                                 key={data.id}

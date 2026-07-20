@@ -13,10 +13,9 @@ import { cn } from "@/lib/utils"
 import {
     RefreshCw, ShieldAlert, Gavel
 } from "lucide-react"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge, MoneyDisplay } from "@/components/shared"
+import { SkeletonShell, ActionConfirmModal, DataCell, MoneyDisplay } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTable, createExpanderColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
@@ -36,13 +35,6 @@ const agingBg: Record<string, string> = {
     overdue_60: "bg-warning/10 text-warning border-warning/30",
     overdue_90: "bg-destructive/5 text-destructive border-destructive/20",
     overdue_90plus: "bg-destructive/10 text-destructive border-destructive/30"
-}
-
-const originBg: Record<string, string> = {
-    MANUAL: "bg-muted text-muted-foreground border-border",
-    SALE: "bg-info/5 text-info border-info/20",
-    ADJUSTMENT: "bg-warning/5 text-warning border-warning/20",
-    REVERSAL: "bg-destructive/5 text-destructive border-destructive/20"
 }
 
 function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
@@ -72,7 +64,6 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
     const [loadingLedger, setLoadingLedger] = useState(false)
     const [writingOff, setWritingOff] = useState(false)
     const [showWriteOffDialog, setShowWriteOffDialog] = useState(false)
-    const { openHub } = useHubPanel()
 
     const totalDebt = Number(contact.credit_balance_used)
     const aging = contact.credit_aging

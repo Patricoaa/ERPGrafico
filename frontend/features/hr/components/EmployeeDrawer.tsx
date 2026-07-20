@@ -66,7 +66,7 @@ const parseLocalDate = (dateStr?: string) => {
     return new Date(year, month - 1, day)
 }
 
-export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger, mode: modeProp }: EmployeeDrawerProps) {
+export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: modeProp }: EmployeeDrawerProps) {
     const { saveEmployee, isSaving: saving } = useEmployeeMutations()
     const { printRef, handlePrint } = usePrintableDrawer()
 

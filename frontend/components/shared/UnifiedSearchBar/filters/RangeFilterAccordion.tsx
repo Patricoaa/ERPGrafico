@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import type { RangeFilterDef } from '@/types/unified-search'
@@ -51,18 +52,19 @@ export function RangeFilterAccordion({
 
   return (
     <div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "flex items-center gap-2 w-full px-2 py-1.5 text-xs font-medium rounded-sm hover:bg-accent/50",
+          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm",
           isActive && "text-primary",
         )}
       >
         <ChevronRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
         <span>{def.label}</span>
         {isActive && <span className="ml-auto text-[10px] text-muted-foreground">✓</span>}
-      </button>
+      </Button>
 
       {expanded && (
         <div className="ml-4 border-l border-border/40 pl-2 space-y-1.5 py-1.5">
@@ -87,21 +89,23 @@ export function RangeFilterAccordion({
             />
           </div>
           <div className="flex items-center gap-2 pt-1">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleApply}
-              className="text-[11px] font-semibold text-primary hover:text-primary/80 px-2 py-0.5 rounded-sm hover:bg-accent/50"
+              className="h-auto px-2 py-0.5 text-[11px] font-semibold text-primary hover:text-primary/80 rounded-sm"
             >
               Aplicar
-            </button>
+            </Button>
             {(from || to) && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleClear}
-                className="text-[11px] text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-sm hover:bg-accent/50"
+                className="h-auto px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground rounded-sm"
               >
                 Limpiar
-              </button>
+              </Button>
             )}
           </div>
         </div>

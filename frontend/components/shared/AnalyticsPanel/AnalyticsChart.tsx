@@ -6,7 +6,6 @@ import { PieChart, BarChart, LineChart } from "../charts"
 import { formatCompactSpanish } from "@/lib/utils/number"
 import { formatMoney, formatQuantity } from "@/lib/money"
 import {
-    nivoTheme,
     barDefaults,
     cardBarDefaults,
     cardLineDefaults,

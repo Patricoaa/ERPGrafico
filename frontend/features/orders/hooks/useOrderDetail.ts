@@ -12,8 +12,8 @@ export function useOrderDetail(orderId: string | number | null, orderType: 'purc
         queryKey: ORDERS_KEYS.order(orderId ?? 0, orderType),
         queryFn: () => {
             return orderType === 'purchase'
-                ? ordersApi.getPurchaseOrder(orderId!)
-                : ordersApi.getSaleOrder(orderId!)
+                ? ordersApi.getPurchaseOrder(orderId as string | number)
+                : ordersApi.getSaleOrder(orderId as string | number)
         },
         staleTime: 30_000,
         enabled: enabled && !!orderId,

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { toast } from "sonner"
+import {useEffect} from "react"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -183,7 +182,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     {...field}
                                                 />
                                             )} />
-                                            <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                            <FormField control={form.control} name="date" render={({ field }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Propuesta"
                                                     required
@@ -262,7 +261,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     {...field}
                                                 />
                                             )} />
-                                            <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                            <FormField control={form.control} name="date" render={({ field }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Propuesta"
                                                     required

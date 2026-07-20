@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DataCell, AutoEntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus, createHubTriggerColumn } from '@/components/shared'
+import {ActionConfirmModal, DataTableView, AutoEntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus, createHubTriggerColumn} from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
@@ -19,11 +19,10 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { ENTITY_REGISTRY, getEntityIcon, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
 
-
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
     const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...search.filters, mode: 'sale' } as InvoiceFilters })
-    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
+    const { openHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const router = useRouter()
@@ -66,10 +65,6 @@ export function SalesInvoicesClientView() {
             toast.error(errorMessage || "Error al anular el documento.")
         }
     })
-
-    const handleAnnul = (id: number) => {
-        annulConfirm.requestConfirm(id)
-    }
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingInv) return
@@ -132,9 +127,6 @@ export function SalesInvoicesClientView() {
                         const d = data as unknown as Record<string, unknown>
                         const config = ENTITY_REGISTRY[label]?.cardConfig
                         const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(d) : config?.iconClassName
-                        const total = parseFloat(String(d.total || 0))
-                        const pending = parseFloat(String(d.pending_amount || 0))
-                        const hasPending = total > 0 && pending > 0
                         const adjustments = (d.adjustments || []) as Array<Record<string, unknown>>
 
                         return (

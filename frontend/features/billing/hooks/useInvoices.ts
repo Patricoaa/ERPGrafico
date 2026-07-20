@@ -3,7 +3,7 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { billingApi } from '../api/billingApi'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
-import type { InvoiceFilters, Invoice } from '../types'
+import type {InvoiceFilters} from '../types'
 import { SALES_KEYS } from '@/features/sales'
 
 import { INVOICES_KEYS, INVOICES_QUERY_KEY } from './queryKeys'

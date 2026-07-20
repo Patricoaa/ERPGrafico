@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState, useMemo, useRef } from "react"
+import {useEffect, useState, useMemo} from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
-import { ActionConfirmModal, DomainHubStatus, Drawer, StatCard, StatusBadge } from '@/components/shared'
+import {ActionConfirmModal, DomainHubStatus, Drawer, StatCard} from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import {
     Form,
@@ -16,14 +16,14 @@ import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
-import { type Contact, type ContactPayload, type InsightsData } from "../types"
+import { type Contact, type ContactPayload } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
 
 import { ActivitySidebar } from "@/features/audit"
 
-import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Printer} from "lucide-react"
+import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin} from "lucide-react"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
@@ -39,7 +39,6 @@ import { contactCreditDocumentFields, type ContactCreditDocument } from '../cont
 
 import { getHubStatuses } from '@/features/orders'
 import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
-import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
 
 const contactSchema = z.object({
@@ -74,9 +73,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     const [activeTab, setActiveTab] = useState("profile")
     const c = contact
     const { createContact, updateContact } = useContactMutations()
-    const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
-    const ins = insightsData
-
+    const { data: insightsData, isLoading: loadingInsights } = useContactInsights(c?.id)
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
         defaultValues: c ? {
@@ -124,12 +121,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         }
     }, [contactDetails, form])
 
-    const { data: ledgerData = [], isLoading: loadingLedger, refetch: fetchLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
-
-    const handleActionSuccess = () => {
-        refetchInsights()
-        fetchLedger()
-    }
+    const { data: ledgerData = [], isLoading: loadingLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
 
     useEffect(() => {
         if (!open) {
@@ -499,7 +491,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="sale"
                                         title="Historial de Ventas (NV)"
                                         icon={ShoppingCart}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -509,7 +500,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="purchase"
                                         title="Historial de Compras (OC)"
                                         icon={Package}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -519,7 +509,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="work_order"
                                         title="Historial de Órdenes de Trabajo"
                                         icon={Wand2}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
                                 <TabBarContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
@@ -566,10 +555,9 @@ interface InsightsTableProps {
     type: 'sale' | 'purchase' | 'work_order'
     title: string
     icon: LucideIcon
-    onActionSuccess?: () => void
 }
 
-function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: InsightsTableProps) {
+function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     const { openEntity } = useGlobalModals()
     const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')

@@ -8,7 +8,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Hash, User, FileText } from "lucide-react"
+import {User, FileText} from "lucide-react"
 import { useBillingInvoices } from "@/features/finance"
 
 const paymentFormSchema = z.object({

@@ -15,7 +15,7 @@ interface InvoiceDrawerProps extends TransactionDrawerProps {
     invoiceId?: number
 }
 
-export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId }: InvoiceDrawerProps) {
+export function InvoiceDrawer({ id, open, onOpenChange, invoiceId }: InvoiceDrawerProps) {
     const entityId = id ?? invoiceId ?? null
     const { data: invoice, isLoading } = useInvoice(entityId)
     const { printRef, handlePrint } = usePrintableDrawer()

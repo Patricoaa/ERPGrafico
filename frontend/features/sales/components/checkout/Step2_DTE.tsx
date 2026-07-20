@@ -1,7 +1,6 @@
 "use client"
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+import {RadioGroup} from "@/components/ui/radio-group"
 import {
     FileText,
     Receipt,
@@ -12,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { DocumentAttachmentDropzone, FolioValidationInput, StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, RadioCard } from "@/components/shared"
+import {DocumentAttachmentDropzone, FolioValidationInput, StepHeader, PeriodValidationDateInput, LabeledContainer, LabeledSwitch, RadioCard} from "@/components/shared"
 
 import type { CheckoutDTEData } from "../../types"
 

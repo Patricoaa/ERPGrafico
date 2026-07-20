@@ -28,7 +28,6 @@ import { AlertCircle, Package, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Chip, DataCell, DataTable, LabeledInput } from '@/components/shared'
 import { type ColumnDef } from '@tanstack/react-table'
-import { formatCurrency } from '@/lib/money'
 import type { NoteLineItem, NoteType } from '@/features/notes'
 
 // ---------------------------------------------------------------------------
@@ -453,8 +452,6 @@ export function NoteStep_LineItems({
     onLinesChange,
     isExempt = false,
 }: NoteStep_LineItemsProps) {
-    const totalNet = selectedLines.reduce((acc, l) => acc + l.noteQuantity * l.noteUnitPrice, 0)
-
     return (
         <div className="w-full h-full flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {selectionMode === 'select' ? (

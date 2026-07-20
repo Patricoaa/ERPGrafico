@@ -25,7 +25,6 @@ import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 
 import { DataCell } from '@/components/shared'
-import { formatEntityDisplay } from "@/lib/entity-registry"
 import { blacklistFields } from "../blacklistFields"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
