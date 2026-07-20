@@ -691,9 +691,9 @@ export function createEntityFields<T>(): (
                     let role: FieldRole = def.fieldRole ?? TYPE_TO_ROLE[def.type]
                     let placement: CardPlacement = def.cardPlacement ?? ROLE_TO_PLACEMENT[role]
 
-                    // Step 3: Currency narrowing — only 'total' or 'sueldo' keys earn header/primary-value.
+                    // Step 3: Currency narrowing — only 'total' or 'salary' keys earn header/primary-value.
                     // All other currency fields (e.g. unit_price, cost) go to detail as descriptive.
-                    if (!def.fieldRole && !def.cardPlacement && def.type === 'currency' && !/total|sueldo/i.test(def.key)) {
+                    if (!def.fieldRole && !def.cardPlacement && def.type === 'currency' && !/total|salary/i.test(def.key)) {
                         role = 'descriptive'
                         placement = 'detail'
                     }
