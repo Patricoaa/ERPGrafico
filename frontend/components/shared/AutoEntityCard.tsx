@@ -410,7 +410,7 @@ export function AutoEntityCard<TData>({
             {classified.centerDetail.map(f => (
                 <div key={f.key} className={cn(showCenterLabels ? "flex flex-col items-end min-w-0" : "flex items-end gap-1.5 min-w-0", f.cardClassName)}>
                     {showCenterLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
-                    <span className="text-xs font-medium truncate min-w-0 [&>*]:text-xs">{f.value ?? <span className="opacity-40">—</span>}</span>
+                    <span className="text-xs font-normal truncate min-w-0 [&>*]:text-xs [&>*]:font-normal">{f.value ?? <span className="opacity-40">—</span>}</span>
                 </div>
             ))}
         </div>
