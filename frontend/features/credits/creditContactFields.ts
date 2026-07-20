@@ -2,12 +2,14 @@ import { createEntityFields } from '@/components/shared'
 import type { CreditContact } from './api/creditsApi'
 export const creditContactFields = createEntityFields<CreditContact>()({
     name: {
+        order: 10,
         key: 'name',
         type: 'text',
         label: 'Cliente',
         tableOptions: { align: 'left' },
     },
     creditRiskLevel: {
+        order: 20,
         key: 'credit_risk_level',
         type: 'status',
         label: 'Riesgo',
@@ -17,22 +19,26 @@ export const creditContactFields = createEntityFields<CreditContact>()({
         },
     },
     creditLimit: {
+        order: 30,
         key: 'credit_limit',
         type: 'currency',
         label: 'Límite',
     },
     creditBalanceUsed: {
+        order: 40,
         key: 'credit_balance_used',
         type: 'currency',
         label: 'Utilizado',
     },
     currentAging: {
+        order: 50,
         key: 'current',
         type: 'currency',
         label: 'Vigente',
         get: (c) => c.credit_aging?.current || 0,
     },
     overdueAging: {
+        order: 60,
         key: 'overdue',
         type: 'currency',
         label: 'En Mora',
@@ -44,6 +50,7 @@ export const creditContactFields = createEntityFields<CreditContact>()({
         showZeroAsDash: true,
     },
     status: {
+        order: 70,
         key: 'status',
         type: 'status',
         label: 'Estado',
@@ -69,6 +76,7 @@ export const creditContactFields = createEntityFields<CreditContact>()({
         }
     },
     creditLastEvaluated: {
+        order: 80,
         key: 'credit_last_evaluated',
         type: 'date',
         label: 'Bloqueado desde',
