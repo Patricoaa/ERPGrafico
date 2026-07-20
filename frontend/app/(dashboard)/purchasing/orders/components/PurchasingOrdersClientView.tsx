@@ -363,7 +363,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     })
 
     const columns: ColumnDef<PurchaseOrder>[] = [
-        ...(purchaseOrderFields.toColumns() as ColumnDef<PurchaseOrder>[]),
+        ...(purchaseOrderFields.toColumns({ exclude: ["status"] }) as ColumnDef<PurchaseOrder>[]),
         {
             accessorKey: "warehouse_name",
             header: ({ column }) => (

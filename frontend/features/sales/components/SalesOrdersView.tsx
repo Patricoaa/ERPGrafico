@@ -82,7 +82,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     }, [isOverLimit, totalCount])
 
     const columns: ColumnDef<SaleOrder>[] = [
-        ...salesOrderFields.toColumns(),
+        ...salesOrderFields.toColumns({ exclude: ["status"] }),
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
