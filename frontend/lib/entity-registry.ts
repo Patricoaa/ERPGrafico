@@ -49,24 +49,23 @@ export interface EntityMetadata {
   feminine?: boolean;
     /** Default drawer subtitle / description for this entity */
     description?: string;
-    /** Explicit field key to render as card title (replaces auto-promotion from toCardFields).
-     *  When set, AutoEntityCard reads this field's value instead of searching for cardPlacement === 'title'. */
+    /** @deprecated Use meta.title in Fields.ts instead. Field key to render as card title.
+     *  Will be removed once all views migrate to createEntityFields meta config. */
     titleField?: string;
-    /** Explicit field key to render as card subtitle (simple single-field subtitle).
-     *  Takes precedence over subtitleTemplate/subtitleRenderer when set.
-     *  The field is automatically excluded from other card layout zones. */
+    /** @deprecated Use meta.subtitle in Fields.ts instead. Field key to render as card subtitle.
+     *  Will be removed once all views migrate to createEntityFields meta config. */
     subtitleField?: string;
-    /** Template string for dynamic subtitle (e.g. "{code} · {name}"). Rendered with entity data.
-     *  Supports: {field}, {field:date}, {field:currency}, {f1|f2|'default'} (fallback), {?field} (conditional). */
+    /** @deprecated Use meta.subtitle.template in Fields.ts instead. Template string for dynamic subtitle.
+     *  Will be removed once all views migrate to createEntityFields meta config. */
     subtitleTemplate?: string;
-    /** Template string appended to subtitle after " · " separator. Same syntax as subtitleTemplate. */
+    /** @deprecated Use meta.subtitle.suffixTemplate in Fields.ts instead. Template string appended after " · ".
+     *  Will be removed once all views migrate to createEntityFields meta config. */
     subtitleSuffixTemplate?: string;
-    /** Function-based subtitle renderer — overrides subtitleTemplate when defined.
-     *  Used for complex subtitles (JSX components, computed values) that can't be expressed as templates. */
+    /** @deprecated Use meta.subtitle.renderer in Fields.ts instead. Function-based subtitle renderer.
+     *  Will be removed once all views migrate to createEntityFields meta config. */
     subtitleRenderer?: (data: Record<string, unknown>) => SubtitleItem[];
-    /** Explicit field keys excluded from card layout zones when this entity's subtitle is rendered.
-     *  Required when subtitleRenderer is used (can't extract keys from a function).
-     *  Also used when subtitleField is set (auto-included). */
+    /** @deprecated Use meta.subtitle.excludeKeys in Fields.ts instead. Field keys excluded from card zones.
+     *  Will be removed once all views migrate to createEntityFields meta config. */
     subtitleKeys?: string[];
     /** Whether the entity drawer shows a print button in the header */
     printable?: boolean;
