@@ -6,6 +6,7 @@ import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
 import type { LucideIcon } from "lucide-react"
 import type { SubtitleItem } from "@/lib/entity-registry"
+export type { SubtitleItem }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
