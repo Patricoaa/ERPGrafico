@@ -31,6 +31,4 @@ export const uomFields = createEntityFields<UoM>()({
         get: (u) => UOM_STATUS_MAP[u.uom_type]?.status || 'NEUTRAL',
         getLabel: (u) => UOM_STATUS_MAP[u.uom_type]?.label || u.uom_type,
     },
-}, {
-    title: { field: 'name' },
 })

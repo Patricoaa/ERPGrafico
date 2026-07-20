@@ -177,9 +177,10 @@ function classifyFields<TData>(
 ): ClassifiedFields {
     const title = fields.find(f => f.cardPlacement === 'title')
 
-    // Exclude title field and subtitle-referenced fields from layout zones
+    // Exclude title field, subtitle field and subtitle-referenced fields from layout zones
     const rest = fields.filter(f =>
         f.cardPlacement !== 'title' &&
+        f.cardPlacement !== 'subtitle' &&
         f.key !== titleFieldKey &&
         !subtitleFieldKeys.has(f.key)
     )

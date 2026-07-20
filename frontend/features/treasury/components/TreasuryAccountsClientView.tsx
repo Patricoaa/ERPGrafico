@@ -171,6 +171,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                         data={acc}
                                         fields={accountFields}
                                         entityLabel="treasury.treasuryaccount"
+                                        title={acc.name}
                                         onClick={() => handleEdit(acc)} 
                                         defaultAction={treasuryAccountActions.defaultAction(actionsCtx)?.(acc) ?? null}
                                         icon={Icon}

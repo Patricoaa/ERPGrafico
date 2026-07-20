@@ -5,8 +5,8 @@ import { DataCell } from "./DataTableCells"
 import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
 import type { LucideIcon } from "lucide-react"
+export type { SubtitleItem } from "@/lib/entity-registry"
 import type { SubtitleItem } from "@/lib/entity-registry"
-export type { SubtitleItem }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -39,12 +39,13 @@ type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_ty
 /**
  * Card zones — the 5 layout regions in an EntityCard.
  * - `title`: replaces the auto-generated title (identifier field)
+ * - `subtitle`: replaces the auto-generated subtitle (e.g. name field)
  * - `header`: compact badges/values in the header trailing area
  * - `detail`: label:value grid in EntityCard.Body
  * - `metric`: equal-width columns in EntityCard.Metrics
  * - `footer`: summary row in EntityCard.Footer (always explicit)
  */
-export type CardPlacement = 'title' | 'header' | 'detail' | 'metric' | 'footer'
+export type CardPlacement = 'title' | 'subtitle' | 'header' | 'detail' | 'metric' | 'footer'
 
 /**
  * Semantic role of a field — determines its default CardPlacement.
@@ -116,9 +117,20 @@ interface FieldDef<T> {
     surfaces?: FieldSurface[]
     /** Explicit left-to-right order for table columns (lower = more left). Undefined sorts last. */
     order?: number
-    /** Override de posicionamiento en la tarjeta (defaults from ROLE_TO_PLACEMENT) */
+    /**
+     * Override explícito de posicionamiento en la tarjeta.
+     * Evitar cuando `fieldRole` puede expresar la misma intención —
+     * el auto-detector convierte `fieldRole` → `CardPlacement` automáticamente.
+     * Último recurso para casos sin equivalente semántico en `FieldRole`.
+     */
     cardPlacement?: CardPlacement
-    /** Override del rol semántico del campo (defaults from TYPE_TO_ROLE) */
+    /**
+     * Override del rol semántico del campo (defaults from TYPE_TO_ROLE).
+     * **Requerido para `type: 'computed'`**: sin este override, el campo cae en
+     * `'descriptive' → 'detail'` por defecto. Usar el rol que describe mejor la
+     * intención visual: `'status'` → header badge, `'identifier'` → título,
+     * `'primary-value'` → header valor monetario, etc.
+     */
     fieldRole?: FieldRole
     /** Visual sizing for card variant: 'xs' (badge/chip), 'sm' (status/text), 'md' (label/value), 'lg' (accent) */
     cardSize?: 'xs' | 'sm' | 'md' | 'lg'
@@ -653,9 +665,15 @@ export function createEntityFields<T>(): (
                     const role: FieldRole = def.fieldRole ?? TYPE_TO_ROLE[def.type]
                     let placement: CardPlacement = def.cardPlacement ?? ROLE_TO_PLACEMENT[role]
 
-                    // Auto-detect title: identifier field with id/number/code in key
-                    if (placement !== 'title' && role === 'identifier' && /id|number|code/i.test(def.key)) {
+                    // Auto-detect title: identifier field whose key contains id/number/code/display.
+                    // Covers: display_id, number, code, period_display, folio_display, etc.
+                    if (placement !== 'title' && role === 'identifier' && /id|number|code|display/i.test(def.key)) {
                         placement = 'title'
+                    }
+
+                    // Auto-detect subtitle: primary-label or descriptive field whose key contains name.
+                    if (placement !== 'subtitle' && (role === 'primary-label' || role === 'descriptive') && /name/i.test(def.key)) {
+                        placement = 'subtitle'
                     }
 
                     return {
@@ -745,7 +763,30 @@ export function createEntityFields<T>(): (
                     return items
                 }
             }
-            // Priority 3: meta.subtitle.template
+            // Priority 3: field with cardPlacement:'subtitle' (auto-detected or explicit)
+            const cardSubtitleField = Object.values(defs).find(d => {
+                const role = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+                let placement = d.cardPlacement ?? ROLE_TO_PLACEMENT[role]
+                if (placement !== 'subtitle' && (role === 'primary-label' || role === 'descriptive') && /name/i.test(d.key)) {
+                    placement = 'subtitle'
+                }
+                return placement === 'subtitle'
+            })
+            if (cardSubtitleField) {
+                const raw = entity[cardSubtitleField.key as keyof T]
+                if (raw != null && raw !== undefined) {
+                    const items: SubtitleItem[] = [{ kind: 'text', content: String(raw) }]
+                    if (meta?.subtitle?.suffixTemplate) {
+                        const suffixItems = parseSubtitleTemplate(meta.subtitle.suffixTemplate, entity)
+                        if (suffixItems.length > 0) {
+                            items.push({ kind: 'separator' })
+                            items.push(...suffixItems)
+                        }
+                    }
+                    return items
+                }
+            }
+            // Priority 4: meta.subtitle.template
             if (meta?.subtitle?.template) {
                 const items = parseSubtitleTemplate(meta.subtitle.template, entity)
                 if (items.length > 0) {
@@ -763,16 +804,15 @@ export function createEntityFields<T>(): (
         },
 
         getSubtitleExcludeKeys: (): Set<string> => {
-            if (!meta?.subtitle) return new Set()
             const keys = new Set<string>()
-            if (meta.subtitle.field) keys.add(meta.subtitle.field)
-            if (meta.subtitle.excludeKeys) {
+            if (meta?.subtitle?.field) keys.add(meta.subtitle.field)
+            if (meta?.subtitle?.excludeKeys) {
                 for (const k of meta.subtitle.excludeKeys) keys.add(k)
             }
-            if (meta.subtitle.template) {
+            if (meta?.subtitle?.template) {
                 for (const k of Array.from(extractTemplateKeys(meta.subtitle.template))) keys.add(k)
             }
-            if (meta.subtitle.suffixTemplate) {
+            if (meta?.subtitle?.suffixTemplate) {
                 for (const k of Array.from(extractTemplateKeys(meta.subtitle.suffixTemplate))) keys.add(k)
             }
             return keys

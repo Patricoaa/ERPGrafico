@@ -10,7 +10,7 @@ interface Props {
     bankId: number
 }
 
-const loanFields = createEntityFields<BankOverviewData["active_loans"][number]>()({}, { title: { field: "display_id" } })
+const loanFields = createEntityFields<BankOverviewData["active_loans"][number]>()({})
 
 export function BankLoanSection({ data, bankId }: Props) {
     const router = useRouter()
@@ -36,6 +36,7 @@ export function BankLoanSection({ data, bankId }: Props) {
                         fields={loanFields}
                         variant="overview"
                         icon={HandCoins}
+                        title={loan.display_id}
                         subtitle="Vigente"
                         overviewMetrics={[
                             { label: "Capital", value: <DataCell.Currency value={loan.principal} showColor={false} /> },

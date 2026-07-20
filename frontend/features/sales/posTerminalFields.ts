@@ -56,6 +56,4 @@ export const posTerminalFields = createEntityFields<Terminal>()({
         getLabel: (t) => t.is_active ? "Activo" : "Inactivo",
         tableOptions: { enableSorting: false },
     },
-}, {
-    title: { field: 'name' },
 })

@@ -22,4 +22,4 @@ export const inventoryCountFields = createEntityFields<InventoryCount>()({
         label: 'Diferencias',
         get: (c) => c.products_with_difference > 0 ? c.products_with_difference : null,
     },
-}, { title: { field: 'id' } })
+})

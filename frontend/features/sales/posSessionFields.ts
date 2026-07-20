@@ -49,4 +49,4 @@ export const posSessionFields = createEntityFields<POSSession>()({
         get: (s) => s.status,
         getLabel: (s) => s.status_display,
     },
-}, { title: { field: "user_name" } })
+})

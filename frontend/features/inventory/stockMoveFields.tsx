@@ -91,6 +91,4 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         get: (m) => ({ value: Number(m.quantity), unit: m.uom_name, showSign: true }),
         surfaces: ['card'],
     },
-}, {
-    title: { field: 'product_name' },
 })
