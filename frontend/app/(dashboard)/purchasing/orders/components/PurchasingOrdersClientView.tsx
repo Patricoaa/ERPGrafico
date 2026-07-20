@@ -408,30 +408,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             },
         },
 
-        {
-            id: "hub_trigger",
-            header: () => null,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = hubConfig?.orderId === item.id
-                return (
-                    <div className="flex justify-end pr-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => toggleSelection(item.id)}
-                        >
-                            {isSelected && isHubOpen ? (
-                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </Button>
-                    </div>
-                )
-            },
-        },
+
     ]
 
     return (

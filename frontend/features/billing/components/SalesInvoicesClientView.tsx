@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import {ActionConfirmModal, DataTableView, AutoEntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus, createHubTriggerColumn} from '@/components/shared'
+import {ActionConfirmModal, DataTableView, AutoEntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus} from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
@@ -104,10 +104,6 @@ export function SalesInvoicesClientView() {
         }),
         ...salesInvoiceFields.toColumns(),
         createSecondaryColumn<Invoice>("dte_type_display", "Tipo"),
-        createHubTriggerColumn<Invoice>({
-            isSelected: (item) => hubConfig?.invoiceId === item.id,
-            onToggle: (item) => toggleSelection(item),
-        }),
     ]
 
     return (
