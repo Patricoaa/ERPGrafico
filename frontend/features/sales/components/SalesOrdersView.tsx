@@ -82,13 +82,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     }, [isOverLimit, totalCount])
 
     const columns: ColumnDef<SaleOrder>[] = [
-        ...salesOrderFields.toColumns({ exclude: ["status"] }),
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center items-center"><DomainHubStatus label="sales.saleorder" data={row.original} /></div>,
-            meta: { title: "Estado" },
-        },
+        ...salesOrderFields.toColumns(),
         createHubTriggerColumn<SaleOrder>({
             isSelected: (item) => onSelectOrder ? selectedId === item.id : (hubConfig?.orderId === item.id && isHubOpen),
             onToggle: (item) => toggleSelection(item.id),
@@ -175,12 +169,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                     isSelected: getSelectionId(data),
                                     onToggle: () => toggleSelection(data.id),
                                 }}
-                                hubStatusRenderer={(hubData) => (
-                                    <div className="hidden sm:flex items-center gap-3">
-                                        <DomainHubStatus label={label} data={hubData as Record<string, unknown>} />
-                                    </div>
-                                )}
-
                             />
                         )
                     }}
