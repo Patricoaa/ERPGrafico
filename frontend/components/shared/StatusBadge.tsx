@@ -40,6 +40,8 @@ export interface StatusBadgeProps {
     progress?: number
     /** Layout/position only. Never typography or colors. */
     className?: string
+    /** Badge appearance — solid (default) or ghost (transparent background). Only applies to variant="badge". */
+    appearance?: 'solid' | 'ghost'
 }
 
 const DOT_COLORS: Record<string, string> = {
@@ -76,6 +78,7 @@ export function StatusBadge({
     size = 'md',
     progress,
     className,
+    appearance,
 }: StatusBadgeProps) {
     const { intent, label: resolvedLabel } = resolveStatus(status)
     const displayLabel = label ?? resolvedLabel
@@ -95,9 +98,11 @@ export function StatusBadge({
 
     if (variant === 'badge') {
         return (
-            <Badge intent={intent} size={size} tracking="tight" className={className}>
-                <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', DOT_COLORS[intent])} />
-                {displayLabel}
+            <Badge intent={intent} size={size} tracking="tight" appearance={appearance} className={className}>
+                <span className="inline-flex items-center gap-1.5">
+                    <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', DOT_COLORS[intent])} />
+                    {displayLabel}
+                </span>
             </Badge>
         )
     }

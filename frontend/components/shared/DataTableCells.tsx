@@ -332,13 +332,14 @@ export const DataCell = {
     // --- Status & Badges ---
 
     /** Mapped status badge - Internally uses the standardized StatusBadge */
-    Status: ({ status, label, variant = "default", size = "md", className }: { status: string, label?: string, variant?: "default" | "hub" | "dot", size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
+    Status: ({ status, label, variant = "default", size = "sm", className }: { status: string, label?: string, variant?: "default" | "hub" | "dot", size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
         return (
             <div className={cn("flex justify-center items-center w-full", className)}>
                 <StatusBadge
                     status={status}
                     label={label || translateStatus(status)}
-                    variant={variant}
+                    variant="badge"
+                    appearance="ghost"
                     size={size}
                     className={className}
                 />
@@ -349,7 +350,7 @@ export const DataCell = {
     /** Chip for intent-based labels within table cells (wraps shared Chip component) */
     Chip: ({ children, intent = "neutral", size = "sm", icon, className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", icon?: LucideIcon, className?: string } & HTMLAttributes<HTMLDivElement>) => (
         <div className={cn("flex justify-center items-center w-full", className)} {...props}>
-            <ChipComponent intent={intent} size={size} icon={icon}>{children}</ChipComponent>
+            <ChipComponent intent={intent} size={size} icon={icon} appearance="ghost">{children}</ChipComponent>
         </div>
     ),
 

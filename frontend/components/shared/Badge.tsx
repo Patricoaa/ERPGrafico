@@ -81,12 +81,22 @@ const badgeVariants = cva(
                 pill:   'rounded-full',
                 square: 'rounded-sm',
             },
+
+            /**
+             * appearance — solid (default) or ghost (transparent background).
+             * ghost keeps the border and text color from intent but removes the background.
+             */
+            appearance: {
+                solid: '',
+                ghost: 'bg-transparent font-semibold',
+            },
         },
         defaultVariants: {
             intent:   'neutral',
             size:     'md',
             tracking: 'tight',
             shape:    'pill',
+            appearance: 'solid',
         },
     }
 )

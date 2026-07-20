@@ -5,8 +5,27 @@ import { EntityCard } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, type SubtitleItem } from "@/lib/entity-registry"
+import { resolveStatus } from "@/lib/badge-resolvers"
 import type { CardField } from "@/components/shared"
 import type { EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared/entity-fields"
+
+const SUBTITLE_DOT_COLORS: Record<string, string> = {
+    neutral:     'bg-muted-foreground',
+    info:        'bg-info',
+    success:     'bg-success',
+    warning:     'bg-warning',
+    destructive: 'bg-destructive',
+    primary:     'bg-primary',
+}
+
+const SUBTITLE_INTENT_BORDER: Record<string, string> = {
+    neutral:     'border-border/40 text-muted-foreground',
+    info:        'border-info text-info',
+    success:     'border-success text-success',
+    warning:     'border-warning text-warning',
+    destructive: 'border-destructive text-destructive',
+    primary:     'border-primary text-primary',
+}
 
 export interface AutoEntityCardProps<TData> {
     /** The raw entity data */
@@ -169,6 +188,11 @@ interface ClassifiedFields {
  * Subtitle fields (placement === 'subtitle') and title field are excluded from all zones.
  * Detail is capped at 10 fields.
  * Metric receives: progress + any tag/flow that overflowed from header.
+ *
+ * Variant visibility:
+ * - 'highlights': body detail/metric hidden, but centerDetail (header center) preserved
+ * - 'summary': detail hidden, metric visible
+ * - 'full' / 'workflow': all zones visible
  */
 function classifyFields<TData>(
     fields: CardField[],
@@ -237,8 +261,8 @@ function classifyFields<TData>(
     // ── Variant visibility rules ──────────────────────────────────────────────
     switch (variant) {
         case 'highlights':
-            // Header + center only — no detail or metric in body
-            detail = []
+            // Header + center only — no body detail or metric.
+            // detail feeds into centerDetail (header center zone), so keep it.
             break
 
         case 'summary':
@@ -360,11 +384,12 @@ export function AutoEntityCard<TData>({
         : buildSubtitleItems(entityLabel, data, explicitSubtitle, explicitTitle, cardFields[0])
 
     // 4. Build Header trailing content (header fields + explicit trailing)
+    const showHeaderLabels = classified.header.length > 1
     const headerContent = classified.header.length > 0 && (
         <div className="flex items-center gap-4">
             {classified.header.map(f => (
-                <div key={f.key} className={cn("flex flex-col items-end", f.cardClassName)}>
-                    <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>
+                <div key={f.key} className={cn(showHeaderLabels ? "flex flex-col items-end" : "flex items-end gap-1.5", f.cardClassName)}>
+                    {showHeaderLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
                     <span className="text-xs font-semibold">{f.value ?? <span className="opacity-40">—</span>}</span>
                 </div>
             ))}
@@ -379,12 +404,13 @@ export function AutoEntityCard<TData>({
     ) : undefined
 
     // 5. Build Center content: explicit prop → hubStatusRenderer → centerDetail fields
+    const showCenterLabels = classified.centerDetail.length > 1
     const centerDetailNode = classified.centerDetail.length > 0 && (
         <div className="flex items-center gap-4 min-w-0">
             {classified.centerDetail.map(f => (
-                <div key={f.key} className={cn("flex flex-col items-end min-w-0", f.cardClassName)}>
-                    <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>
-                    <span className="text-xs font-semibold truncate min-w-0">{f.value ?? <span className="opacity-40">—</span>}</span>
+                <div key={f.key} className={cn(showCenterLabels ? "flex flex-col items-end min-w-0" : "flex items-end gap-1.5 min-w-0", f.cardClassName)}>
+                    {showCenterLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
+                    <span className="text-xs font-medium truncate min-w-0 [&>*]:text-xs">{f.value ?? <span className="opacity-40">—</span>}</span>
                 </div>
             ))}
         </div>
@@ -403,7 +429,22 @@ export function AutoEntityCard<TData>({
             if (item.kind === 'text') return <React.Fragment key={i}>{item.content}</React.Fragment>
             if (item.kind === 'date') return <React.Fragment key={i}>{formatPlainDate(String(item.value))}</React.Fragment>
             if (item.kind === 'currency') return <React.Fragment key={i}>{new Intl.NumberFormat('es-CL').format(item.value)}</React.Fragment>
-            if (item.kind === 'status') return <React.Fragment key={i}>{item.label}</React.Fragment>
+            if (item.kind === 'status') {
+                const { intent } = resolveStatus(item.status)
+                return (
+                    <span key={i} className={cn('inline-flex items-center gap-1 rounded-full border px-1.5 py-px leading-none align-middle', SUBTITLE_INTENT_BORDER[intent])}>
+                        <span className={cn('inline-block h-1 w-1 rounded-full', SUBTITLE_DOT_COLORS[intent])} />
+                        {item.label}
+                    </span>
+                )
+            }
+            if (item.kind === 'chip') {
+                return (
+                    <span key={i} className={cn('inline-flex items-center rounded-full border px-1.5 py-px leading-none align-middle', SUBTITLE_INTENT_BORDER[item.intent as string])}>
+                        {item.content}
+                    </span>
+                )
+            }
             return null
         })
         : undefined

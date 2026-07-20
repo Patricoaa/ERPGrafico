@@ -1,6 +1,6 @@
 import { type ReactNode } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
+import { cn, translateStatus } from "@/lib/utils"
 import { DataCell } from "./DataTableCells"
 import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
@@ -825,7 +825,7 @@ export function createEntityFields<T>(): (
                 }
             }
             // Priority 4: Auto-compose subtitle from field roles.
-            // Rule: up to 3 values, max 1 of each role in this order: relation → temporal → primary-value.
+            // Rule: up to 4 values, max 1 of each role in this order: relation → temporal → primary-value → tag.
             // A 'primary-label' / 'subtitle' placed field (name key) is always the first slot.
             const allDefs = Object.values(defs)
 
@@ -842,10 +842,10 @@ export function createEntityFields<T>(): (
                 if (raw != null && raw !== '') items.push({ kind: 'text', content: String(raw) })
             }
 
-            // Secondary slots: relation (1), temporal (1), primary-value (1)
-            const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
+            // Secondary slots: relation (1), temporal (1), primary-value (1), tag (1)
+            const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value', 'tag']
             for (const slotRole of slotRoles) {
-                if (items.length >= 3) break
+                if (items.length >= 4) break
                 // Skip primary-value if it's already covered by a name field
                 const candidate = allDefs.find(d => {
                     if (nameDef && d.key === nameDef.key) return false
@@ -863,6 +863,17 @@ export function createEntityFields<T>(): (
                             items.push({ kind: 'date', value: String(raw) })
                         } else if (slotRole === 'primary-value' && candidate.type === 'currency') {
                             items.push({ kind: 'currency', value: Number(raw) })
+                        } else if (slotRole === 'primary-value' && candidate.type === 'status') {
+                            const label = candidate.getLabel
+                                ? String(candidate.getLabel(entity))
+                                : translateStatus(String(raw))
+                            items.push({ kind: 'status', status: String(raw), label })
+                        } else if (slotRole === 'tag') {
+                            const chipValue = candidate.get ? String(candidate.get(entity) ?? raw) : String(raw)
+                            const chipIntent = typeof candidate.intent === 'function'
+                                ? candidate.intent(entity)
+                                : candidate.intent
+                            items.push({ kind: 'chip', content: chipValue, intent: chipIntent })
                         } else {
                             items.push({ kind: 'text', content: String(raw) })
                         }
@@ -901,11 +912,11 @@ export function createEntityFields<T>(): (
                 })
                 if (nameDef) keys.add(nameDef.key)
 
-                // Slots 2-3: relation, temporal, primary-value (max 1 each, up to total 3 tokens)
+                // Slots 2-4: relation, temporal, primary-value, tag (max 1 each, up to total 4 tokens)
                 let slotsFilled = nameDef ? 1 : 0
-                const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
+                const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value', 'tag']
                 for (const slotRole of slotRoles) {
-                    if (slotsFilled >= 3) break
+                    if (slotsFilled >= 4) break
                     const candidate = allDefs.find(d => {
                         if (nameDef && d.key === nameDef.key) return false
                         const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]

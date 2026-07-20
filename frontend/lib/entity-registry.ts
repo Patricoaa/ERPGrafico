@@ -1206,6 +1206,7 @@ export type SubtitleItem =
   | { kind: 'date'; value: string | Date }
   | { kind: 'currency'; value: number; currency?: string }
   | { kind: 'status'; label: string; status: string }
+  | { kind: 'chip'; content: string; intent?: string }
   | { kind: 'separator' }
 
 /**
