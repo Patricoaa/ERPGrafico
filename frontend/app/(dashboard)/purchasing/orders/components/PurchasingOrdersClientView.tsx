@@ -489,9 +489,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                             <DomainHubStatus label={label} data={hubData as Record<string, unknown>} />
                                         </div>
                                     )}
-                                    trailing={
-                                        <DataCell.ActionSingle onClick={() => toggleSelection(data.id as number)} title="Abrir" />
-                                    }
+
 
                                 />
                             )
