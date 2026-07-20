@@ -215,18 +215,14 @@ function classifyFields<TData>(
     const flows = header.filter(f => f.fieldRole === 'flow')
     const headerWithoutFlow = header.filter(f => f.fieldRole !== 'flow')
 
-    // ── Metric: progress (always) + overflow tag/flow ─────────────────────────
-    const overflowMetric = headerOverflow.filter(
-        f => f.fieldRole === 'tag' || f.fieldRole === 'flow' || f.fieldRole === 'progress'
-    )
-    const overflowDetail = headerOverflow.filter(
-        f => f.fieldRole !== 'tag' && f.fieldRole !== 'flow' && f.fieldRole !== 'progress'
-    )
-
+    // ── Metric: ONLY explicit progress fields ─────────────────────────────────
+    // All header overflow cascades to centerDetail — metric is a final fallback
+    // exclusively for progress bars (cardPlacement: 'metric').
     const progressFields = rest.filter(f => f.cardPlacement === 'metric')
-    const metric = [...progressFields, ...overflowMetric]
+    const metric = [...progressFields]
 
-    // ── Detail: everything else, max 10 ──────────────────────────────────────
+    // ── Detail: explicit detail fields + ALL header overflow, max 10 ──────────
+    // Cascade order: header trailing → center header → metric (progress only)
     const assignedKeys = new Set([
         ...header.map(f => f.key),
         ...metric.map(f => f.key),
@@ -234,7 +230,8 @@ function classifyFields<TData>(
     const detailBase = rest.filter(
         f => f.cardPlacement === 'detail' && !assignedKeys.has(f.key)
     )
-    let detail = [...detailBase, ...overflowDetail].slice(0, 10)
+    let detail = [...detailBase, ...headerOverflow].slice(0, 10)
+
     const footer = rest.filter(f => f.cardPlacement === 'footer')
 
     // ── Variant visibility rules ──────────────────────────────────────────────
