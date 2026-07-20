@@ -363,7 +363,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     })
 
     const columns: ColumnDef<PurchaseOrder>[] = [
-        ...(purchaseOrderFields.toColumns({ exclude: ["status"] }) as ColumnDef<PurchaseOrder>[]),
+        ...(purchaseOrderFields.toColumns() as ColumnDef<PurchaseOrder>[]),
         {
             accessorKey: "warehouse_name",
             header: ({ column }) => (
@@ -371,14 +371,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("warehouse_name")}</DataCell.Secondary>,
             meta: { title: "Almacén" },
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estados" />
-            ),
-            cell: ({ row }) => <DomainHubStatus label="purchasing.purchaseorder" data={row.original} />,
-            meta: { title: "Estado" },
         },
 
         // Hidden columns for filtering only - these provide data for faceted filters
@@ -484,13 +476,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                         isSelected: viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id,
                                         onToggle: () => toggleSelection(data.id as number),
                                     }}
-                                    hubStatusRenderer={(hubData) => (
-                                        <div className="hidden sm:flex items-center gap-3">
-                                            <DomainHubStatus label={label} data={hubData as Record<string, unknown>} />
-                                        </div>
-                                    )}
-
-
                                 />
                             )
                         }}
