@@ -1,5 +1,6 @@
 import { createEntityFields } from "@/components/shared"
 import type { Invoice } from "./types"
+import { DomainHubStatus } from "@/components/shared"
 
 export const salesInvoiceFields = createEntityFields<Invoice>()({
     displayId: {
@@ -12,15 +13,19 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         type: "date",
         label: "Fecha",
     },
-    dueDate: {
-        key: "due_date",
-        type: "date",
-        label: "Vencimiento",
-    },
     contactDisplayName: {
         key: "partner_name",
         type: "text",
         label: "Cliente",
+    },
+    domainStatus: {
+        key: "status",
+        type: "complex",
+        label: "Flujo",
+        render: (inv) => (
+            <DomainHubStatus label="billing.invoice" data={inv} />
+        ),
+        tableOptions: { width: 180, align: "center", enableSorting: false },
     },
     status: {
         key: "status",
