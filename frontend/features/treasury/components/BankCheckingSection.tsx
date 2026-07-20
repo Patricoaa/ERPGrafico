@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
-import { EntityCard, DataCell, SectionHeader } from "@/components/shared"
+import { AutoEntityCard, DataCell, SectionHeader, createEntityFields } from "@/components/shared"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
     data: BankOverviewData
     bankId: number
 }
+
+const checkingFields = createEntityFields<BankOverviewData["accounts"][number]>()({})
 
 export function BankCheckingSection({ data, bankId }: Props) {
     const router = useRouter()
@@ -34,22 +36,21 @@ export function BankCheckingSection({ data, bankId }: Props) {
                         : acc.current_balance
 
                     return (
-                        <EntityCard
+                        <AutoEntityCard
                             key={acc.id}
-                            variant="compact"
-                            onClick={() => router.push(`/treasury/bank-center/${bankId}/movements?account=${acc.id}`)}
-                        >
-                            <EntityCard.Header
-                                icon={Landmark}
-                                title={acc.name}
-                                subtitle={acc.account_number ?? acc.code ?? "—"}
-                            />
-                            <EntityCard.Metrics metrics={[
+                            data={acc}
+                            fields={checkingFields}
+                            variant="overview"
+                            icon={Landmark}
+                            title={acc.name}
+                            subtitle={acc.account_number ?? acc.code ?? "—"}
+                            overviewMetrics={[
                                 { label: "Saldo", value: <DataCell.Currency value={acc.current_balance} /> },
                                 { label: "Línea", value: <DataCell.Currency value={creditLine} showColor={false} /> },
                                 { label: "Disponible", value: <DataCell.Currency value={available} showColor={available >= 0} /> },
-                            ]} />
-                        </EntityCard>
+                            ]}
+                            onClick={() => router.push(`/treasury/bank-center/${bankId}/movements?account=${acc.id}`)}
+                        />
                     )
                 })}
             </div>

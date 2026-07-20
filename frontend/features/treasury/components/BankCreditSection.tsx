@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { CreditCard } from "lucide-react"
-import { EntityCard, DataCell, SectionHeader } from "@/components/shared"
+import { AutoEntityCard, DataCell, SectionHeader, createEntityFields } from "@/components/shared"
 import { useBranding } from "@/contexts/BrandingProvider"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
@@ -17,6 +17,8 @@ function formatCardNumber(value: string | null | undefined): string {
     const groups = clean.match(/.{1,4}/g)
     return groups ? groups.join(" ") : value
 }
+
+const creditFields = createEntityFields<BankOverviewData["accounts"][number]>()({})
 
 export function BankCreditSection({ data, bankId }: Props) {
     const router = useRouter()
@@ -42,22 +44,21 @@ export function BankCreditSection({ data, bankId }: Props) {
                         ? card.credit_limit - Math.abs(card.current_balance)
                         : 0
                     return (
-                        <EntityCard
+                        <AutoEntityCard
                             key={card.id}
-                            variant="compact"
-                            onClick={() => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
-                        >
-                            <EntityCard.Header
-                                icon={CreditCard}
-                                title={formatCardNumber(card.card_number || card.account_number || card.code)}
-                                subtitle={companyName || undefined}
-                            />
-                            <EntityCard.Metrics metrics={[
+                            data={card}
+                            fields={creditFields}
+                            variant="overview"
+                            icon={CreditCard}
+                            title={formatCardNumber(card.card_number || card.account_number || card.code)}
+                            subtitle={companyName || undefined}
+                            overviewMetrics={[
                                 { label: "Cupo", value: <DataCell.Currency value={card.credit_limit || 0} showColor={false} /> },
                                 { label: "Utilizado", value: <DataCell.Currency value={Math.abs(card.current_balance)} showColor={false} /> },
                                 { label: "Disponible", value: <DataCell.Currency value={available} showColor={false} /> },
-                            ]} />
-                        </EntityCard>
+                            ]}
+                            onClick={() => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
+                        />
                     )
                 })}
             </div>
