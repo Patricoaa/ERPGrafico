@@ -269,7 +269,6 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             fields={cardStatementFields}
 
                             entityLabel="treasury.cardstatement"
-                            title={stmt.display_id}
                             onClick={() => openStatement(stmt.id, "detail")} 
                             defaultAction={statementActions.defaultAction(actionsCtx)?.(stmt) ?? null}
 

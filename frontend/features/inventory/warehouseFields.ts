@@ -18,4 +18,6 @@ export const warehouseFields = createEntityFields<Warehouse>()({
         type: "secondary",
         label: "Dirección",
     },
+}, {
+    title: { field: 'name' },
 })

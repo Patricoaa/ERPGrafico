@@ -21,4 +21,6 @@ export const productFields = createEntityFields<Product>()({
         get: (p) => p.is_dynamic_pricing ? 'Dinámico' : null,
         intent: 'warning',
     },
+}, {
+    title: { field: 'name' },
 })

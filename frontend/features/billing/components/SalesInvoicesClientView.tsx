@@ -135,7 +135,6 @@ export function SalesInvoicesClientView() {
                                 data={data}
                                 fields={salesInvoiceFields}
                                 entityLabel={label}
-                                title={d.display_id as string}
                                 onClick={() => toggleSelection(data)}
                                 isSelected={hubConfig?.invoiceId === data.id}
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}

@@ -41,4 +41,6 @@ export const employeeFields = createEntityFields<Employee>()({
         get: (e) => e.status,
         getLabel: (e) => (e as Employee & { status_display?: string }).status_display ?? e.status,
     },
+}, {
+    title: { field: 'contact_detail', template: '{contact_detail.name}' },
 })

@@ -34,4 +34,4 @@ export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
         label: "Estado",
         tableOptions: { width: 100 },
     },
-})
+}, { title: { field: 'partner_name' } })

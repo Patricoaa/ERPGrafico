@@ -184,7 +184,6 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                             fields={checkFields}
 
                             entityLabel="treasury.check"
-                            title={check.check_number}
 
                             actions={checkActions.render(check, actionsCtx)}
                         />

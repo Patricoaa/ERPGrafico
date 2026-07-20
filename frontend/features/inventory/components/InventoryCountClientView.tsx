@@ -420,7 +420,6 @@ export function InventoryCountClientView() {
                         fields={inventoryCountFields}
 
                         entityLabel="inventory.inventorycount"
-                        title={`Conteo #${cnt.id}`}
                         onClick={() => handleSelectCount(cnt.id)}
 
                     />

@@ -35,4 +35,4 @@ export const userFields = createEntityFields<AppUser>()({
         label: "Estado",
         get: (u) => u.is_active ? "active" : "inactive",
     },
-})
+}, { title: { field: 'username' } })

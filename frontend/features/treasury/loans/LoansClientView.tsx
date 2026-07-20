@@ -187,7 +187,6 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                             data={loan}
                             fields={loanFields}
                             entityLabel="treasury.bankloan"
-                            title={loan.display_id}
                             onClick={() => openLoan(loan.id, "detail")} 
                             defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
 

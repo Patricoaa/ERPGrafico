@@ -523,7 +523,6 @@ export function UnbilledChargesClientView({
                             fields={unbilledChargeFields}
 
                             entityLabel="treasury.unbilledcharge"
-                            title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
                         />
                     )}
                     cardSkeleton={{ showFooter: true }}

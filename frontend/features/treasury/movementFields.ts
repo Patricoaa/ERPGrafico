@@ -75,4 +75,6 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
         label: "Origen / Sistema",
         get: (m) => m.pos_session ? `POS #${m.pos_session}` : "SISTEMA",
     },
+}, {
+    title: { field: 'display_id' },
 })

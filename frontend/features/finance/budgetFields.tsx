@@ -32,4 +32,4 @@ export const budgetFields = createEntityFields<Budget>()({
         icon: Calendar,
         get: (e) => `${e.start_date} - ${e.end_date}`,
     },
-})
+}, { title: { field: 'name' } })

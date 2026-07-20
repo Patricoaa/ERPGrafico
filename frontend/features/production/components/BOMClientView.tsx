@@ -120,7 +120,6 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                             fields={bomFields}
 
                             entityLabel="production.bom"
-                            title={bom.name}
 
                             actions={bomActions.render(bom, actionsCtx)}
                             defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? (() => bom.id != null && handleEdit(bom.id))}

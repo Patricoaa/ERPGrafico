@@ -112,7 +112,6 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                             data={absence}
                             fields={absenceFields}
                             entityLabel="hr.absence"
-                            title={absence.employee_name}
                             actions={absenceActions.render(absence, absenceActionsCtx)}
                             defaultAction={absenceActions.defaultAction(absenceActionsCtx)?.(absence) ?? (() => openSelected(absence.id))}
 

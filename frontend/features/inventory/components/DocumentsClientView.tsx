@@ -186,7 +186,6 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                                 fields={inventoryDocumentFields}
 
                                 entityLabel="inventory.inventorydocument"
-                                title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
 
                                 actions={documentActions.render(doc, actionsCtx)}
                                 defaultAction={() => openSelected(doc.id)}

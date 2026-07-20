@@ -121,7 +121,6 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                             data={advance}
                             fields={salaryAdvanceFields}
                             entityLabel="hr.salaryadvance"
-                            title={advance.employee_name || '---'}
                             actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}
                             defaultAction={salaryAdvanceActions.defaultAction(salaryAdvanceActionsCtx)?.(advance) ?? (() => openSelected(advance.id))}
 

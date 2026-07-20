@@ -42,4 +42,6 @@ export const purchaseInvoiceFields = createEntityFields<Invoice>()({
         label: "Estado",
         surfaces: ["card", "kanban"],
     },
+}, {
+    title: { field: 'partner_name', template: '{partner_name|reference}' },
 })
