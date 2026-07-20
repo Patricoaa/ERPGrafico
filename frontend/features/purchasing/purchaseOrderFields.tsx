@@ -1,4 +1,5 @@
 import { createEntityFields } from "@/components/shared"
+import { DomainHubStatus } from "@/components/shared"
 import type { PurchaseOrderAPI } from "./types"
 
 export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
@@ -23,9 +24,20 @@ export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
         type: "date",
         label: "Entrega Esperada",
     },
-    status: {
+    domainStatus: {
         key: "status",
-        type: "status",
+        type: "complex",
         label: "Estado",
+        render: (order) => (
+            <DomainHubStatus
+                label="purchasing.purchaseorder"
+                data={order as unknown as Record<string, unknown>}
+            />
+        ),
+        tableOptions: {
+            width: 180,
+            align: "center",
+            enableSorting: false,
+        },
     },
 })
