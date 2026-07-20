@@ -9,7 +9,6 @@ export const workOrderFields = createEntityFields<WorkOrder>()({
         type: 'code',
         label: 'NV Asociada',
         get: (w) => w.sale_order_number ?? null,
-        surfaces: ['table'],
     },
     startDate: {
         order: 20,

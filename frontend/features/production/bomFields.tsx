@@ -42,7 +42,6 @@ export const bomFields = createEntityFields<BOMFields>()({
         label: 'Componentes',
         get: (b) => String(b.lines_count ?? 0),
         chipIcon: Layers,
-        surfaces: ['table', 'card'],
     },
     totalCost: {
         key: 'total_cost',

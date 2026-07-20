@@ -6,7 +6,6 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         key: "display_id",
         type: "code",
         label: "Folio",
-        surfaces: ["card", "kanban"],
     },
     invoiceDate: {
         key: "date",
@@ -17,7 +16,6 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         key: "due_date",
         type: "date",
         label: "Vencimiento",
-        surfaces: ["card", "kanban"],
     },
     contactDisplayName: {
         key: "partner_name",
@@ -28,12 +26,10 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         key: "status",
         type: "status",
         label: "Estado",
-        surfaces: ["card", "kanban"],
     },
     dteType: {
         key: "dte_type_display",
         type: "chip",
         label: "Tipo DTE",
-        surfaces: ["card", "kanban"],
     },
 })

@@ -39,7 +39,6 @@ export const expenseDetailFields = createEntityFields<ExpenseDetail>()({
         key: "contact_display_name",
         type: "text",
         label: "Contacto",
-        surfaces: ["card", "kanban"],
     },
     costCenterName: {
         key: "cost_center_name",
