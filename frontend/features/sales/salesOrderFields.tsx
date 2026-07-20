@@ -1,5 +1,4 @@
-import { createEntityFields } from "@/components/shared"
-import { DomainHubStatus } from "@/components/shared"
+import { createEntityFields, DataCell, DomainHubStatus } from "@/components/shared"
 import type { SaleOrder } from "./types"
 
 export const salesOrderFields = createEntityFields<SaleOrder>()({
@@ -45,5 +44,27 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
         key: "channel_display",
         type: "chip",
         label: "Canal",
+    },
+    workflow: {
+        key: "workflow",
+        type: "complex",
+        label: "Resumen",
+        surfaces: ["table"],
+        render: (order) => {
+            const o = order as any;
+            return (
+                <DataCell.WorkflowSummary
+                    lines={o.lines}
+                    total={parseFloat(String(o.total || 0))}
+                    pending={parseFloat(String(o.pending_amount || 0))}
+                    deliveryDate={o.delivery_date}
+                />
+            )
+        },
+        tableOptions: {
+            width: 180,
+            align: "right",
+            enableSorting: false,
+        },
     },
 })

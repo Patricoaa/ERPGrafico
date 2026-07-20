@@ -625,6 +625,45 @@ export const DataCell = {
             </div>
         )
     },
+
+    /**
+     * Compact summary for workflow-based entities (orders, etc.) in table views.
+     * Replicates the essential data of EntityCardWorkflowBody in a space-efficient cell.
+     */
+    WorkflowSummary: ({
+        lines,
+        total,
+        pending,
+        deliveryDate,
+        dateLabel = "Entrega",
+        className,
+        ...props
+    }: HTMLAttributes<HTMLDivElement> & {
+        lines?: Array<{ quantity: number | string; product_name?: string }>
+        total: number
+        pending?: number
+        deliveryDate?: string
+        dateLabel?: string
+    }) => {
+        return (
+            <div className={cn("flex flex-col items-end justify-center gap-0.5", className)} {...props}>
+                <div className="flex items-center gap-1.5 min-w-0">
+                    {lines && lines.length > 0 && (
+                        <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/60">{lines.length} {lines.length === 1 ? 'item' : 'items'}</span>
+                    )}
+                    <span className="text-sm font-semibold tracking-tight">{formatCurrency(total)}</span>
+                </div>
+                {(pending != null && pending > 0) && (
+                    <span className="text-[9px] text-warning font-bold uppercase tracking-widest leading-none">Pend.: {formatCurrency(pending)}</span>
+                )}
+                {deliveryDate && (
+                    <span className="text-[9px] text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis max-w-full leading-none">
+                        {dateLabel}: {formatPlainDate(deliveryDate)}
+                    </span>
+                )}
+            </div>
+        )
+    },
 }
 
 // ─── ActionMenu item types ────────────────────────────────────────────────────
