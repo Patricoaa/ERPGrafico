@@ -3,9 +3,8 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import {ActionConfirmModal, DataTableView, AutoEntityCard, createCodeColumn, createSecondaryColumn, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus} from '@/components/shared'
+import {ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus} from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
-import { type ColumnDef } from "@tanstack/react-table"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { GitBranch } from "lucide-react"
 import { treasuryApi } from "@/features/treasury"
@@ -17,7 +16,7 @@ import { PaymentModal } from "@/features/treasury"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { ENTITY_REGISTRY, getEntityIcon, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
+import { getEntityIcon, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
@@ -98,13 +97,7 @@ export function SalesInvoicesClientView() {
         }
     }
 
-    const columns: ColumnDef<Invoice>[] = [
-        createCodeColumn<Invoice>("number", "Folio", {
-            render: (row) => <>{row.display_id ?? row.number}</>,
-        }),
-        ...salesInvoiceFields.toColumns(),
-        createSecondaryColumn<Invoice>("dte_type_display", "Tipo"),
-    ]
+    const columns = salesInvoiceFields.toColumns()
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -121,8 +114,7 @@ export function SalesInvoicesClientView() {
                     renderCard={(data: Invoice) => {
                         const label = 'billing.invoice'
                         const d = data as unknown as Record<string, unknown>
-                        const config = ENTITY_REGISTRY[label]?.cardConfig
-                        const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(d) : config?.iconClassName
+                        const isNC = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(d.dte_type ?? ''))
                         const adjustments = (d.adjustments || []) as Array<Record<string, unknown>>
 
                         return (
@@ -135,7 +127,7 @@ export function SalesInvoicesClientView() {
                                 isSelected={hubConfig?.invoiceId === data.id}
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
-                                iconClassName={iconClassName}
+                                iconClassName={isNC ? "text-warning bg-warning/10" : undefined}
                                 hubTrigger={{
                                     isSelected: hubConfig?.invoiceId === data.id,
                                     onToggle: () => toggleSelection(data),
