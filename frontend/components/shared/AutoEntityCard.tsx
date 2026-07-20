@@ -262,10 +262,11 @@ function classifyFields<TData>(
             break
     }
 
-    // Center routing: flow fields get the header center slot.
-    // If no flows, center shows detail fields (highlights/full variants).
-    const centerDetail = flows.length > 0 ? flows : detail
-    const bodyDetail = flows.length > 0 ? detail : []
+    // Center routing: flows + ALL detail fields always go to the header center slot.
+    // bodyDetail is always empty — 'detail' cardPlacement is now semantically 'center header'.
+    // EntityCard.Body is no longer driven by auto-classification.
+    const centerDetail = [...flows, ...detail]
+    const bodyDetail: CardField[] = []
 
     return { title, header: headerWithoutFlow, centerDetail, bodyDetail, metric, footer }
 }
