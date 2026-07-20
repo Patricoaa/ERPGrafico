@@ -48,8 +48,9 @@ export interface AutoEntityCardProps<TData> {
      * - 'summary': management, dense — header + metrics, detail hidden
      * - 'full': management, complete — header + detail + metrics (DEFAULT)
      * - 'workflow': documents with line items — header + detail + metrics + workflow body (driven by cardConfig.workflow in entity-registry)
+     * - 'overview': external DTO data — header + overviewMetrics (entity fields hidden, metrics come from overviewMetrics prop)
      */
-    variant?: 'highlights' | 'summary' | 'full' | 'workflow'
+    variant?: 'highlights' | 'summary' | 'full' | 'workflow' | 'overview'
     /**
      * Hub status renderer — called for summary/full/workflow variants to render domain-specific
      * status content in the header center area.
@@ -72,6 +73,11 @@ export interface AutoEntityCardProps<TData> {
         /** Toggle handler */
         onToggle: () => void
     }
+    /**
+     * Pre-built metrics for variant='overview' — rendered instead of entity-derived metrics.
+     * Each item becomes a metric column in the card body.
+     */
+    overviewMetrics?: Array<{ label: string; value: React.ReactNode; currency?: string }>
 }
 
 // ─── Workflow Data Extraction ─────────────────────────────────────────────────
@@ -90,10 +96,6 @@ interface WorkflowData {
     pending?: number
     deliveryDate?: string
     dateLabel: string
-}
-
-function resolveKey<T>(value: T | ((data: Record<string, unknown>) => T), data: Record<string, unknown>): T {
-    return typeof value === 'function' ? (value as (d: Record<string, unknown>) => T)(data) : value
 }
 
 function extractWorkflowData(
@@ -191,6 +193,12 @@ function classifyFields<TData>(
             detail = []
             break
 
+        case 'overview':
+            // External DTO data — hide all entity-derived zones (metrics come from overviewMetrics prop)
+            detail = []
+            metric = []
+            break
+
         case 'workflow':
         case 'full':
         default:
@@ -266,6 +274,7 @@ export function AutoEntityCard<TData>({
     hubStatusRenderer,
     workflowRenderer,
     hubTrigger,
+    overviewMetrics,
 }: AutoEntityCardProps<TData>) {
     // Resolve variant: explicit prop > entity registry > default 'full'
     const registryVariant = entityLabel ? getEntityMetadata(entityLabel)?.viewPolicy?.cardVariant : undefined
@@ -341,6 +350,7 @@ export function AutoEntityCard<TData>({
 
     // 7. Determine EntityCard variant (compact padding if no body detail/metric and no footer/workflow)
     const hasBodyContent = classified.bodyDetail.length > 0 || classified.metric.length > 0 || classified.footer.length > 0
+        || (effectiveVariant === 'overview' && overviewMetrics && overviewMetrics.length > 0)
     const entityCardVariant = hasBodyContent ? "full" : "compact"
 
     // 8. Build combined actions: existing actions + hub trigger
@@ -389,6 +399,9 @@ export function AutoEntityCard<TData>({
                     label: f.label,
                     value: f.value,
                 }))} />
+            )}
+            {effectiveVariant === 'overview' && overviewMetrics && overviewMetrics.length > 0 && (
+                <EntityCard.Metrics metrics={overviewMetrics} />
             )}
             {classified.footer.length > 0 && (
                 <EntityCard.Footer>
