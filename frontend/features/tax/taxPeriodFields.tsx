@@ -50,7 +50,7 @@ export const taxPeriodFields = createEntityFields<TaxPeriod>()({
         key: "payment_status",
         type: "computed",
         label: "Estado Pago",
-        fieldRole: "status",
+        fieldRole: "primary-value",
         render: (e) => {
             const summary = e.declaration_summary
             return (

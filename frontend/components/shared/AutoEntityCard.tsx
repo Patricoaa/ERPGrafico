@@ -158,16 +158,17 @@ interface ClassifiedFields {
 }
 
 /**
- * Classifies card fields into layout zones based on their resolved cardPlacement.
- * Applies variant-based visibility rules.
+ * Classifies card fields into layout zones based on their resolved cardPlacement and fieldRole.
  *
- * Fields referenced by subtitle templates (via subtitleFieldKeys) or the title field
- * are excluded from all zones to prevent duplicate rendering.
+ * Header capacity rules:
+ * - Fields are prioritised: complex → primary-value → flow → tag (chip/icon)
+ * - If ALL selected header fields share the SAME semantic role → max 3
+ * - If they have MIXED roles → max 1
+ * - Overflow from header is demoted: tag/progress → metric, others → detail
  *
- * Detail field routing:
- * - Flow fields (numericFlow/currencyFlow) → center of header
- * - Other detail fields → center of header UNLESS flow fields are present,
- *   in which case they stay in body.
+ * Subtitle fields (placement === 'subtitle') and title field are excluded from all zones.
+ * Detail is capped at 10 fields.
+ * Metric receives: progress + any tag/flow that overflowed from header.
  */
 function classifyFields<TData>(
     fields: CardField[],
@@ -177,7 +178,7 @@ function classifyFields<TData>(
 ): ClassifiedFields {
     const title = fields.find(f => f.cardPlacement === 'title')
 
-    // Exclude title field, subtitle field and subtitle-referenced fields from layout zones
+    // Exclude title, subtitle-placed, and subtitle-referenced fields from all zones
     const rest = fields.filter(f =>
         f.cardPlacement !== 'title' &&
         f.cardPlacement !== 'subtitle' &&
@@ -185,47 +186,90 @@ function classifyFields<TData>(
         !subtitleFieldKeys.has(f.key)
     )
 
-    let detail = rest.filter(f => f.cardPlacement === 'detail')
-    let metric = rest.filter(f => f.cardPlacement === 'metric')
-    const flows = rest.filter(f => f.fieldRole === 'flow')
-    const header = rest.filter(f => f.cardPlacement === 'header' && f.fieldRole !== 'flow')
+    // ── Header candidate pool (priority order) ────────────────────────────────
+    // complex > primary-value > flow > tag
+    const HEADER_PRIORITY: Array<(f: CardField) => boolean> = [
+        f => f.fieldRole === 'complex',
+        f => f.fieldRole === 'primary-value',
+        f => f.fieldRole === 'flow',
+        f => f.fieldRole === 'tag',
+    ]
+
+    const headerCandidates = rest.filter(f => f.cardPlacement === 'header')
+
+    // Sort candidates by priority group
+    const sortedCandidates = [...headerCandidates].sort((a, b) => {
+        const pa = HEADER_PRIORITY.findIndex(fn => fn(a))
+        const pb = HEADER_PRIORITY.findIndex(fn => fn(b))
+        return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb)
+    })
+
+    // Determine header capacity based on role uniformity
+    const uniqueRoles = new Set(sortedCandidates.map(f => f.fieldRole))
+    const maxHeader = uniqueRoles.size <= 1 ? 3 : 1
+
+    const header = sortedCandidates.slice(0, maxHeader)
+    const headerOverflow = sortedCandidates.slice(maxHeader)
+
+    // ── Flows (center of header) ───────────────────────────────────────────────
+    const flows = header.filter(f => f.fieldRole === 'flow')
+    const headerWithoutFlow = header.filter(f => f.fieldRole !== 'flow')
+
+    // ── Metric: progress (always) + overflow tag/flow ─────────────────────────
+    const overflowMetric = headerOverflow.filter(
+        f => f.fieldRole === 'tag' || f.fieldRole === 'flow' || f.fieldRole === 'progress'
+    )
+    const overflowDetail = headerOverflow.filter(
+        f => f.fieldRole !== 'tag' && f.fieldRole !== 'flow' && f.fieldRole !== 'progress'
+    )
+
+    const progressFields = rest.filter(f => f.cardPlacement === 'metric')
+    const metric = [...progressFields, ...overflowMetric]
+
+    // ── Detail: everything else, max 10 ──────────────────────────────────────
+    const assignedKeys = new Set([
+        ...header.map(f => f.key),
+        ...metric.map(f => f.key),
+    ])
+    const detailBase = rest.filter(
+        f => f.cardPlacement === 'detail' && !assignedKeys.has(f.key)
+    )
+    let detail = [...detailBase, ...overflowDetail].slice(0, 10)
     const footer = rest.filter(f => f.cardPlacement === 'footer')
 
-    // Apply variant visibility
+    // ── Variant visibility rules ──────────────────────────────────────────────
     switch (variant) {
         case 'highlights':
-            // Header + center — detail fields route to center via centerDetail, hide metric
-            metric = []
+            // Header + center only — no detail or metric in body
+            detail = []
             break
 
         case 'summary':
-            // Header + metric — hide detail
+            // Header + metric — no detail
             detail = []
             break
 
         case 'overview':
-            // External DTO data — hide all entity-derived zones (metrics come from overviewMetrics prop)
+            // All entity-derived body zones hidden (overviewMetrics prop drives content)
             detail = []
-            metric = []
+            // metric intentionally kept empty — overviewMetrics prop used instead
             break
 
         case 'workflow':
         case 'full':
         default:
-            // All zones visible — balance header if too many
-            if (header.length > 3) {
-                const excess = header.splice(3)
-                detail.unshift(...excess)
-            }
+            // All zones visible — already balanced above
             break
     }
 
-    // Center routing: flow fields or detail fields go to header center
+    // Center routing: flow fields get the header center slot.
+    // If no flows, center shows detail fields (highlights/full variants).
     const centerDetail = flows.length > 0 ? flows : detail
     const bodyDetail = flows.length > 0 ? detail : []
 
-    return { title, header, centerDetail, bodyDetail, metric, footer }
+    return { title, header: headerWithoutFlow, centerDetail, bodyDetail, metric, footer }
 }
+
 
 /**
  * Builds structured SubtitleItem[] for the card.
@@ -297,19 +341,19 @@ export function AutoEntityCard<TData>({
         ? fieldsSubtitleKeys
         : registrySubtitleKeys
 
-    // Resolve title field key from registry (legacy fallback)
+    // entityMetadata is still needed for workflowConfig and cardConfig lookups.
+    // Note: titleField is no longer sourced from entityMetadata — title resolution is fully
+    // delegated to resolveTitle() from createEntityFields meta, or auto-detection in classifyFields.
     const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
-    const titleFieldKey = entityMetadata?.titleField
 
     const cardFields = fields.toCardFields(data)
 
     // 1. Classify fields into layout zones
-    const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys, titleFieldKey)
+    const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys)
 
-    // 2. Determine display title — Fields.ts meta first, then explicit prop, then registry, then auto-detect
+    // 2. Determine display title — Fields.ts meta first, then explicit prop, then auto-detect
     const fieldsTitle = fields.resolveTitle?.(data)
-    const titleField = titleFieldKey ? cardFields.find(f => f.key === titleFieldKey) : undefined
-    const displayTitle = fieldsTitle ?? explicitTitle ?? titleField?.value ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
+    const displayTitle = fieldsTitle ?? explicitTitle ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
 
     // 3. Build subtitle — Fields.ts meta first, then explicit, then registry
     const fieldsSubtitle = fields.resolveSubtitle?.(data)

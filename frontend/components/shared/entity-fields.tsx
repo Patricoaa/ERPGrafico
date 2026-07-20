@@ -27,6 +27,11 @@ type FieldType =
     | "sourceDest"
     | "chip-category"
     | "computed"
+    /**
+     * `complex` — Rich, multi-dimensional cell (e.g. source→dest routes, domain hub statuses).
+     * Always promoted to the header zone. Use `render` callback to produce the ReactNode.
+     */
+    | "complex"
 
 type FieldSurface = "table" | "card" | "kanban"
 
@@ -52,30 +57,36 @@ export type CardPlacement = 'title' | 'subtitle' | 'header' | 'detail' | 'metric
  * Each FieldType maps to a FieldRole via TYPE_TO_ROLE.
  */
 export type FieldRole =
-    | 'identifier'       // code field with key containing id/number/code
-    | 'primary-label'    // text field with key containing 'name'
-    | 'status'           // status badge
+    | 'identifier'       // code field — card title candidate (prefers key with id/display)
+    | 'primary-label'    // text field with key containing 'name' — exclusive subtitle candidate
+    | 'complex'          // rich multi-dimensional cell (sourceDest, domain status) — always header
     | 'tag'              // chip / icon
-    | 'primary-value'    // currency (main financial value)
-    | 'secondary-value'  // currency (secondary), number metrics
-    | 'flow'             // currencyFlow, numericFlow
-    | 'relation'         // text (related entity name)
-    | 'temporal'         // date field
-    | 'descriptive'      // text (description, notes)
-    | 'supplementary'    // secondary text
-    | 'progress'         // progress bar
+    | 'primary-value'    // currency (key must contain "total") or status badge — header
+    | 'flow'             // currencyFlow, numericFlow — header center
+    | 'relation'         // contact / text referencing another entity — subtitle candidate
+    | 'temporal'         // date field — subtitle candidate
+    | 'descriptive'      // text, number, secondary, computed — detail body
+    | 'supplementary'    // secondary text — detail body
+    | 'progress'         // progress bar — metric fallback
 
 /**
  * FieldType → FieldRole mapping.
  * Used by toCardFields() when no explicit fieldRole is set.
+ *
+ * Key rule changes vs. legacy:
+ * - `status`    → 'primary-value' (rendered as a badge but semantically a primary KPI)
+ * - `number`    → 'descriptive'  (quantities/counts go to detail body, not metric)
+ * - `currency`  → 'primary-value' only when key contains "total" (see toCardFields override)
+ * - `sourceDest`→ 'complex'      (rich route display, always header)
+ * - `complex`   → 'complex'      (new explicit rich-cell type, always header)
  */
 const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
     'text':          'descriptive',
     'code':          'identifier',
     'date':          'temporal',
-    'currency':      'primary-value',
-    'status':        'status',
-    'number':        'secondary-value',
+    'currency':      'primary-value',  // Further narrowed to 'total' keys in toCardFields
+    'status':        'primary-value',  // Status badges are primary KPIs
+    'number':        'descriptive',    // Quantities/counts → detail body
     'secondary':     'supplementary',
     'contact':       'relation',
     'chip':          'tag',
@@ -83,28 +94,32 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
     'progress':      'progress',
     'numericFlow':   'flow',
     'currencyFlow':  'flow',
-    'sourceDest':    'descriptive',
+    'sourceDest':    'complex',        // Rich route display → always header
     'chip-category': 'tag',
     'computed':      'descriptive',
+    'complex':       'complex',        // Explicit rich-cell type → always header
 }
 
 /**
  * FieldRole → default CardPlacement mapping.
  * Explicit cardPlacement in FieldDef always overrides this.
+ *
+ * Hierarchy: title → header → subtitle → detail → metric
+ * - Header is controlled by classifyFields() capacity rules, not just this map.
+ * - 'tag', 'progress', 'flow' default to 'header' but fall back to 'metric' when header is full.
  */
 const ROLE_TO_PLACEMENT: Record<FieldRole, CardPlacement> = {
-    'identifier':       'header',
-    'primary-label':    'detail',
-    'status':           'header',
-    'tag':              'header',
-    'primary-value':    'header',
-    'secondary-value':  'metric',
-    'flow':             'header',
-    'relation':         'detail',
-    'temporal':         'detail',
-    'descriptive':      'detail',
-    'supplementary':    'detail',
-    'progress':         'metric',
+    'identifier':       'header',      // Promoted to 'title' by auto-detect in toCardFields
+    'primary-label':    'subtitle',    // Promoted to 'subtitle' when key contains 'name'
+    'complex':          'header',      // Always header — highest priority zone
+    'tag':              'header',      // Chips/icons — fall back to metric if header full
+    'primary-value':    'header',      // Totals/status badges — header
+    'flow':             'header',      // Flow fields — header center
+    'relation':         'detail',      // Subtitle candidate in auto-subtitle, otherwise detail
+    'temporal':         'detail',      // Subtitle candidate in auto-subtitle, otherwise detail
+    'descriptive':      'detail',      // Default body
+    'supplementary':    'detail',      // Secondary text → body
+    'progress':         'metric',      // Progress bars → metric fallback
 }
 
 interface FieldDef<T> {
@@ -294,6 +309,9 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
 
     switch (def.type) {
         case "computed":
+        case "complex":
+            // Both computed and complex delegate to the render callback.
+            // 'complex' fields are additionally routed to the header zone by the placement engine.
             return def.render ? def.render(entity) : null
         case "text": {
             const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
@@ -651,29 +669,51 @@ export function createEntityFields<T>(): (
         /**
          * Converts field definitions into CardField[] for card rendering.
          *
-         * Each field gets a resolved cardPlacement and fieldRole:
-         * - Explicit fieldRole overrides TYPE_TO_ROLE
-         * - Explicit cardPlacement overrides ROLE_TO_PLACEMENT
-         * - Title field (identifier with id/number/code key) gets 'title' placement
+         * Placement resolution pipeline (each step can be overridden by the next explicit rule):
+         * 1. TYPE_TO_ROLE: field.type → semantic FieldRole
+         * 2. ROLE_TO_PLACEMENT: FieldRole → default CardPlacement
+         * 3. Currency narrowing: currency role → 'primary-value' only if key contains 'total', else 'descriptive'
+         * 4. Auto-title: identifier with key matching /id|display/ preferred; plain identifier fallback
+         * 5. Auto-subtitle (exclusive): text/descriptive field whose key matches /name/ → 'subtitle' (blocks title)
+         * 6. Explicit fieldRole / cardPlacement on FieldDef always wins
          */
         toCardFields: (entity: T, opts?: { only?: string[] }): CardField[] => {
             const allowed = opts?.only
+
             const fields = Object.entries(defs)
                 .filter(([, def]) => isPresentOnSurface(def, "card"))
                 .filter(([, def]) => !allowed || allowed.includes(def.key))
                 .map(([, def]): CardField => {
-                    const role: FieldRole = def.fieldRole ?? TYPE_TO_ROLE[def.type]
+                    // Step 1-2: base role and placement
+                    let role: FieldRole = def.fieldRole ?? TYPE_TO_ROLE[def.type]
                     let placement: CardPlacement = def.cardPlacement ?? ROLE_TO_PLACEMENT[role]
 
-                    // Auto-detect title: identifier field whose key contains id/number/code/display.
-                    // Covers: display_id, number, code, period_display, folio_display, etc.
-                    if (placement !== 'title' && role === 'identifier' && /id|number|code|display/i.test(def.key)) {
-                        placement = 'title'
+                    // Step 3: Currency narrowing — only a 'total' key earns header/primary-value.
+                    // All other currency fields (e.g. unit_price, cost) go to detail as descriptive.
+                    if (!def.fieldRole && !def.cardPlacement && def.type === 'currency' && !/total/i.test(def.key)) {
+                        role = 'descriptive'
+                        placement = 'detail'
                     }
 
-                    // Auto-detect subtitle: primary-label or descriptive field whose key contains name.
-                    if (placement !== 'subtitle' && (role === 'primary-label' || role === 'descriptive') && /name/i.test(def.key)) {
-                        placement = 'subtitle'
+                    // Step 4 & 5: Auto-title / auto-subtitle detection
+                    // 'name' key is EXCLUSIVE for subtitle (never becomes title)
+                    if (!def.cardPlacement) {
+                        const keyHasName = /name/i.test(def.key)
+                        const keyHasIdOrDisplay = /id|display/i.test(def.key)
+                        const keyHasCode = /number|code/i.test(def.key)
+
+                        if (role === 'primary-label' || (role === 'descriptive' && keyHasName)) {
+                            // Text/descriptive fields whose key contains 'name' → subtitle (exclusive)
+                            placement = 'subtitle'
+                            role = 'primary-label'
+                        } else if (role === 'identifier') {
+                            // Identifiers: prefer id/display keys for title, fallback for others
+                            if (keyHasIdOrDisplay || keyHasCode) {
+                                placement = 'title'
+                            }
+                            // Plain identifier without any keyword stays in 'header' — may be promoted
+                            // later in the fallback block below if no title is found
+                        }
                     }
 
                     return {
@@ -686,10 +726,14 @@ export function createEntityFields<T>(): (
                     }
                 })
 
-            // Ensure exactly one title — if none found, first identifier or first field
+            // Ensure exactly one title — fallback chain:
+            // 1. Any field already set to 'title'
+            // 2. First 'identifier' role field in the list
+            // 3. Absolute first field
             const hasTitle = fields.some(f => f.cardPlacement === 'title')
             if (!hasTitle && fields.length > 0) {
-                const titleCandidate = fields.find(f => f.fieldRole === 'identifier') ?? fields[0]
+                const titleCandidate =
+                    fields.find(f => f.fieldRole === 'identifier') ?? fields[0]
                 titleCandidate.cardPlacement = 'title'
             }
 
@@ -744,11 +788,11 @@ export function createEntityFields<T>(): (
         },
 
         resolveSubtitle: (entity: T): SubtitleItem[] => {
-            // Priority 1: meta.subtitle.renderer (complex JSX)
+            // Priority 1: meta.subtitle.renderer (complex JSX escape hatch)
             if (meta?.subtitle?.renderer) {
                 return meta.subtitle.renderer(entity)
             }
-            // Priority 2: meta.subtitle.field (simple single-field)
+            // Priority 2: meta.subtitle.field (explicit single-field)
             if (meta?.subtitle?.field) {
                 const raw = entity[meta.subtitle.field as keyof T]
                 if (raw != null && raw !== undefined) {
@@ -763,30 +807,7 @@ export function createEntityFields<T>(): (
                     return items
                 }
             }
-            // Priority 3: field with cardPlacement:'subtitle' (auto-detected or explicit)
-            const cardSubtitleField = Object.values(defs).find(d => {
-                const role = d.fieldRole ?? TYPE_TO_ROLE[d.type]
-                let placement = d.cardPlacement ?? ROLE_TO_PLACEMENT[role]
-                if (placement !== 'subtitle' && (role === 'primary-label' || role === 'descriptive') && /name/i.test(d.key)) {
-                    placement = 'subtitle'
-                }
-                return placement === 'subtitle'
-            })
-            if (cardSubtitleField) {
-                const raw = entity[cardSubtitleField.key as keyof T]
-                if (raw != null && raw !== undefined) {
-                    const items: SubtitleItem[] = [{ kind: 'text', content: String(raw) }]
-                    if (meta?.subtitle?.suffixTemplate) {
-                        const suffixItems = parseSubtitleTemplate(meta.subtitle.suffixTemplate, entity)
-                        if (suffixItems.length > 0) {
-                            items.push({ kind: 'separator' })
-                            items.push(...suffixItems)
-                        }
-                    }
-                    return items
-                }
-            }
-            // Priority 4: meta.subtitle.template
+            // Priority 3: meta.subtitle.template
             if (meta?.subtitle?.template) {
                 const items = parseSubtitleTemplate(meta.subtitle.template, entity)
                 if (items.length > 0) {
@@ -800,7 +821,53 @@ export function createEntityFields<T>(): (
                     return items
                 }
             }
-            return []
+            // Priority 4: Auto-compose subtitle from field roles.
+            // Rule: up to 3 values, max 1 of each role in this order: relation → temporal → primary-value.
+            // A 'primary-label' / 'subtitle' placed field (name key) is always the first slot.
+            const allDefs = Object.values(defs)
+
+            // Find the primary-label field (name key) — occupies the first subtitle slot
+            const nameDef = allDefs.find(d => {
+                const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+                return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
+            })
+
+            const items: SubtitleItem[] = []
+
+            if (nameDef) {
+                const raw = entity[nameDef.key as keyof T]
+                if (raw != null && raw !== '') items.push({ kind: 'text', content: String(raw) })
+            }
+
+            // Secondary slots: relation (1), temporal (1), primary-value (1)
+            const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
+            for (const slotRole of slotRoles) {
+                if (items.length >= 3) break
+                // Skip primary-value if it's already covered by a name field
+                const candidate = allDefs.find(d => {
+                    if (nameDef && d.key === nameDef.key) return false
+                    const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+                    if (r !== slotRole) return false
+                    // Currency: only if key contains 'total'
+                    if (d.type === 'currency' && !/total/i.test(d.key)) return false
+                    return true
+                })
+                if (candidate) {
+                    const raw = entity[candidate.key as keyof T]
+                    if (raw != null && raw !== '') {
+                        if (items.length > 0) items.push({ kind: 'separator' })
+                        if (slotRole === 'temporal') {
+                            items.push({ kind: 'date', value: String(raw) })
+                        } else if (slotRole === 'primary-value' && candidate.type === 'currency') {
+                            items.push({ kind: 'currency', value: Number(raw) })
+                        } else {
+                            items.push({ kind: 'text', content: String(raw) })
+                        }
+                    }
+                }
+            }
+
+            return items
         },
 
         getSubtitleExcludeKeys: (): Set<string> => {
