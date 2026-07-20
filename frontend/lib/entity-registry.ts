@@ -443,7 +443,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'highlights' },
   },
   'tax.taxperiod': {
     label: 'tax.taxperiod',
