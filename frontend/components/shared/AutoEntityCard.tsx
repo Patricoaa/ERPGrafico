@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, type SubtitleItem } from "@/lib/entity-registry"
 import type { CardField } from "@/components/shared"
+import type { EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared/entity-fields"
 
 export interface AutoEntityCardProps<TData> {
     /** The raw entity data */
@@ -13,6 +14,14 @@ export interface AutoEntityCardProps<TData> {
     /** The fields factory returned by createEntityFields() */
     fields: {
         toCardFields: (data: TData, opts?: { only?: string[] }) => CardField[]
+        /** Centralized card metadata from createEntityFields meta param */
+        meta?: EntityFieldsMeta<TData>
+        /** Resolve card title from Fields.ts meta config */
+        resolveTitle?: (entity: TData) => React.ReactNode
+        /** Resolve card subtitle from Fields.ts meta config */
+        resolveSubtitle?: (entity: TData) => FieldsSubtitleItem[]
+        /** Field keys referenced by subtitle config — to exclude from other card layout zones */
+        getSubtitleExcludeKeys?: () => Set<string>
     }
     /** Entity label for registry lookups (e.g. 'sales.order') — used for auto-subtitle and hub status */
     entityLabel?: string
@@ -280,10 +289,14 @@ export function AutoEntityCard<TData>({
     const registryVariant = entityLabel ? getEntityMetadata(entityLabel)?.viewPolicy?.cardVariant : undefined
     const effectiveVariant = variant ?? registryVariant ?? 'full'
 
-    // Resolve subtitle field keys from registry templates to exclude from layout zones
-    const subtitleFieldKeys = entityLabel ? getSubtitleFieldKeys(entityLabel) : new Set<string>()
+    // Resolve subtitle field keys — Fields.ts meta first, then entity-registry fallback
+    const fieldsSubtitleKeys = fields.getSubtitleExcludeKeys?.()
+    const registrySubtitleKeys = entityLabel ? getSubtitleFieldKeys(entityLabel) : new Set<string>()
+    const subtitleFieldKeys = fieldsSubtitleKeys && fieldsSubtitleKeys.size > 0
+        ? fieldsSubtitleKeys
+        : registrySubtitleKeys
 
-    // Resolve title field key from registry
+    // Resolve title field key from registry (legacy fallback)
     const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
     const titleFieldKey = entityMetadata?.titleField
 
@@ -292,12 +305,16 @@ export function AutoEntityCard<TData>({
     // 1. Classify fields into layout zones
     const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys, titleFieldKey)
 
-    // 2. Determine display title — use explicit titleField from registry, then explicit prop, then first field
+    // 2. Determine display title — Fields.ts meta first, then explicit prop, then registry, then auto-detect
+    const fieldsTitle = fields.resolveTitle?.(data)
     const titleField = titleFieldKey ? cardFields.find(f => f.key === titleFieldKey) : undefined
-    const displayTitle = explicitTitle ?? titleField?.value ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
+    const displayTitle = fieldsTitle ?? explicitTitle ?? titleField?.value ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
 
-    // 3. Build subtitle from registry or explicit
-    const subtitleItems = buildSubtitleItems(entityLabel, data, explicitSubtitle, explicitTitle, cardFields[0])
+    // 3. Build subtitle — Fields.ts meta first, then explicit, then registry
+    const fieldsSubtitle = fields.resolveSubtitle?.(data)
+    const subtitleItems: SubtitleItem[] = (fieldsSubtitle && fieldsSubtitle.length > 0)
+        ? fieldsSubtitle
+        : buildSubtitleItems(entityLabel, data, explicitSubtitle, explicitTitle, cardFields[0])
 
     // 4. Build Header trailing content (header fields + explicit trailing)
     const headerContent = classified.header.length > 0 && (
