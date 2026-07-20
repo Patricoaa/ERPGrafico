@@ -12,11 +12,19 @@ export interface ChipProps {
     size?: 'xs' | 'sm' | 'md'
     icon?: LucideIcon
     className?: string
+    appearance?: 'solid' | 'ghost'
 }
 
-export function Chip({ children, intent = 'neutral', size = 'sm', icon, className }: ChipProps) {
+export function Chip({ children, intent = 'neutral', size = 'sm', icon, className, appearance }: ChipProps) {
     return (
-        <Badge intent={intent} size={size} tracking="wide" icon={icon} className={className}>
+        <Badge
+            intent={intent}
+            size={size}
+            tracking={appearance === 'ghost' ? 'tight' : 'wide'}
+            icon={icon}
+            appearance={appearance}
+            className={className}
+        >
             {children}
         </Badge>
     )
