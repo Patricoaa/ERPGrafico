@@ -25,7 +25,10 @@ export const employeeFields = createEntityFields<Employee>()({
         key: "afp_detail",
         type: "text",
         label: "Previsión",
-        get: (e) => `AFP: ${(e as unknown as Record<string, unknown>).afp_detail ? ((e as unknown as Record<string, unknown>).afp_detail as Record<string, unknown>).name ?? 'N/A' : 'N/A'}`,
+        get: (e) => {
+            const detail = (e as unknown as Record<string, unknown>).afp_detail as Record<string, unknown> | undefined
+            return detail?.name ?? 'N/A'
+        },
     },
     salud: {
         order: 50,

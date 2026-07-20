@@ -9,6 +9,7 @@ import { DataTableView, DataTableColumnHeader, AutoEntityCard } from '@/componen
 import { DataCell } from '@/components/shared'
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr"
 import { employeeUnifiedSearchDef } from "../unifiedSearchDef"
@@ -162,7 +163,8 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
                             data={emp}
                             fields={employeeFields}
                             entityLabel="hr.employee"
-
+                            icon={getEntityIcon('hr.employee')}
+                            iconClassName="text-primary bg-primary/10"
                             actions={employeeActions.render(emp, actionsCtx)}
                             defaultAction={employeeActions.defaultAction(actionsCtx)?.(emp) ?? (() => {
                                 const params = new URLSearchParams(searchParams.toString())
@@ -172,7 +174,7 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
 
                         />
                     )}
-                    cardSkeleton={{ showFooter: true }}
+                    cardSkeleton={{ showFooter: false }}
                 />
             </div>
             <EmployeeDrawer
