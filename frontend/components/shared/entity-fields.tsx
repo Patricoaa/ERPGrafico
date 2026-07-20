@@ -875,6 +875,8 @@ export function createEntityFields<T>(): (
 
         getSubtitleExcludeKeys: (): Set<string> => {
             const keys = new Set<string>()
+
+            // ── Explicit meta config ──────────────────────────────────────────
             if (meta?.subtitle?.field) keys.add(meta.subtitle.field)
             if (meta?.subtitle?.excludeKeys) {
                 for (const k of meta.subtitle.excludeKeys) keys.add(k)
@@ -885,7 +887,41 @@ export function createEntityFields<T>(): (
             if (meta?.subtitle?.suffixTemplate) {
                 for (const k of Array.from(extractTemplateKeys(meta.subtitle.suffixTemplate))) keys.add(k)
             }
+
+            // ── Auto-composition mirror (Priority 4 of resolveSubtitle) ───────
+            // When no meta is configured, resolveSubtitle() auto-picks fields by role.
+            // We must exclude those same keys here so they don't also appear in centerDetail.
+            if (!meta?.subtitle?.field && !meta?.subtitle?.template && !meta?.subtitle?.renderer) {
+                const allDefs = Object.values(defs)
+
+                // Slot 1: primary-label (key with 'name')
+                const nameDef = allDefs.find(d => {
+                    const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+                    return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
+                })
+                if (nameDef) keys.add(nameDef.key)
+
+                // Slots 2-3: relation, temporal, primary-value (max 1 each, up to total 3 tokens)
+                let slotsFilled = nameDef ? 1 : 0
+                const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
+                for (const slotRole of slotRoles) {
+                    if (slotsFilled >= 3) break
+                    const candidate = allDefs.find(d => {
+                        if (nameDef && d.key === nameDef.key) return false
+                        const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+                        if (r !== slotRole) return false
+                        if (d.type === 'currency' && !/total/i.test(d.key)) return false
+                        return true
+                    })
+                    if (candidate) {
+                        keys.add(candidate.key)
+                        slotsFilled++
+                    }
+                }
+            }
+
             return keys
         },
+
     })
 }
