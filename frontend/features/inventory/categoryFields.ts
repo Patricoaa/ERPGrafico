@@ -18,6 +18,4 @@ export const categoryFields = createEntityFields<Category>()({
         type: "secondary",
         label: "Categoría Padre",
     },
-}, {
-    title: { field: 'name' },
 })

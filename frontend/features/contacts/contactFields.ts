@@ -14,6 +14,4 @@ export const contactFields = createEntityFields<Contact>()({
         domain: 'contact_type',
         get: (c) => c.active_roles ?? [],
     },
-}, {
-    title: { field: 'name' },
 })

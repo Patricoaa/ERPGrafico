@@ -27,4 +27,4 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
         type: 'status',
         label: 'Estado',
     },
-}, { title: { field: 'display_id' } })
+})

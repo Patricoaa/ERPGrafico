@@ -19,6 +19,4 @@ export const terminalDeviceFields = createEntityFields<PaymentTerminalDevice>()(
             .map(id => DEVICE_METHOD_MAP[id])
             .filter(Boolean),
     },
-}, {
-    title: { field: 'name' },
 })

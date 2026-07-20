@@ -52,6 +52,4 @@ export const loanFields = createEntityFields<BankLoan>()({
         type: 'status',
         label: 'Estado',
     },
-}, {
-    title: { field: 'display_id' },
 })

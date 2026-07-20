@@ -30,6 +30,4 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
         label: "Canal",
         surfaces: ["card", "kanban"],
     },
-}, {
-    title: { field: 'number' },
 })

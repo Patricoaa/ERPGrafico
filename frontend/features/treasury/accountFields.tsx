@@ -79,4 +79,4 @@ export const accountFields = createEntityFields<TreasuryAccount>()({
         get: (e) => e.bank_name,
         surfaces: ["card"],
     },
-}, { title: { field: "name" } })
+})

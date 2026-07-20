@@ -42,6 +42,4 @@ export const paymentMethodFields = createEntityFields<PaymentMethod>()({
             </div>
         ),
     },
-}, {
-    title: { field: 'name' },
 })

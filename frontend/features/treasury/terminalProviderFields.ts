@@ -6,6 +6,4 @@ export const terminalProviderFields = createEntityFields<PaymentTerminalProvider
     supplier_name: { key: 'supplier_name', type: 'text', label: 'Contacto' },
     receivable_account_name: { key: 'receivable_account_name', type: 'text', label: 'Cuenta Recaudación' },
     is_active: { key: 'is_active', type: 'status', label: 'Estado', get: (row) => row.is_active ? 'active' : 'inactive' },
-}, {
-    title: { field: 'name' },
 })

@@ -8,6 +8,4 @@ export interface UoMCategory {
 export const uomCategoryFields = createEntityFields<UoMCategory>()({
     id: { key: 'id', type: 'code', label: 'Código' },
     name: { key: 'name', type: 'text', label: 'Nombre' },
-}, {
-    title: { field: 'name' },
 })

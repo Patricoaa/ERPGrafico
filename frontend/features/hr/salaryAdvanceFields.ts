@@ -31,6 +31,4 @@ export const salaryAdvanceFields = createEntityFields<SalaryAdvance>()({
         type: "code",
         label: "Liquidación",
     },
-}, {
-    title: { field: 'employee_name' },
 })

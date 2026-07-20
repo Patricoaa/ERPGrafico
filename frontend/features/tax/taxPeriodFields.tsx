@@ -6,7 +6,7 @@ export const taxPeriodFields = createEntityFields<TaxPeriod>()({
         key: "period_display",
         type: "computed",
         label: "Período",
-        cardPlacement: "title",
+        fieldRole: "identifier",
         tableOptions: {
             align: "center",
             sortingFn: (rowA, rowB) => {
@@ -50,7 +50,7 @@ export const taxPeriodFields = createEntityFields<TaxPeriod>()({
         key: "payment_status",
         type: "computed",
         label: "Estado Pago",
-        cardPlacement: "header",
+        fieldRole: "status",
         render: (e) => {
             const summary = e.declaration_summary
             return (

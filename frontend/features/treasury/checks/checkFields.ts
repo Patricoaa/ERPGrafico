@@ -29,6 +29,4 @@ export const checkFields = createEntityFields<Check>()({
         type: "status",
         label: "Estado",
     },
-}, {
-    title: { field: 'check_number' },
 })
