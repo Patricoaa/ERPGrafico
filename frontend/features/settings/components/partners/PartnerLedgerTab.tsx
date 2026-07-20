@@ -79,14 +79,6 @@ export function PartnerLedgerTab() {
         'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
     ].includes(type)
 
-    const getTransactionColor = (type: string) => {
-        if (type === 'SUBSCRIPTION') return 'bg-info/10 text-info border-info/20'
-        if (type.includes('TRANSFER')) return 'bg-warning/10 text-warning border-warning/20'
-        if (isInflow(type)) return 'bg-success/10 text-success border-success/20'
-        if (isOutflow(type)) return 'bg-destructive/10 text-destructive border-destructive/20'
-        return 'bg-muted/50 text-muted-foreground border-transparent'
-    }
-
     const getTransactionIntent = (type: string): "info" | "warning" | "success" | "destructive" | "neutral" => {
         if (type === 'SUBSCRIPTION') return 'info'
         if (type.includes('TRANSFER')) return 'warning'

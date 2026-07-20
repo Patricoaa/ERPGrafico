@@ -127,7 +127,6 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                                 fields={posTerminalFields}
 
                                 entityLabel="sales.posterminal"
-                                title={terminal.name}
                                 onClick={() => openSelected(terminal.id)} 
                                 defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} 
                                 className={!terminal.is_active ? "grayscale bg-muted/20" : ""}

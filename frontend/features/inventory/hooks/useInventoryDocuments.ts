@@ -28,7 +28,7 @@ export function useInventoryDocuments(filters: InventoryDocumentFilters = {}) {
 export function useInventoryDocument(id: number | string | null | undefined) {
     return useQuery<InventoryDocument>({
         queryKey: id ? [...INVENTORY_DOCUMENTS_QUERY_KEY, 'detail', id] : [...INVENTORY_DOCUMENTS_QUERY_KEY, 'detail', 'noop'],
-        queryFn: () => inventoryApi.getInventoryDocument(id!),
+        queryFn: () => inventoryApi.getInventoryDocument(id as number | string),
         enabled: id !== null && id !== undefined && id !== '',
     })
 }
@@ -39,7 +39,7 @@ export function useInventoryDocumentMutations(id?: number | string) {
 
     const confirmMutation = useMutation({
         mutationFn: (docId: number | string) => inventoryApi.confirmInventoryDocument(docId),
-        onSuccess: (data) => {
+        onSuccess: () => {
             markLocalMutation()
             // Invalidate list and detail queries
             queryClient.invalidateQueries({ queryKey: INVENTORY_DOCUMENTS_QUERY_KEY })
@@ -53,7 +53,7 @@ export function useInventoryDocumentMutations(id?: number | string) {
 
     const annulMutation = useMutation({
         mutationFn: (docId: number | string) => inventoryApi.annulInventoryDocument(docId),
-        onSuccess: (data) => {
+        onSuccess: () => {
             markLocalMutation()
             queryClient.invalidateQueries({ queryKey: INVENTORY_DOCUMENTS_QUERY_KEY })
             if (id) {

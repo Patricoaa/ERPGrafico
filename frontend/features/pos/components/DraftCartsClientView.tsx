@@ -20,7 +20,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
-import { ActionConfirmModal, BaseModal, DataTable } from '@/components/shared'
+import { ActionConfirmModal, ActionSlideButton, BaseModal, DataTable } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
@@ -400,24 +400,22 @@ export function DraftCartsClientView({
                                 const cannotLoad = lockedByOther || isCurrentDraft
                                 return (
                                     <>
-                                        <Button
+                                        <ActionSlideButton
                                             size="sm"
-                                            variant="ghost"
+                                            variant="destructive"
                                             className={cn(
-                                                "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10",
+                                                "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
                                                 cannotDelete && "!opacity-0 pointer-events-none"
                                             )}
-                                            disabled={deletingId === d.id || cannotDelete}
+                                            loading={deletingId === d.id}
+                                            disabled={cannotDelete}
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 setConfirmDeleteId(d.id)
                                                 setConfirmDeleteName(d.name)
                                             }}
-                                        >
-                                            {deletingId === d.id
-                                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                : <Trash2 className="h-3.5 w-3.5" />}
-                                        </Button>
+                                            icon={Trash2}
+                                        />
                                         <Button
                                             size="sm"
                                             variant="ghost"

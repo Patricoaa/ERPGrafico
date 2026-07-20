@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { type VariantProps } from "class-variance-authority"
 import { type badgeVariants } from "@/components/ui/badge"
 import { type LucideIcon, ArrowRight, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -479,11 +480,11 @@ interface EntityCardListItemProps {
 
 function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value, trailing, onClick, className }: EntityCardListItemProps) {
     return (
-        <button
-            type="button"
+        <Button
+            variant="ghost"
             onClick={onClick}
             className={cn(
-                "w-full flex items-center gap-3 py-2 px-2 text-left",
+                "w-full flex items-center gap-3 py-2 px-2 text-left justify-start",
                 "card-base",
                 "transition-all group",
                 onClick && "cursor-pointer",
@@ -505,7 +506,7 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
             {onClick && (
                 <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
             )}
-        </button>
+        </Button>
     )
 }
 
@@ -665,11 +666,12 @@ interface EntityCardHubTriggerProps {
 function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHubTriggerProps) {
     return (
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <button
-                type="button"
+            <Button
+                variant="ghost"
+                size="icon"
                 onClick={onToggle}
                 className={cn(
-                    "inline-flex items-center justify-center h-7 w-7 rounded-full transition-all duration-200",
+                    "h-7 w-7 rounded-full transition-all duration-200",
                     "hover:scale-105 active:scale-95 hover:bg-accent hover:text-accent-foreground",
                     isSelected
                         ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
@@ -682,7 +684,7 @@ function EntityCardHubTrigger({ isSelected, onToggle, className }: EntityCardHub
                 ) : (
                     <ArrowRight className="h-4 w-4" />
                 )}
-            </button>
+            </Button>
         </div>
     )
 }

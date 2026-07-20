@@ -7,7 +7,6 @@ import { DataCell, DataTableView, AutoEntityCard, DataTableColumnHeader, Unified
 import type { MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 
-
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
@@ -25,7 +24,7 @@ export function StockReport() {
     }), [categories, warehouses])
 
     const search = useUnifiedSearch(stockReportUnifiedSearchDef, filterOptions)
-    const { report, isLoading, refetch } = useStockReport(search.paramValues.warehouse_id as string | null)
+    const { report, isLoading } = useStockReport(search.paramValues.warehouse_id as string | null)
 
     const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
 
@@ -173,8 +172,6 @@ export function StockReport() {
                             key={item.id}
                             data={item}
                             fields={stockReportFields}
-
-                            title={item.name}
                             entityLabel="inventory.stockreport"
                             actions={stockReportActions.render(item, stockReportActionsCtx)}
                         />

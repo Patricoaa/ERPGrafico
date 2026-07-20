@@ -3,10 +3,9 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import {FileText, Loader2, Upload} from "lucide-react"
-import {BaseModal, CancelButton, DocumentAttachmentDropzone, FolioValidationInput, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput} from '@/components/shared'
+import {FileText, Upload} from "lucide-react"
+import {BaseModal, ActionSlideButton, CancelButton, DocumentAttachmentDropzone, FolioValidationInput, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput} from '@/components/shared'
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -114,13 +113,13 @@ export function DocumentRegistrationModal({
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-                            <Button 
+                            <ActionSlideButton 
                                 onClick={handleSubmit} 
-                                disabled={submitting || (!isPending && (!isPeriodValid || !isFolioValid))}
+                                loading={submitting}
+                                disabled={!isPending && (!isPeriodValid || !isFolioValid)}
                             >
-                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Registrar Documento
-                            </Button>
+                            </ActionSlideButton>
                         </>
                     }
                 />

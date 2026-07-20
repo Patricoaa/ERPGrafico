@@ -5,7 +5,7 @@ import { PURCHASING_KEYS } from './queryKeys'
 export function useReceiptData(orderId: number | null, enabled: boolean) {
     const orderQuery = useQuery({
         queryKey: orderId ? [...PURCHASING_KEYS.orders(), 'detail', orderId] : [...PURCHASING_KEYS.orders(), 'noop'],
-        queryFn: () => purchasingApi.getOrder(orderId!),
+        queryFn: () => purchasingApi.getOrder(orderId as number),
         staleTime: 30_000,
         enabled: enabled && !!orderId,
     })

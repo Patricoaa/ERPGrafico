@@ -8,7 +8,6 @@ import { ActionConfirmModal, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch 
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import {
     Building2,
-    User as UserIcon
 } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -198,7 +197,6 @@ export function PaymentHardwareClientView({
                                 data={provider}
                                 fields={terminalProviderFields}
                                 entityLabel="treasury.paymentterminalprovider"
-                                title={provider.name}
                                 icon={Building2}
 
                                 actions={providerActions.render(provider, providerActionsCtx)}
@@ -252,7 +250,6 @@ export function PaymentHardwareClientView({
                                 data={device}
                                 fields={terminalDeviceFields}
                                 entityLabel="treasury.paymentterminaldevice"
-                                title={device.name}
                                 actions={deviceActions.render(device, deviceActionsCtx)}
                                 onClick={() => openDeviceSelected(device.id)}
                                 defaultAction={deviceActions.defaultAction(deviceActionsCtx)?.(device) ?? null}

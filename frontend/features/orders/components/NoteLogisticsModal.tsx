@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell } from '@/components/shared'
+import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
 import {
     Table,
     TableBody,
@@ -18,7 +18,7 @@ import { Chip } from "@/components/shared"
 import { toast } from "sonner"
 import { useProcessLogistics } from "../hooks/useOrdersMutations"
 import { useNoteLogisticsData } from "../hooks/useNoteLogisticsData"
-import {Loader2} from "lucide-react"
+
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { type Order } from "../types"
@@ -43,7 +43,7 @@ interface NoteLogisticsModalProps {
 export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
     const { dateString } = useServerDate()
     const { processLogistics } = useProcessLogistics()
-    const { warehouses, invoice: freshInvoice, isLoading, refetchInvoice } = useNoteLogisticsData(invoice?.id ?? null, open && !!invoice)
+    const { warehouses, invoice: freshInvoice, isLoading } = useNoteLogisticsData(invoice?.id ?? null, open && !!invoice)
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
     const [displayLines, setDisplayLines] = useState<InvoiceLine[]>((invoice?.lines as unknown as InvoiceLine[]) || [])
@@ -140,10 +140,9 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
             footer={
                 <>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={submitting || isLoading}>
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <SubmitButton loading={submitting} onClick={handleSubmit} disabled={isLoading}>
                         Confirmar Movimiento
-                    </Button>
+                    </SubmitButton>
                 </>
             }
         >

@@ -100,7 +100,7 @@ export function PartnerLedgerDrawer({
         'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
     ].includes(type)
 
-    const getTransactionIntent = (type: string): "info" | "warning" | "success" | "destructive" | "neutral" => {
+    const getStatus = (type: string) => {
         if (type === 'SUBSCRIPTION') return 'info'
         if (type.includes('TRANSFER')) return 'warning'
         if (isInflow(type)) return 'success'

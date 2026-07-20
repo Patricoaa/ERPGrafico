@@ -12,13 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
-import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from '@/components/shared'
+import { ActionConfirmModal, ActionDock, ActionSlideButton, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, UnifiedSearchBar, useUnifiedSearch, SEG_TRIGGER, SEG_WRAPPER, StaleDataBanner } from '@/components/shared'
 import { reconciliationUnifiedSearchDef } from "../unifiedSearchDef"
 
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
-    Loader2, Sparkles, X, Wand2, Calculator, Brain, Plus
+    Sparkles, X, Wand2, Calculator, Brain, Plus
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -88,8 +88,6 @@ interface ReconGroupData {
     difference_type_display: string
     difference_journal_entry?: number
 }
-
-
 
 interface ReconciliationPanelProps {
     statementId: number
@@ -226,7 +224,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     const { match, isMatching } = useMatchMutation(statementId, treasuryAccountId)
     const { groupMatch, isGroupMatching } = useGroupMatchMutation(statementId, treasuryAccountId)
-    const { autoMatch, isAutoMatching } = useAutoMatchMutation(statementId)
+    const { isAutoMatching } = useAutoMatchMutation(statementId)
     const { exclude } = useExcludeMutation(statementId)
     const { bulkExclude } = useBulkExcludeMutation(statementId)
     const { restore } = useRestoreMutation(statementId)
@@ -740,14 +738,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button
+                                <ActionSlideButton
                                     onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                                    disabled={isAutoMatching}
-                                    variant="ghost"
+                                    variant="success"
+                                    size="icon"
+                                    loading={isAutoMatching}
+                                    icon={<Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
                                     className="h-9 w-9 p-0 bg-success/5 hover:bg-success/10 text-success group transition-all"
-                                >
-                                    {isAutoMatching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />}
-                                </Button>
+                                />
                             </TooltipTrigger>
                             <TooltipContent side="top">Auto-Match</TooltipContent>
                         </Tooltip>
@@ -1393,16 +1391,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             Limpiar
                         </Button>
 
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-9 rounded-full px-6 text-xs font-bold text-primary hover:bg-primary/10 hover:text-primary shadow-floating transition-transform active:scale-95"
+                        <ActionSlideButton
+                            variant="primary"
+                            loading={matching}
+                            icon={<CheckCircle2 className="mr-2 h-4 w-4" />}
                             onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
-                            disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
+                            disabled={selectedLines.length === 0 || selectedPayments.length === 0}
+                            className="h-9 rounded-full px-6 text-xs font-bold shadow-floating transition-transform active:scale-95"
                         >
-                            {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                             Conciliar
-                        </Button>
+                        </ActionSlideButton>
                     </ActionDock.Actions>
                 </ActionDock>
 

@@ -11,7 +11,6 @@ import type { Group } from "@/lib/group-utils"
 import { groupItems } from "@/lib/group-utils"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { TableRow, TableCell } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
 import { AnalyticsLayout } from "./AnalyticsPanel"
 
 interface CardGroupByDef {

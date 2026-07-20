@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { createEntityFields, type CardField, type KanbanField } from "../entity-fields"
+import { createEntityFields } from "../entity-fields"
 import type { ColumnDef } from "@tanstack/react-table"
 
 function getAccessorKey<T>(col: ColumnDef<T>): string | undefined {

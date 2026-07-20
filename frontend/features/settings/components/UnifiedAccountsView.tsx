@@ -26,8 +26,6 @@ import { useBillingSettings } from "@/features/settings/hooks/useBillingSettings
 import { useInventorySettings } from "@/features/settings/hooks/useInventorySettings"
 import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettings"
 import { usePartnerSettings } from "@/features/settings/hooks/usePartnerSettings"
-import { ACCOUNT_TABS } from "@/features/settings/constants"
-
 interface UnifiedAccountsViewProps {
     activeTab: string
 }

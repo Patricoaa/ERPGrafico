@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 
-import { BaseModal, Drawer, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep } from '@/components/shared'
+import {Drawer, FormSection, GenericWizard, LabeledInput, MoneyDisplay, type WizardStep} from '@/components/shared'
 import {
     Calculator,
     CheckCircle2,

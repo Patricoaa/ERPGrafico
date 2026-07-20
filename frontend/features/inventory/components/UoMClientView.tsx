@@ -171,7 +171,6 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                             data={uom}
                             fields={uomFields}
                             entityLabel="inventory.uom"
-                            title={uom.name}
                             actions={uomActions.render(uom, actionsCtx)}
                             defaultAction={uomActions.defaultAction(actionsCtx)?.(uom) ?? (() => openSelected(uom.id))}
 

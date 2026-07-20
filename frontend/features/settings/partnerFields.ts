@@ -85,4 +85,6 @@ export const partnerFields = createEntityFields<Partner>()({
         tableOptions: { align: "right" },
         cellProps: { className: "text-right font-mono text-[12px] font-black" },
     },
+}, {
+    title: { field: 'name' },
 })

@@ -84,7 +84,6 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                             data={group}
                             fields={groupFields}
                             entityLabel="settings.group"
-                            title={group.name}
                             onClick={() => groupActionsCtx.onEdit(group)}
                             icon={Users}
                             actions={groupActions.render(group, groupActionsCtx)}

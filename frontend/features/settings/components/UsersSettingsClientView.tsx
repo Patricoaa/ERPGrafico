@@ -1,6 +1,6 @@
 "use client"
 
-import {useState, useEffect, useMemo} from "react"
+import {useState, useMemo} from "react"
 
 import { DataTableView, ToolbarCreateButton, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -16,7 +16,6 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
 
 import { type AppUser } from "@/types/entities"
-
 
 interface UsersSettingsClientViewProps {
     activeTab: string
@@ -56,8 +55,6 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<AppUser>({
         endpoint: '/core/users'
     })
-
-
 
     const isUserModalOpen = !!selectedFromUrl
     const userToEdit = selectedFromUrl ?? null

@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
 import {
     Form,
     FormField,
@@ -90,8 +89,6 @@ export function AccountDrawer({
     const hasParent = isEditMode && !!init?.parent
     const hasPostedItems = isEditMode && !!init?.has_posted_items
     const hasChildren = isEditMode && !init?.is_selectable
-
-    const accountType = form.watch("account_type");
 
     // Reset form when opening or initialData changes
     useEffect(() => {

@@ -1,11 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, QuantityDisplay, RadioCard } from "@/components/shared"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+import {LabeledInput, PeriodValidationDateInput, LabeledContainer, QuantityDisplay, RadioCard} from "@/components/shared"
+import {RadioGroup} from "@/components/ui/radio-group"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useAllowedUoMs } from "@/features/inventory"
 import {
     Select,
@@ -62,7 +60,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     // Determine mode
     const isServiceMode = isOnlyService
     const isMixedMode = !isOnlyService && hasPhysical && orderLines.some(line => line.product_type === 'SERVICE')
-
 
     // Physical-only items for the table (exclude services in mixed mode)
     const physicalLines = isMixedMode
@@ -270,7 +267,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     </div>
                 </div>
             )}
-
 
             {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
                 <PeriodValidationDateInput

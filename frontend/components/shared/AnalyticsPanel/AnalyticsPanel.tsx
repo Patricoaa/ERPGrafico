@@ -48,7 +48,7 @@ export interface AnalyticsPanelContentProps {
 }
 
 export function AnalyticsPanelContent({
-    entityName,
+    entityName, // eslint-disable-line @typescript-eslint/no-unused-vars -- part of AnalyticsPanelContentProps interface
     tabs,
     activeTab: activeTabProp,
     onTabChange,

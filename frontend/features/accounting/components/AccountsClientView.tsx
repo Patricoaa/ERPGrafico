@@ -37,7 +37,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const [formParentId, setFormParentId] = useState<string | null>(null)
     const [ledgerTarget, setLedgerTarget] = useState<{ id: number; name: string; code: string } | null>(null)
 
-
     const accounts = React.useMemo(() => {
         if (flatAccounts.length > 0) {
             return buildAccountTree(flatAccounts)
@@ -67,8 +66,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
-
-
 
     const confirmDelete = async () => {
         if (!deleteTarget) return

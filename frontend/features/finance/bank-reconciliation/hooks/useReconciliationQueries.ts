@@ -72,7 +72,7 @@ export function useReconciliationSettingsQuery(accountId?: number | string) {
 export function useUnreconciledLinesQuery(statementId: number, params: QueryPaginationParams = {}) {
     return useQuery({
         queryKey: reconciliationKeys.unreconciledLines(statementId, params),
-        queryFn: async ({ signal }) => {
+        queryFn: async () => {
             const data = await financeApi.getStatementLines({
                 statement: statementId,
                 reconciliation_state: 'UNRECONCILED,EXCLUDED',
@@ -95,7 +95,7 @@ export function useUnreconciledLinesQuery(statementId: number, params: QueryPagi
 export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: QueryPaginationParams = {}) {
     return useQuery({
         queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId, params),
-        queryFn: async ({ signal }) => {
+        queryFn: async () => {
             const paymentsData = await financeApi.getPayments({
                 is_reconciled: 'False',
                 treasury_account: treasuryAccountId,
@@ -148,7 +148,7 @@ export function usePaymentSuggestionsQuery(paymentId: number, enabled: boolean) 
 export function useReconciledLinesQuery(statementId: number, params: QueryPaginationParams = {}) {
     return useQuery({
         queryKey: reconciliationKeys.reconciledLines(statementId, params),
-        queryFn: async ({ signal }) => {
+        queryFn: async () => {
             const data = await financeApi.getStatementLines({
                 statement: statementId,
                 reconciliation_state: 'RECONCILED',

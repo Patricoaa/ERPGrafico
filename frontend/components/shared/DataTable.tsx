@@ -175,7 +175,6 @@ export function DataTable<TData, TValue>({
     unifiedSearch,
     showReset,
     sortOptions,
-    analyticsPanel,
     onRowClick,
     defaultAction,
     variant,

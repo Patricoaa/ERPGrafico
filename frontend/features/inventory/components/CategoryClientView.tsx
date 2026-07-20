@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useMemo, useCallback, useEffect } from "react"
+import {useState, useMemo, useCallback} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
 import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
@@ -109,8 +109,6 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         ]
     }, [actionsCtx])
 
-
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
@@ -151,7 +149,6 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                             data={category}
                             fields={categoryFields}
                             entityLabel="inventory.category"
-                            title={category.name}
                             actions={categoryActions.render(category, actionsCtx)}
                             defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? (() => openSelected(category.id))}
 

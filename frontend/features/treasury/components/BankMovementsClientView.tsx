@@ -36,7 +36,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
     }
     const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
+    const { page, movements, totalCount, isLoading } = useTreasuryMovements({
         ...(allFilters as TreasuryMovementFilters),
         page: isGrouping ? 1 : pageState.pageIndex + 1,
         page_size: isGrouping ? 5000 : pageState.pageSize,
@@ -50,8 +50,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
             toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
     }, [isOverLimit, totalCount])
-
-
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
@@ -208,15 +206,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                             sourceLabel = m.from_account_name || 'Origen'
                             destLabel = m.to_account_name || 'Destino'
                         }
-
-                        const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
-
-                        const sourceEntity = type === 'INBOUND'
-                            ? (m.partner_id ? { label: sourceLabel, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
-                            : (m.from_account ? { label: sourceLabel, entityLabel: 'treasury.treasuryaccount', id: m.from_account } : undefined)
-                        const destEntity = type === 'OUTBOUND'
-                            ? (m.partner_id ? { label: destLabel, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
-                            : (m.to_account ? { label: destLabel, entityLabel: 'treasury.treasuryaccount', id: m.to_account } : undefined)
 
                         return (
                             <AutoEntityCard 

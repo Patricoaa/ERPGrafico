@@ -82,15 +82,6 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
         onDelete: (id) => handleDelete(id),
     }
 
-    const methodTypeLabels: Record<string, string> = {
-        CASH: "Efectivo Directo",
-        CARD_TERMINAL: "Tarjeta (Dispositivo Integrado)",
-        TRANSFER: "Transferencia Bancaria",
-        DEBIT_CARD: "Tarjeta Débito Empresa",
-        CREDIT_CARD: "Tarjeta Crédito Empresa",
-        CHECK: "Cheque",
-    }
-
     const methodTypeIcons: Record<string, LucideIcon> = {
         CASH: Wallet,
         CARD_TERMINAL: Monitor,
@@ -125,7 +116,6 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                 fields={paymentMethodFields}
 
                 entityLabel="treasury.paymentmethod"
-                title={method.name}
                 onClick={() => openEdit(method)} 
                 defaultAction={paymentMethodActions.defaultAction(paymentMethodActionsCtx)?.(method) ?? null}
                 icon={Icon}

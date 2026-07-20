@@ -1,7 +1,6 @@
 import { type ReactNode } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { LucideIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { createActionsColumn, DataCell, type ActionMenuItem } from "./DataTableCells"
 import type { RowActionKey } from "@/lib/row-actions"
 
@@ -50,7 +49,7 @@ export type StructuredActions<T, Ctx> = (item: T, ctx: Ctx) => StructuredAction[
  *
  * Parent must have the `group` class for `ActionSingle` hover-reveal to work.
  */
-export function renderActions<T, Ctx>(
+export function renderActions(
     structuredActions: StructuredAction[],
 ): ReactNode {
     const visible = structuredActions.filter(

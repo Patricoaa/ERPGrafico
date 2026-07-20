@@ -3,7 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 
-import { BaseModal, CancelButton, DataCell, DataTable, EmptyState, IconButton, LabeledContainer, SubmitButton } from '@/components/shared'
+import {BaseModal, CancelButton, DataCell, DataTable, IconButton, LabeledContainer, SubmitButton} from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -184,7 +184,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                     <LabeledContainer label="Agregar Socio">
                         <AdvancedContactSelector
                             value={null}
-                            onChange={(val) => { }}
+                            onChange={() => { }}
                             onSelectContact={(contact) => handleAddPartner(contact.id.toString(), contact)}
                             placeholder="Buscar contacto por nombre o RUT..."
                             className="border-0 focus-visible:ring-0 h-9"

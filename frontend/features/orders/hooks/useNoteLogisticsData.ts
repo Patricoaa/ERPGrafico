@@ -16,7 +16,7 @@ export function useNoteLogisticsData(invoiceId: number | null, enabled: boolean)
 
     const invoiceQuery = useQuery({
         queryKey: ORDERS_KEYS.invoice(invoiceId ?? 0),
-        queryFn: () => ordersApi.getInvoice(invoiceId!),
+        queryFn: () => ordersApi.getInvoice(invoiceId as number),
         staleTime: 30_000,
         enabled: enabled && !!invoiceId,
     })

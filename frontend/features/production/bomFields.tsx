@@ -1,9 +1,8 @@
 import { createEntityFields } from '@/components/shared'
-import { formatCurrency } from '@/lib/money'
 import { Layers } from 'lucide-react'
 import type { BOM } from './types'
 import type { BOMListItem } from './components/BOMClientView'
-import { Chip, DataCell } from '@/components/shared'
+import {Chip} from '@/components/shared'
 
 type BOMFields = BOM & BOMListItem
 

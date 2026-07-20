@@ -3,6 +3,7 @@
 import { ArrowUp, ArrowDown, ArrowUpDown, List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, Columns3 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { translateColumnId } from '../DataTableColumnToggle'
 import type { Column } from '@tanstack/react-table'
@@ -52,18 +53,19 @@ function ViewModeSection({
             const Icon = VIEW_ICON_MAP[option.value] ?? option.icon
             const isActive = currentView === option.value
             return (
-              <button
+              <Button
                 key={option.value}
-                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => onViewChange?.(option.value)}
                 className={cn(
-                  "w-full text-left flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 transition-colors min-w-0",
+                  "w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm min-w-0",
                   isActive ? "text-primary font-semibold" : "text-muted-foreground",
                 )}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{option.label}</span>
-              </button>
+              </Button>
             )
           })}
         </div>
@@ -84,12 +86,13 @@ function SortSection({ columns }: { columns: Column<unknown>[] }) {
             const isSorted = column.getIsSorted()
             const title = (column.columnDef.meta as { title?: string })?.title || translateColumnId(column.id)
             return (
-              <button
+              <Button
                 key={column.id}
-                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                 className={cn(
-                  "w-full text-left flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 transition-colors min-w-0",
+                  "w-full justify-start gap-1.5 px-2 py-1.5 text-xs rounded-sm min-w-0",
                   isSorted ? "text-primary font-semibold" : "text-muted-foreground",
                 )}
               >
@@ -103,7 +106,7 @@ function SortSection({ columns }: { columns: Column<unknown>[] }) {
                   )}
                 </div>
                 <span className="truncate">{title}</span>
-              </button>
+              </Button>
             )
           })}
         </div>

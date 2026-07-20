@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, Receipt } from 'lucide-react'
 import {
@@ -18,7 +18,6 @@ import { PayStatementModal } from './PayStatementModal'
 import { statementActions, type StatementActionsCtx } from './statementActions'
 import type { CreditCardStatement } from './types'
 import { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
-import { parseDateOnly } from '@/lib/utils'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
 import { cardStatementFields } from './cardStatementFields'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
@@ -28,8 +27,6 @@ interface StatementsClientViewProps {
 }
 
 export function StatementsClientView({ bankId }: StatementsClientViewProps) {
-    const router = useRouter()
-    const pathname = usePathname()
     const searchParams = useSearchParams()
     const { data: overview, isLoading: overviewLoading } = useBankOverview(bankId)
     const overviewData = (overview && !overviewLoading ? overview : null) as BankOverviewData | null

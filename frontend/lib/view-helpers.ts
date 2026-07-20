@@ -44,8 +44,6 @@ export function createEntityCardView(
 ) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
   const layout = options.gridLayout ?? policy?.gridLayout ?? 'single-column'
-  const cardVariant = policy?.cardVariant ?? 'full'
-
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-2"

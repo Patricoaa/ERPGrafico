@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, {useState, useMemo, useCallback} from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
-import { type AccountingPeriod, type FiscalYearPreviewResult, type FiscalYear, type TaxPeriod } from '../../types';
+import { type AccountingPeriod, type TaxPeriod } from '../../types';
 import { useTaxPeriods, useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod, useCreateTaxPayment, DeclarationWizard, F29PaymentModal, F29CloseModal } from '@/features/tax';
 import type { TaxDeclaration, TaxPaymentData } from '@/features/tax';
 import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
@@ -62,7 +62,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const { reopenPeriod: reopenTaxPeriod, isReopeningPeriod: isReopeningTaxPeriod } = useReopenTaxPeriod();
     const isLoadingTaxAction = isClosingTaxPeriod || isReopeningTaxPeriod;
 
-    const [activeYearToClose, setActiveYearToClose] = useState<number | null>(null);
+    const [activeYearToClose] = useState<number | null>(null);
     const [declarationTarget, setDeclarationTarget] = useState<{ id?: number; year?: number; month?: number } | undefined>(undefined);
     const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
 
@@ -101,7 +101,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const clearSelection = () => {
         clearUrlSelection();
     };
-
 
     const handleCreateFY = async (year: number) => {
         try {

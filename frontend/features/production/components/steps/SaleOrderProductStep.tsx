@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText } from "lucide-react";
+import { DataCell } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, parseDateOnly } from "@/lib/utils";
@@ -206,17 +207,10 @@ export function SaleOrderProductStep({
                         </div>
                         {selectedOrderId === String(order.id) && (
                           <div className="flex-shrink-0 space-y-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOrderSelect(null);
-                              }}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <DataCell.Action
+                              action="delete"
+                              onClick={() => handleOrderSelect(null)}
+                            />
                           </div>
                         )}
                       </div>

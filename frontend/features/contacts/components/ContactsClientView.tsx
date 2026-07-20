@@ -195,12 +195,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 data={contact}
                                 fields={contactFields}
                                 entityLabel="contacts.contact"
-                                title={
-                                    <span className="flex items-center gap-1.5">
-                                        <ContactRoleIcons contact={contact} />
-                                        {contact.name}
-                                    </span>
-                                }
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
 

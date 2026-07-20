@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { FileText } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
+    DataTableView, DataTableColumnHeader,
     MoneyDisplay, SkeletonShell, AutoEntityCard,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,

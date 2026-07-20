@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { Plus, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ActionConfirmModal, Chip, DataCell, DataTable, EmptyState } from '@/components/shared'
+import {ActionConfirmModal, Chip, DataCell, DataTable} from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -21,7 +21,6 @@ import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import type { Product } from "@/types/entities"
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
-
 
 interface MaterialAssignmentStepProps {
   order: WorkOrder

@@ -10,7 +10,6 @@ import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollP
 import type { MyProfile } from "@/types/profile"
 import type {Payroll} from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
 import { ActionSlideButton, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'

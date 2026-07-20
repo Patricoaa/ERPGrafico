@@ -1,5 +1,4 @@
 import { createEntityFields, StatusBadge } from "@/components/shared"
-import { formatCurrency } from "@/lib/money"
 import type { TaxPeriod } from "./types"
 
 export const taxPeriodFields = createEntityFields<TaxPeriod>()({

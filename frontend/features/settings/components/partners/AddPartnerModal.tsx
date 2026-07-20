@@ -257,7 +257,3 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
         />
     )
 }
-
-function formatCurrencyExcludingSymbol(amount: number) {
-    return formatCurrency(amount)
-}

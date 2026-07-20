@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef } from "react"
+import React from "react"
 import { Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"

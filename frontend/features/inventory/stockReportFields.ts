@@ -57,4 +57,6 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
         type: 'currency',
         label: 'Valorización',
     },
+}, {
+    title: { field: 'name' },
 })

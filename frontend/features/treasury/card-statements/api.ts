@@ -1,5 +1,4 @@
 import api from '@/lib/api'
-import type { TreasuryMovement } from '../types'
 import type {
     CreditCardStatement, CreditCardStatementCreatePayload,
     PayStatementPayload, ApplyChargesPayload,

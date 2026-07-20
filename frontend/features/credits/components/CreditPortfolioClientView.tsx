@@ -13,7 +13,6 @@ import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
-const EMPTY_CONTACTS: CreditContact[] = []
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
 export function CreditPortfolioClientView({
@@ -25,7 +24,7 @@ export function CreditPortfolioClientView({
     externalOpen?: boolean,
     createAction?: React.ReactNode
 }) {
-    const { data, contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
+    const { contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
     const { data: rawHistory, isLoading: loadingHistory } = useCreditHistory()
 
     // ADR-0020: edit modal opens via ?selected={contactId}

@@ -71,39 +71,6 @@ interface CashFlowTableProps {
     futureMaturities?: MaturityItem[];
 }
 
-const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, showComparison?: boolean, icon?: React.ElementType }) => (
-    <TableRow className="bg-muted/30 font-bold border-t-2 first:border-t-0">
-        <TableCell colSpan={showComparison ? 4 : 2} className="py-2.5 px-4">
-            <div className="flex items-center gap-2">
-                {Icon && <Icon className="h-3.5 w-3.5 text-primary" />}
-                <span className="uppercase tracking-widest text-[10px] text-muted-foreground">{title}</span>
-            </div>
-        </TableCell>
-    </TableRow>
-);
-
-const SectionTotal = ({ title, amount, amountComp, showComparison, variant = 'default' }: { title: string, amount: number, amountComp?: number, showComparison?: boolean, variant?: 'default' | 'highlight' }) => (
-    <TableRow className={cn(
-        "font-bold border-t border-muted/50 transition-colors",
-        variant === 'highlight' ? "bg-muted/10 text-base" : "bg-transparent text-sm"
-    )}>
-        <TableCell className="pl-8 italic text-muted-foreground">{title}</TableCell>
-        <TableCell className="text-right">
-            <MoneyDisplay amount={amount} showColor={false} className={cn("font-mono", variant === 'highlight' ? "text-lg" : "text-sm")} />
-        </TableCell>
-        {showComparison && (
-            <>
-                <TableCell className="text-right">
-                    <MoneyDisplay amount={amountComp} showColor={false} className="font-mono text-xs text-muted-foreground" />
-                </TableCell>
-                <TableCell className="text-right">
-                    <MoneyDisplay amount={amount - (amountComp || 0)} className="font-mono text-sm" />
-                </TableCell>
-            </>
-        )}
-    </TableRow>
-);
-
 export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, showComparison, periodLabel, compPeriodLabel, futureMaturities }) => {
     const [auditModalOpen, setAuditModalOpen] = useState(false);
 

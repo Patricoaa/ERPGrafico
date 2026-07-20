@@ -22,7 +22,7 @@ import {
 import { ActionConfirmModal, ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge } from '@/components/shared'
 
 import {
-    Loader2, BookOpen,
+    BookOpen,
     DollarSign, ShieldCheck, Sparkles,
     CheckCircle2, FileText, ArrowLeft
 } from "lucide-react"
@@ -149,8 +149,6 @@ export function PayrollDetailView({
     const totalPrevired = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR').reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount || "0"), 0) || 0
     const pendingPrevired = Math.max(0, totalPrevired - payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0))
 
-    const workerLegalDiscounts = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
-
     useEffect(() => {
         if (isSheet && onHeaderDataChange && payroll) {
             onHeaderDataChange({
@@ -178,27 +176,27 @@ export function PayrollDetailView({
                     <div className="flex items-center gap-2 sm:gap-3">
                         {viewMode === 'admin' && !isPosted && (
                             <>
-                                <Button
-                                    variant="outline"
+                                <ActionSlideButton
+                                    variant="primary"
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
-                                    disabled={generating}
+                                    loading={generating}
+                                    icon={Sparkles}
                                 >
-                                    {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                                     <span className="hidden sm:inline">Propuesta Inicial</span>
                                     <span className="sm:hidden">Propuesta</span>
-                                </Button>
+                                </ActionSlideButton>
 
-                                <Button
+                                <ActionSlideButton
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
-                                    disabled={posting}
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
+                                    icon={BookOpen}
                                 >
-                                    {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
                                     Contabilizar
-                                </Button>
+                                </ActionSlideButton>
                             </>
                         )}
                         {viewMode === 'admin' && isPosted && (
@@ -294,27 +292,27 @@ export function PayrollDetailView({
                     <div className="flex items-center gap-2 sm:gap-3">
                         {viewMode === 'admin' && !isPosted && (
                             <>
-                                <Button
-                                    variant="outline"
+                                <ActionSlideButton
+                                    variant="primary"
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
                                     onClick={handleGenerateProforma}
-                                    disabled={generating}
+                                    loading={generating}
+                                    icon={Sparkles}
                                 >
-                                    {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                                     <span className="hidden sm:inline">Propuesta Inicial</span>
                                     <span className="sm:hidden">Propuesta</span>
-                                </Button>
+                                </ActionSlideButton>
 
-                                <Button
+                                <ActionSlideButton
                                     size="sm"
-                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
-                                    disabled={posting}
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9"
+                                    loading={posting}
                                     onClick={() => setPostConfirmOpen(true)}
+                                    icon={BookOpen}
                                 >
-                                    {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
                                     Contabilizar
-                                </Button>
+                                </ActionSlideButton>
                             </>
                         )}
                         {viewMode === 'admin' && isPosted && (
@@ -449,8 +447,8 @@ export function PayrollDetailView({
     )
 }
 
-function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, trigger }: {
-    payrollId: number, item: PayrollItem | null, concepts: PayrollConcept[], onSaved: () => void, onEditCleared: () => void, trigger?: React.ReactNode
+function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared }: {
+    payrollId: number, item: PayrollItem | null, concepts: PayrollConcept[], onSaved: () => void, onEditCleared: () => void
 }) {
     const [open, setOpen] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -512,9 +510,8 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                             <ActionSlideButton
                                 form="payroll-item-form"
                                 type="submit"
-                                disabled={saving}
+                                loading={saving}
                             >
-                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {item && item.id ? "Actualizar Item" : "Añadir a Liquidación"}
                             </ActionSlideButton>
                         </>

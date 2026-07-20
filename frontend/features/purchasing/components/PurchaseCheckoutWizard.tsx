@@ -27,11 +27,11 @@ function generateUUID(): string {
 }
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
-import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, ShoppingCart } from "lucide-react"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Drawer, CancelButton, FormFooter } from '@/components/shared'
+import { Drawer, ActionSlideButton, CancelButton, FormFooter } from '@/components/shared'
 import { useRef } from "react"
 
 interface PurchaseCheckoutWizardProps {
@@ -439,18 +439,15 @@ export function PurchaseCheckoutWizard({
                                 <ChevronRight className="ml-2 h-4 w-4" />
                             </Button>
                         ) : (
-                            <Button
+                            <ActionSlideButton
                                 onClick={handleFinish}
+                                loading={loading}
                                 className="w-48 bg-success hover:bg-success/90 text-success-foreground font-bold transition-all shadow-elevated shadow-success/20"
-                                disabled={loading}
+                                variant="success"
+                                icon={Check}
                             >
-                                {loading ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Check className="mr-2 h-4 w-4" />
-                                )}
                                 Finalizar Compra
-                            </Button>
+                            </ActionSlideButton>
                         )
                     }
                 />

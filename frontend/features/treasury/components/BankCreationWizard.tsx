@@ -2,8 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from "react"
 import {
-    Landmark, CreditCard, Banknote, Plus, Trash2, Info,
+    Landmark, CreditCard, Banknote, Plus, Info,
 } from "lucide-react"
+import { DataCell } from "@/components/shared"
 import { GenericWizard, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 import type { WizardStep } from "@/components/shared"
@@ -91,15 +92,7 @@ function ItemCard({
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                     Ítem {index + 1}
                 </span>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
-                    onClick={onRemove}
-                >
-                    <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                <DataCell.Action action="delete" onClick={onRemove} />
             </div>
             <div className="p-3 space-y-3">{children}</div>
         </div>

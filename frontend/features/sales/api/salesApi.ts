@@ -3,7 +3,7 @@ import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '..
 import type { SaleNoteFilters } from '../hooks/useSalesOrders'
 import { type Invoice } from '@/features/billing'
 import { toPage } from '@/lib/pagination'
-import type { Page, PageParams } from '@/lib/pagination'
+import type {Page} from '@/lib/pagination'
 
 /**
  * Centralized API service for sales operations

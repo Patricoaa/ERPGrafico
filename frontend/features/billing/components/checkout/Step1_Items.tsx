@@ -1,6 +1,6 @@
 "use client"
 
-import { LabeledInput, StepHeader, DataCell, MoneyDisplay } from "@/components/shared"
+import {LabeledInput, StepHeader} from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -233,4 +233,3 @@ export function Step1_Items({
         </div>
     )
 }
-

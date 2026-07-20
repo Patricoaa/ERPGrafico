@@ -4,7 +4,7 @@ import React from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
-import type { Absence, Employee } from "@/types/hr"
+import type {Absence} from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableView, AutoEntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { useAbsences, deleteAbsence, absenceActions, type AbsenceActionsCtx, useEmployees } from "@/features/hr"
@@ -40,8 +40,6 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
-
-
 
     const absenceActionsCtx: AbsenceActionsCtx = {
         onEdit: (absence) => openSelected(absence.id),

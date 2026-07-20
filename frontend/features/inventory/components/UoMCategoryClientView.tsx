@@ -171,7 +171,6 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                             data={cat}
                             fields={uomCategoryFields}
                             entityLabel="inventory.uomcategory"
-                            title={cat.name}
                             actions={uomCategoryActions.render(cat, actionsCtx)}
                             defaultAction={uomCategoryActions.defaultAction(actionsCtx)?.(cat) ?? (() => openSelected(cat.id))}
 

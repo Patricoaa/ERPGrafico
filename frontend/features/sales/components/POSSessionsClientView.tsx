@@ -5,11 +5,10 @@ import { useQuery } from "@tanstack/react-query"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataCell, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import {DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { posSessionFields } from "../posSessionFields"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
-import { toast } from "sonner"
 import { POSReport, type POSReportData } from "@/features/pos"
 import { SessionCloseModal } from "@/features/pos"
 import type { POSSession as POSSessionModal } from "@/features/pos"
@@ -65,7 +64,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     const reportSessionId = selectedFromUrl ? selectedFromUrl.id : null
     const { data: queryReportData } = useQuery({
         queryKey: ['pos-session-summary', reportSessionId],
-        queryFn: () => fetchPOSSessionSummary<Record<string, unknown>>(reportSessionId!),
+        queryFn: () => fetchPOSSessionSummary<Record<string, unknown>>(reportSessionId as number),
         enabled: !!reportSessionId
     })
 
