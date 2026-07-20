@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { Search, ChevronDown, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
@@ -119,7 +120,7 @@ export function UnifiedSearchBar({
               ref={containerRef}
               onClick={handleBarClick}
               className={cn(
-                "flex items-center flex-1 h-9 bg-background rounded-l-sm px-2 gap-1",
+                "flex items-center flex-1 h-9 bg-background rounded-sm px-2 gap-1",
                 "cursor-pointer",
               )}
             >
@@ -143,13 +144,14 @@ export function UnifiedSearchBar({
                         )}
                       >
                         <span className="truncate">{formatChipLabel(chip)}</span>
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => { e.stopPropagation(); chip.onRemove() }}
-                          className="hover:bg-background/50 rounded-sm p-[1px] shrink-0"
+                          className="h-4 w-4 hover:bg-background/50 rounded-sm p-[1px] shrink-0"
                         >
                           <X className="h-2.5 w-2.5" />
-                        </button>
+                        </Button>
                       </span>
                     ))}
                   </div>
@@ -165,18 +167,16 @@ export function UnifiedSearchBar({
                   className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground/60 h-full"
                 />
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
-              className={cn(
-                "h-9 w-7 flex items-center justify-center bg-background rounded-r-sm shrink-0",
-                "hover:bg-accent/50 transition-colors",
-              )}
-            >
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
+                className="h-9 w-7 shrink-0 border-l border-border rounded-none"
+              >
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </div>
           </div>
         </PopoverTrigger>
 
