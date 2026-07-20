@@ -5,6 +5,7 @@ import { DataCell } from "./DataTableCells"
 import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
 import type { LucideIcon } from "lucide-react"
+import type { SubtitleItem } from "@/lib/entity-registry"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,8 @@ interface FieldDef<T> {
     get?: (entity: T) => unknown
     cellProps?: Record<string, unknown>
     surfaces?: FieldSurface[]
+    /** Explicit left-to-right order for table columns (lower = more left). Undefined sorts last. */
+    order?: number
     /** Override de posicionamiento en la tarjeta (defaults from ROLE_TO_PLACEMENT) */
     cardPlacement?: CardPlacement
     /** Override del rol semántico del campo (defaults from TYPE_TO_ROLE) */
@@ -181,6 +184,36 @@ interface FieldDef<T> {
     render?: (entity: T) => ReactNode
 }
 
+// ─── Card Metadata (Title / Subtitle) ────────────────────────────────────────
+
+/** Configuration for the card title — declarative in Fields.ts meta. */
+export interface CardTitleConfig<T> {
+    /** Field key that provides the title value */
+    field: (keyof T & string)
+    /** Optional template for computed titles (e.g. '{month_display} {year}'). Supports {field}, {?field}, {f1|f2|'default'}. */
+    template?: string
+}
+
+/** Configuration for the card subtitle — declarative in Fields.ts meta. */
+export interface CardSubtitleConfig<T> {
+    /** Simple single-field subtitle */
+    field?: (keyof T & string)
+    /** Template with: {field}, {?field} (conditional), {f1|f2|'default'} (fallback), {field:date}, {field:currency} */
+    template?: string
+    /** Suffix template appended after " · " separator — same syntax as template */
+    suffixTemplate?: string
+    /** Function-based subtitle renderer for complex JSX/computed subtitles (escape hatch) */
+    renderer?: (entity: T) => SubtitleItem[]
+    /** Explicit field keys excluded from card layout zones when this subtitle is rendered (required when renderer is used) */
+    excludeKeys?: string[]
+}
+
+/** Centralized metadata for card title/subtitle — the single source of truth. */
+export interface EntityFieldsMeta<T> {
+    title?: CardTitleConfig<T>
+    subtitle?: CardSubtitleConfig<T>
+}
+
 export interface CardField {
     key: string
     label: string
@@ -200,11 +233,19 @@ export interface KanbanField {
 }
 
 export type EntityFieldsReturn<T> = {
-    toColumns: () => ColumnDef<T>[]
+    toColumns: (opts?: { exclude?: string[] }) => ColumnDef<T>[]
     toCardFields: (entity: T, opts?: { only?: string[] }) => CardField[]
     toKanbanFields: (entity: T, opts?: { only?: string[] }) => KanbanField[]
     render: (fieldKey: string, entity: T) => ReactNode
     defs: Record<string, FieldDef<T>>
+    /** Centralized card metadata — title/subtitle config from createEntityFields meta param. */
+    meta?: EntityFieldsMeta<T>
+    /** Resolve card title from meta.title config. Falls back to cardPlacement:'title' field, then first field. */
+    resolveTitle: (entity: T) => ReactNode
+    /** Resolve card subtitle from meta.subtitle config. Returns SubtitleItem[] for EntityCard.Subtitle. */
+    resolveSubtitle: (entity: T) => SubtitleItem[]
+    /** Field keys referenced by subtitle config — to exclude from other card layout zones. */
+    getSubtitleExcludeKeys: () => Set<string>
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -217,18 +258,11 @@ function resolveValue<T>(def: FieldDef<T>, entity: T): unknown {
     return def.get ? def.get(entity) : entity[def.key as keyof T]
 }
 
-function resolveDyn<TContext>(
-    prop: unknown,
-    context: TContext,
-): unknown {
-    return typeof prop === "function" ? (prop as (ctx: TContext) => unknown)(context) : prop
-}
-
 // ─── Cell Renderers ──────────────────────────────────────────────────────────
 
 function resolveIcon<T>(def: FieldDef<T>, entity: T): LucideIcon | undefined {
     if (!def.icon) return undefined
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- T is unconstrained; icon is always LucideIcon | ((entity: T) => LucideIcon)
+     
     return typeof def.icon === 'function' ? (def.icon as (e: T) => LucideIcon)(entity) : def.icon
 }
 
@@ -382,6 +416,147 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
 // ─── Factory ─────────────────────────────────────────────────────────────────
 
 /**
+ * Resolves a template string like '{field}', '{?field}', '{f1|f2|'default'}' against entity data.
+ * Returns the resolved string, or undefined if all references are null/missing.
+ */
+function resolveTemplate<T>(template: string, entity: T): string | undefined {
+    const regex = /\{(\??)([^}]+)\}/g
+    let result = ''
+    let lastIndex = 0
+    let hasValue = false
+    let match: RegExpExecArray | null
+
+    while ((match = regex.exec(template)) !== null) {
+        const isConditional = match[1] === '?'
+        const inner = match[2]
+        const [rawPath] = inner.split(':')
+        const alternatives = rawPath.split('|')
+
+        let resolved: unknown = undefined
+        for (const alt of alternatives) {
+            const a = alt.trim()
+            if (a.startsWith("'") && a.endsWith("'")) {
+                if (resolved == null) resolved = a.slice(1, -1)
+            } else {
+                const v = resolvePath(a, entity)
+                if (v != null) { resolved = v; break }
+            }
+        }
+
+        if (resolved == null || resolved === undefined) {
+            if (isConditional) {
+                lastIndex = regex.lastIndex
+                continue
+            }
+            return undefined
+        }
+
+        if (match.index > lastIndex) {
+            result += template.slice(lastIndex, match.index)
+        }
+        result += String(resolved)
+        hasValue = true
+        lastIndex = regex.lastIndex
+    }
+
+    if (lastIndex < template.length) {
+        result += template.slice(lastIndex)
+    }
+
+    return hasValue ? result : (template.includes('{') ? undefined : template)
+}
+
+/** Resolve a dotted path (e.g. 'contact.name') against an entity object. */
+function resolvePath<T>(path: string, entity: T): unknown {
+    let value: unknown = entity
+    for (const part of path.split('.')) {
+        if (value !== null && typeof value === 'object') {
+            value = (value as Record<string, unknown>)[part]
+        } else {
+            return undefined
+        }
+    }
+    return value
+}
+
+/**
+ * Builds SubtitleItem[] from a template string and entity data.
+ * Reuses the same syntax as entity-registry: {field}, {?field}, {f1|f2|'default'}, {field:date}, {field:currency}
+ */
+function parseSubtitleTemplate<T>(template: string, entity: T): SubtitleItem[] {
+    const items: SubtitleItem[] = []
+    const regex = /\{(\??)([^}]+)\}/g
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+
+    while ((match = regex.exec(template)) !== null) {
+        const isConditional = match[1] === '?'
+        const inner = match[2]
+        const [rawPath, format] = inner.split(':')
+        const alternatives = rawPath.split('|')
+
+        let resolved: unknown = undefined
+        for (const alt of alternatives) {
+            const a = alt.trim()
+            if (a.startsWith("'") && a.endsWith("'")) {
+                if (resolved == null) resolved = a.slice(1, -1)
+            } else {
+                const v = resolvePath(a, entity)
+                if (v != null) { resolved = v; break }
+            }
+        }
+
+        if (resolved == null || resolved === undefined) {
+            if (isConditional && items.length > 0 && items[items.length - 1].kind === 'text') {
+                items.pop()
+            }
+            lastIndex = regex.lastIndex
+            continue
+        }
+
+        if (match.index > lastIndex && !(isConditional && (resolved == null || resolved === undefined))) {
+            items.push({ kind: 'text', content: template.slice(lastIndex, match.index) })
+        }
+
+        if (format === 'date') {
+            items.push({ kind: 'date', value: String(resolved) })
+        } else if (format === 'currency') {
+            items.push({ kind: 'currency', value: Number(resolved) })
+        } else {
+            items.push({ kind: 'text', content: String(resolved) })
+        }
+        lastIndex = regex.lastIndex
+    }
+
+    if (lastIndex < template.length) {
+        const tail = template.slice(lastIndex)
+        if (tail) items.push({ kind: 'text', content: tail })
+    }
+
+    return items
+}
+
+/**
+ * Extracts field keys referenced by a subtitle template string.
+ */
+function extractTemplateKeys<T>(template: string): Set<string> {
+    const keys = new Set<string>()
+    const regex = /\{(\??)([^}]+)\}/g
+    let match: RegExpExecArray | null
+    while ((match = regex.exec(template)) !== null) {
+        const inner = match[2]
+        const [rawPath] = inner.split(':')
+        const alternatives = rawPath.split('|')
+        for (const alt of alternatives) {
+            const a = alt.trim()
+            if (a.startsWith("'") && a.endsWith("'")) continue
+            keys.add(a.split('.')[0])
+        }
+    }
+    return keys
+}
+
+/**
  * createEntityFields — Generic factory for entity field definitions shared between
  * DataTable (ColumnDef), EntityCard (Field), and Kanban card surfaces.
  *
@@ -400,33 +575,38 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
  * Usage:
  * ```tsx
  * const orderFields = createEntityFields<Order>()({
- *   code: { key: 'display_id', type: 'code', label: 'Folio' },
- *   date: { key: 'date', type: 'date', label: 'Fecha' },
- *   total: { key: 'total', type: 'currency', label: 'Total', get: (o) => parseFloat(o.amount) },
+ *   code: { key: 'display_id', type: 'code', label: 'Folio', order: 10 },
+ *   date: { key: 'date', type: 'date', label: 'Fecha', order: 20 },
+ *   total: { key: 'total', type: 'currency', label: 'Total', order: 30, get: (o) => parseFloat(o.amount) },
+ * }, {
+ *   title: { field: 'display_id' },
+ *   subtitle: { field: 'customer_name' },
  * })
  *
- * // DataTable
+ * // DataTable — columns sorted by `order`
  * const columns = orderFields.toColumns()
  *
- * // EntityCard
- * {orderFields.toCardFields(order).map(f => <EntityCard.Field key={f.key} label={f.label} value={f.value} />)}
+ * // EntityCard — title/subtitle auto-resolved from meta
+ * const title = orderFields.resolveTitle(order)
+ * const subtitle = orderFields.resolveSubtitle(order)
  *
  * // Kanban
  * {orderFields.toKanbanFields(order).map(f => <div key={f.key}>{f.value}</div>)}
- *
- * // Ad-hoc
- * {orderFields.render('total', order)}
  * ```
  */
 export function createEntityFields<T>(): (
-    defs: Record<string, FieldDef<T>>
+    defs: Record<string, FieldDef<T>>,
+    meta?: EntityFieldsMeta<T>
 ) => EntityFieldsReturn<T> {
-    return (defs) => ({
+    return (defs, meta?) => ({
         defs,
+        meta,
 
-        toColumns: (): ColumnDef<T>[] => {
+        toColumns: (opts?: { exclude?: string[] }): ColumnDef<T>[] => {
+            const excluded = new Set(opts?.exclude ?? [])
             return Object.entries(defs)
-                .filter(([, def]) => isPresentOnSurface(def, "table"))
+                .filter(([fieldKey, def]) => isPresentOnSurface(def, "table") && !excluded.has(fieldKey))
+                .sort(([, a], [, b]) => (a.order ?? Infinity) - (b.order ?? Infinity))
                 .map(([fieldKey, def]): ColumnDef<T> => {
                     const headerLabel = def.header ?? def.label
                     const enableSorting = def.tableOptions?.enableSorting ?? true
@@ -436,7 +616,7 @@ export function createEntityFields<T>(): (
 
                     return {
                         ...(hasAccessorFn
-                            ? { id: fieldKey, accessorFn: (row: T) => def.tableOptions!.accessorFn!(row) }
+                            ? { id: fieldKey, accessorFn: (row: T) => def.tableOptions?.accessorFn?.(row) ?? null }
                             : { accessorKey: def.key }
                         ),
                         header: ({ column }) => (
@@ -513,6 +693,88 @@ export function createEntityFields<T>(): (
             const def = defs[fieldKey]
             if (!def) return null
             return renderCell(def, entity)
+        },
+
+        resolveTitle: (entity: T): ReactNode => {
+            // Priority 1: meta.title with template
+            if (meta?.title?.template) {
+                const resolved = resolveTemplate(meta.title.template, entity)
+                if (resolved) return resolved
+            }
+            // Priority 2: meta.title.field
+            if (meta?.title?.field) {
+                const def = Object.values(defs).find(d => d.key === meta.title!.field)
+                if (def) return renderCell(def, entity)
+                // Fallback: raw value from entity
+                const raw = entity[meta.title.field as keyof T]
+                if (raw != null) return String(raw)
+            }
+            // Priority 3: field with cardPlacement:'title' (backwards compat)
+            const cardTitleField = Object.values(defs).find(d => d.cardPlacement === 'title')
+            if (cardTitleField) return renderCell(cardTitleField, entity)
+            // Priority 4: first identifier field
+            const identifier = Object.values(defs).find(d => {
+                const role = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+                return role === 'identifier'
+            })
+            if (identifier) return renderCell(identifier, entity)
+            // Priority 5: first field
+            const first = Object.values(defs)[0]
+            if (first) return renderCell(first, entity)
+            return '---'
+        },
+
+        resolveSubtitle: (entity: T): SubtitleItem[] => {
+            // Priority 1: meta.subtitle.renderer (complex JSX)
+            if (meta?.subtitle?.renderer) {
+                return meta.subtitle.renderer(entity)
+            }
+            // Priority 2: meta.subtitle.field (simple single-field)
+            if (meta?.subtitle?.field) {
+                const raw = entity[meta.subtitle.field as keyof T]
+                if (raw != null && raw !== undefined) {
+                    const items: SubtitleItem[] = [{ kind: 'text', content: String(raw) }]
+                    if (meta.subtitle.suffixTemplate) {
+                        const suffixItems = parseSubtitleTemplate(meta.subtitle.suffixTemplate, entity)
+                        if (suffixItems.length > 0) {
+                            items.push({ kind: 'separator' })
+                            items.push(...suffixItems)
+                        }
+                    }
+                    return items
+                }
+            }
+            // Priority 3: meta.subtitle.template
+            if (meta?.subtitle?.template) {
+                const items = parseSubtitleTemplate(meta.subtitle.template, entity)
+                if (items.length > 0) {
+                    if (meta.subtitle.suffixTemplate) {
+                        const suffixItems = parseSubtitleTemplate(meta.subtitle.suffixTemplate, entity)
+                        if (suffixItems.length > 0) {
+                            items.push({ kind: 'separator' })
+                            items.push(...suffixItems)
+                        }
+                    }
+                    return items
+                }
+            }
+            return []
+        },
+
+        getSubtitleExcludeKeys: (): Set<string> => {
+            if (!meta?.subtitle) return new Set()
+            const keys = new Set<string>()
+            if (meta.subtitle.field) keys.add(meta.subtitle.field)
+            if (meta.subtitle.excludeKeys) {
+                for (const k of meta.subtitle.excludeKeys) keys.add(k)
+            }
+            if (meta.subtitle.template) {
+                for (const k of Array.from(extractTemplateKeys(meta.subtitle.template))) keys.add(k)
+            }
+            if (meta.subtitle.suffixTemplate) {
+                for (const k of Array.from(extractTemplateKeys(meta.subtitle.suffixTemplate))) keys.add(k)
+            }
+            return keys
         },
     })
 }
