@@ -80,6 +80,21 @@ export interface EntityMetadata {
       dateLabel?: string
     }
   }
+
+  // ── Legacy subtitle fallbacks (used by renderEntitySubtitleItems / getSubtitleFieldKeys) ──
+  // These are fallback mechanisms when Fields.ts meta is unavailable.
+  // Prefer configuring subtitle via createEntityFields() meta param instead.
+
+  /** @deprecated Use createEntityFields meta.subtitle.field instead */
+  subtitleField?: string
+  /** @deprecated Use createEntityFields meta.subtitle.renderer instead */
+  subtitleRenderer?: (data: Record<string, unknown>) => SubtitleItem[]
+  /** @deprecated Explicit keys excluded from card zones when subtitleRenderer is used */
+  subtitleKeys?: string[]
+  /** @deprecated Use createEntityFields meta.subtitle.template instead */
+  subtitleTemplate?: string
+  /** @deprecated Use createEntityFields meta.subtitle.suffixTemplate instead */
+  subtitleSuffixTemplate?: string
 }
 
 export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
