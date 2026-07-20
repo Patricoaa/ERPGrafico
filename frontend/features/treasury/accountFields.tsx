@@ -77,6 +77,5 @@ export const accountFields = createEntityFields<TreasuryAccount>()({
         type: "text",
         label: "Entidad",
         get: (e) => e.bank_name,
-        surfaces: ["card"],
     },
 })

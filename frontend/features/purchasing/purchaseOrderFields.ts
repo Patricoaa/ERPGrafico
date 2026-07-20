@@ -22,12 +22,10 @@ export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
         key: "receipt_date",
         type: "date",
         label: "Entrega Esperada",
-        surfaces: ["card", "kanban"],
     },
     status: {
         key: "status",
         type: "status",
         label: "Estado",
-        surfaces: ["card", "kanban"],
     },
 })

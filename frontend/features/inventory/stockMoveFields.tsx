@@ -70,25 +70,21 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         key: 'date',
         type: 'date',
         label: 'Fecha',
-        surfaces: ['card'],
     },
     sourceLocation: {
         key: 'source_location_name',
         type: 'text',
         label: 'Origen',
-        surfaces: ['card'],
     },
     destinationLocation: {
         key: 'destination_location_name',
         type: 'text',
         label: 'Destino',
-        surfaces: ['card'],
     },
     quantity: {
         key: 'quantity',
         type: 'numericFlow',
         label: 'Cantidad',
         get: (m) => ({ value: Number(m.quantity), unit: m.uom_name, showSign: true }),
-        surfaces: ['card'],
     },
 })
