@@ -151,7 +151,6 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                             }}
                         />
                     )}
-                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 

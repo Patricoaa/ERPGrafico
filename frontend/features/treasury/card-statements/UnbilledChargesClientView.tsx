@@ -525,7 +525,6 @@ export function UnbilledChargesClientView({
                             entityLabel="treasury.unbilledcharge"
                         />
                     )}
-                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 
