@@ -240,7 +240,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                             data={rule}
                             fields={pricingRuleFields}
                             entityLabel="inventory.pricingrule"
-                            title={rule.name}
 
                             actions={pricingRuleActions.render(rule, actionsCtx)}
                             defaultAction={pricingRuleActions.defaultAction(actionsCtx)?.(rule) ?? (() => openSelected(rule.id))}

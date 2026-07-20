@@ -435,7 +435,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                                     fields={subscriptionFields}
 
                                     entityLabel="inventory.subscription"
-                                    title={sub.product_name}
                                     onClick={() => openSubscription(sub.id, "edit")} 
                                     defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
 

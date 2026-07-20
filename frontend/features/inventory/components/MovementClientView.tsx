@@ -102,7 +102,6 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                 data={move}
                                 fields={stockMoveFields}
                                 entityLabel="inventory.stockmove"
-                                title={move.product_name}
                                 actions={stockMoveActions.render(move, actionsCtx)}
                                 defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
 

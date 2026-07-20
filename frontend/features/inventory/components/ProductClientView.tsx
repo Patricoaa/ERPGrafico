@@ -489,7 +489,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 imageSrc={imageUrl}
                                 icon={imageUrl ? undefined : (fallbackIcon ?? LucideIcons.Package)}
                                 iconClassName="bg-muted"
-                                title={product.name}
                                 actions={productActions.render(product, actionsCtx)}
                                 defaultAction={productActions.defaultAction(actionsCtx)?.(product) ?? null} 
                                 onClick={() => openSelected(product.id)}

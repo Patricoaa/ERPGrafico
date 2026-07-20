@@ -59,4 +59,6 @@ export const bomFields = createEntityFields<BOMFields>()({
         get: (b) => b.active ? 'active' : 'inactive',
         getLabel: (b) => b.active ? 'Activa' : 'Inactiva',
     },
+}, {
+    title: { field: 'name' },
 })

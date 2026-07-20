@@ -233,7 +233,6 @@ export function PurchaseInvoicesClientView() {
                                 data={data}
                                 fields={purchaseInvoiceFields}
                                 entityLabel="billing.purchaseinvoice"
-                                title={d.partner_name as string ?? d.reference as string ?? `Documento #${data.id}`}
                                 isSelected={hubConfig?.invoiceId === data.id}
                                 onClick={() => {
                                     const isSelected = hubConfig?.invoiceId === data.id

@@ -188,7 +188,6 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                                             fields={userFields}
 
                                             entityLabel="settings.user"
-                                            title={user.username}
                                             onClick={() => actionsCtx.onEdit(user.id)}
                                             actions={userActions.render(user, actionsCtx)}
                                         />

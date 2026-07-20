@@ -36,4 +36,6 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         label: "Tipo DTE",
         surfaces: ["card", "kanban"],
     },
+}, {
+    title: { field: 'display_id' },
 })

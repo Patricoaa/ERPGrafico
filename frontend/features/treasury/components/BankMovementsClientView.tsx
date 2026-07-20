@@ -213,7 +213,6 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                                 data={m}
                                 fields={movementFields}
                                 entityLabel="treasury.bankmovement"
-                                title={m.display_id}
                                 onClick={() => handleViewDetails(m.id)}
                                 icon={icon}
                                 iconClassName={iconClassName}

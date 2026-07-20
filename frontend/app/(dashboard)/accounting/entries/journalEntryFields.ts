@@ -46,4 +46,4 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
         get: (e) => e.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0,
         surfaces: ["card"],
     },
-})
+}, { title: { field: 'display_id' } })

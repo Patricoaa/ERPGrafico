@@ -19,4 +19,6 @@ export const pricingRuleFields = createEntityFields<PricingRule>()({
         get: (r) => r.active ? 'active' : 'inactive',
         getLabel: (r) => r.active ? 'Activo' : 'Inactivo',
     },
+}, {
+    title: { field: 'name' },
 })

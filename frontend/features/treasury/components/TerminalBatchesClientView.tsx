@@ -137,7 +137,6 @@ export function TerminalBatchesClientView({
                             fields={terminalBatchFields}
 
                             entityLabel="treasury.terminalbatch"
-                            title={batch.batch_number}
                             onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
                                 params.set('modal', 'batch')

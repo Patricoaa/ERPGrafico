@@ -187,7 +187,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                             data={warehouse}
                             fields={warehouseFields}
                             entityLabel="inventory.warehouse"
-                            title={warehouse.name}
                             actions={warehouseActions.render(warehouse, actionsCtx)}
                             defaultAction={warehouseActions.defaultAction(actionsCtx)?.(warehouse) ?? (() => openSelected(warehouse.id))}
 

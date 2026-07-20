@@ -166,7 +166,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 data={data as any}
                                 fields={viewMode === 'orders' ? salesOrderFields as any : undefined as any}
                                 entityLabel={label}
-                                title={d.display_id as string}
                                 onClick={() => toggleSelection(data.id)}
                                 isSelected={getSelectionId(data)}
                                 className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}

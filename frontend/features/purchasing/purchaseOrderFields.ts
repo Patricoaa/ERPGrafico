@@ -30,4 +30,6 @@ export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
         label: "Estado",
         surfaces: ["card", "kanban"],
     },
+}, {
+    title: { field: 'number' },
 })

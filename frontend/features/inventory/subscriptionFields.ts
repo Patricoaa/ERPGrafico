@@ -29,4 +29,6 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         type: "date",
         label: "Próximo Pago",
     },
+}, {
+    title: { field: 'product_name' },
 })

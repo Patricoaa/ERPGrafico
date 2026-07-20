@@ -68,4 +68,4 @@ export const taxPeriodFields = createEntityFields<TaxPeriod>()({
             )
         },
     },
-})
+}, { title: { field: 'month_display', template: '{month_display} {year}' } })

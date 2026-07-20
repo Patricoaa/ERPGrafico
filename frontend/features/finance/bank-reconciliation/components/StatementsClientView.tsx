@@ -265,7 +265,6 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                             fields={statementFields}
 
                             className="overflow-hidden"
-                            title={stmt.display_id}
                             entityLabel="treasury.bankstatement"
                         >
                             {/* Escape hatch: action buttons (Reconciliar, Ver Detalle) — not expressible as fields */}

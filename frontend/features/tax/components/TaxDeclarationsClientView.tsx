@@ -287,7 +287,6 @@ export function TaxDeclarationsClientView({ externalOpen, onExternalOpenChange, 
 
                                             data={period}
                                             fields={taxPeriodFields}
-                                            title={period.month_display + " " + period.year}
                                             className={cn(
                                                 "flex flex-col justify-between",
                                                 canOpenChecklist ? "cursor-pointer" : "cursor-default"

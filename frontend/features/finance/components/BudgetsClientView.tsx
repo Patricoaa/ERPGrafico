@@ -132,7 +132,6 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                             data={budget}
                             fields={budgetFields}
                             entityLabel="accounting.budget"
-                            title={budget.name}
                             actions={budgetActions.render(budget, actionsCtx)}
 
                         />

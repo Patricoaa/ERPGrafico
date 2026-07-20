@@ -29,4 +29,6 @@ export const absenceFields = createEntityFields<Absence>()({
         type: "code",
         label: "Días",
     },
+}, {
+    title: { field: 'employee_name' },
 })

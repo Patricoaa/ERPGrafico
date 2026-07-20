@@ -475,7 +475,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                     data={data}
                                     fields={viewMode === 'orders' ? purchaseOrderFields as any : undefined as any}
                                     entityLabel={label}
-                                    title={data.display_id as string}
                                     onClick={() => toggleSelection(data.id as number)}
                                     isSelected={viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id}
                                     className={isHubOpen && (viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}

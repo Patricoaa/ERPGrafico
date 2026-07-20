@@ -41,4 +41,6 @@ export const payrollFields = createEntityFields<Payroll>()({
         label: "Pago",
         get: (p) => p.remuneration_paid_status || "PENDING",
     },
+}, {
+    title: { field: 'employee_name' },
 })

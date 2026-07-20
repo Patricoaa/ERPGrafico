@@ -201,7 +201,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
                             fields={payrollFields}
 
                             entityLabel="hr.payroll"
-                            title={(payroll as Payroll & Record<string, unknown>).employee_name as string || '---'}
 
                             actions={payrollActions.render(payroll, actionsCtx)}
                             defaultAction={() => openDetail(payroll.id)}
