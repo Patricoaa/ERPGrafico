@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createHubTriggerColumn } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader } from '@/components/shared'
 import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
@@ -83,10 +83,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
 
     const columns: ColumnDef<SaleOrder>[] = [
         ...salesOrderFields.toColumns(),
-        createHubTriggerColumn<SaleOrder>({
-            isSelected: (item) => onSelectOrder ? selectedId === item.id : (hubConfig?.orderId === item.id && isHubOpen),
-            onToggle: (item) => toggleSelection(item.id),
-        }),
     ]
 
     const noteColumns: ColumnDef<SaleNote>[] = [
@@ -123,10 +119,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                 </div>
             ),
         },
-        createHubTriggerColumn<SaleNote>({
-            isSelected: (item) => onSelectOrder ? selectedId === item.id : (hubConfig?.invoiceId === item.id && isHubOpen),
-            onToggle: (item) => toggleSelection(item.id),
-        }),
     ]
 
     // Determine entity label based on tab

@@ -14,7 +14,7 @@ import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal } from "@/features/purchasing"
 import { UnifiedNoteWizard } from '@/features/notes'
 
-import { DataTableView, createCodeColumn, DataTableColumnHeader, AutoEntityCard, createHubTriggerColumn } from '@/components/shared'
+import { DataTableView, createCodeColumn, DataTableColumnHeader, AutoEntityCard } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { purchaseInvoiceFields } from "@/features/billing/purchaseInvoiceFields"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -158,21 +158,6 @@ export function PurchaseInvoicesClientView() {
                 )
             },
         },
-        createHubTriggerColumn<Invoice>({
-            isSelected: (item) => hubConfig?.invoiceId === item.id,
-            onToggle: (item) => {
-                if (hubConfig?.invoiceId === item.id && isHubOpen) {
-                    closeHub()
-                } else {
-                    openHub({
-                        orderId: item.purchase_order || null,
-                        invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(item.dte_type) ? item.id : null,
-                        type: 'purchase',
-                        onActionSuccess: fetchDocuments
-                    })
-                }
-            },
-        }),
     ]
 
     return (

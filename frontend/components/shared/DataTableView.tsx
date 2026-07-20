@@ -12,6 +12,8 @@ import { groupItems } from "@/lib/group-utils"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { AnalyticsLayout } from "./AnalyticsPanel"
+import type { ColumnDef } from "@tanstack/react-table"
+import { createHubTriggerColumn } from "./DataTableCells"
 
 interface CardGroupByDef {
   field: string
@@ -221,9 +223,26 @@ export function DataTableView<TData, TValue>({
     [isTableViewGrouped, tableGroups, derivedCardGroupBy, groupsMap, dataTableProps.columns],
   )
 
+    const finalColumns = useMemo(() => {
+      let cols = dataTableProps.columns as ColumnDef<TData, unknown>[]
+      if (isSelected && dataTableProps.onRowClick) {
+        if (!cols.some(c => c.id === "hub_trigger")) {
+          cols = [
+            ...cols,
+            createHubTriggerColumn({
+              isSelected,
+              onToggle: dataTableProps.onRowClick,
+            }) as ColumnDef<TData, unknown>
+          ]
+        }
+      }
+      return cols
+    }, [dataTableProps.columns, isSelected, dataTableProps.onRowClick])
+
   return (
     <DataTable
       {...dataTableProps}
+      columns={finalColumns as any}
       data={isTableViewGrouped ? sortedData : dataTableProps.data}
       renderRow={isTableViewGrouped ? internalRenderRow : dataTableProps.renderRow}
       viewOptions={viewOptions}
