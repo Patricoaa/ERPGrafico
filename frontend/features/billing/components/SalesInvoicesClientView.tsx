@@ -188,7 +188,6 @@ export function SalesInvoicesClientView() {
                         title: "Aún no hay documentos de venta",
                         description: "Las boletas y facturas que emitas aparecerán aquí.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                 />
             </div>
 
