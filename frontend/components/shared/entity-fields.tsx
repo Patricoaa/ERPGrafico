@@ -42,12 +42,15 @@ type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_ty
 // ─── Card Placement System ────────────────────────────────────────────────────
 
 /**
- * Card zones — the 5 layout regions in an EntityCard.
+ * Card zones — the layout regions in an EntityCard.
  * - `title`: replaces the auto-generated title (identifier field)
- * - `subtitle`: replaces the auto-generated subtitle (e.g. name field)
+ * - `subtitle`: replaces the auto-generated subtitle
  * - `header`: compact badges/values in the header trailing area
- * - `detail`: label:value grid in EntityCard.Body
- * - `metric`: equal-width columns in EntityCard.Metrics
+ * - `detail`: **routed to the header center zone** (label:value columns alongside flows).
+ *   @deprecated as a distinct body zone — all detail fields now render in the center of the card header.
+ *   Keep using `cardPlacement: 'detail'` in FieldDef for semantic clarity, but the rendering
+ *   target is now the center header, not a separate body grid.
+ * - `metric`: equal-width columns in EntityCard.Metrics (progress bars, overflowed tags)
  * - `footer`: summary row in EntityCard.Footer (always explicit)
  */
 export type CardPlacement = 'title' | 'subtitle' | 'header' | 'detail' | 'metric' | 'footer'
@@ -114,9 +117,9 @@ const ROLE_TO_PLACEMENT: Record<FieldRole, CardPlacement> = {
     'complex':          'header',      // Always header — highest priority zone
     'tag':              'header',      // Chips/icons — fall back to metric if header full
     'primary-value':    'header',      // Totals/status badges — header
-    'flow':             'header',      // Flow fields — header center
-    'relation':         'detail',      // Subtitle candidate in auto-subtitle, otherwise detail
-    'temporal':         'detail',      // Subtitle candidate in auto-subtitle, otherwise detail
+    'flow':             'header',      // Flow fields — routed to header center in classifyFields
+    'relation':         'detail',      // Subtitle candidate in auto-subtitle; otherwise center header
+    'temporal':         'detail',      // Subtitle candidate in auto-subtitle; otherwise center header
     'descriptive':      'detail',      // Default body
     'supplementary':    'detail',      // Secondary text → body
     'progress':         'metric',      // Progress bars → metric fallback
