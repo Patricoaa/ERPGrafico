@@ -2,7 +2,7 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
-import { ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus } from '@/components/shared'
+import { ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
@@ -190,9 +190,6 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
                                 isSelected: hubConfig?.invoiceId === data.id,
                                 onToggle: () => toggleHub(data),
                             }}
-                            hubStatusRenderer={(hubData) => (
-                                <DomainHubStatus label="billing.invoice" data={hubData} />
-                            )}
                         />
                     )}
                 />
