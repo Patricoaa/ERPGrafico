@@ -16,12 +16,12 @@ export default async function BOMsPage({ searchParams }: PageProps) {
     let initialBoms: BOM[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialBoms = await serverFetch<BOM[]>('production/boms/', {
+            initialBoms = (await serverFetch<{ results: BOM[] }>('production/boms/', {
                 params: {
                     page_size: '200',
                 },
                 revalidate: 10,
-            })
+            })).results
         } catch {
             // Client-side fetch handles fallback
         }
