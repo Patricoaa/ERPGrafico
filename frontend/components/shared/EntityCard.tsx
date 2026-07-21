@@ -142,15 +142,15 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
     if (center) {
         return (
             <div className={cn("grid grid-cols-[1fr_minmax(auto,3fr)_auto] items-start gap-2", className)}>
-                <div className="flex items-start gap-3 min-w-0">
+                <div className="flex items-stretch gap-3 min-w-0">
                     {checkboxNode}
                     {imageSrc ? (
-                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
+                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
                             <Image src={imageSrc} alt="" fill className="object-cover" />
                         </div>
                     ) : Icon ? (
-                        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
-                            <Icon className="h-4 w-4" />
+                        <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
+                            <Icon className="h-5 w-5" />
                         </div>
                     ) : null}
                     <div className="min-w-0 flex-1">
@@ -177,15 +177,15 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
 
     return (
         <div className={cn("flex items-start justify-between gap-2", className)}>
-            <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="flex items-stretch gap-3 min-w-0 flex-1">
                 {checkboxNode}
                 {imageSrc ? (
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
+                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md overflow-hidden", iconClassName ?? "bg-accent text-muted-foreground")}>
                         <Image src={imageSrc} alt="" fill className="object-cover" />
                     </div>
                 ) : Icon ? (
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
-                        <Icon className="h-4 w-4" />
+                    <div className={cn("flex w-10 shrink-0 items-center justify-center rounded-md", iconClassName ?? "bg-accent text-muted-foreground")}>
+                        <Icon className="h-5 w-5" />
                     </div>
                 ) : null}
                 <div className="min-w-0 flex-1">
@@ -335,7 +335,7 @@ function EntityCardSkeleton({
                 {showHeader && (
                     <div className="flex flex-col gap-2 p-1">
                         <div className="flex items-center gap-3">
-                            <Skeleton className="h-8 w-8 rounded-sm shrink-0" />
+                            <Skeleton className="h-10 w-10 rounded-sm shrink-0" />
                             <div className="flex flex-col gap-1.5 flex-1">
                                 <Skeleton className="h-4 w-3/4" />
                                 <Skeleton className="h-3 w-1/2 opacity-60" />
