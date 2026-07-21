@@ -38,8 +38,8 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
     },
     sourceDest: {
         key: "from_account",
-        type: "sourceDest",
-        label: "Origen / Destino",
+        type: "text",
+        label: "Flujo",
         get: (m) => {
             const isTransferOrAdj = m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT'
             let source = m.from_account_name || m.partner_name || 'Origen'
@@ -54,13 +54,7 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
                 source = m.from_account_name || 'Origen'
                 dest = m.to_account_name || 'Destino'
             }
-            const sourceEntity = m.movement_type === 'INBOUND'
-                ? (m.partner_id ? { label: source, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
-                : (m.from_account ? { label: source, entityLabel: 'treasury.treasuryaccount', id: m.from_account } : undefined)
-            const destEntity = m.movement_type === 'OUTBOUND'
-                ? (m.partner_id ? { label: dest, entityLabel: 'contacts.contact', id: m.partner_id } : undefined)
-                : (m.to_account ? { label: dest, entityLabel: 'treasury.treasuryaccount', id: m.to_account } : undefined)
-            return { source, dest, sourceEntity, destEntity }
+            return `${source} → ${dest}`
         },
     },
     amount: {
