@@ -143,6 +143,7 @@ export function PurchaseInvoicesClientView({ createAction }: Props) {
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="billing.invoice"
+                    defaultView="card"
                     columns={columns}
                     data={documents}
                     isLoading={isLoading}

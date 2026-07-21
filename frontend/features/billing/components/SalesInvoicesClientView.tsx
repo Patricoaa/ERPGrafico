@@ -105,6 +105,7 @@ export function SalesInvoicesClientView() {
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="billing.invoice"
+                    defaultView="card"
                     columns={columns}
                     data={invoices}
                     isLoading={isLoading}

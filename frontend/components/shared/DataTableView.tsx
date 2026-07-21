@@ -31,6 +31,7 @@ interface DataTableViewProps<TData, TValue>
     "viewOptions" | "currentView" | "onViewChange" | "renderCustomView" | "renderLoadingView" | "sortOptions"
   > {
   entityLabel: string
+  defaultView?: string
   renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
   renderLoadingView?: () => React.ReactNode
   renderCard?: (data: TData, row: Row<TData>, table?: ReactTable<TData>) => React.ReactNode
@@ -45,6 +46,7 @@ interface DataTableViewProps<TData, TValue>
 
 export function DataTableView<TData, TValue>({
   entityLabel,
+  defaultView,
   renderCustomView: externalRenderCustomView,
   renderLoadingView: externalLoadingView,
   renderCard,
@@ -58,7 +60,7 @@ export function DataTableView<TData, TValue>({
 }: DataTableViewProps<TData, TValue>) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
 
-  const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel)
+  const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel, defaultView)
   const hasBulkActions = !!(dataTableProps.bulkActions?.length || dataTableProps.bulkDock)
 
   const derivedCardGroupBy = useMemo((): CardGroupByDef | undefined => {
