@@ -144,29 +144,6 @@ function ProductGridComponent({
                                 </div>
                             )}
 
-                            {/* Favorite Toggle — rich density only */}
-                            {isRich && onToggleFavorite && (
-                                <Button
-                                    variant="ghost"
-                                    className={cn(
-                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
-                                        product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
-                                    )}
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onToggleFavorite(product.id)
-                                    }}
-                                    title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
-                                >
-                                    <Heart
-                                        className={cn(
-                                            "h-3.5 w-3.5 transition-colors",
-                                            product.is_favorite ? "fill-current" : ""
-                                        )}
-                                    />
-                                </Button>
-                            )}
-
                             {/* Availability Badge — hidden on minimal density */}
                             {!isMinimal && (
                                 <div className="absolute top-2 right-2 flex flex-col gap-2 items-end z-20">
@@ -208,9 +185,7 @@ function ProductGridComponent({
                                     {(product.product_type === 'SERVICE' ||
                                         product.product_type === 'SUBSCRIPTION' ||
                                         product.product_type === 'CONSUMABLE') && (
-                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border">
-                                            <div className="h-2 w-2 rounded-full bg-success" />
-                                        </div>
+                                        <AvailabilityBadge available={true} label="Disponible" />
                                     )}
                                 </div>
                             )}
@@ -223,13 +198,36 @@ function ProductGridComponent({
                                 isRich ? "pt-3 pb-1 px-1" : "pt-2 pb-1 px-1",
                                 isTouchPOS && isRich && "pt-4"
                             )}>
-                                {/* Product Name — primary element */}
-                                <div className={cn(
-                                    "font-semibold text-left leading-tight",
-                                    isRich ? "text-sm line-clamp-2" : "text-xs line-clamp-1",
-                                    isTouchPOS && isRich && "text-base"
-                                )}>
-                                    {product.name}
+                                {/* Footer row: favorite + product name */}
+                                <div className="flex items-start gap-1.5">
+                                    {isRich && onToggleFavorite && (
+                                        <Button
+                                            variant="ghost"
+                                            className={cn(
+                                                "shrink-0 flex h-5 w-5 items-center justify-center rounded-sm transition-all p-0 mt-0.5",
+                                                product.is_favorite ? "text-destructive" : "text-muted-foreground/40 hover:text-muted-foreground"
+                                            )}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onToggleFavorite(product.id)
+                                            }}
+                                            title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
+                                        >
+                                            <Heart
+                                                className={cn(
+                                                    "h-3.5 w-3.5 transition-colors",
+                                                    product.is_favorite ? "fill-current" : ""
+                                                )}
+                                            />
+                                        </Button>
+                                    )}
+                                    <div className={cn(
+                                        "font-semibold text-left leading-tight flex-1 min-w-0",
+                                        isRich ? "text-sm line-clamp-2" : "text-xs line-clamp-1",
+                                        isTouchPOS && isRich && "text-base"
+                                    )}>
+                                        {product.name}
+                                    </div>
                                 </div>
 
                                 {/* Price Section — own line below name */}
