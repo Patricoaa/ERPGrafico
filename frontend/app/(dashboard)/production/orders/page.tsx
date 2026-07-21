@@ -16,12 +16,12 @@ export default async function WorkOrdersPage({ searchParams }: PageProps) {
     let initialOrders: WorkOrder[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialOrders = await serverFetch<WorkOrder[]>('production/orders/', {
+            initialOrders = (await serverFetch<{ results: WorkOrder[] }>('production/orders/', {
                 params: {
                     page_size: '200',
                 },
                 revalidate: 10,
-            })
+            })).results
         } catch {
             // Client-side fetch handles fallback
         }
