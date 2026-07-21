@@ -6,6 +6,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { Building2, User as UserIcon } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -195,9 +196,11 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 data={contact}
                                 fields={contactFields}
                                 entityLabel="contacts.contact"
+                                icon={getEntityIcon('contacts.contact')}
+                                iconClassName="text-primary bg-primary/10"
+                                subtitle={<><contact.name /><ContactRoleIcons contact={contact} /></>}
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
-
                             />
                         )}
                     />
