@@ -1,13 +1,17 @@
 import { createEntityFields } from "@/components/shared"
 import type { Invoice } from "./types"
 import { DomainHubStatus } from "@/components/shared"
+import { getDtePrefix } from "@/lib/entity-registry"
 
 export const salesInvoiceFields = createEntityFields<Invoice>()({
     displayId: {
         key: "display_id",
         type: "code",
         label: "Folio",
-        get: (inv) => inv.display_id ?? inv.number,
+        get: (inv) => {
+            const id = inv.display_id ?? inv.number
+            return id ? `${getDtePrefix(inv.dte_type)}-${id}` : '-'
+        },
     },
     invoiceDate: {
         key: "date",
