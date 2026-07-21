@@ -163,6 +163,43 @@ function ProductGridComponent({
                                     />
                                 </Button>
                             )}
+
+                            {/* Availability Badge — top-left of image, hidden on minimal */}
+                            {!isMinimal && (
+                                <div className="absolute top-2 left-2 z-20">
+                                    {product.product_type === 'STORABLE' && (
+                                        <AvailabilityBadge available={hasQty} label={String(qty)} />
+                                    )}
+                                    {isManufacturable && mfgSubType === 'SIMPLE' && (
+                                        <AvailabilityBadge available={hasQty} label={String(qty)} />
+                                    )}
+                                    {isManufacturable && mfgSubType === 'EXPRESS' && (
+                                        !product.has_bom ? (
+                                            <BadgeChip label="Sin receta" />
+                                        ) : (
+                                            <AvailabilityBadge
+                                                available={(product.manufacturable_quantity ?? 0) > 0}
+                                                label={`${product.manufacturable_quantity ?? 0} fab.`}
+                                            />
+                                        )
+                                    )}
+                                    {isManufacturable && mfgSubType === 'ADVANCED' && (
+                                        product.has_bom ? (
+                                            <AvailabilityBadge
+                                                available={(product.manufacturable_quantity ?? 0) > 0}
+                                                label={`${product.manufacturable_quantity ?? 0} fab.`}
+                                            />
+                                        ) : (
+                                            <BadgeChip label="Sin receta" />
+                                        )
+                                    )}
+                                    {(product.product_type === 'SERVICE' ||
+                                        product.product_type === 'SUBSCRIPTION' ||
+                                        product.product_type === 'CONSUMABLE') && (
+                                        <AvailabilityBadge available={true} label="Disponible" />
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Info Area */}
@@ -205,43 +242,6 @@ function ProductGridComponent({
                                         </div>
                                     )}
                                 </div>
-
-                                {/* Badge row — below name */}
-                                {!isMinimal && (
-                                    <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                        {product.product_type === 'STORABLE' && (
-                                            <AvailabilityBadge available={hasQty} label={String(qty)} />
-                                        )}
-                                        {isManufacturable && mfgSubType === 'SIMPLE' && (
-                                            <AvailabilityBadge available={hasQty} label={String(qty)} />
-                                        )}
-                                        {isManufacturable && mfgSubType === 'EXPRESS' && (
-                                            !product.has_bom ? (
-                                                <BadgeChip label="Sin receta" />
-                                            ) : (
-                                                <AvailabilityBadge
-                                                    available={(product.manufacturable_quantity ?? 0) > 0}
-                                                    label={`${product.manufacturable_quantity ?? 0} fab.`}
-                                                />
-                                            )
-                                        )}
-                                        {isManufacturable && mfgSubType === 'ADVANCED' && (
-                                            product.has_bom ? (
-                                                <AvailabilityBadge
-                                                    available={(product.manufacturable_quantity ?? 0) > 0}
-                                                    label={`${product.manufacturable_quantity ?? 0} fab.`}
-                                                />
-                                            ) : (
-                                                <BadgeChip label="Sin receta" />
-                                            )
-                                        )}
-                                        {(product.product_type === 'SERVICE' ||
-                                            product.product_type === 'SUBSCRIPTION' ||
-                                            product.product_type === 'CONSUMABLE') && (
-                                            <AvailabilityBadge available={true} label="Disponible" />
-                                        )}
-                                    </div>
-                                )}
                             </div>
                         ) : (
                             /* Minimal: name only, tight */
