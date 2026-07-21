@@ -1,4 +1,5 @@
 import { createEntityFields } from "@/components/shared"
+import { translateStatus } from "@/lib/utils"
 import type { JournalEntry } from "@/features/accounting"
 
 export const journalEntryFields = createEntityFields<JournalEntry>()({
@@ -45,4 +46,19 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
         label: "Total Débito",
         get: (e) => e.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0,
     },
-}, { title: { field: 'display_id' } })
+}, {
+    title: { field: 'display_id' },
+    subtitle: {
+        renderer: (e) => {
+            const origin = e.is_manual ? "Manual" : e.reversal_of ? "Reversión" : "Automático"
+            const originIntent = e.is_manual ? "neutral" : e.reversal_of ? "warning" : "info"
+            return [
+                { kind: 'date', value: e.date },
+                { kind: 'separator' },
+                { kind: 'chip', content: origin, intent: originIntent },
+                { kind: 'separator' },
+                { kind: 'status', label: translateStatus(e.status), status: e.status },
+            ]
+        },
+    },
+})

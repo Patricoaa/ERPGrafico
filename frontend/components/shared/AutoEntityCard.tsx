@@ -387,12 +387,15 @@ export function AutoEntityCard<TData>({
     const showHeaderLabels = classified.header.length > 1
     const headerContent = classified.header.length > 0 && (
         <div className="flex items-center gap-4">
-            {classified.header.map(f => (
-                <div key={f.key} className={cn(showHeaderLabels ? "flex flex-col items-end" : "flex items-end gap-1.5", f.cardClassName)}>
-                    {showHeaderLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
-                    <span className="text-xs font-semibold">{f.value ?? <span className="opacity-40">—</span>}</span>
-                </div>
-            ))}
+            {classified.header.map(f => {
+                const isEmpty = f.value == null || f.value === '' || (Array.isArray(f.value) && f.value.length === 0)
+                return (
+                    <div key={f.key} className={cn(showHeaderLabels ? "flex flex-col items-end" : "flex items-end gap-1.5", f.cardClassName)}>
+                        {showHeaderLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
+                        <span className="text-xs font-semibold">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
+                    </div>
+                )
+            })}
         </div>
     )
 
@@ -407,12 +410,15 @@ export function AutoEntityCard<TData>({
     const showCenterLabels = classified.centerDetail.length > 1
     const centerDetailNode = classified.centerDetail.length > 0 && (
         <div className="flex items-center gap-4 min-w-0">
-            {classified.centerDetail.map(f => (
-                <div key={f.key} className={cn(showCenterLabels ? "flex flex-col items-end min-w-0" : "flex items-end gap-1.5 min-w-0", f.cardClassName)}>
-                    {showCenterLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
-                    <span className="text-xs font-normal truncate min-w-0 [&>*]:text-xs [&>*]:font-normal">{f.value ?? <span className="opacity-40">—</span>}</span>
-                </div>
-            ))}
+            {classified.centerDetail.map(f => {
+                const isEmpty = f.value == null || f.value === '' || (Array.isArray(f.value) && f.value.length === 0)
+                return (
+                    <div key={f.key} className={cn(showCenterLabels ? "flex flex-col items-end min-w-0" : "flex items-end gap-1.5 min-w-0", f.cardClassName)}>
+                        {showCenterLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
+                        <span className="text-xs font-normal truncate min-w-0 [&>*]:text-xs [&>*]:font-normal">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
+                    </div>
+                )
+            })}
         </div>
     )
 
