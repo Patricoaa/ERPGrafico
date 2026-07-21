@@ -8,7 +8,7 @@ import { ProductGrid } from './ProductGrid'
 import { CategoryDropdown } from './CategoryDropdown'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import type { BaseProduct, ProductCategory } from '@/features/inventory'
-import type { SharedStockLimits } from './ProductGrid'
+import type { SharedStockLimits, CardDensity } from './ProductGrid'
 
 export interface ProductSelectorProps {
     products: BaseProduct[]
@@ -31,6 +31,8 @@ export interface ProductSelectorProps {
     priceRenderer?: (product: BaseProduct) => React.ReactNode
     /** IDs of selected products (in cart, calculator, etc). Shows CMY ribbon on each. */
     selectedProductIds?: Set<number>
+    /** Controls card density. Passed through to ProductGrid. */
+    density?: CardDensity
 }
 
 export function ProductSelector({
@@ -46,9 +48,11 @@ export function ProductSelector({
     isProductDisabled,
     limits,
     priceRenderer,
-    selectedProductIds
+    selectedProductIds,
+    density
 }: ProductSelectorProps) {
     const { isDesktop } = useDeviceContext()
+    const hasCategories = categories.length > 0
 
     return (
         <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
@@ -57,7 +61,7 @@ export function ProductSelector({
                     value={searchTerm}
                     onChange={onSearchChange}
                     onEnter={onSearchEnter}
-                    rightAction={isDesktop ? (
+                    rightAction={isDesktop && hasCategories ? (
                         <CategoryDropdown
                             categories={categories}
                             selectedCategoryId={selectedCategoryId}
@@ -65,7 +69,7 @@ export function ProductSelector({
                         />
                     ) : undefined}
                 />
-                {!isDesktop && (
+                {!isDesktop && hasCategories && (
                     <CategoryFilter
                         categories={categories}
                         selectedCategoryId={selectedCategoryId}
@@ -83,6 +87,7 @@ export function ProductSelector({
                     onToggleFavorite={onToggleFavorite}
                     priceRenderer={priceRenderer}
                     selectedProductIds={selectedProductIds}
+                    density={density}
                 />
             </div>
         </Card>
