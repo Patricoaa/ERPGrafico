@@ -210,10 +210,7 @@ function ProductGridComponent({
                                     {isRich && onToggleFavorite && (
                                         <Button
                                             variant="ghost"
-                                            className={cn(
-                                                "shrink-0 flex h-5 w-5 items-center justify-center rounded-sm transition-all p-0 mt-0.5",
-                                                product.is_favorite ? "text-destructive" : "text-muted-foreground/40 hover:text-muted-foreground"
-                                            )}
+                                            className="shrink-0 flex items-center justify-center transition-all p-0 m-0 h-auto w-auto bg-transparent border-none shadow-none text-muted-foreground/20 hover:text-muted-foreground"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 onToggleFavorite(product.id)
@@ -222,8 +219,8 @@ function ProductGridComponent({
                                         >
                                             <Heart
                                                 className={cn(
-                                                    "h-3.5 w-3.5 transition-colors",
-                                                    product.is_favorite ? "fill-current" : ""
+                                                    "h-4 w-4 transition-colors",
+                                                    product.is_favorite ? "fill-destructive text-destructive" : ""
                                                 )}
                                             />
                                         </Button>
