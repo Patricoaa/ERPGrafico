@@ -235,10 +235,6 @@ function classifyFields<TData>(
     const header = sortedCandidates.slice(0, maxHeader)
     const headerOverflow = sortedCandidates.slice(maxHeader)
 
-    // ── Flows (center of header) ───────────────────────────────────────────────
-    const flows = header.filter(f => f.fieldRole === 'flow')
-    const headerWithoutFlow = header.filter(f => f.fieldRole !== 'flow')
-
     // ── Metric: ONLY explicit progress fields ─────────────────────────────────
     // All header overflow cascades to centerDetail — metric is a final fallback
     // exclusively for progress bars (cardPlacement: 'metric').
@@ -283,13 +279,13 @@ function classifyFields<TData>(
             break
     }
 
-    // Center routing: flows + ALL detail fields always go to the header center slot.
+    // Center routing: ALL detail fields go to the header center slot.
     // bodyDetail is always empty — 'detail' cardPlacement is now semantically 'center header'.
     // EntityCard.Body is no longer driven by auto-classification.
-    const centerDetail = [...flows, ...detail]
+    const centerDetail = [...detail]
     const bodyDetail: CardField[] = []
 
-    return { title, header: headerWithoutFlow, centerDetail, bodyDetail, metric, footer }
+    return { title, header, centerDetail, bodyDetail, metric, footer }
 }
 
 
