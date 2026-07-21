@@ -208,7 +208,9 @@ function ProductGridComponent({
                                     {(product.product_type === 'SERVICE' ||
                                         product.product_type === 'SUBSCRIPTION' ||
                                         product.product_type === 'CONSUMABLE') && (
-                                        <AvailabilityBadge available={true} label="Disponible" />
+                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border">
+                                            <div className="h-2 w-2 rounded-full bg-success" />
+                                        </div>
                                     )}
                                 </div>
                             )}
