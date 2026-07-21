@@ -27,11 +27,6 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         ),
         tableOptions: { width: 180, align: "center", enableSorting: false },
     },
-    status: {
-        key: "status",
-        type: "status",
-        label: "Estado",
-    },
     dteType: {
         key: "dte_type_display",
         type: "chip",
