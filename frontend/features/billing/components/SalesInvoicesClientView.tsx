@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import {ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DomainHubStatus} from '@/components/shared'
+import {ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { GitBranch } from "lucide-react"
@@ -153,7 +153,6 @@ export function SalesInvoicesClientView() {
                                                 ))}
                                             </div>
                                         )}
-                                        <DomainHubStatus label={label} data={hubD} />
                                     </div>
                                     )
                                 }}

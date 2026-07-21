@@ -7,6 +7,7 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         key: "display_id",
         type: "code",
         label: "Folio",
+        get: (inv) => inv.display_id ?? inv.number,
     },
     invoiceDate: {
         key: "date",
