@@ -160,6 +160,7 @@ export function UnifiedSearchBar({
                 <input
                   ref={inputRef}
                   type="text"
+                  autoComplete="off"
                   value={inputValue}
                   onChange={(e) => { setForceFilters(false); onInputChange(e.target.value) }}
                   onKeyDown={handleKeyDown}
