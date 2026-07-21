@@ -198,8 +198,15 @@ function ProductGridComponent({
                                 isRich ? "pt-3 pb-1 px-1" : "pt-2 pb-1 px-1",
                                 isTouchPOS && isRich && "pt-4"
                             )}>
-                                {/* Footer row: favorite + product name */}
+                                {/* Footer row: product name + favorite */}
                                 <div className="flex items-start gap-1.5">
+                                    <div className={cn(
+                                        "font-semibold text-left leading-tight flex-1 min-w-0",
+                                        isRich ? "text-sm line-clamp-2" : "text-xs line-clamp-1",
+                                        isTouchPOS && isRich && "text-base"
+                                    )}>
+                                        {product.name}
+                                    </div>
                                     {isRich && onToggleFavorite && (
                                         <Button
                                             variant="ghost"
@@ -221,13 +228,6 @@ function ProductGridComponent({
                                             />
                                         </Button>
                                     )}
-                                    <div className={cn(
-                                        "font-semibold text-left leading-tight flex-1 min-w-0",
-                                        isRich ? "text-sm line-clamp-2" : "text-xs line-clamp-1",
-                                        isTouchPOS && isRich && "text-base"
-                                    )}>
-                                        {product.name}
-                                    </div>
                                 </div>
 
                                 {/* Price Section — own line below name */}
