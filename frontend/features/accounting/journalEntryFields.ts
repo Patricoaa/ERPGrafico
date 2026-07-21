@@ -16,6 +16,7 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
         key: "is_manual",
         type: "chip",
         label: "Origen",
+        cardPlacement: 'subtitle',
         get: (e) => {
             if (e.is_manual) return "Manual"
             if (e.reversal_of) return "Reversión"

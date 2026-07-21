@@ -845,14 +845,13 @@ export function createEntityFields<T>(): (
             // Secondary slots: relation (1), temporal (1), primary-value (1)
             // 'tag' excluded — tag fields have cardPlacement:'header' and belong in header trailing
             const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
+            const consumedKeys = new Set<string>(nameDef ? [nameDef.key] : [])
             for (const slotRole of slotRoles) {
                 if (items.length >= 4) break
-                // Skip primary-value if it's already covered by a name field
                 const candidate = allDefs.find(d => {
-                    if (nameDef && d.key === nameDef.key) return false
+                    if (consumedKeys.has(d.key)) return false
                     const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
                     if (r !== slotRole) return false
-                    // Currency: only if key contains 'total'
                     if (d.type === 'currency' && !/total/i.test(d.key)) return false
                     return true
                 })
@@ -869,15 +868,31 @@ export function createEntityFields<T>(): (
                                 ? String(candidate.getLabel(entity))
                                 : translateStatus(String(raw))
                             items.push({ kind: 'status', status: String(raw), label })
-                        } else if (slotRole === 'tag') {
-                            const chipValue = candidate.get ? String(candidate.get(entity) ?? raw) : String(raw)
-                            const chipIntent = typeof candidate.intent === 'function'
-                                ? candidate.intent(entity)
-                                : candidate.intent
-                            items.push({ kind: 'chip', content: chipValue, intent: chipIntent })
                         } else {
                             items.push({ kind: 'text', content: String(raw) })
                         }
+                        consumedKeys.add(candidate.key)
+                    }
+                }
+            }
+
+            // Explicit cardPlacement:'subtitle' fields not yet consumed by role-based slots
+            const explicitSubtitleFields = allDefs.filter(d =>
+                d.cardPlacement === 'subtitle' && !consumedKeys.has(d.key)
+            )
+            for (const d of explicitSubtitleFields) {
+                if (items.length >= 4) break
+                const raw = entity[d.key as keyof T]
+                if (raw != null && raw !== '') {
+                    if (items.length > 0) items.push({ kind: 'separator' })
+                    if (d.type === 'chip' || d.type === 'chip-category') {
+                        const chipValue = d.get ? String(d.get(entity) ?? raw) : String(raw)
+                        const chipIntent = typeof d.intent === 'function'
+                            ? d.intent(entity)
+                            : d.intent
+                        items.push({ kind: 'chip', content: chipValue, intent: chipIntent })
+                    } else {
+                        items.push({ kind: 'text', content: String(raw) })
                     }
                 }
             }
@@ -930,6 +945,16 @@ export function createEntityFields<T>(): (
                         keys.add(candidate.key)
                         slotsFilled++
                     }
+                }
+
+                // Explicit cardPlacement:'subtitle' fields (same as resolveSubtitle Priority 4)
+                const explicitSubtitleFields = allDefs.filter(d =>
+                    d.cardPlacement === 'subtitle' && !keys.has(d.key)
+                )
+                for (const d of explicitSubtitleFields) {
+                    if (slotsFilled >= 4) break
+                    keys.add(d.key)
+                    slotsFilled++
                 }
             }
 
