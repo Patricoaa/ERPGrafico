@@ -842,8 +842,9 @@ export function createEntityFields<T>(): (
                 if (raw != null && raw !== '') items.push({ kind: 'text', content: String(raw) })
             }
 
-            // Secondary slots: relation (1), temporal (1), primary-value (1), tag (1)
-            const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value', 'tag']
+            // Secondary slots: relation (1), temporal (1), primary-value (1)
+            // 'tag' excluded — tag fields have cardPlacement:'header' and belong in header trailing
+            const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
             for (const slotRole of slotRoles) {
                 if (items.length >= 4) break
                 // Skip primary-value if it's already covered by a name field
@@ -912,9 +913,10 @@ export function createEntityFields<T>(): (
                 })
                 if (nameDef) keys.add(nameDef.key)
 
-                // Slots 2-4: relation, temporal, primary-value, tag (max 1 each, up to total 4 tokens)
+                // Slots 2-4: relation, temporal, primary-value (max 1 each, up to total 4 tokens)
+                // 'tag' excluded — tag fields have cardPlacement:'header' and belong in header trailing
                 let slotsFilled = nameDef ? 1 : 0
-                const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value', 'tag']
+                const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
                 for (const slotRole of slotRoles) {
                     if (slotsFilled >= 4) break
                     const candidate = allDefs.find(d => {

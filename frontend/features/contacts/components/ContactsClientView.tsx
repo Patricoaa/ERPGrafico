@@ -198,7 +198,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
                                 entityLabel="contacts.contact"
                                 icon={getEntityIcon('contacts.contact')}
                                 iconClassName="text-primary bg-primary/10"
-                                subtitle={<><contact.name /><ContactRoleIcons contact={contact} /></>}
                                 actions={contactActions.render(contact, actionsCtx)}
                                 defaultAction={contactActions.defaultAction(actionsCtx)?.(contact) ?? (() => openSelected(contact.id))}
                             />

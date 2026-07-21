@@ -350,6 +350,17 @@ describe("createEntityFields", () => {
             const subtitle = fields.resolveSubtitle(entityNoName)
             expect(subtitle.length).toBeGreaterThan(0)
         })
+
+        it("resolveSubtitle does not consume tag-role fields as subtitle slots", () => {
+            const fields = createEntityFields<{ name: string; roles: string[] }>()({
+                name: { key: "name", type: "text", label: "Nombre" },
+                roles: { key: "roles", type: "chip-category", label: "Roles", domain: "contact_type",
+                         get: (e) => e.roles },
+            })
+            const subtitle = fields.resolveSubtitle({ name: "Test", roles: ["admin"] })
+            expect(subtitle).toHaveLength(1)
+            expect(subtitle[0].kind).toBe("text")
+        })
     })
 
     describe("getSubtitleExcludeKeys", () => {
@@ -382,6 +393,17 @@ describe("createEntityFields", () => {
             })
             const keys = fields.getSubtitleExcludeKeys()
             expect(keys.size).toBe(0)
+        })
+
+        it("does not exclude tag-role keys from subtitle exclude set", () => {
+            const fields = createEntityFields<{ name: string; roles: string[] }>()({
+                name: { key: "name", type: "text", label: "Nombre" },
+                roles: { key: "roles", type: "chip-category", label: "Roles", domain: "contact_type",
+                         get: (e) => e.roles },
+            })
+            const keys = fields.getSubtitleExcludeKeys()
+            expect(keys.has("name")).toBe(true)
+            expect(keys.has("roles")).toBe(false)
         })
     })
 
