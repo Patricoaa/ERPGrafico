@@ -42,10 +42,4 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
         label: "Monto",
         direction: (m) => m.movement_type === "OUTBOUND" ? "outflow" : "inflow",
     },
-    origin: {
-        key: "pos_session",
-        type: "text",
-        label: "Origen / Sistema",
-        get: (m) => m.pos_session ? `POS #${m.pos_session}` : "SISTEMA",
-    },
 })
