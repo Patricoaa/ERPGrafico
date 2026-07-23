@@ -275,8 +275,6 @@ export type EntityFieldsReturn<T> = {
     resolveTitle: (entity: T) => ReactNode
     /** Resolve card subtitle from meta.subtitle config. Returns SubtitleItem[] for EntityCard.Subtitle. */
     resolveSubtitle: (entity: T) => SubtitleItem[]
-    /** Field keys referenced by subtitle config — to exclude from other card layout zones. */
-    getSubtitleExcludeKeys: () => Set<string>
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -729,6 +727,27 @@ export function createEntityFields<T>(): (
                     }
                 })
 
+            // ── Cascade resolution — enforce capacity per zone ──────────────
+            // When a zone exceeds its capacity, overflow cascades to the next zone.
+            // This ensures every field ends up in a visible zone.
+            const CAP: Record<CardPlacement, number> = {
+                title: 1, subtitle: 1, header: 3,
+                detail: 10, metric: 1, footer: Infinity,
+            }
+            const CASCADE_NEXT: Record<CardPlacement, CardPlacement> = {
+                title: 'subtitle', subtitle: 'detail', header: 'detail',
+                detail: 'metric', metric: 'footer', footer: 'footer',
+            }
+            for (const zone of ['title', 'subtitle', 'header', 'detail', 'metric'] as const) {
+                const inZone = fields.filter(f => f.cardPlacement === zone)
+                if (inZone.length <= CAP[zone]) continue
+                const overflow = inZone.slice(CAP[zone])
+                for (const f of overflow) {
+                    f.cardPlacement = CASCADE_NEXT[zone]
+                    if (zone === 'subtitle') f.fieldRole = 'descriptive'
+                }
+            }
+
             // Ensure exactly one title — fallback chain:
             // 1. Any field already set to 'title'
             // 2. First 'identifier' role field in the list
@@ -898,67 +917,6 @@ export function createEntityFields<T>(): (
             }
 
             return items
-        },
-
-        getSubtitleExcludeKeys: (): Set<string> => {
-            const keys = new Set<string>()
-
-            // ── Explicit meta config ──────────────────────────────────────────
-            if (meta?.subtitle?.field) keys.add(meta.subtitle.field)
-            if (meta?.subtitle?.excludeKeys) {
-                for (const k of meta.subtitle.excludeKeys) keys.add(k)
-            }
-            if (meta?.subtitle?.template) {
-                for (const k of Array.from(extractTemplateKeys(meta.subtitle.template))) keys.add(k)
-            }
-            if (meta?.subtitle?.suffixTemplate) {
-                for (const k of Array.from(extractTemplateKeys(meta.subtitle.suffixTemplate))) keys.add(k)
-            }
-
-            // ── Auto-composition mirror (Priority 4 of resolveSubtitle) ───────
-            // When no meta is configured, resolveSubtitle() auto-picks fields by role.
-            // We must exclude those same keys here so they don't also appear in centerDetail.
-            if (!meta?.subtitle?.field && !meta?.subtitle?.template && !meta?.subtitle?.renderer) {
-                const allDefs = Object.values(defs)
-
-                // Slot 1: primary-label (key with 'name')
-                const nameDef = allDefs.find(d => {
-                    const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
-                    return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
-                })
-                if (nameDef) keys.add(nameDef.key)
-
-                // Slots 2-4: relation, temporal, primary-value (max 1 each, up to total 4 tokens)
-                // 'tag' excluded — tag fields have cardPlacement:'header' and belong in header trailing
-                let slotsFilled = nameDef ? 1 : 0
-                const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
-                for (const slotRole of slotRoles) {
-                    if (slotsFilled >= 4) break
-                    const candidate = allDefs.find(d => {
-                        if (nameDef && d.key === nameDef.key) return false
-                        const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
-                        if (r !== slotRole) return false
-                        if (d.type === 'currency' && !/total/i.test(d.key)) return false
-                        return true
-                    })
-                    if (candidate) {
-                        keys.add(candidate.key)
-                        slotsFilled++
-                    }
-                }
-
-                // Explicit cardPlacement:'subtitle' fields (same as resolveSubtitle Priority 4)
-                const explicitSubtitleFields = allDefs.filter(d =>
-                    d.cardPlacement === 'subtitle' && !keys.has(d.key)
-                )
-                for (const d of explicitSubtitleFields) {
-                    if (slotsFilled >= 4) break
-                    keys.add(d.key)
-                    slotsFilled++
-                }
-            }
-
-            return keys
         },
 
     })
