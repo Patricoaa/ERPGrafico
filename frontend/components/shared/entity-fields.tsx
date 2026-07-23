@@ -677,6 +677,8 @@ export function createEntityFields<T>(): (
          * 4. Auto-title: identifier with key matching /id|display/ preferred; plain identifier fallback
          * 5. Auto-subtitle (exclusive): text/descriptive field whose key matches /name/ → 'subtitle' (blocks title)
          * 6. Explicit fieldRole / cardPlacement on FieldDef always wins
+         * 7. Cascade resolution: enforce capacity per zone (title:1, subtitle:1, header:3, detail:10),
+         *    overflow cascades to next zone (title→subtitle→detail→metric→footer)
          */
         toCardFields: (entity: T, opts?: { only?: string[] }): CardField[] => {
             const allowed = opts?.only
@@ -727,9 +729,19 @@ export function createEntityFields<T>(): (
                     }
                 })
 
-            // ── Cascade resolution — enforce capacity per zone ──────────────
-            // When a zone exceeds its capacity, overflow cascades to the next zone.
-            // This ensures every field ends up in a visible zone.
+            // Ensure exactly one title — fallback chain:
+            // 1. Any field already set to 'title'
+            // 2. First 'identifier' role field in the list
+            // 3. Absolute first field
+            const hasTitle = fields.some(f => f.cardPlacement === 'title')
+            if (!hasTitle && fields.length > 0) {
+                const titleCandidate =
+                    fields.find(f => f.fieldRole === 'identifier') ?? fields[0]
+                titleCandidate.cardPlacement = 'title'
+            }
+
+            // ── Cascade resolution — enforce capacity per zone, overflow to next zone ──
+            // Cascade order: title → subtitle → detail → metric → footer
             const CAP: Record<CardPlacement, number> = {
                 title: 1, subtitle: 1, header: 3,
                 detail: 10, metric: 1, footer: Infinity,
@@ -746,17 +758,6 @@ export function createEntityFields<T>(): (
                     f.cardPlacement = CASCADE_NEXT[zone]
                     if (zone === 'subtitle') f.fieldRole = 'descriptive'
                 }
-            }
-
-            // Ensure exactly one title — fallback chain:
-            // 1. Any field already set to 'title'
-            // 2. First 'identifier' role field in the list
-            // 3. Absolute first field
-            const hasTitle = fields.some(f => f.cardPlacement === 'title')
-            if (!hasTitle && fields.length > 0) {
-                const titleCandidate =
-                    fields.find(f => f.fieldRole === 'identifier') ?? fields[0]
-                titleCandidate.cardPlacement = 'title'
             }
 
             return fields
