@@ -36,27 +36,6 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
         label: "Método",
         get: (m) => m.payment_method_display ?? m.payment_method ?? "",
     },
-    sourceDest: {
-        key: "from_account",
-        type: "text",
-        label: "Flujo",
-        get: (m) => {
-            const isTransferOrAdj = m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT'
-            let source = m.from_account_name || m.partner_name || 'Origen'
-            let dest = m.to_account_name || m.partner_name || 'Destino'
-            if (m.movement_type === 'INBOUND') {
-                source = m.partner_name || 'Particular'
-                dest = m.to_account_name || 'Caja'
-            } else if (m.movement_type === 'OUTBOUND') {
-                source = m.from_account_name || 'Caja'
-                dest = m.partner_name || 'Particular'
-            } else if (isTransferOrAdj) {
-                source = m.from_account_name || 'Origen'
-                dest = m.to_account_name || 'Destino'
-            }
-            return `${source} → ${dest}`
-        },
-    },
     amount: {
         key: "amount",
         type: "currencyFlow",
