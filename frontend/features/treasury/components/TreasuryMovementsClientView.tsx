@@ -167,7 +167,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     }
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
-        ...movementFields.toColumns(),
+        ...movementFields.toColumns({ exclude: ["sourceDest"] }),
         flowColumn,
         treasuryMovementActions.auto(actionsCtx)
     ], [openEntity, handleViewDetails])
@@ -242,7 +242,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     renderCard={(m) => {
                         const type = m.movement_type
                         const isWriteOff = m.payment_method === 'WRITE_OFF'
-                        const isTransferOrAdj = type === 'TRANSFER' || type === 'ADJUSTMENT'
 
                         const Icon = isWriteOff
                             ? Ban
@@ -261,20 +260,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 : type === 'OUTBOUND'
                                     ? "text-destructive bg-destructive/10"
                                     : "text-warning bg-warning/10"
-
-                        let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
-                        let destLabel = m.to_account_name || m.partner_name || 'Destino'
-
-                        if (type === 'INBOUND') {
-                            sourceLabel = m.partner_name || 'Particular'
-                            destLabel = m.to_account_name || 'Caja'
-                        } else if (type === 'OUTBOUND') {
-                            sourceLabel = m.from_account_name || 'Caja'
-                            destLabel = m.partner_name || 'Particular'
-                        } else if (isTransferOrAdj) {
-                            sourceLabel = m.from_account_name || 'Origen'
-                            destLabel = m.to_account_name || 'Destino'
-                        }
 
                         return (
                             <AutoEntityCard 
