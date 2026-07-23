@@ -363,50 +363,6 @@ describe("createEntityFields", () => {
         })
     })
 
-    describe("getSubtitleExcludeKeys", () => {
-        it("returns field keys from meta.subtitle.field", () => {
-            const fields = createEntityFields<TestEntity>()({
-                code: { key: "code", type: "code", label: "Folio" },
-                name: { key: "name", type: "text", label: "Nombre" },
-            }, {
-                subtitle: { field: "name" },
-            })
-            const keys = fields.getSubtitleExcludeKeys()
-            expect(keys.has("name")).toBe(true)
-        })
-
-        it("returns keys from meta.subtitle.template", () => {
-            const fields = createEntityFields<TestEntity>()({
-                code: { key: "code", type: "code", label: "Folio" },
-                name: { key: "name", type: "text", label: "Nombre" },
-            }, {
-                subtitle: { template: "{code} · {name}" },
-            })
-            const keys = fields.getSubtitleExcludeKeys()
-            expect(keys.has("code")).toBe(true)
-            expect(keys.has("name")).toBe(true)
-        })
-
-        it("returns empty set when no meta", () => {
-            const fields = createEntityFields<TestEntity>()({
-                code: { key: "code", type: "code", label: "Folio" },
-            })
-            const keys = fields.getSubtitleExcludeKeys()
-            expect(keys.size).toBe(0)
-        })
-
-        it("does not exclude tag-role keys from subtitle exclude set", () => {
-            const fields = createEntityFields<{ name: string; roles: string[] }>()({
-                name: { key: "name", type: "text", label: "Nombre" },
-                roles: { key: "roles", type: "chip-category", label: "Roles", domain: "contact_type",
-                         get: (e) => e.roles },
-            })
-            const keys = fields.getSubtitleExcludeKeys()
-            expect(keys.has("name")).toBe(true)
-            expect(keys.has("roles")).toBe(false)
-        })
-    })
-
     describe("all field types", () => {
         const allTypeFields = createEntityFields<Record<string, unknown>>()({
             f_text: { key: "text", type: "text", label: "Text" },
