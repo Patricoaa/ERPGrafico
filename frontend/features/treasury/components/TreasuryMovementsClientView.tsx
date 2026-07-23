@@ -167,7 +167,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     }
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
-        ...movementFields.toColumns({ exclude: ["sourceDest"] }),
+        ...movementFields.toColumns(),
         flowColumn,
         treasuryMovementActions.auto(actionsCtx)
     ], [openEntity, handleViewDetails])
