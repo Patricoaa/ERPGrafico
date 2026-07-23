@@ -136,6 +136,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                             data={accounts}
                             isLoading={isLoading}
                             variant="embedded"
+                            cardSkeleton={{ showBody: false, showFooter: false }}
                             createAction={activeTab === "accounts" ? createAction : undefined}
                             unifiedSearch={<UnifiedSearchBar
                                 config={treasuryAccountUnifiedSearchDef}
