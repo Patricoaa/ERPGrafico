@@ -145,7 +145,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
     }
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
-        ...movementFields.toColumns(),
+        ...movementFields.toColumns({ exclude: ["sourceDest"] }),
         flowColumn,
         treasuryMovementActions.auto(actionsCtx)
     ], [openEntity, handleViewDetails])

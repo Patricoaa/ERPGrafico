@@ -388,7 +388,7 @@ export function AutoEntityCard<TData>({
                 return (
                     <div key={f.key} className={cn(showHeaderLabels ? "flex flex-col items-end" : "flex items-end gap-1.5", f.cardClassName)}>
                         {showHeaderLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
-                        <span className="text-xs font-semibold">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
+                        <span className="text-xs">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
                     </div>
                 )
             })}
