@@ -36,6 +36,23 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
         label: "Método",
         get: (m) => m.payment_method_display ?? m.payment_method ?? "",
     },
+    sourceDest: {
+        key: "from_account",
+        type: "text",
+        label: "Cuentas",
+        get: (m) => {
+            let source = m.from_account_name || 'Origen'
+            let dest = m.to_account_name || 'Destino'
+            if (m.movement_type === 'INBOUND') {
+                source = m.partner_name || 'Particular'
+                dest = m.to_account_name || 'Caja'
+            } else if (m.movement_type === 'OUTBOUND') {
+                source = m.from_account_name || 'Caja'
+                dest = m.partner_name || 'Particular'
+            }
+            return `${source} → ${dest}`
+        },
+    },
     amount: {
         key: "amount",
         type: "currencyFlow",
