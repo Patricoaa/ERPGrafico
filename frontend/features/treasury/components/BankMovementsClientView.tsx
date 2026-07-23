@@ -1,9 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { DataTableView, AutoEntityCard, DataCell, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowDown } from "lucide-react"
 import { resolveTreasuryMovementIcon } from "@/lib/movement-icons"
 
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
@@ -70,83 +69,8 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
 
     const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
-    const flowColumn: ColumnDef<TreasuryMovement> = {
-        id: "flow",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Flujo" className="justify-center" />,
-        cell: ({ row }) => {
-            const m = row.original;
-            const type = m.movement_type;
-
-            let sourceData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
-            let destData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
-
-            if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                sourceData = {
-                    label: m.from_account_name || 'Origen',
-                    type: 'account',
-                    id: m.from_account_account_id || undefined,
-                    accountCode: m.from_account_code || ''
-                };
-                destData = {
-                    label: m.to_account_name || 'Destino',
-                    type: 'account',
-                    id: m.to_account_account_id || undefined,
-                    accountCode: m.to_account_code || ''
-                };
-            } else if (type === 'INBOUND') {
-                sourceData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
-                destData = {
-                    label: m.to_account_name || 'Caja',
-                    type: 'account',
-                    id: m.to_account_account_id || undefined,
-                    accountCode: m.to_account_code || ''
-                };
-            } else if (type === 'OUTBOUND') {
-                sourceData = {
-                    label: m.from_account_name || 'Caja',
-                    type: 'account',
-                    id: m.from_account_account_id || undefined,
-                    accountCode: m.from_account_code || ''
-                };
-                destData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
-            }
-
-            const EntityLink = ({ data }: { data: typeof sourceData }) => {
-                if (data.type === 'contact' && data.id) {
-                    return (
-                        <DataCell.ContactLink
-                            contactId={data.id}
-                        >
-                            {data.label}
-                        </DataCell.ContactLink>
-                    );
-                }
-                if (data.type === 'account' && data.id) {
-                    const accountId = m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null));
-                    return (
-                        <DataCell.Link
-                            onClick={() => { if (accountId) openEntity('treasury.treasuryaccount', accountId) }}
-                        >
-                            {data.label}
-                        </DataCell.Link>
-                    );
-                }
-                return <DataCell.Text>{data.label}</DataCell.Text>;
-            };
-
-            return (
-                <div className="flex flex-col items-center gap-0.5 py-1 w-full min-w-[120px]">
-                    <EntityLink data={sourceData} />
-                    <ArrowDown className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-                    <EntityLink data={destData} />
-                </div>
-            );
-        },
-    }
-
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
         ...movementFields.toColumns(),
-        flowColumn,
         treasuryMovementActions.auto(actionsCtx)
     ], [openEntity, handleViewDetails])
 
