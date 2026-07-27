@@ -647,7 +647,6 @@ export function POSClientView() {
                         onItemQuantityChange={updateQuantity}
                         onItemUomChange={handleItemUomChange}
                         onItemPriceChange={handleItemPriceChange}
-                        onItemDiscountChange={handleItemDiscountChange}
                         onItemRemove={removeFromCart}
                         onOpenNumpad={handleOpenNumpad}
                         onQuickSale={handleQuickSale}

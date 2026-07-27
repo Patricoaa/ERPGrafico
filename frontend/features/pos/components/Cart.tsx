@@ -45,7 +45,6 @@ interface CartProps {
     onItemQuantityChange: (cartItemId: string, qty: number | string) => void
     onItemUomChange: (cartItemId: string, uomId: number, uomName: string) => void
     onItemPriceChange: (cartItemId: string, priceGross: number) => void
-    onItemDiscountChange: (cartItemId: string, amount: number, percent: number) => void
     onItemRemove: (cartItemId: string) => void
     onOpenNumpad: (cartItemId: string | 'cart', field: 'qty' | 'price' | 'discount', currentValue: number) => void
     onQuickSale: () => void
@@ -78,7 +77,6 @@ export function Cart({
     onItemQuantityChange,
     onItemUomChange,
     onItemPriceChange,
-    onItemDiscountChange,
     onItemRemove,
     onOpenNumpad,
     onQuickSale,
@@ -153,7 +151,6 @@ export function Cart({
                                             onQuantityChange={onItemQuantityChange}
                                             onUomChange={onItemUomChange}
                                             onPriceChange={onItemPriceChange}
-                                            onDiscountChange={onItemDiscountChange}
                                             onRemove={onItemRemove}
                                             onOpenNumpad={onOpenNumpad}
                                             showLineDiscount={showLineDiscounts}
