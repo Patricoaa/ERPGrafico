@@ -57,12 +57,4 @@ export const productFields = createEntityFields<Product>()({
             </div>
         ),
     },
-    isActive: {
-        key: 'is_active',
-        type: 'status',
-        label: 'Estado',
-        get: (p) => p.is_active ? 'active' : 'inactive',
-        surfaces: ['table'],
-        order: 70,
-    },
 })
