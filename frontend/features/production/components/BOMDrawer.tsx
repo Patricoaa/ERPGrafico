@@ -583,7 +583,11 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
+                                                                                const uomIdForCategory = typeof p.uom === 'object' ? p.uom.id : p.uom
+                                                                                if (uomIdForCategory) {
+                                                                                    const foundUom = uoms.find((u: UoM) => String(u.id) === String(uomIdForCategory))
+                                                                                    if (foundUom) form.setValue(`lines.${index}.component_uom_category`, foundUom.category)
+                                                                                }
                                                                                 if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
@@ -626,7 +630,11 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
+                                                                                const uomIdForCategory = typeof p.uom === 'object' ? p.uom.id : p.uom
+                                                                                if (uomIdForCategory) {
+                                                                                    const foundUom = uoms.find((u: UoM) => String(u.id) === String(uomIdForCategory))
+                                                                                    if (foundUom) form.setValue(`lines.${index}.component_uom_category`, foundUom.category)
+                                                                                }
                                                                                 if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
