@@ -92,7 +92,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
     }), [openSelected, handlePrint, handleAnnul])
 
     const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
-        const [dateCol, statusCol] = inventoryDocumentFields.toColumns()
+        const [dateCol, statusCol] = inventoryDocumentFields.toColumns({ exclude: ['documentType', 'reference'] })
         const cols: ColumnDef<InventoryDocument>[] = [
             {
                 id: "folio",

@@ -126,7 +126,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         onViewDetail: (id) => openStatement(id, "detail"),
     }
 
-    const [periodCol, dueDateCol, statusCol] = cardStatementFields.toColumns()
+    const [periodCol, dueDateCol, statusCol] = cardStatementFields.toColumns({ exclude: ['billedAmount'] })
 
     const columns: ColumnDef<CreditCardStatement>[] = [
         {

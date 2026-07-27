@@ -68,7 +68,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
     }
 
     const columns: ColumnDef<AppUser>[] = useMemo(() => [
-        ...userFields.toColumns(),
+        ...userFields.toColumns({ exclude: ['role'] }),
         {
             id: "contact",
             header: "Contacto",

@@ -114,7 +114,7 @@ export function StockReport() {
                 </div>
             ),
         },
-        ...stockReportFields.toColumns(),
+        ...stockReportFields.toColumns({ exclude: ['total_value'] }),
         {
             accessorKey: "total_value",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,

@@ -55,7 +55,7 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         ),
     },
     flow: {
-        key: 'source_location_name',
+        key: 'flow_display',
         type: 'computed',
         label: 'Origen → Destino',
         render: (m) => (

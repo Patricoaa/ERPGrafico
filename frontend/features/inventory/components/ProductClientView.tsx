@@ -250,7 +250,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             size: 40,
             minSize: 40,
         },
-        ...productFields.toColumns(),
+        ...productFields.toColumns({ exclude: ['product_type', 'salePrice', 'isDynamicPricing'] }),
         {
             accessorKey: "name",
             header: ({ column }) => (

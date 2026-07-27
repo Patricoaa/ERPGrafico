@@ -226,7 +226,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     }), [subscriptions, handlePause, handleResume, openSubscription])
 
     const columns = useMemo<ColumnDef<Subscription>[]>(() => {
-        const [categoryCol, amountCol, nextPaymentCol] = subscriptionFields.toColumns()
+        const autoCols = subscriptionFields.toColumns({ exclude: ['status', 'supplierName'] })
         return [
             {
                 id: "select",
@@ -273,7 +273,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                     );
                 },
             },
-            categoryCol,
+            ...autoCols,
             {
                 accessorKey: "supplier_name",
                 header: ({ column }) => (
@@ -289,7 +289,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                     </div>
                 ),
             },
-            amountCol,
             {
                 id: "frequency",
                 header: ({ column }) => (
@@ -299,7 +298,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                     <DataCell.Secondary>{getPaymentScheduleText(row.original)}</DataCell.Secondary>
                 ),
             },
-            nextPaymentCol,
             {
                 accessorKey: "status",
                 header: ({ column }) => (

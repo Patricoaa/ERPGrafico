@@ -106,10 +106,10 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         onDisburse: (loan) => openLoan(loan.id, "disburse"),
     }
 
-    const [displayIdCol, interestRateCol, termMonthsCol, nextDueDateCol, statusCol] = loanFields.toColumns()
+    const autoCols = loanFields.toColumns({ exclude: ['principal', 'outstandingBalance'] })
 
     const columns: ColumnDef<BankLoan>[] = [
-        displayIdCol,
+        autoCols[0],
         {
             accessorKey: 'currency',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Moneda" />,
@@ -128,8 +128,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 </div>
             ),
         },
-        interestRateCol,
-        termMonthsCol,
+        autoCols[1],
+        autoCols[2],
         {
             accessorKey: 'outstanding_balance',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo Insoluto" className="justify-end" />,
@@ -142,8 +142,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 </div>
             ),
         },
-        nextDueDateCol,
-        statusCol,
+        autoCols[3],
+        autoCols[4],
         loanActions.auto(actionsCtx),
     ]
 
