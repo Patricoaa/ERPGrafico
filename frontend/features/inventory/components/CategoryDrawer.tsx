@@ -362,7 +362,7 @@ export function CategoryDrawer({
                             )}
                         />
 
-                        <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
+                        <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} className="-mt-2" />
 
                         <FormField
                             control={form.control}

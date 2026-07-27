@@ -3,13 +3,6 @@ import type { Category } from "./hooks/useCategories"
 import * as LucideIcons from "lucide-react"
 
 export const categoryFields = createEntityFields<Category>()({
-    id: {
-        key: "id",
-        type: "code",
-        label: "Código Interno",
-        order: 10,
-        tableOptions: { width: 80 },
-    },
     icon: {
         key: "icon",
         type: "computed",
