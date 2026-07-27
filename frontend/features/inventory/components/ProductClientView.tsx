@@ -4,8 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableView, StatusBadge } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { ActionConfirmModal, DataTableView } from '@/components/shared'
 
 import { type ColumnDef } from "@tanstack/react-table"
 
@@ -13,19 +12,15 @@ import type { BulkAction } from "@/components/shared"
 import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
-import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
+import { Plus, AlertTriangle } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
-import { cn, translateProductType } from "@/lib/utils"
 import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
-import { useVatRate } from '@/hooks/useVatRate'
-import { PricingUtils } from '@/lib/pricing-utils'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 
-import { DataCell } from '@/components/shared'
 import { AutoEntityCard } from "@/components/shared"
 import { productFields } from "@/features/inventory/productFields"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
@@ -34,10 +29,9 @@ import { type Product, type Restriction, type ProductFilters } from "@/features/
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import { Chip, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { productUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
-import { Button } from "@/components/ui/button"
 
 interface ProductClientViewProps {
     externalOpen?: boolean
@@ -47,7 +41,6 @@ interface ProductClientViewProps {
 }
 
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction, initialProducts }: ProductClientViewProps) {
-    const { rate } = useVatRate()
     const { categories: categoryOptions } = useCategories()
     const categoryIconMap = useMemo(() => {
         const map = new Map<number, string | undefined>()
@@ -119,8 +112,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [isRetrying, setIsRetrying] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
-    const [expandedTemplates, setExpandedTemplates] = useState<Set<number>>(new Set())
-
+    const displayProducts = React.useMemo(() => products, [products])
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -147,28 +139,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             }
         }
     }
-
-    const toggleExpand = (templateId: number) => {
-        setExpandedTemplates(prev => {
-            const next = new Set(prev)
-            if (next.has(templateId)) next.delete(templateId)
-            else next.add(templateId)
-            return next
-        })
-    }
-
-    const displayProducts = React.useMemo(() => {
-        const result: Product[] = []
-        products.forEach((p: Product) => {
-            result.push(p)
-            if (p.has_variants && expandedTemplates.has(p.id) && p.variants) {
-                p.variants.forEach((v: Product) => {
-                    result.push({ ...v, is_child_variant: true })
-                })
-            }
-        })
-        return result
-    }, [products, expandedTemplates])
 
     const handleArchive = async (product: Product, isConfirmed = false) => {
         const isArchiving = product.is_active
@@ -250,157 +220,9 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             size: 40,
             minSize: 40,
         },
-        ...productFields.toColumns({ exclude: ['product_type', 'salePrice', 'isDynamicPricing'] }),
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const product = row.original;
-                const isChild = product.is_child_variant;
-                return (
-                    <div className={cn("w-full flex items-center justify-center gap-2", isChild && "pl-8")}>
-                        {isChild && <div className="h-4 w-4 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg -mt-2" />}
-
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <DataCell.Text>
-                                    {product.name}
-                                </DataCell.Text>
-                                {!product.is_active && (
-                                    <StatusBadge
-                                        status="inactive"
-                                        label="ARCHIVADO"
-                                        size="sm"
-                                        className="h-3.5"
-                                    />
-                                )}
-                                {product.has_variants && !isChild && (
-                                    <Button
-                                        onClick={() => toggleExpand(product.id)}
-                                        className={cn(
-                                            "flex items-center gap-2 px-1 transition-all duration-200 group/var",
-                                            expandedTemplates.has(product.id)
-                                                ? "text-primary"
-                                                : "text-muted-foreground/60 hover:text-primary"
-                                        )}
-                                    >
-                                        <Layers className={cn(
-                                            "h-3 w-3 transition-transform",
-                                            expandedTemplates.has(product.id) ? "scale-110" : "opacity-70 group-hover/var:opacity-100"
-                                        )} />
-                                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.15em]">
-                                            {product.variants?.length || 0} Variantes
-                                        </span>
-                                        <ChevronDown className={cn(
-                                            "h-3 w-3 transition-transform duration-300",
-                                            expandedTemplates.has(product.id) ? "rotate-180" : "opacity-40 group-hover/var:opacity-100"
-                                        )} />
-                                    </Button>
-                                )}
-                            </div>
-                            {isChild && product.variant_display_name && (
-                                <span className="text-[9px] font-bold text-primary uppercase">{product.variant_display_name}</span>
-                            )}
-                        </div>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: "is_active",
-            id: "is_active",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            enableHiding: true,
-            cell: ({ row }) => (
-                <DataCell.Status
-                    status={row.original.is_active ? "active" : "inactive"}
-                    label={row.original.is_active ? "Activo" : "Archivado"}
-                />
-            ),
-        },
-        {
-            accessorKey: "product_type",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {translateProductType(row.getValue("product_type"))}
-                </DataCell.Text>
-            ),
-        },
-
-        {
-            accessorKey: "sale_price",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Neto" className="justify-center" />,
-            cell: ({ row }) => {
-                if (row.original.is_dynamic_pricing) {
-                    return (
-                        <div className="flex justify-center w-full">
-                            <Chip size="xs" intent="warning">Dinámico</Chip>
-                        </div>
-                    )
-                }
-                return <DataCell.Currency value={row.getValue("sale_price")} />
-            },
-            size: 120,
-            minSize: 100,
-        },
-        {
-            id: "tax",
-            header: ({ column }) => <DataTableColumnHeader column={column} title={`IVA (${rate}%)`} className="justify-center" />,
-            cell: ({ row }) => {
-                if (row.original.is_dynamic_pricing) {
-                    return (
-                        <div className="flex justify-center w-full">
-                            <Chip size="xs" intent="warning">Dinámico</Chip>
-                        </div>
-                    )
-                }
-                const tax = PricingUtils.calculateTax(Number(row.getValue("sale_price")))
-                return <DataCell.Currency value={tax} />
-            },
-            size: 110,
-            minSize: 90,
-        },
-        {
-            id: "total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Total (c/IVA)" className="justify-center" />,
-            cell: ({ row }) => {
-                const total = row.original.sale_price_gross || PricingUtils.netToGross(Number(row.getValue("sale_price")))
-                if (row.original.is_dynamic_pricing) {
-                    return (
-                        <div className="flex justify-center w-full">
-                            <Chip size="xs" intent="warning">Dinámico</Chip>
-                        </div>
-                    )
-                }
-                return <DataCell.Currency value={total} />
-            },
-            size: 130,
-            minSize: 110,
-        },
-        {
-            id: "availability",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible para" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center gap-1">
-                    {row.original.can_be_sold && (
-                        <Chip size="xs">Venta</Chip>
-                    )}
-                    {row.original.can_be_purchased && (
-                        <Chip size="xs">Compra</Chip>
-                    )}
-                    {!row.original.can_be_sold && !row.original.can_be_purchased && (
-                        <span className="text-[10px] text-muted-foreground italic">Ninguno</span>
-                    )}
-                </div>
-            ),
-        },
+        ...productFields.toColumns(),
         productActions.auto(actionsCtx),
-    ], [actionsCtx, expandedTemplates])
+    ], [actionsCtx])
 
     const initialColumnVisibility = useMemo(() => ({ is_active: false }), [])
 

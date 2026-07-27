@@ -1,9 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
-import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, AutoEntityCard } from '@/components/shared'
+import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -24,14 +22,6 @@ import { PrintableLayout } from "@/features/_shared"
 interface DocumentsClientViewProps {
     documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
     createAction?: React.ReactNode
-}
-
-const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutral" | "info" | "primary", label: string }> = {
-    'RECEIPT': { intent: 'success', label: 'Recepción' },
-    'DELIVERY': { intent: 'primary', label: 'Entrega' },
-    'TRANSFER': { intent: 'info', label: 'Transferencia' },
-    'ADJUSTMENT': { intent: 'warning', label: 'Ajuste' },
-    'PRODUCTION': { intent: 'neutral', label: 'Producción' }
 }
 
 export function DocumentsClientView({ documentTypeFilter, createAction }: DocumentsClientViewProps) {
@@ -92,52 +82,10 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
     }), [openSelected, handlePrint, handleAnnul])
 
     const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
-        const [dateCol, statusCol] = inventoryDocumentFields.toColumns({ exclude: ['documentType', 'reference'] })
-        const cols: ColumnDef<InventoryDocument>[] = [
-            {
-                id: "folio",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-                cell: ({ row }) => (
-                    <DataCell.Code>{`DOC-${row.original.id}`}</DataCell.Code>
-                ),
-                size: 90,
-            },
-            dateCol,
-        ]
-
-        if (!documentTypeFilter) {
-            cols.push({
-                accessorKey: "document_type",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-                cell: ({ row }) => {
-                    const config = DOCUMENT_TYPE_MAP[row.original.document_type] || { intent: 'neutral' as const, label: row.original.document_type }
-                    return (
-                        <DataCell.Chip intent={config.intent} size="sm">{config.label}</DataCell.Chip>
-                    )
-                },
-                size: 120,
-            })
-        }
-
-        cols.push({
-            id: "reference",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Referencia" className="justify-center" />,
-            cell: ({ row }) => {
-                const doc = row.original
-                if (doc.source_document_type && doc.source_document_id) {
-                    return <DataCell.Entity entityLabel={doc.source_document_type} number={doc.source_document_id} />
-                }
-                return <DataCell.Text>{doc.reference || '-'}</DataCell.Text>
-            },
-            size: 120,
-        })
-
-        cols.push(
-            statusCol,
+        return [
+            ...inventoryDocumentFields.toColumns({ exclude: documentTypeFilter ? ['documentType'] : [] }),
             documentActions.auto(actionsCtx),
-        )
-
-        return cols
+        ]
     }, [documentTypeFilter, actionsCtx])
 
     return (

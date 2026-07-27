@@ -3,14 +3,12 @@
 import React, { useState, lazy, Suspense, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { BaseModal, DataTableView, AutoEntityCard, FormFooter, CancelButton, ActionSlideButton } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import type { ColumnDef, Row } from "@tanstack/react-table"
-import { Plus, Building2 } from "lucide-react"
-import { format } from "date-fns"
+import type { ColumnDef } from "@tanstack/react-table"
+import { Plus } from "lucide-react"
 
 import { useTerminalBatches } from "@/features/treasury"
 import type { TerminalBatch } from "@/features/treasury/types"
-import { DataCell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { SkeletonShell } from "@/components/shared"
 import { terminalBatchUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { terminalBatchFields } from "../terminalBatchFields"
@@ -46,53 +44,8 @@ export function TerminalBatchesClientView({
 
 
     const columns = useMemo<ColumnDef<TerminalBatch>[]>(() => {
-        const [netAmountCol, statusCol] = terminalBatchFields.toColumns()
         return [
-            {
-                accessorKey: "sales_date",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
-                cell: ({ row }: { row: Row<TerminalBatch> }) => (
-                    <div className="flex flex-col justify-center w-full items-center text-xs">
-                        <DataCell.Date value={row.original.sales_date} />
-                        {row.original.sales_date_end && row.original.sales_date_end !== row.original.sales_date && (
-                            <span className="text-[10px] text-muted-foreground leading-none mt-1">
-                                al {format(new Date(row.original.sales_date_end + "T12:00:00"), "dd/MM/yyyy")}
-                            </span>
-                        )}
-                    </div>
-                )
-            },
-            {
-                accessorKey: "provider_name",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />,
-                cell: ({ row }: { row: Row<TerminalBatch> }) => (
-                    <div className="flex flex-col items-center">
-                        <span className="font-bold flex items-center justify-center gap-1.5 text-center w-full">
-                            <Building2 className="h-3.5 w-3.5 text-primary" />
-                            {row.original.provider_name}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide text-center">
-                            {row.original.payment_method_name} (Depósito)
-                        </span>
-                    </div>
-                )
-            },
-            netAmountCol,
-            {
-                accessorKey: "commission_total",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Comisión (Total)" className="justify-center" />,
-                cell: ({ row }: { row: Row<TerminalBatch> }) => {
-                    const amount = row.original.commission_total
-                    return (
-                        <div className="flex justify-center w-full">
-                            <DataCell.Currency
-                                value={amount ? -Math.abs(parseFloat(amount)) : 0}
-                            />
-                        </div>
-                    )
-                }
-            },
-            statusCol,
+            ...terminalBatchFields.toColumns(),
         ]
     }, [])
 

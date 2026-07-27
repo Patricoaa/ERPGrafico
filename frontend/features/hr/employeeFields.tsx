@@ -1,4 +1,5 @@
 import { createEntityFields } from "@/components/shared"
+import { DataCell } from "@/components/shared"
 import type { Employee } from "@/types/hr"
 
 export const employeeFields = createEntityFields<Employee>()({
@@ -7,6 +8,17 @@ export const employeeFields = createEntityFields<Employee>()({
         key: "display_id",
         type: "code",
         label: "Código",
+    },
+    contact: {
+        order: 15,
+        key: "contact_detail",
+        type: "computed",
+        label: "Contacto",
+        render: (e) => (
+            <DataCell.ContactLink contactId={e.contact}>
+                {e.contact_detail?.name}
+            </DataCell.ContactLink>
+        ),
     },
     position: {
         order: 20,
@@ -23,18 +35,20 @@ export const employeeFields = createEntityFields<Employee>()({
     afp: {
         order: 40,
         key: "afp_detail",
-        type: "text",
+        type: "computed",
         label: "Previsión",
-        get: (e) => {
-            const detail = (e as unknown as Record<string, unknown>).afp_detail as Record<string, unknown> | undefined
-            return detail?.name ?? 'N/A'
-        },
+        render: (e) => (
+            <DataCell.Text>{e.afp_detail?.name || 'No disp.'}</DataCell.Text>
+        ),
     },
     salud: {
         order: 50,
         key: "salud_type_display",
-        type: "text",
+        type: "computed",
         label: "Salud",
+        render: (e) => (
+            <DataCell.Text>{e.salud_type_display || 'No disp.'}</DataCell.Text>
+        ),
     },
     baseSalary: {
         order: 60,

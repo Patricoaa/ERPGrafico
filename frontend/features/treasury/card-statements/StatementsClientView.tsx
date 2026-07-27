@@ -5,8 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, Receipt } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
-    MoneyDisplay, SkeletonShell, AutoEntityCard,
+    DataTableView,
+    SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -126,31 +126,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         onViewDetail: (id) => openStatement(id, "detail"),
     }
 
-    const [periodCol, dueDateCol, statusCol] = cardStatementFields.toColumns({ exclude: ['billedAmount'] })
-
     const columns: ColumnDef<CreditCardStatement>[] = [
-        {
-            accessorKey: 'display_id',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.Code>{row.original.display_id}</DataCell.Code>
-                    <DataCell.Secondary>{row.original.card_account_name}</DataCell.Secondary>
-                </div>
-            ),
-        },
-        periodCol,
-        {
-            accessorKey: 'billed_amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Facturado" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={parseFloat(row.original.billed_amount)} />
-                </div>
-            ),
-        },
-        dueDateCol,
-        statusCol,
+        ...cardStatementFields.toColumns(),
         statementActions.auto(actionsCtx),
     ]
 

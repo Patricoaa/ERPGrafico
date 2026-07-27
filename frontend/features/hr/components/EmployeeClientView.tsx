@@ -5,8 +5,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, AutoEntityCard } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { employeeActions, type EmployeeActionsCtx } from "@/features/hr/employeeActions"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { getEntityIcon } from "@/lib/entity-registry"
@@ -53,68 +52,10 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
         },
     }
 
-    const columns: ColumnDef<Employee>[] = (() => {
-        const allCols = employeeFields.toColumns()
-        const displayIdCol = allCols[0]   // order 10: display_id
-        const baseSalaryCol = allCols[5]  // order 60: base_salary
-        const statusCol = allCols[6]      // order 70: status
-        return [
-            displayIdCol,
-            {
-                accessorFn: (row) => row.contact_detail?.name || "",
-                id: "contact",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto" className="justify-center" />,
-                cell: ({ row }) => {
-                    const emp = row.original;
-                    return (
-                        <div>
-                            <DataCell.ContactLink contactId={emp.contact}>{emp.contact_detail?.name}</DataCell.ContactLink>
-                        </div>
-                    );
-                },
-            },
-            {
-                id: "prevision",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Previsión" className="justify-center" />,
-                cell: ({ row }) => {
-                    const emp = row.original;
-                    return (
-                        <DataCell.Text>
-                            {emp.afp_detail?.name || 'No disp.'}
-                        </DataCell.Text>
-                    );
-                },
-            },
-            {
-                id: "salud",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Salud" className="justify-center" />,
-                cell: ({ row }) => {
-                    const emp = row.original;
-                    return (
-                        <DataCell.Text>
-                            {emp.salud_type_display || 'No disp.'}
-                        </DataCell.Text>
-                    );
-                },
-            },
-            {
-                accessorKey: "position",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Cargo" className="justify-center" />,
-                cell: ({ row }) => {
-                    const emp = row.original;
-                    return (
-                        <div className="flex flex-col items-center justify-center w-full">
-                            <DataCell.Text>{emp.position || '—'}</DataCell.Text>
-                            <DataCell.Secondary>{emp.department}</DataCell.Secondary>
-                        </div>
-                    );
-                },
-            },
-            baseSalaryCol,
-            statusCol,
-            employeeActions.auto(actionsCtx),
-        ]
-    })()
+    const columns: ColumnDef<Employee>[] = [
+        ...employeeFields.toColumns(),
+        employeeActions.auto(actionsCtx),
+    ]
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

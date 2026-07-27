@@ -6,11 +6,10 @@ import { DataTableView, ToolbarCreateButton, AutoEntityCard, UnifiedSearchBar, u
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
-import { FadeIn, Chip } from "@/components/shared"
+import { FadeIn } from "@/components/shared"
 import { userActions, type UserActionsCtx } from './userActions'
 import { userFields } from '../userFields'
 
-import { Users } from "lucide-react"
 import { UserDrawer } from "@/features/users"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupsClientView } from "@/features/settings/components/GroupsClientView"
@@ -68,7 +67,7 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
     }
 
     const columns: ColumnDef<AppUser>[] = useMemo(() => [
-        ...userFields.toColumns({ exclude: ['role'] }),
+        ...userFields.toColumns(),
         {
             id: "contact",
             header: "Contacto",
@@ -80,53 +79,6 @@ export function UsersSettingsClientView({ activeTab }: UsersSettingsClientViewPr
                 if (!contactId) return <div className="text-muted-foreground text-sm font-bold text-center">{displayName}</div>
 
                 return <DataCell.ContactLink contactId={contactId}>{displayName}</DataCell.ContactLink>
-            },
-        },
-        {
-            accessorKey: "groups",
-            id: "role",
-            header: "Rol",
-            cell: ({ row }) => {
-                const groups = (row.original.groups || []).map(g => typeof g === 'string' ? g : g.name)
-                const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                const systemRole = groups.find(g => roles.includes(g))
-
-                if (!systemRole) return null
-
-                const roleIntent: Record<string, 'primary' | 'warning' | 'info' | 'neutral'> = {
-                    ADMIN: 'primary',
-                    MANAGER: 'warning',
-                    OPERATOR: 'info',
-                    READ_ONLY: 'neutral',
-                }
-
-                return (
-                    <DataCell.Chip intent={roleIntent[systemRole] || 'neutral'}>
-                        {systemRole}
-                    </DataCell.Chip>
-                )
-            },
-        },
-        {
-            accessorKey: "groups",
-            id: "functional_groups",
-            header: "Grupos",
-            cell: ({ row }) => {
-                const groups = (row.original.groups || []).map(g => typeof g === 'string' ? g : g.name)
-                const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                const functionalGroups = groups.filter(g => !roles.includes(g))
-
-                if (functionalGroups.length === 0) return null
-
-                return (
-                    <div className="flex flex-wrap gap-1">
-                        {functionalGroups.map(g => (
-                            <Chip key={g} size="xs" intent="neutral" icon={Users}>
-                                {g}
-                            </Chip>
-                        ))}
-                    </div>
-                )
             },
         },
         userActions.auto(actionsCtx)

@@ -1,4 +1,5 @@
 import { createEntityFields } from "@/components/shared"
+import { DataCell } from "@/components/shared"
 import type { InventoryDocument } from "./types"
 
 const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutral" | "info" | "primary", label: string }> = {
@@ -10,28 +11,45 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
 }
 
 export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
+    folio: {
+        key: "id",
+        type: "computed",
+        label: "Folio",
+        order: 10,
+        render: (d) => <DataCell.Code>{`DOC-${d.id}`}</DataCell.Code>,
+    },
     date: {
         key: "date",
         type: "date",
         label: "Fecha",
+        order: 20,
         tableOptions: { width: 90 },
     },
     documentType: {
         key: "document_type",
         type: "chip",
         label: "Tipo",
+        order: 30,
         get: (d) => DOCUMENT_TYPE_MAP[d.document_type]?.label ?? d.document_type,
         intent: (d) => DOCUMENT_TYPE_MAP[d.document_type]?.intent ?? 'neutral',
     },
     reference: {
         key: "reference",
-        type: "text",
+        type: "computed",
         label: "Referencia",
+        order: 40,
+        render: (d) => {
+            if (d.source_document_type && d.source_document_id) {
+                return <DataCell.Entity entityLabel={d.source_document_type} number={d.source_document_id} />
+            }
+            return <DataCell.Text>{d.reference || '-'}</DataCell.Text>
+        },
     },
     status: {
         key: "status",
         type: "status",
         label: "Estado",
+        order: 50,
         tableOptions: { width: 100 },
     },
 })

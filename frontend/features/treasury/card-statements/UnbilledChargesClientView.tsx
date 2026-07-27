@@ -213,35 +213,11 @@ export function UnbilledChargesClientView({
         toast.success('Cargos facturados exitosamente')
     }
 
-    const [dateCol, amountCol] = unbilledChargeFields.toColumns()
+    const [dateCol, amountCol, cuotaCol] = unbilledChargeFields.toColumns()
 
     const columns: ColumnDef<UnbilledItemRow, unknown>[] = [
         dateCol,
-        {
-            id: 'cuota',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cuota" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const item = row.original
-                if (item.source === 'pending') {
-                    return (
-                        <div className="flex justify-center w-full">
-                            <span className="text-xs text-muted-foreground">N/A</span>
-                        </div>
-                    )
-                }
-                if (!item.installmentNumber || !item.totalInstallments) return null
-                return (
-                    <div className="flex justify-center w-full">
-                        <span className="text-xs font-medium tabular-nums">
-                            {item.installmentNumber}/{item.totalInstallments}
-                        </span>
-                    </div>
-                )
-            },
-            enableSorting: false,
-        },
+        cuotaCol,
         {
             id: 'compra',
             header: ({ column }) => (

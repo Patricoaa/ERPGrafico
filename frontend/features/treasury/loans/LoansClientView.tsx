@@ -5,8 +5,8 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { FileText } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader,
-    MoneyDisplay, SkeletonShell, AutoEntityCard,
+    DataTableView,
+    SkeletonShell, AutoEntityCard,
     ToolbarCreateButton,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
@@ -106,44 +106,8 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
         onDisburse: (loan) => openLoan(loan.id, "disburse"),
     }
 
-    const autoCols = loanFields.toColumns({ exclude: ['principal', 'outstandingBalance'] })
-
     const columns: ColumnDef<BankLoan>[] = [
-        autoCols[0],
-        {
-            accessorKey: 'currency',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Moneda" />,
-            cell: ({ row }) => (
-                <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold">
-                    {row.original.currency}
-                </span>
-            ),
-        },
-        {
-            accessorKey: 'principal',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Capital" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={parseFloat(row.original.principal)} />
-                </div>
-            ),
-        },
-        autoCols[1],
-        autoCols[2],
-        {
-            accessorKey: 'outstanding_balance',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo Insoluto" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay
-                        amount={parseFloat(row.original.outstanding_balance)}
-                        className={row.original.status === 'ACTIVE' ? 'font-bold' : 'text-muted-foreground'}
-                    />
-                </div>
-            ),
-        },
-        autoCols[3],
-        autoCols[4],
+        ...loanFields.toColumns(),
         loanActions.auto(actionsCtx),
     ]
 
