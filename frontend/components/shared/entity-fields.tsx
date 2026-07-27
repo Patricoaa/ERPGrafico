@@ -276,6 +276,9 @@ export type EntityFieldsReturn<T> = {
     /** Resolve card subtitle from meta.subtitle config. Returns SubtitleItem[] for EntityCard.Subtitle.
      *  @param cardFields - resolved CardField[] from toCardFields() — used to skip fields already assigned to title. */
     resolveSubtitle: (entity: T, cardFields?: CardField[]) => SubtitleItem[]
+    /** Returns field keys consumed by the subtitle — used by AutoEntityCard to exclude them from card zones.
+     *  Prevents duplicate rendering (e.g. date in subtitle AND center detail). */
+    getSubtitleExcludeKeys: (entity: T, cardFields?: CardField[]) => Set<string>
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -590,6 +593,61 @@ function extractTemplateKeys<T>(template: string): Set<string> {
 }
 
 /**
+ * Computes which field keys the auto-compose subtitle (Priority 4) would consume.
+ * Shared between resolveSubtitle (rendering) and getSubtitleExcludeKeys (exclusion).
+ *
+ * Logic: up to 4 slots in order: primary-label (name) → relation → temporal → primary-value.
+ * Plus any explicit cardPlacement:'subtitle' fields not yet consumed.
+ * Only includes keys whose entity value is non-null (same as resolveSubtitle).
+ */
+function computeAutoComposeKeys<T>(
+    defs: Record<string, FieldDef<T>>,
+    entity: T,
+    titleKeys: Set<string>,
+): Set<string> {
+    const allDefs = Object.values(defs)
+    const consumedKeys = new Set<string>()
+
+    const nameDef = allDefs.find(d => {
+        if (titleKeys.has(d.key)) return false
+        const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+        return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
+    })
+
+    if (nameDef) {
+        const raw = entity[nameDef.key as keyof T]
+        if (raw != null && raw !== '') consumedKeys.add(nameDef.key)
+    }
+
+    const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
+    for (const slotRole of slotRoles) {
+        if (consumedKeys.size >= 4) break
+        const candidate = allDefs.find(d => {
+            if (consumedKeys.has(d.key)) return false
+            const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
+            if (r !== slotRole) return false
+            if (d.type === 'currency' && !/total/i.test(d.key)) return false
+            return true
+        })
+        if (candidate) {
+            const raw = entity[candidate.key as keyof T]
+            if (raw != null && raw !== '') consumedKeys.add(candidate.key)
+        }
+    }
+
+    const explicitSubtitleFields = allDefs.filter(d =>
+        d.cardPlacement === 'subtitle' && !consumedKeys.has(d.key)
+    )
+    for (const d of explicitSubtitleFields) {
+        if (consumedKeys.size >= 4) break
+        const raw = entity[d.key as keyof T]
+        if (raw != null && raw !== '') consumedKeys.add(d.key)
+    }
+
+    return consumedKeys
+}
+
+/**
  * createEntityFields — Generic factory for entity field definitions shared between
  * DataTable (ColumnDef), EntityCard (Field), and Kanban card surfaces.
  *
@@ -844,31 +902,29 @@ export function createEntityFields<T>(): (
             // Find the primary-label field (name key) — occupies the first subtitle slot
             // Skip fields already assigned to title by toCardFields()
             const titleKeys = new Set(cardFields?.filter(f => f.cardPlacement === 'title').map(f => f.key) ?? [])
+            const consumedKeys = computeAutoComposeKeys(defs, entity, titleKeys)
+
+            const items: SubtitleItem[] = []
+
+            // Rebuild items from consumedKeys in role order
             const nameDef = allDefs.find(d => {
                 if (titleKeys.has(d.key)) return false
                 const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
                 return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
             })
 
-            const items: SubtitleItem[] = []
-
-            if (nameDef) {
+            if (nameDef && consumedKeys.has(nameDef.key)) {
                 const raw = entity[nameDef.key as keyof T]
                 if (raw != null && raw !== '') items.push({ kind: 'text', content: String(raw) })
             }
 
-            // Secondary slots: relation (1), temporal (1), primary-value (1)
-            // 'tag' excluded — tag fields have cardPlacement:'header' and belong in header trailing
             const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
-            const consumedKeys = new Set<string>(nameDef ? [nameDef.key] : [])
             for (const slotRole of slotRoles) {
                 if (items.length >= 4) break
                 const candidate = allDefs.find(d => {
-                    if (consumedKeys.has(d.key)) return false
+                    if (!consumedKeys.has(d.key)) return false
                     const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
-                    if (r !== slotRole) return false
-                    if (d.type === 'currency' && !/total/i.test(d.key)) return false
-                    return true
+                    return r === slotRole
                 })
                 if (candidate) {
                     const raw = entity[candidate.key as keyof T]
@@ -886,14 +942,13 @@ export function createEntityFields<T>(): (
                         } else {
                             items.push({ kind: 'text', content: String(raw) })
                         }
-                        consumedKeys.add(candidate.key)
                     }
                 }
             }
 
             // Explicit cardPlacement:'subtitle' fields not yet consumed by role-based slots
             const explicitSubtitleFields = allDefs.filter(d =>
-                d.cardPlacement === 'subtitle' && !consumedKeys.has(d.key)
+                d.cardPlacement === 'subtitle' && consumedKeys.has(d.key) && !items.some(item => item.kind !== 'separator')
             )
             for (const d of explicitSubtitleFields) {
                 if (items.length >= 4) break
@@ -913,6 +968,27 @@ export function createEntityFields<T>(): (
             }
 
             return items
+        },
+
+        getSubtitleExcludeKeys: (entity: T, cardFields?: CardField[]): Set<string> => {
+            if (meta?.subtitle?.excludeKeys) return new Set(meta.subtitle.excludeKeys)
+
+            if (meta?.subtitle?.field) {
+                const keys = new Set<string>([meta.subtitle.field])
+                if (meta.subtitle.suffixTemplate) {
+                    for (const k of extractTemplateKeys(meta.subtitle.suffixTemplate)) keys.add(k)
+                }
+                return keys
+            }
+
+            if (meta?.subtitle?.template) {
+                return extractTemplateKeys(meta.subtitle.template)
+            }
+
+            const titleKeys = new Set(
+                cardFields?.filter(f => f.cardPlacement === 'title').map(f => f.key) ?? []
+            )
+            return computeAutoComposeKeys(defs, entity, titleKeys)
         },
 
     })

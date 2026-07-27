@@ -39,8 +39,8 @@ export interface AutoEntityCardProps<TData> {
         resolveTitle?: (entity: TData) => React.ReactNode
         /** Resolve card subtitle from Fields.ts meta config */
         resolveSubtitle?: (entity: TData, cardFields?: CardField[]) => FieldsSubtitleItem[]
-        /** Field keys referenced by subtitle config — to exclude from other card layout zones */
-        getSubtitleExcludeKeys?: () => Set<string>
+        /** Returns field keys consumed by the subtitle — to exclude from other card layout zones */
+        getSubtitleExcludeKeys?: (entity: TData, cardFields?: CardField[]) => Set<string>
     }
     /** Entity label for registry lookups (e.g. 'sales.order') — used for auto-subtitle and hub status */
     entityLabel?: string
@@ -353,21 +353,19 @@ export function AutoEntityCard<TData>({
     const registryVariant = entityLabel ? getEntityMetadata(entityLabel)?.viewPolicy?.cardVariant : undefined
     const effectiveVariant = variant ?? registryVariant ?? 'full'
 
-    // Resolve subtitle field keys — Fields.ts meta first, then entity-registry fallback
-    const fieldsSubtitleKeys = fields.getSubtitleExcludeKeys?.()
+    // entityMetadata is still needed for workflowConfig and cardConfig lookups.
+    const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
+
+    const cardFields = fields.toCardFields(data)
+
+    // Resolve subtitle field keys — fields API first (data-aware), then entity-registry fallback
+    const fieldsSubtitleKeys = fields.getSubtitleExcludeKeys?.(data, cardFields)
     const registrySubtitleKeys = entityLabel ? getSubtitleFieldKeys(entityLabel) : new Set<string>()
     const subtitleFieldKeys = fieldsSubtitleKeys && fieldsSubtitleKeys.size > 0
         ? fieldsSubtitleKeys
         : registrySubtitleKeys
 
-    // entityMetadata is still needed for workflowConfig and cardConfig lookups.
-    // Note: titleField is no longer sourced from entityMetadata — title resolution is fully
-    // delegated to resolveTitle() from createEntityFields meta, or auto-detection in classifyFields.
-    const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
-
-    const cardFields = fields.toCardFields(data)
-
-    // 1. Classify fields into layout zones
+    // 1. Classify fields into layout zones (subtitle keys exclude consumed fields from center)
     const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys)
 
     // 2. Determine display title — Fields.ts meta first, then explicit prop, then auto-detect
