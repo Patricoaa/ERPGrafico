@@ -5,9 +5,12 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { EntityBadge } from "@/components/shared"
 import { type CreditContact, type CreditHistoryEntry } from "@/features/credits/api/creditsApi"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Gavel } from "lucide-react"
 
-export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnDef<CreditContact>[] => [
+export const getPortfolioColumns = (
+    onEdit: (c: CreditContact) => void,
+    onWriteOff?: (contact: CreditContact) => void,
+): ColumnDef<CreditContact>[] => [
     {
         accessorKey: "name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
@@ -107,6 +110,24 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             return (
                 <DataCell.Status status={statusKey} label={label} />
             )
+        },
+    },
+    {
+        id: "actions",
+        header: "",
+        meta: { align: "right" },
+        cell: ({ row }) => {
+            const contact = row.original
+            const totalDebt = Number(contact.credit_balance_used)
+            const canWriteOff = !contact.is_default_customer && totalDebt > 0 && onWriteOff
+            return canWriteOff ? (
+                <DataCell.Action
+                    icon={Gavel}
+                    title="Castigar Deuda"
+                    className="text-destructive"
+                    onClick={(e) => { e.stopPropagation(); onWriteOff(contact) }}
+                />
+            ) : <span className="text-muted-foreground/30">—</span>
         },
     },
 ]

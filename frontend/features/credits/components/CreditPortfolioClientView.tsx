@@ -1,10 +1,10 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 
-import { type CreditContact, type CreditHistoryEntry } from '@/features/credits/api/creditsApi'
+import { type CreditContact, type CreditHistoryEntry, writeOffDebt } from '@/features/credits/api/creditsApi'
 import CreditAssignmentModal from "./CreditAssignmentModal"
-import { DataTable } from '@/components/shared'
+import { DataTable, ActionConfirmModal, MoneyDisplay } from '@/components/shared'
 import { PortfolioTable } from "./PortfolioTable"
 import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -12,6 +12,9 @@ import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { ShieldAlert } from "lucide-react"
+import { toast } from "sonner"
+import { formatMoney } from "@/lib/money"
 
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
@@ -36,7 +39,30 @@ export function CreditPortfolioClientView({
         openSelected(contact.id)
     }, [openSelected])
 
-    const portfolioCols = useMemo(() => getPortfolioColumns(handleEditLimit), [handleEditLimit])
+    const [writeOffContact, setWriteOffContact] = useState<CreditContact | null>(null)
+
+    const handleWriteOff = useCallback(async () => {
+        if (!writeOffContact) return
+        try {
+            const res = await writeOffDebt(writeOffContact.id)
+            toast.success(`Deuda castigada: ${res.journal_entry} por ${formatMoney(res.amount)}`)
+            await refetch()
+        } catch (error) {
+            const e = error as { response?: { data?: { error?: string } }; message?: string }
+            toast.error(e.response?.data?.error || e.message || "Error al castigar deuda")
+        } finally {
+            setWriteOffContact(null)
+        }
+    }, [writeOffContact, refetch])
+
+    const handleWriteOffColumn = useCallback((contact: CreditContact) => {
+        setWriteOffContact(contact)
+    }, [])
+
+    const portfolioCols = useMemo(
+        () => getPortfolioColumns(handleEditLimit, handleWriteOffColumn),
+        [handleEditLimit, handleWriteOffColumn],
+    )
 
     const contactConfig: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
@@ -103,6 +129,27 @@ export function CreditPortfolioClientView({
                 onOpenChange={(open) => { if (!open) clearSelection() }}
                 contact={selectedContact}
                 onSuccess={handleModalSuccess}
+            />
+
+            <ActionConfirmModal
+                open={!!writeOffContact}
+                onOpenChange={(o) => !o && setWriteOffContact(null)}
+                onConfirm={handleWriteOff}
+                title="¿Confirmar Castigo de Deuda?"
+                description={
+                    <div className="space-y-3 pt-1 text-sm leading-relaxed">
+                        <p>Esta acción es <strong>irreversible</strong> y tiene las siguientes consecuencias:</p>
+                        <ul className="list-disc list-inside space-y-1 font-medium text-muted-foreground">
+                            <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold"><MoneyDisplay amount={writeOffContact?.credit_balance_used} inline /></span>.</li>
+                            <li>El cliente quedará bloqueado permanentemente.</li>
+                            <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
+                            <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
+                        </ul>
+                    </div>
+                }
+                variant="destructive"
+                icon={ShieldAlert}
+                confirmText="Confirmar Castigo"
             />
 
             {activeTab === 'portfolio' ? (
