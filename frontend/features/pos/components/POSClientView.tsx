@@ -641,7 +641,6 @@ export function POSClientView() {
                         totals={totals}
                         loading={loading}
                         currentDraftId={currentDraftId}
-                        lastSaved={lastSaved || undefined}
                         saving={isSaving}
                         canQuickSale={quickSaleEligibility}
                         onItemQuantityChange={updateQuantity}
