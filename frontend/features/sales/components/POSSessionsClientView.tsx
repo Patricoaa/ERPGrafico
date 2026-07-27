@@ -131,8 +131,8 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "pos",
-                        title: "Aún no hay sesiones de caja",
-                        description: "Las sesiones del punto de venta aparecerán aquí al abrir caja.",
+                        title: "Aún no hay sesiones POS",
+                        description: "Las sesiones del punto de venta aparecerán aquí al iniciar sesión.",
                     }}
                     renderCard={(session: POSSession) => (
                         <AutoEntityCard

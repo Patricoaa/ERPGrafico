@@ -52,7 +52,7 @@ export function SalesHeader() {
             iconName: "banknote",
             href: "/sales/pos/cajas",
             subTabs: [
-                { value: "cajas", label: "Cajas", href: "/sales/pos/cajas" },
+                { value: "cajas", label: "Puntos de Venta", href: "/sales/pos/cajas" },
                 { value: "sessions", label: "Sesiones", href: "/sales/sessions" },
             ]
         },
@@ -95,8 +95,8 @@ export function SalesHeader() {
             return { title: "Cartera de Créditos", description: "Saldo por cliente, clasificación por antigüedad y estado de cobro.", iconName: "pie-chart" as const }
         }
         if (activeValue === 'pos') {
-            if (subActiveValue === 'sessions') return { title: "Sesiones Punto de Venta", description: "Historial de aperturas y cierres de caja.", iconName: "list" as const }
-            return { title: "Cajas POS", description: "Administre los puntos de venta y sus métodos de pago autorizados.", iconName: "banknote" as const }
+            if (subActiveValue === 'sessions') return { title: "Sesiones POS", description: "Historial de aperturas y cierres de sesión.", iconName: "list" as const }
+            return { title: "Puntos de Venta", description: "Administre los puntos de venta y sus métodos de pago autorizados.", iconName: "banknote" as const }
         }
         if (activeValue === 'orders') {
             if (subActiveValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.", iconName: "file-text" as const }

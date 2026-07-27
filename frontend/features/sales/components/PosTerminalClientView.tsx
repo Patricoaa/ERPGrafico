@@ -117,7 +117,7 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                             params.set("modal", "new")
                             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
                         }} className="h-9">
-                            <Plus className="mr-2 h-4 w-4" /> Crear Caja
+                            <Plus className="mr-2 h-4 w-4" /> Crear Punto de Venta
                         </Button>
                     )}
                     renderCard={(terminal: Terminal) => (
@@ -149,8 +149,8 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                 open={deleteConfirm.isOpen}
                 onOpenChange={(open: boolean) => { if (!open) deleteConfirm.cancel() }}
                 onConfirm={deleteConfirm.confirm}
-                title="Eliminar Caja POS"
-                description={`¿Está seguro de eliminar la caja POS "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
+                title="Eliminar Punto de Venta"
+                description={`¿Está seguro de eliminar el punto de venta "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
                 variant="destructive"
             />
         </div>
