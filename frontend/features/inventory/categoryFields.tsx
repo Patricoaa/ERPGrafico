@@ -21,6 +21,12 @@ export const categoryFields = createEntityFields<Category>()({
             )
         },
     },
+    prefix: {
+        key: "prefix",
+        type: "text",
+        label: "Siglas",
+        order: 17,
+    },
     name: {
         key: "name",
         type: "text",
