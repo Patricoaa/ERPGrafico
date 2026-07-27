@@ -166,9 +166,9 @@ export function SessionCloseModal({
 
             if (difference !== 0) {
                 const diffType = difference > 0 ? "sobrante" : "faltante"
-                toast.warning(`Caja cerrada con ${diffType} de ${formatCurrency(Math.abs(difference))}`)
+                toast.warning(`Sesión cerrada con ${diffType} de ${formatCurrency(Math.abs(difference))}`)
             } else {
-                toast.success("Caja cerrada correctamente - Cuadra perfecto!")
+                toast.success("Sesión cerrada correctamente - Cuadra perfecto!")
             }
 
             // Call success callback
@@ -184,7 +184,7 @@ export function SessionCloseModal({
             setJustifyTargetId(null)
             setCashDestinationId(null)
         } catch (error: unknown) {
-            showApiError(error, "Error al cerrar caja")
+            showApiError(error, "Error al cerrar sesión")
         } finally {
             setSubmitting(false)
         }
@@ -507,11 +507,11 @@ export function SessionCloseModal({
     // Step configuration for Header
     const getStepInfo = () => {
         switch (step) {
-            case 1: return { title: "Cierre de Caja y Conteo", description: "Revise los totales del sistema y realice el conteo físico" }
+            case 1: return { title: "Cierre de Sesión y Conteo", description: "Revise los totales del sistema y realice el conteo físico" }
             case 2: return { title: "Resumen de Cierre", description: "Verifique las diferencias y justifique si es necesario" }
             case 3: return { title: "Retiro o Traspaso", description: "¿Desea realizar un retiro de efectivo antes de cerrar?" }
             case 4: return { title: "Configurar Retiro", description: "Ingrese el monto y el destino para el retiro" }
-            default: return { title: "Cierre de Caja", description: "" }
+            default: return { title: "Cierre de Sesión", description: "" }
         }
     }
 

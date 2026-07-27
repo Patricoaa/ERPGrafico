@@ -141,7 +141,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
             <div className="space-y-4 mb-6">
                 <div className="flex items-center gap-2 pb-1.5 border-b border-border">
                     <Calculator className="h-3 w-3 text-foreground" />
-                    <h4 className=" font-black text-xs uppercase tracking-widest text-foreground">Control de Caja</h4>
+                    <h4 className=" font-black text-xs uppercase tracking-widest text-foreground">Control de Sesión</h4>
                 </div>
 
                 <div className="space-y-1.5 text-[11px] leading-tight">
