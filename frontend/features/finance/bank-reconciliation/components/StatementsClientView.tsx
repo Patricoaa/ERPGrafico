@@ -9,7 +9,6 @@ import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
 import {DataTableView, UnifiedSearchBar, useUnifiedSearch, AutoEntityCard, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal, ActionSlideButton} from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { statementFields } from "../statementFields"
 import { statementActions, type StatementActionsCtx } from './statementActions'
@@ -178,43 +177,8 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     }
 
     const columns = useMemo<ColumnDef<BankStatement>[]>(() => {
-        const [idCol, accountCol, dateCol, openingCol, closingCol, stateCol] = statementFields.toColumns()
         return [
-            idCol,
-            accountCol,
-            dateCol,
-            openingCol,
-            closingCol,
-            {
-                id: "lines_info",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Líneas" className="justify-center" />,
-                cell: ({ row }) => (
-                    <div className="flex flex-col items-center justify-center w-full">
-                        <span className="font-semibold text-xs">{row.original.total_lines} total</span>
-                        <span className="text-xs text-muted-foreground">
-                            {row.original.reconciled_lines} rec.
-                        </span>
-                    </div>
-                ),
-            },
-            {
-                accessorKey: "reconciliation_progress",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Progreso" className="justify-center" />
-                ),
-                cell: ({ row }) => {
-                    const progress = parseFloat(row.getValue("reconciliation_progress") as string)
-                    return (
-                        <div className="flex items-center justify-center gap-2 min-w-[120px] w-full">
-                            <Progress value={progress} className="h-1.5 w-16" />
-                            <span className="text-xs font-mono font-bold w-10 text-right">
-                                {Math.round(progress)}%
-                            </span>
-                        </div>
-                    )
-                },
-            },
-            stateCol,
+            ...statementFields.toColumns(),
             statementActions.auto(actionsCtx)
         ]
     }, [])

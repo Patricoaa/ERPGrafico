@@ -3,14 +3,10 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import React, {useState, lazy, Suspense} from "react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Building2, User as UserIcon } from "lucide-react"
 
-import { formatRUT } from "@/lib/utils/format"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, AutoEntityCard } from '@/components/shared'
+import { AutoEntityCard } from '@/components/shared'
 import { contactFields } from "@/features/contacts/contactFields"
 import { contactActions, type ContactActionsCtx } from "@/features/contacts/contactActions"
 import { useContacts, type Contact } from "@/features/contacts"
@@ -24,40 +20,6 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 const ContactDrawer = lazy(() => import("./ContactDrawer"))
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
 
-function ContactRoleIcons({ contact }: { contact: Contact }) {
-    const hasCustomer = contact.is_default_customer
-    const hasVendor = contact.is_default_vendor
-    if (!hasCustomer && !hasVendor) return null
-
-    return (
-        <div className="flex items-center gap-1 shrink-0">
-            {hasCustomer && (
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
-                                <UserIcon className="h-3 w-3" />
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="rounded-sm">Cliente por defecto</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            )}
-            {hasVendor && (
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/15 text-success">
-                                <Building2 className="h-3 w-3" />
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="rounded-sm">Proveedor por defecto</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            )}
-        </div>
-    )
-}
 
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
@@ -117,39 +79,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction, initi
     }
 
     const columns = React.useMemo<ColumnDef<Contact>[]>(() => [
-        ...contactFields.toColumns().map(col => {
-            const key = col.id || (col as any).accessorKey;
-            
-            if (key === 'tax_id') {
-                return {
-                    ...col,
-                    header: ({ column }: any) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
-                    cell: ({ row }: any) => {
-                        const taxId = row.getValue("tax_id") as string | null
-                        return <DataCell.Text>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Text>
-                    },
-                }
-            }
-
-            if (key === 'name') {
-                return {
-                    ...col,
-                    header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-                    cell: ({ row }: any) => {
-                        const contact = row.original as Contact
-                        return (
-                            <div className="flex items-center justify-center gap-2 w-full">
-                                <ContactRoleIcons contact={contact} />
-                                <DataCell.Text>{contact.name}</DataCell.Text>
-                            </div>
-                        )
-                    }
-                }
-            }
-            
-            return col;
-        }) as ColumnDef<Contact>[],
-
+        ...contactFields.toColumns(),
         contactActions.auto(actionsCtx),
     ] as ColumnDef<Contact>[], [actionsCtx])
 

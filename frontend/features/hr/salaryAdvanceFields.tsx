@@ -1,21 +1,31 @@
 import { createEntityFields } from "@/components/shared"
+import { DataCell } from "@/components/shared"
 import type { SalaryAdvance } from "@/types/hr"
 
 export const salaryAdvanceFields = createEntityFields<SalaryAdvance>()({
     employeeName: {
         key: "employee_name",
-        type: "text",
+        type: "computed",
         label: "Empleado",
+        order: 10,
+        render: (a) => (
+            <div className="flex flex-col items-center justify-center w-full">
+                <DataCell.Text weight="bold">{a.employee_name}</DataCell.Text>
+                <DataCell.Secondary>{a.employee_display_id}</DataCell.Secondary>
+            </div>
+        ),
     },
     date: {
         key: "date",
         type: "date",
         label: "Fecha",
+        order: 20,
     },
     amount: {
         key: "amount",
         type: "currency",
         label: "Monto",
+        order: 30,
         get: (a) => parseFloat(a.amount as unknown as string) || 0,
         cellProps: { intent: "warning", weight: "bold" },
     },
@@ -23,6 +33,7 @@ export const salaryAdvanceFields = createEntityFields<SalaryAdvance>()({
         key: "is_discounted",
         type: "status",
         label: "Estado",
+        order: 40,
         get: (a) => a.is_discounted ? "DISCOUNTED" : "PENDING",
         getLabel: (a) => a.is_discounted ? "Descontado" : "Pendiente",
     },
@@ -30,5 +41,6 @@ export const salaryAdvanceFields = createEntityFields<SalaryAdvance>()({
         key: "payroll_display_id",
         type: "code",
         label: "Liquidación",
+        order: 50,
     },
 })

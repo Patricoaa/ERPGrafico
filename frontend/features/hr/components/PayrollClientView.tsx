@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance, triggerDraftPayrolls } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, AutoEntityCard, createStatusColumn, type ToolbarActionItem } from '@/components/shared'
+import { DataTableView, AutoEntityCard, type ToolbarActionItem } from '@/components/shared'
 import { FileText } from "lucide-react"
 import { payrollActions, type PayrollActionsCtx } from '@/features/hr/payrollActions'
 import { PaymentModal } from "@/features/treasury"
@@ -126,27 +126,6 @@ export function PayrollClientView({ initialPayrolls }: PayrollClientViewProps) {
 
     const columns: ColumnDef<Payroll>[] = [
         ...payrollFields.toColumns(),
-        {
-            accessorKey: "legal_deductions_worker",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).legal_deductions_worker || "0")} />,
-        },
-        {
-            accessorKey: "employer_contribution",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).employer_contribution || "0")} />,
-        },
-        {
-            accessorKey: "other_deductions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Otros Desc." className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).other_deductions || "0")} />,
-        },
-        {
-            accessorKey: "advances_total",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).advances_total || "0")} />,
-        },
-        createStatusColumn<Payroll>("previred_paid_status", "Previred"),
         payrollActions.auto(actionsCtx, "Acciones"),
     ]
 

@@ -7,8 +7,8 @@ import { AdvanceDrawer } from "@/features/hr"
 import { createAdvance, deleteAdvance } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance } from "@/types/hr"
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { DataCell, AutoEntityCard } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
+import { AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -64,17 +64,7 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     }
 
     const columns: ColumnDef<SalaryAdvance>[] = [
-        {
-            accessorKey: "employee_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center justify-center w-full">
-                    <DataCell.Text weight="bold">{row.original.employee_name}</DataCell.Text>
-                    <DataCell.Secondary>{row.original.employee_display_id}</DataCell.Secondary>
-                </div>
-            )
-        },
-        ...salaryAdvanceFields.toColumns().filter(c => !("accessorKey" in c) || c.accessorKey !== "employee_name"),
+        ...salaryAdvanceFields.toColumns(),
         salaryAdvanceActions.auto(salaryAdvanceActionsCtx)
     ]
 

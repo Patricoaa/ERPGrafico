@@ -3,7 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import {useState, useMemo, useCallback} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
 import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
@@ -16,7 +16,6 @@ import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import * as LucideIcons from "lucide-react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
@@ -82,29 +81,8 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     }
 
     const columns = useMemo<ColumnDef<Category>[]>(() => {
-        const [idCol, nameCol, parentCol] = categoryFields.toColumns()
         return [
-            idCol,
-            {
-                id: "icon",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" className="justify-center" />,
-                cell: ({ row }) => {
-                    const iconName = row.original.icon
-                    if (!iconName) return <div className="flex justify-center w-full">-</div>
-                    return (
-                        <div className="flex items-center justify-center w-full">
-                            <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
-                                {(() => {
-                                    const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
-                                    return <Icon className="h-4 w-4 text-muted-foreground/70" />
-                                })()}
-                            </div>
-                        </div>
-                    )
-                },
-            },
-            nameCol,
-            parentCol,
+            ...categoryFields.toColumns(),
             categoryActions.auto(actionsCtx),
         ]
     }, [actionsCtx])

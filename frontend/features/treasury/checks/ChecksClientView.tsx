@@ -3,7 +3,7 @@
 import React, { useMemo, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
+    DataTableView,
     SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
@@ -127,20 +127,6 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
 
     const columns = [
         ...checkFields.toColumns(),
-        {
-            id: 'sale_order',
-            accessorFn: (row: Check) => row.sale_order_display?.number ?? null,
-            header: ({ column }: { column: import('@tanstack/react-table').Column<Check> }) => <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />,
-            cell: ({ row }: { row: import('@tanstack/react-table').Row<Check> }) => {
-                const so = row.original.sale_order_display
-                if (!so) return null
-                return (
-                    <div className="flex justify-center">
-                        <DataCell.Entity entityLabel="sales.saleorder" number={so.number} />
-                    </div>
-                )
-            },
-        },
         checkActions.auto(actionsCtx),
     ]
 

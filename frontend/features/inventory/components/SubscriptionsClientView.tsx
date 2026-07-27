@@ -17,15 +17,13 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { ActionConfirmModal, AutoEntityCard, Chip, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, AutoEntityCard } from '@/components/shared'
 import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
-import { DataTableView } from '@/components/shared'
+import { DataTableView, DataCell } from '@/components/shared'
 import type { Product } from "@/types/entities"
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
 import type { KpiCardDef } from '@/components/shared'
 import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
 import { PageHeader, PageHeaderButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -202,15 +200,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         }
     }, [resumeSubscription])
 
-    const getPaymentScheduleText = (sub: Subscription) => {
-        if (sub.payment_day_type === "FIXED_DAY" && sub.payment_day) {
-            return `Día ${sub.payment_day} de cada ${sub.recurrence_display.toLowerCase()}`
-        } else if (sub.payment_day_type === "INTERVAL" && sub.payment_interval_days) {
-            return `Cada ${sub.payment_interval_days} días`
-        }
-        return sub.recurrence_display
-    }
-
     const actionsCtx: SubscriptionActionsCtx = useMemo(() => ({
         onEdit: (productId) => {
             const sub = subscriptions.find(s => s.product === productId)
@@ -226,7 +215,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     }), [subscriptions, handlePause, handleResume, openSubscription])
 
     const columns = useMemo<ColumnDef<Subscription>[]>(() => {
-        const autoCols = subscriptionFields.toColumns({ exclude: ['status', 'supplierName'] })
         return [
             {
                 id: "select",
@@ -250,67 +238,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 enableHiding: false,
                 size: 40,
             },
-            {
-                id: "product",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
-                ),
-                accessorFn: (row) => row.product_name,
-                cell: ({ row }) => {
-                    const sub = row.original;
-                    return (
-                        <div className="flex flex-col items-center gap-1 py-1 w-full">
-                            <DataCell.Text>{sub.product_name}</DataCell.Text>
-                            <div className="flex flex-wrap justify-center gap-1 mt-1">
-                                {sub.product_internal_code && (
-                                    <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
-                                )}
-                                {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                    <Chip size="xs" intent="primary" className="opacity-80">{sub.product_code}</Chip>
-                                )}
-                            </div>
-                        </div>
-                    );
-                },
-            },
-            ...autoCols,
-            {
-                accessorKey: "supplier_name",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />
-                ),
-                cell: ({ row }) => (
-                    <div className="flex justify-center w-full">
-                        <DataCell.ContactLink
-                            contactId={row.original.supplier_id}
-                        >
-                            {row.getValue("supplier_name")}
-                        </DataCell.ContactLink>
-                    </div>
-                ),
-            },
-            {
-                id: "frequency",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Frecuencia" className="justify-center" />
-                ),
-                cell: ({ row }) => (
-                    <DataCell.Secondary>{getPaymentScheduleText(row.original)}</DataCell.Secondary>
-                ),
-            },
-            {
-                accessorKey: "status",
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-                ),
-                cell: ({ row }) => (
-                    <div className="flex justify-center">
-                        <StatusBadge
-                            status={row.getValue("status")}
-                        />
-                    </div>
-                ),
-            },
+            ...subscriptionFields.toColumns(),
             subscriptionActions.auto(actionsCtx),
         ]
     }, [actionsCtx])
