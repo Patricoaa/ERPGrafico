@@ -30,6 +30,7 @@ export const productFields = createEntityFields<Product>()({
         type: 'computed',
         label: 'Total (c/IVA)',
         order: 50,
+        cardPlacement: 'header',
         render: (p) => {
             if (p.is_dynamic_pricing) {
                 return (
@@ -47,6 +48,7 @@ export const productFields = createEntityFields<Product>()({
         type: 'computed',
         label: 'Disponible para',
         order: 60,
+        cardPlacement: 'subtitle',
         render: (p) => (
             <div className="flex justify-center gap-1">
                 {p.can_be_sold && <Chip size="xs">Venta</Chip>}
