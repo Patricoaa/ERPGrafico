@@ -25,7 +25,7 @@ export const posSessionActions = createEntityActions<
         {
             action: "lock",
             icon: Lock,
-            label: "Cerrar Caja",
+            label: "Cerrar Sesión",
             className: "text-destructive",
             onClick: () => ctx.onCloseRegister(item),
             visible: isOpen,

@@ -534,13 +534,13 @@ export function POSClientView() {
                             </div>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Fondo</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte de la Sesión</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
                                 <Lock className="mr-2 h-4 w-4" />
-                                Cerrar Caja
+                                Cerrar Sesión
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -554,8 +554,8 @@ export function POSClientView() {
                     <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
                         <Card className="w-full max-w-md shadow-card border-primary/20 p-8 text-center space-y-4 rounded-md">
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
-                            <h3 className="text-2xl font-bold">Caja Cerrada</h3>
-                            <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
+                            <h3 className="text-2xl font-bold">Sesión Cerrada</h3>
+                            <p className="text-muted-foreground">Debe iniciar una sesión para realizar ventas.</p>
                             <Button
                                 variant="default"
                                 size="lg"
@@ -563,7 +563,7 @@ export function POSClientView() {
                                 onClick={() => sessionControlRef.current?.openSessionDialog()}
                             >
                                 <Unlock className="h-4 w-4" />
-                                Abrir Caja
+                                Iniciar Sesión
                             </Button>
                         </Card>
                     </div>
@@ -595,7 +595,7 @@ export function POSClientView() {
                                         />
                                     )}
                                 </div>
-                                <div className="flex-1 px-1.5 pb-1"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} density="rich" /></div>
+                                <div className="flex-1 px-1.5 pb-1"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
                             </Card>
                         </div>
                     ) : (

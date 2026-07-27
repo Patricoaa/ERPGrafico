@@ -105,7 +105,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         prev.includes(m.id) && m.method_type === 'CASH'
                     )
                     if (existingCash) {
-                        toast.warning("Solo se puede seleccionar 1 método de EFECTIVO (Caja) por terminal.")
+                        toast.warning("Solo se puede seleccionar 1 método de EFECTIVO (Caja) por punto de venta.")
                         return prev
                     }
                 }
@@ -135,15 +135,15 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
             if (terminal) {
                 await treasuryApi.updateTerminal(terminal.id, payload as unknown as TerminalUpdatePayload)
-                toast.success("Caja POS actualizada correctamente")
+                toast.success("Punto de Venta actualizado correctamente")
             } else {
                 await treasuryApi.createTerminal(payload as unknown as TerminalCreatePayload)
-                toast.success("Caja POS creada correctamente")
+                toast.success("Punto de Venta creado correctamente")
             }
             onSuccess?.()
             onOpenChange(false)
         } catch (error: unknown) {
-            showApiError(error, "Error al guardar la caja POS")
+            showApiError(error, "Error al guardar el punto de venta")
         } finally {
             setIsSubmitting(false)
         }
@@ -153,7 +153,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
     const getTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
-            'CASH': 'Efectivo (Cajas)',
+            'CASH': 'Efectivo',
             'CARD': 'Tarjetas (Débito / Crédito)',
             'TRANSFER': 'Transferencias',
             'CHECK': 'Cheques',
@@ -182,7 +182,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         <span className="opacity-30">|</span>
                     </>
                 )}
-                <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
+                <span>{terminal ? "Modifique la configuración del punto de venta y revise su historial." : "Configuración del punto de venta y asignación de métodos de pago."}</span>
             </div>
         ),
         onPrint: handlePrint,
@@ -230,7 +230,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                             <>
                                 <CancelButton onClick={() => onOpenChange(false)} />
                                 <ActionSlideButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
-                                    {mode === 'create' ? "Crear Caja POS" : "Guardar Cambios"}
+                                    {mode === 'create' ? "Crear Punto de Venta" : "Guardar Cambios"}
                                 </ActionSlideButton>
                             </>
                         }
@@ -260,7 +260,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                 label="Nombre"
                                                 required
                                                 {...field}
-                                                placeholder="Ej: Caja 1"
+                                                placeholder="Ej: Mostrador Principal"
                                             />
                                         )}
                                     />

@@ -25,7 +25,7 @@ function entityLabel(type: string): string {
         purchase_receipt: 'Recepción',
         stock_move: 'Movimiento de Stock',
         journal_entry: 'Asiento Contable',
-        cash_movement: 'Movimiento de Caja',
+        cash_movement: 'Movimiento de Fondo',
     }
     return labels[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 }

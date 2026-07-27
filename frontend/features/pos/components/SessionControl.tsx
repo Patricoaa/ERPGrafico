@@ -336,10 +336,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             setIsSharedSession(false)
             setOpenDialogOpen(false)
             setReportDialogOpen(false)
-            toast.success("Caja abierta correctamente")
+            toast.success("Sesión iniciada correctamente")
             localStorage.removeItem('shared_pos_session_id')
         } catch (error: unknown) {
-            showApiError(error, "Error al abrir caja")
+            showApiError(error, "Error al iniciar sesión")
         } finally {
             setSubmitting(false)
         }
@@ -575,7 +575,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center space-y-1">
                             <h3 className="font-bold text-lg">{terminal?.name}</h3>
-                            <p className="text-sm text-muted-foreground">Ingrese el fondo inicial en caja</p>
+                            <p className="text-sm text-muted-foreground">Ingrese el fondo inicial</p>
                         </div>
 
                         <div className="flex justify-center">
@@ -808,7 +808,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     className="gap-2"
                 >
                     <Unlock className="h-4 w-4" />
-                    Abrir Caja
+                    Iniciar Sesión
                 </Button>
 
                 <BaseModal
@@ -835,7 +835,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
                         )}>
                             <div className={cn("h-2 w-2 rounded-full animate-pulse", isSharedSession ? 'bg-primary' : 'bg-success')} />
-                            {isSharedSession ? "Caja Compartida" : "Caja Abierta"}
+                            {isSharedSession ? "Sesión Compartida" : "Sesión Abierta"}
                         </span>
 
                         <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mr-2">
