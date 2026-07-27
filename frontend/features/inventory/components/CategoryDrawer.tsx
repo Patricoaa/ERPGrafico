@@ -301,7 +301,7 @@ export function CategoryDrawer({
             sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id} entityType="category" /> : sidebar}
         >
             <Form {...form}>
-                <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 px-6 pb-6 pt-6">
                     <fieldset disabled={isView} className="contents">
 
                         <FormField
