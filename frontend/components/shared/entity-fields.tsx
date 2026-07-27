@@ -624,6 +624,7 @@ function computeAutoComposeKeys<T>(
         if (consumedKeys.size >= 4) break
         const candidate = allDefs.find(d => {
             if (consumedKeys.has(d.key)) return false
+            if (d.cardPlacement && d.cardPlacement !== 'subtitle') return false
             const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
             if (r !== slotRole) return false
             if (d.type === 'currency' && !/total/i.test(d.key)) return false
