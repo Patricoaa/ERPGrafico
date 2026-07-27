@@ -947,9 +947,9 @@ export function createEntityFields<T>(): (
             }
 
             // Explicit cardPlacement:'subtitle' fields not yet consumed by role-based slots
-            const explicitSubtitleFields = allDefs.filter(d =>
-                d.cardPlacement === 'subtitle' && consumedKeys.has(d.key) && !items.some(item => item.kind !== 'separator')
-            )
+    const explicitSubtitleFields = allDefs.filter(d =>
+        d.cardPlacement === 'subtitle' && consumedKeys.has(d.key)
+    )
             for (const d of explicitSubtitleFields) {
                 if (items.length >= 4) break
                 const raw = entity[d.key as keyof T]

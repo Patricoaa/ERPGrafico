@@ -28,6 +28,7 @@ export const productFields = createEntityFields<Product>()({
     total: {
         key: 'sale_price',
         type: 'computed',
+        fieldRole: 'primary-value',
         label: 'Total (c/IVA)',
         order: 50,
         cardPlacement: 'header',
