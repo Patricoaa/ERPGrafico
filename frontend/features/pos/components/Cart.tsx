@@ -196,7 +196,7 @@ export function Cart({
                                 </div>
                             )}
 
-                            {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
+                            {(totals.global_discount_total || 0) > 0 && (
                                 <div className="flex justify-between text-xs text-muted-foreground">
                                     <span>Descuento Global</span>
                                     <span>-{formatCurrency(totalDiscountAmount || totals.global_discount_total || 0)}</span>
