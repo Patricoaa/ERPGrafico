@@ -1,10 +1,10 @@
 "use client"
 
 // ProductSelector/ProductGrid
-// Grid display of products with availability indicators.
-// Supports three density modes: rich (POS), compact (calculators), minimal (OT creation).
-//
-// Requires a parent container with explicit height (e.g. `flex-1 min-h-0`)
+// Grid display of products with availability indicators
+// Extracted from @/features/pos/components/ProductGrid (PR-2: ProductSelector migration).
+// 
+// Requires a parent container with explicit height (e.g. `flex-1 min-h-0`) 
 // to work correctly with VirtuosoGrid.
 
 import { Button } from "@/components/ui/button"
@@ -22,10 +22,8 @@ import { DynamicIcon, EmptyState } from '@/components/shared'
 import { resolveMediaUrl } from '@/lib/media-url'
 import { VirtuosoGrid } from 'react-virtuoso'
 
+// Define StockLimits locally here since they are passed from POS but might not be present in other contexts
 export type SharedStockLimits = Record<string, number | undefined>
-
-/** Card density variant controlling information richness. */
-export type CardDensity = 'rich' | 'compact' | 'minimal'
 
 export interface ProductGridProps {
     products: BaseProduct[]
@@ -41,8 +39,6 @@ export interface ProductGridProps {
     priceRenderer?: (product: BaseProduct) => React.ReactNode
     /** IDs of selected products (in cart, calculator, etc). Shows CMY ribbon on each. */
     selectedProductIds?: Set<number>
-    /** Controls information density on each card. 'rich' = full POS card, 'compact' = calculator, 'minimal' = OT picker. */
-    density?: CardDensity
 }
 
 function ProductGridComponent({
@@ -53,13 +49,9 @@ function ProductGridComponent({
     onProductClick,
     onToggleFavorite,
     priceRenderer,
-    selectedProductIds,
-    density = 'rich'
+    selectedProductIds
 }: ProductGridProps) {
     const { isTouchPOS, isSmallScreen } = useDeviceContext()
-
-    const isRich = density === 'rich'
-    const isMinimal = density === 'minimal'
 
     if (products.length === 0) {
         return (
@@ -74,12 +66,12 @@ function ProductGridComponent({
         )
     }
 
-    // Adaptive grid columns based on device + density
-    const gridCols = isMinimal
-        ? (isTouchPOS ? "grid-cols-4" : isSmallScreen ? "grid-cols-3" : "grid-cols-3 lg:grid-cols-5")
-        : density === 'compact'
-            ? (isTouchPOS ? "grid-cols-4" : isSmallScreen ? "grid-cols-3" : "grid-cols-3 lg:grid-cols-4")
-            : (isTouchPOS ? "grid-cols-3" : isSmallScreen ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4")
+    // Adaptive grid columns based on device
+    const gridCols = isTouchPOS
+        ? "grid-cols-3"  // Tablet: 3 columns for better touch targets
+        : isSmallScreen
+            ? "grid-cols-2"  // Mobile: 2 columns
+            : "grid-cols-2 lg:grid-cols-4"  // Desktop: 2-4 columns
 
     return (
         <VirtuosoGrid
@@ -97,31 +89,26 @@ function ProductGridComponent({
                     ? product.category?.icon
                     : catData?.icon) || null
 
+                // Uses the injected strategy to determine if disabled
                 const isDisabled = isProductDisabled(product)
 
+                // Used only for visual badges
                 const isManufacturable = product.product_type === 'MANUFACTURABLE'
                 const mfgSubType = isManufacturable
                     ? (product.requires_advanced_manufacturing ? 'ADVANCED'
                         : product.mfg_auto_finalize ? 'EXPRESS' : 'SIMPLE')
                     : null
 
-                const qty = limits[`prod_${product.id}`] ?? product.qty_available ?? 0
-                const hasQty = qty > 0
-
                 return (
                     <Card
                         className={cn(
-                            "group cursor-pointer transition-all border border-border/50 overflow-hidden flex flex-col h-full rounded-md bg-card shadow-card shadow-black/5",
-                            isRich ? "p-2" : "p-1.5",
+                            "group cursor-pointer hover:shadow-elevated transition-all border border-border/50 overflow-hidden flex flex-col h-full rounded-md p-2 bg-card shadow-card shadow-black/5",
                             selectedProductIds?.has(product.id) && "ribbon-cmyk",
                             isTouchPOS && "active:scale-95",
-                            isDisabled
-                                ? "opacity-50 grayscale cursor-not-allowed"
-                                : "hover:shadow-elevated"
+                            isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}
                         onClick={() => !isDisabled && onProductClick(product)}
                     >
-                        {/* Image Area */}
                         <div className={cn(
                             "aspect-square bg-muted/20 rounded-sm flex items-center justify-center relative overflow-hidden border shadow-card",
                             isTouchPOS && "min-h-[120px]"
@@ -135,122 +122,131 @@ function ProductGridComponent({
                                 />
                             )}
 
-                            {/* Hover Add Indicator — centered */}
+                            {/* Hover Indicator (Centered Large Icon) */}
                             {!isDisabled && (
-                                <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-floating flex items-center justify-center">
+                                <div className="absolute inset-0 bg-background/10 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity z-10 flex items-center justify-center">
+                                    <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-floating flex items-center justify-center transform scale-50 group-hover:scale-100 transition-transform duration-300 ease-out">
                                         <Plus className="h-6 w-6" />
                                     </div>
                                 </div>
                             )}
 
-                            {/* Favorite Toggle — top-right of image, rich density only */}
-                            {isRich && onToggleFavorite && (
-                                <Button
-                                    variant="ghost"
-                                    className="absolute top-2 right-2 z-20 flex items-center justify-center transition-all p-0 m-0 h-auto w-auto bg-transparent border-none shadow-none text-muted-foreground/20 hover:text-muted-foreground"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onToggleFavorite(product.id)
-                                    }}
-                                    title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
-                                >
-                                    <Heart
+                            {/* Top overlay: Favorites + Availability badges */}
+                            <div className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between">
+                                {/* Left side Favorite Badge */}
+                                {onToggleFavorite && (
+                                    <Button
+                                        variant="ghost"
                                         className={cn(
-                                            "h-4 w-4 transition-colors",
-                                            product.is_favorite ? "fill-destructive text-destructive" : ""
+                                            "flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
+                                            product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
                                         )}
-                                    />
-                                </Button>
-                            )}
-
-                            {/* Availability Badge — top-left of image, hidden on minimal */}
-                            {!isMinimal && (
-                                <div className="absolute top-2 left-2 z-20">
-                                    {product.product_type === 'STORABLE' && (
-                                        <AvailabilityBadge available={hasQty} label={String(qty)} />
-                                    )}
-                                    {isManufacturable && mfgSubType === 'SIMPLE' && (
-                                        <AvailabilityBadge available={hasQty} label={String(qty)} />
-                                    )}
-                                    {isManufacturable && mfgSubType === 'EXPRESS' && (
-                                        !product.has_bom ? (
-                                            <BadgeChip label="Sin receta" />
-                                        ) : (
-                                            <AvailabilityBadge
-                                                available={(product.manufacturable_quantity ?? 0) > 0}
-                                                label={`${product.manufacturable_quantity ?? 0} fab.`}
-                                            />
-                                        )
-                                    )}
-                                    {isManufacturable && mfgSubType === 'ADVANCED' && (
-                                        product.has_bom ? (
-                                            <AvailabilityBadge
-                                                available={(product.manufacturable_quantity ?? 0) > 0}
-                                                label={`${product.manufacturable_quantity ?? 0} fab.`}
-                                            />
-                                        ) : (
-                                            <BadgeChip label="Sin receta" />
-                                        )
-                                    )}
-                                    {(product.product_type === 'SERVICE' ||
-                                        product.product_type === 'SUBSCRIPTION' ||
-                                        product.product_type === 'CONSUMABLE') && (
-                                        <AvailabilityBadge available={true} label="Disponible" />
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Info Area */}
-                        {!isMinimal ? (
-                            <div className={cn(
-                                "flex flex-col gap-0.5",
-                                isRich ? "pt-3 pb-1 px-1" : "pt-2 pb-1 px-1",
-                                isTouchPOS && isRich && "pt-4"
-                            )}>
-                                {/* Row: name left, price right */}
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className={cn(
-                                        "font-semibold text-left leading-tight flex-1 min-w-0",
-                                        isRich ? "text-sm line-clamp-2" : "text-xs line-clamp-1",
-                                        isTouchPOS && isRich && "text-base"
-                                    )}>
-                                        {product.name}
-                                    </div>
-                                    {(isRich || (priceRenderer && density === 'compact')) && (
-                                        <div className="shrink-0 text-right">
-                                            {priceRenderer ? (
-                                                priceRenderer(product)
-                                            ) : product.is_dynamic_pricing ? (
-                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-warning/20 bg-warning/10 text-warning">
-                                                    Dinámico
-                                                </span>
-                                            ) : (
-                                                <div className="flex flex-col items-end">
-                                                    <span className={cn(
-                                                        "font-medium text-foreground",
-                                                        isTouchPOS && isRich ? "text-base" : "text-sm"
-                                                    )}>
-                                                        {formatCurrency(PricingUtils.netToGross(Number(product.sale_price || 0)))}
-                                                    </span>
-                                                    <span className="text-[9px] text-muted-foreground uppercase font-medium leading-none">
-                                                        c/IVA
-                                                    </span>
-                                                </div>
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onToggleFavorite(product.id)
+                                        }}
+                                        title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
+                                    >
+                                        <Heart
+                                            className={cn(
+                                                "h-3.5 w-3.5 transition-colors",
+                                                product.is_favorite ? "fill-current" : ""
                                             )}
+                                        />
+                                    </Button>
+                                )}
+
+                                {/* Right side badges (Availability) */}
+                                <div className="flex flex-col gap-2 items-end">
+
+                                {/* Stock/Availability Badge */}
+                                {product.product_type === 'STORABLE' && (
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                        <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
+                                        {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
+                                    </div>
+                                )}
+
+                                {/* MANUFACTURABLE badges */}
+                                {isManufacturable && mfgSubType === 'SIMPLE' && (
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                        <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
+                                        {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
+                                    </div>
+                                )}
+
+                                {isManufacturable && mfgSubType === 'EXPRESS' && (
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                        {!product.has_bom ? (
+                                            <>
+                                                <div className="h-2 w-2 rounded-full bg-muted-foreground" />
+                                                Sin LdM
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-destructive'}`} />
+                                                {`${product.manufacturable_quantity ?? 0} fab.`}
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
+                                {isManufacturable && mfgSubType === 'ADVANCED' && (
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                        {product.has_bom ? (
+                                            <>
+                                                <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-warning'}`} />
+                                                {`${product.manufacturable_quantity ?? 0} fab.`}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="h-2 w-2 rounded-full bg-primary" />
+                                                Disponible
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
+                                {(product.product_type === 'SERVICE' ||
+                                    product.product_type === 'SUBSCRIPTION' ||
+                                    product.product_type === 'CONSUMABLE') && (
+                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                            <div className="h-2 w-2 rounded-full bg-success" />
+                                            Disponible
                                         </div>
                                     )}
                                 </div>
                             </div>
-                        ) : (
-                            /* Minimal: name only, tight */
-                            <div className="pt-2 pb-1 px-1">
-                                <div className="font-medium text-xs text-left leading-tight line-clamp-1">
-                                    {product.name}
-                                </div>
+                        </div>
+
+                        <div className={cn(
+                            "pt-3 pb-1 px-1 flex items-start justify-between gap-3",
+                            isTouchPOS && "pt-4"
+                        )}>
+                            <div className={cn(
+                                "font-bold line-clamp-2 text-left flex-1 leading-tight",
+                                isTouchPOS ? "text-base" : "text-sm"
+                            )}>
+                                {product.name}
                             </div>
-                        )}
+                            <div className={cn(
+                                "text-primary font-black text-right shrink-0",
+                                isTouchPOS ? "text-lg" : "text-base"
+                            )}>
+                                {priceRenderer ? priceRenderer(product) : (
+                                    product.is_dynamic_pricing ? (
+                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-warning/20 bg-warning/10 text-warning">
+                                            Dinámico
+                                        </span>
+                                    ) : (
+                                        <div className="flex flex-col items-end">
+                                            <span>{formatCurrency(PricingUtils.netToGross(Number(product.sale_price || 0)))}</span>
+                                            <span className="text-[9px] text-muted-foreground uppercase font-semibold leading-none mt-0.5">c/IVA</span>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </div>
                     </Card>
                 )
             }}
@@ -258,25 +254,7 @@ function ProductGridComponent({
     )
 }
 
-/* ── Badge sub-components ────────────────────────────────────────── */
-
-function AvailabilityBadge({ available, label }: { available: boolean; label: string }) {
-    return (
-        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
-            <div className={cn("h-2 w-2 rounded-full", available ? "bg-success" : "bg-destructive")} />
-            {label}
-        </div>
-    )
-}
-
-function BadgeChip({ label }: { label: string }) {
-    return (
-        <div className="flex items-center bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
-            {label}
-        </div>
-    )
-}
-
+// 🚀 Memoize to prevent unnecessary re-renders when products/limits haven't changed
 export const ProductGrid = memo(ProductGridComponent, (prevProps, nextProps) => {
     return (
         prevProps.products === nextProps.products &&
@@ -285,7 +263,6 @@ export const ProductGrid = memo(ProductGridComponent, (prevProps, nextProps) => 
         prevProps.onToggleFavorite === nextProps.onToggleFavorite &&
         prevProps.isProductDisabled === nextProps.isProductDisabled &&
         prevProps.priceRenderer === nextProps.priceRenderer &&
-        prevProps.selectedProductIds === nextProps.selectedProductIds &&
-        prevProps.density === nextProps.density
+        prevProps.selectedProductIds === nextProps.selectedProductIds
     )
 })
