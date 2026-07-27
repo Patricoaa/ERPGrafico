@@ -1,8 +1,7 @@
 import { createEntityFields } from '@/components/shared'
-import { DataCell, Chip, StatusBadge } from '@/components/shared'
+import { DataCell, Chip } from '@/components/shared'
 import type { Product } from '@/features/inventory/types'
 import { translateProductType } from '@/lib/utils'
-import { PricingUtils } from '@/lib/pricing-utils'
 
 export const productFields = createEntityFields<Product>()({
     internal_code: { key: 'internal_code', type: 'code', label: 'Código Interno', order: 10 },
@@ -13,15 +12,8 @@ export const productFields = createEntityFields<Product>()({
         label: 'Nombre',
         order: 25,
         render: (p) => (
-            <div className="flex items-center justify-center gap-2 w-full">
-                <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                        <DataCell.Text>{p.name}</DataCell.Text>
-                        {!p.is_active && (
-                            <StatusBadge status="inactive" label="ARCHIVADO" size="sm" className="h-3.5" />
-                        )}
-                    </div>
-                </div>
+            <div className="flex items-center justify-center w-full">
+                <DataCell.Text>{p.name}</DataCell.Text>
             </div>
         ),
     },
@@ -33,10 +25,10 @@ export const productFields = createEntityFields<Product>()({
         get: (p) => translateProductType(p.product_type),
         order: 40,
     },
-    salePrice: {
+    total: {
         key: 'sale_price',
         type: 'computed',
-        label: 'Neto',
+        label: 'Total (c/IVA)',
         order: 50,
         render: (p) => {
             if (p.is_dynamic_pricing) {
@@ -46,40 +38,7 @@ export const productFields = createEntityFields<Product>()({
                     </div>
                 )
             }
-            return <DataCell.Currency value={Number(p.sale_price)} />
-        },
-    },
-    tax: {
-        key: 'sale_price',
-        type: 'computed',
-        label: 'IVA',
-        order: 55,
-        render: (p) => {
-            if (p.is_dynamic_pricing) {
-                return (
-                    <div className="flex justify-center w-full">
-                        <Chip size="xs" intent="warning">Dinámico</Chip>
-                    </div>
-                )
-            }
-            const tax = PricingUtils.calculateTax(Number(p.sale_price))
-            return <DataCell.Currency value={tax} />
-        },
-    },
-    total: {
-        key: 'sale_price',
-        type: 'computed',
-        label: 'Total (c/IVA)',
-        order: 57,
-        render: (p) => {
-            if (p.is_dynamic_pricing) {
-                return (
-                    <div className="flex justify-center w-full">
-                        <Chip size="xs" intent="warning">Dinámico</Chip>
-                    </div>
-                )
-            }
-            const total = p.sale_price_gross || PricingUtils.netToGross(Number(p.sale_price))
+            const total = p.sale_price_gross || Number(p.sale_price)
             return <DataCell.Currency value={total} />
         },
     },
