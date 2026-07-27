@@ -224,8 +224,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         productActions.auto(actionsCtx),
     ], [actionsCtx])
 
-    const initialColumnVisibility = useMemo(() => ({ is_active: false }), [])
-
     const bulkActions = useMemo<BulkAction<Product>[]>(() => [
         {
             key: "restore",
@@ -291,7 +289,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     />}
                     unifiedSearchConfig={config}
                     currentGroupBy={effectiveGrouping ? search.groupBy : null}
-                    initialColumnVisibility={initialColumnVisibility}
                     showReset={search.isFiltered}
                     isFiltered={search.isFiltered}
                     onReset={search.clearAll}
