@@ -156,29 +156,41 @@ function CartItemComponent({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                    {/* Discount Icon */}
+                    {/* Discount: icon when empty, amount when applied */}
                     {showLineDiscount && (
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    className={cn(
-                                        "flex items-center justify-center transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer",
-                                        isTouchMode ? "h-10 w-10" : "h-7 w-7 opacity-0 group-hover:opacity-100",
-                                        (item.discount_amount || 0) > 0
-                                            ? "text-destructive hover:bg-destructive/10"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    )}
-                                    onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
-                                    type="button"
-                                    title="Descuento"
-                                >
-                                    <Percent className={cn(isTouchMode ? "h-5 w-5" : "h-4 w-4")} />
-                                </Button>
+                                {(item.discount_amount || 0) > 0 ? (
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "font-bold transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
+                                            isTouchMode ? "h-10 px-2 text-sm" : "h-7 px-2 text-xs opacity-0 group-hover:opacity-100"
+                                        )}
+                                        onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
+                                        type="button"
+                                        title="Editar descuento"
+                                    >
+                                        -{formatCurrency(item.discount_amount)}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "flex items-center justify-center transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted",
+                                            isTouchMode ? "h-10 w-10" : "h-7 w-7 opacity-0 group-hover:opacity-100"
+                                        )}
+                                        onClick={() => onOpenNumpad(item.cartItemId, 'discount', 0)}
+                                        type="button"
+                                        title="Agregar descuento"
+                                    >
+                                        <Percent className={cn(isTouchMode ? "h-5 w-5" : "h-4 w-4")} />
+                                    </Button>
+                                )}
                             </TooltipTrigger>
                             <TooltipContent side="top" className="text-xs">
                                 {(item.discount_amount || 0) > 0
-                                    ? `Descuento: ${formatCurrency(item.discount_amount)}`
+                                    ? `Descuento: ${formatCurrency(item.discount_amount)} — clic para editar`
                                     : "Agregar descuento"
                                 }
                             </TooltipContent>
