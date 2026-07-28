@@ -61,6 +61,7 @@ export function createEntityCardView(
           title: resolved.title,
           description: resolved.description,
           action: resolved.action,
+          entityLabel: resolved.entityLabel,
           className: "h-full w-full",
         })
       )
@@ -148,6 +149,7 @@ export function createCardGroupView<TData>(
           title: resolved.title,
           description: resolved.description,
           action: resolved.action,
+          entityLabel: resolved.entityLabel,
           className: "h-full w-full",
         }),
       )

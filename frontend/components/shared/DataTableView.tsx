@@ -63,6 +63,11 @@ export function DataTableView<TData, TValue>({
   const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel, defaultView)
   const hasBulkActions = !!(dataTableProps.bulkActions?.length || dataTableProps.bulkDock)
 
+  const enrichedEmptyState = useMemo(() => ({
+    ...dataTableProps.emptyState,
+    entityLabel,
+  }), [dataTableProps.emptyState, entityLabel])
+
   const derivedCardGroupBy = useMemo((): CardGroupByDef | undefined => {
     if (unifiedSearchConfig?.groupBy?.length && currentGroupBy) {
       const option = unifiedSearchConfig.groupBy.find(g => g.key === currentGroupBy)
@@ -118,7 +123,7 @@ export function DataTableView<TData, TValue>({
             renderCard: renderCard as (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode,
             cardGroupBy: derivedCardGroupBy,
             gridLayout: policy.gridLayout,
-            emptyState: dataTableProps.emptyState,
+            emptyState: enrichedEmptyState,
             isFiltered: dataTableProps.isFiltered,
             hasBulkActions,
           }) as unknown as (table: ReactTable<TData>) => React.ReactNode
@@ -126,7 +131,7 @@ export function DataTableView<TData, TValue>({
         return createEntityCardView(entityLabel, {
           renderCard: renderCard as (data: Record<string, unknown>, row: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode,
           gridLayout: policy.gridLayout,
-          emptyState: dataTableProps.emptyState,
+          emptyState: enrichedEmptyState,
           isFiltered: dataTableProps.isFiltered,
           hasBulkActions,
         }) as unknown as (table: ReactTable<TData>) => React.ReactNode
@@ -244,6 +249,7 @@ export function DataTableView<TData, TValue>({
   return (
     <DataTable
       {...dataTableProps}
+      emptyState={enrichedEmptyState}
       columns={finalColumns as any}
       data={isTableViewGrouped ? sortedData : dataTableProps.data}
       renderRow={isTableViewGrouped ? internalRenderRow : dataTableProps.renderRow}

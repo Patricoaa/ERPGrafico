@@ -531,6 +531,7 @@ export function DataTable<TData, TValue>({
                                         title={emptyProps.title}
                                         description={emptyProps.description}
                                         action={emptyProps.action}
+                                        entityLabel={emptyProps.entityLabel}
                                     />
                                 </TableCell>
                             </TableRow>
@@ -629,6 +630,7 @@ export function DataTable<TData, TValue>({
                         title={emptyProps.title}
                         description={emptyProps.description}
                         action={emptyProps.action}
+                        entityLabel={emptyProps.entityLabel}
                     />
                 )}
             </div>
@@ -705,6 +707,7 @@ export function DataTable<TData, TValue>({
                             title={emptyProps.title}
                             description={emptyProps.description}
                             action={emptyProps.action}
+                            entityLabel={emptyProps.entityLabel}
                             className="h-full w-full"
                         />
                     </TableCell>
@@ -949,6 +952,7 @@ export function DataTable<TData, TValue>({
                                                     title={emptyProps.title}
                                                     description={emptyProps.description}
                                                     action={emptyProps.action}
+                                                    entityLabel={emptyProps.entityLabel}
                                                 />
                                             </TableCell>
                                         </TableRow>
