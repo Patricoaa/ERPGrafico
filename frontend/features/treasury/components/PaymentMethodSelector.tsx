@@ -522,11 +522,16 @@ export function PaymentMethodSelector({
                 <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
                     {/* Card "Múltiple" para salir */}
                     <div
-                        className="col-span-full self-start p-8 flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground rounded-[calc(var(--radius))]"
+                        className="col-span-full self-start p-8 flex flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground rounded-[calc(var(--radius))]"
                     >
                         <div className="flex items-center gap-3 min-w-0">
                             <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
-                            <div className="text-base font-semibold leading-tight">Múltiple</div>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <div className="text-base font-semibold leading-tight">Múltiple</div>
+                                    <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
+                                </div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="flex flex-wrap gap-1.5">
@@ -544,11 +549,10 @@ export function PaymentMethodSelector({
                                     </span>
                                 )}
                             </div>
-                            <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none shrink-0">Activo</span>
                             <button
                                 type="button"
                                 onClick={exitMultiMode}
-                                className="rounded-[calc(var(--radius))] p-1 hover:bg-primary-foreground/20 transition-colors shrink-0"
+                                className="rounded-[calc(var(--radius))] p-1 hover:bg-primary-foreground/20 transition-colors"
                             >
                                 <X className="h-5 w-5 text-primary-foreground" />
                             </button>
