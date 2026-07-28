@@ -733,26 +733,9 @@ export function PaymentMethodSelector({
                 }
             >
                 <div className="flex flex-col items-center gap-4 overflow-y-auto">
-                    {pendingMethod && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Método:</span>
-                            <span className="font-semibold text-foreground">
-                                {METHOD_META[pendingMethod]?.label || pendingMethod}
-                            </span>
-                        </div>
-                    )}
-                    {isMultiPayment && (
-                        <div className="text-xs text-muted-foreground">
-                            {editingIndex !== null
-                                ? `Editando monto para ${METHOD_META[pendingMethod || '']?.label || ''}`
-                                : `Restante por cobrar: ${formatMoney(remaining)}`
-                            }
-                        </div>
-                    )}
                     <Numpad
                         value={tempAmount}
                         onChange={setTempAmount}
-                        title="Monto a Pagar"
                         onConfirm={handleAmountConfirm}
                         onClose={() => { setIsAmountModalOpen(false); setEditingIndex(null) }}
                         allowDecimal={false}
