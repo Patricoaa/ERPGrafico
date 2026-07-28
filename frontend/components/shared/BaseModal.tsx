@@ -85,7 +85,7 @@ export function BaseModal({
     const iconElement: React.ReactNode = icon
         ? (typeof icon === "function" || (typeof icon === "object" && "render" in icon))
             ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
-                className: cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-primary-foreground" : "text-muted-foreground/80")
+                className: cn("h-5 w-5 flex-shrink-0", isTransaction ? "text-primary-foreground" : "text-muted-foreground/80")
             })
             : icon
         : null

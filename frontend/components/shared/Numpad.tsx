@@ -140,7 +140,7 @@ export function Numpad({
                         <Button
                             key={qa.label}
                             variant="outline"
-                            className="h-10 lg:h-12 text-xs lg:text-sm font-bold active:scale-95 transition-transform"
+                            className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
                             onClick={() => {
                                 if (onQuickAmountAction) {
                                     onQuickAmountAction(qa)
@@ -215,7 +215,7 @@ export function Numpad({
 
             {onConfirm && !hideConfirm && (
                 <Button
-                    className="w-full h-12 lg:h-14 font-black uppercase tracking-widest text-sm lg:text-base bg-primary hover:bg-primary"
+                    className="w-full h-12 lg:h-14 font-black uppercase tracking-widest text-sm lg:text-base bg-primary hover:bg-primary active:scale-95 transition-transform"
                     onClick={onConfirm}
                 >
                     {confirmLabel}
