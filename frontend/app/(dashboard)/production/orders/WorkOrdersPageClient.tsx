@@ -165,7 +165,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                         />
                     </div>
                 ),
-                meta: { title: "Folio" },
             },
             saleOrderCol,
             startDateCol,
@@ -189,7 +188,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 filterFn: (row, id, value) => {
                     return value.includes(row.getValue(id))
                 },
-                meta: { title: "Estado" },
             },
             stageCol,
             dueDateCol,

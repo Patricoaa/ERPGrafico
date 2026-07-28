@@ -761,6 +761,7 @@ export function createEntityFields<T>(): (
                             />
                         ),
                         cell: ({ row }) => renderCell(def, row.original),
+                        meta: { title: headerLabel },
                         enableSorting,
                         size: def.tableOptions?.width,
                         ...(def.tableOptions?.sortingFn && { sortingFn: def.tableOptions.sortingFn as never }),

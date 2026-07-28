@@ -90,25 +90,21 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
             cell: ({ row }) => <DataCell.Text className="font-normal uppercase text-[11px]">{row.original.dte_type_display}</DataCell.Text>,
-            meta: { title: "Documento" },
         },
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Número" className="justify-center" />,
             cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-            meta: { title: "Número" },
         },
         {
             accessorKey: "customer_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as unknown as Record<string, unknown>).customer as number || row.original.partner}>{(row.original as unknown as Record<string, unknown>).customer_name as string || row.original.partner_name}</DataCell.ContactLink>,
-            meta: { title: "Cliente" },
         },
         {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
-            meta: { title: "Total" },
         },
         {
             accessorKey: "status",
