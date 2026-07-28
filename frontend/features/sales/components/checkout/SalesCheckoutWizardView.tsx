@@ -398,8 +398,25 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     }
                     return { isValid: true }
 
-                case 'delivery':
+                case 'delivery': {
+                    const isOnlyService = currentOrderLines.every(line => line.product_type === 'SERVICE')
+                    if (isOnlyService && !deliveryData.date) {
+                        toast.error("Debe seleccionar una fecha de cumplimiento para continuar.")
+                        return { isValid: false }
+                    }
+                    if ((deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && !deliveryData.date) {
+                        toast.error("Debe seleccionar una fecha de entrega para continuar.")
+                        return { isValid: false }
+                    }
+                    if (deliveryData.type === 'PARTIAL') {
+                        const hasPartialQty = (deliveryData.partialQuantities || []).some(pq => pq.dispatchedQty > 0)
+                        if (!hasPartialQty) {
+                            toast.error("Debe especificar al menos una cantidad a despachar inmediatamente.")
+                            return { isValid: false }
+                        }
+                    }
                     return { isValid: true }
+                }
 
                 case 'payment': {
                     const multiPayments = paymentData.payments
