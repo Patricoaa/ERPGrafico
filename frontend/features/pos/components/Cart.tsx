@@ -106,8 +106,7 @@ export function Cart({
                     {/* Header */}
                     <div className={cn("px-2 border-b border-border/40 bg-transparent shrink-0 flex justify-between items-center gap-2", isTouchPOS ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
                         <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
-                        {posMode === 'SHOPPING' && (
-                            <DropdownMenu>
+                        <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
                                         variant="ghost"
@@ -135,7 +134,6 @@ export function Cart({
                                     )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                        )}
                     </div>
 
                     {/* Items List */}
