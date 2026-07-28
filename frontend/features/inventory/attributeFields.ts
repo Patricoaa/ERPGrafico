@@ -11,7 +11,7 @@ export const attributeFields = createEntityFields<Attribute>()({
         key: "values",
         type: "chip",
         label: "Valores",
-        get: (a) => a.values?.map(v => v.name).join(', ') ?? '',
+        get: (a) => a.values?.map(v => v.value).join(', ') ?? '',
     },
 }, {
     subtitle: { renderer: () => [] },

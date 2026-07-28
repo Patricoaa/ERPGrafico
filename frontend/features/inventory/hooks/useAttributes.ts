@@ -17,7 +17,7 @@ export interface Attribute {
 export interface AttributeValue {
     id: number
     attribute: number
-    name: string
+    value: string
     code: string
     extra_price: number | string
 }
