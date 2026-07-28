@@ -1044,7 +1044,14 @@ class UoMService:
             display_qty, display_uom = qty, base_uom
 
         # Formatear cantidad (eliminar ceros innecesarios)
-        qty_str = str(display_qty.normalize())
+        # NOTA: Decimal.normalize() usa notación científica para enteros
+        # (ej: Decimal('100').normalize() → '1E+2'). Para evitarlo,
+        # usamos quantize(1) en cantidades enteras.
+        qty_str = str(
+            display_qty.quantize(Decimal('1.'))
+            if display_qty == display_qty.to_integral()
+            else display_qty.normalize()
+        )
 
         # Seleccionar nombre según cantidad: abbreviation > plural/singular > name
         if display_uom.abbreviation:
@@ -1080,8 +1087,11 @@ class UoMService:
             converted_qty = UoMService.convert_quantity(qty, from_uom, to_uom)
             from_label = from_uom.display_abbr
             to_label = to_uom.display_abbr
-            from_str = f"{qty.normalize()} {from_label}"
-            to_str = f"{converted_qty.normalize()} {to_label}"
+            def _fmt_no_sci(val: Decimal) -> str:
+                return str(val.quantize(Decimal('1.')) if val == val.to_integral() else val.normalize())
+
+            from_str = f"{_fmt_no_sci(qty)} {from_label}"
+            to_str = f"{_fmt_no_sci(converted_qty)} {to_label}"
             return f"{from_str} = {to_str} (stock)"
         except ValidationError:
             return ""
