@@ -280,8 +280,8 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <DropdownMenuContent className="w-56 border-sidebar-border shadow-overlay" align="end" sideOffset={12}>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
-                                <Avatar className="h-7 w-7 rounded-full">
-                                    <AvatarFallback className=" font-black text-[10px]">
+                                <Avatar className="h-7 w-7 rounded-md">
+                                    <AvatarFallback className="rounded-md font-black text-[10px]">
                                         {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                     </AvatarFallback>
                                 </Avatar>
