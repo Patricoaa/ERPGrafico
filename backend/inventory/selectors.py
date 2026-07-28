@@ -209,6 +209,8 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
 
     from django.db.models import Q
 
+    from inventory.services import UoMService
+
     products = Product.objects.filter(
         Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE])
         | Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True)
@@ -217,7 +219,7 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
             requires_advanced_manufacturing=False,
             mfg_auto_finalize=False,
         )
-    ).select_related("category")
+    ).select_related("category", "uom")
 
     report = []
     for p in products:
@@ -244,6 +246,11 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
         total_value = float(stock_qty * Decimal(str(unit_cost)))
         qty_available = float(stock_qty) - qty_reserved
 
+        uom = p.uom
+        uom_display_stock = UoMService.format_quantity_display(stock_qty, uom) if uom else ""
+        uom_display_reserved = UoMService.format_quantity_display(Decimal(str(qty_reserved)), uom) if uom else ""
+        uom_display_available = UoMService.format_quantity_display(Decimal(str(qty_available)), uom) if uom else ""
+
         report.append(
             {
                 "id": p.id,
@@ -252,10 +259,13 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
                 "name": p.name,
                 "category_id": p.category_id,
                 "category_name": p.category.name,
-                "uom_id": p.uom.id if p.uom else None,
-                "uom_category_id": p.uom.category_id if p.uom else None,
-                "uom_name": p.uom.name if p.uom else "",
-                "uom_abbreviation": (p.uom.abbreviation or p.uom.name) if p.uom else "",
+                "uom_id": uom.id if uom else None,
+                "uom_category_id": uom.category_id if uom else None,
+                "uom_name": uom.name if uom else "",
+                "uom_abbreviation": (uom.abbreviation or uom.name) if uom else "",
+                "uom_display_stock": uom_display_stock,
+                "uom_display_reserved": uom_display_reserved,
+                "uom_display_available": uom_display_available,
                 "stock_qty": float(stock_qty),
                 "unit_cost": unit_cost,
                 "total_value": total_value,
