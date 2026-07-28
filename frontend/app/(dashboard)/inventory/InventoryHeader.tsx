@@ -57,7 +57,7 @@ export function InventoryHeader() {
             iconName: "file-text",
             href: "/inventory/reports",
             subTabs: [
-                { value: "stock", label: "Existencias", iconName: "package", href: "/inventory/reports/stock" },
+                { value: "stock", label: "Existencias", iconName: "package", href: getViewModeUrl('inventory.stockreport', "/inventory/reports/stock") },
                 { value: "movements", label: "Movimientos de stock", iconName: getEntityIconName('inventory.stockmove'), href: getViewModeUrl('inventory.stockmove', "/inventory/reports/movements") },
             ]
         },
