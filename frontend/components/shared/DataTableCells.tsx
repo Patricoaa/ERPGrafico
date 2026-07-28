@@ -214,13 +214,13 @@ export const DataCell = {
     // --- Numeric Cells ---
 
     /** Right-aligned number with tabular figures */
-    Number: ({ value, suffix, prefix, className, decimals = 0, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
+    Number: ({ value, suffix, prefix, className, decimals = 0, suffixGap = true, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number, suffixGap?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
         if (value === null || value === undefined) return <div className={cn("text-sm font-sans font-medium tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
             <div className={cn("text-sm font-sans font-medium tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
-                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-sm font-medium text-foreground flex justify-center items-center text-center">{suffix}</span>}
+                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix && <span className={cn("text-sm font-medium text-foreground flex justify-center items-center text-center", suffixGap && "ml-1")}>{suffix}</span>}
             </div>
         )
     },

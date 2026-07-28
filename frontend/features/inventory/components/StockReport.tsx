@@ -6,6 +6,7 @@ import React, { useState, useMemo } from "react"
 import { DataCell, DataTableView, AutoEntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
@@ -99,19 +100,7 @@ export function StockReport() {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex flex-col items-center py-1">
-                    <DataCell.Text>{row.original.name}</DataCell.Text>
-                    <div className="flex gap-2 items-center justify-center">
-                        {row.original.internal_code && (
-                            <DataCell.Code>{row.original.internal_code}</DataCell.Code>
-                        )}
-                        {row.original.code && row.original.code !== row.original.internal_code && (
-                            <DataCell.Code>
-                                {row.original.code}
-                            </DataCell.Code>
-                        )}
-                    </div>
-                </div>
+                <DataCell.Text>{row.original.name}</DataCell.Text>
             ),
             meta: { title: "Producto" },
         },
@@ -122,12 +111,16 @@ export function StockReport() {
             cell: ({ row }) => {
                 const item = row.original;
                 return (
-                    <div className="flex flex-col items-center w-full">
-                        <DataCell.Currency value={item.total_value} size="md" intent="primary" />
-                        <DataCell.Secondary className="text-[9px] opacity-40 uppercase tracking-tighter">
-                            {formatCurrency(item.unit_cost)} c/{item.uom_name}
-                        </DataCell.Secondary>
-                    </div>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex items-center justify-center w-full cursor-default">
+                                <DataCell.Currency value={item.total_value} size="md" intent="primary" />
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                            {formatCurrency(item.unit_cost)} / {item.uom_name}
+                        </TooltipContent>
+                    </Tooltip>
                 )
             },
         },

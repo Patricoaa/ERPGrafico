@@ -32,12 +32,14 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
             )
         },
         suffix: (entity) => entity.uom_name ?? "",
+        suffixGap: false,
     },
     qty_reserved: {
         key: 'qty_reserved',
         type: 'number',
         label: 'Reservado',
         suffix: (entity) => entity.uom_name ?? "",
+        suffixGap: false,
     },
     qty_available: {
         key: 'qty_available',
@@ -51,6 +53,7 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
             )
         },
         suffix: (entity) => entity.uom_name ?? "",
+        suffixGap: false,
     },
     total_value: {
         key: 'total_value',

@@ -203,6 +203,8 @@ interface FieldDef<T> {
     // Number / Text
     /** Suffix text — static or derived per entity (e.g. uom_name, "%"). */
     suffix?: string | ((entity: T) => string)
+    /** Whether to add left margin to the suffix (default true). Set false for number+uom without space. */
+    suffixGap?: boolean
 
     // Icon prefix (text, code, secondary, chip)
     /** Optional icon prepended to the cell content. Ignored for card header rendering. */
@@ -379,6 +381,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     value={value as number | string}
                     className={resolvedClassName}
                     {...(suffixValue !== undefined && { suffix: suffixValue })}
+                    {...(def.suffixGap !== undefined && { suffixGap: def.suffixGap })}
                     {...extra}
                 />
             )
