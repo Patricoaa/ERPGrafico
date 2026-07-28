@@ -1,6 +1,6 @@
 "use client"
 
-import { Banknote, CreditCard, Building2, ClipboardList, Wallet, Trash2, Pencil, Layers } from "lucide-react"
+import { Banknote, CreditCard, Building2, ClipboardList, Wallet, Trash2, Pencil, Layers, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
 import { useBanks } from '../hooks/useMasterData'
@@ -526,7 +526,7 @@ export function PaymentMethodSelector({
                         type="button"
                         variant="ghost"
                         onClick={exitMultiMode}
-                        className="col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="col-span-full self-start p-8 flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         <div className="flex items-center gap-3 min-w-0">
                             <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
@@ -535,23 +535,25 @@ export function PaymentMethodSelector({
                                     <div className="text-base font-semibold leading-tight">Múltiple</div>
                                     <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
                                 </div>
-                                <div className="text-xs text-muted-foreground leading-tight">Salir del modo múltiple</div>
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 shrink-0">
-                            {paymentsList.map((p, i) => (
-                                <span
-                                    key={i}
-                                    className="text-[10px] font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
-                                >
-                                    {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
-                                </span>
-                            ))}
-                            {!isFullyPaid && remaining > 0 && (
-                                <span className="text-[10px] font-semibold bg-primary-foreground/15 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap">
-                                    Crédito: {formatMoney(remaining)}
-                                </span>
-                            )}
+                        <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap gap-1.5">
+                                {paymentsList.map((p, i) => (
+                                    <span
+                                        key={i}
+                                        className="text-[10px] font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
+                                    >
+                                        {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
+                                    </span>
+                                ))}
+                                {!isFullyPaid && remaining > 0 && (
+                                    <span className="text-[10px] font-semibold bg-primary-foreground/15 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap">
+                                        Crédito: {formatMoney(remaining)}
+                                    </span>
+                                )}
+                            </div>
+                            <X className="h-5 w-5 shrink-0 text-primary-foreground/70" />
                         </div>
                     </Button>
 
