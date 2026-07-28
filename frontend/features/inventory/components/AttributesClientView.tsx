@@ -201,7 +201,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
             cell: ({ row }) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     <Tag className="h-4 w-4 text-primary opacity-70" />
-                    <DataCell.Text weight="bold" uppercase size="md">
+                    <DataCell.Text>
                         {row.getValue("name")}
                     </DataCell.Text>
                 </div>
@@ -236,7 +236,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                             </span>
                         ))}
                         <IconButton
-                            className="h-6 w-6 rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"
+                            className="!p-0 h-[22px] w-[22px] min-h-[22px] min-w-[22px] rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"
                             onClick={() => {
                                 setSelectedAttribute(row.original)
                                 setIsValueModalOpen(true)
