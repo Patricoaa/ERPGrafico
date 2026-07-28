@@ -2,7 +2,6 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import {useState, useEffect, useMemo, useRef, forwardRef, useImperativeHandle} from "react"
-import { PricingUtils } from '@/lib/pricing-utils'
 import { Button } from "@/components/ui/button"
 import { Step1_Customer } from "./Step1_Customer"
 import { Step2_DTE } from "./Step2_DTE"
@@ -86,6 +85,7 @@ export interface SalesCheckoutWizardViewHandle {
 export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle, SalesCheckoutWizardViewProps>(function SalesCheckoutWizardView({
     order,
     orderLines: initialOrderLines,
+    total,
     totalDiscountAmount = 0,
     onComplete,
     onCancel,
@@ -220,16 +220,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
         }
     }, [dateString, initialDteData])
 
-    const currentTotal = useMemo(() => {
-        const isExempt = dteData.type === 'FACTURA_EXENTA' || dteData.type === 'BOLETA_EXENTA';
-        const linesTotal = currentOrderLines.reduce((acc: number, line: SaleOrderLine) => {
-            const net = PricingUtils.calculateLineNet(line.qty || line.quantity, line.unit_price_net || line.unit_price);
-            if (isExempt) return acc + net;
-            if (line.total_gross !== undefined) return acc + line.total_gross;
-            return acc + PricingUtils.netToGross(net);
-        }, 0);
-        return Math.max(0, linesTotal - totalDiscountAmount);
-    }, [currentOrderLines, dteData.type, totalDiscountAmount]);
+    const currentTotal = total
 
     const prevTotalRef = useRef(currentTotal)
 

@@ -214,6 +214,7 @@ export function POSClientView() {
         tax_rate: (item as unknown as Record<string, unknown>).tax_rate as number ?? rate,
         discount_amount: item.discount_amount,
         discount_percentage: item.discount_percentage,
+        total_gross: item.total_gross,
         product_type: item.product_type,
         requires_advanced_manufacturing: item.requires_advanced_manufacturing,
         manufacturing_data: item.manufacturing_data,
