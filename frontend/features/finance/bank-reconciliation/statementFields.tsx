@@ -3,14 +3,13 @@ import type { BankStatement } from "./types"
 import { Progress } from "@/components/ui/progress"
 
 export const statementFields = createEntityFields<BankStatement>()({
-    display_id: { key: "display_id", type: "code", label: "Folio", order: 10 },
-    treasury_account_name: { key: "treasury_account_name", type: "text", label: "Cuenta", order: 20 },
-    statement_date: { key: "statement_date", type: "date", label: "Fecha", order: 30 },
+    display_id: { key: "display_id", type: "code", label: "Folio" },
+    treasury_account_name: { key: "treasury_account_name", type: "text", label: "Cuenta" },
+    statement_date: { key: "statement_date", type: "date", label: "Fecha" },
     opening_balance: {
         key: "opening_balance",
         type: "currency",
         label: "Apertura",
-        order: 40,
         cellProps: { intent: "muted" },
         tableOptions: { align: "right" },
     },
@@ -18,14 +17,12 @@ export const statementFields = createEntityFields<BankStatement>()({
         key: "closing_balance",
         type: "currency",
         label: "Cierre",
-        order: 50,
         tableOptions: { align: "right" },
     },
     linesInfo: {
         key: "total_lines",
         type: "computed",
         label: "Líneas",
-        order: 55,
         render: (e) => (
             <div className="flex flex-col items-center justify-center w-full">
                 <span className="font-semibold text-xs">{e.total_lines} total</span>
@@ -39,7 +36,6 @@ export const statementFields = createEntityFields<BankStatement>()({
         key: "reconciliation_progress",
         type: "computed",
         label: "Progreso",
-        order: 60,
         render: (e) => {
             const progress = e.reconciliation_progress
             return (
@@ -52,5 +48,5 @@ export const statementFields = createEntityFields<BankStatement>()({
             )
         },
     },
-    state: { key: "state", type: "status", label: "Estado", order: 70, getLabel: (e) => e.state_display },
+    state: { key: "state", type: "status", label: "Estado", getLabel: (e) => e.state_display },
 })

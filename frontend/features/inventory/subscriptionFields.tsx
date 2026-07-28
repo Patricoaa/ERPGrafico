@@ -16,7 +16,6 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         key: "status",
         type: "computed",
         label: "Estado",
-        order: 10,
         render: (s) => (
             <div className="flex justify-center">
                 <StatusBadge status={s.status} />
@@ -27,13 +26,11 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         key: "category_name",
         type: "secondary",
         label: "Categoría",
-        order: 20,
     },
     supplierName: {
         key: "supplier_name",
         type: "computed",
         label: "Proveedor",
-        order: 30,
         render: (s) => (
             <div className="flex justify-center w-full">
                 <DataCell.ContactLink contactId={s.supplier_id}>
@@ -46,19 +43,16 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         key: "amount",
         type: "currency",
         label: "Monto",
-        order: 40,
     },
     nextPaymentDate: {
         key: "next_payment_date",
         type: "date",
         label: "Próximo Pago",
-        order: 50,
     },
     productName: {
         key: "product_name",
         type: "computed",
         label: "Producto",
-        order: 5,
         render: (sub) => (
             <div className="flex flex-col items-center gap-1 py-1 w-full">
                 <DataCell.Text>{sub.product_name}</DataCell.Text>
@@ -77,7 +71,6 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         key: "recurrence_display",
         type: "computed",
         label: "Frecuencia",
-        order: 35,
         render: (sub) => (
             <DataCell.Secondary>{getPaymentScheduleText(sub)}</DataCell.Secondary>
         ),

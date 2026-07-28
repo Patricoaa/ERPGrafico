@@ -58,9 +58,6 @@ type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_ty
  */
 export type Placement = 'title' | 'subtitle' | 'header' | 'detail' | 'metric' | 'footer'
 
-/** @deprecated Use `Placement` instead — cardPlacement now controls both card and list ordering. */
-export type CardPlacement = Placement
-
 /**
  * Semantic role of a field — determines its default Placement.
  * Each FieldType maps to a FieldRole via TYPE_TO_ROLE.
@@ -139,18 +136,14 @@ interface FieldDef<T> {
     get?: (entity: T) => unknown
     cellProps?: Record<string, unknown>
     surfaces?: FieldSurface[]
-    /** Explicit left-to-right order for table columns within a placement zone (lower = more left). Undefined sorts last. */
-    order?: number
     /**
-     * Ubicación semántica del campo — controla tanto el layout en tarjeta como el orden de columnas en lista.
+     * Ubicación semántica del campo — fuente de verdad para orden en card Y list.
      * En lista: title(0) → subtitle(1) → header(2) → detail(3) → metric(4) → footer(5).
-     * Dentro de la misma zona, `order` determina el sub-orden.
+     * Dentro de la misma zona, los campos siguen el orden de definición.
      * Evitar cuando `fieldRole` puede expresar la misma intención —
      * el auto-detector convierte `fieldRole` → `Placement` automáticamente.
      */
     placement?: Placement
-    /** @deprecated Use `placement` instead. */
-    cardPlacement?: Placement
     /**
      * Override del rol semántico del campo (defaults from TYPE_TO_ROLE).
      * **Requerido para `type: 'computed'`**: sin este override, el campo cae en
@@ -633,7 +626,7 @@ function computeAutoComposeKeys<T>(
         if (consumedKeys.size >= 4) break
         const candidate = allDefs.find(d => {
             if (consumedKeys.has(d.key)) return false
-            if ((d.placement ?? d.cardPlacement) && (d.placement ?? d.cardPlacement) !== 'subtitle') return false
+            if (d.placement && d.placement !== 'subtitle') return false
             const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
             if (r !== slotRole) return false
             if (d.type === 'currency' && !/total/i.test(d.key)) return false
@@ -646,7 +639,7 @@ function computeAutoComposeKeys<T>(
     }
 
     const explicitSubtitleFields = allDefs.filter(d =>
-        (d.placement ?? d.cardPlacement) === 'subtitle' && !consumedKeys.has(d.key)
+        d.placement === 'subtitle' && !consumedKeys.has(d.key)
     )
     for (const d of explicitSubtitleFields) {
         if (consumedKeys.size >= 4) break
@@ -711,12 +704,9 @@ export function createEntityFields<T>(): (
             return Object.entries(defs)
                 .filter(([fieldKey, def]) => isPresentOnSurface(def, "table") && !excluded.has(fieldKey))
                 .sort(([, a], [, b]) => {
-                    const pa = (a.placement ?? a.cardPlacement) ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[a.type]]
-                    const pb = (b.placement ?? b.cardPlacement) ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[b.type]]
-                    const za = ZONE_ORDER[pa] ?? 3
-                    const zb = ZONE_ORDER[pb] ?? 3
-                    if (za !== zb) return za - zb
-                    return (a.order ?? Infinity) - (b.order ?? Infinity)
+                    const pa = a.placement ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[a.type]]
+                    const pb = b.placement ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[b.type]]
+                    return (ZONE_ORDER[pa] ?? 3) - (ZONE_ORDER[pb] ?? 3)
                 })
                 .map(([fieldKey, def]): ColumnDef<T> => {
                     const headerLabel = def.header ?? def.label
@@ -766,11 +756,11 @@ export function createEntityFields<T>(): (
                 .map(([, def]): CardField => {
                     // Step 1-2: base role and placement
                     let role: FieldRole = def.fieldRole ?? TYPE_TO_ROLE[def.type]
-                    let resolvedPlacement: Placement = (def.placement ?? def.cardPlacement) ?? ROLE_TO_PLACEMENT[role]
+                    let resolvedPlacement: Placement = def.placement ?? ROLE_TO_PLACEMENT[role]
 
                     // Step 3: Auto-title / auto-subtitle detection
                     // Only assign each placement once — fields that don't win keep their base placement.
-                    if (!def.placement && !def.cardPlacement) {
+                    if (!def.placement) {
                         const keyHasName = /name/i.test(def.key)
                         const keyHasIdOrDisplay = /id|display/i.test(def.key)
                         const keyHasCode = /number|code/i.test(def.key)
@@ -866,7 +856,7 @@ export function createEntityFields<T>(): (
                 if (raw != null) return String(raw)
             }
             // Priority 3: field with placement:'title' (backwards compat)
-            const cardTitleField = Object.values(defs).find(d => (d.placement ?? d.cardPlacement) === 'title')
+            const cardTitleField = Object.values(defs).find(d => d.placement === 'title')
             if (cardTitleField) return renderCell(cardTitleField, entity)
             // Priority 4: first identifier field
             const identifier = Object.values(defs).find(d => {
@@ -968,7 +958,7 @@ export function createEntityFields<T>(): (
 
             // Explicit placement:'subtitle' fields not yet consumed by role-based slots
     const explicitSubtitleFields = allDefs.filter(d =>
-        (d.placement ?? d.cardPlacement) === 'subtitle' && consumedKeys.has(d.key)
+        d.placement === 'subtitle' && consumedKeys.has(d.key)
     )
             for (const d of explicitSubtitleFields) {
                 if (items.length >= 4) break

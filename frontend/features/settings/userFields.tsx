@@ -17,20 +17,17 @@ export const userFields = createEntityFields<AppUser>()({
         key: "username",
         type: "text",
         label: "Usuario",
-        order: 10,
     },
     email: {
         key: "email",
         type: "text",
         label: "Email",
-        order: 20,
     },
     fullName: {
         key: "full_name",
         type: "text",
         label: "Nombre",
         get: (u) => `${u.first_name || ''} ${u.last_name || ''}`.trim() || '—',
-        order: 30,
     },
     role: {
         key: "role",
@@ -45,13 +42,11 @@ export const userFields = createEntityFields<AppUser>()({
             const systemRole = groups.find(g => SYSTEM_ROLES.includes(g as typeof SYSTEM_ROLES[number]))
             return systemRole ? (ROLE_INTENT[systemRole] || 'neutral') : 'neutral'
         },
-        order: 40,
     },
     functionalGroups: {
         key: "groups",
         type: "computed",
         label: "Grupos",
-        order: 50,
         render: (u) => {
             const groups = (u.groups || []).map(g => typeof g === 'string' ? g : g.name)
             const functionalGroups = groups.filter(g => !SYSTEM_ROLES.includes(g as typeof SYSTEM_ROLES[number]))
@@ -72,6 +67,5 @@ export const userFields = createEntityFields<AppUser>()({
         type: "status",
         label: "Estado",
         get: (u) => u.is_active ? "active" : "inactive",
-        order: 60,
     },
 })

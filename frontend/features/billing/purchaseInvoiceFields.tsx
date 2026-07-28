@@ -5,7 +5,6 @@ import { getDtePrefix } from "@/lib/entity-registry"
 
 export const purchaseInvoiceFields = createEntityFields<Invoice>()({
     displayId: {
-        order: 10,
         key: "display_id",
         type: "code",
         label: "Folio",
@@ -15,25 +14,21 @@ export const purchaseInvoiceFields = createEntityFields<Invoice>()({
         },
     },
     issueDate: {
-        order: 20,
         key: "date",
         type: "date",
         label: "Fecha Emisión",
     },
     contactDisplayName: {
-        order: 30,
         key: "partner_name",
         type: "text",
         label: "Proveedor",
     },
     dteType: {
-        order: 40,
         key: "dte_type_display",
         type: "chip",
         label: "Tipo DTE",
     },
     domainStatus: {
-        order: 45,
         key: "status",
         type: "complex",
         label: "Flujo",
@@ -43,7 +38,6 @@ export const purchaseInvoiceFields = createEntityFields<Invoice>()({
         tableOptions: { width: 180, align: "center", enableSorting: false },
     },
     totalWithTax: {
-        order: 50,
         key: "total",
         type: "currency",
         label: "Total",

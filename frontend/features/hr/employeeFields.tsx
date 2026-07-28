@@ -4,13 +4,11 @@ import type { Employee } from "@/types/hr"
 
 export const employeeFields = createEntityFields<Employee>()({
     displayId: {
-        order: 10,
         key: "display_id",
         type: "code",
         label: "Código",
     },
     contact: {
-        order: 15,
         key: "contact_detail",
         type: "computed",
         label: "Contacto",
@@ -21,19 +19,16 @@ export const employeeFields = createEntityFields<Employee>()({
         ),
     },
     position: {
-        order: 20,
         key: "position",
         type: "text",
         label: "Cargo",
     },
     department: {
-        order: 30,
         key: "department",
         type: "text",
         label: "Dpto.",
     },
     afp: {
-        order: 40,
         key: "afp_detail",
         type: "computed",
         label: "Previsión",
@@ -42,7 +37,6 @@ export const employeeFields = createEntityFields<Employee>()({
         ),
     },
     salud: {
-        order: 50,
         key: "salud_type_display",
         type: "computed",
         label: "Salud",
@@ -51,14 +45,12 @@ export const employeeFields = createEntityFields<Employee>()({
         ),
     },
     baseSalary: {
-        order: 60,
         key: "base_salary",
         type: "currency",
         label: "Sueldo Base",
         get: (e) => parseFloat((e.base_salary as string) || "0"),
     },
     status: {
-        order: 70,
         key: "status",
         type: "status",
         label: "Estado",

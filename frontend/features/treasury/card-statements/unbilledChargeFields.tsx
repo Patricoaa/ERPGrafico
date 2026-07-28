@@ -10,19 +10,16 @@ export const unbilledChargeFields = createEntityFields<UnbilledItemRow>()({
         label: 'Tipo',
         get: (i) => i.chargeType || i.source,
         getLabel: (i) => i.chargeTypeDisplay || i.source,
-        order: 10,
     },
     date: {
         key: 'date',
         type: 'date',
         label: 'Fecha',
-        order: 20,
     },
     cuota: {
         key: 'installmentNumber',
         type: 'computed',
         label: 'Cuota',
-        order: 25,
         render: (i) => {
             if (i.source === 'pending') {
                 return (
@@ -45,13 +42,11 @@ export const unbilledChargeFields = createEntityFields<UnbilledItemRow>()({
         key: 'notes',
         type: 'text',
         label: 'Descripción',
-        order: 30,
     },
     amount: {
         key: 'amount',
         type: 'currency',
         label: 'Monto',
-        order: 40,
         cellProps: { weight: 'bold' },
     },
 }, { title: { field: 'reference' } })

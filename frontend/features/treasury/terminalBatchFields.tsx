@@ -9,7 +9,6 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
         key: "sales_date",
         type: "computed",
         label: "Fecha Venta",
-        order: 10,
         render: (b) => (
             <div className="flex flex-col justify-center w-full items-center text-xs">
                 <DataCell.Date value={b.sales_date} />
@@ -25,13 +24,11 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
         key: "transaction_count",
         type: "number",
         label: "Transacciones",
-        order: 20,
     },
     providerName: {
         key: "provider_name",
         type: "computed",
         label: "Proveedor",
-        order: 30,
         render: (b) => (
             <div className="flex flex-col items-center">
                 <span className="font-bold flex items-center justify-center gap-1.5 text-center w-full">
@@ -48,13 +45,11 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
         key: "net_amount",
         type: "currency",
         label: "Depósito Neto",
-        order: 40,
     },
     commissionTotal: {
         key: "commission_total",
         type: "computed",
         label: "Comisión",
-        order: 50,
         render: (b) => (
             <div className="flex justify-center w-full">
                 <DataCell.Currency
@@ -69,6 +64,5 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
         label: "Estado",
         get: (b) => b.is_settled ? 'settled' : 'pending',
         getLabel: (b) => b.is_settled ? 'Liquidado' : 'Pendiente',
-        order: 60,
     },
 })

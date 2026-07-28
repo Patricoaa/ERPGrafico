@@ -5,7 +5,6 @@ import type { Budget } from "./api/financeApi"
 
 export const budgetFields = createEntityFields<Budget>()({
     name: {
-        order: 10,
         key: "name",
         type: "computed",
         label: "Nombre",
@@ -27,7 +26,6 @@ export const budgetFields = createEntityFields<Budget>()({
         ),
     },
     period: {
-        order: 20,
         key: "start_date",
         type: "text",
         label: "Periodo",

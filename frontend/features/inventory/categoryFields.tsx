@@ -7,7 +7,6 @@ export const categoryFields = createEntityFields<Category>()({
         key: "icon",
         type: "computed",
         label: "Icono",
-        order: 15,
         render: (c) => {
             const iconName = c.icon
             if (!iconName) return <div className="flex justify-center w-full">-</div>
@@ -25,18 +24,15 @@ export const categoryFields = createEntityFields<Category>()({
         key: "prefix",
         type: "text",
         label: "Siglas",
-        order: 17,
     },
     name: {
         key: "name",
         type: "text",
         label: "Nombre",
-        order: 20,
     },
     parentName: {
         key: "parent_name",
         type: "secondary",
         label: "Categoría Padre",
-        order: 30,
     },
 })
