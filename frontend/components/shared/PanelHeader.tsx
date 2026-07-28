@@ -22,6 +22,7 @@ export interface PanelBaseProps {
     headerClassName?: string
     footerClassName?: string
     titleClassName?: string
+    centered?: boolean
 }
 
 // ──────────────────────────────────────────
@@ -41,6 +42,8 @@ export interface PanelHeaderProps {
     closeTooltip?: string
     /** ClassName for the close button (e.g. to match title color) */
     closeButtonClassName?: string
+    /** When true, icon+title are centered with equal spacers on both sides; close button stays right */
+    centered?: boolean
 }
 
 export function PanelHeader({
@@ -53,10 +56,47 @@ export function PanelHeader({
     onClose,
     closeTooltip,
     closeButtonClassName,
+    centered,
 }: PanelHeaderProps) {
     const resolvedIcon = React.isValidElement(icon)
         ? icon
         : icon && React.createElement(icon as React.ComponentType<{ className?: string }>, { className: "h-8 w-8" })
+
+    if (centered) {
+        return (
+            <div className={cn("flex items-center w-full", className)}>
+                <div className="flex-1" />
+                <div className="flex flex-row items-center gap-4">
+                    {resolvedIcon && (
+                        <div className="flex-shrink-0">
+                            {resolvedIcon}
+                        </div>
+                    )}
+                    <div className="flex flex-col gap-0.5 items-center">
+                        <div className={cn("truncate text-center", titleClassName)}>
+                            {title}
+                        </div>
+                        {subtitle && (
+                            <div className="truncate text-xs font-medium text-muted-foreground text-center">
+                                {subtitle}
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="flex-1 flex items-center justify-end gap-2">
+                    {headerActions}
+                    {onClose && (
+                        <SheetCloseButton
+                            onClick={onClose}
+                            showTooltip
+                            tooltipText={closeTooltip}
+                            className={cn("text-foreground hover:text-foreground", closeButtonClassName)}
+                        />
+                    )}
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className={cn("flex items-center justify-between gap-4 w-full", className)}>

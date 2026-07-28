@@ -44,7 +44,7 @@ export function NumpadModal({
             size="sm"
             headerClassName="border-b-0"
             footerClassName="border-t-0"
-            titleClassName="text-center"
+            centered
             footer={
                 <Button
                     className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
