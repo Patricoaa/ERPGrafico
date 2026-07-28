@@ -4,7 +4,7 @@ import React from "react"
 import { EntityCard } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, type SubtitleItem } from "@/lib/entity-registry"
+import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, getEntityIcon, type SubtitleItem } from "@/lib/entity-registry"
 import { resolveStatus } from "@/lib/badge-resolvers"
 import type { CardField } from "@/components/shared"
 import type { EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared/entity-fields"
@@ -356,6 +356,8 @@ export function AutoEntityCard<TData>({
     // entityMetadata is still needed for workflowConfig and cardConfig lookups.
     const entityMetadata = entityLabel ? getEntityMetadata(entityLabel) : undefined
 
+    const resolvedIcon = icon ?? (entityLabel ? getEntityIcon(entityLabel) : undefined)
+
     const cardFields = fields.toCardFields(data)
 
     // Resolve subtitle field keys — fields API first (data-aware), then entity-registry fallback
@@ -480,7 +482,7 @@ export function AutoEntityCard<TData>({
     return (
         <EntityCard defaultAction={defaultAction} onClick={onClick} isSelected={isSelected} className={className} variant={entityCardVariant}>
             <EntityCard.Header
-                icon={icon}
+                icon={resolvedIcon}
                 iconClassName={iconClassName}
                 imageSrc={imageSrc ?? undefined}
                 title={displayTitle}
