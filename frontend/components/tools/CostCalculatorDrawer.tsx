@@ -173,7 +173,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
         >
             <div className="flex-1 overflow-hidden flex">
                 {/* Panel Izquierdo: Catálogo */}
-                <div className="flex-1 flex flex-col p-4 gap-4 min-h-0">
+                <div className="w-[60%] flex flex-col p-4 gap-4 min-h-0">
                     {loading ? (
                         <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-muted/10 py-1.5">
                             <div className="px-2 pt-1.5 pb-1.5 border-b">
@@ -192,7 +192,6 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                             selectedCategoryId={selectedCategoryId}
                             onSelectCategory={setSelectedCategoryId}
                             onProductClick={(p) => addItem(p as unknown as Product)}
-                            density="compact"
                             priceRenderer={(product) => (
                                 <>
                                     <span className="text-base font-black text-primary">
@@ -208,7 +207,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                 </div>
 
                 {/* Panel Derecho: Selección */}
-                <div className="w-[380px] flex flex-col p-4 gap-4 min-h-0">
+                <div className="w-[45%] flex flex-col p-4 gap-4 min-h-0">
                     <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border">
                         <ScrollArea className="flex-1">
                             {loading ? (

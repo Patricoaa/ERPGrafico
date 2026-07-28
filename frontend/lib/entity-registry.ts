@@ -266,7 +266,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/inventory/operations/documents',
     detailUrlPattern: '/inventory/operations/documents/{id}',
     printable: true,
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'full' },
   },
   'inventory.product': {
     label: 'inventory.product',

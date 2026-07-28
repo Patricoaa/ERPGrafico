@@ -13,7 +13,7 @@ export { CategoryFilter } from './CategoryFilter'
 export type { CategoryFilterProps } from './CategoryFilter'
 
 export { ProductGrid } from './ProductGrid'
-export type { ProductGridProps, SharedStockLimits, CardDensity } from './ProductGrid'
+export type { ProductGridProps, SharedStockLimits } from './ProductGrid'
 
 export { VariantSelectorModal } from './VariantSelectorModal'
 export type { VariantSelectorModalProps } from './VariantSelectorModal'
