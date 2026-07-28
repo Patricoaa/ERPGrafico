@@ -1,5 +1,6 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
+import { cn } from "@/lib/utils"
 
 import React, { useState, useMemo } from "react"
 
@@ -104,7 +105,52 @@ export function StockReport() {
             ),
             meta: { title: "Producto" },
         },
-        ...stockReportFields.toColumns({ exclude: ['total_value'] }),
+        {
+            accessorKey: "category_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
+            cell: ({ row }) => (
+                <DataCell.Secondary>{row.original.category_name}</DataCell.Secondary>
+            ),
+        },
+        {
+            accessorKey: "stock_qty",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Stock" className="justify-center" />,
+            cell: ({ row }) => {
+                const qty = Number(row.original.stock_qty)
+                return (
+                    <span className={cn(
+                        "text-sm font-sans font-medium tabular-nums flex justify-center items-center",
+                        qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
+                    )}>
+                        {row.original.uom_display_stock}
+                    </span>
+                )
+            },
+        },
+        {
+            accessorKey: "qty_reserved",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
+            cell: ({ row }) => (
+                <span className="text-sm font-sans font-medium tabular-nums text-foreground flex justify-center items-center">
+                    {row.original.uom_display_reserved}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "qty_available",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-center" />,
+            cell: ({ row }) => {
+                const qty = Number(row.original.qty_available)
+                return (
+                    <span className={cn(
+                        "text-sm font-sans font-medium tabular-nums flex justify-center items-center",
+                        qty <= 0 ? "text-destructive" : "text-primary font-black"
+                    )}>
+                        {row.original.uom_display_available}
+                    </span>
+                )
+            },
+        },
         {
             accessorKey: "total_value",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,

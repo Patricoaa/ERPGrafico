@@ -13,6 +13,9 @@ interface StockReportItem {
     qty_available?: number | string
     uom_name?: string
     uom_abbreviation?: string
+    uom_display_stock?: string
+    uom_display_reserved?: string
+    uom_display_available?: string
     unit_cost?: number | string
     total_value?: number | string
 }
