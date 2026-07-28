@@ -173,6 +173,9 @@ class UoM(TimeStampedModel):
         SMALLER = "SMALLER", _("Más pequeño que la referencia")
 
     name = models.CharField(_("Nombre"), max_length=100)
+    name_singular = models.CharField(_("Nombre singular"), max_length=20, blank=True, default="")
+    name_plural = models.CharField(_("Nombre plural"), max_length=20, blank=True, default="")
+    abbreviation = models.CharField(_("Abreviación"), max_length=10, blank=True, default="")
     category = models.ForeignKey(UoMCategory, on_delete=models.CASCADE, related_name="uoms")
     uom_type = models.CharField(
         _("Tipo"), max_length=20, choices=Type.choices, default=Type.REFERENCE
@@ -188,7 +191,7 @@ class UoM(TimeStampedModel):
                 {
                     "id": "main",
                     "label": "General",
-                    "fields": ["name", "category", "uom_type", "ratio", "rounding", "is_active"],
+                    "fields": ["name", "name_singular", "name_plural", "abbreviation", "category", "uom_type", "ratio", "rounding", "is_active"],
                 }
             ]
         }
@@ -200,6 +203,21 @@ class UoM(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    @property
+    def display_name(self):
+        """Nombre singular para display individual (fallback a name)."""
+        return self.name_singular or self.name
+
+    @property
+    def display_name_plural(self):
+        """Nombre plural para display (fallback a name)."""
+        return self.name_plural or self.name
+
+    @property
+    def display_abbr(self):
+        """Abreviación para sufijo compacto (fallback a name)."""
+        return self.abbreviation or self.name
 
 
 class ProductAttribute(TimeStampedModel):

@@ -30,6 +30,9 @@ export interface Warehouse {
 export interface UoM {
     id: number
     name: string
+    name_singular?: string
+    name_plural?: string
+    abbreviation?: string
     ratio: number
     category?: number
 }

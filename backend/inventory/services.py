@@ -848,6 +848,25 @@ class UoMService:
         return _get_uom_name(uid)
 
     @staticmethod
+    def get_cached_uom_abbr(uid: int) -> str | None:
+        """
+        Retorna la abreviación de la UoM usando caché en memoria.
+        Fallback a name si abbreviation está vacío.
+        """
+        from functools import lru_cache
+        from inventory.models import UoM
+
+        @lru_cache(maxsize=32)
+        def _get_uom_abbr(uom_id):
+            try:
+                uom = UoM.objects.get(pk=int(uom_id))
+                return uom.abbreviation or uom.name
+            except (UoM.DoesNotExist, TypeError, ValueError):
+                return None
+
+        return _get_uom_abbr(uid)
+
+    @staticmethod
     def convert_quantity(qty: Decimal, from_uom: UoM, to_uom: UoM) -> Decimal:
         """
         Convierte cantidad entre UoMs de la misma categoría.
@@ -1000,6 +1019,9 @@ class UoMService:
         """
         Formatea cantidad con unidad para display.
 
+        Usa abbreviation para sufijo compacto, name_plural cuando qty != 1,
+        name_singular como fallback.
+
         Args:
             qty: Cantidad en unidad base
             base_uom: UoM base del producto
@@ -1024,7 +1046,15 @@ class UoMService:
         # Formatear cantidad (eliminar ceros innecesarios)
         qty_str = str(display_qty.normalize())
 
-        return f"{qty_str} {display_uom.name}"
+        # Seleccionar nombre según cantidad: abbreviation > plural/singular > name
+        if display_uom.abbreviation:
+            unit_str = display_uom.abbreviation
+        elif Decimal(qty_str) == 1:
+            unit_str = display_uom.name_singular or display_uom.name
+        else:
+            unit_str = display_uom.name_plural or display_uom.name
+
+        return f"{qty_str} {unit_str}"
 
     @staticmethod
     def get_conversion_hint(qty: Decimal, from_uom: UoM, to_uom: UoM) -> str:
@@ -1048,8 +1078,10 @@ class UoMService:
 
         try:
             converted_qty = UoMService.convert_quantity(qty, from_uom, to_uom)
-            from_str = f"{qty.normalize()} {from_uom.name}"
-            to_str = f"{converted_qty.normalize()} {to_uom.name}"
+            from_label = from_uom.display_abbr
+            to_label = to_uom.display_abbr
+            from_str = f"{qty.normalize()} {from_label}"
+            to_str = f"{converted_qty.normalize()} {to_label}"
             return f"{from_str} = {to_str} (stock)"
         except ValidationError:
             return ""

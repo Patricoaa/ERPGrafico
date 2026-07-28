@@ -118,7 +118,7 @@ export function StockReport() {
                             </div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs">
-                            {formatCurrency(item.unit_cost)} / {item.uom_name}
+                            {formatCurrency(item.unit_cost)} / {item.uom_abbreviation || item.uom_name}
                         </TooltipContent>
                     </Tooltip>
                 )

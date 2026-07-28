@@ -140,6 +140,7 @@ export interface BOM {
 export interface UoM {
     id: number
     name: string
+    abbreviation?: string
     category: number
     ratio: string
 }

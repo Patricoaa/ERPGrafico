@@ -255,6 +255,7 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
                 "uom_id": p.uom.id if p.uom else None,
                 "uom_category_id": p.uom.category_id if p.uom else None,
                 "uom_name": p.uom.name if p.uom else "",
+                "uom_abbreviation": (p.uom.abbreviation or p.uom.name) if p.uom else "",
                 "stock_qty": float(stock_qty),
                 "unit_cost": unit_cost,
                 "total_value": total_value,
