@@ -19,7 +19,7 @@ const SIZE_MAP: Record<RingSize, string> = {
 }
 
 const CMYK_WHEEL =
-  'conic-gradient(from 0deg, var(--color-magenta) 0deg 90deg, var(--color-yellow) 90deg 180deg, var(--color-cyan) 180deg 270deg, var(--color-black) 270deg 360deg)'
+  'conic-gradient(from 0deg, var(--color-cyan) 0deg 90deg, var(--color-magenta) 90deg 180deg, var(--color-yellow) 180deg 270deg, var(--color-black) 270deg 360deg)'
 
 /**
  * CmykRing — Four‑quadrant process‑colour wheel (C / M / Y / K).
