@@ -13,4 +13,6 @@ export const attributeFields = createEntityFields<Attribute>()({
         label: "Valores",
         get: (a) => a.values?.map(v => v.name).join(', ') ?? '',
     },
+}, {
+    subtitle: { renderer: () => [] },
 })
