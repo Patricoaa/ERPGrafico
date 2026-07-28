@@ -659,7 +659,7 @@ export function POSClientView() {
                         onCheckoutFinish={handleCheckoutFinish}
                         onCancel={() => setPosMode('SHOPPING')}
                         onSuspend={() => {
-                            /* suspend for another terminal — wizard exposes last state via onStateChange */
+                            if (wizardState) handleSuspendDraft(wizardState as unknown as CheckoutWizardState)
                         }}
                         isLastStep={isCheckoutLastStep}
                         checkoutLoading={false}

@@ -34,13 +34,13 @@ export function RadioCard({
         <Label
             htmlFor={id}
             className={cn(
-                "relative group flex rounded-sm border border-input p-3 transition-all h-full",
+                "relative group flex rounded-sm border border-input p-3 transition-all h-full bg-card",
                 isVertical
                     ? "flex-col items-center justify-center text-center gap-2 p-4 min-h-[110px]"
                     : "flex-row items-start gap-3",
-                !disabled && "cursor-pointer hover:border-primary/50 hover:bg-accent/50",
+                !disabled && "cursor-pointer hover:border-primary/50",
                 disabled && "opacity-50 cursor-not-allowed",
-                "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5 [&:has([data-state=checked])]:ring-1 [&:has([data-state=checked])]:ring-primary/20",
+                "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:ring-1 [&:has([data-state=checked])]:ring-primary/20",
                 className
             )}
         >
