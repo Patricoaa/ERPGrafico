@@ -306,7 +306,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/inventory/stock/warehouses',
     detailUrlPattern: '/inventory/warehouses/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'highlights' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', cardVariant: 'highlights' },
   },
   'inventory.attribute': {
     label: 'inventory.attribute',
