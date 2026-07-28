@@ -193,10 +193,6 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     const canDirectApprove = hasPermission('sales.approve_credit')
     const didHydrateRef = useRef(false)
 
-    // Draft step migration: old customer_dte split into customer (step 1) + dte (step 2).
-    // Drafts saved before this change used step >= 2 for the second step onward.
-    const migratedInitialStep = initialStep !== undefined && initialStep >= 2 ? initialStep + 1 : initialStep;
-
     // Sync order lines and hydrate step data
     useEffect(() => {
         if (!didHydrateRef.current) {
@@ -207,14 +203,14 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 if (quickSale && currentOrderLines.length > 0) {
                     if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
                     setStep(totalSteps)
-                } else if (migratedInitialStep && migratedInitialStep > 1 && !quickSale) {
-                    setStep(migratedInitialStep)
+                } else if (initialStep && initialStep > 1 && !quickSale) {
+                    setStep(initialStep)
                 } else {
-                    setStep(migratedInitialStep ?? 1)
+                    setStep(initialStep ?? 1)
                 }
             })
         }
-    }, [migratedInitialStep, quickSale, totalSteps, currentOrderLines.length])
+    }, [initialStep, quickSale, totalSteps, currentOrderLines.length])
 
     useEffect(() => {
         if (dateString && !initialDteData) {
