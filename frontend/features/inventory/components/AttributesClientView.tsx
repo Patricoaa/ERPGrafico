@@ -131,12 +131,9 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
                 <DataTableColumnHeader column={column} title="Atributo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-2 w-full">
-                    <Tag className="h-4 w-4 text-primary opacity-70" />
-                    <DataCell.Text>
-                        {row.getValue("name")}
-                    </DataCell.Text>
-                </div>
+                <DataCell.Text>
+                    {row.getValue("name")}
+                </DataCell.Text>
             ),
         },
         {
