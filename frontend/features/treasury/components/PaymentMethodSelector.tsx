@@ -440,6 +440,7 @@ export function PaymentMethodSelector({
                                 disabled={!m.isAllowed}
                                 className={cn(
                                     methodCardClass,
+                                    isMultiCard ? "border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60" : undefined,
                                     isSingleSelected ? "border-2 border-primary accent-visible" : undefined,
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
@@ -515,27 +516,42 @@ export function PaymentMethodSelector({
             )
         }
 
-        // ── Multi mode: unified grid + header ──
+        // ── Multi mode: unified grid + exit card ──
         return (
             <div className="space-y-4">
-                {/* Multi header: badge + exit */}
-                <div className="flex items-center justify-between gap-3 p-3 rounded-sm bg-primary/5 border border-primary/10">
-                    <div className="flex items-center gap-2">
-                        <Layers className="h-5 w-5 text-primary" />
-                        <span className="text-sm font-semibold uppercase tracking-wider text-primary">Modo múltiple</span>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        type="button"
-                        onClick={exitMultiMode}
-                        className="text-sm font-semibold text-destructive hover:text-destructive/80 px-4 py-2"
-                    >
-                        Salir
-                    </Button>
-                </div>
-
-                {/* Unified grid: all methods in strict columns */}
+                {/* Unified grid: exit card + methods */}
                 <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
+                    {/* Card "Múltiple" para salir */}
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={exitMultiMode}
+                        className={cn(
+                            methodCardClass,
+                            "col-span-full flex-row items-center justify-between gap-3 border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60"
+                        )}
+                    >
+                        <div className="flex items-center gap-3 min-w-0">
+                            <Layers className="h-9 w-9 shrink-0 text-primary" />
+                            <div className="min-w-0">
+                                <div className="text-base font-semibold leading-tight">Múltiple</div>
+                                <div className="text-xs text-muted-foreground leading-tight">Salir del modo múltiple</div>
+                            </div>
+                        </div>
+                        {paymentsList.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 shrink-0">
+                                {paymentsList.map((p, i) => (
+                                    <span
+                                        key={i}
+                                        className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-sm whitespace-nowrap"
+                                    >
+                                        {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </Button>
+
                     {availableMethods.map((m) => {
                         const allocIndex = paymentsList.findIndex(p => p.method === m.id)
                         const isAllocated = allocIndex >= 0
