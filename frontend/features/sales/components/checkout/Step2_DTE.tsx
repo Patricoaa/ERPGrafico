@@ -184,15 +184,6 @@ export function Step2_DTE({
                     </AlertDescription>
                 </Alert>
             )}
-
-            {dteData.type === "BOLETA" && (
-                <Alert variant="info">
-                    <AlertDescription className="text-xs font-medium">
-                        El sistema asignará el siguiente folio disponible automáticamente al
-                        finalizar la venta.
-                    </AlertDescription>
-                </Alert>
-            )}
         </div>
     )
 }
