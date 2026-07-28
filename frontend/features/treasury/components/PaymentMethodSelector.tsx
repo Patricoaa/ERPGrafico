@@ -520,7 +520,7 @@ export function PaymentMethodSelector({
         return (
             <div className="space-y-4">
                 {/* Unified grid: exit card + methods */}
-                <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3 p-3 rounded-sm bg-primary/[0.02] border border-primary/[0.06]">
                     {/* Card "Múltiple" para salir */}
                     <Button
                         type="button"
@@ -528,13 +528,16 @@ export function PaymentMethodSelector({
                         onClick={exitMultiMode}
                         className={cn(
                             methodCardClass,
-                            "col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60"
+                            "col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-primary/60 bg-primary/[0.05] hover:bg-primary/[0.08] hover:border-primary/80"
                         )}
                     >
                         <div className="flex items-center gap-3 min-w-0">
                             <Layers className="h-9 w-9 shrink-0 text-primary" />
                             <div className="min-w-0">
-                                <div className="text-base font-semibold leading-tight">Múltiple</div>
+                                <div className="flex items-center gap-2">
+                                    <div className="text-base font-semibold leading-tight">Múltiple</div>
+                                    <span className="text-[10px] font-bold uppercase bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
+                                </div>
                                 <div className="text-xs text-muted-foreground leading-tight">Salir del modo múltiple</div>
                             </div>
                         </div>
