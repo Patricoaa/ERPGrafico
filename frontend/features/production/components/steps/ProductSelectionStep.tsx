@@ -93,7 +93,6 @@ export function ProductSelectionStep({
                 selectedCategoryId={null}
                 onProductClick={handleProductSelect}
                 priceRenderer={() => null}
-                density="minimal"
               />
             )}
           </div>

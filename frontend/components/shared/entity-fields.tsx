@@ -721,7 +721,7 @@ export function createEntityFields<T>(): (
 
             for (const [fieldKey, def] of tableEntries) {
                 if (def.placement) {
-                    resolvedPlacements.set(fieldKey, def.placement)
+                    resolvedPlacements.set(def.key, def.placement)
                     if (def.placement === 'title') titleAssigned = true
                     continue
                 }
@@ -733,7 +733,7 @@ export function createEntityFields<T>(): (
                     placement = 'title'
                     titleAssigned = true
                 }
-                resolvedPlacements.set(fieldKey, placement)
+                resolvedPlacements.set(def.key, placement)
             }
 
             // Fallback: if no title assigned, first identifier or first field gets title
@@ -741,7 +741,7 @@ export function createEntityFields<T>(): (
                 const fallback =
                     tableEntries.find(([, d]) => (d.fieldRole ?? TYPE_TO_ROLE[d.type]) === 'identifier')
                     ?? tableEntries[0]
-                resolvedPlacements.set(fallback[0], 'title')
+                resolvedPlacements.set(fallback[1].key, 'title')
             }
 
             return tableEntries
