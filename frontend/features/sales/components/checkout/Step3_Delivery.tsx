@@ -298,6 +298,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     open={numpadOpen}
                     onOpenChange={setNumpadOpen}
                     title="Cantidad a Despachar"
+                    icon={Package}
                     value={numpadValue}
                     onChange={setNumpadValue}
                     onConfirm={() => {

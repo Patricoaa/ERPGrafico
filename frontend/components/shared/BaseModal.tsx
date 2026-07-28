@@ -45,6 +45,7 @@ export function BaseModal({
     contentClassName,
     headerClassName,
     footerClassName,
+    titleClassName,
     hideScrollArea = false,
     allowOverflow = false,
     variant = "default",
@@ -116,6 +117,7 @@ export function BaseModal({
                                     {title}
                                 </DialogTitle>
                             }
+                            titleClassName={titleClassName}
                             subtitle={description ? (
                                 <DialogDescription
                                     asChild={typeof description !== "string"}

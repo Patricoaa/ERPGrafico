@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card'
 import { ActionConfirmModal, PrintableReceipt, BaseModal } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, Wallet, Check, Printer } from 'lucide-react'
+import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag } from 'lucide-react'
 
 import {
     DropdownMenu,
@@ -673,7 +673,16 @@ export function POSClientView() {
 
             <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Product)} items={items} bomCache={bomCache as unknown as Record<number, Record<string, unknown>>} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
             <DraftCartsClientView open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} currentDraftId={currentDraftId} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
-            <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : numpadConfig?.field === 'discount' ? "Descuento" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
+            <NumpadModal
+                open={numpadOpen}
+                onOpenChange={setNumpadOpen}
+                title={numpadConfig?.field === 'qty' ? "Cantidad" : numpadConfig?.field === 'discount' ? "Descuento" : "Precio"}
+                icon={numpadConfig?.field === 'qty' ? Package : numpadConfig?.field === 'discount' ? Percent : Tag}
+                value={numpadValue}
+                onChange={setNumpadValue}
+                onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))}
+                allowDecimal
+            />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
