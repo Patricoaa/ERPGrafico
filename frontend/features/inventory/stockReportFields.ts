@@ -1,4 +1,5 @@
 import { createEntityFields } from '@/components/shared'
+import { formatCurrency } from '@/lib/money'
 import { cn } from '@/lib/utils'
 
 interface StockReportItem {
@@ -23,7 +24,8 @@ interface StockReportItem {
 export type { StockReportItem }
 
 export const stockReportFields = createEntityFields<StockReportItem>()({
-    category_name: { key: 'category_name', type: 'text', label: 'Categoría' },
+    name: { key: 'name', type: 'text', label: 'Producto' },
+    category_name: { key: 'category_name', type: 'secondary', label: 'Categoría' },
     stock_qty: {
         key: 'stock_qty',
         type: 'number',
@@ -63,5 +65,6 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
         key: 'total_value',
         type: 'currency',
         label: 'Valorización',
+        tooltip: (entity) => `${formatCurrency(entity.unit_cost ?? 0)} / ${entity.uom_abbreviation || entity.uom_name || ''}`,
     },
 })
