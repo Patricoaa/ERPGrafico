@@ -247,7 +247,7 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
         qty_available = float(stock_qty) - qty_reserved
 
         uom = p.uom
-        uom_display_stock = UoMService.format_quantity_display(stock_qty, uom) if uom else ""
+        uom_display_stock = UoMService.format_quantity_display(Decimal(str(stock_qty)), uom) if uom else ""
         uom_display_reserved = UoMService.format_quantity_display(Decimal(str(qty_reserved)), uom) if uom else ""
         uom_display_available = UoMService.format_quantity_display(Decimal(str(qty_available)), uom) if uom else ""
 
