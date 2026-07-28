@@ -289,7 +289,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
             cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-            meta: { title: "Folio" },
         },
         {
             accessorKey: "date",
@@ -297,7 +296,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
             cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
-            meta: { title: "Fecha" },
         },
         {
             accessorKey: "partner_name",
@@ -305,7 +303,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 <DataTableColumnHeader column={column} title="Proveedor" />
             ),
             cell: ({ row }) => <DataCell.Text>{row.original.supplier_name || row.original.partner_name}</DataCell.Text>,
-            meta: { title: "Proveedor" },
         },
         {
             accessorKey: "total",
@@ -313,7 +310,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 <DataTableColumnHeader column={column} title="Total" />
             ),
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
-            meta: { title: "Total" },
         },
         {
             accessorKey: "status",
@@ -325,7 +321,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                     <DomainHubStatus label="billing.invoice" data={row.original} />
                 </div>
             ),
-            meta: { title: "Estado" },
         },
     ]
 
@@ -370,7 +365,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 <DataTableColumnHeader column={column} title="Almacén" />
             ),
             cell: ({ row }) => <DataCell.Secondary>{row.getValue("warehouse_name")}</DataCell.Secondary>,
-            meta: { title: "Almacén" },
         },
 
         // Hidden columns for filtering only - these provide data for faceted filters
