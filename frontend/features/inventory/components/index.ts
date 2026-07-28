@@ -1,5 +1,6 @@
 export * from './ArchivingRestrictionsModal';
 export * from './AttributesClientView';
+export * from './AttributeDrawer';
 export * from './BarcodeModal';
 export * from './CategoryClientView';
 export * from './MovementClientView';

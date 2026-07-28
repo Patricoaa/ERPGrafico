@@ -27,6 +27,7 @@ from .models import (
     InventoryDocument,
 )
 from .selectors import (
+    ProductAttributeValueSelector,
     ProductSelector,
     StockMoveSelector,
     get_product_base_queryset,
@@ -283,6 +284,13 @@ class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, A
     serializer_class = ProductAttributeValueSerializer
     pagination_class = None  # Master data
     filterset_fields = ["attribute"]
+
+    @action(detail=False, methods=["get"], url_path="filter-suggestions")
+    def filter_suggestions(self, request):
+        q = request.query_params.get("q", "").strip()
+        if len(q) < 2:
+            return Response([])
+        return Response(ProductAttributeValueSelector.filter_suggestions(q))
 
 
 class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):

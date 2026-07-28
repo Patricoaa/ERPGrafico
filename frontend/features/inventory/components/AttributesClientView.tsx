@@ -7,124 +7,61 @@ import { Plus, Trash2, Tag, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { BaseModal, DataTableView, AutoEntityCard } from '@/components/shared'
+import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { attributeActions, type AttributeActionsCtx } from './attributeActions'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { BulkAction } from "@/components/shared"
-import { ActivitySidebar } from "@/features/audit"
-import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { CancelButton, SubmitButton, IconButton, LabeledInput, MultiTagInput, ActionConfirmModal, FormFooter } from "@/components/shared"
+import { IconButton, ActionConfirmModal } from "@/components/shared"
 import { attributeFields } from "../attributeFields"
-
-interface ProductAttribute {
-    id: number
-    name: string
-    values?: ProductAttributeValue[]
-}
-
-interface ProductAttributeValue {
-    id: number
-    attribute: number
-    value: string
-}
+import { useAttributes, type Attribute } from "@/features/inventory/hooks/useAttributes"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { AttributeDrawer } from "./AttributeDrawer"
 
 interface AttributesClientViewProps {
     externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
-import { useAttributes } from "@/features/inventory/hooks/useAttributes"
-import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { attributeUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-
-export function AttributesClientView({ externalOpen, createAction }: AttributesClientViewProps) {
+export function AttributesClientView({ externalOpen, onExternalOpenChange, createAction }: AttributesClientViewProps) {
     const search = useUnifiedSearch(attributeUnifiedSearchDef)
     const {
         attributes,
         isLoading,
         refetch,
-        saveAttribute,
         deleteAttribute,
-        createAttributeValue,
         deleteAttributeValue,
     } = useAttributes({ filters: search.filters })
-    const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
-    const [isValueModalOpen, setIsValueModalOpen] = useState(false)
-    const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
-    const [newAttrName, setNewAttrName] = useState("")
-    const [newAttrValues, setNewAttrValues] = useState<string[]>([])
-    const [newValueName, setNewValueName] = useState("")
-    const [isSaving, setIsSaving] = useState(false)
 
+    const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
-    const handleCloseModal = () => {
-        setIsAttrModalOpen(false)
-        setSelectedAttribute(null)
-        setNewAttrName("")
-        setNewAttrValues([])
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Attribute>({
+        endpoint: '/inventory/attributes'
+    })
+    const { openSelected } = useEntityRouteActions()
 
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isEditOpen = !!selectedFromUrl
+    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
 
-    const handleCreateAttribute = async () => {
-        if (!newAttrName.trim()) return
-        setIsSaving(true)
-        try {
-            // saveAttribute invalida ATTRIBUTES_QUERY_KEY y emite el toast.
-            const saved = await saveAttribute({
-                id: selectedAttribute?.id ?? null,
-                payload: { name: newAttrName },
-            })
-            const attrId = saved.id
-
-            // Bulk-create de los valores nuevos. Cada createAttributeValue
-            // invalidaría ATTRIBUTES_QUERY_KEY individualmente; lo permitimos
-            // (TanStack Query agrupa los refetches del mismo queryKey).
-            if (newAttrValues.length > 0) {
-                await Promise.all(newAttrValues.map(val =>
-                    createAttributeValue({ attribute: attrId, value: val })
-                ))
+    const handleCloseModal = (open: boolean = false) => {
+        if (!open) {
+            onExternalOpenChange?.(false)
+            if (isEditOpen) clearSelection()
+            if (isCreateOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
             }
-
-            handleCloseModal()
-            refetch()
-        } catch (error) {
-            showApiError(error, "Error al guardar atributo")
-        } finally {
-            setIsSaving(false)
-        }
-    }
-
-    const addTag = (tag: string) => {
-        if (tag && !newAttrValues.includes(tag)) {
-            setNewAttrValues([...newAttrValues, tag])
-        }
-    }
-
-    const removeTag = (tag: string) => {
-        setNewAttrValues(newAttrValues.filter(v => v !== tag))
-    }
-
-    const handleCreateValue = async () => {
-        if (!newValueName.trim() || !selectedAttribute) return
-        try {
-            await createAttributeValue({ attribute: selectedAttribute.id, value: newValueName })
-            toast.success("Valor añadido")
-            setNewValueName("")
-            setIsValueModalOpen(false)
-        } catch (error) {
-            showApiError(error, "Error al añadir valor")
         }
     }
 
@@ -151,16 +88,11 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
     const handleDeleteValue = useCallback((id: number) => deleteValueConfirm.requestConfirm(id), [deleteValueConfirm])
 
     const attributeActionsCtx: AttributeActionsCtx = {
-        onViewEdit: (attr) => {
-            const a = attr as ProductAttribute
-            setSelectedAttribute(a)
-            setNewAttrName(a.name)
-            setIsAttrModalOpen(true)
-        },
+        onEdit: (id) => openSelected(id),
         onDelete: (id) => handleDeleteAttribute(id),
     }
 
-    const bulkDeleteConfirm = useConfirmAction<ProductAttribute[]>(async (items) => {
+    const bulkDeleteConfirm = useConfirmAction<Attribute[]>(async (items) => {
         try {
             await Promise.all(items.map(a => deleteAttribute(a.id)))
             toast.success(`${items.length} atributos eliminados`)
@@ -170,7 +102,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
         }
     })
 
-    const columns = useMemo<ColumnDef<ProductAttribute>[]>(() => [
+    const columns = useMemo<ColumnDef<Attribute>[]>(() => [
         {
             id: "select",
             header: ({ table }) => (
@@ -221,7 +153,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                                 key={val.id}
                                 className="inline-flex items-center gap-1 h-[22px] px-2.5 text-[10px] font-mono font-black uppercase tracking-widest rounded-full border border-border/50 bg-muted/60 text-muted-foreground"
                             >
-                                {val.value}
+                                {val.name}
                                 <IconButton
                                     variant="ghost"
                                     className="ml-0.5 h-3 w-3 p-0 text-muted-foreground hover:text-destructive transition-colors"
@@ -237,10 +169,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                         ))}
                         <IconButton
                             className="!p-0 h-[22px] w-[22px] min-h-[22px] min-w-[22px] rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"
-                            onClick={() => {
-                                setSelectedAttribute(row.original)
-                                setIsValueModalOpen(true)
-                            }}
+                            onClick={() => openSelected(row.original.id)}
                             title="Añadir valor"
                         >
                             <Plus className="h-3.5 w-3.5" />
@@ -254,10 +183,10 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                 )
             },
         },
-        attributeActions.auto(attributeActionsCtx) as ColumnDef<ProductAttribute>,
+        attributeActions.auto(attributeActionsCtx) as ColumnDef<Attribute>,
     ], [handleDeleteValue, handleDeleteAttribute, attributeActionsCtx])
 
-    const bulkActions = useMemo<BulkAction<ProductAttribute>[]>(() => [
+    const bulkActions = useMemo<BulkAction<Attribute>[]>(() => [
         {
             key: "delete",
             label: "Eliminar",
@@ -273,8 +202,7 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                 <DataTableView
                     entityLabel="inventory.attribute"
                     columns={columns}
-                    // Safe: Attribute from useAttributes and ProductAttribute are structurally compatible at runtime
-                    data={attributes as unknown as ProductAttribute[]}
+                    data={attributes}
                     isLoading={isLoading}
                     variant="embedded"
                     bulkActions={bulkActions}
@@ -303,8 +231,8 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                         title: "Aún no hay atributos",
                         description: "Crea atributos (color, talla…) para generar variantes de producto.",
                     }}
-                    renderCard={(attr: ProductAttribute) => (
-                        <AutoEntityCard 
+                    renderCard={(attr: Attribute) => (
+                        <AutoEntityCard
                             key={attr.id}
                             data={attr}
                             fields={attributeFields}
@@ -316,102 +244,12 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                 />
             </div>
 
-            {/* Modal para Atributo */}
-            <BaseModal
-                open={isAttrModalOpen || !!externalOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsAttrModalOpen(true)
-                    }
-                }}
-                icon={Tag}
-                title={selectedAttribute ? "Editar Atributo" : "Nuevo Atributo de Variante"}
-                description={selectedAttribute ? "Modifica el nombre o añade nuevos valores al atributo." : "Define un nuevo atributo para generar variaciones de producto (ej: Color, Talla)."}
-                footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={handleCloseModal} disabled={isSaving} />
-                                <SubmitButton onClick={handleCreateAttribute} loading={isSaving}>
-                                    {selectedAttribute ? "Guardar Cambios" : "Crear Atributo"}
-                                </SubmitButton>
-                            </>
-                        }
-                    />
-                }
-                hideScrollArea={true}
-                className={cn("transition-all duration-300", selectedAttribute?.id ? "sm:max-w-[1000px]" : "sm:max-w-[600px]")}
-            >
-                <div className="flex flex-1 overflow-hidden min-h-[400px]">
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                        <div className="space-y-6">
-                            <LabeledInput
-                                label="Nombre del Atributo (ej: Color, Talla)"
-                                required
-                                id="attr-name"
-                                value={newAttrName}
-                                onChange={(e) => setNewAttrName(e.target.value)}
-                                placeholder="Escribe el nombre..."
-                            />
-
-                            <MultiTagInput
-                                label="Nuevos Valores"
-                                placeholder="Escribe un valor y pulsa Enter..."
-                                values={newAttrValues}
-                                onAdd={addTag}
-                                onRemove={removeTag}
-                                hint="Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter."
-                            />
-                        </div>
-                    </div>
-
-                    {/* Right Side: Activity Sidebar */}
-                    {selectedAttribute?.id && (
-                        <ActivitySidebar
-                            entityType="attribute"
-                            entityId={selectedAttribute.id}
-                            className="h-full border-none"
-                            title="Historial"
-                        />
-                    )}
-                </div>
-            </BaseModal>
-
-            {/* Modal para Valor */}
-            <BaseModal
-                open={isValueModalOpen}
-                onOpenChange={setIsValueModalOpen}
-                icon={Plus}
-                title={selectedAttribute?.name ? `Añadir Valor a ${selectedAttribute.name}` : "Añadir Valor"}
-                footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={() => setIsValueModalOpen(false)} disabled={isSaving} />
-                                <SubmitButton onClick={handleCreateValue} loading={isSaving}>
-                                    Añadir Valor
-                                </SubmitButton>
-                            </>
-                        }
-                    />
-                }
-            >
-                <div className="space-y-4 py-4">
-                    <LabeledInput
-                        label="Nombre del Valor (ej: Rojo, XL)"
-                        required
-                        id="val-name"
-                        value={newValueName}
-                        onChange={(e) => setNewValueName(e.target.value)}
-                        placeholder="Escribe el valor..."
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleCreateValue()
-                        }}
-                    />
-                </div>
-            </BaseModal>
+            <AttributeDrawer
+                onSuccess={() => { void refetch() }}
+                open={drawerOpen}
+                onOpenChange={handleCloseModal}
+                initialData={selectedFromUrl || undefined}
+            />
 
             <ActionConfirmModal
                 open={deleteAttrConfirm.isOpen}
