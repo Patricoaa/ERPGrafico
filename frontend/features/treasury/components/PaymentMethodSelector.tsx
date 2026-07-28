@@ -526,12 +526,7 @@ export function PaymentMethodSelector({
                     >
                         <div className="flex items-center gap-3 min-w-0">
                             <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <div className="text-base font-semibold leading-tight">Múltiple</div>
-                                    <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
-                                </div>
-                            </div>
+                            <div className="text-base font-semibold leading-tight">Múltiple</div>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="flex flex-wrap gap-1.5">
@@ -549,10 +544,11 @@ export function PaymentMethodSelector({
                                     </span>
                                 )}
                             </div>
+                            <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none shrink-0">Activo</span>
                             <button
                                 type="button"
                                 onClick={exitMultiMode}
-                                className="rounded-[calc(var(--radius))] p-1 hover:bg-primary-foreground/20 transition-colors"
+                                className="rounded-[calc(var(--radius))] p-1 hover:bg-primary-foreground/20 transition-colors shrink-0"
                             >
                                 <X className="h-5 w-5 text-primary-foreground" />
                             </button>
