@@ -220,7 +220,7 @@ export const DataCell = {
         return (
             <div className={cn("text-sm font-sans font-medium tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
-                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix && <span className={cn("text-sm font-medium text-foreground flex justify-center items-center text-center", suffixGap && "ml-1")}>{suffix}</span>}
+                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix && <span className={cn("tabular-nums text-foreground flex justify-center items-center text-center", suffixGap && "ml-1")}>{suffix}</span>}
             </div>
         )
     },

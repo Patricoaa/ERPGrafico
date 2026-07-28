@@ -131,6 +131,7 @@ export function StockReport() {
                         title: "Sin productos para reportar",
                         description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
                     }}
+                    cardSkeleton={{ showFooter: false }}
                     renderCard={(item: StockReportItem) => (
                         <AutoEntityCard
                             key={item.id}
