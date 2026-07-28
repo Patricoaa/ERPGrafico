@@ -224,14 +224,14 @@ export function AttributesClientView({ externalOpen, createAction }: AttributesC
                                 {val.value}
                                 <IconButton
                                     variant="ghost"
-                                    className="ml-0.5 h-3.5 w-3.5 p-0 text-muted-foreground hover:text-destructive transition-colors"
+                                    className="ml-0.5 h-3 w-3 p-0 text-muted-foreground hover:text-destructive transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handleDeleteValue(val.id)
                                     }}
                                     title="Eliminar valor"
                                 >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-2.5 w-2.5" />
                                 </IconButton>
                             </span>
                         ))}
