@@ -130,12 +130,12 @@ describe("createEntityFields", () => {
             expect(cardFields[0].key).toBe("name")
         })
 
-        it("resolves cardPlacement and fieldRole for all fields", () => {
+        it("resolves placement and fieldRole for all fields", () => {
             const fields = testFields.toCardFields(sampleEntity)
             fields.forEach((f) => {
-                expect(f.cardPlacement).toBeDefined()
+                expect(f.placement).toBeDefined()
                 expect(f.fieldRole).toBeDefined()
-                expect(["title", "header", "detail", "metric"]).toContain(f.cardPlacement)
+                expect(["title", "header", "detail", "metric"]).toContain(f.placement)
             })
         })
 
@@ -143,14 +143,14 @@ describe("createEntityFields", () => {
             const fields = testFields.toCardFields(sampleEntity)
             const codeField = fields.find(f => f.key === "code")
             expect(codeField).toBeDefined()
-            expect(codeField!.cardPlacement).toBe("title")
+            expect(codeField!.placement).toBe("title")
         })
 
         it("assigns status to header zone", () => {
             const fields = testFields.toCardFields(sampleEntity)
             const statusField = fields.find(f => f.key === "status")
             expect(statusField).toBeDefined()
-            expect(statusField!.cardPlacement).toBe("header")
+            expect(statusField!.placement).toBe("header")
             expect(statusField!.fieldRole).toBe("status")
         })
 
@@ -158,7 +158,7 @@ describe("createEntityFields", () => {
             const fields = testFields.toCardFields(sampleEntity)
             const totalField = fields.find(f => f.key === "total")
             expect(totalField).toBeDefined()
-            expect(totalField!.cardPlacement).toBe("header")
+            expect(totalField!.placement).toBe("header")
             expect(totalField!.fieldRole).toBe("primary-value")
         })
 
@@ -166,16 +166,16 @@ describe("createEntityFields", () => {
             const fields = testFields.toCardFields(sampleEntity)
             const nameField = fields.find(f => f.key === "name")
             expect(nameField).toBeDefined()
-            expect(nameField!.cardPlacement).toBe("detail")
+            expect(nameField!.placement).toBe("detail")
         })
 
-        it("respects explicit cardPlacement override", () => {
+        it("respects explicit placement override", () => {
             const fields = createEntityFields<TestEntity>()({
                 code: { key: "code", type: "code", label: "Folio" },
-                name: { key: "name", type: "text", label: "Nombre", cardPlacement: "header" },
+                name: { key: "name", type: "text", label: "Nombre", placement: "header" },
             }).toCardFields(sampleEntity)
             const nameField = fields.find(f => f.key === "name")
-            expect(nameField!.cardPlacement).toBe("header")
+            expect(nameField!.placement).toBe("header")
         })
 
         it("respects explicit fieldRole override", () => {
@@ -184,12 +184,12 @@ describe("createEntityFields", () => {
             }).toCardFields(sampleEntity)
             const nameField = fields[0]
             expect(nameField.fieldRole).toBe("relation")
-            expect(nameField.cardPlacement).toBe("detail")
+            expect(nameField.placement).toBe("detail")
         })
 
         it("ensures exactly one title field", () => {
             const fields = testFields.toCardFields(sampleEntity)
-            const titles = fields.filter(f => f.cardPlacement === "title")
+            const titles = fields.filter(f => f.placement === "title")
             expect(titles).toHaveLength(1)
         })
     })
@@ -266,6 +266,59 @@ describe("createEntityFields", () => {
         })
     })
 
+    describe("placement-based column ordering", () => {
+        it("sorts columns by placement zone first, then by order within zone", () => {
+            const fields = createEntityFields<TestEntity>()({
+                detail_a: { key: "name", type: "text", label: "Detail A", order: 10 },
+                header_a: { key: "status", type: "status", label: "Header A", order: 20 },
+                title_a: { key: "code", type: "code", label: "Title A", order: 30 },
+                detail_b: { key: "description", type: "text", label: "Detail B", order: 5 },
+            })
+            const columns = fields.toColumns()
+            // title(0) → header(2) → detail(3)
+            expect(getAccessorKey(columns[0])).toBe("code")      // title zone, order:30
+            expect(getAccessorKey(columns[1])).toBe("status")    // header zone, order:20
+            expect(getAccessorKey(columns[2])).toBe("detail_b")  // detail zone, order:5
+            expect(getAccessorKey(columns[3])).toBe("detail_a")  // detail zone, order:10
+        })
+
+        it("uses explicit placement over type-derived placement", () => {
+            const fields = createEntityFields<TestEntity>()({
+                a: { key: "name", type: "text", label: "A", placement: "title", order: 30 },
+                b: { key: "code", type: "code", label: "B", order: 10 },
+            })
+            const columns = fields.toColumns()
+            // 'name' is explicitly title(0), 'code' is type-derived header(2)
+            expect(getAccessorKey(columns[0])).toBe("name")
+            expect(getAccessorKey(columns[1])).toBe("code")
+        })
+
+        it("falls back to type-derived placement when no explicit placement", () => {
+            const fields = createEntityFields<TestEntity>()({
+                a: { key: "status", type: "status", label: "Status" },   // header(2)
+                b: { key: "name", type: "text", label: "Name" },         // detail(3)
+                c: { key: "code", type: "code", label: "Code" },         // header(2)
+            })
+            const columns = fields.toColumns()
+            // Both status and code are header(2), name is detail(3)
+            // Within header zone, no order → original insertion order
+            expect(getAccessorKey(columns[0])).toBe("status")
+            expect(getAccessorKey(columns[1])).toBe("code")
+            expect(getAccessorKey(columns[2])).toBe("name")
+        })
+
+        it("deprecated cardPlacement still works for column ordering", () => {
+            const fields = createEntityFields<TestEntity>()({
+                a: { key: "name", type: "text", label: "A", cardPlacement: "header", order: 20 },
+                b: { key: "code", type: "code", label: "B", order: 10 },
+            })
+            const columns = fields.toColumns()
+            // 'name' is cardPlacement header(2) with order 20, 'code' is type-derived header(2) with order 10
+            expect(getAccessorKey(columns[0])).toBe("code")
+            expect(getAccessorKey(columns[1])).toBe("name")
+        })
+    })
+
     describe("meta.title", () => {
         it("resolveTitle uses meta.title.field", () => {
             const fields = createEntityFields<TestEntity>()({
@@ -289,16 +342,16 @@ describe("createEntityFields", () => {
             expect(title).toBe("Enero 2026")
         })
 
-        it("resolveTitle falls back to cardPlacement:'title' field", () => {
+        it("resolveTitle falls back to placement:'title' field", () => {
             const fields = createEntityFields<TestEntity>()({
-                code: { key: "code", type: "code", label: "Folio", cardPlacement: "title" },
+                code: { key: "code", type: "code", label: "Folio", placement: "title" },
                 name: { key: "name", type: "text", label: "Nombre" },
             })
             const title = fields.resolveTitle(sampleEntity)
             expect(title).toBeTruthy()
         })
 
-        it("resolveTitle falls back to first field when no meta or cardPlacement", () => {
+        it("resolveTitle falls back to first field when no meta or placement", () => {
             const fields = createEntityFields<TestEntity>()({
                 name: { key: "name", type: "text", label: "Nombre" },
             })

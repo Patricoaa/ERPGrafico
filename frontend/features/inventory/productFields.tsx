@@ -31,7 +31,7 @@ export const productFields = createEntityFields<Product>()({
         fieldRole: 'primary-value',
         label: 'Total (c/IVA)',
         order: 50,
-        cardPlacement: 'header',
+        placement: 'header',
         render: (p) => {
             if (p.is_dynamic_pricing) {
                 return (
@@ -49,7 +49,7 @@ export const productFields = createEntityFields<Product>()({
         type: 'chip',
         label: 'Disponible para',
         order: 60,
-        cardPlacement: 'subtitle',
+        placement: 'subtitle',
         get: (p) => {
             if (p.can_be_sold && p.can_be_purchased) return 'Venta y Compra'
             if (p.can_be_sold) return 'Venta'
