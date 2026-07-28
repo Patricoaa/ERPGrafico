@@ -169,6 +169,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
             resizable={false}
             showOverlay={true}
             defaultSize="100%"
+            fillContent
             contentClassName="p-0 flex flex-col overflow-hidden"
         >
             <div className="flex-1 overflow-hidden flex">
