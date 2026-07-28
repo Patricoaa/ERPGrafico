@@ -206,6 +206,10 @@ interface FieldDef<T> {
     /** Whether to add left margin to the suffix (default true). Set false for number+uom without space. */
     suffixGap?: boolean
 
+    // Currency
+    /** Tooltip content — static or derived per entity. Shows on hover for currency cells. */
+    tooltip?: string | ((entity: T) => string)
+
     // Icon prefix (text, code, secondary, chip)
     /** Optional icon prepended to the cell content. Ignored for card header rendering. */
     icon?: LucideIcon | ((entity: T) => LucideIcon)
@@ -350,12 +354,14 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
             const showZeroAsDashValue = typeof def.showZeroAsDash === "function"
                 ? def.showZeroAsDash(value as number)
                 : def.showZeroAsDash
+            const tooltipValue = typeof def.tooltip === "function" ? def.tooltip(entity) : def.tooltip
             return (
                 <DataCell.Currency
                     value={value as number | string}
                     className={resolvedClassName}
                     {...(currencyValue !== undefined && { currency: currencyValue })}
                     {...(showZeroAsDashValue !== undefined && { showZeroAsDash: showZeroAsDashValue })}
+                    {...(tooltipValue !== undefined && { tooltip: tooltipValue })}
                     {...extra}
                 />
             )

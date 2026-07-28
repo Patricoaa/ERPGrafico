@@ -1,13 +1,10 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
-import { cn } from "@/lib/utils"
 
 import React, { useState, useMemo } from "react"
 
-import { DataCell, DataTableView, AutoEntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import type { MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
@@ -96,83 +93,10 @@ export function StockReport() {
         });
     }, [search.filters, report, isFiltered])
 
-    const columns = useMemo<ColumnDef<StockReportItem>[]>(() => [
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.name}</DataCell.Text>
-            ),
-            meta: { title: "Producto" },
-        },
-        {
-            accessorKey: "category_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Secondary>{row.original.category_name}</DataCell.Secondary>
-            ),
-        },
-        {
-            accessorKey: "stock_qty",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Stock" className="justify-center" />,
-            cell: ({ row }) => {
-                const qty = Number(row.original.stock_qty)
-                return (
-                    <span className={cn(
-                        "text-sm font-sans font-medium tabular-nums flex justify-center items-center",
-                        qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
-                    )}>
-                        {row.original.uom_display_stock}
-                    </span>
-                )
-            },
-        },
-        {
-            accessorKey: "qty_reserved",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
-            cell: ({ row }) => (
-                <span className="text-sm font-sans font-medium tabular-nums text-foreground flex justify-center items-center">
-                    {row.original.uom_display_reserved}
-                </span>
-            ),
-        },
-        {
-            accessorKey: "qty_available",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-center" />,
-            cell: ({ row }) => {
-                const qty = Number(row.original.qty_available)
-                return (
-                    <span className={cn(
-                        "text-sm font-sans font-medium tabular-nums flex justify-center items-center",
-                        qty <= 0 ? "text-destructive" : "text-primary font-black"
-                    )}>
-                        {row.original.uom_display_available}
-                    </span>
-                )
-            },
-        },
-        {
-            accessorKey: "total_value",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,
-            cell: ({ row }) => {
-                const item = row.original;
-                return (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="flex items-center justify-center w-full cursor-default">
-                                <DataCell.Currency value={item.total_value} size="md" intent="primary" />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">
-                            {formatCurrency(item.unit_cost)} / {item.uom_abbreviation || item.uom_name}
-                        </TooltipContent>
-                    </Tooltip>
-                )
-            },
-        },
-
+    const columns: ColumnDef<StockReportItem>[] = useMemo(() => [
+        ...stockReportFields.toColumns(),
         stockReportActions.auto(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
-    ], [setInsightsProduct, stockReportActionsCtx])
+    ], [stockReportActionsCtx])
 
     return (
         <div className="flex-1 flex flex-col min-h-0">

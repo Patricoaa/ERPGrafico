@@ -226,12 +226,29 @@ export const DataCell = {
     },
 
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
-    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, color, textTransform, letterSpacing, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
-        return (
+    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, color, textTransform, letterSpacing, tooltip: tooltipContent, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing, tooltip?: ReactNode }) => {
+        const cell = (
             <div className={cn("text-sm font-sans font-medium text-foreground flex justify-center items-center text-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
             </div>
         )
+
+        if (tooltipContent) {
+            return (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center w-full cursor-default">
+                            {cell}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                        {tooltipContent}
+                    </TooltipContent>
+                </Tooltip>
+            )
+        }
+
+        return cell
     },
 
     /**
