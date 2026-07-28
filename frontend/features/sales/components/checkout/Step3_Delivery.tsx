@@ -74,7 +74,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isServiceMode) {
         return (
             <div className="space-y-6">
-                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-md shadow-card shadow-black/5">
+                <div className="flex items-start gap-3 p-4 bg-card border border-primary/20 rounded-md shadow-card shadow-black/5">
                     <Calendar className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
                     <div className="space-y-1">
                         <p className="text-xs font-bold uppercase tracking-wider">Cumplimiento de Servicios</p>
