@@ -723,6 +723,9 @@ export function PaymentMethodSelector({
                 title={amountModalTitle || "Monto"}
                 description={amountModalDescription}
                 className="sm:max-w-md"
+                headerClassName="border-b-0"
+                footerClassName="border-t-0"
+                centered
                 footer={
                     <Button
                         className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
