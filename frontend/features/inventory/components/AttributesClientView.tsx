@@ -152,7 +152,7 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
                                 key={val.id}
                                 className="inline-flex items-center gap-1 h-[22px] px-2.5 text-[10px] font-mono font-black uppercase tracking-widest rounded-full border border-border/50 bg-muted/60 text-muted-foreground"
                             >
-                                {val.name}
+                                {val.value}
                                 <IconButton
                                     variant="ghost"
                                     className="ml-0.5 h-3 w-3 p-0 text-muted-foreground hover:text-destructive transition-colors"

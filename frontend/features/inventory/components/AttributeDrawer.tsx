@@ -73,7 +73,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
         if (isNewOpen || isNewData) {
             if (initialData && Object.keys(initialData).length > 0) {
                 form.reset({ name: initialData.name || "" })
-                setAttrValues(initialData.values?.map((v) => v.name) ?? [])
+                setAttrValues(initialData.values?.map((v) => v.value) ?? [])
             } else {
                 form.reset({ name: "" })
                 setAttrValues([])
@@ -92,7 +92,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
 
             if (attrValues.length > 0) {
                 const existingNames = new Set(
-                    (initialData?.values ?? []).map((v) => v.name)
+                    (initialData?.values ?? []).map((v) => v.value)
                 )
                 const newValues = attrValues.filter((v) => !existingNames.has(v))
                 if (newValues.length > 0) {
