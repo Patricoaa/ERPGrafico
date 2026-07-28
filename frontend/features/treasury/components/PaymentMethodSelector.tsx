@@ -439,8 +439,7 @@ export function PaymentMethodSelector({
                                 }}
                                 disabled={!m.isAllowed}
                                 className={cn(
-                                    methodCardClass,
-                                    isMultiCard ? "col-span-full self-start h-auto border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60" : undefined,
+                                    isMultiCard ? "col-span-full self-start h-auto p-8 border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60" : "card-base bg-card text-card-foreground p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start",
                                     isSingleSelected ? "border-2 border-primary accent-visible" : undefined,
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
@@ -522,11 +521,8 @@ export function PaymentMethodSelector({
                 {/* Unified grid: exit card + methods */}
                 <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
                     {/* Card "Múltiple" para salir */}
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={exitMultiMode}
-                        className="col-span-full self-start p-8 flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                    <div
+                        className="col-span-full self-start p-8 flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground rounded-[calc(var(--radius))]"
                     >
                         <div className="flex items-center gap-3 min-w-0">
                             <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
@@ -553,9 +549,15 @@ export function PaymentMethodSelector({
                                     </span>
                                 )}
                             </div>
-                            <X className="h-5 w-5 shrink-0 text-primary-foreground/70" />
+                            <button
+                                type="button"
+                                onClick={exitMultiMode}
+                                className="rounded-[calc(var(--radius))] p-1 hover:bg-primary-foreground/20 transition-colors"
+                            >
+                                <X className="h-5 w-5 text-primary-foreground" />
+                            </button>
                         </div>
-                    </Button>
+                    </div>
 
                     {availableMethods.map((m) => {
                         const allocIndex = paymentsList.findIndex(p => p.method === m.id)
