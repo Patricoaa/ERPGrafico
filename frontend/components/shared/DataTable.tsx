@@ -474,7 +474,7 @@ export function DataTable<TData, TValue>({
                 )}
 
                 {!hidePagination && !isMinimal && (
-                    <div className="border-t border-border/40 rounded-t-sm rounded-b-sm bg-background mt-2 px-2 py-1.5">
+                    <div className="rounded-b-sm bg-background mt-2 px-2 py-1.5">
                         <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                     </div>
                 )}
@@ -636,6 +636,7 @@ export function DataTable<TData, TValue>({
     }
 
     if (isEmbedded) {
+        const embeddedHeaderGroups = table.getHeaderGroups()
         const tableBody = renderCustomView ? null : (
             table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
@@ -749,39 +750,56 @@ export function DataTable<TData, TValue>({
                             {renderCustomView(table)}
                         </div>
                     ) : (
-                        <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", isTableEmpty && "flex flex-col")}>
-                            <table className={cn("w-full text-sm", isTableEmpty && "h-full")}>
-                                <TableHeader className={cn("sticky top-0 bg-background z-10 border-b", !noBorder && "rounded-t-sm")}>
-                                    {table.getHeaderGroups().map((headerGroup) => (
-                                        <TableRow
-                                            key={headerGroup.id}
-                                            className="border-none hover:bg-transparent"
-                                        >
-                                            {headerGroup.headers.map((header) => (
-                                                <TableHead
-                                                    key={header.id}
-                                                    className="table-header"
-                                                >
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(
-                                                            header.column.columnDef.header,
-                                                            header.getContext()
-                                                        )}
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-                                </TableHeader>
-                                <TableBody>
-                                    {tableBody}
-                                </TableBody>
-                            </table>
+                        <div className="flex flex-col min-h-0">
+                            <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden" style={{ scrollbarGutter: 'stable' }}>
+                                <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+                                    <colgroup>
+                                        {embeddedHeaderGroups[0]?.headers.map(header => (
+                                            <col key={header.id} style={{ width: header.getSize() }} />
+                                        ))}
+                                    </colgroup>
+                                    <TableHeader className="bg-background">
+                                        {embeddedHeaderGroups.map((headerGroup) => (
+                                            <TableRow
+                                                key={headerGroup.id}
+                                                className="border-none hover:bg-transparent"
+                                            >
+                                                {headerGroup.headers.map((header) => (
+                                                    <TableHead
+                                                        key={header.id}
+                                                        className="table-header"
+                                                        style={{ width: header.getSize() }}
+                                                    >
+                                                        {header.isPlaceholder
+                                                            ? null
+                                                            : flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                    </TableHead>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </TableHeader>
+                                </table>
+                            </div>
+                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", isTableEmpty && "flex flex-col")} style={{ scrollbarGutter: 'stable' }}>
+                                <table className={cn("w-full text-sm", isTableEmpty && "h-full")} style={{ tableLayout: 'fixed' }}>
+                                    <colgroup>
+                                        {embeddedHeaderGroups[0]?.headers.map(header => (
+                                            <col key={header.id} style={{ width: header.getSize() }} />
+                                        ))}
+                                    </colgroup>
+                                    <TableBody>
+                                        {tableBody}
+                                    </TableBody>
+                                </table>
+                            </div>
                         </div>
                     )}
 
                     {!hidePagination && currentView !== 'analytics' && (
-                        <div className="px-2 shrink-0 border-t border-border/40 py-1.5 bg-background rounded-t-sm rounded-b-sm mt-2">
+                        <div className="px-2 shrink-0 py-1.5 bg-background rounded-b-sm mt-2">
                             <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                         </div>
                     )}
@@ -792,9 +810,10 @@ export function DataTable<TData, TValue>({
         )
     }
 
-    // ─── Classic Mode (unchanged) ─────────────────────────────────────────────
+    // ─── Classic Mode ──────────────────────────────────────────────────
+    const classicHeaderGroups = table.getHeaderGroups()
     return (
-        <div ref={containerRef} className={cn(isEmbedded ? "w-full flex flex-col h-full min-h-0" : "w-full space-y-4", className)}>
+        <div ref={containerRef} className={cn("w-full space-y-4", className)}>
             {kpiCardsNode}
             {showToolbar && (
                 <div className={cn(
@@ -829,110 +848,133 @@ export function DataTable<TData, TValue>({
                             )}
                         />
                     </div>
-                    <Table containerClassName={cn(
-                        !isInModal && !isEmbedded && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar",
-                        !isInModal && isEmbedded && "flex-1 min-h-0 overflow-y-auto custom-scrollbar",
-                        tableContainerClassName
-                    )}>
-                        <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-card border-b" : "bg-muted/30")}>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => {
-                                        return (
-                                            <TableHead key={header.id}>
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        header.column.columnDef.header,
-                                                        header.getContext()
-                                                    )}
-                                            </TableHead>
-                                        )
-                                    })}
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                table.getRowModel().rows.map((row) => (
-                                    <React.Fragment key={row.id}>
-                                        {renderRow ? (
-                                            renderRow(row, (
-                                                <TableRow
-                                                    data-state={row.getIsSelected() && "selected"}
-                                                    className={cn(
-                                                        "group table-row-hover",
-                                                        hasRowAction && "cursor-pointer",
-                                                        getRowClassName?.(row)
-                                                    )}
-                                                    onClick={() => handleRowClick(row.original)}
-                                                >
-                                                    {row.getVisibleCells().map((cell) => (
-                                                        <TableCell key={cell.id}>
-                                                            {flexRender(
-                                                                cell.column.columnDef.cell,
-                                                                cell.getContext()
+                    <div className={cn("flex flex-col min-h-0", !isInModal && "max-h-[calc(100vh-260px)]", tableContainerClassName)}>
+                        <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden" style={{ scrollbarGutter: 'stable' }}>
+                            <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+                                <colgroup>
+                                    {classicHeaderGroups[0]?.headers.map(header => (
+                                        <col key={header.id} style={{ width: header.getSize() }} />
+                                    ))}
+                                </colgroup>
+                                <TableHeader className="bg-background">
+                                    {classicHeaderGroups.map((headerGroup) => (
+                                        <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
+                                            {headerGroup.headers.map((header) => {
+                                                return (
+                                                    <TableHead key={header.id} style={{ width: header.getSize() }}>
+                                                        {header.isPlaceholder
+                                                            ? null
+                                                            : flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
                                                             )}
-                                                        </TableCell>
-                                                    ))}
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow
-                                                data-state={row.getIsSelected() && "selected"}
-                                                className={cn(
-                                                    "group table-row-hover",
-                                                    hasRowAction && "cursor-pointer",
-                                                    getRowClassName?.(row)
-                                                )}
-                                                onClick={() => handleRowClick(row.original)}
-                                            >
-                                                {row.getVisibleCells().map((cell) => (
-                                                    <TableCell key={cell.id}>
-                                                        {flexRender(
-                                                            cell.column.columnDef.cell,
-                                                            cell.getContext()
+                                                    </TableHead>
+                                                )
+                                            })}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                            </table>
+                        </div>
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar" style={{ scrollbarGutter: 'stable' }}>
+                            <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+                                <colgroup>
+                                    {classicHeaderGroups[0]?.headers.map(header => (
+                                        <col key={header.id} style={{ width: header.getSize() }} />
+                                    ))}
+                                </colgroup>
+                                <TableBody>
+                                    {table.getRowModel().rows?.length ? (
+                                        table.getRowModel().rows.map((row) => (
+                                            <React.Fragment key={row.id}>
+                                                {renderRow ? (
+                                                    renderRow(row, (
+                                                        <TableRow
+                                                            data-state={row.getIsSelected() && "selected"}
+                                                            className={cn(
+                                                                "group table-row-hover",
+                                                                hasRowAction && "cursor-pointer",
+                                                                getRowClassName?.(row)
+                                                            )}
+                                                            onClick={() => handleRowClick(row.original)}
+                                                        >
+                                                            {row.getVisibleCells().map((cell) => (
+                                                                <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
+                                                                    {flexRender(
+                                                                        cell.column.columnDef.cell,
+                                                                        cell.getContext()
+                                                                    )}
+                                                                </TableCell>
+                                                            ))}
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow
+                                                        data-state={row.getIsSelected() && "selected"}
+                                                        className={cn(
+                                                            "group table-row-hover",
+                                                            hasRowAction && "cursor-pointer",
+                                                            getRowClassName?.(row)
                                                         )}
-                                                    </TableCell>
-                                                ))}
-                                            </TableRow>
-                                        )}
-                                        {row.getIsExpanded() && renderSubComponent && (
-                                            <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
-                                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
-                                                    {renderSubComponent(row)}
-                                                </TableCell>
-                                            </tr>
-                                        )}
-                                    </React.Fragment>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={columns.length}
-                                        className="h-24 p-0"
-                                    >
-                                        <EmptyState
-                                            context={emptyProps.context}
-                                            icon={emptyProps.icon}
-                                            title={emptyProps.title}
-                                            description={emptyProps.description}
-                                            action={emptyProps.action}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
+                                                        onClick={() => handleRowClick(row.original)}
+                                                    >
+                                                        {row.getVisibleCells().map((cell) => (
+                                                            <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
+                                                                {flexRender(
+                                                                    cell.column.columnDef.cell,
+                                                                    cell.getContext()
+                                                                )}
+                                                            </TableCell>
+                                                        ))}
+                                                    </TableRow>
+                                                )}
+                                                {row.getIsExpanded() && renderSubComponent && (
+                                                    <tr key={`exp-${row.id}`} className="animate-in fade-in slide-in-from-top-2 duration-200 ease-in-out fill-mode-both">
+                                                        <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                                            {renderSubComponent(row)}
+                                                        </TableCell>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="h-24 p-0"
+                                            >
+                                                <EmptyState
+                                                    context={emptyProps.context}
+                                                    icon={emptyProps.icon}
+                                                    title={emptyProps.title}
+                                                    description={emptyProps.description}
+                                                    action={emptyProps.action}
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </table>
+                        </div>
                         {renderFooter && (
-                            <TableFooter className="table-footer border-t-2">
-                                {renderFooter(table)}
-                            </TableFooter>
+                            <div className="flex-shrink-0 overflow-hidden border-t-2" style={{ scrollbarGutter: 'stable' }}>
+                                <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+                                    <colgroup>
+                                        {classicHeaderGroups[0]?.headers.map(header => (
+                                            <col key={header.id} style={{ width: header.getSize() }} />
+                                        ))}
+                                    </colgroup>
+                                    <TableFooter className="table-footer">
+                                        {renderFooter(table)}
+                                    </TableFooter>
+                                </table>
+                            </div>
                         )}
-                    </Table>
+                    </div>
                 </div>
             )}
             {!hidePagination && currentView !== 'analytics' && (
-                <div className="border-t border-border/40 rounded-t-sm rounded-b-sm bg-background mt-2 px-2 py-1.5">
+                <div className="rounded-b-sm bg-background mt-2 px-2 py-1.5">
                     <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                 </div>
             )}
