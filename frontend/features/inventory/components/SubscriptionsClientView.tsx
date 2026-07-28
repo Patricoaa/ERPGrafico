@@ -316,61 +316,54 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 </PageHeader>
             )}
 
-            <div className="flex-1 h-full flex flex-col">
+            <DataTableView
+                kpiCards={kpiCards}
+                entityLabel="inventory.subscription"
+                columns={columns}
+                data={subscriptions}
+                isLoading={loading}
+                variant="embedded"
+                unifiedSearch={<UnifiedSearchBar
+                    config={subscriptionUnifiedSearchDef}
+                    chips={search.chips}
+                    isFiltered={search.isFiltered}
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                    placeholder="Buscar suscripciones..."
+                />}
+                unifiedSearchConfig={subscriptionUnifiedSearchDef}
+                currentGroupBy={search.groupBy}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
+                defaultPageSize={20}
+                bulkActions={bulkActions}
+                createAction={createAction}
+                isFiltered={search.isFiltered}
+                emptyState={{
+                    context: "inventory",
+                    title: "Aún no hay suscripciones",
+                    description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
+                }}
+                renderCard={(sub: Subscription) => (
+                    <AutoEntityCard 
+                        key={sub.id} 
+                        data={sub}
+                        fields={subscriptionFields}
 
-                <div className="flex-1 min-h-0 flex flex-col space-y-6">
-                    <div className="flex-1 min-h-0">
-                        <DataTableView
-                            kpiCards={kpiCards}
-                            entityLabel="inventory.subscription"
-                            columns={columns}
-                            data={subscriptions}
-                            isLoading={loading}
-                            variant="embedded"
-                            unifiedSearch={<UnifiedSearchBar
-                                config={subscriptionUnifiedSearchDef}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
-                                placeholder="Buscar suscripciones..."
-                            />}
-                            unifiedSearchConfig={subscriptionUnifiedSearchDef}
-                            currentGroupBy={search.groupBy}
-                            showReset={search.isFiltered}
-                            onReset={search.clearAll}
-                            defaultPageSize={20}
-                            bulkActions={bulkActions}
-                            createAction={createAction}
-                            isFiltered={search.isFiltered}
-                            emptyState={{
-                                context: "inventory",
-                                title: "Aún no hay suscripciones",
-                                description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
-                            }}
-                            renderCard={(sub: Subscription) => (
-                                <AutoEntityCard 
-                                    key={sub.id} 
-                                    data={sub}
-                                    fields={subscriptionFields}
+                        entityLabel="inventory.subscription"
+                        onClick={() => openSubscription(sub.id, "edit")} 
+                        defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
 
-                                    entityLabel="inventory.subscription"
-                                    onClick={() => openSubscription(sub.id, "edit")} 
-                                    defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
-
-                                    actions={subscriptionActions.render(sub, actionsCtx)}
-                                />
-                            )}
-                        />
-                    </div>
-                </div>
-            </div>
+                        actions={subscriptionActions.render(sub, actionsCtx)}
+                    />
+                )}
+            />
 
             <ProductDrawer
                 open={isEditOpen}

@@ -44,11 +44,6 @@ export const subscriptionFields = createEntityFields<Subscription>()({
         type: "date",
         label: "Próximo Pago",
     },
-    categoryName: {
-        key: "category_name",
-        type: "secondary",
-        label: "Categoría",
-    },
     frequency: {
         key: "recurrence_display",
         type: "computed",
