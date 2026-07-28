@@ -7,25 +7,21 @@ export const checkFields = createEntityFields<Check>()({
         key: "display_id",
         type: "code",
         label: "Folio",
-        order: 10,
     },
     checkNumber: {
         key: "check_number",
         type: "text",
         label: "# Cheque",
-        order: 20,
     },
     dueDate: {
         key: "due_date",
         type: "date",
         label: "Vencimiento",
-        order: 30,
     },
     amount: {
         key: "amount",
         type: "currency",
         label: "Monto",
-        order: 40,
         get: (c) => parseFloat(c.amount) || 0,
         cellProps: { weight: "bold" },
     },
@@ -33,7 +29,6 @@ export const checkFields = createEntityFields<Check>()({
         key: "sale_order_display",
         type: "computed",
         label: "NV Asociada",
-        order: 50,
         render: (c) => {
             const so = c.sale_order_display
             if (!so) return null
@@ -48,6 +43,5 @@ export const checkFields = createEntityFields<Check>()({
         key: "status",
         type: "status",
         label: "Estado",
-        order: 60,
     },
 })

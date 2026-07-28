@@ -242,50 +242,27 @@ describe("createEntityFields", () => {
         })
     })
 
-    describe("order", () => {
-        it("sorts columns by order property (lower first)", () => {
+    describe("column ordering", () => {
+        it("sorts columns by placement zone (title→subtitle→header→detail→metric→footer)", () => {
             const fields = createEntityFields<TestEntity>()({
-                c: { key: "code", type: "code", label: "C", order: 30 },
-                a: { key: "name", type: "text", label: "A", order: 10 },
-                b: { key: "date", type: "date", label: "B", order: 20 },
-            })
-            const columns = fields.toColumns()
-            expect(getAccessorKey(columns[0])).toBe("name")
-            expect(getAccessorKey(columns[1])).toBe("date")
-            expect(getAccessorKey(columns[2])).toBe("code")
-        })
-
-        it("sorts fields without order last", () => {
-            const fields = createEntityFields<TestEntity>()({
-                c: { key: "code", type: "code", label: "C" },
-                a: { key: "name", type: "text", label: "A", order: 10 },
-            })
-            const columns = fields.toColumns()
-            expect(getAccessorKey(columns[0])).toBe("name")
-            expect(getAccessorKey(columns[1])).toBe("code")
-        })
-    })
-
-    describe("placement-based column ordering", () => {
-        it("sorts columns by placement zone first, then by order within zone", () => {
-            const fields = createEntityFields<TestEntity>()({
-                detail_a: { key: "name", type: "text", label: "Detail A", order: 10 },
-                header_a: { key: "status", type: "status", label: "Header A", order: 20 },
-                title_a: { key: "code", type: "code", label: "Title A", order: 30 },
-                detail_b: { key: "description", type: "text", label: "Detail B", order: 5 },
+                detail_a: { key: "name", type: "text", label: "Detail A" },
+                header_a: { key: "status", type: "status", label: "Header A" },
+                title_a: { key: "code", type: "code", label: "Title A" },
+                detail_b: { key: "description", type: "text", label: "Detail B" },
             })
             const columns = fields.toColumns()
             // title(0) → header(2) → detail(3)
-            expect(getAccessorKey(columns[0])).toBe("code")      // title zone, order:30
-            expect(getAccessorKey(columns[1])).toBe("status")    // header zone, order:20
-            expect(getAccessorKey(columns[2])).toBe("detail_b")  // detail zone, order:5
-            expect(getAccessorKey(columns[3])).toBe("detail_a")  // detail zone, order:10
+            // Within same zone, definition order preserved
+            expect(getAccessorKey(columns[0])).toBe("code")      // title zone
+            expect(getAccessorKey(columns[1])).toBe("status")    // header zone
+            expect(getAccessorKey(columns[2])).toBe("name")      // detail zone (first defined)
+            expect(getAccessorKey(columns[3])).toBe("description") // detail zone (second defined)
         })
 
         it("uses explicit placement over type-derived placement", () => {
             const fields = createEntityFields<TestEntity>()({
-                a: { key: "name", type: "text", label: "A", placement: "title", order: 30 },
-                b: { key: "code", type: "code", label: "B", order: 10 },
+                a: { key: "name", type: "text", label: "A", placement: "title" },
+                b: { key: "code", type: "code", label: "B" },
             })
             const columns = fields.toColumns()
             // 'name' is explicitly title(0), 'code' is type-derived header(2)
@@ -301,21 +278,22 @@ describe("createEntityFields", () => {
             })
             const columns = fields.toColumns()
             // Both status and code are header(2), name is detail(3)
-            // Within header zone, no order → original insertion order
             expect(getAccessorKey(columns[0])).toBe("status")
             expect(getAccessorKey(columns[1])).toBe("code")
             expect(getAccessorKey(columns[2])).toBe("name")
         })
 
-        it("deprecated cardPlacement still works for column ordering", () => {
+        it("preserves definition order within same placement zone", () => {
             const fields = createEntityFields<TestEntity>()({
-                a: { key: "name", type: "text", label: "A", cardPlacement: "header", order: 20 },
-                b: { key: "code", type: "code", label: "B", order: 10 },
+                a: { key: "name", type: "text", label: "A" },     // detail(3)
+                b: { key: "description", type: "text", label: "B" }, // detail(3)
+                c: { key: "email", type: "text", label: "C" },    // detail(3)
             })
             const columns = fields.toColumns()
-            // 'name' is cardPlacement header(2) with order 20, 'code' is type-derived header(2) with order 10
-            expect(getAccessorKey(columns[0])).toBe("code")
-            expect(getAccessorKey(columns[1])).toBe("name")
+            // All detail zone — definition order preserved
+            expect(getAccessorKey(columns[0])).toBe("name")
+            expect(getAccessorKey(columns[1])).toBe("description")
+            expect(getAccessorKey(columns[2])).toBe("email")
         })
     })
 

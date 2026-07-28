@@ -4,33 +4,30 @@ import type { Product } from '@/features/inventory/types'
 import { translateProductType } from '@/lib/utils'
 
 export const productFields = createEntityFields<Product>()({
-    internal_code: { key: 'internal_code', type: 'code', label: 'Código Interno', order: 10 },
-    code: { key: 'code', type: 'code', label: 'SKU', order: 20 },
+    internal_code: { key: 'internal_code', type: 'code', label: 'Código Interno' },
+    code: { key: 'code', type: 'code', label: 'SKU' },
     name: {
         key: 'name',
         type: 'computed',
         label: 'Nombre',
-        order: 25,
         render: (p) => (
             <div className="flex items-center justify-center w-full">
                 <DataCell.Text>{p.name}</DataCell.Text>
             </div>
         ),
     },
-    category_name: { key: 'category_name', type: 'text', label: 'Categoría', order: 30 },
+    category_name: { key: 'category_name', type: 'text', label: 'Categoría' },
     product_type: {
         key: 'product_type',
         type: 'text',
         label: 'Tipo',
         get: (p) => translateProductType(p.product_type),
-        order: 40,
     },
     total: {
         key: 'sale_price',
         type: 'computed',
         fieldRole: 'primary-value',
         label: 'Total (c/IVA)',
-        order: 50,
         placement: 'header',
         render: (p) => {
             if (p.is_dynamic_pricing) {
@@ -48,7 +45,6 @@ export const productFields = createEntityFields<Product>()({
         key: 'can_be_sold',
         type: 'chip',
         label: 'Disponible para',
-        order: 60,
         placement: 'subtitle',
         get: (p) => {
             if (p.can_be_sold && p.can_be_purchased) return 'Venta y Compra'

@@ -45,7 +45,6 @@ export const contactFields = createEntityFields<Contact>()({
         key: 'name',
         type: 'computed',
         label: 'Nombre',
-        order: 10,
         render: (c) => (
             <div className="flex items-center justify-center gap-2 w-full">
                 <ContactRoleIcons contact={c} />
@@ -57,21 +56,19 @@ export const contactFields = createEntityFields<Contact>()({
         key: 'tax_id',
         type: 'computed',
         label: 'RUT / Identificación',
-        order: 20,
         tableOptions: { align: 'center' },
         render: (c) => (
             <DataCell.Text>{c.tax_id ? formatRUT(c.tax_id) : 'S/Rut'}</DataCell.Text>
         ),
     },
-    display_id: { key: 'display_id', type: 'code', label: 'Código Interno', order: 30 },
-    email: { key: 'email', type: 'text', label: 'Email', order: 40 },
-    phone: { key: 'phone', type: 'text', label: 'Teléfono', order: 50 },
+    display_id: { key: 'display_id', type: 'code', label: 'Código Interno' },
+    email: { key: 'email', type: 'text', label: 'Email' },
+    phone: { key: 'phone', type: 'text', label: 'Teléfono' },
     activeRoles: {
         key: 'active_roles',
         type: 'chip-category',
         label: 'Roles',
         domain: 'contact_type',
         get: (c) => c.active_roles ?? [],
-        order: 60,
     },
 })

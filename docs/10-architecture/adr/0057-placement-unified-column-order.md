@@ -15,24 +15,25 @@ Esto significaba que un campo con `cardPlacement: 'header'` podía tener `order:
 
 ## Decisión
 
-Unificar ambos sistemas usando `placement` como fuente de verdad para el orden en ambas vistas:
+Unificar ambos sistemas usando `placement` como **única fuente de verdad** para el orden en ambas vistas. Se eliminan completamente `order` y `cardPlacement`:
 
-1. **Renombrar** `CardPlacement` → `Placement` (con alias `CardPlacement` deprecated)
-2. **Renombrar** propiedad `cardPlacement` → `placement` en `FieldDef<T>` y `CardField`
-3. **Modificar `toColumns()`** para usar `placement` como sort primario y `order` como sort secundario
+1. **Eliminar** tipo `CardPlacement` — solo existe `Placement`
+2. **Eliminar** propiedad `order` de `FieldDef<T>`
+3. **Eliminar** propiedad `cardPlacement` de `FieldDef<T>`
+4. **Eliminar** `order: NN` de todos los `*Fields.ts` del codebase (~146 ocurrencias en 23 archivos)
+5. **Modificar `toColumns()`** para sortear exclusivamente por `placement`
 
 ### Sort en `toColumns()`
 
 ```typescript
 .sort(([, a], [, b]) => {
-    const pa = (a.placement ?? a.cardPlacement) ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[a.type]]
-    const pb = (b.placement ?? b.cardPlacement) ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[b.type]]
-    const za = ZONE_ORDER[pa] ?? 3
-    const zb = ZONE_ORDER[pb] ?? 3
-    if (za !== zb) return za - zb
-    return (a.order ?? Infinity) - (b.order ?? Infinity)
+    const pa = a.placement ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[a.type]]
+    const pb = b.placement ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[b.type]]
+    return (ZONE_ORDER[pa] ?? 3) - (ZONE_ORDER[pb] ?? 3)
 })
 ```
+
+Dentro de la misma zona, los campos mantienen su **orden de definición** (insertion order de `Object.entries`).
 
 ### Jerarquía de orden (izquierda → derecha)
 
@@ -48,36 +49,32 @@ Unificar ambos sistemas usando `placement` como fuente de verdad para el orden e
 ### Resolución de placement para `toColumns()`
 
 1. Si `def.placement` está definido → úsalo
-2. Si `def.cardPlacement` está definido (deprecated) → úsalo (backward-compat)
-3. Si no → derivar de `TYPE_TO_ROLE[field.type]` → `ROLE_TO_PLACEMENT[role]`
-4. Sin cascade ni auto-detect (solo en `toCardFields()`)
+2. Si no → derivar de `TYPE_TO_ROLE[field.type]` → `ROLE_TO_PLACEMENT[role]`
+3. Sin cascade ni auto-detect (solo en `toCardFields()`)
 
 ### Resolución de placement para `toCardFields()` (sin cambios funcionales)
 
 El pipeline de resolución de tarjeta se mantiene igual:
 1. `TYPE_TO_ROLE` → `ROLE_TO_PLACEMENT`
 2. Auto-detect (title/subtitle)
-3. Override explícito
+3. Override explícito via `placement`
 4. Cascade (capacity limits)
-
-Solo se cambia `def.cardPlacement` → `def.placement ?? def.cardPlacement` para backward-compat.
 
 ## Consecuencias
 
 ### Positivas
 - **Fuente de verdad única**: un campo importante en tarjeta (`header`) también aparece primero en lista
-- **Menos configuración manual**: entidades sin `order` explícito ahora tienen un orden razonable derivado del tipo
-- **Backward-compat**: `cardPlacement` sigue funcionando como alias deprecated
-- **`order` preservado**: sigue funcionando como sub-orden dentro de cada zona
+- **Configuración mínima**: solo `placement` define la posición — sin `order` que mantener
+- **Consistencia**: la misma semántica (`title→subtitle→header→detail→metric→footer`) governa ambas vistas
+- **Menos código**: eliminadas ~146 propiedades `order` y el tipo `CardPlacement`
 
 ### Negativas
-- **Cambio visual**: entidades existentes pueden ver reordenamiento de columnas (aceptable — el nuevo orden es más semántico)
-- **Renombre amplio**: ~53 referencias a `cardPlacement` en el códigobase (mitigado por alias deprecated)
+- **Cambio visual**: columnas se reordenan según placement zone (aceptable — el nuevo orden es semántico)
+- **Pérdida de sub-orden**: dentro de la misma zona, el orden depende de la definición del objeto (no hay control fino)
 
 ### Archivos modificados
-- `frontend/components/shared/entity-fields.tsx` — core del cambio
-- `frontend/components/shared/AutoEntityCard.tsx` — referencias a `f.placement`
-- `frontend/components/shared/__tests__/entity-fields.test.ts` — tests actualizados + nuevos
-- `frontend/features/inventory/productFields.tsx` — `cardPlacement` → `placement`
-- `frontend/features/accounting/journalEntryFields.ts` — `cardPlacement` → `placement`
-- `frontend/app/(dashboard)/accounting/entries/journalEntryFields.ts` — `cardPlacement` → `placement`
+- `frontend/components/shared/entity-fields.tsx` — core: eliminados `order`, `cardPlacement`, `CardPlacement`
+- `frontend/components/shared/AutoEntityCard.tsx` — solo `f.placement`
+- `frontend/components/shared/__tests__/entity-fields.test.ts` — tests actualizados
+- 23 archivos `*Fields.ts(x)` — eliminadas propiedades `order`
+- 3 archivos `*Fields.ts(x)` — migrados `cardPlacement` → `placement`
