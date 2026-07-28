@@ -18,12 +18,6 @@ export const attributeFields = createEntityFields<ProductAttribute>()({
         type: "text",
         label: "Atributo",
     },
-    valueCount: {
-        key: "value_count",
-        type: "text",
-        label: "Valores",
-        get: (a) => `${a.values?.length ?? 0} valores`,
-    },
     values: {
         key: "values",
         type: "chip",
