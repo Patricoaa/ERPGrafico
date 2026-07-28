@@ -5,7 +5,7 @@ import {useState, useMemo} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-import {ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard} from '@/components/shared'
+import {ActionConfirmModal, DataTableView, AutoEntityCard} from '@/components/shared'
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -96,7 +96,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     }
 
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => {
-        const [, codeCol, addressCol] = warehouseFields.toColumns()
+        const [nameCol, codeCol, addressCol] = warehouseFields.toColumns()
         return [
             {
                 id: "select",
@@ -120,16 +120,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 enableHiding: false,
                 size: 40,
             },
-            {
-                accessorKey: "name",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" className="justify-center" />,
-                cell: ({ row }) => (
-                    <div className="flex flex-col items-center py-1">
-                        <span className="text-sm font-medium">{row.original.name}</span>
-                        <span className="text-[10px] text-muted-foreground">Ubicación Física</span>
-                    </div>
-                ),
-            },
+            nameCol,
             codeCol,
             addressCol,
             warehouseActions.auto(actionsCtx),
