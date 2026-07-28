@@ -238,7 +238,7 @@ export function SessionCloseModal({
                                     <Numpad
                                         value={actualCash}
                                         onChange={setActualCash}
-                                        label="Efectivo Contado"
+                                        title="Efectivo Contado"
                                         displayValue={formatCurrency(parseFloat(actualCash) || 0)}
                                         allowDecimal={true}
                                         className="w-full max-w-full shadow-none border-0 p-0"
@@ -468,7 +468,7 @@ export function SessionCloseModal({
                                 <Numpad
                                     value={withdrawalAmount}
                                     onChange={setWithdrawalAmount}
-                                    label="Monto a Retirar"
+                                    title="Monto a Retirar"
                                     displayValue={formatCurrency(parseFloat(withdrawalAmount) || 0)}
                                     allowDecimal={true}
                                     className="w-full max-w-full shadow-none border-0 p-0"
