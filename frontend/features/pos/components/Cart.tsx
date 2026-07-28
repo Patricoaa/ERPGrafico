@@ -217,7 +217,7 @@ export function Cart({
                         <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -231,7 +231,7 @@ export function Cart({
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -246,7 +246,7 @@ export function Cart({
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
+                                "w-full rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
                                 isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                             )}
                             size="lg"
@@ -267,7 +267,7 @@ export function Cart({
                         <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -280,7 +280,7 @@ export function Cart({
                             {isLastStep && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -298,7 +298,7 @@ export function Cart({
                                 onClick={onCheckoutBack}
                                 disabled={checkoutLoading}
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
