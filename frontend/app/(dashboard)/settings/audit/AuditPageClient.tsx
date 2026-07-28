@@ -70,7 +70,8 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                         </DataCell.Secondary>
                     </div>
                 );
-            }
+            },
+            meta: { title: "Fecha y Hora" },
         },
         {
             accessorKey: "user_name",

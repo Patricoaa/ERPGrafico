@@ -225,6 +225,7 @@ export function BlacklistClientView() {
                     {row.original.name}
                 </DataCell.ContactLink>
             ),
+            meta: { title: "Cliente" },
         },
         balanceCol,
         evaluatedCol,

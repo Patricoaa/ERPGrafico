@@ -134,6 +134,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <DataTableColumnHeader column={column} title="#" />
             ),
             cell: ({ row }) => <span className="text-muted-foreground font-mono text-xs">{row.getValue("line_number")}</span>,
+            meta: { title: "#" },
         },
         {
             accessorKey: "transaction_date",
@@ -141,6 +142,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
             cell: ({ row }) => <DataCell.Date value={row.getValue("transaction_date")} />,
+            meta: { title: "Fecha" },
         },
         {
             accessorKey: "description",
@@ -174,6 +176,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
             },
+            meta: { title: "Cargo" },
         },
         {
             accessorKey: "credit",
@@ -188,6 +191,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
             },
+            meta: { title: "Abono" },
         },
         {
             accessorKey: "balance",
@@ -211,6 +215,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     />
                 )
             },
+            meta: { title: "Estado" },
         },
         {
             id: "matched_payment",

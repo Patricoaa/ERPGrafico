@@ -215,6 +215,7 @@ export function translateFieldName(field: string): string {
     'partner': 'Tercero',
     'debit': 'Cargo / Debe',
     'credit': 'Abono / Haber',
+    'values': 'Valores',
     // Accounting
     'account_type': 'Tipo',
     'debit_total': 'Debe',

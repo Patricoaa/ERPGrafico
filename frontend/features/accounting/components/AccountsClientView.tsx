@@ -132,6 +132,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     </div>
                 )
             },
+            meta: { title: "Código" },
         },
         {
             accessorKey: "name",

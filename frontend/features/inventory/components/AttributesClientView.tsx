@@ -135,12 +135,14 @@ export function AttributesClientView({ externalOpen, onExternalOpenChange, creat
                     {row.getValue("name")}
                 </DataCell.Text>
             ),
+            meta: { title: "Atributo" },
         },
         {
             accessorKey: "values",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Valores" className="justify-center" />
+                        <DataTableColumnHeader column={column} title="Valores" className="justify-center" />
             ),
+            meta: { title: "Valores" },
             cell: ({ row }) => {
                 const values = row.original.values || []
                 return (

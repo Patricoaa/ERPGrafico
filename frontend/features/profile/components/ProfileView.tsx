@@ -427,6 +427,7 @@ function PersonalTab({
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Folio" />,
             cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
+            meta: { title: "Folio" },
         },
         {
             accessorKey: "period_label",
@@ -447,6 +448,7 @@ function PersonalTab({
             accessorKey: "net_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Líquido" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("net_salary")} />,
+            meta: { title: "Líquido" },
         },
         {
             accessorKey: "remuneration_paid_status",
@@ -458,7 +460,8 @@ function PersonalTab({
                         <StatusBadge status={s || "PENDING"} />
                     </div>
                 )
-            }
+            },
+            meta: { title: "Pago" },
         },
         profilePayrollActions.auto(profilePayrollActionsCtx) as ColumnDef<Payroll>,
     ]

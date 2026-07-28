@@ -409,7 +409,8 @@ export function PartnersClientView({
                         </div>
                     )}
                 </div>
-            )
+            ),
+            meta: { title: "Socio" },
         },
         ...partnerFields.toColumns(),
         partnerActions.auto(partnerActionsCtx)

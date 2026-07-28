@@ -157,6 +157,7 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                     )}
                 </div>
             ),
+            meta: { title: "UdM" },
         },
         {
             id: "value",
