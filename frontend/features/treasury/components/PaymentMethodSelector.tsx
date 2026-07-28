@@ -429,10 +429,10 @@ export function PaymentMethodSelector({
                                             isTerminalIntegration,
                                         })
                                         if (!isReClick) {
-                                            setTempAmount((paymentData.amount || 0).toString())
+                                            setTempAmount((total || 0).toString())
                                             setIsAmountModalOpen(true)
                                         } else if (m.id !== 'TRANSFER' && m.id !== 'CREDIT_BALANCE') {
-                                            setTempAmount((paymentData.amount || 0).toString())
+                                            setTempAmount((total || 0).toString())
                                             setIsAmountModalOpen(true)
                                         }
                                     }
