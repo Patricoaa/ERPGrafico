@@ -36,7 +36,6 @@ export function Step3_PurchasePayment({ paymentData, setPaymentData, total }: St
                     differencePositiveLabel: 'Excedente',
                     differenceNegativeLabel: 'Deuda Pendiente',
                     amountModalTitle: 'Monto a Pagar',
-                    amountModalDescription: 'Ingrese el monto a pagar para esta compra.'
                 }}
             />
         </div>

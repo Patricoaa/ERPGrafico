@@ -51,7 +51,6 @@ interface PaymentMethodCardSelectorProps {
         differencePositiveLabel?: string
         differenceNegativeLabel?: string
         amountModalTitle?: string
-        amountModalDescription?: string
     }
     customerCreditBalance?: number
     allowCreditBalanceAccumulation?: boolean
@@ -82,7 +81,6 @@ export function PaymentMethodSelector({
 }: PaymentMethodCardSelectorProps) {
     const {
         amountModalTitle = 'Monto',
-        amountModalDescription = 'Ingrese el monto para este pago.'
     } = labels
 
     const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
@@ -721,14 +719,14 @@ export function PaymentMethodSelector({
                 open={isAmountModalOpen}
                 onOpenChange={setIsAmountModalOpen}
                 title={amountModalTitle || "Monto"}
-                description={amountModalDescription}
+                icon={Wallet}
                 className="sm:max-w-md"
                 headerClassName="border-b-0"
                 footerClassName="border-t-0"
                 centered
                 footer={
                     <Button
-                        className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
+                        className="w-full h-12 lg:h-14 bg-primary hover:bg-primary font-black uppercase tracking-widest text-sm lg:text-base active:scale-95 transition-transform"
                         onClick={handleAmountConfirm}
                     >
                         CONFIRMAR

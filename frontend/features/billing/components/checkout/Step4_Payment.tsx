@@ -99,7 +99,6 @@ export function Step4_Payment({
                     differencePositiveLabel: "Excedente / Vuelto",
                     differenceNegativeLabel: isCreditNote ? "Saldo Pendiente" : "Por Cobrar",
                     amountModalTitle: isCreditNote ? "Monto a Devolver" : "Monto a Cobrar",
-                    amountModalDescription: "Ingrese el monto asociado al movimiento."
                 }}
             />
         </div>
