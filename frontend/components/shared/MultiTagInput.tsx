@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useRef, type KeyboardEvent } from "react"
-import { X } from "lucide-react"
+import React, { useState, useRef, useCallback, type KeyboardEvent } from "react"
+import { X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { IconButton } from '@/components/shared'
@@ -18,11 +18,14 @@ interface MultiTagInputProps {
     disabled?: boolean
     hint?: React.ReactNode
     suffix?: React.ReactNode
+    suggestions?: string[]
+    isLoadingSuggestions?: boolean
 }
 
 /**
  * MultiTagInput — A "combobox-style" multi-select tag input.
  * Integrates with the notched fieldset aesthetic.
+ * Optionally renders a suggestion dropdown when `suggestions` is provided.
  */
 export function MultiTagInput({
     label,
@@ -35,11 +38,30 @@ export function MultiTagInput({
     containerClassName,
     disabled = false,
     hint,
-    suffix
+    suffix,
+    suggestions,
+    isLoadingSuggestions,
 }: MultiTagInputProps) {
     const [inputValue, setInputValue] = useState("")
+    const [isFocused, setIsFocused] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const hasError = !!error
+
+    const filteredSuggestions = suggestions
+        ? suggestions.filter(
+            (s) =>
+                !values.includes(s) &&
+                s.toLowerCase().includes(inputValue.toLowerCase())
+        )
+        : []
+
+    const showSuggestions = isFocused && inputValue.length >= 2 && filteredSuggestions.length > 0
+
+    const handleSelectSuggestion = useCallback((suggestion: string) => {
+        onAdd(suggestion)
+        setInputValue("")
+        inputRef.current?.focus()
+    }, [onAdd])
 
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
@@ -112,6 +134,8 @@ export function MultiTagInput({
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyDown}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setTimeout(() => setIsFocused(false), 150)}
                             placeholder={values.length === 0 ? placeholder : ""}
                             disabled={disabled}
                             className={cn(
@@ -128,6 +152,30 @@ export function MultiTagInput({
                     )}
                 </div>
             </fieldset>
+
+            {showSuggestions && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-[150px] overflow-y-auto">
+                    {filteredSuggestions.map((suggestion) => (
+                        <button
+                            key={suggestion}
+                            type="button"
+                            className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer outline-none"
+                            onMouseDown={(e) => {
+                                e.preventDefault()
+                                handleSelectSuggestion(suggestion)
+                            }}
+                        >
+                            {suggestion}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {!showSuggestions && isLoadingSuggestions && inputValue.length >= 2 && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md px-3 py-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                </div>
+            )}
 
             {hasError && (
                 <p role="alert" className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">

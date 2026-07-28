@@ -1,18 +1,7 @@
 import { createEntityFields } from "@/components/shared"
+import type { Attribute } from "./hooks/useAttributes"
 
-interface ProductAttributeValue {
-    id: number
-    attribute: number
-    value: string
-}
-
-interface ProductAttribute {
-    id: number
-    name: string
-    values?: ProductAttributeValue[]
-}
-
-export const attributeFields = createEntityFields<ProductAttribute>()({
+export const attributeFields = createEntityFields<Attribute>()({
     name: {
         key: "name",
         type: "text",
@@ -22,6 +11,6 @@ export const attributeFields = createEntityFields<ProductAttribute>()({
         key: "values",
         type: "chip",
         label: "Valores",
-        get: (a) => a.values?.map(v => v.value).join(', ') ?? '',
+        get: (a) => a.values?.map(v => v.name).join(', ') ?? '',
     },
 })

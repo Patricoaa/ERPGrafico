@@ -267,6 +267,20 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
     return report
 
 
+class ProductAttributeValueSelector:
+    @staticmethod
+    def filter_suggestions(q: str) -> list[str]:
+        from .models import ProductAttributeValue
+
+        names = (
+            ProductAttributeValue.objects.filter(value__icontains=q)
+            .values_list("value", flat=True)
+            .distinct()
+            .order_by("value")[:10]
+        )
+        return list(names)
+
+
 class ProductSelector:
     @staticmethod
     def filter_suggestions(q: str) -> list[str]:
