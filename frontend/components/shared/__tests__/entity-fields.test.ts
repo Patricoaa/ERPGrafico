@@ -295,6 +295,55 @@ describe("createEntityFields", () => {
             expect(getAccessorKey(columns[1])).toBe("description")
             expect(getAccessorKey(columns[2])).toBe("email")
         })
+
+        it("auto-titles first identifier field with code/id/display in key (no explicit placement)", () => {
+            const fields = createEntityFields<TestEntity>()({
+                chip: { key: "status", type: "chip", label: "Status" },      // subtitle(1) — auto-subtitle for chip
+                identifier: { key: "internal_code", type: "code", label: "ID" }, // auto-title(0)
+                detail: { key: "name", type: "text", label: "Name" },         // detail(3)
+            })
+            const columns = fields.toColumns()
+            // identifier should be first (title zone) due to auto-title detection
+            expect(getAccessorKey(columns[0])).toBe("internal_code")
+            expect(getAccessorKey(columns[1])).toBe("status")
+            expect(getAccessorKey(columns[2])).toBe("name")
+        })
+
+        it("respects fieldRole as fallback when no explicit placement", () => {
+            const fields = createEntityFields<TestEntity>()({
+                a: { key: "period_display", type: "computed", label: "Period", fieldRole: "identifier" },
+                b: { key: "status", type: "status", label: "Status" },
+                c: { key: "name", type: "text", label: "Name" },
+            })
+            const columns = fields.toColumns()
+            // 'a' has fieldRole:'identifier' → ROLE_TO_PLACEMENT['identifier'] = 'header'(2)
+            // 'b' is status → header(2), 'c' is text → detail(3)
+            expect(getAccessorKey(columns[0])).toBe("period_display")
+            expect(getAccessorKey(columns[1])).toBe("status")
+            expect(getAccessorKey(columns[2])).toBe("name")
+        })
+
+        it("falls back to first identifier field when no auto-title match", () => {
+            const fields = createEntityFields<TestEntity>()({
+                a: { key: "name", type: "text", label: "Name" },         // detail(3)
+                b: { key: "code", type: "code", label: "Code" },         // identifier → fallback title(0)
+            })
+            const columns = fields.toColumns()
+            // 'code' is the only identifier → gets title via fallback chain
+            expect(getAccessorKey(columns[0])).toBe("code")
+            expect(getAccessorKey(columns[1])).toBe("name")
+        })
+
+        it("falls back to first field when no identifier exists at all", () => {
+            const fields = createEntityFields<TestEntity>()({
+                a: { key: "name", type: "text", label: "Name" },     // detail(3) → fallback title(0)
+                b: { key: "description", type: "text", label: "Desc" }, // detail(3)
+            })
+            const columns = fields.toColumns()
+            // First field gets title via fallback chain
+            expect(getAccessorKey(columns[0])).toBe("name")
+            expect(getAccessorKey(columns[1])).toBe("description")
+        })
     })
 
     describe("meta.title", () => {

@@ -54,7 +54,7 @@ type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_ty
  *
  * List column ordering (left → right):
  * `title` → `subtitle` → `header` → `detail` → `metric` → `footer`
- * Within the same zone, the `order` property determines sub-ordering.
+ * Within the same zone, definition order (Object.entries insertion) is preserved.
  */
 export type Placement = 'title' | 'subtitle' | 'header' | 'detail' | 'metric' | 'footer'
 
@@ -701,11 +701,44 @@ export function createEntityFields<T>(): (
             const ZONE_ORDER: Record<Placement, number> = {
                 title: 0, subtitle: 1, header: 2, detail: 3, metric: 4, footer: 5,
             }
-            return Object.entries(defs)
-                .filter(([fieldKey, def]) => isPresentOnSurface(def, "table") && !excluded.has(fieldKey))
+
+            // Pre-resolve effective placement per field (mirrors toCardFields auto-title logic).
+            // Resolution: explicit placement → fieldRole → TYPE_TO_ROLE → auto-title promotion.
+            const resolvedPlacements = new Map<string, Placement>()
+            let titleAssigned = false
+            const tableEntries = Object.entries(defs).filter(
+                ([k, d]) => isPresentOnSurface(d, "table") && !excluded.has(k),
+            )
+
+            for (const [fieldKey, def] of tableEntries) {
+                if (def.placement) {
+                    resolvedPlacements.set(fieldKey, def.placement)
+                    if (def.placement === 'title') titleAssigned = true
+                    continue
+                }
+                const role = def.fieldRole ?? TYPE_TO_ROLE[def.type]
+                let placement: Placement = ROLE_TO_PLACEMENT[role]
+
+                // Auto-title: first identifier with code/id/display in key → title
+                if (!titleAssigned && role === 'identifier' && /number|code|id|display/i.test(def.key)) {
+                    placement = 'title'
+                    titleAssigned = true
+                }
+                resolvedPlacements.set(fieldKey, placement)
+            }
+
+            // Fallback: if no title assigned, first identifier or first field gets title
+            if (!titleAssigned && tableEntries.length > 0) {
+                const fallback =
+                    tableEntries.find(([, d]) => (d.fieldRole ?? TYPE_TO_ROLE[d.type]) === 'identifier')
+                    ?? tableEntries[0]
+                resolvedPlacements.set(fallback[0], 'title')
+            }
+
+            return tableEntries
                 .sort(([, a], [, b]) => {
-                    const pa = a.placement ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[a.type]]
-                    const pb = b.placement ?? ROLE_TO_PLACEMENT[TYPE_TO_ROLE[b.type]]
+                    const pa = resolvedPlacements.get(a.key) ?? 'detail'
+                    const pb = resolvedPlacements.get(b.key) ?? 'detail'
                     return (ZONE_ORDER[pa] ?? 3) - (ZONE_ORDER[pb] ?? 3)
                 })
                 .map(([fieldKey, def]): ColumnDef<T> => {
