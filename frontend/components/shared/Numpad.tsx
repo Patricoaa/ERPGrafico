@@ -113,9 +113,9 @@ export function Numpad({
     }, [value, allowDecimal, onConfirm, onClose])
 
     return (
-        <div className={cn("flex flex-col bg-background rounded-md shadow-[var(--shadow-overlay)] w-full overflow-hidden", className)}>
-            {(title || displayValue || (!hideDisplay && value)) && (
-                <div className="bg-muted/50 px-4 py-4 text-center flex flex-col gap-1">
+        <div className={cn("flex flex-col gap-2 p-3 bg-background rounded-md shadow-[var(--shadow-overlay)] w-full", className)}>
+            {!hideDisplay && (
+                <>
                     {title && (
                         <div className="flex items-center justify-center gap-2">
                             {icon && <span className="shrink-0">{icon}</span>}
@@ -123,109 +123,103 @@ export function Numpad({
                         </div>
                     )}
                     {displayValue ? (
-                        <div className="text-3xl font-black font-mono tracking-tight text-primary">
+                        <div className="text-3xl font-black font-mono tracking-tight text-primary text-center">
                             {displayValue}
                         </div>
-                    ) : !hideDisplay && !title && (
+                    ) : !title && (
                         <div className="lg:text-xl text-base font-black tracking-tight text-primary truncate text-center">
                             {value}
                         </div>
                     )}
+                </>
+            )}
+
+            {quickAmounts && quickAmounts.length > 0 && (
+                <div className="grid grid-cols-3 lg:gap-1.5 gap-1">
+                    {quickAmounts.map((qa) => (
+                        <Button
+                            key={qa.label}
+                            variant="outline"
+                            className="h-10 lg:h-12 text-xs lg:text-sm font-bold active:scale-95 transition-transform"
+                            onClick={() => {
+                                if (onQuickAmountAction) {
+                                    onQuickAmountAction(qa)
+                                } else {
+                                    handleQuickAmount(qa)
+                                }
+                            }}
+                        >
+                            {qa.label}
+                        </Button>
+                    ))}
                 </div>
             )}
 
-            <div className="p-3 flex flex-col gap-2">
-                {quickAmounts && quickAmounts.length > 0 && (
-                    <div className="grid grid-cols-3 lg:gap-1.5 gap-1">
-                        {quickAmounts.map((qa) => (
-                            <Button
-                                key={qa.label}
-                                variant="outline"
-                                className="h-10 lg:h-12 text-xs lg:text-sm font-bold active:scale-95 transition-transform"
-                                onClick={() => {
-                                    if (onQuickAmountAction) {
-                                        onQuickAmountAction(qa)
-                                    } else {
-                                        handleQuickAmount(qa)
-                                    }
-                                }}
-                            >
-                                {qa.label}
-                            </Button>
-                        ))}
-                    </div>
-                )}
-
-                <div className="grid grid-cols-3 lg:gap-1.5 gap-1">
-                    {keys.map((key) => (
-                        <Button
-                            key={key}
-                            variant="outline"
-                            className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
-                            onClick={() => handleNumber(key)}
-                        >
-                            {key}
-                        </Button>
-                    ))}
-
-                    {/* Row 4 */}
+            <div className="grid grid-cols-3 lg:gap-1.5 gap-1">
+                {keys.map((key) => (
                     <Button
-                        variant="destructive"
-                        className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
-                        onClick={handleClear}
+                        key={key}
+                        variant="outline"
+                        className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
+                        onClick={() => handleNumber(key)}
                     >
-                        C
+                        {key}
                     </Button>
+                ))}
 
+                {/* Row 4 */}
+                <Button
+                    variant="destructive"
+                    className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
+                    onClick={handleClear}
+                >
+                    C
+                </Button>
+
+                <Button
+                    variant="outline"
+                    className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
+                    onClick={() => handleNumber("0")}
+                >
+                    0
+                </Button>
+
+                {allowDecimal ? (
                     <Button
                         variant="outline"
                         className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
-                        onClick={() => handleNumber("0")}
+                        onClick={() => handleNumber(".")}
                     >
-                        0
+                        .
                     </Button>
-
-                    {allowDecimal ? (
-                        <Button
-                            variant="outline"
-                            className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
-                            onClick={() => handleNumber(".")}
-                        >
-                            .
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="outline"
-                            className="h-12 lg:h-14 text-warning font-bold active:scale-95 transition-transform"
-                            onClick={handleDelete}
-                        >
-                            <Delete className="lg:h-5 lg:w-5 h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
+                ) : (
+                    <Button
+                        variant="outline"
+                        className="h-12 lg:h-14 text-warning font-bold active:scale-95 transition-transform"
+                        onClick={handleDelete}
+                    >
+                        <Delete className="lg:h-5 lg:w-5 h-4 w-4" />
+                    </Button>
+                )}
             </div>
 
-            {(onExactAmount || (onConfirm && !hideConfirm)) && (
-                <div className="px-3 pb-3 flex flex-col gap-2">
-                    {onExactAmount && (
-                        <Button
-                            variant="outline"
-                            className="w-full h-12 lg:h-14 font-bold text-sm lg:text-base bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20"
-                            onClick={onExactAmount}
-                        >
-                            {exactAmountLabel || "MONTO EXACTO"}
-                        </Button>
-                    )}
+            {onExactAmount && (
+                <Button
+                    variant="outline"
+                    className="w-full h-12 lg:h-14 font-bold text-sm lg:text-base bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20"
+                    onClick={onExactAmount}
+                >
+                    {exactAmountLabel || "MONTO EXACTO"}
+                </Button>
+            )}
 
-                    {onConfirm && !hideConfirm && (
-                        <Button
-                            className="w-full h-12 lg:h-14 font-black uppercase tracking-widest text-sm lg:text-base bg-primary hover:bg-primary"
-                            onClick={onConfirm}
-                        >
-                            {confirmLabel}
-                        </Button>
-                    )}
-                </div>
+            {onConfirm && !hideConfirm && (
+                <Button
+                    className="w-full h-12 lg:h-14 font-black uppercase tracking-widest text-sm lg:text-base bg-primary hover:bg-primary"
+                    onClick={onConfirm}
+                >
+                    {confirmLabel}
+                </Button>
             )}
         </div>
     )
