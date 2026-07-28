@@ -28,8 +28,8 @@ import type { KpiCardDef } from '@/components/shared'
 import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
 import { PageHeader, PageHeaderButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { type Restriction } from "@/features/inventory/types"
-import { PageContainer } from "@/components/shared"
-import { cn } from "@/lib/utils"
+
+
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { subscriptionUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
@@ -292,7 +292,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     ], [pauseSubscription, resumeSubscription, updateProduct])
 
     return (
-        <PageContainer className={cn("flex flex-col", hideHeader && "pt-0")}>
+        <div className="flex-1 min-h-0 flex flex-col">
             {!hideHeader && (
                 <PageHeader
                     title="Suscripciones y Recurrentes"
@@ -415,6 +415,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 onRetry={handleArchive}
                 isRetrying={isRetrying}
             />
-        </PageContainer>
+        </div>
     )
 }
