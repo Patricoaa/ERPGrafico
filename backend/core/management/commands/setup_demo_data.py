@@ -915,32 +915,60 @@ class Command(BaseCommand):
         cat_graphic, _ = UoMCategory.objects.get_or_create(name="Medidas Gráficas")
 
         # Basic
-        uom_un, _ = UoM.objects.get_or_create(
+        uom_un, created = UoM.objects.get_or_create(
             name="Unidad",
-            defaults={"category": cat_units, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+            defaults={"category": cat_units, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE,
+                       "name_singular": "Unidad", "name_plural": "Unidades", "abbreviation": "un"},
         )
-        uom_kg, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_un.pk).update(
+                name_singular="Unidad", name_plural="Unidades", abbreviation="un")
+
+        uom_kg, created = UoM.objects.get_or_create(
             name="Kilogramo (kg)",
-            defaults={"category": cat_weight, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+            defaults={"category": cat_weight, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE,
+                       "name_singular": "Kilogramo", "name_plural": "Kilogramos", "abbreviation": "kg"},
         )
+        if not created:
+            UoM.objects.filter(pk=uom_kg.pk).update(
+                name_singular="Kilogramo", name_plural="Kilogramos", abbreviation="kg")
 
         # Graphic specifics
-        uom_hoja, _ = UoM.objects.get_or_create(
+        uom_hoja, created = UoM.objects.get_or_create(
             name="Hoja",
-            defaults={"category": cat_graphic, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+            defaults={"category": cat_graphic, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE,
+                       "name_singular": "Hoja", "name_plural": "Hojas", "abbreviation": "hj"},
         )
-        uom_millar, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_hoja.pk).update(
+                name_singular="Hoja", name_plural="Hojas", abbreviation="hj")
+
+        uom_millar, created = UoM.objects.get_or_create(
             name="Millar (1000u)",
-            defaults={"category": cat_units, "ratio": 1000.0, "uom_type": UoM.Type.BIGGER},
+            defaults={"category": cat_units, "ratio": 1000.0, "uom_type": UoM.Type.BIGGER,
+                       "name_singular": "Millar", "name_plural": "Miles", "abbreviation": "ml"},
         )
-        uom_resma, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_millar.pk).update(
+                name_singular="Millar", name_plural="Miles", abbreviation="ml")
+
+        uom_resma, created = UoM.objects.get_or_create(
             name="Resma (500 pl)",
-            defaults={"category": cat_graphic, "ratio": 500.0, "uom_type": UoM.Type.BIGGER},
+            defaults={"category": cat_graphic, "ratio": 500.0, "uom_type": UoM.Type.BIGGER,
+                       "name_singular": "Resma", "name_plural": "Resmas", "abbreviation": "rsm"},
         )
-        uom_paquete, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_resma.pk).update(
+                name_singular="Resma", name_plural="Resmas", abbreviation="rsm")
+
+        uom_paquete, created = UoM.objects.get_or_create(
             name="Paquete (100u)",
-            defaults={"category": cat_units, "ratio": 100.0, "uom_type": UoM.Type.BIGGER},
+            defaults={"category": cat_units, "ratio": 100.0, "uom_type": UoM.Type.BIGGER,
+                       "name_singular": "Paquete", "name_plural": "Paquetes", "abbreviation": "paq"},
         )
+        if not created:
+            UoM.objects.filter(pk=uom_paquete.pk).update(
+                name_singular="Paquete", name_plural="Paquetes", abbreviation="paq")
 
         return {
             "un": uom_un,
