@@ -583,7 +583,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 <Numpad
                                     value={openingBalance}
                                     onChange={setOpeningBalance}
-                                    label="Monto Ingresado"
+                                    title="Monto Ingresado"
                                     displayValue={formatCurrency(parseFloat(openingBalance) || 0)}
                                     allowDecimal={true}
                                     className="w-full max-w-full shadow-none border-0 p-0"
