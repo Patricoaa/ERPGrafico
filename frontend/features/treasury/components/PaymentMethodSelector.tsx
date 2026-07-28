@@ -526,10 +526,7 @@ export function PaymentMethodSelector({
                         type="button"
                         variant="ghost"
                         onClick={exitMultiMode}
-                        className={cn(
-                            methodCardClass,
-                            "col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-                        )}
+                        className="col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         <div className="flex items-center gap-3 min-w-0">
                             <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
@@ -541,18 +538,21 @@ export function PaymentMethodSelector({
                                 <div className="text-xs text-muted-foreground leading-tight">Salir del modo múltiple</div>
                             </div>
                         </div>
-                        {paymentsList.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 shrink-0">
-                                {paymentsList.map((p, i) => (
-                                    <span
-                                        key={i}
-                                        className="text-[10px] font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
-                                    >
-                                        {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
+                        <div className="flex flex-wrap gap-1.5 shrink-0">
+                            {paymentsList.map((p, i) => (
+                                <span
+                                    key={i}
+                                    className="text-[10px] font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
+                                >
+                                    {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
+                                </span>
+                            ))}
+                            {!isFullyPaid && remaining > 0 && (
+                                <span className="text-[10px] font-semibold bg-primary-foreground/15 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap">
+                                    Crédito: {formatMoney(remaining)}
+                                </span>
+                            )}
+                        </div>
                     </Button>
 
                     {availableMethods.map((m) => {
