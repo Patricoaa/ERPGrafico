@@ -18,7 +18,7 @@ import { useInvoices } from "@/features/billing"
 import { getTask } from "@/features/workflow"
 import { formatMoney } from "@/lib/money"
 
-import {Loader2, Hammer, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
+import {Hammer, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
 import {BaseModal, StepHeader} from '@/components/shared'
 import { cn } from "@/lib/utils"
 
@@ -26,7 +26,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
 
-import { PINPadModal } from "@/features/pos"
+import { PINPadModal, POSApprovalCard } from "@/features/pos"
 import {type SaleOrder, type SaleOrderLine, type CheckoutDTEData, type CheckoutPaymentData, type CheckoutDeliveryData, type CheckoutResponse} from "../../types"
 import { type Contact } from "@/features/contacts"
 import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury"
@@ -864,74 +864,18 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     <>
                         {/* Pending Debts Banner rendered inside Step2_DTE */}
 
-                        {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
-                            <Alert variant={isApproved ? "success" : "warning"} className="mb-4 border-l-[3px] shadow-card" icon={null}>
-                                <div className="flex items-start gap-4">
-                                    <div className={cn(
-                                        "p-2 rounded-sm",
-                                        isApproved ? "bg-success/10" : "bg-warning/10"
-                                    )}>
-                                        {isWaitingApproval ? (
-                                            <Loader2 className="h-4 w-4 text-warning animate-spin" />
-                                        ) : isApproved ? (
-                                            <CheckCircle2 className="h-4 w-4 text-success" />
-                                        ) : (
-                                            <AlertCircle className="h-4 w-4 text-warning" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <AlertTitle className={cn(
-                                            "font-black uppercase tracking-tight text-xs mb-1",
-                                            isApproved ? "text-success" : "text-warning"
-                                        )}>
-                                            {isWaitingApproval ? "Esperando Autorización..." : isApproved ? "Crédito Aprobado" : "Autorización Requerida"}
-                                        </AlertTitle>
-                                        <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                            <span className={cn(
-                                                "text-sm leading-relaxed",
-                                                isApproved ? "text-success-foreground/80" : "text-warning-foreground/80"
-                                            )}>
-                                                {isWaitingApproval
-                                                    ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..."
-                                                    : isApproved
-                                                        ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta."
-                                                        : creditApprovalReason}
-                                            </span>
-                                            {!isApproved && (
-                                                <div className="flex gap-2 shrink-0">
-                                                    {isWaitingApproval ? (
-                                                        <>
-                                                            <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="h-8 border-warning/30 text-warning hover:bg-warning/10 uppercase font-bold text-[10px]">
-                                                                Cancelar
-                                                            </Button>
-                                                            {approvalTaskId && (
-                                                                <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="h-8 bg-warning hover:bg-warning/90 text-warning-foreground border-none shadow-card uppercase font-bold text-[10px]">
-                                                                    Verificar
-                                                                </Button>
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="h-8 border-warning/30 text-warning hover:bg-warning/10 uppercase font-bold text-[10px]">
-                                                                Ajustar
-                                                            </Button>
-                                                            {canDirectApprove && (
-                                                                <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="h-8 bg-warning/20 hover:bg-warning/30 text-warning border-none shadow-card uppercase font-bold text-[10px]">
-                                                                    Aprobar
-                                                                </Button>
-                                                            )}
-                                                            <Button size="sm" onClick={handleRequestApproval} className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-card uppercase font-bold text-[10px]">
-                                                                Solicitar
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </AlertDescription>
-                                    </div>
-                                </div>
-                            </Alert>
+                            <POSApprovalCard
+                                state={isApproved ? 'approved' : isWaitingApproval ? 'waiting' : 'required'}
+                                reason={creditApprovalReason}
+                                canDirectApprove={canDirectApprove}
+                                approvalTaskId={approvalTaskId}
+                                onAdjust={cancelApprovalRequest}
+                                onDirectApprove={handleDirectApproval}
+                                onRequest={handleRequestApproval}
+                                onCancel={cancelApprovalRequest}
+                                onVerify={(taskId) => checkApprovalStatus(taskId, false)}
+                            />
                         )}
 
                         {securityErrorMessage && (
