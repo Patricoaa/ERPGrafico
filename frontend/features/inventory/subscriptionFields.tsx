@@ -1,5 +1,5 @@
 import { createEntityFields } from "@/components/shared"
-import { DataCell, Chip } from "@/components/shared"
+import { DataCell } from "@/components/shared"
 import type { Subscription } from "./hooks/useSubscriptions"
 
 function getPaymentScheduleText(sub: Subscription) {
@@ -12,31 +12,10 @@ function getPaymentScheduleText(sub: Subscription) {
 }
 
 export const subscriptionFields = createEntityFields<Subscription>()({
-    folio: {
-        key: "id",
-        type: "computed",
-        fieldRole: "identifier",
-        label: "Folio",
-        render: (s) => <DataCell.Code>{`SUB-${s.id}`}</DataCell.Code>,
-    },
     productName: {
         key: "product_name",
-        type: "computed",
-        fieldRole: "identifier",
+        type: "text",
         label: "Producto",
-        render: (sub) => (
-            <div className="flex flex-col items-center gap-1 py-1 w-full">
-                <DataCell.Text>{sub.product_name}</DataCell.Text>
-                <div className="flex flex-wrap justify-center gap-1 mt-1">
-                    {sub.product_internal_code && (
-                        <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
-                    )}
-                    {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                        <Chip size="xs" intent="primary" className="opacity-80">{sub.product_code}</Chip>
-                    )}
-                </div>
-            </div>
-        ),
     },
     status: {
         key: "status",
