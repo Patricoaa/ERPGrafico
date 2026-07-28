@@ -500,12 +500,12 @@ export function PaymentMethodSelector({
                     )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-warning" />
+                                <Wallet className="h-9 w-9 shrink-0 text-primary" />
                                 <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
                             </div>
                             <div className="text-right shrink-0">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                <div className="text-base font-semibold tabular-nums text-warning">
+                                <div className="text-base font-semibold tabular-nums">
                                     <MoneyDisplay amount={total - paymentData.amount} showColor={false} />
                                 </div>
                             </div>
@@ -520,7 +520,7 @@ export function PaymentMethodSelector({
         return (
             <div className="space-y-4">
                 {/* Unified grid: exit card + methods */}
-                <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3 p-3 rounded-sm bg-primary/[0.02] border border-primary/[0.06]">
+                <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
                     {/* Card "Múltiple" para salir */}
                     <Button
                         type="button"
@@ -528,15 +528,15 @@ export function PaymentMethodSelector({
                         onClick={exitMultiMode}
                         className={cn(
                             methodCardClass,
-                            "col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-primary/60 bg-primary/[0.05] hover:bg-primary/[0.08] hover:border-primary/80"
+                            "col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground hover:bg-primary/90"
                         )}
                     >
                         <div className="flex items-center gap-3 min-w-0">
-                            <Layers className="h-9 w-9 shrink-0 text-primary" />
+                            <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                     <div className="text-base font-semibold leading-tight">Múltiple</div>
-                                    <span className="text-[10px] font-bold uppercase bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
+                                    <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
                                 </div>
                                 <div className="text-xs text-muted-foreground leading-tight">Salir del modo múltiple</div>
                             </div>
@@ -546,7 +546,7 @@ export function PaymentMethodSelector({
                                 {paymentsList.map((p, i) => (
                                     <span
                                         key={i}
-                                        className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-sm whitespace-nowrap"
+                                        className="text-[10px] font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
                                     >
                                         {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
                                     </span>
@@ -673,12 +673,12 @@ export function PaymentMethodSelector({
                     )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-warning" />
+                                <Wallet className="h-9 w-9 shrink-0 text-primary" />
                                 <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
                             </div>
                             <div className="text-right shrink-0">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                <div className="text-base font-semibold tabular-nums text-warning">
+                                <div className="text-base font-semibold tabular-nums">
                                     <MoneyDisplay amount={remaining} showColor={false} />
                                 </div>
                             </div>
