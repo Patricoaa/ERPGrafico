@@ -13,6 +13,9 @@ export interface UoMCategory {
 export interface UoM {
     id: number
     name: string
+    name_singular: string
+    name_plural: string
+    abbreviation: string
     category: number
     category_name: string
     uom_type: 'REFERENCE' | 'BIGGER' | 'SMALLER'

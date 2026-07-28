@@ -12,6 +12,7 @@ interface StockReportItem {
     qty_reserved?: number | string
     qty_available?: number | string
     uom_name?: string
+    uom_abbreviation?: string
     unit_cost?: number | string
     total_value?: number | string
 }
@@ -31,14 +32,14 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
                 qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
             )
         },
-        suffix: (entity) => entity.uom_name ?? "",
+        suffix: (entity) => entity.uom_abbreviation || (entity.uom_name ?? ""),
         suffixGap: false,
     },
     qty_reserved: {
         key: 'qty_reserved',
         type: 'number',
         label: 'Reservado',
-        suffix: (entity) => entity.uom_name ?? "",
+        suffix: (entity) => entity.uom_abbreviation || (entity.uom_name ?? ""),
         suffixGap: false,
     },
     qty_available: {
@@ -52,7 +53,7 @@ export const stockReportFields = createEntityFields<StockReportItem>()({
                 qty <= 0 ? "text-destructive" : "text-primary font-black"
             )
         },
-        suffix: (entity) => entity.uom_name ?? "",
+        suffix: (entity) => entity.uom_abbreviation || (entity.uom_name ?? ""),
         suffixGap: false,
     },
     total_value: {

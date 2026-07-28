@@ -9,6 +9,7 @@ import { LabeledContainer } from "@/components/shared"
 interface UoM {
     id: number
     name: string
+    abbreviation?: string
     category: number
     ratio: number
 }

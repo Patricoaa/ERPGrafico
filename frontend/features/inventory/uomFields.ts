@@ -19,6 +19,21 @@ export const uomFields = createEntityFields<UoM>()({
         type: "text",
         label: "Nombre",
     },
+    abbreviation: {
+        key: "abbreviation",
+        type: "code",
+        label: "Abreviación",
+    },
+    nameSingular: {
+        key: "name_singular",
+        type: "secondary",
+        label: "Singular",
+    },
+    namePlural: {
+        key: "name_plural",
+        type: "secondary",
+        label: "Plural",
+    },
     categoryName: {
         key: "category_name",
         type: "secondary",
@@ -30,5 +45,10 @@ export const uomFields = createEntityFields<UoM>()({
         label: "Tipo",
         get: (u) => UOM_STATUS_MAP[u.uom_type]?.status || 'NEUTRAL',
         getLabel: (u) => UOM_STATUS_MAP[u.uom_type]?.label || u.uom_type,
+    },
+    ratio: {
+        key: "ratio",
+        type: "text",
+        label: "Ratio",
     },
 })
