@@ -112,7 +112,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                             href={action.url}
                                             target={action.title === "POS" ? "_blank" : undefined}
                                             className={cn(
-                                                "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
+                                                "relative flex items-center justify-center h-10 w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
                                                 isActive
                                                     ? "bg-primary text-primary-foreground "
                                                     : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -133,14 +133,14 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                     })}
 
                     {/* Inbox Toggle Button */}
-                    <div className="w-px h-8 bg-sidebar-border/50 mx-1" />
+                    <div className="w-px h-6 bg-sidebar-border/50 mx-1" />
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
                                 variant={isInboxOpen ? "default" : "ghost"}
                                 onClick={onInboxToggle}
                                 className={cn(
-                                    "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
+                                    "relative flex items-center justify-center h-10 w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isInboxOpen
                                         ? ""
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -169,7 +169,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 variant={isCalculatorOpen ? "default" : "ghost"}
                                 onClick={() => setIsCalculatorOpen(true)}
                                 className={cn(
-                                    "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
+                                    "relative flex items-center justify-center h-10 w-10 rounded-md transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isCalculatorOpen
                                         ? ""
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

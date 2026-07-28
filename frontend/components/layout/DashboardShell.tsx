@@ -77,7 +77,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 {/* Module launcher: shows current module icon, hover → hamburger */}
                 <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="icon"
                     onClick={() => setIsModuleLauncherOpen(true)}
                     onMouseEnter={() => setIsLauncherHovered(true)}
                     onMouseLeave={() => setIsLauncherHovered(false)}
