@@ -1,6 +1,6 @@
 import { createEntityFields } from "@/components/shared"
+import { DataCell, Chip } from "@/components/shared"
 import type { Subscription } from "./hooks/useSubscriptions"
-import { DataCell, Chip, StatusBadge } from "@/components/shared"
 
 function getPaymentScheduleText(sub: Subscription) {
     if (sub.payment_day_type === "FIXED_DAY" && sub.payment_day) {
@@ -12,46 +12,17 @@ function getPaymentScheduleText(sub: Subscription) {
 }
 
 export const subscriptionFields = createEntityFields<Subscription>()({
-    status: {
-        key: "status",
+    folio: {
+        key: "id",
         type: "computed",
-        label: "Estado",
-        render: (s) => (
-            <div className="flex justify-center">
-                <StatusBadge status={s.status} />
-            </div>
-        ),
-    },
-    categoryName: {
-        key: "category_name",
-        type: "secondary",
-        label: "Categoría",
-    },
-    supplierName: {
-        key: "supplier_name",
-        type: "computed",
-        label: "Proveedor",
-        render: (s) => (
-            <div className="flex justify-center w-full">
-                <DataCell.ContactLink contactId={s.supplier_id}>
-                    {s.supplier_name}
-                </DataCell.ContactLink>
-            </div>
-        ),
-    },
-    amount: {
-        key: "amount",
-        type: "currency",
-        label: "Monto",
-    },
-    nextPaymentDate: {
-        key: "next_payment_date",
-        type: "date",
-        label: "Próximo Pago",
+        fieldRole: "identifier",
+        label: "Folio",
+        render: (s) => <DataCell.Code>{`SUB-${s.id}`}</DataCell.Code>,
     },
     productName: {
         key: "product_name",
         type: "computed",
+        fieldRole: "identifier",
         label: "Producto",
         render: (sub) => (
             <div className="flex flex-col items-center gap-1 py-1 w-full">
@@ -66,6 +37,38 @@ export const subscriptionFields = createEntityFields<Subscription>()({
                 </div>
             </div>
         ),
+    },
+    status: {
+        key: "status",
+        type: "status",
+        label: "Estado",
+        tableOptions: { width: 100 },
+    },
+    amount: {
+        key: "amount",
+        type: "currency",
+        label: "Monto",
+    },
+    supplierName: {
+        key: "supplier_name",
+        type: "computed",
+        fieldRole: "relation",
+        label: "Proveedor",
+        render: (s) => (
+            <DataCell.ContactLink contactId={s.supplier_id}>
+                {s.supplier_name}
+            </DataCell.ContactLink>
+        ),
+    },
+    nextPaymentDate: {
+        key: "next_payment_date",
+        type: "date",
+        label: "Próximo Pago",
+    },
+    categoryName: {
+        key: "category_name",
+        type: "secondary",
+        label: "Categoría",
     },
     frequency: {
         key: "recurrence_display",
