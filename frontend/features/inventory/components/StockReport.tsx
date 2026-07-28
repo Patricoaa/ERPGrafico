@@ -113,6 +113,7 @@ export function StockReport() {
                     </div>
                 </div>
             ),
+            meta: { title: "Producto" },
         },
         ...stockReportFields.toColumns({ exclude: ['total_value'] }),
         {

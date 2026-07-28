@@ -106,6 +106,7 @@ export default function JobsView() {
                     </span>
                 )
             },
+            meta: { title: "Iniciado" },
         },
         {
             id: "actions",

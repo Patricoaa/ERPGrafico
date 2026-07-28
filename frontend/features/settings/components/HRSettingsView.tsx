@@ -108,7 +108,8 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         <Chip size="xs" intent="primary">SYSTEM</Chip>
                     )}
                 </div>
-            )
+            ),
+            meta: { title: "Concepto de Nómina" },
         },
         {
             accessorKey: "category_display",
@@ -121,7 +122,8 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         {row.getValue("category_display")}
                     </Chip>
                 )
-            }
+            },
+            meta: { title: "Categoría" },
         },
         {
             accessorKey: "formula_type_display",
@@ -130,7 +132,8 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 <span className="text-[10px] font-medium text-muted-foreground italic">
                     {row.getValue("formula_type_display")}
                 </span>
-            )
+            ),
+            meta: { title: "Lógica / Fórmula" },
         },
         {
             accessorKey: "account_code",
@@ -139,7 +142,8 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 <div className="font-mono text-[10px] text-primary/70 bg-primary/5 px-2 py-0.5 rounded-sm border border-primary/10 w-fit">
                     {row.getValue("account_code")}
                 </div>
-            )
+            ),
+            meta: { title: "Cuenta Contable" },
         },
         payrollConceptActions.auto(payrollConceptActionsCtx),
     ]
