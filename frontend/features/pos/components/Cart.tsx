@@ -217,7 +217,7 @@ export function Cart({
                         <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-muted text-primary hover:bg-muted/80 border border-border",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -231,7 +231,7 @@ export function Cart({
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -246,7 +246,7 @@ export function Cart({
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full rounded-sm font-black uppercase tracking-tight hover:brightness-110 transition-all",
+                                "w-full rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
                                 isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                             )}
                             size="lg"
@@ -267,7 +267,7 @@ export function Cart({
                         <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-muted text-primary hover:bg-muted/80 border border-border",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -280,7 +280,7 @@ export function Cart({
                             {isLastStep && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-info text-info-foreground hover:bg-info/90",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -295,11 +295,10 @@ export function Cart({
 
                         <div className="flex gap-2">
                             <Button
-                                variant="secondary"
                                 onClick={onCheckoutBack}
                                 disabled={checkoutLoading}
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -312,7 +311,7 @@ export function Cart({
                                     onClick={onCheckoutNext}
                                     disabled={checkoutLoading}
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -325,7 +324,7 @@ export function Cart({
                                     onClick={onCheckoutFinish}
                                     disabled={checkoutLoading}
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-success hover:bg-success/90 text-success-foreground",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
