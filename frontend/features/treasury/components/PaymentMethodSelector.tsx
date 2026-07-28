@@ -394,7 +394,7 @@ export function PaymentMethodSelector({
         if (!isMultiPayment) {
             // ── Single mode: original grid + "Múltiple" card ──
             const allMethods = availableMethods.map(m => ({ ...m, isMultiple: false }))
-            allMethods.push({
+            allMethods.unshift({
                 id: '__MULTIPLE__',
                 label: 'Múltiple',
                 description: 'Varios métodos',
@@ -440,7 +440,7 @@ export function PaymentMethodSelector({
                                 disabled={!m.isAllowed}
                                 className={cn(
                                     methodCardClass,
-                                    isMultiCard ? "border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60" : undefined,
+                                    isMultiCard ? "col-span-full self-start h-auto border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60" : undefined,
                                     isSingleSelected ? "border-2 border-primary accent-visible" : undefined,
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
@@ -528,7 +528,7 @@ export function PaymentMethodSelector({
                         onClick={exitMultiMode}
                         className={cn(
                             methodCardClass,
-                            "col-span-full flex-row items-center justify-between gap-3 border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60"
+                            "col-span-full self-start h-auto flex-row items-center justify-between gap-3 border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60"
                         )}
                     >
                         <div className="flex items-center gap-3 min-w-0">
