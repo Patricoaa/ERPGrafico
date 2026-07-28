@@ -752,6 +752,7 @@ export function PaymentMethodSelector({
                     <Numpad
                         value={tempAmount}
                         onChange={setTempAmount}
+                        title="Monto a Pagar"
                         onConfirm={handleAmountConfirm}
                         onClose={() => { setIsAmountModalOpen(false); setEditingIndex(null) }}
                         allowDecimal={false}
