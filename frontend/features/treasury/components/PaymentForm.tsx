@@ -117,9 +117,6 @@ export function PaymentForm({
                             differencePositiveLabel: "Excedente",
                             differenceNegativeLabel: "Deuda Pendiente",
                             amountModalTitle: paymentType === "INBOUND" ? "Monto Recibido" : "Monto a Pagar",
-                            amountModalDescription: paymentType === "INBOUND"
-                                ? "Ingrese el monto recibido."
-                                : "Ingrese el monto a pagar.",
                         }}
                     />
 
