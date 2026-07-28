@@ -177,7 +177,7 @@ interface ClassifiedFields {
 }
 
 /**
- * Classifies card fields into layout zones based on their resolved cardPlacement and fieldRole.
+ * Classifies card fields into layout zones based on their resolved placement and fieldRole.
  *
  * Header capacity rules:
  * - Fields are prioritised: complex → primary-value → flow → tag (chip/icon)
@@ -200,12 +200,12 @@ function classifyFields<TData>(
     subtitleFieldKeys: Set<string>,
     titleFieldKey?: string,
 ): ClassifiedFields {
-    const title = fields.find(f => f.cardPlacement === 'title')
+    const title = fields.find(f => f.placement === 'title')
 
     // Exclude title, subtitle-placed, and subtitle-referenced fields from all zones
     const rest = fields.filter(f =>
-        f.cardPlacement !== 'title' &&
-        f.cardPlacement !== 'subtitle' &&
+        f.placement !== 'title' &&
+        f.placement !== 'subtitle' &&
         f.key !== titleFieldKey &&
         !subtitleFieldKeys.has(f.key)
     )
@@ -220,7 +220,7 @@ function classifyFields<TData>(
         f => f.fieldRole === 'tag',
     ]
 
-    const headerCandidates = rest.filter(f => f.cardPlacement === 'header')
+    const headerCandidates = rest.filter(f => f.placement === 'header')
 
     // Sort candidates by priority group
     const sortedCandidates = [...headerCandidates].sort((a, b) => {
@@ -238,8 +238,8 @@ function classifyFields<TData>(
 
     // ── Metric: ONLY explicit progress fields ─────────────────────────────────
     // All header overflow cascades to centerDetail — metric is a final fallback
-    // exclusively for progress bars (cardPlacement: 'metric').
-    const progressFields = rest.filter(f => f.cardPlacement === 'metric')
+    // exclusively for progress bars (placement: 'metric').
+    const progressFields = rest.filter(f => f.placement === 'metric')
     const metric = [...progressFields]
 
     // ── Detail: explicit detail fields + ALL header overflow, max 10 ──────────
@@ -249,11 +249,11 @@ function classifyFields<TData>(
         ...metric.map(f => f.key),
     ])
     const detailBase = rest.filter(
-        f => f.cardPlacement === 'detail' && !assignedKeys.has(f.key)
+        f => f.placement === 'detail' && !assignedKeys.has(f.key)
     )
     let detail = [...detailBase, ...headerOverflow].slice(0, 10)
 
-    const footer = rest.filter(f => f.cardPlacement === 'footer')
+    const footer = rest.filter(f => f.placement === 'footer')
 
     // ── Variant visibility rules ──────────────────────────────────────────────
     switch (variant) {
@@ -281,7 +281,7 @@ function classifyFields<TData>(
     }
 
     // Center routing: ALL detail fields go to the header center slot.
-    // bodyDetail is always empty — 'detail' cardPlacement is now semantically 'center header'.
+    // bodyDetail is always empty — 'detail' placement is now semantically 'center header'.
     // EntityCard.Body is no longer driven by auto-classification.
     const centerDetail = [...detail]
     const bodyDetail: CardField[] = []
@@ -321,7 +321,7 @@ function buildSubtitleItems<TData>(
  * AutoEntityCard - A standardized card component for Master Data entities.
  *
  * Automatically generates the EntityCard layout using the fields defined in `createEntityFields`.
- * - Uses `cardPlacement` metadata ('title', 'header', 'detail', 'metric', 'footer') to position fields.
+ * - Uses `placement` metadata ('title', 'header', 'detail', 'metric', 'footer') to position fields.
  * - Uses `variant` to control which layout zones are visible.
  * - `variant='workflow'` automatically renders the workflow body from cardConfig.workflow in entity-registry.
  * - Auto-generates subtitle from registry when no explicit subtitle is provided.
