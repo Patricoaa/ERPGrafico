@@ -115,7 +115,6 @@ export function EmployeeClientView({ initialEmployees }: EmployeeClientViewProps
 
                         />
                     )}
-                    cardSkeleton={{ showFooter: false }}
                 />
             </div>
             <EmployeeDrawer
