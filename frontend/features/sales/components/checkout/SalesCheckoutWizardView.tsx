@@ -502,6 +502,10 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
     }
 
     const handleBack = () => {
+        if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
+        setIsWaitingApproval(false)
+        setApprovalTaskId(null)
+        setCreditApprovalRequired(false)
         if ((step === 1 || quickSale) && onCancel) {
             onCancel()
         } else {

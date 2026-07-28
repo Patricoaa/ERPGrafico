@@ -493,7 +493,7 @@ export function PaymentMethodSelector({
                 {paymentData.amount > 0 && paymentData.amount < total && (
                     <div className={cn(
                         methodCardClass,
-                        "self-start h-auto border-2 border-primary accent-visible"
+                        "self-start h-auto border-2 border-primary accent-visible rounded-sm"
                     )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
@@ -671,7 +671,7 @@ export function PaymentMethodSelector({
                 {!isFullyPaid && remaining > 0 && (
                     <div className={cn(
                         methodCardClass,
-                        "self-start h-auto border-2 border-primary accent-visible"
+                        "self-start h-auto border-2 border-primary accent-visible rounded-sm"
                     )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
