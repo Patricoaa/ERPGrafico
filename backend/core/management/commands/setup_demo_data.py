@@ -317,7 +317,11 @@ class Command(BaseCommand):
                 self.stdout.write(
                     f"  ✓ {n_po} OC, {n_so} NV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería"
                 )
-
+                
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Historical Purchases & POS Demo...")
+                self._create_historical_purchases_and_pos(accounts, partners, inventory, uoms)
             section_start = time.time()
             self.stdout.write(f"\n{'─' * 50}")
             self.stdout.write("  Company Settings...")
@@ -1685,8 +1689,8 @@ class Command(BaseCommand):
         count = 0
 
         for product in products:
-            # Random initial quantity between 50 and 500
-            qty = Decimal(str(random.randint(50, 500)))
+            # Random initial quantity between 5000 and 15000 to support large historical sales
+            qty = Decimal(str(random.randint(5000, 15000)))
 
             # Determine a realistic cost based on sale price (approx 40-70% of sale price)
             if product.sale_price > 0:
@@ -2900,62 +2904,185 @@ class Command(BaseCommand):
 
         self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
 
-        # ── Multi-month sales (Jan-Jun 2026) ──────────────────────────────
+        # ── Multi-month sales (Historical to Current Month) ─────────────
+        import random
         from datetime import date as _date
+        import calendar
 
-        impresion = Product.objects.get(code="PT-0001")
-        diseno = Product.objects.get(code="SRV-DIS-GRA")
-        encuadernacion = Product.objects.get(name="Servicio Encuadernación")
-        banner = Product.objects.get(name="Banner Roller Up (80x200cm)")
-        calendario = Product.objects.get(name="Calendario de Escritorio")
-        afiche = Product.objects.get(name="Afiche Publicitario (Couché 170g)")
+        current_month = today.month
+        current_year = today.year
 
-        multi_month_sales = [
-            (c1, impresion, uoms["hoja"], 300, Decimal("150"), "Venta mensual impresión"),
-            (c2, diseno, uoms["un"], 2, Decimal("25000"), "Servicio diseño gráfico"),
-            (c_default, banner, uoms["un"], 5, Decimal("35000"), "Venta banners"),
-            (c1, calendario, uoms["un"], 50, Decimal("2800"), "Venta calendarios"),
-            (c2, afiche, uoms["un"], 20, Decimal("1500"), "Venta afiches"),
-            (c_default, encuadernacion, uoms["un"], 15, Decimal("1500"), "Servicio encuadernación"),
+        available_products = [
+            (Product.objects.get(code="PT-0001"), uoms["hoja"]),
+            (Product.objects.get(code="SRV-DIS-GRA"), uoms["un"]),
+            (Product.objects.get(name="Servicio Encuadernación"), uoms["un"]),
+            (Product.objects.get(name="Banner Roller Up (80x200cm)"), uoms["un"]),
+            (Product.objects.get(name="Calendario de Escritorio"), uoms["un"]),
+            (Product.objects.get(name="Afiche Publicitario (Couché 170g)"), uoms["un"]),
         ]
-        for i, month in enumerate(range(1, 7)):
-            order_date = _date(2026, month, 12)
-            customer, product, uom, qty, price, _desc = multi_month_sales[i]
-            note_tag = f"Seed-VentaMultiMonth-{month:02d}"
-            if SaleOrder.objects.filter(notes=note_tag).exists():
-                continue
-            so = SaleOrder.objects.create(
-                customer=customer, date=order_date,
-                payment_method=SaleOrder.PaymentMethod.TRANSFER,
-                notes=note_tag,
-            )
-            SaleLine.objects.create(
-                order=so, product=product, description=f"{product.name} x {qty}",
-                quantity=qty, uom=uom, unit_price=price,
-                tax_rate=get_default_vat_rate(),
-            )
-            so.save()
-            SalesService.confirm_sale(so)
-            delivery = SalesService.dispatch_order(so, wh)
-            SalesService.confirm_delivery(delivery)
-            inv = BillingService.create_sale_invoice(
-                so, dte_type=Invoice.DTEType.FACTURA,
-                payment_method="TRANSFER", date=order_date,
-            )
-            TreasuryService.create_movement(
-                amount=inv.total,
-                movement_type=TreasuryMovement.Type.INBOUND,
-                payment_method=TreasuryMovement.Method.TRANSFER,
-                date=order_date, created_by=admin,
-                to_account=bco_estado, partner=customer,
-                sale_order=so, invoice=inv,
-                reference=f"Cobro Venta MultiMonth {month:02d}",
-            )
-            self.stdout.write(
-                f"  ✓ NV-{so.number}: {customer.name} → {qty}u {product.name} "
-                f"(${inv.total:,.0f}) — {order_date.strftime('%b %Y')}"
-            )
-        self.stdout.write(f"  ── +6 ventas multi-mes (Ene-Jun 2026)")
+        
+        customers = [c1, c2, c_default]
+        total_hist_sales = 0
+
+        for month in range(1, current_month + 1):
+            num_days = calendar.monthrange(current_year, month)[1]
+            max_day = num_days if month != current_month else today.day
+            if max_day < 1: max_day = 1
+            
+            # Generate around 100 sales per month
+            num_sales = random.randint(90, 110)
+            
+            for sale_idx in range(num_sales):
+                order_date = _date(current_year, month, random.randint(1, max_day))
+                customer = random.choice(customers)
+                product, uom = random.choice(available_products)
+                
+                target_value = Decimal(random.randint(1000, 150000))
+                price = product.sale_price if product.sale_price > 0 else Decimal("1000")
+                qty = max(1, int(target_value / price))
+                
+                note_tag = f"Seed-HistSale-{month:02d}-{sale_idx:02d}"
+                if SaleOrder.objects.filter(notes=note_tag).exists():
+                    continue
+                    
+                so = SaleOrder.objects.create(
+                    customer=customer, date=order_date,
+                    payment_method=SaleOrder.PaymentMethod.TRANSFER,
+                    notes=note_tag,
+                )
+                SaleLine.objects.create(
+                    order=so, product=product, description=f"{product.name} (Auto Histórico)",
+                    quantity=qty, uom=uom, unit_price=price,
+                    tax_rate=get_default_vat_rate(),
+                )
+                so.save()
+                SalesService.confirm_sale(so)
+                
+                # Dispatch if required (for services, this might return None or empty)
+                delivery = SalesService.dispatch_order(so, wh, delivery_date=order_date)
+                if delivery:
+                    SalesService.confirm_delivery(delivery)
+
+                inv = BillingService.create_sale_invoice(
+                    so, dte_type=Invoice.DTEType.FACTURA,
+                    payment_method="TRANSFER", date=order_date,
+                )
+                
+                TreasuryService.create_movement(
+                    amount=inv.total,
+                    movement_type=TreasuryMovement.Type.INBOUND,
+                    payment_method=TreasuryMovement.Method.TRANSFER,
+                    date=order_date, created_by=admin,
+                    to_account=bco_estado, partner=customer,
+                    sale_order=so, invoice=inv,
+                    reference=f"Cobro Venta Hist. {note_tag}",
+                )
+                total_hist_sales += 1
+
+        self.stdout.write(f"  ✓ {total_hist_sales} ventas multi-mes generadas (Ene-{today.strftime('%b')} {current_year})")
+
+    def _create_historical_purchases_and_pos(self, accounts, partners, inventory, uoms):
+        import calendar
+        import random
+        from datetime import date as _date
+        from billing.services import BillingService
+        from purchasing.models import PurchaseOrder, PurchaseLine
+        from purchasing.services import PurchaseOrderService, PurchasingService
+        from treasury.services import TreasuryService, TerminalBatchService
+        from treasury.models import PaymentTerminalProvider, PaymentMethod, TreasuryAccount, TreasuryMovement
+        from inventory.models import Product
+
+        admin = User.objects.filter(is_superuser=True).first()
+        today = timezone.now().date()
+        current_year = today.year
+        current_month = today.month
+
+        # Subscriptions
+        electric_prod = Product.objects.get(code="SUB-ELEC")
+        maint_prod = Product.objects.get(code="SUB-MNT-OFF")
+        internet_prod, _ = Product.objects.get_or_create(
+            code="SUB-INT",
+            defaults={
+                "name": "Servicios de Internet",
+                "category": electric_prod.category,
+                "product_type": Product.Type.SUBSCRIPTION,
+                "uom": uoms["un"],
+                "sale_price": 0,
+                "can_be_sold": False,
+                "can_be_purchased": True,
+            }
+        )
+
+        suppliers = partners["suppliers"]
+        s_enel = suppliers[2]
+        s_maint = suppliers[1]
+        s_internet = suppliers[0] # Ejemplo
+
+        # POS setup
+        tuu_prov = PaymentTerminalProvider.objects.filter(name="TUU").first()
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        pm_deposit = PaymentMethod.objects.filter(
+            treasury_account=bco_estado, allow_for_sales=True, is_active=True,
+            method_type=PaymentMethod.Type.TRANSFER
+        ).first()
+
+        for month in range(1, current_month + 1):
+            num_days = calendar.monthrange(current_year, month)[1]
+            max_day = num_days if month != current_month else today.day
+            if max_day < 1: max_day = 1
+
+            # 1. Purchase Invoices (Subscriptions)
+            subs = [
+                (s_enel, electric_prod, Decimal(random.randint(60000, 150000))),
+                (s_maint, maint_prod, Decimal("250000")),
+                (s_internet, internet_prod, Decimal("45000")),
+            ]
+            for supp, prod, cost in subs:
+                order_date = _date(current_year, month, random.randint(1, 10))
+                po = PurchaseOrder.objects.create(
+                    supplier=supp, date=order_date,
+                    payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
+                    notes=f"Subscripción Histórica {month:02d}",
+                )
+                PurchaseLine.objects.create(
+                    order=po, product=prod, quantity=1, uom=prod.uom,
+                    unit_cost=cost, tax_rate=get_default_vat_rate(),
+                )
+                po.save()
+                PurchaseOrderService().confirm(po, user=admin)
+                PurchasingService.receive_order(po, inventory["warehouse"])
+                inv = BillingService.create_purchase_bill(
+                    po, supplier_invoice_number=f"SUB-{prod.code}-{month:02d}", date=order_date,
+                )
+                TreasuryService.create_movement(
+                    amount=po.total, movement_type=TreasuryMovement.Type.OUTBOUND,
+                    payment_method=TreasuryMovement.Method.TRANSFER, date=order_date,
+                    created_by=admin, from_account=bco_estado, partner=supp,
+                    purchase_order=po, invoice=inv, reference=f"Pago SUB {month:02d}"
+                )
+
+            # 2. POS Terminal Settlements (TUU)
+            if tuu_prov and pm_deposit:
+                sales_date = _date(current_year, month, max_day)
+                gross = Decimal(random.randint(2000000, 5000000))
+                base_comm = (gross * Decimal("0.02")).quantize(Decimal("1")) # 2%
+                iva_comm = (base_comm * Decimal("0.19")).quantize(Decimal("1"))
+                net = gross - base_comm - iva_comm
+                
+                TerminalBatchService.create_batch(
+                    provider=tuu_prov, payment_method=pm_deposit,
+                    sales_date=sales_date, gross_amount=gross,
+                    commission_base=base_comm, commission_tax=iva_comm,
+                    net_amount=net, terminal_reference=f"SETTLE-{month:02d}",
+                    user=admin
+                )
+                
+                TerminalBatchService.generate_monthly_invoice(
+                    provider=tuu_prov, year=current_year, month=month,
+                    user=admin, number=f"TUU-{month:02d}", date=sales_date
+                )
+                
+        self.stdout.write(f"  ✓ Compras históricas (Suscripciones) y Liquidaciones TC generadas (Ene-{today.strftime('%b')} {current_year})")
 
     def _initialize_company_settings(self):
         """
@@ -3163,7 +3290,7 @@ class Command(BaseCommand):
                 "tax_id": f"11111111-{compute_rut_dv('11111111')}",
                 "position": "Gerente de Operaciones",
                 "department": "Gerencia",
-                "base_salary": Decimal("1200000"),
+                "base_salary": Decimal("590000"),
                 "afp_name": "Habitat",
                 "salud_type": Employee.SaludType.FONASA,
                 "jornada_type": Employee.JornadaType.ORDINARIA_22,
@@ -3179,7 +3306,7 @@ class Command(BaseCommand):
                 "tax_id": f"22222222-{compute_rut_dv('22222222')}",
                 "position": "Jefe de Ventas",
                 "department": "Ventas",
-                "base_salary": Decimal("950000"),
+                "base_salary": Decimal("580000"),
                 "afp_name": "Provida",
                 "salud_type": Employee.SaludType.FONASA,
                 "jornada_type": Employee.JornadaType.ORDINARIA_22,
@@ -3195,7 +3322,7 @@ class Command(BaseCommand):
                 "tax_id": f"33333333-{compute_rut_dv('33333333')}",
                 "position": "Operador de Máquina Offset",
                 "department": "Taller",
-                "base_salary": Decimal("650000"),
+                "base_salary": Decimal("570000"),
                 "afp_name": "Modelo",
                 "salud_type": Employee.SaludType.FONASA,
                 "jornada_type": Employee.JornadaType.ORDINARIA_22,
@@ -3211,7 +3338,7 @@ class Command(BaseCommand):
                 "tax_id": f"44444444-{compute_rut_dv('44444444')}",
                 "position": "Encargado de Bodega",
                 "department": "Bodega",
-                "base_salary": Decimal("600000"),
+                "base_salary": Decimal("550000"),
                 "afp_name": "Habitat",
                 "salud_type": Employee.SaludType.FONASA,
                 "jornada_type": Employee.JornadaType.PARCIAL_40BIS,
@@ -3227,7 +3354,7 @@ class Command(BaseCommand):
                 "tax_id": f"55555555-{compute_rut_dv('55555555')}",
                 "position": "Ejecutivo de Ventas",
                 "department": "Ventas",
-                "base_salary": Decimal("700000"),
+                "base_salary": Decimal("560000"),
                 "afp_name": "Provida",
                 "salud_type": Employee.SaludType.ISAPRE,
                 "isapre_amount_uf": Decimal("1.5000"),
@@ -3244,7 +3371,7 @@ class Command(BaseCommand):
                 "tax_id": f"66666666-{compute_rut_dv('66666666')}",
                 "position": "Diseñador Gráfico",
                 "department": "Diseño",
-                "base_salary": Decimal("750000"),
+                "base_salary": Decimal("540000"),
                 "afp_name": "Modelo",
                 "salud_type": Employee.SaludType.FONASA,
                 "jornada_type": Employee.JornadaType.ORDINARIA_22,
