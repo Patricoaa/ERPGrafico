@@ -184,7 +184,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         lineOverlay: {
                                                             dataKey: "orderCount",
                                                             label: "Cantidad Órdenes",
-                                                            color: "#22c55e",
+                                                            color: "var(--color-success)",
                                                         },
                                                     },
                                             },
@@ -209,9 +209,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         type: "pie-chart",
                                                         preset: "card",
                                                         data: [
-                                                            { id: "A tiempo", value: analyticsData.onTimeCount, color: "#22c55e" },
-                                                            { id: "Con retraso", value: analyticsData.lateCount, color: "#ef4444" },
-                                                            { id: "Pendientes", value: analyticsData.pendingReceiptCount, color: "#f59e0b" },
+                                                            { id: "A tiempo", value: analyticsData.onTimeCount, color: "var(--color-success)" },
+                                                            { id: "Con retraso", value: analyticsData.lateCount, color: "var(--color-destructive)" },
+                                                            { id: "Pendientes", value: analyticsData.pendingReceiptCount, color: "var(--color-warning)" },
                                                         ],
                                                         compact: true,
                                                         enableLabels: true,
