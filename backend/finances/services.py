@@ -613,8 +613,13 @@ class FinanceService:
 
         total_financing = sum(item["amount"] for item in financing_activities)
 
+        total_operating_comp = sum(item.get("amount_comp", 0) for item in operating_activities)
+        total_investing_comp = sum(item.get("amount_comp", 0) for item in investing_activities)
+        total_financing_comp = sum(item.get("amount_comp", 0) for item in financing_activities)
+
         # 4. Reconciliation & Anomaly Detection
         calculated_net_increase = total_operating + total_investing + total_financing
+        calculated_net_increase_comp = total_operating_comp + total_investing_comp + total_financing_comp
         discrepancy = float(actual_net_increase) - calculated_net_increase
 
         culprit_accounts = []
@@ -625,11 +630,13 @@ class FinanceService:
                 mapped_ids = FiscalYearAccountMapping.objects.filter(
                     fiscal_year_id=fiscal_year_id, cf_category__isnull=True
                 ).values_list("account_id", flat=True)
-                unmapped_accs = Account.objects.filter(id__in=mapped_ids).exclude(pk__in=cash_pool_ids)
+                unmapped_accs = Account.objects.filter(id__in=mapped_ids).exclude(
+                    pk__in=cash_pool_ids
+                ).exclude(account_type__in=[AccountType.INCOME, AccountType.EXPENSE])
             else:
                 unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(
                     pk__in=cash_pool_ids
-                )
+                ).exclude(account_type__in=[AccountType.INCOME, AccountType.EXPENSE])
             for acc in unmapped_accs:
                 if not acc.is_selectable:
                     continue  # parent accounts logic
@@ -658,6 +665,7 @@ class FinanceService:
             "net_increase": float(actual_net_increase),
             "net_increase_comp": float(actual_net_increase_comp),
             "calculated_net_increase": calculated_net_increase,
+            "calculated_net_increase_comp": calculated_net_increase_comp,
             "discrepancy": discrepancy,
             "culprit_accounts": culprit_accounts,
             "is_balanced": abs(discrepancy) < 0.01,
@@ -730,12 +738,16 @@ class FinanceService:
         solvency_ratio = (total_assets / total_liabilities) if total_liabilities else 0
 
         # Extract income statement totals for margin calculations
+        # get_income_statement returns {"sections": [...], "net_income": float}
+        # We need to extract revenue/profit from the sections list by name.
         is_res = FinanceService.get_income_statement(start_date, end_date, fiscal_year_id=fiscal_year_id)
 
-        total_revenue = is_res.get("total_revenue", 0)
-        gross_profit = is_res.get("gross_profit", 0)
-        operating_profit = is_res.get("operating_profit", 0)
-        net_income = is_res.get("net_income", 0)
+        sections_by_name = {s["name"]: s for s in is_res.get("sections", [])}
+        total_revenue = sections_by_name.get("Ingresos Operacionales", {}).get("total", 0) or 0
+        total_cogs = sections_by_name.get("Costo de Ventas", {}).get("total", 0) or 0
+        gross_profit = sections_by_name.get("Resultado Bruto", {}).get("total", total_revenue - total_cogs)
+        operating_profit = sections_by_name.get("Resultado Operacional", {}).get("total", 0) or 0
+        net_income = is_res.get("net_income", 0) or 0
 
         # Margin calculations
         gross_margin = (gross_profit / total_revenue) if total_revenue else 0
@@ -760,6 +772,9 @@ class FinanceService:
             "solvency": {"solvency_ratio": solvency_ratio},
             "profitability": {
                 "total_revenue": total_revenue,
+                "gross_profit": gross_profit,
+                "operating_profit": operating_profit,
+                "net_income": net_income,
                 "gross_margin": gross_margin,
                 "operating_margin": operating_margin,
                 "net_margin": net_margin,
@@ -781,13 +796,27 @@ class FinanceService:
         if not start_date:
             start_date = end_date - datetime.timedelta(days=180)  # Last 6 months by default
 
-        # 1. Sales Analytics
+        period_length = (end_date - start_date).days or 1
+        prev_end = start_date - datetime.timedelta(days=1)
+        prev_start = prev_end - datetime.timedelta(days=period_length)
+
+        # ── 1. Sales Analytics ──────────────────────────────────────────────
+        ACTIVE_SALE_STATUSES = ["CONFIRMED", "INVOICED", "PAID"]
         sales_qs = SaleOrder.objects.filter(
-            date__range=(start_date, end_date), status__in=["CONFIRMED", "INVOICED", "PAID"]
+            date__range=(start_date, end_date), status__in=ACTIVE_SALE_STATUSES
         )
         total_sales = sales_qs.aggregate(total=Sum("total"))["total"] or Decimal("0.00")
         sales_count = sales_qs.count()
-        avg_ticket = total_sales / sales_count if sales_count > 0 else Decimal("0.00")
+
+        # Real period-over-period growth
+        prev_sales_qs = SaleOrder.objects.filter(
+            date__range=(prev_start, prev_end), status__in=ACTIVE_SALE_STATUSES
+        )
+        prev_total_sales = prev_sales_qs.aggregate(total=Sum("total"))["total"] or Decimal("0.00")
+        if prev_total_sales > 0:
+            growth = round(float((total_sales - prev_total_sales) / prev_total_sales * 100), 1)
+        else:
+            growth = 0.0
 
         # Monthly Trend
         monthly_sales = (
@@ -796,9 +825,10 @@ class FinanceService:
             .annotate(total=Sum("total"))
             .order_by("month")
         )
-        trend = []
-        for ms in monthly_sales:
-            trend.append({"month": ms["month"].strftime("%b"), "sales": float(ms["total"])})
+        trend = [
+            {"month": ms["month"].strftime("%b"), "sales": float(ms["total"])}
+            for ms in monthly_sales
+        ]
 
         # Top Customers
         top_customers_qs = (
@@ -808,104 +838,228 @@ class FinanceService:
             {"name": c["customer__name"], "amount": float(c["total"])} for c in top_customers_qs
         ]
 
-        # 2. Inventory Analytics
-        # Get all storable products
+        # Sales by channel
+        channel_dist = (
+            sales_qs.values("channel").annotate(total=Sum("total"), count=Count("id")).order_by("-total")
+        )
+        sales_by_channel = [
+            {"channel": row["channel"], "total": float(row["total"]), "count": row["count"]}
+            for row in channel_dist
+        ]
+
+        # Pending deliveries (CONFIRMED but not fully dispatched)
+        pending_deliveries = sales_qs.filter(
+            status="CONFIRMED", delivery_status__in=["PENDING", "PARTIAL"]
+        ).count()
+
+        # ── 2. Purchase Analytics ───────────────────────────────────────────
+        po_qs = PurchaseOrder.objects.filter(date__range=(start_date, end_date))
+        purchase_total = (
+            po_qs.filter(status__in=["CONFIRMED", "RECEIVED", "INVOICED", "PAID"])
+            .aggregate(total=Sum("total"))["total"] or Decimal("0")
+        )
+        purchase_count = po_qs.exclude(status="CANCELLED").count()
+
+        # Purchase by status distribution
+        po_by_status = (
+            po_qs.exclude(status="CANCELLED")
+            .values("status")
+            .annotate(count=Count("id"), total=Sum("total"))
+            .order_by("status")
+        )
+        purchase_status_dist = [
+            {"status": row["status"], "count": row["count"], "total": float(row["total"] or 0)}
+            for row in po_by_status
+        ]
+
+        # Top suppliers by purchase volume
+        top_suppliers_qs = (
+            po_qs.filter(status__in=["CONFIRMED", "RECEIVED", "INVOICED", "PAID"])
+            .values("supplier__name")
+            .annotate(total=Sum("total"))
+            .order_by("-total")[:5]
+        )
+        top_suppliers = [
+            {"name": s["supplier__name"], "amount": float(s["total"])} for s in top_suppliers_qs
+        ]
+
+        # ── 3. Inventory Analytics ──────────────────────────────────────────
         products = Product.objects.filter(product_type="STORABLE", track_inventory=True)
-
-        asset_vals = {}
-        for product in products:
-            total_qty = StockMove.objects.filter(product=product).aggregate(total=Sum("quantity"))[
-                "total"
-            ] or Decimal("0")
-
-            if total_qty != Decimal("0"):
-                val = total_qty * product.cost_price
-                asset_vals[product.id] = val
+        total_inventory_value = Decimal("0")
 
         # Breakdown by category
         dist = []
         categories = ProductCategory.objects.all()
-        total_inventory_value = Decimal("0")
         for cat in categories:
-            cat_products = Product.objects.filter(
-                category=cat, product_type="STORABLE", track_inventory=True
-            )
-            cat_val = 0
+            cat_products = products.filter(category=cat)
+            cat_val = Decimal("0")
             items_count = 0
             for p in cat_products:
                 balance = (
                     StockMove.objects.filter(product=p, date__lte=end_date).aggregate(
                         total=Sum("quantity")
-                    )["total"]
-                    or 0
+                    )["total"] or Decimal("0")
                 )
-                cat_val += float(balance) * float(p.cost_price)
+                item_val = Decimal(str(balance)) * p.cost_price
+                cat_val += item_val
+                total_inventory_value += item_val
                 if balance > 0:
                     items_count += 1
             if cat_val > 0:
-                dist.append({"category": cat.name, "value": cat_val, "items": items_count})
+                dist.append({"category": cat.name, "value": float(cat_val), "items": items_count})
 
-        # 3. Production Analytics
+        # ── 4. Production Analytics ─────────────────────────────────────────
         from production.models import WorkOrder
 
-        wo_qs = WorkOrder.objects.all()
-        wo_status_dist = wo_qs.values("status").annotate(count=Count("id"))
+        wo_qs = WorkOrder.objects.filter(created_at__date__range=(start_date, end_date))
+        wo_all = WorkOrder.objects.all()  # global count (status not time-bound)
         finished_wo = wo_qs.filter(status="FINISHED").count()
-        total_wo = wo_qs.count()
-        prod_efficiency = (finished_wo / total_wo * 100) if total_wo > 0 else 0
+        in_progress_wo = wo_all.filter(status="IN_PROGRESS").count()
+        total_wo_period = wo_qs.exclude(status="CANCELLED").count()
+        prod_efficiency = (finished_wo / total_wo_period * 100) if total_wo_period > 0 else 0
 
-        # 4. Performance / Finance Indicators
-        # Accounts Receivable (Invoices POSTED but not PAID)
+        # Stage distribution of active WOs
+        stage_dist = (
+            wo_all.filter(status="IN_PROGRESS")
+            .values("current_stage")
+            .annotate(count=Count("id"))
+            .order_by("current_stage")
+        )
+        wo_stage_dist = [{"stage": row["current_stage"], "count": row["count"]} for row in stage_dist]
+
+        # ── 5. Billing / Receivables & Payables ─────────────────────────────
+        PRIMARY_DTE = [
+            Invoice.DTEType.FACTURA,
+            Invoice.DTEType.FACTURA_EXENTA,
+            Invoice.DTEType.BOLETA,
+            Invoice.DTEType.BOLETA_EXENTA,
+        ]
+        # CxC: primary invoices issued (from sale orders) still POSTED (not paid)
         ar_total = (
-            Invoice.objects.filter(status="POSTED", sale_order__isnull=False).aggregate(
-                total=Sum("total")
-            )["total"]
-            or 0
+            Invoice.objects.filter(
+                status="POSTED", sale_order__isnull=False, dte_type__in=PRIMARY_DTE
+            ).aggregate(total=Sum("total"))["total"] or Decimal("0")
         )
-
-        # Accounts Payable
+        # CxP: purchase invoices (from purchase orders) still POSTED (not paid)
         ap_total = (
-            Invoice.objects.filter(status="POSTED", purchase_order__isnull=False).aggregate(
-                total=Sum("total")
-            )["total"]
-            or 0
+            Invoice.objects.filter(
+                status="POSTED", purchase_order__isnull=False, dte_type=Invoice.DTEType.PURCHASE_INV
+            ).aggregate(total=Sum("total"))["total"] or Decimal("0")
+        )
+        # Invoiced this period (any primary DTE posted or paid)
+        invoiced_period = (
+            Invoice.objects.filter(
+                date__range=(start_date, end_date),
+                status__in=["POSTED", "PAID"],
+                dte_type__in=PRIMARY_DTE,
+                sale_order__isnull=False,
+            ).aggregate(total=Sum("total"))["total"] or Decimal("0")
         )
 
-        # Purchase Volume
-        purchase_vol = (
-            PurchaseOrder.objects.filter(
+        # ── 6. Treasury Cash Flow ────────────────────────────────────────────
+        try:
+            from treasury.models import TreasuryMovement
+            tm_qs = TreasuryMovement.objects.filter(
                 date__range=(start_date, end_date),
-                status__in=["CONFIRMED", "RECEIVED", "INVOICED", "PAID"],
-            ).aggregate(total=Sum("total"))["total"]
-            or 0
-        )
+                status="POSTED",
+            )
+            cash_inbound = (
+                tm_qs.filter(movement_type="INBOUND").aggregate(total=Sum("amount"))["total"] or Decimal("0")
+            )
+            cash_outbound = (
+                tm_qs.filter(movement_type="OUTBOUND").aggregate(total=Sum("amount"))["total"] or Decimal("0")
+            )
+            net_cash_flow = float(cash_inbound) - float(cash_outbound)
+
+            # Monthly cash flow trend
+            monthly_cf = (
+                tm_qs.filter(movement_type__in=["INBOUND", "OUTBOUND"])
+                .annotate(month=TruncMonth("date"))
+                .values("month", "movement_type")
+                .annotate(total=Sum("amount"))
+                .order_by("month", "movement_type")
+            )
+            cf_by_month: dict = {}
+            for row in monthly_cf:
+                key = row["month"].strftime("%b")
+                if key not in cf_by_month:
+                    cf_by_month[key] = {"month": key, "ingresos": 0.0, "egresos": 0.0}
+                if row["movement_type"] == "INBOUND":
+                    cf_by_month[key]["ingresos"] = float(row["total"])
+                else:
+                    cf_by_month[key]["egresos"] = float(row["total"])
+            cash_flow_trend = list(cf_by_month.values())
+        except Exception:
+            cash_inbound = Decimal("0")
+            cash_outbound = Decimal("0")
+            net_cash_flow = 0.0
+            cash_flow_trend = []
+
+        # ── 7. Payroll / Labour Cost ─────────────────────────────────────────
+        try:
+            from hr.models import Payroll
+            payroll_qs = Payroll.objects.filter(
+                period_year__gte=start_date.year,
+                status="POSTED",
+            )
+            # Filter by month range
+            from django.db.models import Q as Q2
+            payroll_qs = payroll_qs.filter(
+                Q2(period_year__gt=start_date.year)
+                | Q2(period_year=start_date.year, period_month__gte=start_date.month)
+            ).filter(
+                Q2(period_year__lt=end_date.year)
+                | Q2(period_year=end_date.year, period_month__lte=end_date.month)
+            )
+            payroll_total = payroll_qs.aggregate(total=Sum("total_haberes"))["total"] or Decimal("0")
+            employee_count = payroll_qs.values("employee").distinct().count()
+        except Exception:
+            payroll_total = Decimal("0")
+            employee_count = 0
 
         return {
             "sales": {
                 "total_sales": float(total_sales),
+                "prev_total_sales": float(prev_total_sales),
                 "sales_count": sales_count,
-                "average_ticket": float(avg_ticket),
+                "growth": growth,
                 "monthly_trend": trend,
                 "top_customers": top_customers,
-                "growth": 0,
+                "sales_by_channel": sales_by_channel,
+                "pending_deliveries": pending_deliveries,
+                "invoiced_period": float(invoiced_period),
+            },
+            "purchasing": {
+                "purchase_total": float(purchase_total),
+                "purchase_count": purchase_count,
+                "status_distribution": purchase_status_dist,
+                "top_suppliers": top_suppliers,
             },
             "inventory": {
                 "total_value": float(total_inventory_value),
                 "item_count": products.count(),
                 "stock_distribution": dist,
-                "turnover_ratio": 0,
-                "low_stock_alerts": 0,
             },
             "production": {
-                "total_wo": total_wo,
+                "total_wo": total_wo_period,
                 "finished_wo": finished_wo,
+                "in_progress_wo": in_progress_wo,
                 "efficiency": round(prod_efficiency, 1),
-                "status_distribution": list(wo_status_dist),
+                "stage_distribution": wo_stage_dist,
             },
-            "performance": {
+            "billing": {
                 "ar_total": float(ar_total),
                 "ap_total": float(ap_total),
-                "purchase_total": float(purchase_vol),
+            },
+            "treasury": {
+                "cash_inbound": float(cash_inbound),
+                "cash_outbound": float(cash_outbound),
+                "net_cash_flow": net_cash_flow,
+                "cash_flow_trend": cash_flow_trend,
+            },
+            "payroll": {
+                "total_cost": float(payroll_total),
+                "employee_count": employee_count,
             },
         }
 
