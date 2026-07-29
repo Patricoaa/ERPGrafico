@@ -21,7 +21,7 @@ export interface StatCardChart {
 }
 
 interface StatCardProps {
-  label: string
+  label: React.ReactNode
   value?: React.ReactNode
   icon?: LucideIcon
   subtext?: string
@@ -164,7 +164,7 @@ export function StatCard({
           className: cn(
             baseCardClasses,
             variant === "default" && "gap-0 py-3",
-            (variant === "chart" || variant === "metric-chart") && "py-0 gap-0",
+            (variant === "chart" || variant === "metric-chart") && "py-0 gap-0 rounded-xl",
             variant === "compact" && accentBg[accent],
             interactiveClasses,
             active && activeRing[accent],
@@ -279,19 +279,19 @@ export function StatCard({
     const TrendIcon = trendIcon
     inner = (
       <>
-        <CardHeader className="flex flex-row items-start justify-between px-3 py-2">
+        <CardHeader className="flex flex-row items-start justify-between p-5 pb-0 gap-4">
           <div className="flex items-center gap-2 min-w-0">
             {Icon && (
               <div className={cn("p-1.5 rounded-md border shrink-0", accentIconBg[accent])}>
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
               </div>
             )}
-            <div className="min-w-0">
-              <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            <div className="flex flex-col min-w-0">
+              <CardTitle className="text-base font-bold text-foreground">
                 {label}
               </CardTitle>
               {subtext && (
-                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{subtext}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{subtext}</p>
               )}
             </div>
           </div>
@@ -305,7 +305,7 @@ export function StatCard({
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+        <CardContent className="flex flex-col flex-1 min-h-0 p-5 pt-4">
           {chart}
         </CardContent>
       </>
@@ -314,24 +314,24 @@ export function StatCard({
     const TrendIcon = trendIcon
     inner = (
       <>
-        <CardHeader className="flex flex-row items-start justify-between px-3 py-2">
+        <CardHeader className="flex flex-row items-start justify-between p-5 pb-0 gap-4">
           <div className="flex items-center gap-2 min-w-0">
             {Icon && (
               <div className={cn("p-1.5 rounded-md border shrink-0", accentIconBg[accent])}>
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-4 w-4" />
               </div>
             )}
-            <div className="min-w-0">
+            <div className="flex flex-col min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className={cn("font-black tracking-tighter shrink-0", valueSizeMap[valueSize])}>
                   {value}
                 </span>
-                <span className="text-xs font-bold text-muted-foreground truncate">
+                <span className="text-sm font-bold text-muted-foreground truncate">
                   {label}
                 </span>
               </div>
               {subtext && (
-                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{subtext}</p>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{subtext}</p>
               )}
             </div>
           </div>
@@ -346,7 +346,7 @@ export function StatCard({
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+        <CardContent className="flex flex-col flex-1 min-h-0 p-5 pt-4">
           {chart}
         </CardContent>
       </>
