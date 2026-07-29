@@ -2,69 +2,12 @@
 
 import React from 'react';
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
-import { DollarSign, Factory, Package, CreditCard, TrendingUp, TrendingDown, Info, Wallet, Users, LayoutDashboard, ShoppingCart, Truck } from 'lucide-react';
-import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart, StaleDataBanner } from '@/components/shared';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { DollarSign, Factory, Package, CreditCard, TrendingUp, TrendingDown, Wallet, Users, ShoppingCart, Truck } from 'lucide-react';
+import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard } from '@/components/shared';
 import { formatCurrency, formatMoney } from "@/lib/money";
 import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
-function KPIWrapper({ tooltip, children }: { tooltip: string, children: React.ReactNode }) {
-    return (
-        <TooltipProvider>
-            <Tooltip delayDuration={150}>
-                <TooltipTrigger asChild>
-                    <div className="cursor-help flex flex-col h-full hover:brightness-95 dark:hover:brightness-110 transition-all">
-                        {children}
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[300px] p-3 text-balance">
-                    <p className="text-xs leading-relaxed">{tooltip}</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-    )
-}
-
-function KPIValue({ current, previous, showComparison, isPercentage = false, isCurrency = false }: { current: number, previous?: number, showComparison?: boolean, isPercentage?: boolean, isCurrency?: boolean }) {
-    const format = (v: number | undefined) => {
-        const val = v ? Number(v) : 0;
-        if (isPercentage) return `${val.toFixed(1)}%`;
-        if (isCurrency) return formatMoney(val);
-        return val.toFixed(0);
-    };
-    
-    if (!showComparison || previous === undefined) {
-        return <>{format(current)}</>;
-    }
-    
-    return (
-        <div className="flex flex-col gap-1.5 mt-1">
-            <div className="flex items-baseline gap-2 leading-none">
-                <span>{format(current)}</span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">Actual</span>
-            </div>
-            <div className="flex items-baseline gap-2 text-lg text-muted-foreground/90 leading-none">
-                <span>{format(previous)}</span>
-                <span className="text-[9px] font-bold uppercase tracking-widest">Anterior</span>
-            </div>
-        </div>
-    );
-}
-
-function DeltaBadge({ current, previous, inverse = false }: { current: number; previous: number, inverse?: boolean }) {
-    if (!previous) return null
-    const delta = ((current - previous) / Math.abs(previous)) * 100
-    let isPositive = delta >= 0
-    if (inverse) isPositive = !isPositive;
-    
-    return (
-        <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-            {delta >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
-            {Math.abs(delta).toFixed(1)}%
-        </span>
-    )
-}
 
 interface BIAnalyticsDashboardProps {
     date?: DateRange;
