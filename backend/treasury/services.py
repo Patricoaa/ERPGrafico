@@ -1502,7 +1502,8 @@ class TerminalBatchService:
 
         # 2. Create Purchase Order
         from purchasing.models import PurchaseLine, PurchaseOrder
-        from purchasing.services import PurchasingService
+        from purchasing.services import PurchaseOrderService
+        from billing.services import BillingService
 
         po = PurchaseOrder.objects.create(
             supplier=supplier,
@@ -1531,12 +1532,14 @@ class TerminalBatchService:
         )
 
         # 3. Confirm PO
-        PurchasingService.confirm_order(po, user)
+        PurchaseOrderService().confirm(po, user=user)
 
-        # 4. Generate Invoice (using PurchasingService)
-        # This service usually creates a JournalEntry or Invoice depending on the flow.
-        # Assuming it creates an Invoice and links it to the PO.
-        PurchasingService.create_invoice_from_order(po, user=user)
+        # 4. Generate Invoice
+        BillingService.create_purchase_bill(
+            po, 
+            supplier_invoice_number=number or f"COM-{po.number}", 
+            date=date or timezone.now().date()
+        )
 
         # Re-fetch invoice linked to PO
         invoice = po.invoices.first()
