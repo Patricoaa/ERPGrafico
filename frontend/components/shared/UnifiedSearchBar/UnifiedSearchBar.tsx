@@ -33,6 +33,7 @@ interface UnifiedSearchBarProps {
   viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
   currentView?: string
   onViewChange?: (view: string) => void
+  toolbarActions?: React.ReactNode
 }
 
 function formatChipLabel(chip: UnifiedChip): string {
@@ -58,6 +59,7 @@ export function UnifiedSearchBar({
   viewOptions,
   currentView,
   onViewChange,
+  toolbarActions,
 }: UnifiedSearchBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [forceFilters, setForceFilters] = useState(false)
@@ -213,6 +215,12 @@ export function UnifiedSearchBar({
           )}
         </PopoverContent>
       </Popover>
+
+      {toolbarActions && (
+        <div className="flex shrink-0 ml-2">
+          {toolbarActions}
+        </div>
+      )}
     </div>
   )
 }

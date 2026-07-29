@@ -310,7 +310,7 @@ export function FiscalYearClosingWizard({
             >
                 <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                        <FinancialStatementsReport activeTab="bs" hideToolbar hideChart />
+                        <FinancialStatementsReport activeTab="bs" hideToolbar />
                     </Suspense>
                 </div>
             </BaseModal>
@@ -328,7 +328,7 @@ export function FiscalYearClosingWizard({
             >
                 <div className="flex-1 min-h-0 overflow-y-auto p-4">
                     <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                        <FinancialStatementsReport activeTab="pl" hideToolbar hideChart />
+                        <FinancialStatementsReport activeTab="pl" hideToolbar />
                     </Suspense>
                 </div>
             </BaseModal>

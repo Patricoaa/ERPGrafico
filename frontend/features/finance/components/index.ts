@@ -10,6 +10,6 @@ export * from './FinancialStatementsReport';
 export * from './AccountDrawer';
 export * from './AccountingEquationCard';
 export * from './BalanceSheetKPIs';
-export * from './DistributionBar';
+
 
 export * from './TransactionNumberDrawer';

@@ -1,18 +1,18 @@
 "use client";
 
-import { Button } from "@/components/ui/button"
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from "@/components/ui/table";
+  useReactTable,
+  getCoreRowModel,
+  getExpandedRowModel,
+  flexRender,
+  createColumnHelper,
+  ExpandedState,
+} from '@tanstack/react-table';
 import { ChevronRight, ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared';
+import { LedgerDrawer } from '@/features/accounting';
 
 export interface ReportNode {
     id: number | string;
@@ -22,138 +22,28 @@ export interface ReportNode {
     comp_balance?: number;
     variance?: number;
     children?: ReportNode[];
+    isTotalRow?: boolean;
+    varianceDirection?: 'higher-is-better' | 'lower-is-better';
 }
 
 interface ReportTableProps {
     data: ReportNode[] | null;
-    title?: string;
-    totalLabel?: string;
-    totalValue?: number;
-    totalValueComp?: number;
     showComparison?: boolean;
-    embedded?: boolean;
     isLoading?: boolean;
     periodLabel?: string;
     compPeriodLabel?: string;
-    mode?: 'tree' | 'flat';
-    accentColor?: 'primary' | 'success' | 'info' | 'destructive' | 'income' | 'expense' | 'asset' | 'liability';
     varianceDirection?: 'higher-is-better' | 'lower-is-better';
 }
 
-const RowIcon = ({ isExpanded, hasChildren }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
-    if (hasChildren) {
-        return isExpanded ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-primary" />;
-    }
-    return <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0" />;
-};
+interface DrillDownTarget {
+    accountId: number;
+    accountName: string;
+    accountCode: string;
+}
 
-const ReportRow = ({ 
-    node, 
-    level = 0, 
-    showComparison, 
-    mode = 'tree',
-    varianceDirection = 'higher-is-better'
-}: { 
-    node: ReportNode, 
-    level?: number, 
-    showComparison?: boolean,
-    mode?: 'tree' | 'flat',
-    varianceDirection?: 'higher-is-better' | 'lower-is-better'
-}) => {
-    const [expanded, setExpanded] = React.useState(true);
-    const hasChildren = mode === 'tree' && node.children && node.children.length > 0;
-    const paddingLeft = level * 16 + 10;
+const columnHelper = createColumnHelper<ReportNode>();
 
-    return (
-        <>
-            <TableRow className={cn(
-                "table-row-hover border-l-2",
-                level === 0 ? "font-black border-l-primary/40 bg-muted/5 h-12" : "border-l-transparent"
-            )}>
-                <TableCell className="py-2.5 px-4">
-                    <div className="flex items-center gap-2" style={{ paddingLeft: `${paddingLeft}px` }}>
-                        {(hasChildren || mode === 'flat') && (
-                            <Button 
-                                variant="ghost"
-                                onClick={() => mode === 'tree' && setExpanded(!expanded)} 
-                                className={cn("flex-shrink-0 h-auto w-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", !hasChildren && mode === 'flat' && "cursor-default opacity-50")}
-                                disabled={!hasChildren}
-                            >
-                                <RowIcon isExpanded={expanded} hasChildren={!!hasChildren} level={level} />
-                            </Button>
-                        )}
-                        {!hasChildren && mode === 'tree' && <div className="w-6 mr-1 flex justify-center"><div className="w-1 h-1 rounded-full bg-muted-foreground/30" /></div>}
-                        
-                        <div className="flex flex-col min-w-0">
-                            {node.code && (
-                                <span className="font-mono text-[10px] text-muted-foreground opacity-70 leading-none mb-0.5">
-                                    {node.code}
-                                </span>
-                            )}
-                            <span className={cn(
-                                "text-sm tracking-tight truncate", 
-                                level === 0 ? "uppercase font-black" : "font-medium"
-                            )}>
-                                {node.name}
-                            </span>
-                        </div>
-                    </div>
-                </TableCell>
-                <TableCell className="text-right py-2.5 px-4">
-                    <MoneyDisplay 
-                        amount={node.balance} 
-                        showColor={false} 
-                        className={cn("font-mono font-bold", level === 0 ? "text-base font-black" : "text-sm")} 
-                    />
-                </TableCell>
-                {showComparison && (
-                    <>
-                        <TableCell className="text-right py-2.5 px-4 border-l border-muted/20">
-                            <MoneyDisplay amount={node.comp_balance} showColor={false} className="font-mono text-xs text-muted-foreground font-medium" />
-                        </TableCell>
-                        <TableCell className="text-right py-2.5 px-4">
-                             <div className="flex flex-col items-end">
-                                <div className="flex items-center gap-1">
-                                    {node.variance !== undefined && node.variance !== 0 && (
-                                        node.variance > 0 ? (
-                                            <TrendingUp className={cn(
-                                                "h-3 w-3",
-                                                varianceDirection === 'higher-is-better' ? "text-success" : "text-destructive"
-                                            )} />
-                                        ) : (
-                                            <TrendingDown className={cn(
-                                                "h-3 w-3",
-                                                varianceDirection === 'higher-is-better' ? "text-destructive" : "text-success"
-                                            )} />
-                                        )
-                                    )}
-                                    <MoneyDisplay amount={node.variance} className={cn(
-                                        "font-mono text-xs font-bold",
-                                        node.variance !== undefined && node.variance > 0
-                                            ? (varianceDirection === 'higher-is-better' ? "text-success" : "text-destructive")
-                                            : node.variance !== undefined && node.variance < 0
-                                                ? (varianceDirection === 'higher-is-better' ? "text-destructive" : "text-success")
-                                                : ""
-                                    )} />
-                                </div>
-                                {node.comp_balance ? (
-                                    <span className="text-[10px] text-muted-foreground font-black">
-                                        {(((node.balance - node.comp_balance) / Math.abs(node.comp_balance)) * 100).toFixed(1)}%
-                                    </span>
-                                ) : null}
-                             </div>
-                        </TableCell>
-                    </>
-                )}
-            </TableRow>
-            {hasChildren && expanded && node.children?.map(child => (
-                <ReportRow key={child.id} node={child} level={level + 1} showComparison={showComparison} mode={mode} varianceDirection={varianceDirection} />
-            ))}
-        </>
-    );
-};
-
-const SKELETON_DATA: ReportNode[] = Array.from({ length: 6 }, (_, i) => ({
+const SKELETON_DATA: ReportNode[] = Array.from({ length: 5 }, (_, i) => ({
     id: `sk-${i}`,
     code: "00.00.00",
     name: "————————————————————————————",
@@ -162,48 +52,195 @@ const SKELETON_DATA: ReportNode[] = Array.from({ length: 6 }, (_, i) => ({
     variance: 0,
 }));
 
-const accentBorderColor: Record<NonNullable<ReportTableProps['accentColor']>, string> = {
-    primary: "border-primary/20",
-    success: "border-success/20",
-    info: "border-info/20",
-    destructive: "border-destructive/20",
-    income: "border-income/20",
-    expense: "border-expense/20",
-    asset: "border-asset/20",
-    liability: "border-liability/20",
-}
-
-const accentBgColor: Record<NonNullable<ReportTableProps['accentColor']>, string> = {
-    primary: "bg-primary/5 border-primary/20",
-    success: "bg-success/5 border-success/20",
-    info: "bg-info/5 border-info/20",
-    destructive: "bg-destructive/5 border-destructive/20",
-    income: "bg-income/5 border-income/20",
-    expense: "bg-expense/5 border-expense/20",
-    asset: "bg-asset/5 border-asset/20",
-    liability: "bg-liability/5 border-liability/20",
+/** Returns true only if the node has a real numeric DB id (not a synthetic wrapper) */
+function isDrillable(node: ReportNode): boolean {
+    if (node.isTotalRow) return false;
+    const numId = Number(node.id);
+    return !isNaN(numId) && numId > 0;
 }
 
 export const ReportTable: React.FC<ReportTableProps> = ({ 
     data, 
-    title, 
-    totalLabel, 
-    totalValue, 
-    totalValueComp, 
     showComparison, 
-    embedded, 
     isLoading,
     periodLabel,
     compPeriodLabel,
-    mode = 'tree',
-    accentColor = 'primary',
     varianceDirection = 'higher-is-better'
 }) => {
-    const displayData = isLoading ? SKELETON_DATA : data;
+    const [expanded, setExpanded] = useState<ExpandedState>(true);
+    const [drillDown, setDrillDown] = useState<DrillDownTarget | null>(null);
+
+    const displayData = isLoading ? SKELETON_DATA : data || [];
+
+    const handleRowClick = (node: ReportNode) => {
+        if (!isDrillable(node)) return;
+        setDrillDown({
+            accountId: Number(node.id),
+            accountName: node.name,
+            accountCode: node.code ?? '',
+        });
+    };
+
+    const columns = React.useMemo(() => {
+        const cols = [
+            columnHelper.accessor('name', {
+                header: ({ table }) => (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={table.getToggleAllRowsExpandedHandler()}
+                            className="p-1 hover:bg-muted/50 rounded-md transition-colors flex-shrink-0 -ml-1"
+                            title="Expandir/contraer todo"
+                        >
+                            {table.getIsAllRowsExpanded() ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
+                        </button>
+                        <span>Cuenta / Concepto</span>
+                    </div>
+                ),
+                cell: ({ row, getValue }) => {
+                    const node = row.original;
+                    const level = row.depth;
+                    const hasChildren = row.getCanExpand();
+                    const paddingLeft = level * 16 + 16;
+                    const drillable = isDrillable(node);
+                    
+                    if (node.isTotalRow) {
+                        return (
+                            <div className="flex items-center py-1" style={{ paddingLeft: `${paddingLeft}px` }}>
+                                <span className="text-sm font-bold tracking-tight uppercase text-primary">
+                                    {getValue()}
+                                </span>
+                            </div>
+                        )
+                    }
+
+                    return (
+                        <div className="flex items-center gap-2 py-1.5" style={{ paddingLeft: `${paddingLeft}px` }}>
+                            {hasChildren ? (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); row.getToggleExpandedHandler()(); }}
+                                    className="p-1 hover:bg-muted/50 rounded-md transition-colors flex-shrink-0"
+                                >
+                                    {row.getIsExpanded() ? (
+                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                </button>
+                            ) : (
+                                <div className="w-6 flex-shrink-0" />
+                            )}
+                            
+                            <div className="flex items-baseline gap-2 min-w-0">
+                                {node.code && (
+                                    <span className="font-mono text-[11px] text-muted-foreground/60 leading-none">
+                                        {node.code}
+                                    </span>
+                                )}
+                                <span className={cn(
+                                    "text-sm tracking-tight truncate", 
+                                    level === 0 ? "uppercase font-semibold text-foreground/90" : "font-medium text-foreground/80",
+                                    drillable && "group-hover/row:text-primary group-hover/row:underline decoration-dotted underline-offset-2 cursor-pointer transition-colors"
+                                )}>
+                                    {getValue()}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                },
+            }),
+            columnHelper.accessor('balance', {
+                header: () => <div className="text-right">{periodLabel || 'Saldo'}</div>,
+                cell: ({ row, getValue }) => {
+                    const val = getValue();
+                    const level = row.depth;
+                    const isTotal = row.original.isTotalRow;
+                    return (
+                        <div className={cn("text-right font-mono", isTotal ? "text-base font-bold text-primary" : level === 0 ? "text-[15px] font-semibold text-foreground/90" : "text-sm text-foreground/80")}>
+                            <MoneyDisplay amount={val} showColor={false} />
+                        </div>
+                    );
+                },
+            }),
+        ];
+
+        if (showComparison) {
+            cols.push(
+                columnHelper.accessor('comp_balance', {
+                    header: () => <div className="text-right text-muted-foreground/70">{compPeriodLabel || 'Anterior'}</div>,
+                    cell: ({ getValue }) => (
+                        <div className="text-right font-mono text-[13px] text-muted-foreground font-medium">
+                            <MoneyDisplay amount={getValue() || 0} showColor={false} />
+                        </div>
+                    ),
+                }),
+                columnHelper.accessor('variance', {
+                    header: () => <div className="text-right">Var.</div>,
+                    cell: ({ row }) => {
+                        const node = row.original;
+                        const bal = node.balance || 0;
+                        const comp = node.comp_balance || 0;
+                        const variance = bal - comp;
+                        
+                        if (comp === 0 && bal === 0) return null;
+                        
+                        const pct = comp !== 0 ? ((variance / Math.abs(comp)) * 100).toFixed(1) : null;
+                        
+                        const rowDir = node.varianceDirection || varianceDirection;
+                        const isPositiveGood = rowDir === 'higher-is-better';
+                        
+                        return (
+                            <div className="flex flex-col items-end justify-center py-1">
+                                <div className="flex items-center gap-1.5">
+                                    {variance !== 0 && (
+                                        variance > 0 ? (
+                                            <TrendingUp className={cn("h-3 w-3", isPositiveGood ? "text-emerald-500" : "text-rose-500")} />
+                                        ) : (
+                                            <TrendingDown className={cn("h-3 w-3", isPositiveGood ? "text-rose-500" : "text-emerald-500")} />
+                                        )
+                                    )}
+                                    <MoneyDisplay 
+                                        amount={variance} 
+                                        className={cn(
+                                            "font-mono text-xs font-bold",
+                                            variance > 0 ? (isPositiveGood ? "text-emerald-500" : "text-rose-500") 
+                                                : variance < 0 ? (isPositiveGood ? "text-rose-500" : "text-emerald-500") : "text-muted-foreground"
+                                        )} 
+                                    />
+                                </div>
+                                {pct && (
+                                    <span className="text-[10px] text-muted-foreground/70 font-semibold mt-0.5 inline-block bg-muted/50 px-1.5 py-0.5 rounded-sm">
+                                        {pct}%
+                                    </span>
+                                )}
+                            </div>
+                        )
+                    }
+                })
+            );
+        }
+
+        return cols;
+    }, [showComparison, periodLabel, compPeriodLabel, varianceDirection]);
+
+    const table = useReactTable({
+        data: displayData,
+        columns,
+        state: {
+            expanded,
+        },
+        onExpandedChange: setExpanded,
+        getSubRows: row => row.children,
+        getCoreRowModel: getCoreRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+    });
 
     if (!isLoading && (!displayData || displayData.length === 0)) {
         return (
-            <div className="p-12">
+            <div className="p-12 border rounded-2xl bg-card shadow-sm">
                 <EmptyState 
                     context="finance" 
                     title="Sin datos en este periodo"
@@ -213,72 +250,73 @@ export const ReportTable: React.FC<ReportTableProps> = ({
         );
     }
 
-    const tableContent = (
-        <div className="relative group">
-            <Table>
-                <TableHeader className="bg-muted/30 sticky top-0 z-10 shadow-sm">
-                    <TableRow className={cn(
-                        "border-b-2",
-                        accentBorderColor[accentColor]
-                    )}>
-                        <TableHead className="font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Cuenta / Concepto</TableHead>
-                        <TableHead className="text-right w-[150px] font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{periodLabel || 'Saldo'}</TableHead>
-                        {showComparison && (
-                            <>
-                                <TableHead className="text-right w-[150px] font-black text-muted-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{compPeriodLabel || 'Anterior'}</TableHead>
-                                <TableHead className="text-right w-[110px] font-black py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Var.</TableHead>
-                            </>
-                        )}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {displayData?.map(node => (
-                        <ReportRow key={node.id} node={node} showComparison={showComparison} mode={mode} varianceDirection={varianceDirection} />
-                    ))}
-                    {(totalLabel || isLoading) && (
-                        <TableRow className={cn(
-                            "font-black border-t-2 shadow-card sticky bottom-0 z-10",
-                            accentBgColor[accentColor]
-                        )}>
-                            <TableCell className="p-5 text-foreground uppercase tracking-tighter text-sm font-black italic">
-                                {isLoading ? "————————————————" : totalLabel}
-                            </TableCell>
-                            <TableCell className="text-right p-5">
-                                <MoneyDisplay amount={isLoading ? 0 : totalValue} showColor={false} className="text-xl font-black" />
-                            </TableCell>
-                            {showComparison && (
-                                <>
-                                    <TableCell className="text-right p-5 border-l border-muted/20">
-                                        <MoneyDisplay amount={isLoading ? 0 : totalValueComp} showColor={false} className="text-xl text-muted-foreground font-bold opacity-70" />
-                                    </TableCell>
-                                    <TableCell className="text-right p-5">
-                                        <MoneyDisplay amount={isLoading ? 0 : (totalValue ?? 0) - (totalValueComp ?? 0)} className="text-xl font-black" />
-                                    </TableCell>
-                                </>
-                            )}
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-        </div>
-    );
-
-    const container = embedded ? (
-        tableContent
-    ) : (
-        <div className="rounded-none border bg-card shadow-card overflow-hidden">
-            {title && (
-                <div className="p-4 border-b bg-muted/30 flex justify-between items-center h-12">
-                    <h3 className="font-bold uppercase tracking-widest text-xs text-muted-foreground animate-in slide-in-from-left-2">{title}</h3>
-                </div>
-            )}
-            {tableContent}
-        </div>
-    );
-
     return (
-        <SkeletonShell isLoading={!!isLoading} ariaLabel="Cargando reporte contable">
-            {container}
-        </SkeletonShell>
+        <>
+            <SkeletonShell isLoading={!!isLoading} ariaLabel="Cargando reporte contable">
+                <div className="mb-8 rounded-t-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full caption-bottom text-sm border-collapse">
+                            <thead className="bg-background">
+                                {table.getHeaderGroups().map(headerGroup => (
+                                    <tr key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => (
+                                            <th 
+                                                key={header.id} 
+                                                className="h-10 px-3 text-left align-middle font-semibold text-[11px] uppercase tracking-widest text-muted-foreground/80 whitespace-nowrap"
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                        header.column.columnDef.header,
+                                                        header.getContext()
+                                                    )}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </thead>
+                            <tbody className="divide-y divide-border/40">
+                                {table.getRowModel().rows.map(row => {
+                                    const isRoot = row.depth === 0;
+                                    const isTotal = row.original.isTotalRow;
+                                    const drillable = isDrillable(row.original);
+                                    
+                                    return (
+                                        <tr 
+                                            key={row.id} 
+                                            onClick={() => handleRowClick(row.original)}
+                                            className={cn(
+                                                "transition-colors group/row",
+                                                drillable ? "cursor-pointer" : "cursor-default",
+                                                !isTotal && "hover:bg-muted/10",
+                                                isTotal ? "bg-primary/5 hover:bg-primary/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]" : "",
+                                                isRoot && !isTotal ? "bg-muted/5" : ""
+                                            )}
+                                        >
+                                            {row.getVisibleCells().map(cell => (
+                                                <td key={cell.id} className="px-3 py-1.5 align-middle">
+                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </SkeletonShell>
+
+            {drillDown && (
+                <LedgerDrawer
+                    accountId={drillDown.accountId}
+                    accountName={drillDown.accountName}
+                    accountCode={drillDown.accountCode}
+                    noTrigger
+                    open={true}
+                    onOpenChange={(open) => { if (!open) setDrillDown(null); }}
+                />
+            )}
+        </>
     );
 };

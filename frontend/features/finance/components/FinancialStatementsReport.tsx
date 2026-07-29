@@ -7,12 +7,11 @@ import { PageContainer } from "@/components/shared"
 import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
-import { DistributionBar } from "@/features/finance/components/DistributionBar"
 import type { BalanceSheetData, PLData, PLSection } from "@/features/finance/types"
 import { type DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
 import { es } from 'date-fns/locale'
-import { cn } from "@/lib/utils"
+import { exportReportToCsv } from "@/lib/utils/export-report"
 import { useServerDate } from "@/hooks/useServerDate"
 
 function SkeletonReportSection() {
@@ -39,12 +38,11 @@ interface FinancialStatementsReportProps {
     activeTab: string
     onPeriodLabelChange?: (label: string) => void
     hideToolbar?: boolean
-    hideChart?: boolean
 }
 
 import { useStatements } from "@/features/finance/hooks/useStatements"
 
-export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hideToolbar, hideChart }: FinancialStatementsReportProps) {
+export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hideToolbar }: FinancialStatementsReportProps) {
     const [showComparison, setShowComparison] = useState(false)
     const { open: mappingOpen, onOpenChange: setMappingOpen, resolvedMappingType, openDrawer: openMappingDrawer } = useMappingDrawer(
         activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'
@@ -91,6 +89,37 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
 
     const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch, isError } = useStatements(statementParams)
 
+    const handleExport = () => {
+        const baseOpts = {
+            periodLabel,
+            compPeriodLabel,
+            showComparison,
+        }
+
+        if (activeTab === 'bs' && bsData) {
+            const d = bsData as BalanceSheetData
+            exportReportToCsv([
+                { id: 'assets', code: '', name: 'Activos', balance: d.total_assets, comp_balance: d.total_assets_comp, children: d.assets },
+                { id: 'liabilities', code: '', name: 'Pasivos', balance: d.total_liabilities, comp_balance: d.total_liabilities_comp, children: d.liabilities },
+                { id: 'equity', code: '', name: 'PATRIMONIO Y RESULTADOS', balance: d.total_equity, comp_balance: d.total_equity_comp, children: d.equity },
+            ], { ...baseOpts, filename: `balance_general_${periodLabel}` })
+        } else if (activeTab === 'pl' && plData) {
+            const d = plData as PLData
+            exportReportToCsv(
+                (d.sections || []).map((sec, idx) => ({
+                    id: `sec-${idx}`,
+                    code: '',
+                    name: sec.name,
+                    balance: sec.total,
+                    comp_balance: sec.total_comp,
+                    children: sec.is_total ? undefined : sec.tree,
+                    isTotalRow: sec.is_total,
+                })),
+                { ...baseOpts, filename: `estado_resultados_${periodLabel}` }
+            )
+        }
+    }
+
     const getPeriodLabel = (range: DateRange | undefined) => {
         if (!range?.from || !range?.to) return ""
         const fromDate = range.from
@@ -127,47 +156,11 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
         onPeriodLabelChange?.(periodLabel)
     }, [periodLabel, onPeriodLabelChange])
 
-    const renderBSDistribution = (d: BalanceSheetData) => {
-        const segments = [
-            { label: "Activos", value: d.total_assets || 0, bgClass: "bg-asset", textClass: "text-asset-foreground" },
-            { label: "Pasivos", value: d.total_liabilities || 0, bgClass: "bg-liability", textClass: "text-liability-foreground" },
-            { label: "Patrimonio", value: d.total_equity || 0, bgClass: "bg-primary", textClass: "text-primary-foreground" },
-        ]
-        return <DistributionBar segments={segments} className="mb-6" />
-    }
-
-    const renderPLDistribution = (d: PLData) => {
-        const sections = d.sections || []
-        const incomeTotal = sections
-            .filter(s => s.name.toLowerCase().includes('ingreso'))
-            .reduce((sum, s) => sum + Math.abs(s.total || 0), 0)
-        const expenseTotal = sections
-            .filter(s => s.name.toLowerCase().includes('gasto') || s.name.toLowerCase().includes('costo'))
-            .reduce((sum, s) => sum + Math.abs(s.total || 0), 0)
-
-        if (incomeTotal === 0 && expenseTotal === 0) return null
-
-        const segments = [
-            ...(incomeTotal > 0 ? [{ label: "Ingresos", value: incomeTotal, bgClass: "bg-income" as const, textClass: "text-income-foreground" as const }] : []),
-            ...(expenseTotal > 0 ? [{ label: "Costos y Gastos", value: expenseTotal, bgClass: "bg-expense" as const, textClass: "text-expense-foreground" as const }] : []),
-        ]
-        return <DistributionBar segments={segments} className="mb-6" />
-    }
-
-    const renderCFDistribution = (d: CashFlowData) => {
-        const segments = [
-            { label: "Operativo", value: Math.abs(d.total_operating || 0), bgClass: "bg-asset", textClass: "text-asset-foreground" },
-            { label: "Inversión", value: Math.abs(d.total_investing || 0), bgClass: "bg-liability", textClass: "text-liability-foreground" },
-            { label: "Financiamiento", value: Math.abs(d.total_financing || 0), bgClass: "bg-primary", textClass: "text-primary-foreground" },
-        ]
-        return <DistributionBar segments={segments} className="mb-6" />
-    }
-
     return (
-        <PageContainer scrollable className="px-0">
-            <div className="w-full pt-4">
-                {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4" />}
-                {!hideToolbar && (
+        <PageContainer className="px-0 pt-0 flex flex-col gap-0 space-y-0">
+            {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4 mb-2" />}
+            {!hideToolbar && (
+                <div className="shrink-0">
                     <ReportToolbar
                         headerFormat={headerFormat}
                         onHeaderFormatChange={setHeaderFormat}
@@ -179,8 +172,11 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                         onCompDateChange={setCompDate}
                         showMapeo
                         onMapeoClick={() => openMappingDrawer()}
+                        onExport={activeTab !== 'cf' ? handleExport : undefined}
                     />
-                )}
+                </div>
+            )}
+            <div className="flex-1 min-h-0 overflow-y-auto">
                 <FadeIn key={activeTab}>
                     <div className="mt-0 outline-none ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                         {activeTab === "bs" && (
@@ -190,48 +186,40 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                                         {(() => {
                                             const d = bsData as BalanceSheetData;
                                             return (
-                                                <>
-                                                    {!hideChart && renderBSDistribution(d)}
-                                                    <ReportTable
-                                                        title="Activos"
-                                                        data={d.assets}
-                                                        totalLabel="Total Activos"
-                                                        totalValue={d.total_assets}
-                                                        totalValueComp={d.total_assets_comp}
-                                                        compPeriodLabel={compPeriodLabel}
-                                                        periodLabel={periodLabel}
-                                                        showComparison={showComparison}
-                                                        accentColor="asset"
-                                                        varianceDirection="higher-is-better"
-                                                        embedded
-                                                    />
-                                                    <ReportTable
-                                                        title="Pasivos"
-                                                        data={d.liabilities}
-                                                        totalLabel="Total Pasivos"
-                                                        totalValue={d.total_liabilities}
-                                                        totalValueComp={d.total_liabilities_comp}
-                                                        compPeriodLabel={compPeriodLabel}
-                                                        periodLabel={periodLabel}
-                                                        showComparison={showComparison}
-                                                        accentColor="liability"
-                                                        varianceDirection="higher-is-better"
-                                                        embedded
-                                                    />
-                                                    <ReportTable
-                                                        title="Patrimonio"
-                                                        data={d.equity}
-                                                        totalLabel="Total Patrimonio"
-                                                        totalValue={d.total_equity}
-                                                        totalValueComp={d.total_equity_comp}
-                                                        compPeriodLabel={compPeriodLabel}
-                                                        periodLabel={periodLabel}
-                                                        showComparison={showComparison}
-                                                        accentColor="primary"
-                                                        varianceDirection="higher-is-better"
-                                                        embedded
-                                                    />
-                                                </>
+                                                <ReportTable
+                                                    data={[
+                                                        {
+                                                            id: 'assets',
+                                                            code: '',
+                                                            name: 'Activos',
+                                                            balance: d.total_assets,
+                                                            comp_balance: d.total_assets_comp,
+                                                            children: d.assets,
+                                                            varianceDirection: 'higher-is-better'
+                                                        },
+                                                        {
+                                                            id: 'liabilities',
+                                                            code: '',
+                                                            name: 'Pasivos',
+                                                            balance: d.total_liabilities,
+                                                            comp_balance: d.total_liabilities_comp,
+                                                            children: d.liabilities,
+                                                            varianceDirection: 'lower-is-better'
+                                                        },
+                                                        {
+                                                            id: 'equity',
+                                                            code: '',
+                                                            name: 'PATRIMONIO Y RESULTADOS',
+                                                            balance: d.total_equity,
+                                                            comp_balance: d.total_equity_comp,
+                                                            children: d.equity,
+                                                            varianceDirection: 'higher-is-better'
+                                                        }
+                                                    ]}
+                                                    compPeriodLabel={compPeriodLabel}
+                                                    periodLabel={periodLabel}
+                                                    showComparison={showComparison}
+                                                />
                                             );
                                         })()}
                                     </div>
@@ -256,50 +244,21 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                                         {(() => {
                                             const d = plData as PLData;
                                             return (
-                                                <>
-                                                    {!hideChart && renderPLDistribution(d)}
-                                                    {(d.sections || []).map((section: PLSection, idx: number) => (
-                                                section.is_total ? (
-                                                    <div key={idx} className={cn(
-                                                        "py-6 px-4 flex justify-between items-center rounded-md my-4 transition-colors",
-                                                        idx === (d.sections?.length || 0) - 1
-                                                            ? "bg-primary text-primary-foreground shadow-elevated"
-                                                            : "bg-muted/50 border"
-                                                    )}>
-                                                        <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
-                                                        <div className="flex space-x-12 items-center">
-                                                            <div className="text-right">
-                                                                <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
-                                                                <div className="text-2xl font-black font-mono">
-                                                                    <MoneyDisplay amount={section.total} />
-                                                                </div>
-                                                            </div>
-                                                            {showComparison && (
-                                                                <div className={cn("text-right border-l pl-12", idx === (d.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
-                                                                    <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
-                                                                    <div className={cn("text-2xl font-black font-mono opacity-80", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
-                                                                        <MoneyDisplay amount={section.total_comp} />
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <ReportTable
-                                                        key={idx}
-                                                        title={section.name}
-                                                        data={section.tree}
-                                                        totalLabel={`Total ${section.name}`}
-                                                        totalValue={section.total}
-                                                        totalValueComp={section.total_comp}
-                                                        showComparison={showComparison}
-                                                        accentColor={section.name.toLowerCase().includes('ingreso') ? 'income' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'expense' : 'primary'}
-                                                        varianceDirection={section.name.toLowerCase().includes('ingreso') ? 'higher-is-better' : 'lower-is-better'}
-                                                        embedded
-                                                    />
-                                                )
-                                            ))}
-                                        </>
+                                                <ReportTable
+                                                    data={(d.sections || []).map((sec, idx) => ({
+                                                        id: `sec-${idx}`,
+                                                        code: '',
+                                                        name: sec.name,
+                                                        balance: sec.total,
+                                                        comp_balance: sec.total_comp,
+                                                        children: sec.is_total ? undefined : sec.tree,
+                                                        isTotalRow: sec.is_total,
+                                                        varianceDirection: sec.name.toLowerCase().includes('ingreso') ? 'higher-is-better' : 'lower-is-better'
+                                                    }))}
+                                                    compPeriodLabel={compPeriodLabel}
+                                                    periodLabel={periodLabel}
+                                                    showComparison={showComparison}
+                                                />
                                     );
                                 })()}
                                     </div>
@@ -321,7 +280,6 @@ export function FinancialStatementsReport({ activeTab, onPeriodLabelChange, hide
                             <>
                                 {cfData ? (
                                     <div className="space-y-6">
-                                        {!hideChart && renderCFDistribution(cfData as CashFlowData)}
                                         <CashFlowTable
                                             data={cfData as CashFlowData}
                                             embedded

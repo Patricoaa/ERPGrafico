@@ -84,74 +84,62 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             variance: (item.amount || 0) - (item.amount_comp || 0)
         }));
 
+    const unifiedData: ReportNode[] = [
+        { 
+            id: 'init', 
+            code: 'BASE', 
+            name: 'SALDO INICIAL DE EFECTIVO (TESORERÍA)', 
+            balance: data.beginning_cash, 
+            comp_balance: data.beginning_cash_comp,
+            isTotalRow: true
+        },
+        {
+            id: 'op',
+            code: '',
+            name: 'Actividades de Operación',
+            balance: data.total_operating,
+            children: mapToNodes(data.operating),
+        },
+        {
+            id: 'inv',
+            code: '',
+            name: 'Actividades de Inversión',
+            balance: data.total_investing,
+            children: mapToNodes(data.investing),
+        },
+        {
+            id: 'fin',
+            code: '',
+            name: 'Actividades de Financiamiento',
+            balance: data.total_financing,
+            children: mapToNodes(data.financing),
+        },
+        { 
+            id: 'net', 
+            code: 'NET', 
+            name: 'VARIACIÓN NETA DE EFECTIVO (Actividades)', 
+            balance: data.calculated_net_increase, 
+            comp_balance: data.net_increase_comp,
+            isTotalRow: true
+        },
+        { 
+            id: 'end', 
+            code: 'FIN', 
+            name: 'SALDO FINAL DE EFECTIVO (TESORERÍA)', 
+            balance: data.ending_cash, 
+            comp_balance: data.ending_cash_comp,
+            isTotalRow: true
+        }
+    ];
+
     const tableContent = (
         <div className="space-y-8">
-            {/* Saldo Inicial */}
             <ReportTable 
-                data={[{ id: 'init', code: 'BASE', name: 'SALDO INICIAL DE EFECTIVO (TESORERÍA)', balance: data.beginning_cash, comp_balance: data.beginning_cash_comp }]}
-                accentColor="primary"
-                embedded
+                data={unifiedData}
                 showComparison={showComparison}
                 periodLabel={periodLabel}
                 compPeriodLabel={compPeriodLabel}
             />
-
-            {/* Operación */}
-            <ReportTable 
-                title="Actividades de Operación"
-                data={mapToNodes(data.operating)}
-                totalLabel="Flujo de Efectivo de Actividades de Operación"
-                totalValue={data.total_operating}
-                accentColor="income"
-                embedded
-                showComparison={showComparison}
-                periodLabel={periodLabel}
-                compPeriodLabel={compPeriodLabel}
-                mode="flat"
-            />
-
-            {/* Inversión */}
-            <ReportTable 
-                title="Actividades de Inversión"
-                data={mapToNodes(data.investing)}
-                totalLabel="Flujo de Efectivo de Actividades de Inversión"
-                totalValue={data.total_investing}
-                accentColor="info"
-                embedded
-                showComparison={showComparison}
-                periodLabel={periodLabel}
-                compPeriodLabel={compPeriodLabel}
-                mode="flat"
-            />
-
-            {/* Financiamiento */}
-            <ReportTable 
-                title="Actividades de Financiamiento"
-                data={mapToNodes(data.financing)}
-                totalLabel="Flujo de Efectivo de Actividades de Financiamiento"
-                totalValue={data.total_financing}
-                accentColor="expense"
-                embedded
-                showComparison={showComparison}
-                periodLabel={periodLabel}
-                compPeriodLabel={compPeriodLabel}
-                mode="flat"
-            />
-
-            {/* Resumen Final */}
-            <div className="pt-4 border-t-4 border-double border-muted/30">
-                <ReportTable 
-                    data={[
-                        { id: 'net', code: 'NET', name: 'VARIACIÓN NETA DE EFECTIVO (Actividades)', balance: data.calculated_net_increase, comp_balance: data.net_increase_comp },
-                        { id: 'end', code: 'FIN', name: 'SALDO FINAL DE EFECTIVO (TESORERÍA)', balance: data.ending_cash, comp_balance: data.ending_cash_comp }
-                    ]}
-                    accentColor="primary"
-                    embedded
-                    showComparison={showComparison}
-                    periodLabel={periodLabel}
-                    compPeriodLabel={compPeriodLabel}
-                />
-            </div>
 
             {/* Vencimientos Futuros (F5.3) */}
             {futureMaturities && futureMaturities.length > 0 && (
