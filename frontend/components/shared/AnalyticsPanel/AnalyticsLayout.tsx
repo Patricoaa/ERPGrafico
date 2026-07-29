@@ -2,7 +2,7 @@
 
 import React from "react"
 import type { AnalyticsColumn, AnalyticsSection as AnalyticsSectionType, ChartConfig } from "./types"
-import { StatCard, ChartLegend } from "@/components/shared"
+import { StatCard, ChartLegend, KPIWrapper, KPIValue } from "@/components/shared"
 import { AnalyticsChart } from "./AnalyticsChart"
 import { getCssChartColors } from "./nivo-theme"
 
@@ -33,6 +33,11 @@ function extractLegendItems(chart: ChartConfig): Array<{ label: string; color?: 
                 label: slice.id,
                 color: slice.color ?? palette[i % palette.length],
             }))
+        case "radar-chart":
+            return chart.keys.map((key, i) => ({
+                label: key.charAt(0).toUpperCase() + key.slice(1),
+                color: palette[i % palette.length],
+            }))
     }
 }
 
@@ -47,27 +52,51 @@ function SectionRenderer({ section }: { section: AnalyticsSectionType }) {
             : card.variant === "compact" || card.variant === "minimal" ? card.variant
             : undefined
 
+        const renderedCard = (
+            <StatCard
+                label={card.label}
+                value={
+                    card.comparison ? (
+                        <KPIValue
+                            current={card.comparison.current}
+                            previous={card.comparison.previous}
+                            showComparison={card.comparison.showComparison}
+                            isPercentage={card.comparison.isPercentage}
+                            alreadyPercent={card.comparison.alreadyPercent}
+                            isCurrency={card.comparison.isCurrency}
+                            decimals={card.comparison.decimals}
+                        />
+                    ) : (
+                        card.value
+                    )
+                }
+                icon={card.icon}
+                accent={card.accent}
+                subtext={card.subtext}
+                variant={effectiveVariant}
+                valueSize={card.valueSize}
+                trend={card.trend}
+                href={card.href}
+                onClick={card.onClick}
+                active={card.active}
+                loading={card.loading}
+                chart={card.chart ? <AnalyticsChart {...card.chart} /> : undefined}
+                chartLegend={card.chart?.preset === "card"
+                    ? <ChartLegend items={extractLegendItems(card.chart)} />
+                    : undefined
+                }
+            />
+        )
+
         return (
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                <StatCard
-                    label={card.label}
-                    value={card.value}
-                    icon={card.icon}
-                    accent={card.accent}
-                    subtext={card.subtext}
-                    variant={effectiveVariant}
-                    valueSize={card.valueSize}
-                    trend={card.trend}
-                    href={card.href}
-                    onClick={card.onClick}
-                    active={card.active}
-                    loading={card.loading}
-                    chart={card.chart ? <AnalyticsChart {...card.chart} /> : undefined}
-                    chartLegend={card.chart?.preset === "card"
-                        ? <ChartLegend items={extractLegendItems(card.chart)} />
-                        : undefined
-                    }
-                />
+                {card.tooltip ? (
+                    <KPIWrapper tooltip={card.tooltip}>
+                        {renderedCard}
+                    </KPIWrapper>
+                ) : (
+                    renderedCard
+                )}
             </div>
         )
     }

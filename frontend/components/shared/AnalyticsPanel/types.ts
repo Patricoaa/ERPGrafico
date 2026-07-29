@@ -21,6 +21,17 @@ export interface StatCardConfig {
     active?: boolean
     loading?: boolean
     chart?: ChartConfig
+    tooltip?: string
+    comparison?: {
+        current: number
+        previous?: number
+        showComparison?: boolean
+        isPercentage?: boolean
+        alreadyPercent?: boolean
+        isCurrency?: boolean
+        decimals?: number
+        inverse?: boolean
+    }
 }
 
 // ── Chart configs (discriminated by type, no `any`) ──
@@ -68,7 +79,19 @@ export interface PieChartConfig {
     centerLabel?: { value: string | number; label?: string }
 }
 
-export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig
+export interface RadarChartConfig {
+    type: "radar-chart"
+    preset?: "card"
+    data: Record<string, string | number>[]
+    keys: string[]
+    indexBy: string
+    maxValue?: "auto" | number
+    showLegend?: boolean
+    compact?: boolean
+    valueFormat?: string
+}
+
+export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig | RadarChartConfig
 
 // ── Layout types ──
 

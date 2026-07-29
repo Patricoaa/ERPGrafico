@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import type { BarChartConfig, LineChartConfig, PieChartConfig } from "./types"
-import { PieChart, BarChart, LineChart } from "../charts"
+import type { BarChartConfig, LineChartConfig, PieChartConfig, RadarChartConfig, ChartConfig } from "./types"
+import { PieChart, BarChart, LineChart, RadarChart } from "../charts"
 import { formatCompactSpanish } from "@/lib/utils/number"
 import { formatMoney, formatQuantity } from "@/lib/money"
 import {
@@ -246,7 +246,33 @@ function PieChartRenderer(props: PieChartConfig) {
     )
 }
 
-export function AnalyticsChart(props: BarChartConfig | LineChartConfig | PieChartConfig) {
+function RadarChartRenderer(props: RadarChartConfig) {
+    const isCard = props.preset === "card"
+    const isCompact = props.compact
+
+    const margin = isCard
+        ? { top: 32, right: 32, bottom: 32, left: 32 }
+        : isCompact
+            ? { top: 4, right: 4, bottom: 4, left: 4 }
+            : { top: 48, right: 80, bottom: 32, left: 80 }
+
+    const showLegend = isCompact ? false : (props.showLegend ?? true)
+
+    return (
+        <div className="flex-1 min-h-[300px] w-full relative">
+            <RadarChart
+                data={props.data}
+                keys={props.keys}
+                indexBy={props.indexBy}
+                maxValue={props.maxValue}
+                margin={margin}
+                legends={isCard ? [] : showLegend ? [{ ...defaultLegend }] : []}
+            />
+        </div>
+    )
+}
+
+export function AnalyticsChart(props: ChartConfig) {
     switch (props.type) {
         case "bar-chart":
             return <BarChartRenderer {...props} />
@@ -254,5 +280,7 @@ export function AnalyticsChart(props: BarChartConfig | LineChartConfig | PieChar
             return <LineChartRenderer {...props} />
         case "pie-chart":
             return <PieChartRenderer {...props} />
+        case "radar-chart":
+            return <RadarChartRenderer {...props} />
     }
 }
