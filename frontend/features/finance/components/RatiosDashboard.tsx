@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, RadarChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard } from '@/components/shared'
+import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, RadarChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard, ChartLegend } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
 import { type DateRange } from "react-day-picker";
@@ -302,49 +302,37 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
             {/* ── Row 2: Radar + Capital de Trabajo ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">
                 {/* Radar: Salud Financiera General */}
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground">Salud Financiera General</h3>
-                    <span className="text-sm text-muted-foreground mb-4">Índice normalizado 0–100 por indicador</span>
-                    <div className="h-[320px]">
+                <SectionCard
+                    title="Salud Financiera General"
+                    description="Índice normalizado 0–100 por indicador"
+                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "#1f77b4" }, { label: "Anterior", color: "#ff7f0e" }]} /> : undefined}
+                >
+                    <div className="h-full">
                         <RadarChart
                             data={radarData}
                             keys={radarKeys}
                             indexBy="indicador"
                             maxValue={100}
-                            margin={{ top: 48, right: 80, bottom: 32, left: 80 }}
-                            {...(showComparison && cd ? {
-                                legends: [{
-                                    anchor: "top-left",
-                                    direction: "column",
-                                    translateX: -70,
-                                    translateY: -40,
-                                    itemWidth: 70,
-                                    itemHeight: 18,
-                                    symbolSize: 8,
-                                    symbolShape: "circle",
-                                }]
-                            } : {})}
+                            margin={{ top: 10, right: 80, bottom: 32, left: 80 }}
+                            legends={[]}
                         />
                     </div>
-                </div>
+                </SectionCard>
 
                 {/* Bar: Capital de Trabajo */}
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground">Capital de Trabajo</h3>
-                    <span className="text-sm text-muted-foreground mb-4">
-                        Activos y Pasivos Corrientes —{' '}
-                        <span className="font-bold text-foreground">
-                            Saldo: <MoneyDisplay amount={d.liquidity.current_assets - d.liquidity.current_liabilities} />
-                        </span>
-                    </span>
-                    <div className="h-[320px]">
+                <SectionCard
+                    title="Capital de Trabajo"
+                    description={`Activos y Pasivos Corrientes — Saldo: ${formatMoney(d.liquidity.current_assets - d.liquidity.current_liabilities)}`}
+                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "#1f77b4" }, { label: "Anterior", color: "#ff7f0e" }]} /> : undefined}
+                >
+                    <div className="h-full">
                         <BarChart
                             data={workingCapitalData}
                             keys={barKeys}
                             indexBy="name"
                             groupMode="grouped"
                             enableLabel={false}
-                            margin={{ top: 20, right: 20, bottom: 40, left: 72 }}
+                            margin={{ top: 10, right: 20, bottom: 20, left: 72 }}
                             axisBottom={{ tickSize: 0, tickPadding: 12 }}
                             axisLeft={{
                                 tickSize: 0,
@@ -357,37 +345,22 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                     <span className="font-bold">{formatMoney(value)}</span>
                                 </div>
                             )}
-                            {...(showComparison && cd ? {
-                                legends: [{
-                                    dataFrom: 'keys',
-                                    anchor: 'bottom',
-                                    direction: 'row',
-                                    justify: false,
-                                    translateX: 0,
-                                    translateY: 40,
-                                    itemsSpacing: 2,
-                                    itemWidth: 100,
-                                    itemHeight: 20,
-                                    itemDirection: 'left-to-right',
-                                    itemOpacity: 0.85,
-                                    symbolSize: 10,
-                                    symbolShape: "circle",
-                                }]
-                            } : {})}
+                            legends={[]}
                         />
                     </div>
-                </div>
+                </SectionCard>
             </div>
 
             {/* ── Row 3: Pie Charts ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">
                 {/* Pie: Estructura de Financiamiento */}
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground">Estructura de Financiamiento</h3>
-                    <span className="text-sm text-muted-foreground mb-4">Distribución entre Deuda y Patrimonio</span>
-                    
+                <SectionCard
+                    title="Estructura de Financiamiento"
+                    description="Distribución entre Deuda y Patrimonio"
+                    headerRight={<ChartLegend items={[{ label: "Pasivos", color: "#1f77b4" }, { label: "Patrimonio", color: "#ff7f0e" }]} />}
+                >
                     {showComparison && cd ? (
-                        <div className="flex h-[280px] gap-2">
+                        <div className="flex h-full gap-2">
                             <div className="flex-1 flex flex-col items-center">
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actual</span>
                                 <div className="w-full h-full">
@@ -426,7 +399,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             </div>
                         </div>
                     ) : (
-                        <div className="h-[280px]">
+                        <div className="h-full">
                             <PieChart
                                 data={structureData}
                                 enableArcLabels={false}
@@ -437,28 +410,21 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                         <span className="font-bold">{formatMoney(value)}</span>
                                     </div>
                                 )}
-                                legends={[{
-                                    anchor: "bottom",
-                                    direction: "row",
-                                    translateY: 40,
-                                    itemWidth: 110,
-                                    itemHeight: 18,
-                                    symbolSize: 10,
-                                    symbolShape: "circle",
-                                }]}
-                                margin={{ top: 16, right: 16, bottom: 52, left: 16 }}
+                                legends={[]}
+                                margin={{ top: 16, right: 16, bottom: 20, left: 16 }}
                             />
                         </div>
                     )}
-                </div>
+                </SectionCard>
 
                 {/* Pie: Composición de Activos */}
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground">Composición de Activos</h3>
-                    <span className="text-sm text-muted-foreground mb-4">Corrientes vs No Corrientes</span>
-                    
+                <SectionCard
+                    title="Composición de Activos"
+                    description="Corrientes vs No Corrientes"
+                    headerRight={<ChartLegend items={[{ label: "Corrientes", color: "#1f77b4" }, { label: "No Corrientes", color: "#ff7f0e" }]} />}
+                >
                     {showComparison && cd ? (
-                        <div className="flex h-[280px] gap-2">
+                        <div className="flex h-full gap-2">
                             <div className="flex-1 flex flex-col items-center">
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actual</span>
                                 <div className="w-full h-full">
@@ -497,7 +463,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                             </div>
                         </div>
                     ) : (
-                        <div className="h-[280px]">
+                        <div className="h-full">
                             <PieChart
                                 data={assetsDistribution}
                                 enableArcLabels={false}
@@ -508,20 +474,12 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                         <span className="font-bold">{formatMoney(value)}</span>
                                     </div>
                                 )}
-                                legends={[{
-                                    anchor: "bottom",
-                                    direction: "row",
-                                    translateY: 40,
-                                    itemWidth: 110,
-                                    itemHeight: 18,
-                                    symbolSize: 10,
-                                    symbolShape: "circle",
-                                }]}
-                                margin={{ top: 16, right: 16, bottom: 52, left: 16 }}
+                                legends={[]}
+                                margin={{ top: 16, right: 16, bottom: 20, left: 16 }}
                             />
                         </div>
                     )}
-                </div>
+                </SectionCard>
             </div>
 
         </SkeletonShell>
