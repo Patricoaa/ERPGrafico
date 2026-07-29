@@ -2,12 +2,11 @@
 
 import React from 'react';
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
-import { DollarSign, Factory, Package, CreditCard, TrendingUp, TrendingDown, Wallet, Users, ShoppingCart, Truck } from 'lucide-react';
-import { EmptyState, MoneyDisplay, SkeletonShell, StatCard, LineChart, BarChart, PieChart, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard } from '@/components/shared';
+import { Factory, Package, TrendingUp, TrendingDown, Users, Truck } from 'lucide-react';
+import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard, ChartLegend } from '@/components/shared';
 import { formatCurrency, formatMoney } from "@/lib/money";
-import { type DateRange } from "react-day-picker";
 import { format } from "date-fns";
-
+import { type DateRange } from "react-day-picker";
 
 interface BIAnalyticsDashboardProps {
     date?: DateRange;
@@ -210,14 +209,16 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
 
             {/* ── Row 2: Cash Flow and Sales Trend ── */}
             <div className="grid gap-6 md:grid-cols-2 mt-6">
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground">Tendencia de Ventas</h3>
-                    <span className="text-sm text-muted-foreground mb-4">Evolución mensual de ventas (sin impuestos)</span>
-                    <div className="h-[320px]">
+                <SectionCard 
+                    title="Tendencia de Ventas" 
+                    description="Evolución mensual de ventas (sin impuestos)"
+                    headerRight={hasValidTrend ? <ChartLegend items={[{ label: "Ventas", color: "#1f77b4" }]} /> : undefined}
+                >
+                    <div className="h-full">
                         {hasValidTrend ? (
                             <LineChart
                                 data={salesTrendData}
-                                margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
+                                margin={{ top: 10, right: 20, bottom: 20, left: 60 }}
                                 yScale={{ type: 'linear', min: 0, max: 'auto', stacked: false, reverse: false }}
                                 axisBottom={{ tickSize: 0, tickPadding: 12 }}
                                 axisLeft={{
@@ -225,13 +226,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                     tickPadding: 12,
                                     format: (v: number) => formatCurrency(v),
                                 }}
-                                legends={[{
-                                    anchor: "bottom",
-                                    direction: "row",
-                                    translateY: 50,
-                                    itemWidth: 100,
-                                    symbolSize: 12,
-                                }]}
+                                legends={[]}
                                 colors={{ scheme: 'category10' }}
                             />
                         ) : (
@@ -240,19 +235,20 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         )}
                     </div>
-                </div>
+                </SectionCard>
 
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground">Top Clientes</h3>
-                    <span className="text-sm text-muted-foreground mb-4">Por volumen de compras facturadas</span>
-                    <div className="h-[320px]">
+                <SectionCard
+                    title="Top Clientes"
+                    description="Por volumen de compras facturadas"
+                >
+                    <div className="h-full">
                         {sales.top_customers && sales.top_customers.length > 0 ? (
                             <BarChart
                                 data={(sales.top_customers || []).map(c => ({ name: c.name, amount: c.amount }))}
                                 keys={["amount"]}
                                 indexBy="name"
                                 layout="horizontal"
-                                margin={{ top: 20, right: 20, bottom: 40, left: 100 }}
+                                margin={{ top: 10, right: 20, bottom: 20, left: 100 }}
                                 axisBottom={{
                                     tickSize: 0,
                                     tickPadding: 12,
@@ -273,16 +269,18 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         )}
                     </div>
-                </div>
+                </SectionCard>
             </div>
 
             {/* ── Row 3: Insights by Module ── */}
             <div className="grid gap-6 md:grid-cols-3 mt-6">
                 {/* 1. Compras y CxP */}
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground mb-1">Proveedores y CxP</h3>
-                    <span className="text-xs text-muted-foreground mb-4">Análisis de pasivos y principales proveedores</span>
-                    
+                <SectionCard
+                    title="Proveedores y CxP"
+                    description="Análisis de pasivos y principales proveedores"
+                    chartHeight="auto"
+                    className="h-full"
+                >
                     <div className="space-y-4 flex-1">
                         <div className="flex flex-col bg-muted/30 p-3 rounded-lg border border-border/50">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cuentas por Pagar (Facturas Pendientes)</span>
@@ -306,13 +304,15 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         </div>
                     </div>
-                </div>
+                </SectionCard>
 
                 {/* 2. Inventario */}
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground mb-1">Inventario</h3>
-                    <span className="text-xs text-muted-foreground mb-4">Composición del valor en almacén por categoría</span>
-                    
+                <SectionCard
+                    title="Inventario"
+                    description="Composición del valor en almacén por categoría"
+                    chartHeight="auto"
+                    className="h-full flex flex-col"
+                >
                     <div className="h-[220px] -mx-2">
                         {inventory.stock_distribution && inventory.stock_distribution.length > 0 ? (
                             <PieChart
@@ -345,13 +345,15 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </div>
                         ))}
                     </div>
-                </div>
+                </SectionCard>
 
                 {/* 3. Ventas y CxC */}
-                <div className="flex flex-col rounded-xl border bg-card p-5 shadow-sm">
-                    <h3 className="text-base font-bold text-foreground mb-1">Cuentas por Cobrar</h3>
-                    <span className="text-xs text-muted-foreground mb-4">Facturas emitidas y pendientes de cobro</span>
-                    
+                <SectionCard
+                    title="Cuentas por Cobrar"
+                    description="Facturas emitidas y pendientes de cobro"
+                    chartHeight="auto"
+                    className="h-full"
+                >
                     <div className="space-y-4 flex-1">
                         <div className="flex flex-col bg-muted/30 p-3 rounded-lg border border-border/50">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Monto Pendiente</span>
@@ -367,7 +369,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             </span>
                         </div>
                     </div>
-                </div>
+                </SectionCard>
             </div>
 
         </SkeletonShell>

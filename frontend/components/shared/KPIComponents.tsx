@@ -127,6 +127,8 @@ export interface SectionCardProps {
     className?: string
     /** Optional footer content rendered below the chart area */
     footer?: React.ReactNode
+    /** Optional slot for right-aligned header content (like a legend or actions) */
+    headerRight?: React.ReactNode
 }
 
 export function SectionCard({
@@ -136,17 +138,27 @@ export function SectionCard({
     children,
     className,
     footer,
+    headerRight,
 }: SectionCardProps) {
     return (
         <div className={cn('flex flex-col rounded-xl border bg-card p-5 shadow-sm', className)}>
-            <h3 className="text-base font-bold text-foreground">{title}</h3>
-            {description && (
-                <span className="text-sm text-muted-foreground mb-4">{description}</span>
-            )}
-            <div style={{ height: chartHeight }}>
+            <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col">
+                    <h3 className="text-base font-bold text-foreground">{title}</h3>
+                    {description && (
+                        <span className="text-sm text-muted-foreground mb-4">{description}</span>
+                    )}
+                </div>
+                {headerRight && (
+                    <div className="shrink-0 flex items-center">
+                        {headerRight}
+                    </div>
+                )}
+            </div>
+            <div style={{ height: chartHeight }} className={cn(!description && "mt-4")}>
                 {children}
             </div>
-            {footer && <div className="mt-auto">{footer}</div>}
+            {footer && <div className="mt-auto pt-4">{footer}</div>}
         </div>
     )
 }
