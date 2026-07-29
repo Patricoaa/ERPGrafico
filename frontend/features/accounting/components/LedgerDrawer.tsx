@@ -162,7 +162,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                 headerActions={identity.headerActions}
             >
                  {open && dateRange && (
-                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full">
+                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor" className="flex-1 flex flex-col h-full min-h-0 overflow-hidden">
                          <LedgerContent
                              accountId={accountId}
                              startDate={startStr}
@@ -313,59 +313,71 @@ function LedgerContent({
     )
 
     return (
-        <div className="flex-1 flex flex-col gap-4 pt-4 px-6 pb-6 min-h-0 h-full overflow-hidden">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0 items-start">
-                <StatCard
-                    variant="minimal"
-                    accent="muted"
-                    label="Saldo Inicial"
-                    icon={Calculator}
-                    value={<MoneyDisplay amount={data?.opening_balance} />}
-                    subtext={`Al ${dateRange?.from ? format(dateRange.from, 'dd/MM/yy', { locale: es }) : '-'}`}
-                    className="p-2"
-                />
-                <StatCard
-                    variant="minimal"
-                    accent="info"
-                    label="Cargos (Debe)"
-                    icon={ArrowUpRight}
-                    value={<MoneyDisplay amount={data?.period_debit} />}
-                    subtext="Total del periodo"
-                    className="p-2"
-                />
-                <StatCard
-                    variant="minimal"
-                    accent="warning"
-                    label="Abonos (Haber)"
-                    icon={ArrowDownRight}
-                    value={<MoneyDisplay amount={data?.period_credit} />}
-                    subtext="Total del periodo"
-                    className="p-2"
-                />
-                <StatCard
-                    variant="minimal"
-                    accent="primary"
-                    label="Saldo Final"
-                    icon={Scale}
-                    value={<MoneyDisplay amount={data?.closing_balance} showColor />}
-                    subtext={`Al ${dateRange?.to ? format(dateRange.to, 'dd/MM/yy', { locale: es }) : '-'}`}
-                    className="p-2"
-                />
+        <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
+                {/* Black/Base — Saldo Inicial */}
+                <div className="rounded-lg border border-foreground/20 bg-foreground/5 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-md bg-foreground/10 p-1.5 shrink-0">
+                        <Calculator className="h-3.5 w-3.5 text-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground/80">Saldo Inicial</p>
+                        <p className="text-sm font-bold text-foreground font-mono truncate">
+                            <MoneyDisplay amount={data?.opening_balance} showColor={false} />
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Al {dateRange?.from ? format(dateRange.from, 'dd/MM/yy', { locale: es }) : '-'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Cyan — Cargos (Debe) */}
+                <div className="rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-md bg-cyan/20 p-1.5 shrink-0">
+                        <ArrowUpRight className="h-3.5 w-3.5 text-cyan" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-cyan">Cargos (Debe)</p>
+                        <p className="text-sm font-bold text-foreground font-mono truncate">
+                            <MoneyDisplay amount={data?.period_debit} showColor={false} />
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Total del periodo</p>
+                    </div>
+                </div>
+
+                {/* Magenta — Abonos (Haber) */}
+                <div className="rounded-lg border border-magenta/30 bg-magenta/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-md bg-magenta/20 p-1.5 shrink-0">
+                        <ArrowDownRight className="h-3.5 w-3.5 text-magenta" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-magenta">Abonos (Haber)</p>
+                        <p className="text-sm font-bold text-foreground font-mono truncate">
+                            <MoneyDisplay amount={data?.period_credit} showColor={false} />
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Total del periodo</p>
+                    </div>
+                </div>
+
+                {/* Yellow — Saldo Final */}
+                <div className="rounded-lg border border-yellow/40 bg-yellow/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-md bg-yellow/20 p-1.5 shrink-0">
+                        <Scale className="h-3.5 w-3.5 text-yellow" />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-yellow">Saldo Final</p>
+                        <p className="text-sm font-bold text-foreground font-mono truncate">
+                            <MoneyDisplay amount={data?.closing_balance} showColor={false} />
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Al {dateRange?.to ? format(dateRange.to, 'dd/MM/yy', { locale: es }) : '-'}
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div className="flex items-center justify-end shrink-0">
-                <DateRangeFilter
-                    variant="ghost"
-                    onDateChange={(range) => {
-                        if (range?.from && range?.to) {
-                            setDateRange({ from: range.from, to: range.to })
-                        }
-                    }}
-                    defaultRange={dateRange || undefined}
-                />
-            </div>
-
-            <div className="flex-1 overflow-hidden">
+            {/* Table — fills remaining height */}
+            <div className="flex-1 min-h-0 overflow-hidden">
                 <DataTable
                     columns={columns}
                     data={filteredMovements}
@@ -385,6 +397,18 @@ function LedgerContent({
                         onGroupBySelect={search.setGroupBy}
                         paramValues={search.paramValues}
                         placeholder="Buscar por descripción..."
+                        toolbarActions={
+                            <DateRangeFilter
+                                defaultRange={dateRange || undefined}
+                                onDateChange={(range) => {
+                                    if (range?.from && range?.to) {
+                                        setDateRange({ from: range.from, to: range.to })
+                                    }
+                                }}
+                                className="bg-background border-none shadow-none rounded-sm"
+                                variant="outline"
+                            />
+                        }
                     />}
                     showReset={search.isFiltered}
                     onReset={() => {
@@ -412,3 +436,4 @@ function LedgerContent({
         </div>
     )
 }
+
