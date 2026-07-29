@@ -77,7 +77,7 @@ export function AnalysisDashboard({ activeTab }: AnalysisDashboardProps) {
                         <RatiosDashboard date={date} showComparison={showComparison} compDate={compDate} />
                     )}
                     {activeTab === "bi" && (
-                        <BIAnalyticsDashboard date={date} />
+                        <BIAnalyticsDashboard date={date} showComparison={showComparison} compDate={compDate} />
                     )}
                 </FadeIn>
             </div>
