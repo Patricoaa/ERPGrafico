@@ -247,11 +247,13 @@ export function PartnersClientView({
                             sections: [
                                 {
                                     id: "evolution-chart",
-                                    content: evolutionData.periods.length > 0 ? {
+                                    content: {
                                         type: "stat-card",
                                         config: {
                                             label: "Evolución del Patrimonio Neto",
                                             variant: "chart",
+                                            loading: evolutionData.isLoading,
+                                            subtext: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
                                             chart: {
                                                 type: "line-chart",
                                                 preset: "card",
@@ -260,15 +262,6 @@ export function PartnersClientView({
                                                 valueFormat: "currency",
                                             },
                                         },
-                                    } : {
-                                        type: "custom",
-                                        render: evolutionData.isLoading ? (
-                                            <div className="h-full flex items-center justify-center">
-                                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>
-                                        ),
                                     },
                                 },
                             ],
@@ -286,11 +279,12 @@ export function PartnersClientView({
                             sections: [
                                 {
                                     id: "dist-pie",
-                                    content: analyticsData.equityDistribution.length > 0 ? {
+                                    content: {
                                         type: "stat-card",
                                         config: {
                                             label: "Distribución Patrimonial",
                                             variant: "chart",
+                                            subtext: analyticsData.equityDistribution.length === 0 ? "Sin datos de distribución" : undefined,
                                             chart: {
                                                 type: "pie-chart",
                                                 preset: "card",
@@ -304,11 +298,6 @@ export function PartnersClientView({
                                                 },
                                             },
                                         },
-                                    } : {
-                                        type: "custom",
-                                        render: <div className="flex items-center justify-center h-full min-h-32 border border-dashed border-muted-foreground/20 rounded-sm">
-                                            <p className="text-sm text-muted-foreground italic">Sin datos de distribución</p>
-                                        </div>,
                                     },
                                 },
                             ],
@@ -343,11 +332,13 @@ export function PartnersClientView({
                             sections: [
                                 {
                                     id: "composition-line",
-                                    content: evolutionData.periods.length > 0 ? {
+                                    content: {
                                         type: "stat-card",
                                         config: {
                                             label: "Composición Patrimonial",
                                             variant: "chart",
+                                            loading: evolutionData.isLoading,
+                                            subtext: evolutionData.periods.length === 0 && !evolutionData.isLoading ? "Sin datos históricos de evolución" : undefined,
                                             chart: {
                                                 type: "line-chart",
                                                 preset: "card",
@@ -356,15 +347,6 @@ export function PartnersClientView({
                                                 valueFormat: "currency",
                                             },
                                         },
-                                    } : {
-                                        type: "custom",
-                                        render: evolutionData.isLoading ? (
-                                            <div className="h-full flex items-center justify-center">
-                                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                                            </div>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>
-                                        ),
                                     },
                                 },
                             ],
