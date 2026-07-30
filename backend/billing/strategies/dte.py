@@ -210,7 +210,7 @@ class FacturaStrategy(DTEStrategy):
         from django.core.exceptions import ValidationError
 
         if not invoice.sale_order_id and not invoice.purchase_order_id:
-            raise ValidationError("FACTURA requiere una Nota de Venta o una Orden de Compra asociada.")
+            raise ValidationError("FACTURA requiere una Orden de Venta o una Orden de Compra asociada.")
         if invoice.total <= Decimal("0"):
             raise ValidationError("El total de la FACTURA debe ser mayor a cero.")
 
@@ -354,7 +354,7 @@ class BoletaStrategy(DTEStrategy):
         from django.core.exceptions import ValidationError
 
         if not invoice.sale_order_id:
-            raise ValidationError("BOLETA requiere una Nota de Venta asociada.")
+            raise ValidationError("BOLETA requiere una Orden de Venta asociada.")
         if invoice.total <= Decimal("0"):
             raise ValidationError("El total de la BOLETA debe ser mayor a cero.")
 
@@ -429,7 +429,7 @@ class FacturaExentaStrategy(DTEStrategy):
         from django.core.exceptions import ValidationError
 
         if not invoice.sale_order_id:
-            raise ValidationError("FACTURA_EXENTA requiere una Nota de Venta asociada.")
+            raise ValidationError("FACTURA_EXENTA requiere una Orden de Venta asociada.")
         if invoice.total <= Decimal("0"):
             raise ValidationError("El total de la FACTURA_EXENTA debe ser mayor a cero.")
 
@@ -492,7 +492,7 @@ class BoletaExentaStrategy(DTEStrategy):
         from django.core.exceptions import ValidationError
 
         if not invoice.sale_order_id:
-            raise ValidationError("BOLETA_EXENTA requiere una Nota de Venta asociada.")
+            raise ValidationError("BOLETA_EXENTA requiere una Orden de Venta asociada.")
         if invoice.total <= Decimal("0"):
             raise ValidationError("El total de la BOLETA_EXENTA debe ser mayor a cero.")
 
@@ -556,7 +556,7 @@ class ComprobantePagoStrategy(DTEStrategy):
         from django.core.exceptions import ValidationError
 
         if not invoice.sale_order_id:
-            raise ValidationError("COMPROBANTE_PAGO requiere una Nota de Venta asociada.")
+            raise ValidationError("COMPROBANTE_PAGO requiere una Orden de Venta asociada.")
 
     def make_journal_entry(
         self, invoice: "Invoice", settings: "AccountingSettings"

@@ -37,7 +37,7 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStep
             <p className="text-sm font-bold text-warning">Discrepancia de cantidad</p>
             <p className="text-xs text-muted-foreground">
               Se produjeron <span className="font-bold text-foreground">{discrepancy.produced}</span> unidades
-              pero la nota de venta registra <span className="font-bold text-foreground">{discrepancy.sold}</span>.
+              pero la orden de venta registra <span className="font-bold text-foreground">{discrepancy.sold}</span>.
               {' '}Delta: <span className={`font-bold ${discrepancy.delta > 0 ? 'text-success' : 'text-destructive'}`}>
                 {discrepancy.delta > 0 ? '+' : ''}{discrepancy.delta}
               </span>.

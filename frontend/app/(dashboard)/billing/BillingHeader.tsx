@@ -42,7 +42,7 @@ export function BillingHeader() {
         return {
             title: activeValue === 'sales' ? "Facturación de Ventas" : "Facturación de Compras",
             description: activeValue === 'sales'
-                ? "Gestión de boletas, facturas y notas de venta emitidas a clientes."
+                ? "Gestión de boletas, facturas y ordenes de venta emitidas a clientes."
                 : "Recepción y cuadratura de facturas y notas de crédito de proveedores.",
             iconName: getEntityIconName(activeValue === 'sales' ? 'billing.invoice' : 'billing.purchaseinvoice'),
         }

@@ -288,7 +288,7 @@
         <div class="meta-row">
             <div class="meta-cell label">Nota Venta</div>
             <div class="meta-cell value">
-                {% if work_order.sale_order %}NV-{{ work_order.sale_order.number }}{% else %}N/A{% endif %}
+                {% if work_order.sale_order %}OV-{{ work_order.sale_order.number }}{% else %}N/A{% endif %}
             </div>
             <div class="meta-cell label">Entrega Est.</div>
             <div class="meta-cell value">{{ work_order.estimated_completion_date|date:"d/m/Y"|default:"No definida" }}</div>

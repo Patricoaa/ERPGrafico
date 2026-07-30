@@ -167,9 +167,10 @@ function ColRenderer({ column }: { column: AnalyticsColumn }) {
 
 interface LayoutProps {
     columns: AnalyticsColumn[]
+    gridRows?: string
 }
 
-export function AnalyticsLayout({ columns }: LayoutProps) {
+export function AnalyticsLayout({ columns, gridRows }: LayoutProps) {
     const hasColSpan = columns.some((col) =>
         col.sections.some((s) => (s.colSpan ?? 1) > 1)
     )
@@ -189,6 +190,7 @@ export function AnalyticsLayout({ columns }: LayoutProps) {
             className="grid gap-4 flex-1 min-h-0"
             style={{
                 gridTemplateColumns: columns.map((c) => `${c.weight ?? 1}fr`).join(" "),
+                gridTemplateRows: gridRows,
                 gridAutoRows: "minmax(0, 1fr)",
             }}
         >

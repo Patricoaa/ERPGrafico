@@ -3,16 +3,16 @@ import { test, expect } from '@playwright/test';
 test.describe('Universal Search Navigation', () => {
     test('Navigates to entity detail page correctly', async ({ page }) => {
         // Mock the Universal Search API response
-        await page.route('**/api/search/universal/?q=NV-1000', async route => {
+        await page.route('**/api/search/universal/?q=OV-1000', async route => {
             const json = {
                 results: [
                     {
                         id: 1000,
                         type: 'sale_order',
-                        display: 'NV-1000 - Juan Perez',
+                        display: 'OV-1000 - Juan Perez',
                         detail_url: '/sales/orders/1000',
                         icon: 'receipt-text',
-                        label: 'Nota de Venta'
+                        label: 'Orden de Venta'
                     }
                 ]
             };
@@ -23,7 +23,7 @@ test.describe('Universal Search Navigation', () => {
         await page.route('**/api/sales/orders/1000/', async route => {
             const json = {
                 id: 1000,
-                number: 'NV-1000',
+                number: 'OV-1000',
                 customer_name: 'Juan Perez',
                 status: 'DRAFT',
                 total: 50000,
@@ -42,10 +42,10 @@ test.describe('Universal Search Navigation', () => {
         await expect(page.getByRole('dialog', { name: /búsqueda/i })).toBeVisible();
 
         // Type query
-        await page.keyboard.type('NV-1000');
+        await page.keyboard.type('OV-1000');
 
         // Wait for result to appear
-        const result = page.locator('text=NV-1000 - Juan Perez');
+        const result = page.locator('text=OV-1000 - Juan Perez');
         await expect(result).toBeVisible();
 
         // Click the result
@@ -55,8 +55,8 @@ test.describe('Universal Search Navigation', () => {
         await expect(page).toHaveURL(/.*\/sales\/orders\/1000/);
 
         // Check if the EntityDetailPage rendered
-        await expect(page.locator('text=Nota de Venta')).toBeVisible();
-        await expect(page.locator('text=NV-1000')).toBeVisible();
+        await expect(page.locator('text=Orden de Venta')).toBeVisible();
+        await expect(page.locator('text=OV-1000')).toBeVisible();
     });
 
     test('Navigates to invoice detail page correctly and handles server-side split', async ({ page }) => {

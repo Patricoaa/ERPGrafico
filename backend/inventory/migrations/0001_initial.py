@@ -512,7 +512,7 @@ class Migration(migrations.Migration):
                     "requires_advanced_manufacturing",
                     models.BooleanField(
                         default=False,
-                        help_text="Habilita campos personalizados al vender este producto desde POS o notas de venta",
+                        help_text="Habilita campos personalizados al vender este producto desde POS o ordenes de venta",
                         verbose_name="Requiere Fabricación Avanzada",
                     ),
                 ),
@@ -1901,7 +1901,7 @@ class Migration(migrations.Migration):
                     "requires_advanced_manufacturing",
                     models.BooleanField(
                         default=False,
-                        help_text="Habilita campos personalizados al vender este producto desde POS o notas de venta",
+                        help_text="Habilita campos personalizados al vender este producto desde POS o ordenes de venta",
                         verbose_name="Requiere Fabricación Avanzada",
                     ),
                 ),

@@ -329,7 +329,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                                 description={
                                                                     defaultCustomer && defaultCustomer.id !== c?.id
                                                                         ? `Actual: ${defaultCustomer.name}`
-                                                                        : "Se selecciona automáticamente en nuevas NV"
+                                                                        : "Se selecciona automáticamente en nuevas OV"
                                                                 }
                                                                 icon={<ShoppingCart className="h-4 w-4" />}
                                                             />
@@ -489,7 +489,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
-                                        title="Historial de Ventas (NV)"
+                                        title="Historial de Ventas (OV)"
                                         icon={ShoppingCart}
                                     />
                                 </TabBarContent>
@@ -540,7 +540,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                             Al guardar, <strong>{c?.name || 'este contacto'}</strong> lo reemplazará como {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} predeterminado.
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Esta preferencia controla qué contacto se selecciona automáticamente al crear nuevas {confirmReplacement.type === 'customer' ? 'notas de venta' : 'órdenes de compra'}.
+                            Esta preferencia controla qué contacto se selecciona automáticamente al crear nuevas {confirmReplacement.type === 'customer' ? 'ordenes de venta' : 'órdenes de compra'}.
                         </p>
                     </div>
                 }

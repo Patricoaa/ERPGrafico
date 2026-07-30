@@ -150,7 +150,7 @@ const PaymentDrawer = dynamic(
 
 const SaleOrderDrawer = dynamic(
     () => import("@/features/sales/components/SaleOrderDrawer").then((m) => m.SaleOrderDrawer),
-    { ssr: false, loading: () => skeleton("nota de venta") }
+    { ssr: false, loading: () => skeleton("orden de venta") }
 )
 
 const PurchaseOrderDrawer = dynamic(

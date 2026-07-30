@@ -100,14 +100,14 @@ export interface EntityMetadata {
 export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
   'sales.saleorder': {
     label: 'sales.saleorder',
-    title: 'Nota de Venta',
-    titlePlural: 'Notas de Venta',
+    title: 'Orden de Venta',
+    titlePlural: 'Ordenes de Venta',
     icon: ReceiptText,
     iconName: 'ReceiptText',
     feminine: true,
     description: 'Documento de venta a cliente',
     printable: true,
-    shortTemplate: 'NV-{number}',
+    shortTemplate: 'OV-{number}',
     listUrl: '/sales/orders',
     detailUrlPattern: '/sales/orders/{id}',
     partnerField: (data): string => {

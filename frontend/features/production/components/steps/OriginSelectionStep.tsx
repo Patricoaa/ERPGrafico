@@ -52,7 +52,7 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
                 Vincular a Venta
               </h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Fabricación bajo demanda para una Nota de Venta (NV)
+                Fabricación bajo demanda para una Orden de Venta (OV)
               </p>
             </div>
           </div>

@@ -69,7 +69,7 @@ Costo de Venta | DES-78 | Cliente ACME | $850.000
 Recepción | REC-111 | Proveedor XYZ | $1.200.000
 Ingreso | DEP-42 | Cliente ACME | Pago Factura | $500.000
 Remuneraciones | LIQ-15 | Juan Pérez | Ene-2026 | $1.800.000
-Castigo | NV-88 | Cliente ACME | $300.000
+Castigo | OV-88 | Cliente ACME | $300.000
 Apertura | Ejercicio 2026
 ```
 
@@ -117,7 +117,7 @@ Inventario: PROD-A-001 (REC-111)
 Puente Recepción (OCS-45)
 Costo de Venta (DES-78)
 Gasto Interés: Ene-2026 (CRE-42)
-Capital por Cobrar: Juan Pérez (NV-88)
+Capital por Cobrar: Juan Pérez (OV-88)
 ```
 
 ---

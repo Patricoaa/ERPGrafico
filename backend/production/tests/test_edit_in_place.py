@@ -135,7 +135,7 @@ def test_update_volume_blocked_for_linked_ot(draft_order, uom, sale_line_factory
     draft_order.sale_line = sale_line
     draft_order.sale_order = sale_line.order
     draft_order.save()
-    with pytest.raises(ValidationError, match="Nota de Venta"):
+    with pytest.raises(ValidationError, match="Orden de Venta"):
         WorkOrderService.update_volume(draft_order, quantity=200, uom_id=uom.id)
 
 

@@ -78,7 +78,7 @@ describe("WorkOrderBasicStep Unit and Rendering Tests", () => {
         expect(await screen.findByText("Vínculo de Venta")).toBeInTheDocument()
         
         // Wait for specific subcomponents texts
-        expect(await screen.findByText("NV-500")).toBeInTheDocument()
+        expect(await screen.findByText("OV-500")).toBeInTheDocument()
         expect(screen.getByText("Detalle de Producto en Venta")).toBeInTheDocument()
         expect(screen.getByText("Progreso OT")).toBeInTheDocument()
         

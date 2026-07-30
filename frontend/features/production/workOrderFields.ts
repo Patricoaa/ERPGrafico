@@ -6,7 +6,7 @@ export const workOrderFields = createEntityFields<WorkOrder>()({
     saleOrderNumber: {
         key: 'sale_order_number',
         type: 'code',
-        label: 'NV Asociada',
+        label: 'OV Asociada',
         get: (w) => w.sale_order_number ?? null,
     },
     startDate: {

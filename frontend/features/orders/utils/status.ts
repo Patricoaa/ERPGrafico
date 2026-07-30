@@ -266,7 +266,7 @@ export const formatEntity = (prefix: string, number: string | number, displayId?
     if (displayId) return displayId
     if (prefix === 'FACT') return formatEntityDisplay('billing.invoice', { number })
     if (prefix === 'OC') return formatEntityDisplay('purchasing.purchaseorder', { number })
-    if (prefix === 'NV') return formatEntityDisplay('sales.saleorder', { number })
+    if (prefix === 'OV') return formatEntityDisplay('sales.saleorder', { number })
     if (prefix === 'DES') return formatEntityDisplay('sales.saledelivery', { number })
     if (prefix === 'REC') return formatEntityDisplay('purchasing.purchasereceipt', { number })
     if (prefix === 'DEV') return formatEntityDisplay('sales.salereturn', { number })

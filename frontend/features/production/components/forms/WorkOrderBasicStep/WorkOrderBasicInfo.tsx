@@ -61,7 +61,7 @@ export function WorkOrderBasicInfo({
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
                                         <span className="font-bold text-primary">
-                                            {initialData?.sale_order_number ? formatEntityDisplay('sales.saleorder', { number: initialData.sale_order_number }) : "Sin NV"}
+                                            {initialData?.sale_order_number ? formatEntityDisplay('sales.saleorder', { number: initialData.sale_order_number }) : "Sin OV"}
                                         </span>
                                         <span className="text-muted-foreground">
                                             - {typeof initialData?.sale_line === 'object'
@@ -81,7 +81,7 @@ export function WorkOrderBasicInfo({
                                     value={field.value}
                                     onChange={field.onChange}
                                     disabled={!!initialData}
-                                    label="Nota de Venta"
+                                    label="Orden de Venta"
                                     error={fieldState.error?.message}
                                     icon={<FileText className="h-3.5 w-3.5 opacity-50" />}
                                     customFilter={(order: { lines?: Array<{ product_type?: string; requires_advanced_manufacturing?: boolean; work_order_summary?: unknown }> }) =>

@@ -43,10 +43,10 @@ Objeto central `Record<string, EntityMetadata>` que contiene **toda** la identid
 ```typescript
 export interface EntityMetadata {
   label: string;           // Clave Django app.Model (e.g. 'sales.saleorder')
-  title: string;           // Nombre singular (e.g. 'Nota de Venta')
-  titlePlural: string;     // Nombre plural (e.g. 'Notas de Venta')
+  title: string;           // Nombre singular (e.g. 'Orden de Venta')
+  titlePlural: string;     // Nombre plural (e.g. 'Ordenes de Venta')
   icon: LucideIcon;        // Ícono Lucide importado directamente (tree-shakeable)
-  shortTemplate: string;   // Patrón de identificador corto (e.g. 'NV-{number}')
+  shortTemplate: string;   // Patrón de identificador corto (e.g. 'OV-{number}')
   listUrl: string;         // URL de la vista de lista
   detailUrlPattern: string; // Patrón de URL de detalle (e.g. '/sales/orders/{id}')
 }
@@ -58,7 +58,7 @@ El campo `shortTemplate` soporta:
 
 | Sintaxis | Ejemplo | Resultado |
 |----------|---------|-----------|
-| `{field}` | `NV-{number}` | `NV-42` |
+| `{field}` | `OV-{number}` | `OV-42` |
 | `{nested.field}` | `{customer.name}` | `Acme Corp` |
 | `{field:06d}` | `{number:06d}` | `000042` (zero-padding) |
 
@@ -95,7 +95,7 @@ Retorna la metadata completa de una entidad. Retorna `undefined` si la clave no 
 
 ```typescript
 const meta = getEntityMetadata('sales.saleorder');
-// { title: 'Nota de Venta', icon: ReceiptText, shortTemplate: 'NV-{number}', ... }
+// { title: 'Orden de Venta', icon: ReceiptText, shortTemplate: 'OV-{number}', ... }
 ```
 
 ### `formatEntityDisplay(label: string, data: any): string`
@@ -108,7 +108,7 @@ Aplica el template del registro a un objeto `data`. Soporta dot notation y zero-
 
 ```typescript
 formatEntityDisplay('sales.saleorder', { number: 42 });
-// → 'NV-42'
+// → 'OV-42'
 
 formatEntityDisplay('purchasing.purchaseorder', { number: 7 });
 // → 'OCS-7'
@@ -197,10 +197,10 @@ Retorna un array con los `SearchableEntity` registrados, incluyendo templates y 
 [
   {
     "label": "sales.saleorder",
-    "title": "Nota de Venta",
-    "prefix": "NV",
-    "shortTemplate": "NV-{number}",
-    "displayTemplate": "NV-{number} · {customer.name}",
+    "title": "Orden de Venta",
+    "prefix": "OV",
+    "shortTemplate": "OV-{number}",
+    "displayTemplate": "OV-{number} · {customer.name}",
     "subtitleTemplate": "{customer.name} · {customer.tax_id}",
     "icon": "receipt-text",
     "listUrl": "/sales/orders",
@@ -215,7 +215,7 @@ Desde el frontend:
 import { getEntityConfig, fetchEntityConfig } from '@/lib/api/entity-prefixes';
 
 const config = getEntityConfig('sales.saleorder');
-// config?.shortTemplate → "NV-{number}"
+// config?.shortTemplate → "OV-{number}"
 ```
 
 ### `getEntityConfig(label: string): EntityConfig | undefined`
@@ -258,7 +258,7 @@ Componente premium para renderizar identificadores de entidades de forma consist
 
 ```tsx
 <EntityBadge label="sales.saleorder" data={{ id: 1, number: 42 }} />
-// Renderiza: [ReceiptText icon] NV-42  (clickeable → /sales/orders/1)
+// Renderiza: [ReceiptText icon] OV-42  (clickeable → /sales/orders/1)
 
 <EntityBadge label="purchasing.purchaseorder" data={{ id: 5, number: 7 }} link={false} />
 // Renderiza: [ShoppingCart icon] OCS-7  (no clickeable)
@@ -362,7 +362,7 @@ Celda de tabla estandarizada para mostrar identificadores de documentos. Interna
 | `sale_delivery` | `sales.saledelivery` |
 | `sale_return` | `sales.salereturn` |
 
-> Si ningún `entityLabel`, `label` ni `type` resuelve, el fallback es `'sales.saleorder'` (prefijo `NV-`). **Esto es un bug silencioso** — siempre verificar que el tipo sea correcto.
+> Si ningún `entityLabel`, `label` ni `type` resuelve, el fallback es `'sales.saleorder'` (prefijo `OV-`). **Esto es un bug silencioso** — siempre verificar que el tipo sea correcto.
 
 ---
 
@@ -407,7 +407,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 
 | Registry key | Prefijo | Backend `EntityPrefix` | Título | Ícono Lucide |
 |---|---|---|---|---|
-| `sales.saleorder` | `NV` | `SALE_ORDER` | Nota de Venta | `ReceiptText` |
+| `sales.saleorder` | `OV` | `SALE_ORDER` | Orden de Venta | `ReceiptText` |
 | `sales.saledelivery` | `DES` | `SALE_DELIVERY` | Guía de Despacho | `Truck` |
 | `sales.salereturn` | `DEV` | `SALE_RETURN` | Devolución | `Undo2` |
 | `purchasing.purchaseorder` | `OCS` | `PURCHASE_ORDER` | Orden de Compra | `ShoppingCart` |

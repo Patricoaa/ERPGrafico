@@ -81,7 +81,7 @@ skeleton), y (b) mapea las props genéricas a la forma específica del drawer.
 ```tsx
 // frontend/lib/entity-drawers.tsx
 const SaleOrderDrawer = dynamic(() => import("@/features/sales").then(m => m.SaleOrderDrawer), {
-  ssr: false, loading: () => skeleton("nota de venta"),
+  ssr: false, loading: () => skeleton("orden de venta"),
 })
 
 export const ENTITY_DRAWERS = {
@@ -162,7 +162,7 @@ Renderiza el link a un documento origen (GFK de [ADR-0016](../10-architecture/ad
 resolviendo en 3 niveles:
 
 ```tsx
-<SourceDocumentLink doc={{ type: 'sales.saleorder', id: 123, display: 'NV-123' }} />
+<SourceDocumentLink doc={{ type: 'sales.saleorder', id: 123, display: 'OV-123' }} />
 ```
 
 | Prioridad | Condición | Acción |

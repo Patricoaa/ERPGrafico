@@ -303,13 +303,13 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                     </div>
                     {isLinked && (
                         <div className="col-span-2">
-                            <p className="text-xs text-muted-foreground">Nota de Venta</p>
-                            <p className="font-medium">NV-{order.sale_order_number ?? order.sale_order?.number ?? '—'}</p>
+                            <p className="text-xs text-muted-foreground">Orden de Venta</p>
+                            <p className="font-medium">OV-{order.sale_order_number ?? order.sale_order?.number ?? '—'}</p>
                         </div>
                     )}
                 </div>
                 <div className="mt-3 pt-3 border-t flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">¿Producto o NV incorrecto?</span>
+                    <span className="text-xs text-muted-foreground">¿Producto o OV incorrecto?</span>
                     {order.status === 'DRAFT' && (
                         <TooltipProvider delayDuration={200}>
                             <Tooltip>

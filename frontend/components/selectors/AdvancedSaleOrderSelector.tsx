@@ -31,7 +31,7 @@ interface AdvancedSaleOrderSelectorProps {
 export function AdvancedSaleOrderSelector({
     value,
     onChange,
-    placeholder = "Seleccionar nota de venta...",
+    placeholder = "Seleccionar orden de venta...",
     disabled = false,
     customFilter,
     label,

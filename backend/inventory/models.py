@@ -342,7 +342,7 @@ class Product(models.Model):
         _("Requiere Fabricación Avanzada"),
         default=False,
         help_text=_(
-            "Habilita campos personalizados al vender este producto desde POS o notas de venta"
+            "Habilita campos personalizados al vender este producto desde POS o ordenes de venta"
         ),
     )
     mfg_auto_finalize = models.BooleanField(

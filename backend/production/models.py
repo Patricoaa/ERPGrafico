@@ -59,7 +59,7 @@ class WorkOrder(models.Model):
         null=True,
         blank=True,
         related_name="work_orders",
-        help_text="Nota de Venta asociada",
+        help_text="Orden de Venta asociada",
     )
 
     sale_line = models.ForeignKey(

@@ -312,7 +312,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 onOpenChange={(open) => { if (!open) duplicateConfirm.cancel() }}
                 onConfirm={duplicateConfirm.confirm}
                 title="Duplicar OT"
-                description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Nota de Venta original."
+                description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Orden de Venta original."
                 variant="default"
             />
         </div >

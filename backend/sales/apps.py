@@ -31,8 +31,8 @@ class SalesConfig(AppConfig):
                 SearchableEntity(
                     model=SaleOrder,
                     label="sales.saleorder",
-                    title_singular="Nota de Venta",
-                    title_plural="Notas de Venta",
+                    title_singular="Orden de Venta",
+                    title_plural="Ordenes de Venta",
                     icon="receipt-text",
                     search_fields=("number", "customer__name", "customer__tax_id"),
                     short_display_template=f"{EntityPrefix.SALE_ORDER}-{{number}}",

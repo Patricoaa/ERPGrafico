@@ -28,7 +28,7 @@ export const checkFields = createEntityFields<Check>()({
     saleOrder: {
         key: "sale_order_display",
         type: "computed",
-        label: "NV Asociada",
+        label: "OV Asociada",
         render: (c) => {
             const so = c.sale_order_display
             if (!so) return null

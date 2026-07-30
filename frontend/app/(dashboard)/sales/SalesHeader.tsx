@@ -42,7 +42,7 @@ export function SalesHeader() {
             iconName: getEntityIconName('sales.saleorder'),
             href: getViewModeUrl('sales.saleorder', "/sales/orders"),
             subTabs: [
-                { value: "orders", label: "Notas de Venta", href: getViewModeUrl('sales.saleorder', "/sales/orders") },
+                { value: "orders", label: "Ordenes de Venta", href: getViewModeUrl('sales.saleorder', "/sales/orders") },
                 { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders/notes" },
             ]
         },
@@ -101,7 +101,7 @@ export function SalesHeader() {
         if (activeValue === 'orders') {
             if (subActiveValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.", iconName: "file-text" as const }
             if (subActiveValue === 'deliveries') return { title: "Guías de Despacho", description: "Historial de envíos y entregas a clientes, incluyendo notas de débito.", iconName: "truck" as const }
-            return { title: "Notas de Venta", description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: getEntityIconName('sales.saleorder') }
+            return { title: "Ordenes de Venta", description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: getEntityIconName('sales.saleorder') }
         }
         return { title: "Ventas", description: "", iconName: getEntityIconName('sales.saleorder') ?? "shopping-cart" }
     }
