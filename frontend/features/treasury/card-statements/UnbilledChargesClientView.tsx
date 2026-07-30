@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import {
     Receipt, CreditCard,
     Gauge,
+    TrendingUp, Building2, Activity,
 } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
@@ -39,6 +40,8 @@ import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { useUnbilledAnalyticsData } from "@/features/treasury/hooks/useUnbilledAnalyticsData"
+import type { Granularity } from "@/lib/analytics-helpers"
 import { unbilledChargeFields } from './unbilledChargeFields'
 
 interface UnbilledChargesClientViewProps {
@@ -54,15 +57,6 @@ const chargeTypeColorMap: Record<string, string> = {
     OTHER: 'bg-muted text-muted-foreground',
 }
 
-const CHARGE_TYPE_COLORS: Record<string, string> = {
-    COMMISSION: "#f59e0b",
-    TAX: "#ef4444",
-    FEE: "#3b82f6",
-    INSURANCE: "#8b5cf6",
-    INTEREST: "#10b981",
-    OTHER: "#6b7280",
-}
-
 interface UnbilledSummary {
     total: number
     count: number
@@ -76,6 +70,7 @@ export function UnbilledChargesClientView({
 
     const [showBillCharges, setShowBillCharges] = useState(false)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("cupo")
+    const [granularity, setGranularity] = useState<Granularity>("month")
     const queryClient = useQueryClient()
     const { openHub } = useHubPanel()
     const searchParams = useSearchParams()
@@ -157,6 +152,8 @@ export function UnbilledChargesClientView({
     const upcomingInstallments: UpcomingInstallment[] = result?.upcoming_installments ?? []
     const summary: UnbilledSummary | undefined = result?.summary
     const forecast = result?.forecast
+
+    const analyticsData = useUnbilledAnalyticsData(charges, upcomingInstallments, forecast, summary, null, granularity)
 
     const mergedRows = useMemo(
         () => mapToUnbilledItemRows(charges, upcomingInstallments),
@@ -301,25 +298,35 @@ export function UnbilledChargesClientView({
 
     const fmt = (n: number) => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(n)
 
-    // ── Charge type helpers for hub ──
-    const chargeTypeDistribution = useMemo(() => {
-        const groups: Record<string, { count: number; amount: number; display: string }> = {}
+    // ── Charge type helpers for hub (from hook) ──
+    const chargeTypeDisplayMap = useMemo(() => {
+        const map = new Map<string, string>()
         for (const c of charges) {
-            const t = c.charge_type || 'OTHER'
-            if (!groups[t]) groups[t] = { count: 0, amount: 0, display: c.charge_type_display || t }
-            groups[t].count++
-            groups[t].amount += Number(c.amount)
+            const key = c.charge_type || 'OTHER'
+            if (!map.has(key)) map.set(key, c.charge_type_display || key)
         }
-        return Object.entries(groups)
-            .map(([id, v]) => ({ id, display: v.display, count: v.count, amount: v.amount, color: CHARGE_TYPE_COLORS[id] ?? CHARGE_TYPE_COLORS.OTHER }))
-            .sort((a, b) => b.amount - a.amount)
+        return map
     }, [charges])
 
+    const chargeTypeSummary = useMemo(() => {
+        const colorMap = new Map(analyticsData.chargeTypeDistribution.map(d => [d.id, d.color]))
+        const countMap = new Map(analyticsData.chargeTypeDistribution.map(d => [d.id, d.value]))
+        return analyticsData.chargeTypeTotal
+            .map(d => ({
+                id: d.id,
+                display: chargeTypeDisplayMap.get(d.id) || d.id,
+                count: countMap.get(d.id) ?? 0,
+                amount: d.value,
+                color: colorMap.get(d.id) ?? '#6b7280',
+            }))
+            .sort((a, b) => b.amount - a.amount)
+    }, [analyticsData, chargeTypeDisplayMap])
+
     const totalInstAmount = useMemo(
-        () => upcomingInstallments.reduce((s, i) => s + Number(i.principal_amount), 0),
-        [upcomingInstallments],
+        () => analyticsData.upcomingInstallments.reduce((s, i) => s + Number(i.principal_amount), 0),
+        [analyticsData.upcomingInstallments],
     )
-    const totalInstCount = upcomingInstallments.length
+    const totalInstCount = analyticsData.upcomingInstallments.length
 
     const usedPercent = forecast?.credit_limit ? (parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit)) * 100 : 0
 
@@ -373,6 +380,8 @@ export function UnbilledChargesClientView({
                             entityName: "Gestión TC",
                             activeTab: analyticsActiveTab,
                             onTabChange: setAnalyticsActiveTab,
+                            granularity,
+                            onGranularityChange: setGranularity,
                             tabs: [
                                 {
                                     value: 'cupo',
@@ -434,14 +443,14 @@ export function UnbilledChargesClientView({
                                             sections: [
                                                 {
                                                     id: 'charge-types-pie',
-                                                    content: chargeTypeDistribution.length > 0 || totalInstCount > 0 ? {
+                                                    content: chargeTypeSummary.length > 0 || totalInstCount > 0 ? {
                                                         type: 'custom',
                                                         render: (
                                                             <StatCard label="Distribución de Cargos" variant="chart" className="flex-1" chart={
                                                                 <div className="flex flex-col gap-3">
                                                                     <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
                                                                         <PieChart
-                                                                            data={[...chargeTypeDistribution.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
+                                                                            data={[...chargeTypeSummary.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
                                                                             tooltipFormat="currency"
                                                                             legends={[{
                                                                                 anchor: "bottom",
@@ -457,7 +466,7 @@ export function UnbilledChargesClientView({
                                                                     <div className="shrink-0">
                                                                         <SummaryTable
                                                                             rows={[
-                                                                                ...chargeTypeDistribution.map(ct => ({
+                                                                                ...chargeTypeSummary.map(ct => ({
                                                                                     label: ct.display,
                                                                                     value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
                                                                                 })),
@@ -476,6 +485,190 @@ export function UnbilledChargesClientView({
                                                         render: (
                                                             <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos ni cuotas</p>
                                                         ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    value: 'proyeccion',
+                                    label: 'Proyección',
+                                    icon: TrendingUp,
+                                    columns: [
+                                        {
+                                            id: 'proy-main',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'monthly-new',
+                                                    content: analyticsData.monthlyNewCharges.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Cargos vs Cuotas',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: analyticsData.monthlyNewCharges,
+                                                                keys: ['charges', 'installments'],
+                                                                indexBy: 'month',
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos mensuales</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'proy-side',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'monthly-proj',
+                                                    content: analyticsData.monthlyProjection.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Proyección Mensual',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'line-chart',
+                                                                preset: 'card',
+                                                                data: [{
+                                                                    id: 'Proyectado',
+                                                                    data: analyticsData.monthlyProjection.map(m => ({ x: m.month, y: m.total })),
+                                                                }],
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin proyección disponible</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    value: 'proveedores',
+                                    label: 'Proveedores',
+                                    icon: Building2,
+                                    columns: [
+                                        {
+                                            id: 'prov-main',
+                                            weight: 3,
+                                            sections: [
+                                                {
+                                                    id: 'partner-bar',
+                                                    content: analyticsData.topPartners.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Top Proveedores por Monto',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: analyticsData.topPartners.map(p => ({ partner: p.partner, total: p.total })),
+                                                                keys: ['total'],
+                                                                indexBy: 'partner',
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de proveedores</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'prov-side',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'partner-dist',
+                                                    content: analyticsData.partnerDistribution.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Distribución por Proveedor',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'pie-chart',
+                                                                preset: 'card',
+                                                                data: analyticsData.partnerDistribution,
+                                                                valueFormat: 'currency',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de proveedores</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    value: 'actividad',
+                                    label: 'Actividad',
+                                    icon: Activity,
+                                    columns: [
+                                        {
+                                            id: 'act-main',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'daily-accum',
+                                                    content: analyticsData.dailyAccumulation.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Acumulado Diario',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'line-chart',
+                                                                preset: 'card',
+                                                                data: [{
+                                                                    id: 'Acumulado',
+                                                                    data: analyticsData.dailyAccumulation.map(d => ({ x: d.date, y: d.total })),
+                                                                }],
+                                                                enableArea: true,
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin actividad registrada</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'act-side',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'radar-categories',
+                                                    content: analyticsData.radarData.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Categorías de Gasto',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: analyticsData.radarData,
+                                                                keys: ['value'],
+                                                                indexBy: 'category',
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin categorías</p>,
                                                     },
                                                 },
                                             ],

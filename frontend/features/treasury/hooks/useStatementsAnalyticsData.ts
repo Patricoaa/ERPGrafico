@@ -77,5 +77,5 @@ export function useStatementsAnalyticsData(
             purchaseGroupData,
             costBreakdownDonut,
         }
-    }, [analytics, analyticsLoading])
+    }, [analytics, analyticsLoading, granularity])
 }

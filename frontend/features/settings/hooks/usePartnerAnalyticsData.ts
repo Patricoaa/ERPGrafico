@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import type { Partner } from "@/features/contacts"
+import type { Granularity } from "@/lib/analytics-helpers"
 
 export interface PartnerAnalyticsData {
     totalNetEquity: number
@@ -12,6 +13,7 @@ export interface PartnerAnalyticsData {
     totalDividendsPayable: number
     partnerCount: number
     equityDistribution: Array<{ id: string; value: number }>
+    equityPctDistribution: Array<{ id: string; value: number }>
     capitalComparison: Array<{ name: string; paid: number; pending: number }>
     balanceComposition: Array<{
         name: string
@@ -23,7 +25,10 @@ export interface PartnerAnalyticsData {
     partnerRanking: Array<{ name: string; netEquity: number }>
 }
 
-export function usePartnerAnalyticsData(partners: Partner[]): PartnerAnalyticsData {
+export function usePartnerAnalyticsData(
+    partners: Partner[],
+    _granularity?: Granularity,
+): PartnerAnalyticsData {
     return useMemo(() => {
         const safe = Array.isArray(partners) ? partners : []
 
@@ -39,6 +44,10 @@ export function usePartnerAnalyticsData(partners: Partner[]): PartnerAnalyticsDa
         const equityDistribution = safe
             .filter((p) => Number(p.partner_net_equity) > 0)
             .map((p) => ({ id: p.name, value: Number(p.partner_net_equity) }))
+
+        const equityPctDistribution = safe
+            .filter((p) => Number(p.partner_equity_percentage) > 0)
+            .map((p) => ({ id: p.name, value: Number(p.partner_equity_percentage) }))
 
         const capitalComparison = safe.map((p) => ({
             name: p.name.split(" ")[0],
@@ -69,6 +78,7 @@ export function usePartnerAnalyticsData(partners: Partner[]): PartnerAnalyticsDa
             totalDividendsPayable,
             partnerCount: safe.length,
             equityDistribution,
+            equityPctDistribution,
             capitalComparison,
             balanceComposition,
             partnerRanking,

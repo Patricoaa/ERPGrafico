@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, Receipt } from 'lucide-react'
+import { CreditCard, Receipt, BarChart3 } from 'lucide-react'
 import type { Granularity } from '@/components/shared'
 import {
     DataTableView,
@@ -83,11 +83,14 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
 
     const cardAccountId = search.filters.card ? Number(search.filters.card) : (creditCardAccounts[0]?.id ?? null)
 
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("costos")
+    const [granularity, setGranularity] = useState<Granularity>("month")
+
     const params: Record<string, string> = {}
     if (bankId) params.bank = String(bankId)
     if (cardAccountId) params.card_account = String(cardAccountId)
 
-    const hubData = useStatementsAnalyticsData(cardAccountId, 24)
+    const hubData = useStatementsAnalyticsData(cardAccountId, 24, granularity)
 
     const { data: statements = [], isLoading, isError } = useCardStatements(
         Object.keys(params).length > 0 ? params : undefined,
@@ -119,9 +122,6 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
         () => selectedId ? statements.find(s => s.id === selectedId) ?? null : null,
         [selectedId, statements],
     )
-
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("costos")
-    const [granularity, setGranularity] = useState<Granularity>("month")
 
     const actionsCtx: StatementActionsCtx = {
         onPay: (stmt) => openStatement(stmt.id, "pay"),
@@ -228,6 +228,75 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                                         type: 'custom',
                                                         render: (
                                                             <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de costos</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    value: 'compras',
+                                    label: 'Compras',
+                                    icon: BarChart3,
+                                    columns: [
+                                        {
+                                            id: 'col-purchase-main',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'purchase-bar',
+                                                    content: hubData.purchaseGroupData.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Costo Efectivo por Compra',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: hubData.purchaseGroupData.slice(0, 12).map(g => ({
+                                                                    group: g.display_id,
+                                                                    costPct: g.effective_cost_pct ?? 0,
+                                                                })),
+                                                                keys: ['costPct'],
+                                                                indexBy: 'group',
+                                                                axisLeftLegend: '%',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de compras</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'col-purchase-side',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'purchase-summary',
+                                                    content: hubData.purchaseGroupData.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Resumen de Compras',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'pie-chart',
+                                                                preset: 'card',
+                                                                data: [
+                                                                    { id: 'Capital', value: hubData.purchaseGroupData.reduce((s, g) => s + parseFloat(g.total_amount), 0) },
+                                                                    { id: 'Intereses', value: hubData.purchaseGroupData.reduce((s, g) => s + parseFloat(g.total_interest), 0) },
+                                                                ],
+                                                                valueFormat: 'currency',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de compras</p>
                                                         ),
                                                     },
                                                 },
