@@ -651,24 +651,29 @@ export function UnbilledChargesClientView({
                                             weight: 1,
                                             sections: [
                                                 {
-                                                    id: 'radar-categories',
-                                                    content: analyticsData.radarData.length > 0 ? {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Categorías de Gasto',
-                                                            variant: 'chart',
-                                                            chart: {
-                                                                type: 'bar-chart',
-                                                                preset: 'card',
-                                                                data: analyticsData.radarData,
-                                                                keys: ['value'],
-                                                                indexBy: 'category',
-                                                                valueFormat: '$,.0f',
-                                                            },
-                                                        },
+                                                    id: 'charge-types-summary',
+                                                    content: chargeTypeSummary.length > 0 || totalInstCount > 0 ? {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <div>
+                                                                <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Distribución de Cargos</h4>
+                                                                <SummaryTable
+                                                                    rows={[
+                                                                        ...chargeTypeSummary.map(ct => ({
+                                                                            label: ct.display,
+                                                                            value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
+                                                                        })),
+                                                                        ...(totalInstCount > 0 ? [{
+                                                                            label: 'Cuotas',
+                                                                            value: <span className="text-xs font-bold">${fmt(totalInstAmount)} ({totalInstCount} cuotas)</span>,
+                                                                        }] : []),
+                                                                    ]}
+                                                                />
+                                                            </div>
+                                                        ),
                                                     } : {
                                                         type: 'custom',
-                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin categorías</p>,
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin distribución de cargos</p>,
                                                     },
                                                 },
                                             ],
