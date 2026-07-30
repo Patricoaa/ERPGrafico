@@ -165,12 +165,12 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     const health = getRatioHealth('current_ratio', d.liquidity.current_ratio)
                     return (
                         <KPIWrapper tooltip="Mide la capacidad de la empresa para pagar sus deudas a corto plazo con sus activos más líquidos (Activo Corriente / Pasivo Corriente). Un ratio saludable es mayor a 1.5.">
-                            <StatCard
-                                label="Liquidez Corriente"
-                                value={<KPIValue current={d.liquidity.current_ratio} previous={cd?.liquidity.current_ratio} showComparison={showComparison} />}
-                                valueSize="xl"
-                                accent="primary"
-                                className="h-full"
+                                <StatCard
+                                    label="Liquidez Corriente"
+                                    value={<KPIValue current={d.liquidity.current_ratio} previous={cd?.liquidity.current_ratio} showComparison={showComparison} />}
+                                    valueSize="xl"
+                                    accent="primary"
+                                    className="h-full rounded-sm"
                             >
                                 <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
                                     {health.icon}{health.label}
@@ -193,7 +193,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 value={<KPIValue current={d.liquidity.acid_test || 0} previous={cd?.liquidity.acid_test || 0} showComparison={showComparison} />}
                                 valueSize="xl"
                                 accent="info"
-                                className="h-full"
+                                className="h-full rounded-sm"
                             >
                                 <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
                                     {health.icon}{health.label}
@@ -216,7 +216,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 value={<KPIValue current={d.structure.debt_to_equity} previous={cd?.structure.debt_to_equity} showComparison={showComparison} />}
                                 valueSize="xl"
                                 accent="warning"
-                                className="h-full"
+                                className="h-full rounded-sm"
                             >
                                 <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
                                     {health.icon}{health.label}
@@ -239,7 +239,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 value={<KPIValue current={d.solvency.solvency_ratio} previous={cd?.solvency.solvency_ratio} showComparison={showComparison} />}
                                 valueSize="xl"
                                 accent="success"
-                                className="h-full"
+                                className="h-full rounded-sm"
                             >
                                 <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
                                     {health.icon}{health.label}
@@ -262,7 +262,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 value={<KPIValue current={d.profitability?.gross_margin || 0} previous={cd?.profitability?.gross_margin || 0} showComparison={showComparison} isPercentage alreadyPercent={false} decimals={1} />}
                                 valueSize="xl"
                                 accent="accent"
-                                className="h-full"
+                                className="h-full rounded-sm"
                             >
                                 <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
                                     {health.icon}{health.label}
@@ -285,7 +285,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 value={<KPIValue current={d.profitability?.net_margin || 0} previous={cd?.profitability?.net_margin || 0} showComparison={showComparison} isPercentage alreadyPercent={false} decimals={1} />}
                                 valueSize="xl"
                                 accent="muted"
-                                className="h-full"
+                                className="h-full rounded-sm"
                             >
                                 <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
                                     {health.icon}{health.label}
@@ -305,6 +305,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                 <SectionCard
                     title="Salud Financiera General"
                     description="Índice normalizado 0–100 por indicador"
+                    className="rounded-sm"
                     headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "#1f77b4" }, { label: "Anterior", color: "#ff7f0e" }]} /> : undefined}
                 >
                     <div className="h-full">
@@ -323,6 +324,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                 <SectionCard
                     title="Capital de Trabajo"
                     description={`Activos y Pasivos Corrientes — Saldo: ${formatMoney(d.liquidity.current_assets - d.liquidity.current_liabilities)}`}
+                    className="rounded-sm"
                     headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "#1f77b4" }, { label: "Anterior", color: "#ff7f0e" }]} /> : undefined}
                 >
                     <div className="h-full">
@@ -358,6 +360,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     title="Estructura de Financiamiento"
                     description="Distribución entre Deuda y Patrimonio"
                     headerRight={<ChartLegend items={[{ label: "Pasivos", color: "#1f77b4" }, { label: "Patrimonio", color: "#ff7f0e" }]} />}
+                    className="rounded-sm"
                 >
                     {showComparison && cd ? (
                         <div className="flex h-full gap-2">
@@ -422,6 +425,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     title="Composición de Activos"
                     description="Corrientes vs No Corrientes"
                     headerRight={<ChartLegend items={[{ label: "Corrientes", color: "#1f77b4" }, { label: "No Corrientes", color: "#ff7f0e" }]} />}
+                    className="rounded-sm"
                 >
                     {showComparison && cd ? (
                         <div className="flex h-full gap-2">
