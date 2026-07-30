@@ -69,6 +69,7 @@ export function AnalysisDashboard({ activeTab }: AnalysisDashboardProps) {
                 onCompDateChange={setCompDate}
                 showMapeo={activeTab === "ratios"}
                 onMapeoClick={() => openMappingDrawer()}
+                showHeaderFormat={false}
             />
 
             <div className="w-full pt-4">

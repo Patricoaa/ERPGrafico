@@ -81,10 +81,12 @@
    */
   --chart-1: var(--cyan);
   --chart-2: var(--magenta);
-  --chart-3: var(--green);
-  --chart-4: var(--pantone-orange);
-  --chart-5: var(--blue);
-  --chart-6: var(--yellow);
+  --chart-3: var(--yellow);
+  --chart-4: var(--black);
+  --chart-5: var(--pantone-orange);
+  --chart-6: var(--pantone-violet);
+  --chart-7: var(--green);
+  --chart-8: var(--blue);
 
   /*
    * LAYER 2 — SEMANTIC INTENTS
@@ -1360,15 +1362,28 @@ table [data-notched-field] {
     background-color: inherit !important;
   }
 
-  [data-slot="sheet-content"].rounded-r-xl [data-slot="sheet-header"] {
+  /* Drawers from the right → only top-right corner of header is rounded */
+  [data-slot="sheet-content"][data-side="right"] [data-slot="sheet-header"] {
+    border-top-right-radius: inherit !important;
+    border-top-left-radius: 0 !important;
+  }
+
+  /* Drawers from the left → only top-right corner of header is rounded (the visible edge).
+   * top-left corner matches the parent container's border-radius (var(--radius-xl))
+   * so the header hugs the rounded corner of #main-content without a sharp notch. */
+  [data-slot="sheet-content"][data-side="left"] [data-slot="sheet-header"] {
+    border-top-right-radius: inherit !important;
+    border-top-left-radius: var(--radius-xl) !important;
+  }
+
+  /* Drawers from top → both top corners rounded */
+  [data-slot="sheet-content"][data-side="top"] [data-slot="sheet-header"] {
+    border-top-left-radius: inherit !important;
     border-top-right-radius: inherit !important;
   }
-  
-  [data-slot="sheet-content"].rounded-l-xl [data-slot="sheet-header"] {
-    border-top-left-radius: inherit !important;
-  }
-  
-  [data-slot="sheet-content"].rounded-t-xl [data-slot="sheet-header"] {
+
+  /* Drawers from bottom → no top radius on header (header is at top of panel which is the open edge) */
+  [data-slot="sheet-content"][data-side="bottom"] [data-slot="sheet-header"] {
     border-top-left-radius: inherit !important;
     border-top-right-radius: inherit !important;
   }
@@ -1414,10 +1429,25 @@ table [data-notched-field] {
    *   - The close-state fade-out of shadow/border before the DOM is pruned
    */
   #main-content [data-slot="sheet-content"] {
+    isolation: isolate;
     transition:
       box-shadow 400ms var(--ease-premium),
       border-color 400ms var(--ease-premium),
       transform 500ms var(--ease-premium) !important;
+  }
+
+  /* Left drawers embedded in #main-content: force top-left corner to match
+   * the container's border-radius so the panel blends into the rounded corner
+   * of the parent surface instead of showing a sharp notch. */
+  #main-content [data-slot="sheet-content"][data-side="left"] {
+    border-top-left-radius: var(--radius-xl) !important;
+    border-bottom-left-radius: var(--radius-xl) !important;
+  }
+
+  /* Right drawers embedded in #main-content: mirror treatment for right side */
+  #main-content [data-slot="sheet-content"][data-side="right"] {
+    border-top-right-radius: var(--radius-xl) !important;
+    border-bottom-right-radius: var(--radius-xl) !important;
   }
 
   #main-content [data-slot="sheet-content"][data-state="open"] {

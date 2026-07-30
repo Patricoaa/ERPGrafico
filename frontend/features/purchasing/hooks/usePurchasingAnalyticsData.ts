@@ -1,37 +1,7 @@
 import { useMemo } from "react"
 import type { PurchaseOrderAPI } from "../types"
 import { parseDateOnly } from "@/lib/utils"
-
-// ── Color palettes for charts ─────────────────────────────
-
-const STATUS_COLORS: Record<string, string> = {
-    DRAFT: "#6b7280",
-    CONFIRMED: "#3b82f6",
-    RECEIVED: "#06b6d4",
-    INVOICED: "#f59e0b",
-    PAID: "#22c55e",
-    CANCELLED: "#ef4444",
-}
-
-const RECEIVING_COLORS: Record<string, string> = {
-    PENDING: "#f59e0b",
-    PARTIAL: "#3b82f6",
-    RECEIVED: "#22c55e",
-}
-
-const PAYMENT_METHOD_COLORS: Record<string, string> = {
-    CASH: "#22c55e",
-    CARD: "#3b82f6",
-    DEBIT_CARD: "#3b82f6",
-    CREDIT_CARD: "#8b5cf6",
-    CARD_TERMINAL: "#06b6d4",
-    TRANSFER: "#a855f7",
-    CHECK: "#f59e0b",
-    CREDIT: "#ef4444",
-    WRITE_OFF: "#6b7280",
-    CREDIT_BALANCE: "#ec4899",
-    OTHER: "#9ca3af",
-}
+import { assignChartColors } from "@/lib/chart-colors"
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
     CASH: "Efectivo",
@@ -46,7 +16,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
     CREDIT_BALANCE: "Saldo a Favor",
     OTHER: "Otro",
 }
-
 
 
 // ── Helpers ───────────────────────────────────────────────
@@ -193,23 +162,19 @@ export function usePurchasingAnalyticsData(
 
         // ── Status distribution ────────────────────────────
         const statusGroups = groupBy(filtered, (o) => o.status || "UNKNOWN")
-        const statusDistribution = Object.entries(statusGroups)
-            .map(([id, items]) => ({
-                id,
-                value: items.length,
-                color: STATUS_COLORS[id] ?? "#6b7280",
-            }))
-            .sort((a, b) => b.value - a.value)
+        const statusDistribution = assignChartColors(
+            Object.entries(statusGroups)
+                .map(([id, items]) => ({ id, value: items.length }))
+                .sort((a, b) => b.value - a.value)
+        )
 
         // ── Receiving status distribution ──────────────────
         const receivingGroups = groupBy(safeOrders, (o) => o.receiving_status || "PENDING")
-        const receivingDistribution = Object.entries(receivingGroups)
-            .map(([id, items]) => ({
-                id,
-                value: items.length,
-                color: RECEIVING_COLORS[id] ?? "#6b7280",
-            }))
-            .sort((a, b) => b.value - a.value)
+        const receivingDistribution = assignChartColors(
+            Object.entries(receivingGroups)
+                .map(([id, items]) => ({ id, value: items.length }))
+                .sort((a, b) => b.value - a.value)
+        )
 
         // ── Payment method distribution ────────────────────
         function resolvePaymentMethod(o: PurchaseOrderAPI): string {
@@ -231,13 +196,14 @@ export function usePurchasingAnalyticsData(
             return "CREDIT"
         }
         const paymentMethodGroups = groupBy(filtered, resolvePaymentMethod)
-        const paymentMethodDistribution = Object.entries(paymentMethodGroups)
-            .map(([id, items]) => ({
-                id: PAYMENT_METHOD_LABELS[id] ?? id,
-                value: items.length,
-                color: PAYMENT_METHOD_COLORS[id] ?? "#6b7280",
-            }))
-            .sort((a, b) => b.value - a.value)
+        const paymentMethodDistribution = assignChartColors(
+            Object.entries(paymentMethodGroups)
+                .map(([id, items]) => ({
+                    id: PAYMENT_METHOD_LABELS[id] ?? id,
+                    value: items.length,
+                }))
+                .sort((a, b) => b.value - a.value)
+        )
 
         // ── Top suppliers ──────────────────────────────────
         const supplierGroups = groupBy(filtered, (o) => o.supplier_name || "Desconocido")

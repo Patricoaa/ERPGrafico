@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import type { BarChartConfig, LineChartConfig, PieChartConfig, RadarChartConfig, ChartConfig } from "./types"
-import { PieChart, BarChart, LineChart, RadarChart } from "../charts"
+import type { BarChartConfig, LineChartConfig, PieChartConfig, RadarChartConfig, FunnelChartConfig, ChartConfig } from "./types"
+import { PieChart, BarChart, LineChart, RadarChart, FunnelChart } from "../charts"
 import { formatCompactSpanish } from "@/lib/utils/number"
 import { formatMoney, formatQuantity } from "@/lib/money"
 import {
@@ -272,6 +272,23 @@ function RadarChartRenderer(props: RadarChartConfig) {
     )
 }
 
+function FunnelChartRenderer(props: FunnelChartConfig) {
+    const isCard = props.preset === "card"
+    const margin = isCard ? { top: 20, right: 20, bottom: 20, left: 20 } : { top: 40, right: 20, bottom: 40, left: 20 }
+    
+    return (
+        <div className="flex-1 min-h-[250px] w-full relative">
+            <FunnelChart
+                data={props.data}
+                direction={props.direction || "vertical"}
+                valueFormat={props.valueFormat}
+                margin={margin}
+                enableLabel={props.enableLabel}
+            />
+        </div>
+    )
+}
+
 export function AnalyticsChart(props: ChartConfig) {
     switch (props.type) {
         case "bar-chart":
@@ -282,5 +299,7 @@ export function AnalyticsChart(props: ChartConfig) {
             return <PieChartRenderer {...props} />
         case "radar-chart":
             return <RadarChartRenderer {...props} />
+        case "funnel-chart":
+            return <FunnelChartRenderer {...props} />
     }
 }

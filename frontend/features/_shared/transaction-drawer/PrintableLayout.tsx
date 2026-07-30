@@ -24,7 +24,7 @@ export const PrintableLayout = forwardRef<HTMLDivElement, PrintableLayoutProps>(
         </div>
         {children}
         <div className="text-center border-t pt-2 mt-4 text-[9px] text-muted-foreground/60">
-          <p>Gracias por su preferencia</p>
+
           <p>Generado por ERPGrafico</p>
         </div>
       </div>

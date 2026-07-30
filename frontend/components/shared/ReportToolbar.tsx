@@ -27,6 +27,7 @@ export interface ReportToolbarProps {
     showMapeo?: boolean
     onMapeoClick?: () => void
     onExport?: () => void
+    showHeaderFormat?: boolean
 }
 
 export function ReportToolbar({
@@ -41,6 +42,7 @@ export function ReportToolbar({
     showMapeo = true,
     onMapeoClick,
     onExport,
+    showHeaderFormat = true,
 }: ReportToolbarProps) {
     const headerFormatLabel = headerFormat === 'year' ? 'Año' : headerFormat === 'month-year' ? 'Mes/Año' : 'Día/Mes/Año'
 
@@ -61,31 +63,33 @@ export function ReportToolbar({
                     </Button>
                 )}
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className={cn(btnBase, "text-muted-foreground hover:bg-accent/30 hover:text-foreground")}
-                        >
-                            Vista: {headerFormatLabel}
-                            <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-[180px] p-1">
-                        <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => onHeaderFormatChange(val as 'year' | 'month-year' | 'day-month-year')}>
-                            <DropdownMenuRadioItem value="year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
-                                Año
-                            </DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
-                                Mes/Año
-                            </DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="day-month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
-                                Día/Mes/Año
-                            </DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {showHeaderFormat && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(btnBase, "text-muted-foreground hover:bg-accent/30 hover:text-foreground")}
+                            >
+                                Vista: {headerFormatLabel}
+                                <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[180px] p-1">
+                            <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => onHeaderFormatChange(val as 'year' | 'month-year' | 'day-month-year')}>
+                                <DropdownMenuRadioItem value="year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
+                                    Año
+                                </DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
+                                    Mes/Año
+                                </DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="day-month-year" className={`${SEG_DROPDOWN_ITEM} cursor-pointer`}>
+                                    Día/Mes/Año
+                                </DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
 
                 <Button
                     variant="ghost"
