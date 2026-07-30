@@ -208,22 +208,6 @@ export function PartnersClientView({
                                     },
                                 },
                                 {
-                                    id: "chart-equity",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución Patrimonial",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "pie-chart",
-                                                preset: "card",
-                                                data: analyticsData.equityDistribution,
-                                                valueFormat: "currency",
-                                            },
-                                        },
-                                    },
-                                },
-                                {
                                     id: "chart-capital",
                                     content: {
                                         type: "stat-card",
@@ -302,47 +286,14 @@ export function PartnersClientView({
                     ],
                 },
                 {
-                    value: "metricas",
-                    label: "Métricas",
+                    value: "socios",
+                    label: "Socios",
                     icon: Gauge,
                     columns: [
                         {
-                            id: "col-single",
+                            id: "col-main",
+                            weight: 2,
                             sections: [
-                                {
-                                    id: "kpi-top",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Mayor Patrimonio",
-                                            value: analyticsData.partnerRanking[0]?.name ?? "—",
-                                            icon: TrendingUp,
-                                            accent: "primary",
-                                            variant: "minimal",
-                                            subtext: analyticsData.partnerRanking[0]
-                                                ? `${formatCurrency(analyticsData.partnerRanking[0].netEquity)}`
-                                                : "Sin datos",
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "kpi-bottom",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Menor Patrimonio",
-                                            value: analyticsData.partnerRanking.length > 0
-                                                ? analyticsData.partnerRanking[analyticsData.partnerRanking.length - 1].name
-                                                : "—",
-                                            icon: Gauge,
-                                            accent: "muted",
-                                            variant: "minimal",
-                                            subtext: analyticsData.partnerRanking.length > 0
-                                                ? `${formatCurrency(analyticsData.partnerRanking[analyticsData.partnerRanking.length - 1].netEquity)}`
-                                                : "Sin datos",
-                                        },
-                                    },
-                                },
                                 {
                                     id: "kpi-pending",
                                     content: {
@@ -371,38 +322,53 @@ export function PartnersClientView({
                                         },
                                     },
                                 },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "participacion",
-                    label: "Participación",
-                    icon: PieChartIcon,
-                    columns: [
-                        {
-                            id: "col-pct",
-                            sections: [
                                 {
-                                    id: "chart-equity-pct",
-                                    content: analyticsData.equityPctDistribution.length > 0 ? {
+                                    id: "chart-ranking",
+                                    content: analyticsData.partnerRanking.length > 0 ? {
                                         type: "stat-card",
                                         config: {
-                                            label: "% de Participación por Socio",
+                                            label: "Ranking de Patrimonio",
                                             variant: "chart",
                                             chart: {
-                                                type: "pie-chart",
+                                                type: "bar-chart",
                                                 preset: "card",
-                                                data: analyticsData.equityPctDistribution,
-                                                valueFormat: "number",
-                                                enableLabels: true,
-                                                arcLabel: (d: { value: number }) => `${d.value}%`,
+                                                data: analyticsData.partnerRanking.map(p => ({ name: p.name, patrimonio: p.netEquity })),
+                                                keys: ["patrimonio"],
+                                                indexBy: "name",
+                                                valueFormat: "$,.0f",
                                             },
                                         },
                                     } : {
                                         type: "custom",
                                         render: (
-                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de participación</p>
+                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de socios</p>
+                                        ),
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: "col-side",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "chart-equity",
+                                    content: analyticsData.equityDistribution.length > 0 ? {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Distribución Patrimonial",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "pie-chart",
+                                                preset: "card",
+                                                data: analyticsData.equityDistribution,
+                                                valueFormat: "currency",
+                                            },
+                                        },
+                                    } : {
+                                        type: "custom",
+                                        render: (
+                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de distribución</p>
                                         ),
                                     },
                                 },
@@ -410,6 +376,7 @@ export function PartnersClientView({
                         },
                     ],
                 },
+
             ],
         },
     }), [analyticsData, analyticsActiveTab])

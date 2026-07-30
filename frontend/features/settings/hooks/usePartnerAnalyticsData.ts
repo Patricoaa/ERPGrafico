@@ -13,7 +13,6 @@ export interface PartnerAnalyticsData {
     totalDividendsPayable: number
     partnerCount: number
     equityDistribution: Array<{ id: string; value: number }>
-    equityPctDistribution: Array<{ id: string; value: number }>
     capitalComparison: Array<{ name: string; paid: number; pending: number }>
     balanceComposition: Array<{
         name: string
@@ -45,10 +44,6 @@ export function usePartnerAnalyticsData(
             .filter((p) => Number(p.partner_net_equity) > 0)
             .map((p) => ({ id: p.name, value: Number(p.partner_net_equity) }))
 
-        const equityPctDistribution = safe
-            .filter((p) => Number(p.partner_equity_percentage) > 0)
-            .map((p) => ({ id: p.name, value: Number(p.partner_equity_percentage) }))
-
         const capitalComparison = safe.map((p) => ({
             name: p.name.split(" ")[0],
             paid: Number(p.partner_total_paid_in),
@@ -78,7 +73,6 @@ export function usePartnerAnalyticsData(
             totalDividendsPayable,
             partnerCount: safe.length,
             equityDistribution,
-            equityPctDistribution,
             capitalComparison,
             balanceComposition,
             partnerRanking,
