@@ -568,7 +568,7 @@ function createCardGroupView<TData>(options: {
 
 ## 12. Analytics Panel — `analyticsPanel` prop
 
-El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column Toggle) que abre un `Drawer` con gráficos y métricas.
+El `DataTable` soporta una vista de análisis que reemplaza la tabla al activar `view=analytics`, con gráficos y métricas organizados en tabs con sidebar de navegación.
 
 ### 12.1 API
 
@@ -579,8 +579,6 @@ El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column 
       entityName: "Órdenes de Compra",
       granularity,
       onGranularityChange: setGranularity,
-      dateRange,
-      onDateRangeChange: setDateRange,
       tabs: [
         {
           value: "financiero",
@@ -617,21 +615,28 @@ El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column 
 ```
 
 - `onClick?`: callback cuando se presiona el botón (útil para tracking)
-- `screen`: cuando está presente, renderiza un `AnalyticsPanel` dentro de un `Drawer` con `side="bottom"` y `defaultSize="70vh"`
+- `screen`: cuando está presente, habilita `view=analytics` como opción en el toolbar y renderiza `AnalyticsPanelContent` inline (reemplazando la tabla) cuando se selecciona
+- `granularity` / `onGranularityChange`: control de agrupación temporal (día/mes/año), renderizado como `GranularityControl` en la parte inferior del sidebar de tabs
 - Cada tab tiene `columns` con `sections` que pueden ser `StatCard`, `Custom`, o chart directo (bar/line/pie)
+- El tipo `Granularity` se exporta desde `@/components/shared`
 
 ### 12.2 Data flow
 
 ```
-Consumer → AnalyticsPanelConfig (useMemo) → DataTable → DataTableToolbar
-  → botón LayoutDashboard → Drawer → TabBar → AnalyticsLayout → StatCard/Chart
-  → AnalyticsSegmentation (granularity, date range, card account)
+Consumer → AnalyticsPanelConfig (useMemo) → DataTableView
+  → view=analytics → AnalyticsPanelContent inline (full-screen, reemplaza tabla)
+  → Sidebar tabs (left, w-56) + Content area (right, flex-1)
+  → GranularityControl (bottom of sidebar, separador border-t)
+  → Tab → AnalyticsLayout → Column → SectionRenderer → StatCard/Chart
 ```
 
 ### 12.3 Reglas
 
 - Los datos de analytics deben venir de un hook dedicado (ej. `usePurchasingAnalyticsData`)
 - `AnalyticsPanelConfig` se importa desde `@/components/shared`
+- El hook debe usar helpers de `@/lib/analytics-helpers` (no duplicar `groupBy`, `formatMonth`, `granularityKey`, etc.)
+- Los colores de charts deben usar `assignChartColors` desde `@/lib/chart-colors` (no mapas hardcodeados)
+- `Granularity` debe ser tipo compartido, no string literal inline
 - No abusar: reservar para entidades con volumen de datos que justifique análisis visual
 
 ---
@@ -810,6 +815,9 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] La agrupación visual (`cardGroupBy`) es ortogonal al filtrado del toolbar (`SegmentationBar`) — uno filtra, el otro organiza
 - [ ] Usar `groupByDate` desde `@/lib/group-by-date` si se necesita agrupación fuera del factory
 - [ ] `analyticsPanel` usado solo si hay hook de datos dedicado (no construir inline en el componente)
+- [ ] Hook de analytics usa helpers de `@/lib/analytics-helpers` (no duplicados)
+- [ ] Hook de analytics usa `assignChartColors` desde `@/lib/chart-colors` (no mapas hardcodeados)
+- [ ] `Granularity` es tipo compartido, no string literal inline
 - [ ] `renderFooter` usado solo para tablas financieras que requieren fila de totales
 - [ ] `bulkActions` preferido sobre `bulkDock` para acciones declarativas
 - [ ] `toolbarActions` preferido sobre `toolbarAction` legacy

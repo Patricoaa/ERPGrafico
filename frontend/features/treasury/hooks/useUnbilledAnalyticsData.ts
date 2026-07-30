@@ -1,70 +1,8 @@
-"use client"
-
 import { useMemo } from "react"
 import type { PendingChargeRow, UpcomingInstallment, UnbilledForecast } from "../types"
-import { parseDateOnly } from "@/lib/utils"
-
-// ── Color palettes ──────────────────────────────────────────────
-
-const CHARGE_TYPE_COLORS: Record<string, string> = {
-    COMMISSION: "#f59e0b",
-    TAX: "#ef4444",
-    FEE: "#3b82f6",
-    INSURANCE: "#8b5cf6",
-    OTHER: "#6b7280",
-}
-
-// ── Helpers ─────────────────────────────────────────────────────
-
-function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
-    const map: Record<string, T[]> = {}
-    for (const item of items) {
-        const key = keyFn(item)
-        if (!map[key]) map[key] = []
-        map[key].push(item)
-    }
-    return map
-}
-
-function formatMonth(dateStr: string): string {
-    const d = parseDateOnly(dateStr)
-    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
-        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-    return `${months[d.getMonth()]} ${d.getFullYear()}`
-}
-
-function formatYear(dateStr: string): string {
-    return parseDateOnly(dateStr).getFullYear().toString()
-}
-
-function formatDay(dateStr: string): string {
-    const d = parseDateOnly(dateStr)
-    const dd = String(d.getDate()).padStart(2, "0")
-    const mm = String(d.getMonth() + 1).padStart(2, "0")
-    return `${dd}/${mm}`
-}
-
-function granularityKey(dateStr: string, g: "day" | "month" | "year"): string {
-    if (g === "day") return formatDay(dateStr)
-    if (g === "year") return formatYear(dateStr)
-    return formatMonth(dateStr)
-}
-
-function granularitySortValue(key: string, g: "day" | "month" | "year"): number {
-    if (g === "day") {
-        const [dd, mm, yyyy] = key.split("/").map(Number)
-        return new Date(yyyy, mm - 1, dd).getTime()
-    }
-    if (g === "year") return Number(key)
-    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
-        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-    const [m, y] = key.split(" ")
-    return new Date(Number(y), months.indexOf(m), 1).getTime()
-}
-
-function today(): string {
-    return new Date().toISOString().split("T")[0]
-}
+import { assignChartColors } from "@/lib/chart-colors"
+import { groupBy, formatMonth, granularityKey, granularitySortValue, today } from "@/lib/analytics-helpers"
+import type { Granularity } from "@/lib/analytics-helpers"
 
 // ── Public types ────────────────────────────────────────────────
 
@@ -140,7 +78,7 @@ export function useUnbilledAnalyticsData(
     forecast: UnbilledForecast | undefined,
     summary: { total: number; count: number; charges: number; installments: number } | undefined,
     dateRange?: { from: string; to: string } | null,
-    granularity?: "day" | "month" | "year",
+    granularity?: Granularity,
 ): UnbilledAnalyticsData {
     return useMemo(() => {
         const g = granularity ?? "month"
@@ -162,13 +100,11 @@ export function useUnbilledAnalyticsData(
 
         // ── Charge type distribution ───────────────────────────
         const chargeTypeGroups = groupBy(filteredCharges, c => c.charge_type || "OTHER")
-        const chargeTypeDistribution = Object.entries(chargeTypeGroups)
-            .map(([id, items]) => ({
-                id,
-                value: items.length,
-                color: CHARGE_TYPE_COLORS[id] ?? CHARGE_TYPE_COLORS.OTHER,
-            }))
-            .sort((a, b) => b.value - a.value)
+        const chargeTypeDistribution = assignChartColors(
+            Object.entries(chargeTypeGroups)
+                .map(([id, items]) => ({ id, value: items.length }))
+                .sort((a, b) => b.value - a.value),
+        )
 
         const chargeTypeTotal = Object.entries(chargeTypeGroups)
             .map(([id, items]) => ({
@@ -180,7 +116,7 @@ export function useUnbilledAnalyticsData(
         // ── Charge types over time (for stream) ────────────────
         const chargeTimeline = [...filteredCharges]
         const timelineGroups = groupBy(chargeTimeline, c => granularityKey(c.date, g))
-        const chargeTypeKeys = Object.keys(CHARGE_TYPE_COLORS)
+        const chargeTypeKeys = chargeTypeDistribution.map((d) => d.id)
         const chargeTypeOverTime = Object.entries(timelineGroups)
             .map(([period, items]) => {
                 const byType = groupBy(items, c => c.charge_type || "OTHER")
@@ -243,7 +179,7 @@ export function useUnbilledAnalyticsData(
             ? Object.entries(forecast.by_month)
                 .sort(([a], [b]) => a.localeCompare(b))
                 .map(([key, val]) => {
-                    const d = parseDateOnly(key + "-02")
+                    const d = new Date(key + "-02")
                     return {
                         month: d.toLocaleDateString("es-CL", { month: "short", year: "2-digit" }),
                         total: parseFloat(val.total),
@@ -262,129 +198,108 @@ export function useUnbilledAnalyticsData(
             }))
             .sort((a, b) => b.total - a.total)
 
+        const partnerDistribution = partnerAggs
+            .filter(p => p.total > 0)
+            .map(p => ({ id: p.partner, value: p.total }))
+
         const topPartners = partnerAggs.slice(0, 8)
-        const partnerDistribution = partnerAggs.slice(0, 10).map(p => ({
-            id: p.partner,
-            value: p.total,
+
+        // ── Credit composition (pie + simple waffle) ────────────
+        const creditLimit = summary?.total ?? 0
+        const creditUtilizationPct = creditLimit > 0 ? Math.min(100, Math.round((totalUnbilled / creditLimit) * 100)) : 0
+        const remaining = Math.max(0, creditLimit - totalUnbilled)
+
+        const creditComposition = assignChartColors([
+            { id: "Utilizado", value: totalUnbilled },
+            ...(remaining > 0 ? [{ id: "Disponible", value: remaining }] : []),
+        ])
+
+        // ── Upcoming events timeline ──────────────────────────
+        const upcomingEvents: TimelineEvent[] = [
+            ...filteredInstallments
+                .filter(i => i.due_date >= today())
+                .slice(0, 10)
+                .map(i => ({
+                    date: i.due_date,
+                    label: i.partner_name || "Desconocido",
+                    description: `$${Number(i.principal_amount).toLocaleString()}${i.number ? ` · Cuota #${i.number}` : ""}`,
+                    status: "warning" as const,
+                })),
+            ...filteredCharges
+                .filter(c => c.date >= today())
+                .slice(0, 5)
+                .map(c => ({
+                    date: c.date,
+                    label: c.description || "Cargo",
+                    description: `$${Number(c.amount).toLocaleString()}`,
+                    status: "destructive" as const,
+                })),
+        ].sort((a, b) => a.date.localeCompare(b.date))
+
+        const topUpcoming = upcomingEvents.slice(0, 5).map(e => ({
+            label: e.label,
+            value: e.date,
+            amount: parseFloat(e.description?.replace(/[^0-9.-]/g, "") || "0"),
         }))
-
-        // ── Credit composition ─────────────────────────────────
-        const creditComposition = forecast
-            ? [
-                { id: "Deuda Facturada", value: parseFloat(forecast.current_debt), color: "#ef4444" },
-                { id: "No Facturado", value: parseFloat(forecast.total_unbilled), color: "#f59e0b" },
-                { id: "Disponible", value: parseFloat(forecast.available_credit ?? "0"), color: "#22c55e" },
-            ].filter(d => d.value > 0)
-            : []
-
-        const totalLimit = forecast ? parseFloat(forecast.credit_limit ?? "0") : 0
-        const totalUsed = forecast ? parseFloat(forecast.total_used) : 0
-        const creditUtilizationPct = totalLimit > 0 ? (totalUsed / totalLimit) * 100 : 0
-
-        // ── Credit utilization history (from by_month projection) ──
-        const creditUtilizationHistory = forecast?.by_month
-            ? Object.entries(forecast.by_month)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([key, val]) => {
-                    const d = parseDateOnly(key + "-02")
-                    const month = d.toLocaleDateString("es-CL", { month: "short", year: "2-digit" })
-                    return {
-                        month,
-                        used: parseFloat(val.total) + parseFloat(forecast.current_debt),
-                        limit: totalLimit || parseFloat(val.total) * 2,
-                    }
-                })
-            : []
 
         // ── Calendar heatmap data ──────────────────────────────
         const calendarMap = new Map<string, number>()
         for (const c of filteredCharges) {
-            calendarMap.set(c.date, (calendarMap.get(c.date) ?? 0) + Number(c.amount))
+            const day = c.date
+            calendarMap.set(day, (calendarMap.get(day) ?? 0) + Number(c.amount))
         }
         for (const i of filteredInstallments) {
-            calendarMap.set(i.due_date, (calendarMap.get(i.due_date) ?? 0) + Number(i.principal_amount))
+            const day = i.due_date
+            calendarMap.set(day, (calendarMap.get(day) ?? 0) + Number(i.principal_amount))
         }
         const calendarData = Array.from(calendarMap.entries())
-            .map(([day, value]) => ({ day, value: Math.round(value) }))
+            .map(([day, value]) => ({ day, value }))
+            .sort((a, b) => a.day.localeCompare(b.day))
 
-        // ── Radar data ─────────────────────────────────────────
-        const radarData = chargeTypeDistribution.map(ct => ({
-            category: ct.id,
-            value: ct.value,
-        }))
+        // ── Category radar data ────────────────────────────────
+        const categoryMap = new Map<string, number>()
+        for (const c of filteredCharges) {
+            const cat = c.description ? c.description.substring(0, 20) : "Otros"
+            categoryMap.set(cat, (categoryMap.get(cat) ?? 0) + Number(c.amount))
+        }
+        const radarData = Array.from(categoryMap.entries())
+            .map(([category, value]) => ({ category, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 8)
 
-        // ── Upcoming events timeline ───────────────────────────
-        const now = today()
-        const upcomingEvents: TimelineEvent[] = [...filteredInstallments]
-            .filter(i => i.due_date >= now)
-            .sort((a, b) => a.due_date.localeCompare(b.due_date))
-            .slice(0, 15)
-            .map(i => ({
-                date: parseDateOnly(i.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" }),
-                label: `${i.partner_name ?? "Proveedor"} · Cuota ${i.number}/${i.total_installments}`,
-                description: `$${Number(i.principal_amount).toLocaleString("es-CL", { maximumFractionDigits: 0 })}`,
-                status: i.due_date === now ? "warning" as const : "neutral" as const,
-            }))
-
-        // ── Top upcoming ──────────────────────────────────────
-        const topUpcoming = [...filteredInstallments]
-            .sort((a, b) => parseFloat(b.principal_amount) - parseFloat(a.principal_amount))
-            .slice(0, 5)
-            .map(i => ({
-                label: `${i.partner_name ?? "Proveedor"} · ${parseDateOnly(i.due_date).toLocaleDateString("es-CL", { day: "numeric", month: "short" })}`,
-                value: `$${Number(i.principal_amount).toLocaleString("es-CL", { maximumFractionDigits: 0 })}`,
-                amount: Number(i.principal_amount),
-            }))
+        // ── Credit utilization history ──────────────────────────
+        const creditUtilizationHistory: Array<{ month: string; used: number; limit: number }> = []
 
         // ── Trends (period-over-period) ────────────────────────
-        function inPeriod(c: PendingChargeRow, periodVal: number, gr: "day" | "month" | "year"): boolean {
-            const d = parseDateOnly(c.date)
-            if (isNaN(d.getTime())) return false
-            if (gr === "year") return d.getFullYear() === periodVal
-            if (gr === "day") return Math.floor(d.getTime() / 86_400_000) === periodVal
-            return d.getMonth() + d.getFullYear() * 12 === periodVal
-        }
-
-        function inPeriodInst(i: UpcomingInstallment, periodVal: number, gr: "day" | "month" | "year"): boolean {
-            const d = parseDateOnly(i.due_date)
-            if (isNaN(d.getTime())) return false
-            if (gr === "year") return d.getFullYear() === periodVal
-            if (gr === "day") return Math.floor(d.getTime() / 86_400_000) === periodVal
-            return d.getMonth() + d.getFullYear() * 12 === periodVal
+        function periodKey(itemDate: string): number {
+            if (g === "year") return new Date(itemDate).getFullYear()
+            if (g === "day") return Math.floor(new Date(itemDate).getTime() / 86_400_000)
+            const d = new Date(itemDate)
+            return d.getMonth() + d.getFullYear() * 12
         }
 
         const _now = new Date()
-        const currPeriod = g === "year" ? _now.getFullYear()
-            : g === "day" ? Math.floor(_now.getTime() / 86_400_000)
-            : _now.getMonth() + _now.getFullYear() * 12
+        const currPeriod = g === "year" ? _now.getFullYear() : g === "day" ? Math.floor(_now.getTime() / 86_400_000) : _now.getMonth() + _now.getFullYear() * 12
         const prevPeriod = currPeriod - 1
 
-        function sumChargesInPeriod(items: PendingChargeRow[], p: number) {
-            return items.filter(c => inPeriod(c, p, g)).reduce((s, c) => s + Number(c.amount), 0)
-        }
-        function sumInstInPeriod(items: UpcomingInstallment[], p: number) {
-            return items.filter(i => inPeriodInst(i, p, g)).reduce((s, i) => s + Number(i.principal_amount), 0)
-        }
-        function countChargesInPeriod(items: PendingChargeRow[], p: number) {
-            return items.filter(c => inPeriod(c, p, g)).length
-        }
-        function countInstInPeriod(items: UpcomingInstallment[], p: number) {
-            return items.filter(i => inPeriodInst(i, p, g)).length
+        function isInPeriod(dateStr: string | undefined, period: number): boolean {
+            return !!dateStr && periodKey(dateStr) === period
         }
 
-        const currTotal = sumChargesInPeriod(charges, currPeriod) + sumInstInPeriod(upcomingInstallments, currPeriod)
-        const prevTotal = sumChargesInPeriod(charges, prevPeriod) + sumInstInPeriod(upcomingInstallments, prevPeriod)
-        const totalTrend: TrendData = {
-            direction: currTotal >= prevTotal ? "up" : "down",
-            value: prevTotal > 0 ? `${Math.round(((currTotal - prevTotal) / prevTotal) * 100)}%` : "—",
-        }
+        const currTotalCharges = filteredCharges.filter(c => isInPeriod(c.date, currPeriod)).reduce((s, c) => s + Number(c.amount), 0)
+        const prevTotalCharges = filteredCharges.filter(c => isInPeriod(c.date, prevPeriod)).reduce((s, c) => s + Number(c.amount), 0)
+        const currTotalInst = filteredInstallments.filter(i => isInPeriod(i.due_date, currPeriod)).reduce((s, i) => s + Number(i.principal_amount), 0)
+        const prevTotalInst = filteredInstallments.filter(i => isInPeriod(i.due_date, prevPeriod)).reduce((s, i) => s + Number(i.principal_amount), 0)
 
-        const currCnt = countChargesInPeriod(charges, currPeriod) + countInstInPeriod(upcomingInstallments, currPeriod)
-        const prevCnt = countChargesInPeriod(charges, prevPeriod) + countInstInPeriod(upcomingInstallments, prevPeriod)
-        const chargeCountTrend: TrendData = {
-            direction: currCnt >= prevCnt ? "up" : "down",
-            value: prevCnt > 0 ? `${Math.round(((currCnt - prevCnt) / prevCnt) * 100)}%` : "—",
-        }
+        const currTotal = currTotalCharges + currTotalInst
+        const prevTotal = prevTotalCharges + prevTotalInst
+        const totalTrend: TrendData = { direction: currTotal >= prevTotal ? "up" : "down", value: prevTotal > 0 ? `${Math.round(((currTotal - prevTotal) / prevTotal) * 100)}%` : "—" }
+
+        const currCount = filteredCharges.filter(c => isInPeriod(c.date, currPeriod)).length
+            + filteredInstallments.filter(i => isInPeriod(i.due_date, currPeriod)).length
+        const prevCount = filteredCharges.filter(c => isInPeriod(c.date, prevPeriod)).length
+            + filteredInstallments.filter(i => isInPeriod(i.due_date, prevPeriod)).length
+        const chargeCountTrend: TrendData = { direction: currCount >= prevCount ? "up" : "down", value: prevCount > 0 ? `${Math.round(((currCount - prevCount) / prevCount) * 100)}%` : "—" }
 
         return {
             totalUnbilled,
