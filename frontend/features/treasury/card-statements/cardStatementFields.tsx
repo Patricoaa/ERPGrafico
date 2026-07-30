@@ -7,18 +7,18 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
         key: 'display_id',
         type: 'computed',
         label: 'Folio',
-        render: (s) => (
-            <div className="flex flex-col items-center">
-                <DataCell.Code>{s.display_id}</DataCell.Code>
-                <DataCell.Secondary>{s.card_account_name}</DataCell.Secondary>
-            </div>
-        ),
+        render: (s) => <DataCell.Code>{s.display_id}</DataCell.Code>,
+    },
+    cardAccountName: {
+        key: 'card_account_name',
+        type: 'text',
+        label: 'Tarjeta',
     },
     period: {
         key: 'period_month',
-        type: 'text',
+        type: 'computed',
         label: 'Período',
-        get: (s) => `${String(s.period_month).padStart(2, '0')}/${s.period_year}`,
+        render: (s) => <>{String(s.period_month).padStart(2, '0')}/{s.period_year}</>,
     },
     billedAmount: {
         key: 'billed_amount',
@@ -29,6 +29,11 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
                 <MoneyDisplay amount={parseFloat(s.billed_amount)} />
             </div>
         ),
+    },
+    cutOffDate: {
+        key: 'cut_off_date',
+        type: 'date',
+        label: 'Cierre',
     },
     dueDate: {
         key: 'due_date',
@@ -42,5 +47,20 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
         key: 'status',
         type: 'status',
         label: 'Estado',
+    },
+    paidAt: {
+        key: 'paid_at',
+        type: 'date',
+        label: 'Pagado el',
+    },
+    paymentAccountName: {
+        key: 'payment_account_name',
+        type: 'text',
+        label: 'Cuenta de pago',
+    },
+    notes: {
+        key: 'notes',
+        type: 'text',
+        label: 'Notas',
     },
 })
