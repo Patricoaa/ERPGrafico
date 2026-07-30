@@ -3,12 +3,13 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, Receipt, BarChart3 } from 'lucide-react'
+import { CreditCard, Receipt, Gauge, TrendingUp, ShoppingCart } from 'lucide-react'
 import type { Granularity } from '@/components/shared'
 import {
     DataTableView,
     SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
+    SummaryTable, MoneyDisplay,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCardStatements } from '../hooks/useCardStatements'
@@ -83,7 +84,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
 
     const cardAccountId = search.filters.card ? Number(search.filters.card) : (creditCardAccounts[0]?.id ?? null)
 
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("costos")
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("rendimiento")
     const [granularity, setGranularity] = useState<Granularity>("month")
 
     const params: Record<string, string> = {}
@@ -170,20 +171,20 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             onGranularityChange: setGranularity,
                             tabs: [
                                 {
-                                    value: 'costos',
-                                    label: 'Cargos y Cuotas',
-                                    icon: Receipt,
+                                    value: 'rendimiento',
+                                    label: 'Rendimiento',
+                                    icon: TrendingUp,
                                     columns: [
                                         {
                                             id: 'col-evolution',
-                                            weight: 1,
+                                            weight: 2,
                                             sections: [
                                                 {
                                                     id: 'payment-evolution',
                                                     content: hubData.paymentEvolutionChart[0]?.data.some(d => d.y > 0) ? {
                                                         type: 'stat-card',
                                                         config: {
-                                                            label: 'Evolución de Pagos por Estado de Cuenta',
+                                                            label: 'Evolución de Pagos',
                                                             variant: 'chart',
                                                             chart: {
                                                                 type: 'line-chart',
@@ -202,32 +203,31 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                             ],
                                         },
                                         {
-                                            id: 'col-cost',
+                                            id: 'col-kpis',
                                             weight: 1,
                                             sections: [
                                                 {
-                                                    id: 'cost-breakdown-donut',
-                                                    content: hubData.costBreakdownDonut.length > 0 ? {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                             label: 'Composición del Estado de Cuenta',
-                                                            variant: 'chart',
-                                                             chart: {
-                                                                 type: 'pie-chart',
-                                                                 preset: 'card',
-                                                                 data: hubData.costBreakdownDonut,
-                                                                 valueFormat: "currency",
-                                                                 enableLabels: true,
-                                                                 arcLabel: (d: { value: number }) => {
-                                                                    const total = hubData.costBreakdownDonut.reduce((s, item) => s + item.value, 0);
-                                                                    return total > 0 ? `${Math.round((d.value / total) * 100)}%` : '';
-                                                                },
-                                                            },
-                                                        },
+                                                    id: 'payment-kpis',
+                                                    content: hubData.summary ? {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <div>
+                                                                <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Resumen</h4>
+                                                                <SummaryTable
+                                                                    rows={[
+                                                                        { label: 'Deuda Total', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline /> },
+                                                                        { label: 'No Facturado', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_unbilled)} inline /> },
+                                                                        ...(hubData.summary.total_past_due ? [{ label: 'Vencido', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline /> }] : []),
+                                                                        { label: 'Estados Abiertos', value: String(hubData.summary.open_statements) },
+                                                                        { label: 'Estados Vencidos', value: String(hubData.summary.overdue_statements) },
+                                                                    ]}
+                                                                />
+                                                            </div>
+                                                        ),
                                                     } : {
                                                         type: 'custom',
                                                         render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de costos</p>
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin KPIs disponibles</p>
                                                         ),
                                                     },
                                                 },
@@ -236,16 +236,49 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                     ],
                                 },
                                 {
-                                    value: 'compras',
-                                    label: 'Compras',
-                                    icon: BarChart3,
+                                    value: 'costos',
+                                    label: 'Costos',
+                                    icon: Receipt,
                                     columns: [
                                         {
-                                            id: 'col-purchase-main',
-                                            weight: 2,
+                                            id: 'col-costs-timeline',
+                                            weight: 1,
                                             sections: [
                                                 {
-                                                    id: 'purchase-bar',
+                                                    id: 'costs-bar',
+                                                    content: hubData.financialCosts.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Costos Financieros por Período',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: hubData.financialCosts.map(c => ({
+                                                                    period: c.period,
+                                                                    intereses: parseFloat(c.interest),
+                                                                    comisiones: parseFloat(c.fees),
+                                                                })),
+                                                                keys: ['intereses', 'comisiones'],
+                                                                indexBy: 'period',
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin costos financieros</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'col-effective-cost',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'effective-cost-bar',
                                                     content: hubData.purchaseGroupData.length > 0 ? {
                                                         type: 'stat-card',
                                                         config: {
@@ -272,31 +305,143 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                                 },
                                             ],
                                         },
+                                    ],
+                                },
+                                {
+                                    value: 'compras',
+                                    label: 'Compras',
+                                    icon: ShoppingCart,
+                                    columns: [
                                         {
-                                            id: 'col-purchase-side',
+                                            id: 'col-purchase-breakdown',
                                             weight: 1,
                                             sections: [
                                                 {
-                                                    id: 'purchase-summary',
-                                                    content: hubData.purchaseGroupData.length > 0 ? {
+                                                    id: 'purchase-pie',
+                                                    content: hubData.costBreakdownDonut.length > 0 ? {
                                                         type: 'stat-card',
                                                         config: {
-                                                            label: 'Resumen de Compras',
+                                                            label: 'Capital vs Intereses',
                                                             variant: 'chart',
                                                             chart: {
                                                                 type: 'pie-chart',
                                                                 preset: 'card',
-                                                                data: [
-                                                                    { id: 'Capital', value: hubData.purchaseGroupData.reduce((s, g) => s + parseFloat(g.total_amount), 0) },
-                                                                    { id: 'Intereses', value: hubData.purchaseGroupData.reduce((s, g) => s + parseFloat(g.total_interest), 0) },
-                                                                ],
+                                                                data: hubData.costBreakdownDonut,
                                                                 valueFormat: 'currency',
+                                                                enableLabels: true,
+                                                                arcLabel: (d: { value: number }) => {
+                                                                    const total = hubData.costBreakdownDonut.reduce((s, item) => s + item.value, 0);
+                                                                    return total > 0 ? `${Math.round((d.value / total) * 100)}%` : '';
+                                                                },
                                                             },
                                                         },
                                                     } : {
                                                         type: 'custom',
                                                         render: (
                                                             <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de compras</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'col-top-purchases',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'top-purchases-bar',
+                                                    content: hubData.purchaseGroupData.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Top Compras por Monto',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: [...hubData.purchaseGroupData]
+                                                                    .sort((a, b) => parseFloat(b.total_amount) - parseFloat(a.total_amount))
+                                                                    .slice(0, 8)
+                                                                    .map(g => ({ compra: g.display_id, total: parseFloat(g.total_amount) })),
+                                                                keys: ['total'],
+                                                                indexBy: 'compra',
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de compras</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    value: 'cupo',
+                                    label: 'Cupo',
+                                    icon: Gauge,
+                                    columns: [
+                                        {
+                                            id: 'col-utilization',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'utilization-gauge',
+                                                    content: hubData.creditUtilization.length > 0 ? {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <div>
+                                                                <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Utilización del Cupo</h4>
+                                                                {hubData.creditUtilization.map(cu => (
+                                                                    <SummaryTable
+                                                                        key={cu.card_account_id}
+                                                                        rows={[
+                                                                            { label: 'Tarjeta', value: cu.card_name },
+                                                                            { label: 'Límite', value: <MoneyDisplay amount={parseFloat(cu.credit_limit ?? '0')} inline /> },
+                                                                            { label: 'Deuda Actual', value: <MoneyDisplay amount={parseFloat(cu.current_debt)} inline /> },
+                                                                            { label: 'No Facturado', value: <MoneyDisplay amount={parseFloat(cu.total_unbilled)} inline /> },
+                                                                            { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(cu.available_credit ?? '0')} inline /> },
+                                                                            { label: '% Utilizado', value: `${cu.utilization_pct.toFixed(1)}%` },
+                                                                        ]}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        ),
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
+                                                        ),
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'col-debt-summary',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'debt-kpis',
+                                                    content: hubData.summary ? {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <div>
+                                                                <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Deuda Consolidada</h4>
+                                                                <SummaryTable
+                                                                    rows={[
+                                                                        { label: 'Deuda Total', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline /> },
+                                                                        { label: 'Total Facturado', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_billed ?? '0')} inline /> },
+                                                                        { label: 'Total Vencido', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline /> },
+                                                                    ]}
+                                                                />
+                                                            </div>
+                                                        ),
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
+                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de deuda</p>
                                                         ),
                                                     },
                                                 },

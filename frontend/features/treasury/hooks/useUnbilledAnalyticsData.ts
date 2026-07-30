@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import type { PendingChargeRow, UpcomingInstallment, UnbilledForecast } from "../types"
 import { assignChartColors } from "@/lib/chart-colors"
-import { groupBy, formatMonth, granularityKey, granularitySortValue, today } from "@/lib/analytics-helpers"
+import { groupBy, formatMonth, granularityKey, granularitySortValue } from "@/lib/analytics-helpers"
 import type { Granularity } from "@/lib/analytics-helpers"
 
 // ── Public types ────────────────────────────────────────────────
@@ -9,13 +9,6 @@ import type { Granularity } from "@/lib/analytics-helpers"
 export interface TrendData {
     direction: "up" | "down"
     value: string
-}
-
-export interface TimelineEvent {
-    date: string
-    label: string
-    description?: string
-    status: "success" | "warning" | "destructive" | "neutral"
 }
 
 export interface UnbilledAnalyticsData {
@@ -49,22 +42,9 @@ export interface UnbilledAnalyticsData {
     partnerDistribution: Array<{ id: string; value: number }>
     topPartners: Array<{ partner: string; total: number; count: number }>
 
-    // Credit composition (for pie + waffle)
+    // Credit composition (for pie)
     creditComposition: Array<{ id: string; value: number; color: string }>
     creditUtilizationPct: number
-
-    // Credit utilization history
-    creditUtilizationHistory: Array<{ month: string; used: number; limit: number }>
-
-    // Upcoming events timeline
-    upcomingEvents: TimelineEvent[]
-    topUpcoming: Array<{ label: string; value: string; amount: number }>
-
-    // Calendar heatmap data
-    calendarData: Array<{ day: string; value: number }>
-
-    // Category radar data
-    radarData: Array<{ category: string; value: number }>
 
     // Raw passthrough
     forecast: UnbilledForecast | undefined
@@ -204,71 +184,16 @@ export function useUnbilledAnalyticsData(
 
         const topPartners = partnerAggs.slice(0, 8)
 
-        // ── Credit composition (pie + simple waffle) ────────────
-        const creditLimit = summary?.total ?? 0
-        const creditUtilizationPct = creditLimit > 0 ? Math.min(100, Math.round((totalUnbilled / creditLimit) * 100)) : 0
-        const remaining = Math.max(0, creditLimit - totalUnbilled)
+        // ── Credit composition (pie) ────────────────────────────
+        const creditLimit = forecast?.credit_limit ? parseFloat(forecast.credit_limit) : 0
+        const creditUtilizationPct = creditLimit > 0 ? Math.min(100, Math.round(((totalUnbilled + parseFloat(forecast?.current_debt ?? '0')) / creditLimit) * 100)) : 0
+        const totalUsed = totalUnbilled + parseFloat(forecast?.current_debt ?? '0')
+        const remaining = Math.max(0, creditLimit - totalUsed)
 
         const creditComposition = assignChartColors([
-            { id: "Utilizado", value: totalUnbilled },
+            { id: "Utilizado", value: totalUsed },
             ...(remaining > 0 ? [{ id: "Disponible", value: remaining }] : []),
         ])
-
-        // ── Upcoming events timeline ──────────────────────────
-        const upcomingEvents: TimelineEvent[] = [
-            ...filteredInstallments
-                .filter(i => i.due_date >= today())
-                .slice(0, 10)
-                .map(i => ({
-                    date: i.due_date,
-                    label: i.partner_name || "Desconocido",
-                    description: `$${Number(i.principal_amount).toLocaleString()}${i.number ? ` · Cuota #${i.number}` : ""}`,
-                    status: "warning" as const,
-                })),
-            ...filteredCharges
-                .filter(c => c.date >= today())
-                .slice(0, 5)
-                .map(c => ({
-                    date: c.date,
-                    label: c.description || "Cargo",
-                    description: `$${Number(c.amount).toLocaleString()}`,
-                    status: "destructive" as const,
-                })),
-        ].sort((a, b) => a.date.localeCompare(b.date))
-
-        const topUpcoming = upcomingEvents.slice(0, 5).map(e => ({
-            label: e.label,
-            value: e.date,
-            amount: parseFloat(e.description?.replace(/[^0-9.-]/g, "") || "0"),
-        }))
-
-        // ── Calendar heatmap data ──────────────────────────────
-        const calendarMap = new Map<string, number>()
-        for (const c of filteredCharges) {
-            const day = c.date
-            calendarMap.set(day, (calendarMap.get(day) ?? 0) + Number(c.amount))
-        }
-        for (const i of filteredInstallments) {
-            const day = i.due_date
-            calendarMap.set(day, (calendarMap.get(day) ?? 0) + Number(i.principal_amount))
-        }
-        const calendarData = Array.from(calendarMap.entries())
-            .map(([day, value]) => ({ day, value }))
-            .sort((a, b) => a.day.localeCompare(b.day))
-
-        // ── Category radar data ────────────────────────────────
-        const categoryMap = new Map<string, number>()
-        for (const c of filteredCharges) {
-            const cat = c.description ? c.description.substring(0, 20) : "Otros"
-            categoryMap.set(cat, (categoryMap.get(cat) ?? 0) + Number(c.amount))
-        }
-        const radarData = Array.from(categoryMap.entries())
-            .map(([category, value]) => ({ category, value }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 8)
-
-        // ── Credit utilization history ──────────────────────────
-        const creditUtilizationHistory: Array<{ month: string; used: number; limit: number }> = []
 
         // ── Trends (period-over-period) ────────────────────────
         function periodKey(itemDate: string): number {
@@ -318,11 +243,6 @@ export function useUnbilledAnalyticsData(
             topPartners,
             creditComposition,
             creditUtilizationPct,
-            creditUtilizationHistory,
-            upcomingEvents,
-            topUpcoming,
-            calendarData,
-            radarData,
             forecast,
             summary,
             upcomingInstallments: filteredInstallments,
