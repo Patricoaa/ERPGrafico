@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import {
     Receipt, CreditCard,
     Gauge,
-    TrendingUp, Building2, Activity,
+    TrendingUp, Building2,
 } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
@@ -20,7 +20,6 @@ import {
     UnifiedSearchBar,
     useUnifiedSearch,
     StatCard,
-    SummaryTable,
     SkeletonShell,
     EmptyState,
     ToolbarCreateButton,
@@ -296,8 +295,6 @@ export function UnbilledChargesClientView({
         }] : []),
     ]
 
-    const fmt = (n: number) => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(n)
-
     // ── Charge type helpers for hub (from hook) ──
     const chargeTypeDisplayMap = useMemo(() => {
         const map = new Map<string, string>()
@@ -390,93 +387,67 @@ export function UnbilledChargesClientView({
                                     columns: [
                                         {
                                             id: 'cupo-col',
-                                            weight: 2,
+                                            weight: 3,
                                             sections: [
                                                 {
-                                                    id: 'cupo-unified',
-                                                    content: {
+                                                    id: 'cupo-kpis',
+                                                    content: forecast?.credit_limit ? {
                                                         type: 'custom',
-                                                         render: forecast?.credit_limit ? (
-                                                            <StatCard
-                                                                label="Cupo"
-                                                                variant="chart"
-                                                                className="flex-1"
-                                                                chart={
-                                                                    <div className="flex flex-col gap-4">
-                                                                        <div className="flex flex-col gap-1.5">
-                                                                            <div className="flex justify-between items-center text-xs">
-                                                                                <span className="font-bold text-foreground">
-                                                                                    <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> usado
-                                                                                </span>
-                                                                                <span className="font-bold text-muted-foreground">
-                                                                                    <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> disp.
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                                                                <div
-                                                                                    className="h-full rounded-full bg-warning transition-all"
-                                                                                    style={{ width: `${Math.min(usedPercent, 100)}%` }}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                        <SummaryTable
-                                                                            rows={[
-                                                                                { label: 'Límite de Crédito', value: <MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline /> },
-                                                                                { label: 'Total Usado', value: <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> },
-                                                                                { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> },
-                                                                                { label: '% Usado', value: `${usedPercent.toFixed(1)}%` },
-                                                                            ]}
-                                                                        />
-                                                                    </div>
-                                                                }
-                                                            />
-                                                        ) : (
+                                                        render: (
+                                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                                                <StatCard
+                                                                    label="Límite de Crédito"
+                                                                    value={<MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline />}
+                                                                    variant="default"
+                                                                    accent="primary"
+                                                                />
+                                                                <StatCard
+                                                                    label="Total Usado"
+                                                                    value={<MoneyDisplay amount={parseFloat(forecast.total_used)} inline />}
+                                                                    variant="default"
+                                                                    accent="warning"
+                                                                />
+                                                                <StatCard
+                                                                    label="Disponible"
+                                                                    value={<MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline />}
+                                                                    variant="default"
+                                                                    accent="success"
+                                                                />
+                                                                <StatCard
+                                                                    label="% Usado"
+                                                                    value={`${usedPercent.toFixed(1)}%`}
+                                                                    variant="default"
+                                                                    accent="destructive"
+                                                                />
+                                                            </div>
+                                                        ),
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: (
                                                             <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
                                                         ),
                                                     },
                                                 },
-                                            ],
-                                        },
-                                        {
-                                            id: 'cargos-col',
-                                            weight: 1,
-                                            sections: [
                                                 {
                                                     id: 'charge-types-pie',
                                                     content: chargeTypeSummary.length > 0 || totalInstCount > 0 ? {
                                                         type: 'custom',
                                                         render: (
-                                                            <StatCard label="Distribución de Cargos" variant="chart" className="flex-1" chart={
-                                                                <div className="flex flex-col gap-3">
-                                                                    <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
-                                                                        <PieChart
-                                                                            data={[...chargeTypeSummary.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
-                                                                            tooltipFormat="currency"
-                                                                            legends={[{
-                                                                                anchor: "bottom",
-                                                                                direction: "row",
-                                                                                translateY: 28,
-                                                                                itemWidth: 100,
-                                                                                itemHeight: 14,
-                                                                                itemsSpacing: 8,
-                                                                                symbolSize: 8,
-                                                                            }]}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="shrink-0">
-                                                                        <SummaryTable
-                                                                            rows={[
-                                                                                ...chargeTypeSummary.map(ct => ({
-                                                                                    label: ct.display,
-                                                                                    value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
-                                                                                })),
-                                                                                ...(totalInstCount > 0 ? [{
-                                                                                    label: 'Cuotas',
-                                                                                    value: <span className="text-xs font-bold">${fmt(totalInstAmount)} ({totalInstCount} cuotas)</span>,
-                                                                                }] : []),
-                                                                            ]}
-                                                                        />
-                                                                    </div>
+                                                            <StatCard label="Distribución de Cargos" variant="chart" className="flex-1 mt-4" chart={
+                                                                <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
+                                                                    <PieChart
+                                                                        data={[...chargeTypeSummary.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
+                                                                        tooltipFormat="currency"
+                                                                        legends={[{
+                                                                            anchor: "bottom",
+                                                                            direction: "row",
+                                                                            translateY: 28,
+                                                                            itemWidth: 100,
+                                                                            itemHeight: 14,
+                                                                            itemsSpacing: 8,
+                                                                            symbolSize: 8,
+                                                                        }]}
+                                                                    />
                                                                 </div>
                                                             } />
                                                         ),
@@ -612,74 +583,7 @@ export function UnbilledChargesClientView({
                                         },
                                     ],
                                 },
-                                {
-                                    value: 'actividad',
-                                    label: 'Actividad',
-                                    icon: Activity,
-                                    columns: [
-                                        {
-                                            id: 'act-main',
-                                            weight: 2,
-                                            sections: [
-                                                {
-                                                    id: 'daily-accum',
-                                                    content: analyticsData.dailyAccumulation.length > 0 ? {
-                                                        type: 'stat-card',
-                                                        config: {
-                                                            label: 'Acumulado Diario',
-                                                            variant: 'chart',
-                                                            chart: {
-                                                                type: 'line-chart',
-                                                                preset: 'card',
-                                                                data: [{
-                                                                    id: 'Acumulado',
-                                                                    data: analyticsData.dailyAccumulation.map(d => ({ x: d.date, y: d.total })),
-                                                                }],
-                                                                enableArea: true,
-                                                                valueFormat: '$,.0f',
-                                                            },
-                                                        },
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin actividad registrada</p>,
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                        {
-                                            id: 'act-side',
-                                            weight: 1,
-                                            sections: [
-                                                {
-                                                    id: 'charge-types-summary',
-                                                    content: chargeTypeSummary.length > 0 || totalInstCount > 0 ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <div>
-                                                                <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Distribución de Cargos</h4>
-                                                                <SummaryTable
-                                                                    rows={[
-                                                                        ...chargeTypeSummary.map(ct => ({
-                                                                            label: ct.display,
-                                                                            value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
-                                                                        })),
-                                                                        ...(totalInstCount > 0 ? [{
-                                                                            label: 'Cuotas',
-                                                                            value: <span className="text-xs font-bold">${fmt(totalInstAmount)} ({totalInstCount} cuotas)</span>,
-                                                                        }] : []),
-                                                                    ]}
-                                                                />
-                                                            </div>
-                                                        ),
-                                                    } : {
-                                                        type: 'custom',
-                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin distribución de cargos</p>,
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                    ],
-                                },
+
                             ],
                         },
                     }}
