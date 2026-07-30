@@ -131,6 +131,7 @@ export interface AnalyticsTab {
     badge?: string | number
     description?: string
     columns?: AnalyticsColumn[]
+    gridRows?: string
 }
 
 export interface AnalyticsPanelProps {

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Flujo Venta Completo (T-63)
- * Cubre: Crear NV → Confirmar → Emitir Factura → Cobrar → Verificar ER
+ * Cubre: Crear OV → Confirmar → Emitir Factura → Cobrar → Verificar ER
  *
  * Prerequisito: el entorno tiene datos semilla (al menos 1 producto y 1 contacto cliente).
  * El test usa la API del backend para setup y verifica resultados en la UI.
@@ -14,7 +14,7 @@ test.describe('Flujo Venta Completo', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('la lista de Notas de Venta carga correctamente', async ({ page }) => {
+  test('la lista de Ordenes de Venta carga correctamente', async ({ page }) => {
     // La ruta debe responder y mostrar la tabla o estado vacío
     await expect(page).toHaveURL(/ventas\/ordenes/);
     // Encabezado o título de página visible
@@ -28,7 +28,7 @@ test.describe('Flujo Venta Completo', () => {
     }
   });
 
-  test('crear una nueva Nota de Venta abre el formulario', async ({ page }) => {
+  test('crear una nueva Orden de Venta abre el formulario', async ({ page }) => {
     // Buscar botón de creación (varía por implementación)
     const createBtn = page.getByRole('button', { name: /nueva|crear|nuevo/i }).first();
     const createLink = page.getByRole('link', { name: /nueva|crear|nuevo/i }).first();

@@ -64,8 +64,8 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                                 </div>
                                 {check.sale_order_display && (
                                     <div>
-                                        <span className="text-muted-foreground">NV Asociada</span>
-                                        <p className="font-medium">NV-{check.sale_order_display.number}</p>
+                                        <span className="text-muted-foreground">OV Asociada</span>
+                                        <p className="font-medium">OV-{check.sale_order_display.number}</p>
                                     </div>
                                 )}
                             </div>

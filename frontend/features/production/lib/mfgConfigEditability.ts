@@ -27,7 +27,7 @@ export function canEditMfgSection(section: MfgSection, order: WorkOrder): Sectio
     const { status, current_stage } = order
 
     if (section === 'identity') {
-        return { canEdit: false, reason: 'Producto y NV no son modificables después de crear la OT.' }
+        return { canEdit: false, reason: 'Producto y OV no son modificables después de crear la OT.' }
     }
 
     if (status === 'FINISHED' || status === 'CANCELLED') {
@@ -43,7 +43,7 @@ export function canEditMfgSection(section: MfgSection, order: WorkOrder): Sectio
             return { canEdit: false, reason: 'El volumen solo es modificable mientras la OT está en Borrador.' }
         }
         if (order.sale_order_number || order.sale_order) {
-            return { canEdit: false, reason: 'La cantidad se hereda de la Nota de Venta. Edite la línea en la NV o use "Crear OT corregida".' }
+            return { canEdit: false, reason: 'La cantidad se hereda de la Orden de Venta. Edite la línea en la OV o use "Crear OT corregida".' }
         }
         const hasConfirmedPO = (order.materials ?? []).some(
             (m) => m.is_outsourced && m.purchase_order_number

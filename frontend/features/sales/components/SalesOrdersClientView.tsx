@@ -105,7 +105,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
              )}
 
              {addingNote && (
-                 <SkeletonShell isLoading={true} ariaLabel="Cargando wizard de nota de venta">
+                 <SkeletonShell isLoading={true} ariaLabel="Cargando wizard de orden de venta">
                      <Suspense fallback={<div />}>
                          <UnifiedNoteWizard
                              open={!!addingNote}

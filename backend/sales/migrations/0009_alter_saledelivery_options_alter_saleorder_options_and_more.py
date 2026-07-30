@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="saleorder",
-            options={"verbose_name": "Nota de Venta", "verbose_name_plural": "Notas de Venta"},
+            options={"verbose_name": "Orden de Venta", "verbose_name_plural": "Ordenes de Venta"},
         ),
         migrations.AlterModelOptions(
             name="salereturn",

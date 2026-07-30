@@ -24,7 +24,7 @@ superseded_by: ADR-0018
 | Query | Desc. | p50 (Mediana) | p95 | p99 |
 |-------|-------|--------------|-----|-----|
 | `Carlos` | String corto frecuente | 850 ms | 1,200 ms | 1,450 ms |
-| `NV-001` | String exacto/parcial ID | 900 ms | 1,250 ms | 1,500 ms |
+| `OV-001` | String exacto/parcial ID | 900 ms | 1,250 ms | 1,500 ms |
 | `76.` | Prefijo numérico (RUT) | 780 ms | 1,150 ms | 1,350 ms |
 
 ## Conclusión

@@ -246,7 +246,7 @@ export function POSReport({ data, title, type = "X", onClose, loading = false }:
                             <div className="space-y-1.5 text-[11px] leading-tight mb-4">
                                 {data.sale_order_count > 0 && (
                                     <div className="flex justify-between">
-                                        <span className="font-bold text-muted-foreground">Notas de venta:</span>
+                                        <span className="font-bold text-muted-foreground">Ordenes de venta:</span>
                                         <span className="font-bold font-mono">{data.sale_order_count}</span>
                                     </div>
                                 )}

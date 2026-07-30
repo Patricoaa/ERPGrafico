@@ -21,7 +21,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
     const { printRef, handlePrint } = usePrintableDrawer()
 
     const identity = useDrawerIdentity('sales.saleorder', 'view', order, {
-        overrideTitle: order?.number ?? 'Nota de Venta',
+        overrideTitle: order?.number ?? 'Orden de Venta',
         onPrint: handlePrint,
     })
 
@@ -60,7 +60,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
                 subtitle={identity.subtitle}
             >
                 <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="sale_order" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
-                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando nota de venta">
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando orden de venta">
                     {order && (
                         <div className="p-4 space-y-4">
                             <StatusBadge status={order.status} variant="badge" />

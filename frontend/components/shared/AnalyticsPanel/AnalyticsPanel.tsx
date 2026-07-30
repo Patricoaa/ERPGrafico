@@ -143,7 +143,7 @@ function AnalyticsTabContent({ tab, isActive }: { tab: AnalyticsTab; isActive: b
     return (
         <div className={cn("flex-1 flex flex-col min-h-0 h-full w-full", !isActive && "hidden")}>
             {tab.columns?.length ? (
-                <AnalyticsLayout columns={tab.columns} />
+                <AnalyticsLayout columns={tab.columns} gridRows={tab.gridRows} />
             ) : null}
         </div>
     )

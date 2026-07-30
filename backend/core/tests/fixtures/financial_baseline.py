@@ -225,8 +225,8 @@ def _generate_sale_journal_entries(
 
         je = _build_journal_entry(
             date_=d,
-            description=f"Venta NV-{i:06d}",
-            reference=f"NV-{i:06d}",
+            description=f"Venta OV-{i:06d}",
+            reference=f"OV-{i:06d}",
             items=[
                 (debit_account, total, Decimal("0")),
                 (accounts["sales_product"], Decimal("0"), net),

@@ -125,7 +125,7 @@ export function SaleOrderProductStep({
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground mb-1">
-            Buscar Nota de Venta
+            Buscar Orden de Venta
           </label>
           <Input
             placeholder="Buscar por número, cliente o descripción..."
@@ -137,14 +137,14 @@ export function SaleOrderProductStep({
 
         {loading ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Cargando notas de venta...</p>
+            <p className="text-muted-foreground">Cargando ordenes de venta...</p>
           </div>
         ) : (
           <div className="space-y-4">
             {orders.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">
-                  No se encontraron notas de venta. Intente con otro término de búsqueda.
+                  No se encontraron ordenes de venta. Intente con otro término de búsqueda.
                 </p>
               </div>
             ) : (
@@ -180,7 +180,7 @@ export function SaleOrderProductStep({
                         <div className="flex-1 space-y-3">
                           <div className="flex justify-between items-start">
                             <h3 className="font-semibold text-lg text-foreground">
-                              NV #{order.number}
+                              OV #{order.number}
                             </h3>
                             <span className="text-xs text-muted-foreground">
                               {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
@@ -237,7 +237,7 @@ export function SaleOrderProductStep({
                 availableProducts.length === 0 ? (
                   <div className="text-center py-6">
                     <p className="text-muted-foreground">
-                      No hay productos fabricables avanzados pendientes en esta nota de venta.
+                      No hay productos fabricables avanzados pendientes en esta orden de venta.
                     </p>
                   </div>
                 ) : (

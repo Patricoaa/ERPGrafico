@@ -417,7 +417,7 @@ export function ManufacturingConfigStep({
               {otType === "LINKED" ? (
                 <div className="p-4 bg-muted/20 border rounded-md">
                   <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
-                    <FileText className="h-3.5 w-3.5" /> Producto de la Nota de Venta
+                    <FileText className="h-3.5 w-3.5" /> Producto de la Orden de Venta
                   </Label>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-4 text-sm">

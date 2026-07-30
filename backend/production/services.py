@@ -1017,7 +1017,7 @@ class WorkOrderService:
         if work_order.sale_line:
             product = work_order.sale_line.product
             uom = work_order.sale_line.uom
-            # Use actual_quantity_produced when set (rectification on NV-linked OT)
+            # Use actual_quantity_produced when set (rectification on OV-linked OT)
             if work_order.actual_quantity_produced is not None:
                 quantity = work_order.actual_quantity_produced
             else:
@@ -1673,7 +1673,7 @@ class WorkOrderService:
 
         if work_order.sale_line_id:
             raise ValidationError(
-                'La cantidad se hereda de la Nota de Venta y no puede modificarse aquí. Edite la línea en la NV o use "Crear OT corregida".'
+                'La cantidad se hereda de la Orden de Venta y no puede modificarse aquí. Edite la línea en la OV o use "Crear OT corregida".'
             )
 
         if ProductionConsumption.objects.filter(work_order=work_order).exists():
@@ -1902,7 +1902,7 @@ class WorkOrderService:
         }
         if immutable.intersection(data_keys):
             raise ValidationError(
-                'Producto y Nota de Venta no pueden modificarse después de crear la OT. Use "Crear OT corregida" para generar una nueva.'
+                'Producto y Orden de Venta no pueden modificarse después de crear la OT. Use "Crear OT corregida" para generar una nueva.'
             )
 
     @staticmethod

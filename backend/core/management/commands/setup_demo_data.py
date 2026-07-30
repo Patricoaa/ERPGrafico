@@ -315,7 +315,7 @@ class Command(BaseCommand):
                 n_inv = Invoice.objects.count()
                 n_tm = TreasuryMovement.objects.count()
                 self.stdout.write(
-                    f"  ✓ {n_po} OC, {n_so} NV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería"
+                    f"  ✓ {n_po} OC, {n_so} OV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería"
                 )
                 
                 section_start = time.time()
@@ -2284,7 +2284,7 @@ class Command(BaseCommand):
         from billing.models import Invoice
         from sales.services import SalesService
 
-        # 1. SAMPLE SALE: NV -> GD -> FACT
+        # 1. SAMPLE SALE: OV -> GD -> FACT
         customer = partners["customers"][0]
         warehouse = inventory["warehouse"]
         # Use a storable product (no manufacturing validation)
@@ -2323,7 +2323,7 @@ class Command(BaseCommand):
                 date=timezone.now().date(),
             )
             self.stdout.write(
-                f"  ✓ NV-{order.number}: {customer.name} → {order.lines.first().quantity}u {product.name} (FACT-{invoice.number})"
+                f"  ✓ OV-{order.number}: {customer.name} → {order.lines.first().quantity}u {product.name} (FACT-{invoice.number})"
             )
         else:
             self.stdout.write("  — No se encontró producto storable para demo flow")
@@ -2790,7 +2790,7 @@ class Command(BaseCommand):
                 reference="Cobro Venta Transfer",
             )
             self.stdout.write(
-                f"  ✓ NV-{so1.number}: {c1.name} → 500 {impresion.name} "
+                f"  ✓ OV-{so1.number}: {c1.name} → 500 {impresion.name} "
                 f"(${inv1.total:,.0f}) — Transferencia BCO-ESTADO"
             )
 
@@ -2850,7 +2850,7 @@ class Command(BaseCommand):
                 reference="Cobro Venta Efectivo",
             )
             self.stdout.write(
-                f"  ✓ NV-{so2.number}: {c2.name} → 3 Diseño + 10 Encuadernación "
+                f"  ✓ OV-{so2.number}: {c2.name} → 3 Diseño + 10 Encuadernación "
                 f"(${inv2.total:,.0f}) — Efectivo CAJA-TALLER"
             )
 
@@ -2898,7 +2898,7 @@ class Command(BaseCommand):
                 created_by=admin,
             )
             self.stdout.write(
-                f"  ✓ NV-{so3.number}: {c_default.name} → 10 {papel.name} "
+                f"  ✓ OV-{so3.number}: {c_default.name} → 10 {papel.name} "
                 f"(${inv3.total:,.0f}) — Cheque #2001 recibido (IN_PORTFOLIO)"
             )
 

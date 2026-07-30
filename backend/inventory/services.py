@@ -1642,9 +1642,9 @@ class ProductService:
             restrictions.append(
                 {
                     "type": "sale_order",
-                    "label": "Notas de Venta Pendientes",
+                    "label": "Ordenes de Venta Pendientes",
                     "description": f"Hay {pending_sales.count()} Nota(s) de Venta con despachos pendientes.",
-                    "action_hint": "Complete los despachos o anule las Notas de Venta para proceder.",
+                    "action_hint": "Complete los despachos o anule las Ordenes de Venta para proceder.",
                     "count": pending_sales.count(),
                     "link": "/billing/sales",
                 }

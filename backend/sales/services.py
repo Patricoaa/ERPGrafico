@@ -860,7 +860,7 @@ class SalesService:
     @staticmethod
     def validate_editable(instance):
         if instance.status != "DRAFT":
-            raise ValidationError("Solo se pueden editar notas de venta en estado Borrador.")
+            raise ValidationError("Solo se pueden editar ordenes de venta en estado Borrador.")
 
     @staticmethod
     def dispatch_order_by_id(order: SaleOrder, warehouse_id, delivery_date=None):
@@ -1068,7 +1068,7 @@ class SalesService:
                     ):
                         raise ValidationError(
                             f"No se permite crear Nota de Débito para el producto fabricado '{product.name}' sin stock. "
-                            "Por favor, cree una nueva Nota de Venta en su lugar."
+                            "Por favor, cree una nueva Orden de Venta en su lugar."
                         )
 
                 # Rule: Validate quantity doesn't exceed delivered
@@ -1207,7 +1207,7 @@ class SalesService:
                 document_type=InventoryDocument.Type.RECEIPT,
                 status=InventoryDocument.Status.DRAFT,
                 date=date or timezone.now().date(),
-                reference=f"Devolución NC {document_number} - NV {order.number}",
+                reference=f"Devolución NC {document_number} - OV {order.number}",
                 partner=order.customer,
                 source_document_type="sales.saleorder",
                 source_document_id=order.id,

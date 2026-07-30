@@ -338,7 +338,7 @@ class NotificationRule(models.Model):
 class Comment(models.Model):
     """
     Polymorphic comment attached to any model (WorkOrder, SaleOrder, etc.).
-    Comments on linked objects (e.g. OT ↔ NV) are surfaced together at query time.
+    Comments on linked objects (e.g. OT ↔ OV) are surfaced together at query time.
     """
 
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)

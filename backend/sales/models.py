@@ -196,8 +196,8 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         }
 
     class Meta:
-        verbose_name = _("Nota de Venta")
-        verbose_name_plural = _("Notas de Venta")
+        verbose_name = _("Orden de Venta")
+        verbose_name_plural = _("Ordenes de Venta")
 
     def __str__(self):
         return f"{self.display_id} {self.customer.name}"

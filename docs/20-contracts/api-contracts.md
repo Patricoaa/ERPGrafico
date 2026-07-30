@@ -100,7 +100,7 @@ Response schema (detail):
 ```json
 {
   "id": "number",
-  "number": "int (business identifier — rendered as NV-{number} via ENTITY_REGISTRY)",
+  "number": "int (business identifier — rendered as OV-{number} via ENTITY_REGISTRY)",
   "status": "DRAFT|CONFIRMED|PAYMENT_PENDING|INVOICED|PAID|CANCELLED",
   "customer": { "id": "number", "name": "string" },
   "items": [ /* line items with computed totals */ ],

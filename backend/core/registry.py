@@ -30,12 +30,12 @@ def _is_postgres() -> bool:
 class SearchableEntity:
     model: type[models.Model]
     label: str  # dot-notation app label, e.g. 'sales.saleorder'
-    title_singular: str  # e.g. 'Nota de Venta'
-    title_plural: str  # e.g. 'Notas de Venta'
+    title_singular: str  # e.g. 'Orden de Venta'
+    title_plural: str  # e.g. 'Ordenes de Venta'
     icon: str  # lucide icon name, e.g. 'receipt-text'
     search_fields: tuple[str, ...]  # ORM field lookups, e.g. ('number', 'customer__name')
-    short_display_template: str  # e.g. 'NV-{number}'
-    display_template: str  # Python str.format_map template, e.g. 'NV-{number} · {customer.name}'
+    short_display_template: str  # e.g. 'OV-{number}'
+    display_template: str  # Python str.format_map template, e.g. 'OV-{number} · {customer.name}'
     list_url: str  # frontend route, e.g. '/ventas/ordenes'
     detail_url_pattern: str  # frontend route with {id}, e.g. '/ventas/ordenes/{id}'
     subtitle_template: str = ""  # e.g. '{customer.email}'
@@ -128,27 +128,27 @@ class UniversalRegistry:
 
         logger.debug(f"Search started: query='{query}', user='{user}'")
 
-        # 1. Identify if the query has a canonical prefix (e.g., "NV-", "OCS-")
+        # 1. Identify if the query has a canonical prefix (e.g., "OV-", "OCS-")
         # We find the best matching prefix and strip it to search for the core identifier.
         targeted_entities = []
         clean_query = query
         best_prefix_len = 0
 
         for label, entity in cls._entities.items():
-            # Extract constant prefix (e.g., "NV-{number}" -> "NV-")
+            # Extract constant prefix (e.g., "OV-{number}" -> "OV-")
             m = re.match(r"^([^{]+)\{", entity.short_display_template)
             if not m:
                 continue
 
             raw_prefix = m.group(1)
-            # Clean version for flexible matching (e.g., "NV-" -> "NV")
+            # Clean version for flexible matching (e.g., "OV-" -> "OV")
             clean_prefix = re.sub(r"[^a-zA-Z0-9]+$", "", raw_prefix).upper()
             if not clean_prefix:
                 continue
 
             q_upper = query.upper()
 
-            # Match if query starts with the prefix letters (e.g., "NV100" or "NV-100" matches "NV-")
+            # Match if query starts with the prefix letters (e.g., "NV100" or "OV-100" matches "OV-")
             # We ensure it's a true prefix by checking if it's followed by a non-letter or if it's the whole query.
             if q_upper == clean_prefix or (
                 q_upper.startswith(clean_prefix) and not q_upper[len(clean_prefix)].isalpha()

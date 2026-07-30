@@ -180,7 +180,7 @@ export const DataCell = {
         )
     },
 
-    /** Clickable link, often used for document codes (e.g. NV-123) */
+    /** Clickable link, often used for document codes (e.g. OV-123) */
     Link: ({ children, href, onClick, className, external, ...props }: HTMLAttributes<HTMLElement> & { href?: string, onClick?: () => void, external?: boolean }) => {
         if (href) {
             return (

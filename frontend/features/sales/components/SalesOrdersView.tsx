@@ -118,62 +118,85 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         value: "resumen",
                         label: "Resumen",
                         icon: BarChart3,
+                        gridRows: "max-content 1fr",
                         columns: [
                             {
-                                id: "col-kpi",
+                                id: "col-1",
                                 weight: 1,
                                 sections: [
                                     {
                                         id: "kpi-volume",
+                                        colSpan: 1,
                                         content: { type: "stat-card", config: { label: "Volumen Total", value: formatMoney(analyticsData.totalVolume), variant: "hero", trend: analyticsData.volumeTrend } },
                                     },
-                                    {
-                                        id: "kpi-paid",
-                                        content: { type: "stat-card", config: { label: "Cobrado", value: formatMoney(analyticsData.totalPaid), variant: "hero", trend: analyticsData.paidTrend, accent: "success" } },
-                                        fillRemaining: false,
-                                    },
-                                    {
-                                        id: "kpi-pending",
-                                        content: { type: "stat-card", config: { label: "Pendiente", value: formatMoney(analyticsData.totalPending), variant: "hero", accent: "warning" } },
-                                        fillRemaining: false,
-                                    },
-                                    {
-                                        id: "kpi-orders",
-                                        content: { type: "stat-card", config: { label: "Órdenes", value: formatQuantity(analyticsData.orderCount), variant: "tile", trend: analyticsData.orderCountTrend } },
-                                        fillRemaining: false,
-                                    },
-                                    {
-                                        id: "kpi-avg",
-                                        content: { type: "stat-card", config: { label: "Orden Promedio", value: formatMoney(analyticsData.avgOrderValue), variant: "tile", trend: analyticsData.avgOrderValueTrend } },
-                                        fillRemaining: false,
-                                    },
-                                    {
-                                        id: "kpi-customers",
-                                        content: { type: "stat-card", config: { label: "Clientes", value: formatQuantity(analyticsData.customerCount), variant: "tile" } },
-                                        fillRemaining: false,
-                                    },
                                 ],
                             },
                             {
-                                id: "col-charts",
-                                weight: 2,
-                                sections: [
-                                    {
-                                        id: "volume-trend",
-                                        content: { type: "stat-card", config: { label: "Evolución del Volumen", variant: "chart", subtext: "Monto total de órdenes por período", chart: { type: "line-chart", preset: "card", data: lineVolume, valueFormat: "$,.0f" } } },
-                                    },
-                                ],
-                            },
-                            {
-                                id: "col-dist",
+                                id: "col-2",
                                 weight: 1,
                                 sections: [
                                     {
+                                        id: "kpi-paid",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Cobrado", value: formatMoney(analyticsData.totalPaid), variant: "hero", trend: analyticsData.paidTrend, accent: "success" } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-3",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-pending",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Pendiente", value: formatMoney(analyticsData.totalPending), variant: "hero", accent: "warning" } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-4",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-orders",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Órdenes", value: formatQuantity(analyticsData.orderCount), variant: "tile", trend: analyticsData.orderCountTrend } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-5",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-avg",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Orden Promedio", value: formatMoney(analyticsData.avgOrderValue), variant: "tile", trend: analyticsData.avgOrderValueTrend } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-6",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-customers",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Clientes", value: formatQuantity(analyticsData.customerCount), variant: "tile" } },
+                                    },
+                                    {
+                                        id: "volume-trend",
+                                        colSpan: 3,
+                                        content: { type: "stat-card", config: { label: "Evolución del Volumen", variant: "chart", subtext: "Monto total de órdenes por período", chart: { type: "line-chart", preset: "card", data: lineVolume, valueFormat: "$,.0f" } } },
+                                    },
+                                    {
                                         id: "price-range",
+                                        colSpan: 2,
                                         content: { type: "stat-card", config: { label: "Órdenes por Rango de Precio", variant: "chart", subtext: "Distribución del valor total de las órdenes", chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeDistribution, keys: ["value"], indexBy: "id", axisBottomLegend: "Rango", axisLeftLegend: "Órdenes" } } },
                                     },
                                     {
                                         id: "channel-dist",
+                                        colSpan: 1,
                                         content: { type: "stat-card", config: { label: "Canal de Venta", variant: "chart", subtext: "Sistema vs Punto de Venta", chart: { type: "pie-chart", preset: "card", data: systemPosColors, valueFormat: "number", compact: true } } },
                                     },
                                 ],

@@ -18,7 +18,7 @@ export interface EntityHeaderProps {
   entityLabel: string;
   
   /**
-   * Optional data record. Used to format the document number (e.g. NV-1234)
+   * Optional data record. Used to format the document number (e.g. OV-1234)
    * if editing or viewing an existing record.
    */
   data?: object;

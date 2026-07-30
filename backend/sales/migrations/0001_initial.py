@@ -229,8 +229,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "historical Nota de Venta",
-                "verbose_name_plural": "historical Notas de Venta",
+                "verbose_name": "historical Orden de Venta",
+                "verbose_name_plural": "historical Ordenes de Venta",
                 "ordering": ("-history_date", "-history_id"),
                 "get_latest_by": ("history_date", "history_id"),
             },
@@ -680,8 +680,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "Nota de Venta",
-                "verbose_name_plural": "Notas de Venta",
+                "verbose_name": "Orden de Venta",
+                "verbose_name_plural": "Ordenes de Venta",
                 "ordering": ["-id"],
             },
             bases=(models.Model, core.mixins.TotalsCalculationMixin),
