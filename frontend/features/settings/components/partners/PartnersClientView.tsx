@@ -235,9 +235,6 @@ export function PartnersClientView({
                                     } : evolutionData.periods.length === 0 ? {
                                         type: "custom",
                                         render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
-                                    } : evolutionData.periods.length === 1 ? {
-                                        type: "custom",
-                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Se requiere más de un período para graficar la evolución</p>,
                                     } : {
                                         type: "stat-card",
                                         config: {
@@ -260,9 +257,6 @@ export function PartnersClientView({
                                     } : evolutionData.periods.length === 0 ? {
                                         type: "custom",
                                         render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
-                                    } : evolutionData.periods.length === 1 ? {
-                                        type: "custom",
-                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Se requiere más de un período para graficar la evolución</p>,
                                     } : {
                                         type: "stat-card",
                                         config: {
@@ -347,9 +341,6 @@ export function PartnersClientView({
                                     } : evolutionData.periods.length === 0 ? {
                                         type: "custom",
                                         render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
-                                    } : evolutionData.periods.length === 1 ? {
-                                        type: "custom",
-                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Se requiere más de un período para graficar la evolución</p>,
                                     } : {
                                         type: "stat-card",
                                         config: {
