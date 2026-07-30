@@ -61,18 +61,32 @@ export const purchaseOrderUnifiedSearchDef: UnifiedSearchConfig = {
       placeholderTo: 'Hasta',
     },
   ],
-  dateFilters: [{
-    type: 'date',
-    key: 'receipt_date',
-    label: 'Fecha Entrega',
-    options: [
-      { label: 'Hoy', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: today },
-      { label: 'Esta semana', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisWeek },
-      { label: 'Este mes', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisMonth },
-      { label: 'Este trimestre', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisQuarter },
-      { label: 'Este año', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisYear },
-    ],
-  }],
+  dateFilters: [
+    {
+      type: 'date',
+      key: 'created_at',
+      label: 'Fecha de creación',
+      options: [
+        { label: 'Hoy', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: today },
+        { label: 'Esta semana', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisWeek },
+        { label: 'Este mes', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisMonth },
+        { label: 'Este trimestre', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisQuarter },
+        { label: 'Este año', serverParamFrom: 'created_at_after', serverParamTo: 'created_at_before', getValue: thisYear },
+      ],
+    },
+    {
+      type: 'date',
+      key: 'receipt_date',
+      label: 'Fecha Entrega',
+      options: [
+        { label: 'Hoy', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: today },
+        { label: 'Esta semana', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisWeek },
+        { label: 'Este mes', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisMonth },
+        { label: 'Este trimestre', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisQuarter },
+        { label: 'Este año', serverParamFrom: 'receipt_date_after', serverParamTo: 'receipt_date_before', getValue: thisYear },
+      ],
+    },
+  ],
   groupBy: [
     { key: 'date', label: 'Fecha', field: 'date' },
     { key: 'status', label: 'Estado', field: 'status' },
