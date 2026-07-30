@@ -118,7 +118,7 @@ export function StatCard({
   }
 
   const baseCardClasses =
-    "rounded-sm border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0"
+    "rounded-sm border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0 h-full"
 
   const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 
@@ -271,7 +271,7 @@ export function StatCard({
           {label}
         </p>
         {renderSubtext()}
-        {chart && <div className="flex-1 min-h-0 w-full mt-2">{chart}</div>}
+        {chart && <div className="flex-1 min-h-0 h-full w-full mt-2">{chart}</div>}
         {children}
       </CardContent>
     )
@@ -305,7 +305,7 @@ export function StatCard({
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1 min-h-0 p-5 pt-4">
+        <CardContent className="flex flex-col flex-1 min-h-0 h-full p-5 pt-4">
           {chart}
         </CardContent>
       </>
@@ -346,7 +346,7 @@ export function StatCard({
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1 min-h-0 p-5 pt-4">
+        <CardContent className="flex flex-col flex-1 min-h-0 h-full p-5 pt-4">
           {chart}
         </CardContent>
       </>

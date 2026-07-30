@@ -95,7 +95,7 @@ function BarChartRenderer(props: BarChartConfig) {
                 : []
 
     return (
-        <div className="flex-1 min-h-[300px] w-full relative">
+        <div className="flex-1 min-h-0 w-full relative">
             <BarChart
                 data={props.data}
                 keys={props.keys}
@@ -161,7 +161,7 @@ function LineChartRenderer(props: LineChartConfig) {
         : (props.showLegend ?? true)
 
     return (
-        <div className="flex-1 min-h-[300px] w-full relative">
+        <div className="flex-1 min-h-0 w-full relative">
             <LineChart
                 data={props.data}
                 margin={margin}
@@ -194,7 +194,7 @@ function PieChartRenderer(props: PieChartConfig) {
         : (props.showLegend ?? true)
 
     return (
-        <div className="flex-1 min-h-[300px] w-full relative">
+        <div className="flex-1 min-h-0 w-full relative">
             <PieChart
                 data={props.data}
                 innerRadius={isCard ? cardPieDefaults.innerRadius : props.innerRadius}
@@ -259,7 +259,7 @@ function RadarChartRenderer(props: RadarChartConfig) {
     const showLegend = isCompact ? false : (props.showLegend ?? true)
 
     return (
-        <div className="flex-1 min-h-[300px] w-full relative">
+        <div className="flex-1 min-h-0 w-full relative">
             <RadarChart
                 data={props.data}
                 keys={props.keys}
@@ -277,7 +277,7 @@ function FunnelChartRenderer(props: FunnelChartConfig) {
     const margin = isCard ? { top: 20, right: 20, bottom: 20, left: 20 } : { top: 40, right: 20, bottom: 40, left: 20 }
     
     return (
-        <div className="flex-1 min-h-[250px] w-full relative">
+        <div className="flex-1 min-h-0 w-full relative">
             <FunnelChart
                 data={props.data}
                 direction={props.direction || "vertical"}
