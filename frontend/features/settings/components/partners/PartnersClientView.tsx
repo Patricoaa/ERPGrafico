@@ -21,7 +21,8 @@ import {
     DataCell,
     UnifiedSearchBar,
     useUnifiedSearch,
-    AutoEntityCard
+    AutoEntityCard,
+    StatCard,
 } from "@/components/shared"
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
@@ -177,7 +178,7 @@ export function PartnersClientView({
                     icon: PieChartIcon,
                     columns: [
                         {
-                            id: "col-single",
+                            id: "col-kpis",
                             sections: [
                                 {
                                     id: "kpi-patrimonio",
@@ -207,80 +208,6 @@ export function PartnersClientView({
                                         },
                                     },
                                 },
-                                {
-                                    id: "chart-capital",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Capital Enterado vs Pendiente",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.capitalComparison,
-                                                keys: ["paid", "pending"],
-                                                indexBy: "name",
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    ],
-                },
-                {
-                    value: "saldos",
-                    label: "Saldos",
-                    icon: Wallet,
-                    columns: [
-                        {
-                            id: "col-single",
-                            sections: [
-                                {
-                                    id: "kpi-earnings",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Utilidades Acumuladas",
-                                            value: formatCurrency(analyticsData.totalEarnings),
-                                            icon: TrendingUp,
-                                            accent: "success",
-                                            variant: "minimal",
-                                            subtext: "Resultados retenidos",
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "kpi-dividends",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Dividendos por Pagar",
-                                            value: formatCurrency(analyticsData.totalDividendsPayable),
-                                            icon: Wallet,
-                                            accent: "warning",
-                                            variant: "minimal",
-                                            subtext: "Obligaciones pendientes",
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "chart-balances",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Composición de Saldos por Socio",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.balanceComposition,
-                                                keys: ["equity", "earnings", "pending", "withdrawals"],
-                                                indexBy: "name",
-                                            },
-                                        },
-                                    },
-                                },
                             ],
                         },
                     ],
@@ -290,63 +217,6 @@ export function PartnersClientView({
                     label: "Socios",
                     icon: Gauge,
                     columns: [
-                        {
-                            id: "col-main",
-                            weight: 2,
-                            sections: [
-                                {
-                                    id: "kpi-pending",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Capital Pendiente Total",
-                                            value: formatCurrency(analyticsData.totalPending),
-                                            icon: AlertCircle,
-                                            accent: "warning",
-                                            variant: "minimal",
-                                            subtext: `${analyticsData.partnerCount} socios`,
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "kpi-withdrawals",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Retiros Provisorios",
-                                            value: formatCurrency(analyticsData.totalWithdrawals),
-                                            icon: Wallet,
-                                            accent: "destructive",
-                                            variant: "minimal",
-                                            subtext: "Saldos provisorios",
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "chart-ranking",
-                                    content: analyticsData.partnerRanking.length > 0 ? {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Ranking de Patrimonio",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.partnerRanking.map(p => ({ name: p.name, patrimonio: p.netEquity })),
-                                                keys: ["patrimonio"],
-                                                indexBy: "name",
-                                                valueFormat: "$,.0f",
-                                            },
-                                        },
-                                    } : {
-                                        type: "custom",
-                                        render: (
-                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de socios</p>
-                                        ),
-                                    },
-                                },
-                            ],
-                        },
                         {
                             id: "col-side",
                             weight: 1,
@@ -374,9 +244,100 @@ export function PartnersClientView({
                                 },
                             ],
                         },
+                        {
+                            id: "col-main",
+                            weight: 2,
+                            sections: [
+                                {
+                                    id: "chart-capital",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Capital Enterado vs Pendiente",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "bar-chart",
+                                                preset: "card",
+                                                data: analyticsData.capitalComparison,
+                                                keys: ["paid", "pending"],
+                                                indexBy: "name",
+                                            },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
                     ],
                 },
-
+                {
+                    value: "saldos",
+                    label: "Saldos",
+                    icon: Wallet,
+                    columns: [
+                        {
+                            id: "col-full",
+                            sections: [
+                                {
+                                    id: "kpi-row",
+                                    content: {
+                                        type: "custom",
+                                        render: (
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <StatCard
+                                                    label="Retiros Provisorios Totales"
+                                                    value={formatCurrency(analyticsData.totalWithdrawals)}
+                                                    icon={Wallet}
+                                                    accent="destructive"
+                                                    variant="minimal"
+                                                    subtext="Saldos provisorios"
+                                                />
+                                                <StatCard
+                                                    label="Utilidades Acumuladas"
+                                                    value={formatCurrency(analyticsData.totalEarnings)}
+                                                    icon={TrendingUp}
+                                                    accent="success"
+                                                    variant="minimal"
+                                                    subtext="Resultados retenidos"
+                                                />
+                                                <StatCard
+                                                    label="Dividendos por Pagar"
+                                                    value={formatCurrency(analyticsData.totalDividendsPayable)}
+                                                    icon={Wallet}
+                                                    accent="warning"
+                                                    variant="minimal"
+                                                    subtext="Obligaciones pendientes"
+                                                />
+                                            </div>
+                                        ),
+                                    },
+                                },
+                                {
+                                    id: "chart-composition",
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Composición de Saldos por Socio",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "bar-chart",
+                                                preset: "card",
+                                                data: analyticsData.balanceComposition.map(b => ({
+                                                    name: b.name,
+                                                    patrimonio: b.equity,
+                                                    utilidades: b.earnings,
+                                                    pendiente: b.pending,
+                                                    retiros: b.withdrawals,
+                                                })),
+                                                keys: ["patrimonio", "utilidades", "pendiente", "retiros"],
+                                                indexBy: "name",
+                                            },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
             ],
         },
     }), [analyticsData, analyticsActiveTab])
