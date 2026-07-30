@@ -25,6 +25,7 @@ import {
 } from "@/components/shared"
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
+import type { Granularity } from "@/lib/analytics-helpers"
 import { partnerFields } from '../../partnerFields'
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
@@ -93,6 +94,7 @@ export function PartnersClientView({
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
     const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("composicion")
+    const [granularity, setGranularity] = useState<Granularity>("month")
 
     const router = useRouter()
     const pathname = usePathname()
@@ -142,7 +144,7 @@ export function PartnersClientView({
         }
     }, [ledgerParam, partners])
 
-    const analyticsData = usePartnerAnalyticsData(partners)
+    const analyticsData = usePartnerAnalyticsData(partners, granularity)
 
     const filteredPartners = useMemo(() => {
         let result = search.filterFn(partners)
@@ -166,6 +168,8 @@ export function PartnersClientView({
             entityName: "Composición Societaria",
             activeTab: analyticsActiveTab,
             onTabChange: setAnalyticsActiveTab,
+            granularity,
+            onGranularityChange: setGranularity,
             tabs: [
                 {
                     value: "composicion",
@@ -365,6 +369,41 @@ export function PartnersClientView({
                                             variant: "minimal",
                                             subtext: "Saldos provisorios",
                                         },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    value: "participacion",
+                    label: "Participación",
+                    icon: PieChartIcon,
+                    columns: [
+                        {
+                            id: "col-pct",
+                            sections: [
+                                {
+                                    id: "chart-equity-pct",
+                                    content: analyticsData.equityPctDistribution.length > 0 ? {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "% de Participación por Socio",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "pie-chart",
+                                                preset: "card",
+                                                data: analyticsData.equityPctDistribution,
+                                                valueFormat: "number",
+                                                enableLabels: true,
+                                                arcLabel: (d: { value: number }) => `${d.value}%`,
+                                            },
+                                        },
+                                    } : {
+                                        type: "custom",
+                                        render: (
+                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de participación</p>
+                                        ),
                                     },
                                 },
                             ],

@@ -63,14 +63,17 @@ export function SearchBarMenu({
     )
   }, [table])
 
-  const showColumnToggle = currentView === 'list' || !currentView
+  const isAnalyticsView = currentView === 'analytics'
+  const showColumnToggle = (currentView === 'list' || !currentView) && !isAnalyticsView
+  const activeSortableColumns = isAnalyticsView ? [] : sortableColumns
 
-  const hasDisplaySection = (viewOptions?.length ?? 0) > 1 || sortableColumns.length > 0 || (showColumnToggle && hideableColumns.length > 0)
+  const hasDisplaySection = (viewOptions?.length ?? 0) > 1 || activeSortableColumns.length > 0 || (showColumnToggle && hideableColumns.length > 0)
+  const hasGroupBySection = !isAnalyticsView && hasGroupBy
 
-  const hasAnyContent = hasFilters || hasGroupBy || hasDisplaySection
+  const hasAnyContent = hasFilters || hasGroupBySection || hasDisplaySection
   if (!hasAnyContent) return null
 
-  const gridCols = hasDisplaySection ? 'grid-cols-3' : 'grid-cols-2'
+  const gridCols = hasGroupBySection && hasDisplaySection ? 'grid-cols-3' : hasGroupBySection || hasDisplaySection ? 'grid-cols-2' : 'grid-cols-1'
 
   return (
     <div className={`grid ${gridCols} gap-0`}>
@@ -95,28 +98,25 @@ export function SearchBarMenu({
       </div>
 
       {/* Column 2: Agrupar por */}
-      <div className="border-r border-border/60">
-        <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
-          <Layers className="h-3 w-3" />
-          Agrupar por
-        </div>
-        <ScrollArea className="max-h-[80vh]">
-          <div className="p-1.5">
-            {hasGroupBy && groupBy && (
-              <GroupBySection
-                options={groupBy}
-                currentGroupBy={currentGroupBy}
-                onSelect={onGroupBySelect}
-              />
-            )}
-            {!hasGroupBy && (
-              <div className="px-3 py-6 text-xs text-muted-foreground text-center">
-                No hay opciones de agrupación
-              </div>
-            )}
+      {hasGroupBySection && (
+        <div className="border-r border-border/60">
+          <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
+            <Layers className="h-3 w-3" />
+            Agrupar por
           </div>
-        </ScrollArea>
-      </div>
+          <ScrollArea className="max-h-[80vh]">
+            <div className="p-1.5">
+              {hasGroupBy && groupBy && (
+                <GroupBySection
+                  options={groupBy}
+                  currentGroupBy={currentGroupBy}
+                  onSelect={onGroupBySelect}
+                />
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+      )}
 
       {/* Column 3: Visualización (vista, sort, columnas) */}
       {hasDisplaySection && (
@@ -125,7 +125,7 @@ export function SearchBarMenu({
             viewOptions={viewOptions}
             currentView={currentView}
             onViewChange={onViewChange}
-            sortableColumns={sortableColumns}
+            sortableColumns={activeSortableColumns}
             hideableColumns={hideableColumns}
             showColumnToggle={showColumnToggle}
           />
