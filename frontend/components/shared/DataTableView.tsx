@@ -138,6 +138,7 @@ export function DataTableView<TData, TValue>({
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView
     if (!isCustomView) return undefined
+    if (currentView === "analytics") return undefined
     if (policy?.cardComponent === "entity" || externalRenderCustomView) {
       if (derivedCardGroupBy) {
         return createCardGroupLoadingView({
