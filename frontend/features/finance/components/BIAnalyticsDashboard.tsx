@@ -4,6 +4,8 @@ import React from 'react';
 import { useBIAnalytics } from "../hooks/useBIAnalytics";
 import { Factory, Package, TrendingUp, TrendingDown, Users, Truck } from 'lucide-react';
 import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard, ChartLegend } from '@/components/shared';
+import { useMemo } from "react";
+import { getChartPalette } from "@/lib/chart-colors";
 import { formatCurrency, formatMoney } from "@/lib/money";
 import { format } from "date-fns";
 import { type DateRange } from "react-day-picker";
@@ -105,6 +107,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
     
     // Nivo LineChart crashes with NaN if there's only 1 point or if all Y values are identical (e.g., all 0) and yScale is auto.
     const hasValidTrend = salesTrendData[0].data.length > 1 && Math.max(...salesTrendData[0].data.map(d => d.y)) > 0;
+    const palette = useMemo(() => getChartPalette(), []);
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando analytics de negocio">
@@ -212,7 +215,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                 <SectionCard 
                     title="Tendencia de Ventas" 
                     description="Evolución mensual de ventas (sin impuestos)"
-                    headerRight={hasValidTrend ? <ChartLegend items={[{ label: "Ventas", color: "#1f77b4" }]} /> : undefined}
+                    headerRight={hasValidTrend ? <ChartLegend items={[{ label: "Ventas", color: palette[0] }]} /> : undefined}
                     className="rounded-sm"
                 >
                     <div className="h-full">
@@ -228,7 +231,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                     format: (v: number) => formatCurrency(v),
                                 }}
                                 legends={[]}
-                                colors={{ scheme: 'category10' }}
+                                colors={palette}
                                 tooltipFormat="currency"
                             />
                         ) : (
@@ -258,7 +261,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                     format: (v: number) => formatCurrency(v),
                                 }}
                                 axisLeft={{ tickSize: 0, tickPadding: 12 }}
-                                colors={{ scheme: 'set2' }}
+                                colors={palette}
                                 renderTooltip={({ indexValue, value }) => (
                                     <div className="flex flex-col gap-0.5">
                                         <span className="font-medium">{String(indexValue)}</span>

@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .services import FinanceService
+from .bi_analytics import BIAnalyticsService
 from .tasks import generate_report_task
 
 # --- API Views (JSON) ---
@@ -102,5 +103,5 @@ def get_bi_analytics_data(request):
     return _handle_report_request(
         request,
         "bi_analytics",
-        lambda start, end, cs, ce, **kwargs: FinanceService.get_bi_analytics(start, end),
+        lambda start, end, cs, ce, **kwargs: BIAnalyticsService.get_bi_analytics(start, end),
     )

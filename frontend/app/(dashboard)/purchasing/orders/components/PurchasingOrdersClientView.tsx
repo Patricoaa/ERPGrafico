@@ -5,6 +5,7 @@ import { formatMoney } from "@/lib/money"
 import React, {useEffect, useState, useMemo} from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, StatCard } from '@/components/shared'
+import { assignChartColors } from '@/lib/chart-colors'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
 import type { AnalyticsPanelConfig, Granularity } from '@/components/shared'
@@ -123,6 +124,24 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             },
         ]
 
+        const receivingDist = assignChartColors([
+            { id: "A tiempo", value: analyticsData.onTimeCount },
+            { id: "Con retraso", value: analyticsData.lateCount },
+            { id: "Pendientes", value: analyticsData.pendingReceiptCount },
+        ])
+        const storableVsTotal = assignChartColors([
+            { id: "Almacenables", value: analyticsData.storableData.totalVolume },
+            { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.storableData.totalVolume) },
+        ])
+        const serviceVsTotal = assignChartColors([
+            { id: "Servicios", value: analyticsData.serviceData.totalVolume },
+            { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.serviceData.totalVolume) },
+        ])
+        const subscriptionVsTotal = assignChartColors([
+            { id: "Suscripciones", value: analyticsData.subscriptionData.totalVolume },
+            { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.subscriptionData.totalVolume) },
+        ])
+
         return {
             screen: {
                 entityName: "Órdenes de Compra",
@@ -232,11 +251,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 chart: {
                                                         type: "pie-chart",
                                                         preset: "card",
-                                                        data: [
-                                                            { id: "A tiempo", value: analyticsData.onTimeCount, color: "var(--color-success)" },
-                                                            { id: "Con retraso", value: analyticsData.lateCount, color: "var(--color-destructive)" },
-                                                            { id: "Pendientes", value: analyticsData.pendingReceiptCount, color: "var(--color-warning)" },
-                                                        ],
+                                                        data: receivingDist,
                                                         valueFormat: "number",
                                                         compact: true,
                                                         enableLabels: true,
@@ -424,19 +439,16 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
-                                                    data: [
-                                                        { id: "Almacenables", value: analyticsData.storableData.totalVolume, color: "var(--color-info)" },
-                                                        { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.storableData.totalVolume), color: "var(--color-muted)" },
-                                                    ],
-                                                    valueFormat: "currency",
-                                                    compact: true,
-                                                    innerRadius: 0.6,
-                                                },
-                                            }
-                                        }
-                                    },
-                                    {
-                                        id: "storable-category",
+                                                data: storableVsTotal,
+                                                     valueFormat: "currency",
+                                                     compact: true,
+                                                     innerRadius: 0.6,
+                                                 },
+                                             }
+                                         }
+                                     },
+                                     {
+                                         id: "storable-category",
                                         content: {
                                             type: "stat-card",
                                             config: {
@@ -523,19 +535,16 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
-                                                    data: [
-                                                        { id: "Servicios", value: analyticsData.serviceData.totalVolume, color: "var(--color-primary)" },
-                                                        { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.serviceData.totalVolume), color: "var(--color-muted)" },
-                                                    ],
-                                                    valueFormat: "currency",
-                                                    compact: true,
-                                                    innerRadius: 0.6,
-                                                },
-                                            }
-                                        }
-                                    },
-                                    {
-                                        id: "service-category",
+                                                    data: serviceVsTotal,
+                                                     valueFormat: "currency",
+                                                     compact: true,
+                                                     innerRadius: 0.6,
+                                                 },
+                                             }
+                                         }
+                                     },
+                                     {
+                                         id: "service-category",
                                         content: {
                                             type: "stat-card",
                                             config: {
@@ -622,19 +631,16 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 chart: {
                                                     type: "pie-chart",
                                                     preset: "card",
-                                                    data: [
-                                                        { id: "Suscripciones", value: analyticsData.subscriptionData.totalVolume, color: "var(--color-warning)" },
-                                                        { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.subscriptionData.totalVolume), color: "var(--color-muted)" },
-                                                    ],
-                                                    valueFormat: "currency",
-                                                    compact: true,
-                                                    innerRadius: 0.6,
-                                                },
-                                            }
-                                        }
-                                    },
-                                    {
-                                        id: "sub-category",
+                                                    data: subscriptionVsTotal,
+                                                     valueFormat: "currency",
+                                                     compact: true,
+                                                     innerRadius: 0.6,
+                                                 },
+                                             }
+                                         }
+                                     },
+                                     {
+                                         id: "sub-category",
                                         content: {
                                             type: "stat-card",
                                             config: {

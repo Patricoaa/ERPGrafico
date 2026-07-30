@@ -4,6 +4,7 @@ from datetime import datetime
 from celery import shared_task
 
 from .services import FinanceService
+from .bi_analytics import BIAnalyticsService
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,7 @@ def generate_report_task(self, report_type, **kwargs):
             return FinanceService.get_financial_analysis(start_date, end_date, fiscal_year_id=fy_id)
 
         elif report_type == "bi_analytics":
-            return FinanceService.get_bi_analytics()
+            return BIAnalyticsService.get_bi_analytics()
 
         else:
             raise ValueError(f"Unknown report type: {report_type}")

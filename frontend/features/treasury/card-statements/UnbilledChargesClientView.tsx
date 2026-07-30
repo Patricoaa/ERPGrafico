@@ -391,6 +391,7 @@ export function UnbilledChargesClientView({
                                             sections: [
                                                 {
                                                     id: 'cupo-kpis',
+                                                    fillRemaining: false,
                                                     content: forecast?.credit_limit ? {
                                                         type: 'custom',
                                                         render: (
@@ -423,39 +424,27 @@ export function UnbilledChargesClientView({
                                                         ),
                                                     } : {
                                                         type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
-                                                        ),
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>,
                                                     },
                                                 },
                                                 {
-                                                    id: 'charge-types-pie',
+                                                    id: 'cupo-chart',
                                                     content: chargeTypeSummary.length > 0 || totalInstCount > 0 ? {
-                                                        type: 'custom',
-                                                        render: (
-                                                            <StatCard label="Distribución de Cargos" variant="chart" className="flex-1 mt-4" chart={
-                                                                <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
-                                                                    <PieChart
-                                                                        data={[...chargeTypeSummary.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
-                                                                        tooltipFormat="currency"
-                                                                        legends={[{
-                                                                            anchor: "bottom",
-                                                                            direction: "row",
-                                                                            translateY: 28,
-                                                                            itemWidth: 100,
-                                                                            itemHeight: 14,
-                                                                            itemsSpacing: 8,
-                                                                            symbolSize: 8,
-                                                                        }]}
-                                                                    />
-                                                                </div>
-                                                            } />
-                                                        ),
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Distribución de Cargos',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'pie-chart',
+                                                                preset: 'card',
+                                                                data: [...chargeTypeSummary.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])],
+                                                                valueFormat: 'currency',
+                                                                showLegend: true,
+                                                            },
+                                                        },
                                                     } : {
                                                         type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos ni cuotas</p>
-                                                        ),
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos ni cuotas</p>,
                                                     },
                                                 },
                                             ],

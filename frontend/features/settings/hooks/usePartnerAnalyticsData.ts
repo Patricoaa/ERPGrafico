@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import type { Partner } from "@/features/contacts"
 import type { Granularity } from "@/lib/analytics-helpers"
+import { assignChartColors } from "@/lib/chart-colors"
 
 export interface PartnerAnalyticsData {
     totalNetEquity: number
@@ -12,7 +13,7 @@ export interface PartnerAnalyticsData {
     totalEarnings: number
     totalDividendsPayable: number
     partnerCount: number
-    equityDistribution: Array<{ id: string; value: number }>
+    equityDistribution: Array<{ id: string; value: number; color: string }>
     capitalComparison: Array<{ name: string; paid: number; pending: number }>
     balanceComposition: Array<{
         name: string
@@ -40,9 +41,11 @@ export function usePartnerAnalyticsData(
         const totalEarnings = safe.reduce((s, p) => s + Number(p.partner_earnings_balance || 0), 0)
         const totalDividendsPayable = safe.reduce((s, p) => s + Number(p.partner_dividends_payable_balance || 0), 0)
 
-        const equityDistribution = safe
-            .filter((p) => Number(p.partner_net_equity) > 0)
-            .map((p) => ({ id: p.name, value: Number(p.partner_net_equity) }))
+        const equityDistribution = assignChartColors(
+            safe
+                .filter((p) => Number(p.partner_net_equity) > 0)
+                .map((p) => ({ id: p.name, value: Number(p.partner_net_equity) }))
+        )
 
         const capitalComparison = safe.map((p) => ({
             name: p.name.split(" ")[0],
