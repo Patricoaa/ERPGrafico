@@ -35,6 +35,8 @@ export function usePOSSessions(filters?: FilterState) {
             const params: Record<string, unknown> = {}
             if (filters?.status) params.status = filters.status
             if (filters?.search) params.search = filters.search
+            if (filters?.date_from) params.date_from = filters.date_from
+            if (filters?.date_to) params.date_to = filters.date_to
             const data = await posApi.getSessions(params) as unknown as POSSession[]
             return data
         },
