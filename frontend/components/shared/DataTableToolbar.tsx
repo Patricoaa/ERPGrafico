@@ -74,6 +74,15 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         return columnFilterCount > 0 || !!globalFilter
     }, [table, globalFilter])
 
+    const hasUnifiedRightContent = (toolbarActions && toolbarActions.length > 0) || !!createAction
+
+    const hasStandardRightContent =
+        !!effectiveColumnToggle ||
+        (effectiveSortOptions && sortableColumns.length > 0) ||
+        (viewOptions && viewOptions.length > 1) ||
+        (toolbarActions && toolbarActions.length > 0) ||
+        !!createAction
+
     return (
         <SegmentationTableContext.Provider value={table as Table<unknown>}>
             <div className="w-full space-y-4">
@@ -110,47 +119,45 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
-                        <div className="flex items-center gap-2 shrink-0">
-                            {effectiveColumnToggle && !unifiedSearch && (
-                                <DataTableColumnToggle table={table} />
-                            )}
-
-                            {toolbarActions && toolbarActions.length > 0 && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
-                                        >
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="w-[200px] p-1 border-border/80 shadow-floating"
-                                    >
-                                        {toolbarActions.map((action) => (
-                                            <DropdownMenuItem
-                                                key={action.key}
-                                                onClick={action.onClick}
-                                                className={cn(
-                                                    SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
-                                                    action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
-                                                    action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
-                                                    (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
-                                                )}
+                        {hasUnifiedRightContent && (
+                            <div className="flex items-center gap-2 shrink-0">
+                                {toolbarActions && toolbarActions.length > 0 && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
                                             >
-                                                {action.icon && <action.icon className="h-4 w-4 mr-2" />}
-                                                {action.label}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-[200px] p-1 border-border/80 shadow-floating"
+                                        >
+                                            {toolbarActions.map((action) => (
+                                                <DropdownMenuItem
+                                                    key={action.key}
+                                                    onClick={action.onClick}
+                                                    className={cn(
+                                                        SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
+                                                        action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
+                                                        action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
+                                                        (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
+                                                    )}
+                                                >
+                                                    {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                                                    {action.label}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
 
-                            {createAction}
-                        </div>
+                                {createAction}
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="flex items-center gap-2 h-9 w-full">
@@ -175,113 +182,115 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </Tooltip>
                         )}
 
-                        <div className="flex items-center gap-2 shrink-0">
-                            {effectiveColumnToggle && (
-                                <DataTableColumnToggle table={table} />
-                            )}
+                        {hasStandardRightContent && (
+                            <div className="flex items-center gap-2 shrink-0">
+                                {effectiveColumnToggle && (
+                                    <DataTableColumnToggle table={table} />
+                                )}
 
-                            {effectiveSortOptions && sortableColumns.length > 0 && (
-                                <DropdownMenu>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={TOOLBAR_ICON_BTN}
-                                                >
-                                                    <ArrowUpDown className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="bottom">Ordenar columnas</TooltipContent>
-                                    </Tooltip>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="w-[200px] p-1 border-border/80 shadow-floating"
-                                    >
-                                        {sortableColumns.map((column) => {
-                                            const isSorted = column.getIsSorted()
-                                            return (
-                                                <div
-                                                    key={column.id}
-                                                    className={cn(
-                                                        TOOLBAR_MENU_ITEM,
-                                                        isSorted
-                                                            ? "bg-accent/50 text-primary"
-                                                            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                                                    )}
-                                                    onClick={() =>
-                                                        column.toggleSorting(column.getIsSorted() === "asc")
-                                                    }
-                                                >
-                                                    <div className="mr-3 flex h-3.5 w-3.5 items-center justify-center transition-all">
-                                                        {isSorted === "desc" ? (
-                                                            <ArrowDown className="h-3.5 w-3.5 text-primary" />
-                                                        ) : isSorted === "asc" ? (
-                                                            <ArrowUp className="h-3.5 w-3.5 text-primary" />
-                                                        ) : (
-                                                            <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
-                                                        )}
-                                                    </div>
-                                                    <span>
-                                                        {(column.columnDef.meta as { title?: string })?.title ||
-                                                            translateColumnId(column.id)}
-                                                    </span>
-                                                </div>
-                                            )
-                                        })}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-
-                            {viewOptions && viewOptions.length > 1 && (
-                                <TabBar
-                                    value={currentView ?? ''}
-                                    onValueChange={(v) => onViewChange?.(v)}
-                                    items={viewOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon as LucideIcon }))}
-                                    className="w-auto shrink-0"
-                                >
-                                    <div className="hidden" />
-                                </TabBar>
-                            )}
-
-                            {toolbarActions && toolbarActions.length > 0 && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
+                                {effectiveSortOptions && sortableColumns.length > 0 && (
+                                    <DropdownMenu>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={TOOLBAR_ICON_BTN}
+                                                    >
+                                                        <ArrowUpDown className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="bottom">Ordenar columnas</TooltipContent>
+                                        </Tooltip>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-[200px] p-1 border-border/80 shadow-floating"
                                         >
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="w-[200px] p-1 border-border/80 shadow-floating"
-                                    >
-                                        {toolbarActions.map((action) => (
-                                            <DropdownMenuItem
-                                                key={action.key}
-                                                onClick={action.onClick}
-                                                className={cn(
-                                                    SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
-                                                    action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
-                                                    action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
-                                                    (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
-                                                )}
-                                            >
-                                                {action.icon && <action.icon className="h-4 w-4 mr-2" />}
-                                                {action.label}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
+                                            {sortableColumns.map((column) => {
+                                                const isSorted = column.getIsSorted()
+                                                return (
+                                                    <div
+                                                        key={column.id}
+                                                        className={cn(
+                                                            TOOLBAR_MENU_ITEM,
+                                                            isSorted
+                                                                ? "bg-accent/50 text-primary"
+                                                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                                        )}
+                                                        onClick={() =>
+                                                            column.toggleSorting(column.getIsSorted() === "asc")
+                                                        }
+                                                    >
+                                                        <div className="mr-3 flex h-3.5 w-3.5 items-center justify-center transition-all">
+                                                            {isSorted === "desc" ? (
+                                                                <ArrowDown className="h-3.5 w-3.5 text-primary" />
+                                                            ) : isSorted === "asc" ? (
+                                                                <ArrowUp className="h-3.5 w-3.5 text-primary" />
+                                                            ) : (
+                                                                <ArrowUpDown className="h-3.5 w-3.5 opacity-30" />
+                                                            )}
+                                                        </div>
+                                                        <span>
+                                                            {(column.columnDef.meta as { title?: string })?.title ||
+                                                                translateColumnId(column.id)}
+                                                        </span>
+                                                    </div>
+                                                )
+                                            })}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
 
-                            {createAction}
-                        </div>
+                                {viewOptions && viewOptions.length > 1 && (
+                                    <TabBar
+                                        value={currentView ?? ''}
+                                        onValueChange={(v) => onViewChange?.(v)}
+                                        items={viewOptions.map(o => ({ value: o.value, label: o.label, icon: o.icon as LucideIcon }))}
+                                        className="w-auto shrink-0"
+                                    >
+                                        <div className="hidden" />
+                                    </TabBar>
+                                )}
+
+                                {toolbarActions && toolbarActions.length > 0 && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-9 w-9 shrink-0 bg-background hover:bg-muted rounded-sm"
+                                            >
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="w-[200px] p-1 border-border/80 shadow-floating"
+                                        >
+                                            {toolbarActions.map((action) => (
+                                                <DropdownMenuItem
+                                                    key={action.key}
+                                                    onClick={action.onClick}
+                                                    className={cn(
+                                                        SEG_DROPDOWN_ITEM + " flex items-center px-3 py-2 cursor-pointer transition-colors",
+                                                        action.intent === 'success' && "text-success focus:bg-success/10 focus:text-success",
+                                                        action.intent === 'destructive' && "text-destructive focus:bg-destructive/10 focus:text-destructive",
+                                                        (!action.intent || action.intent === 'default' || action.intent === 'primary') && "text-primary focus:bg-primary/10 focus:text-primary",
+                                                    )}
+                                                >
+                                                    {action.icon && <action.icon className="h-4 w-4 mr-2" />}
+                                                    {action.label}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+
+                                {createAction}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
