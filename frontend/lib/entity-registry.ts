@@ -118,7 +118,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
       return String(customerName ?? data.partner_name ?? '---')
     },
     workflowType: 'order',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'workflow' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'workflow' },
     cardConfig: {
       dateLabel: 'Entrega',
       workflow: {
