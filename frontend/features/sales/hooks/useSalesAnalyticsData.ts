@@ -26,7 +26,6 @@ export interface SalesAnalyticsData {
     paidTrend: TrendData
     orderCountTrend: TrendData
     avgOrderValueTrend: TrendData
-    statusDistribution: Array<{ id: string; value: number; color: string }>
     channelDistribution: Array<{ id: string; value: number; color: string }>
     paymentMethodDistribution: Array<{ id: string; value: number; color: string }>
     deliveryStatusDistribution: Array<{ id: string; value: number; color: string }>
@@ -39,15 +38,7 @@ export interface SalesAnalyticsData {
     productTypeBreakdown: Array<{ id: string; value: number; color: string }>
     channelTrend: Array<{ month: string; system: number; pos: number }>
     monthlyDeliveries: Array<{ month: string; count: number }>
-}
-
-const STATUS_LABELS: Record<string, string> = {
-    DRAFT: "Borrador",
-    CONFIRMED: "Confirmado",
-    PAYMENT_PENDING: "Pago en Terminal",
-    INVOICED: "Facturado",
-    PAID: "Pagado",
-    CANCELLED: "Anulado",
+    priceRangeDistribution: Array<{ id: string; value: number; color: string }>
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -95,13 +86,6 @@ export function useSalesAnalyticsData(
         const pendingDeliveryCount = filtered.filter((o) => o.delivery_status !== "DELIVERED" && o.status !== "CANCELLED").length
         const posOrderCount = filtered.filter((o) => o.channel_display === "Punto de Venta (POS)").length
         const systemOrderCount = filtered.filter((o) => o.channel_display === "Sistema").length
-
-        const statusGroups = groupBy(filtered, (o) => o.status || "UNKNOWN")
-        const statusDistribution = assignChartColors(
-            Object.entries(statusGroups)
-                .map(([id, items]) => ({ id: STATUS_LABELS[id] ?? id, value: items.length }))
-                .sort((a, b) => b.value - a.value),
-        )
 
         const channelGroups = groupBy(filtered, (o) => o.channel_display || "Sistema")
         const channelDistribution = assignChartColors(
@@ -239,6 +223,23 @@ export function useSalesAnalyticsData(
         const prevAvg = prevCnt > 0 ? prevVol / prevCnt : 0
         const avgOrderValueTrend: TrendData = { direction: currAvg >= prevAvg ? "up" : "down", value: prevAvg > 0 ? `${Math.round(((currAvg - prevAvg) / prevAvg) * 100)}%` : "—" }
 
+        const RANGES: { label: string; min: number; max: number }[] = [
+            { label: "Hasta $50k", min: 0, max: 50_000 },
+            { label: "$50k - $200k", min: 50_000, max: 200_000 },
+            { label: "$200k - $500k", min: 200_000, max: 500_000 },
+            { label: "$500k - $1M", min: 500_000, max: 1_000_000 },
+            { label: "$1M - $5M", min: 1_000_000, max: 5_000_000 },
+            { label: "Más de $5M", min: 5_000_000, max: Infinity },
+        ]
+        const rangeCounts = RANGES.map((r) => ({
+            id: r.label,
+            value: filtered.filter((o) => {
+                const t = Number(o.total || 0)
+                return t >= r.min && t < r.max
+            }).length,
+        }))
+        const priceRangeDistribution = assignChartColors(rangeCounts.filter((r) => r.value > 0))
+
         return {
             totalVolume,
             totalPaid,
@@ -254,7 +255,6 @@ export function useSalesAnalyticsData(
             paidTrend,
             orderCountTrend,
             avgOrderValueTrend,
-            statusDistribution,
             channelDistribution,
             paymentMethodDistribution,
             deliveryStatusDistribution,
@@ -267,6 +267,7 @@ export function useSalesAnalyticsData(
             productTypeBreakdown,
             channelTrend,
             monthlyDeliveries,
+            priceRangeDistribution,
         }
     }, [orders, dateRange, granularity])
 }
