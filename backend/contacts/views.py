@@ -305,6 +305,13 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             )
         )
 
+    @action(detail=False, methods=['get'])
+    def partner_evolution(self, request):
+        from .partner_analytics import PartnerAnalyticsService
+        months = int(request.query_params.get('months', '24'))
+        granularity = request.query_params.get('granularity', 'month')
+        return Response(PartnerAnalyticsService.get_evolution(months, granularity))
+
     @action(detail=False, methods=['post'])
     def initial_setup(self, request):
         from .services import ContactService

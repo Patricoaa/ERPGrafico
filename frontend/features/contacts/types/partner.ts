@@ -102,6 +102,21 @@ export interface ProfitDistribution {
     notes?: string;
 }
 
+export interface PartnerEvolutionPeriod {
+    period: string
+    net_equity: string
+    total_contributions: string
+    total_withdrawals: string
+    total_earnings: string
+    total_dividends: string
+    period_contributions: string
+    period_withdrawals: string
+    period_earnings: string
+    period_dividends: string
+    period_net_flow: string
+    partner_count: number
+}
+
 export interface PartnerTransactionPayload {
     transaction_type: 'CAPITAL_CASH' | 'CAPITAL_INVENTORY' | 'SUBSCRIPTION' | 'REDUCTION' | 'TRANSFER' | 'PROV_WITHDRAWAL' | 'DIVIDEND_PAYMENT' | 'REINVESTMENT' | 'LOSS_ABSORPTION' | 'WITHDRAWAL' | 'LOAN_IN' | 'LOAN_OUT';
     amount: string | number;

@@ -26,6 +26,7 @@ import {
 } from "@/components/shared"
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
+import { usePartnerEvolutionData } from "@/features/settings/hooks/usePartnerEvolutionData"
 import type { Granularity } from "@/lib/analytics-helpers"
 import { partnerFields } from '../../partnerFields'
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
@@ -146,6 +147,26 @@ export function PartnersClientView({
     }, [ledgerParam, partners])
 
     const analyticsData = usePartnerAnalyticsData(partners, granularity)
+    const evolutionData = usePartnerEvolutionData(24, granularity)
+
+    const equityEvolutionChart = useMemo(() => evolutionData.periods.length > 0 ? [{
+        id: "Patrimonio Neto",
+        data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.net_equity) })),
+    }] : [], [evolutionData.periods])
+
+    const partnerCountEvolutionChart = useMemo(() => evolutionData.periods.length > 0 ? [{
+        id: "Socios",
+        data: evolutionData.periods.map(p => ({ x: p.period, y: p.partner_count })),
+    }] : [], [evolutionData.periods])
+
+    const compositionEvolutionChart = useMemo(() => evolutionData.periods.length > 0 ? [
+        { id: "Aportes", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_contributions) })) },
+        { id: "Retiros", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_withdrawals) })) },
+        { id: "Utilidades", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_earnings) })) },
+        { id: "Dividendos", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_dividends) })) },
+    ] : [], [evolutionData.periods])
+
+
 
     const filteredPartners = useMemo(() => {
         let result = search.filterFn(partners)
@@ -178,33 +199,80 @@ export function PartnersClientView({
                     icon: PieChartIcon,
                     columns: [
                         {
-                            id: "col-kpis",
+                            id: "col-main",
                             sections: [
                                 {
-                                    id: "kpi-patrimonio",
+                                    id: "kpi-row",
                                     content: {
+                                        type: "custom",
+                                        render: (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <StatCard
+                                                    label="Patrimonio Neto"
+                                                    value={formatCurrency(analyticsData.totalNetEquity)}
+                                                    icon={TrendingUp}
+                                                    accent="primary"
+                                                    valueSize="xl"
+                                                    subtext="Valor Libro de la Compañía"
+                                                />
+                                                <StatCard
+                                                    label="Socios"
+                                                    value={analyticsData.partnerCount.toString()}
+                                                    icon={PieChartIcon}
+                                                    accent="info"
+                                                    valueSize="xl"
+                                                    subtext="Total activos"
+                                                />
+                                            </div>
+                                        ),
+                                    },
+                                },
+                                {
+                                    id: "chart-evolution-equity",
+                                    content: evolutionData.isLoading ? {
+                                        type: "custom",
+                                        render: <div className="h-32 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>,
+                                    } : evolutionData.periods.length === 0 ? {
+                                        type: "custom",
+                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
+                                    } : evolutionData.periods.length === 1 ? {
+                                        type: "custom",
+                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Se requiere más de un período para graficar la evolución</p>,
+                                    } : {
                                         type: "stat-card",
                                         config: {
-                                            label: "Patrimonio Neto",
-                                            value: formatCurrency(analyticsData.totalNetEquity),
-                                            icon: TrendingUp,
-                                            accent: "primary",
-                                            variant: "fill",
-                                            subtext: "Valor Libro de la Compañía",
+                                            label: "Evolución del Patrimonio Neto",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "line-chart",
+                                                preset: "card",
+                                                data: equityEvolutionChart,
+                                                valueFormat: "$,.0f",
+                                            },
                                         },
                                     },
                                 },
                                 {
-                                    id: "kpi-socios",
-                                    content: {
+                                    id: "chart-evolution-partners",
+                                    content: evolutionData.isLoading ? {
+                                        type: "custom",
+                                        render: <div className="h-32 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>,
+                                    } : evolutionData.periods.length === 0 ? {
+                                        type: "custom",
+                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
+                                    } : evolutionData.periods.length === 1 ? {
+                                        type: "custom",
+                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Se requiere más de un período para graficar la evolución</p>,
+                                    } : {
                                         type: "stat-card",
                                         config: {
-                                            label: "Socios",
-                                            value: analyticsData.partnerCount.toString(),
-                                            icon: PieChartIcon,
-                                            accent: "info",
-                                            variant: "minimal",
-                                            subtext: "Total activos",
+                                            label: "Evolución de Socios",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "line-chart",
+                                                preset: "card",
+                                                data: partnerCountEvolutionChart,
+                                            },
                                         },
                                     },
                                 },
@@ -267,6 +335,37 @@ export function PartnersClientView({
                                 },
                             ],
                         },
+                        {
+                            id: "col-composition",
+                            weight: 3,
+                            sections: [
+                                {
+                                    id: "chart-evolution-composition",
+                                    content: evolutionData.isLoading ? {
+                                        type: "custom",
+                                        render: <div className="h-32 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>,
+                                    } : evolutionData.periods.length === 0 ? {
+                                        type: "custom",
+                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
+                                    } : evolutionData.periods.length === 1 ? {
+                                        type: "custom",
+                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Se requiere más de un período para graficar la evolución</p>,
+                                    } : {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Composición Patrimonial",
+                                            variant: "chart",
+                                            chart: {
+                                                type: "line-chart",
+                                                preset: "card",
+                                                data: compositionEvolutionChart,
+                                                valueFormat: "$,.0f",
+                                            },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
                     ],
                 },
                 {
@@ -288,7 +387,7 @@ export function PartnersClientView({
                                                     value={formatCurrency(analyticsData.totalWithdrawals)}
                                                     icon={Wallet}
                                                     accent="destructive"
-                                                    variant="minimal"
+                                                    valueSize="xl"
                                                     subtext="Saldos provisorios"
                                                 />
                                                 <StatCard
@@ -296,7 +395,7 @@ export function PartnersClientView({
                                                     value={formatCurrency(analyticsData.totalEarnings)}
                                                     icon={TrendingUp}
                                                     accent="success"
-                                                    variant="minimal"
+                                                    valueSize="xl"
                                                     subtext="Resultados retenidos"
                                                 />
                                                 <StatCard
@@ -304,7 +403,7 @@ export function PartnersClientView({
                                                     value={formatCurrency(analyticsData.totalDividendsPayable)}
                                                     icon={Wallet}
                                                     accent="warning"
-                                                    variant="minimal"
+                                                    valueSize="xl"
                                                     subtext="Obligaciones pendientes"
                                                 />
                                             </div>
@@ -340,7 +439,7 @@ export function PartnersClientView({
                 },
             ],
         },
-    }), [analyticsData, analyticsActiveTab])
+    }), [analyticsData, analyticsActiveTab, equityEvolutionChart, partnerCountEvolutionChart, compositionEvolutionChart, granularity, evolutionData])
 
     const hasPartners = partners.length > 0
 
