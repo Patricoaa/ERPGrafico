@@ -4,6 +4,7 @@ import React, { useMemo } from "react"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { BarDatum, BarLegendProps } from "@nivo/bar"
+import { formatMoney, formatQuantity } from "@/lib/money"
 import {
     nivoTheme,
     barDefaults,
@@ -26,6 +27,7 @@ export interface BarChartProps {
         indexValue: string | number
         color: string
     }) => React.ReactNode
+    tooltipFormat?: "currency" | "number" | ((value: number) => string)
     colors?: unknown
     padding?: number
     borderRadius?: number
@@ -39,11 +41,19 @@ export interface BarChartProps {
     [key: string]: unknown
 }
 
+function formatTooltipValue(value: number, format?: "currency" | "number" | ((value: number) => string)): string {
+    if (format === "currency") return formatMoney(value)
+    if (format === "number") return formatQuantity(value)
+    if (typeof format === "function") return format(value)
+    return formatQuantity(value)
+}
+
 export function BarChart({
     data,
     keys,
     indexBy,
     renderTooltip,
+    tooltipFormat,
     colors,
     padding,
     borderRadius,
@@ -80,10 +90,7 @@ export function BarChart({
                     ) : (
                         <>
                             <span className="font-medium">{String(indexValue)}</span>
-                            <span className="ml-2 font-bold">
-                                {/* eslint-disable-next-line no-restricted-syntax -- Nivo chart tooltip; MoneyDisplay not applicable in SVG context */}
-                                {Number(value).toLocaleString()}
-                            </span>
+                            <span className="ml-2 font-bold">{formatTooltipValue(value, tooltipFormat)}</span>
                         </>
                     )}
                 </div>

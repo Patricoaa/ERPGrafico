@@ -7,10 +7,10 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, StatCard } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
-import type { AnalyticsPanelConfig } from '@/components/shared'
+import type { AnalyticsPanelConfig, Granularity } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, BarChart3, Building2 } from "lucide-react"
+import { ArrowRight, ArrowLeft, BarChart3, Building2, Package, Box, Wrench, RefreshCcw, Receipt } from "lucide-react"
 import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderUnifiedSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { billingApi } from "@/features/billing"
@@ -83,8 +83,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const { hubConfig, isHubOpen } = useHubPanel()
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("financiero")
+    const [granularity, setGranularity] = useState<Granularity>("month")
 
-    const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[])
+    const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[], null, granularity)
 
     const funnelData = useMemo(() => {
         const desiredOrder = ["DRAFT", "CONFIRMED", "RECEIVED", "INVOICED", "PAID"]
@@ -127,6 +128,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 entityName: "Órdenes de Compra",
                 activeTab: analyticsActiveTab,
                 onTabChange: setAnalyticsActiveTab,
+                granularity,
+                onGranularityChange: setGranularity,
                 tabs: [
                     // ── Tab 1: Financiero ──────────────────────────────
                     {
@@ -173,6 +176,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                         type: "pie-chart",
                                                         preset: "card",
                                                         data: analyticsData.paymentMethodDistribution,
+                                                        valueFormat: "number",
                                                     },
                                             },
                                         },
@@ -192,30 +196,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                 id: "col-main",
                                 weight: 2,
                                 sections: [
-                                    {
-                                        id: "top-suppliers",
-                                        content: {
-                                            type: "stat-card",
-                                            config: {
-                                                label: "Top Proveedores",
-                                                variant: "chart",
-                                                subtext: "Proveedores con mayor volumen de compras y recurrencia",
-                                                chart: {
-                                                        type: "bar-chart",
-                                                        preset: "card",
-                                                        data: analyticsData.topSuppliers,
-                                                        keys: ["total"],
-                                                        indexBy: "supplier",
-                                                        valueFormat: "~s",
-                                                        lineOverlay: {
-                                                            dataKey: "orderCount",
-                                                            label: "Cantidad Órdenes",
-                                                            color: "var(--color-success)",
-                                                        },
-                                                    },
-                                            },
-                                        },
-                                    },
                                     {
                                         id: "funnel-workflow",
                                         content: {
@@ -257,6 +237,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                             { id: "Con retraso", value: analyticsData.lateCount, color: "var(--color-destructive)" },
                                                             { id: "Pendientes", value: analyticsData.pendingReceiptCount, color: "var(--color-warning)" },
                                                         ],
+                                                        valueFormat: "number",
                                                         compact: true,
                                                         enableLabels: true,
                                                         arcLabel: (d: { id: string; value: number }) => {
@@ -296,6 +277,444 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         ],
                     },
 
+                    // ── Tab 3: Productos ──────────────────────────────
+                    {
+                        value: "productos",
+                        label: "Productos",
+                        icon: Package,
+                        columns: [
+                            {
+                                id: "col-left",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "top-suppliers-prod",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Top Proveedores",
+                                                variant: "chart",
+                                                subtext: "Proveedores con mayor volumen de compras y recurrencia",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.topSuppliers,
+                                                    keys: ["total"],
+                                                    indexBy: "supplier",
+                                                    valueFormat: "~s",
+                                                    lineOverlay: {
+                                                        dataKey: "orderCount",
+                                                        label: "Cantidad Órdenes",
+                                                        color: "var(--color-success)",
+                                                    },
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "top-products-bar",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Top Productos por Gasto",
+                                                variant: "chart",
+                                                subtext: "Principales productos del presupuesto de compras",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.topProductsByVolume,
+                                                    keys: ["total"],
+                                                    indexBy: "product",
+                                                    valueFormat: "$,.0f",
+                                                },
+                                            }
+                                        }
+                                    },
+                                ]
+                            },
+                            {
+                                id: "col-right",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "category-pie",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Gasto por Tipo de Producto",
+                                                variant: "chart",
+                                                subtext: "Distribución del gasto entre las categorías de producto",
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.categoryDistribution,
+                                                    valueFormat: "currency",
+                                                },
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+
+                    // ── Tab 4: Almacenables ──────────────────────────
+                    {
+                        value: "almacenables",
+                        label: "Almacenables",
+                        icon: Box,
+                        columns: [
+                            {
+                                id: "col-storable-left",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "storable-top",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Top Productos Físicos por Gasto",
+                                                variant: "chart",
+                                                subtext: "Almacenables, Consumibles y Fabricables más comprados",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.storableData.topProducts,
+                                                    keys: ["total"],
+                                                    indexBy: "product",
+                                                    valueFormat: "$,.0f",
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "storable-trend",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Tendencia de Compras Físicas",
+                                                variant: "chart",
+                                                subtext: "Evolución mensual del gasto en productos físicos",
+                                                chart: {
+                                                    type: "line-chart",
+                                                    preset: "card",
+                                                    data: [{ id: "Gasto", data: analyticsData.storableData.monthlyTrend.map(m => ({ x: m.month, y: m.total })) }],
+                                                    valueFormat: "$,.0f",
+                                                },
+                                            }
+                                        }
+                                    },
+                                ]
+                            },
+                            {
+                                id: "col-storable-right",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "storable-vs-total",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Almacenables vs Total",
+                                                variant: "metric-chart",
+                                                value: analyticsData.storableData.totalVolume > 0
+                                                    ? `${Math.round((analyticsData.storableData.totalVolume / (analyticsData.totalLineVolume || 1)) * 100)}%`
+                                                    : "0%",
+                                                subtext: `del total de compras · ${analyticsData.storableData.orderCount} órdenes con físicos`,
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: [
+                                                        { id: "Almacenables", value: analyticsData.storableData.totalVolume, color: "var(--color-info)" },
+                                                        { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.storableData.totalVolume), color: "var(--color-muted)" },
+                                                    ],
+                                                    valueFormat: "currency",
+                                                    compact: true,
+                                                    innerRadius: 0.6,
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "storable-category",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Gasto por Categoría",
+                                                variant: "chart",
+                                                subtext: "Categorías de productos almacenables",
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.storableData.categoryDistribution,
+                                                    valueFormat: "currency",
+                                                },
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+
+                    // ── Tab 5: Servicios ────────────────────────────
+                    {
+                        value: "servicios",
+                        label: "Servicios",
+                        icon: Wrench,
+                        columns: [
+                            {
+                                id: "col-service-left",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "service-top",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Top Servicios por Gasto",
+                                                variant: "chart",
+                                                subtext: "Servicios únicos con mayor gasto acumulado",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.serviceData.topProducts,
+                                                    keys: ["total"],
+                                                    indexBy: "product",
+                                                    valueFormat: "$,.0f",
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "service-trend",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Tendencia Gasto en Servicios",
+                                                variant: "chart",
+                                                subtext: "Evolución mensual del gasto en servicios externos",
+                                                chart: {
+                                                    type: "line-chart",
+                                                    preset: "card",
+                                                    data: [{ id: "Servicios", data: analyticsData.serviceData.monthlyTrend.map(m => ({ x: m.month, y: m.total })) }],
+                                                    valueFormat: "$,.0f",
+                                                },
+                                            }
+                                        }
+                                    },
+                                ]
+                            },
+                            {
+                                id: "col-service-right",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "service-vs-total",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Servicios vs Total",
+                                                variant: "metric-chart",
+                                                value: analyticsData.serviceData.totalVolume > 0
+                                                    ? `${Math.round((analyticsData.serviceData.totalVolume / (analyticsData.totalLineVolume || 1)) * 100)}%`
+                                                    : "0%",
+                                                subtext: `del total de compras · ${analyticsData.serviceData.orderCount} órdenes con servicios`,
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: [
+                                                        { id: "Servicios", value: analyticsData.serviceData.totalVolume, color: "var(--color-primary)" },
+                                                        { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.serviceData.totalVolume), color: "var(--color-muted)" },
+                                                    ],
+                                                    valueFormat: "currency",
+                                                    compact: true,
+                                                    innerRadius: 0.6,
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "service-category",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Gasto por Categoría",
+                                                variant: "chart",
+                                                subtext: "Categorías de servicios externos",
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.serviceData.categoryDistribution,
+                                                    valueFormat: "currency",
+                                                },
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+
+                    // ── Tab 6: Suscripciones ────────────────────────
+                    {
+                        value: "suscripciones",
+                        label: "Suscripciones",
+                        icon: RefreshCcw,
+                        columns: [
+                            {
+                                id: "col-sub-left",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "sub-top",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Top Suscripciones por Gasto Anual",
+                                                variant: "chart",
+                                                subtext: "Servicios recurrentes con mayor impacto en el presupuesto",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.subscriptionData.topProducts,
+                                                    keys: ["total"],
+                                                    indexBy: "product",
+                                                    valueFormat: "$,.0f",
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "sub-trend",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Recurrencia Mensual de Suscripciones",
+                                                variant: "chart",
+                                                subtext: "Gasto recurrente mensual en suscripciones activas",
+                                                chart: {
+                                                    type: "line-chart",
+                                                    preset: "card",
+                                                    data: [{ id: "Suscripciones", data: analyticsData.subscriptionData.monthlyTrend.map(m => ({ x: m.month, y: m.total })) }],
+                                                    valueFormat: "$,.0f",
+                                                },
+                                            }
+                                        }
+                                    },
+                                ]
+                            },
+                            {
+                                id: "col-sub-right",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "sub-vs-total",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Suscripciones vs Total",
+                                                variant: "metric-chart",
+                                                value: analyticsData.subscriptionData.totalVolume > 0
+                                                    ? `${Math.round((analyticsData.subscriptionData.totalVolume / (analyticsData.totalLineVolume || 1)) * 100)}%`
+                                                    : "0%",
+                                                subtext: `del total de compras · ${analyticsData.subscriptionData.orderCount} órdenes con suscripciones`,
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: [
+                                                        { id: "Suscripciones", value: analyticsData.subscriptionData.totalVolume, color: "var(--color-warning)" },
+                                                        { id: "Resto", value: Math.max(0, analyticsData.totalLineVolume - analyticsData.subscriptionData.totalVolume), color: "var(--color-muted)" },
+                                                    ],
+                                                    valueFormat: "currency",
+                                                    compact: true,
+                                                    innerRadius: 0.6,
+                                                },
+                                            }
+                                        }
+                                    },
+                                    {
+                                        id: "sub-category",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Gasto por Categoría",
+                                                variant: "chart",
+                                                subtext: "Categorías de suscripciones",
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.subscriptionData.categoryDistribution,
+                                                    valueFormat: "currency",
+                                                },
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+
+                    // ── Tab 7: DTE ──────────────────────────────────
+                    {
+                        value: "dte",
+                        label: "DTE",
+                        icon: Receipt,
+                        columns: [
+                            {
+                                id: "col-dte-left",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "dte-type-distribution",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Tipos de Documentos Recibidos",
+                                                variant: "chart",
+                                                subtext: "Distribución de los DTEs registrados en compras",
+                                                chart: {
+                                                    type: "bar-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.dteDistribution,
+                                                    keys: ["value"],
+                                                    indexBy: "id",
+                                                },
+                                            }
+                                        }
+                                    },
+                                ]
+                            },
+                            {
+                                id: "col-dte-right",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "dte-vs-total",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Facturado vs Pendiente",
+                                                variant: "metric-chart",
+                                                value: analyticsData.invoicedStatusSummary.invoicedVolume > 0
+                                                    ? `${Math.round((analyticsData.invoicedStatusSummary.invoicedVolume / (analyticsData.totalVolume || 1)) * 100)}%`
+                                                    : "0%",
+                                                subtext: `${analyticsData.invoicedStatusSummary.invoicedCount} órdenes con DTE de ${analyticsData.orderCount}`,
+                                                chart: {
+                                                    type: "pie-chart",
+                                                    preset: "card",
+                                                    data: analyticsData.invoicedVolumeData,
+                                                    valueFormat: "currency",
+                                                    compact: true,
+                                                    innerRadius: 0.6,
+                                                },
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
                 ],
             },
         }

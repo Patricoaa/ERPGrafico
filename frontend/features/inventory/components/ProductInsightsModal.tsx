@@ -243,6 +243,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                 data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.cost_price })),
                                             },
                                         ]}
+                                        tooltipFormat="currency"
                                         axisBottom={{
                                             tickSize: 0,
                                             tickPadding: 10,

@@ -4,13 +4,18 @@ import React from "react"
 import type { BarChartConfig, LineChartConfig, PieChartConfig, RadarChartConfig, FunnelChartConfig, ChartConfig } from "./types"
 import { PieChart, BarChart, LineChart, RadarChart, FunnelChart } from "../charts"
 import { formatCompactSpanish } from "@/lib/utils/number"
-import { formatMoney, formatQuantity } from "@/lib/money"
 import {
     barDefaults,
     cardBarDefaults,
     cardLineDefaults,
     cardPieDefaults,
 } from "./nivo-theme"
+
+function resolveTooltipFormat(valueFormat?: string): "currency" | "number" | undefined {
+    if (valueFormat === "currency" || valueFormat === "$,.0f") return "currency"
+    if (valueFormat === "number" || valueFormat === "~s") return "number"
+    return undefined
+}
 
 const defaultLegend = {
     anchor: "top" as const,
@@ -103,6 +108,7 @@ function BarChartRenderer(props: BarChartConfig) {
                 padding={props.padding ?? (isCard ? cardBarDefaults.padding : barDefaults.padding)}
                 borderRadius={props.borderRadius ?? (isCard ? cardBarDefaults.borderRadius : barDefaults.borderRadius)}
                 valueFormat={props.valueFormat}
+                tooltipFormat={resolveTooltipFormat(props.valueFormat)}
                 margin={margin}
                 enableGridY={props.enableGridY ?? (isCard ? cardBarDefaults.enableGridY : barDefaults.enableGridY)}
                 legends={barLegends}
@@ -173,6 +179,7 @@ function LineChartRenderer(props: LineChartConfig) {
                 useMesh={isCard ? cardLineDefaults.useMesh : undefined}
                 crosshairType={isCard ? cardLineDefaults.crosshairType : undefined}
                 legends={isCard ? [] : showLegend ? [{ ...defaultLegend }] : []}
+                tooltipFormat={resolveTooltipFormat(props.valueFormat)}
                 {...axes}
             />
         </div>
@@ -220,27 +227,7 @@ function PieChartRenderer(props: PieChartConfig) {
                 borderColor={isCard ? cardPieDefaults.borderColor : undefined}
                 legends={isCard ? [] : showLegend ? [{ ...defaultLegend }] : []}
                 margin={margin}
-                renderTooltip={
-                    props.valueFormat
-                        ? ({ id, value }) => {
-                              const val = Number(value)
-                              let formatted: string
-                              if (!Number.isFinite(val)) {
-                                  formatted = String(val)
-                              } else if (props.valueFormat === "currency") {
-                                  formatted = formatMoney(Math.round(val))
-                              } else {
-                                  formatted = formatQuantity(val)
-                              }
-                              return (
-                                  <>
-                                      <span className="font-medium">{String(id)}</span>
-                                      <span className="ml-2 font-bold">{formatted}</span>
-                                  </>
-                              )
-                          }
-                        : undefined
-                }
+                tooltipFormat={resolveTooltipFormat(props.valueFormat)}
             />
         </div>
     )
@@ -282,6 +269,7 @@ function FunnelChartRenderer(props: FunnelChartConfig) {
                 data={props.data}
                 direction={props.direction || "vertical"}
                 valueFormat={props.valueFormat}
+                tooltipFormat={resolveTooltipFormat(props.valueFormat)}
                 margin={margin}
                 enableLabel={props.enableLabel}
             />
