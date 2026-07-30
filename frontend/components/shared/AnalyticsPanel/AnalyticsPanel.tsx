@@ -2,10 +2,11 @@
 
 import React, { useState } from "react"
 import { LayoutDashboard } from "lucide-react"
-import { Drawer } from "@/components/shared"
+import { Drawer, TabBar } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
-import type { AnalyticsPanelProps, AnalyticsTab } from "./types"
+import type { AnalyticsPanelProps, AnalyticsTab, AnalyticsPanelContentProps } from "./types"
 import { cn } from "@/lib/utils"
+import { GranularityControl } from "./GranularityControl"
 
 export interface AnalyticsTabBarProps {
     tabs: AnalyticsTab[]
@@ -41,18 +42,13 @@ export function AnalyticsTabBar({
     )
 }
 
-export interface AnalyticsPanelContentProps {
-    entityName: string
-    tabs: AnalyticsTab[]
-    activeTab?: string
-    onTabChange?: (value: string) => void
-}
-
 export function AnalyticsPanelContent({
     entityName,
     tabs,
     activeTab: activeTabProp,
     onTabChange,
+    granularity,
+    onGranularityChange,
 }: AnalyticsPanelContentProps) {
     const [internalTab, setInternalTab] = useState(tabs[0]?.value ?? "")
 
@@ -89,6 +85,12 @@ export function AnalyticsPanelContent({
                         </button>
                     )
                 })}
+                {granularity && onGranularityChange && (
+                    <>
+                        <div className="mt-auto border-t border-border/50 pt-3" />
+                        <GranularityControl value={granularity} onChange={onGranularityChange} />
+                    </>
+                )}
             </div>
             <div className="flex-1 flex flex-col min-w-0 h-full p-0">
                 {tabs.map((tab) => (
@@ -110,6 +112,8 @@ export function AnalyticsPanel({
     tabs,
     activeTab,
     onTabChange,
+    granularity,
+    onGranularityChange,
 }: AnalyticsPanelProps) {
     return (
         <Drawer
@@ -126,6 +130,8 @@ export function AnalyticsPanel({
                 tabs={tabs}
                 activeTab={activeTab}
                 onTabChange={onTabChange}
+                granularity={granularity}
+                onGranularityChange={onGranularityChange}
             />
         </Drawer>
     )

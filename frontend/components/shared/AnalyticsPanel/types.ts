@@ -2,6 +2,9 @@
 
 import type { LucideIcon } from "lucide-react"
 
+// ── Granularity ──
+export type Granularity = "day" | "month" | "year"
+
 // ── Accent ──
 export type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
 
@@ -135,6 +138,17 @@ export interface AnalyticsPanelProps {
     tabs: AnalyticsTab[]
     activeTab?: string
     onTabChange?: (value: string) => void
+    granularity?: Granularity
+    onGranularityChange?: (value: Granularity) => void
+}
+
+export interface AnalyticsPanelContentProps {
+    entityName: string
+    tabs: AnalyticsTab[]
+    activeTab?: string
+    onTabChange?: (value: string) => void
+    granularity?: Granularity
+    onGranularityChange?: (value: Granularity) => void
 }
 
 export type AnalyticsPanelConfig = {
@@ -144,6 +158,8 @@ export type AnalyticsPanelConfig = {
         tabs: AnalyticsTab[]
         activeTab?: string
         onTabChange?: (value: string) => void
+        granularity?: Granularity
+        onGranularityChange?: (value: Granularity) => void
     }
 }
 

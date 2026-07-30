@@ -102,6 +102,8 @@ export function DataTableView<TData, TValue>({
               tabs={analyticsScreen.tabs}
               activeTab={analyticsScreen.activeTab}
               onTabChange={analyticsScreen.onTabChange}
+              granularity={analyticsScreen.granularity}
+              onGranularityChange={analyticsScreen.onGranularityChange}
             />
           </div>
         )

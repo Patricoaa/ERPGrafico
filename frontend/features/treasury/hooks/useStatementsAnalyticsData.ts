@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { treasuryApi } from "../api/treasuryApi"
 import { parseDateOnly } from "@/lib/utils"
+import { assignChartColors } from "@/lib/chart-colors"
 import type { TcHubAnalyticsResponse, PurchaseGroupAnalysisRow } from "../card-statements/analyticsTypes"
 
 export interface CostDonutItem {
@@ -63,11 +64,11 @@ export function useStatementsAnalyticsData(
 
         const otherCharges = Math.max(0, totalBilled - totalPrincipal)
 
-        const costBreakdownDonut = [
-            { id: 'Cuotas', value: totalPrincipal, color: 'var(--chart-1)' },
-            ...(otherCharges > 0 ? [{ id: 'Otros Cargos', value: otherCharges, color: 'var(--chart-4)' as string }] : []),
-            ...(totalCharges > 0 ? [{ id: 'Intereses/Comisiones', value: totalCharges, color: 'var(--chart-3)' as string }] : []),
-        ]
+        const costBreakdownDonut = assignChartColors([
+            { id: 'Cuotas', value: totalPrincipal },
+            ...(otherCharges > 0 ? [{ id: 'Otros Cargos', value: otherCharges }] : []),
+            ...(totalCharges > 0 ? [{ id: 'Intereses/Comisiones', value: totalCharges }] : []),
+        ])
 
         return {
             analytics,
