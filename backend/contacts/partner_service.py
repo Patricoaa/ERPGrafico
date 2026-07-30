@@ -1122,39 +1122,17 @@ class PartnerService:
 
         Also updates Contact.partner_equity_percentage as a denormalized cache.
         """
-        from django.db.models import Sum
-
-        # 1. Calculate total subscribed capital
-        subs = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-
-        reds = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_REDUCTION
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-
-        trans_in = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_IN
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-
-        trans_out = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-
-        reinvest = PartnerTransaction.objects.filter(
-            transaction_type=PartnerTransaction.Type.REINVESTMENT
-        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
-
-        total_subscribed = subs - reds + trans_in - trans_out + reinvest
 
         partners = Contact.objects.filter(is_partner=True)
 
+        total_net_equity = sum(p.partner_net_equity for p in partners)
+
         for p in partners:
-            if total_subscribed <= 0:
+            if total_net_equity <= 0:
                 new_pct = Decimal("0")
             else:
-                p_total = p.partner_total_contributions
-                new_pct = (p_total / total_subscribed * 100).quantize(Decimal("0.01"))
+                p_total = p.partner_net_equity
+                new_pct = (p_total / total_net_equity * 100).quantize(Decimal("0.01"))
 
             # Close existing active stake if percentage changed
             active_stake = PartnerEquityStake.objects.filter(
@@ -1181,7 +1159,7 @@ class PartnerService:
             p.partner_equity_percentage = new_pct
             p.save(update_fields=["partner_equity_percentage"])
 
-        return total_subscribed
+        return total_net_equity
 
     # ──────────────────────────────────────────────────────────────
     # PRIVATE HELPERS
