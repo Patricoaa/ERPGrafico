@@ -9,7 +9,7 @@ import {
     DataTableView,
     SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
-    SummaryTable, MoneyDisplay,
+    MoneyDisplay, StatCard,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCardStatements } from '../hooks/useCardStatements'
@@ -177,7 +177,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                     columns: [
                                         {
                                             id: 'col-evolution',
-                                            weight: 2,
+                                            weight: 3,
                                             sections: [
                                                 {
                                                     id: 'payment-evolution',
@@ -200,27 +200,42 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                                         ),
                                                     },
                                                 },
-                                            ],
-                                        },
-                                        {
-                                            id: 'col-kpis',
-                                            weight: 1,
-                                            sections: [
                                                 {
-                                                    id: 'payment-kpis',
+                                                    id: 'kpi-cards',
                                                     content: hubData.summary ? {
                                                         type: 'custom',
                                                         render: (
-                                                            <div>
-                                                                <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Resumen</h4>
-                                                                <SummaryTable
-                                                                    rows={[
-                                                                        { label: 'Deuda Total', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline /> },
-                                                                        { label: 'No Facturado', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_unbilled)} inline /> },
-                                                                        ...(hubData.summary.total_past_due ? [{ label: 'Vencido', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline /> }] : []),
-                                                                        { label: 'Estados Abiertos', value: String(hubData.summary.open_statements) },
-                                                                        { label: 'Estados Vencidos', value: String(hubData.summary.overdue_statements) },
-                                                                    ]}
+                                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+                                                                <StatCard
+                                                                    label="Deuda Total"
+                                                                    value={<MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline />}
+                                                                    variant="fill"
+                                                                    accent="primary"
+                                                                    icon={CreditCard}
+                                                                />
+                                                                <StatCard
+                                                                    label="No Facturado"
+                                                                    value={<MoneyDisplay amount={parseFloat(hubData.summary.total_unbilled)} inline />}
+                                                                    variant="fill"
+                                                                    accent="info"
+                                                                    icon={Receipt}
+                                                                />
+                                                                {hubData.summary.total_past_due ? (
+                                                                    <StatCard
+                                                                        label="Vencido"
+                                                                        value={<MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline />}
+                                                                        variant="fill"
+                                                                        accent="destructive"
+                                                                        icon={TrendingUp}
+                                                                    />
+                                                                ) : null}
+                                                                <StatCard
+                                                                    label="Estados Abiertos"
+                                                                    value={String(hubData.summary.open_statements)}
+                                                                    subtext={`${hubData.summary.overdue_statements} vencidos`}
+                                                                    variant="fill"
+                                                                    accent="warning"
+                                                                    icon={Gauge}
                                                                 />
                                                             </div>
                                                         ),
@@ -388,24 +403,52 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                             weight: 2,
                                             sections: [
                                                 {
-                                                    id: 'utilization-gauge',
+                                                    id: 'utilization-kpis',
                                                     content: hubData.creditUtilization.length > 0 ? {
                                                         type: 'custom',
                                                         render: (
-                                                            <div>
-                                                                <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Utilización del Cupo</h4>
+                                                            <div className="space-y-4">
                                                                 {hubData.creditUtilization.map(cu => (
-                                                                    <SummaryTable
-                                                                        key={cu.card_account_id}
-                                                                        rows={[
-                                                                            { label: 'Tarjeta', value: cu.card_name },
-                                                                            { label: 'Límite', value: <MoneyDisplay amount={parseFloat(cu.credit_limit ?? '0')} inline /> },
-                                                                            { label: 'Deuda Actual', value: <MoneyDisplay amount={parseFloat(cu.current_debt)} inline /> },
-                                                                            { label: 'No Facturado', value: <MoneyDisplay amount={parseFloat(cu.total_unbilled)} inline /> },
-                                                                            { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(cu.available_credit ?? '0')} inline /> },
-                                                                            { label: '% Utilizado', value: `${cu.utilization_pct.toFixed(1)}%` },
-                                                                        ]}
-                                                                    />
+                                                                    <div key={cu.card_account_id} className="space-y-3">
+                                                                        <h4 className="text-xs text-muted-foreground font-semibold">{cu.card_name}</h4>
+                                                                        <div className="grid grid-cols-2 gap-3">
+                                                                            <StatCard
+                                                                                label="Límite"
+                                                                                value={<MoneyDisplay amount={parseFloat(cu.credit_limit ?? '0')} inline />}
+                                                                                variant="fill"
+                                                                                accent="primary"
+                                                                            />
+                                                                            <StatCard
+                                                                                label="Deuda Actual"
+                                                                                value={<MoneyDisplay amount={parseFloat(cu.current_debt)} inline />}
+                                                                                variant="fill"
+                                                                                accent="warning"
+                                                                            />
+                                                                            <StatCard
+                                                                                label="No Facturado"
+                                                                                value={<MoneyDisplay amount={parseFloat(cu.total_unbilled)} inline />}
+                                                                                variant="fill"
+                                                                                accent="info"
+                                                                            />
+                                                                            <StatCard
+                                                                                label="Disponible"
+                                                                                value={<MoneyDisplay amount={parseFloat(cu.available_credit ?? '0')} inline />}
+                                                                                variant="fill"
+                                                                                accent="success"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className="h-full rounded-full bg-warning transition-all"
+                                                                                    style={{ width: `${Math.min(cu.utilization_pct, 100)}%` }}
+                                                                                />
+                                                                            </div>
+                                                                            <span className="text-xs font-bold text-muted-foreground">
+                                                                                {cu.utilization_pct.toFixed(1)}% usado
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
                                                                 ))}
                                                             </div>
                                                         ),
@@ -427,14 +470,25 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                                     content: hubData.summary ? {
                                                         type: 'custom',
                                                         render: (
-                                                            <div>
+                                                            <div className="space-y-3">
                                                                 <h4 className="text-xs text-muted-foreground mb-2 font-semibold">Deuda Consolidada</h4>
-                                                                <SummaryTable
-                                                                    rows={[
-                                                                        { label: 'Deuda Total', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline /> },
-                                                                        { label: 'Total Facturado', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_billed ?? '0')} inline /> },
-                                                                        { label: 'Total Vencido', value: <MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline /> },
-                                                                    ]}
+                                                                <StatCard
+                                                                    label="Deuda Total"
+                                                                    value={<MoneyDisplay amount={parseFloat(hubData.summary.total_debt)} inline />}
+                                                                    variant="fill"
+                                                                    accent="primary"
+                                                                />
+                                                                <StatCard
+                                                                    label="Total Facturado"
+                                                                    value={<MoneyDisplay amount={parseFloat(hubData.summary.total_billed ?? '0')} inline />}
+                                                                    variant="fill"
+                                                                    accent="info"
+                                                                />
+                                                                <StatCard
+                                                                    label="Total Vencido"
+                                                                    value={<MoneyDisplay amount={parseFloat(hubData.summary.total_past_due)} inline />}
+                                                                    variant="fill"
+                                                                    accent="destructive"
                                                                 />
                                                             </div>
                                                         ),
