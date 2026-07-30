@@ -23,6 +23,9 @@ import {
     useUnifiedSearch,
     AutoEntityCard,
     StatCard,
+    LineChart,
+    BarChart,
+    PieChart,
 } from "@/components/shared"
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
@@ -154,11 +157,6 @@ export function PartnersClientView({
         data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.net_equity) })),
     }] : [], [evolutionData.periods])
 
-    const partnerCountEvolutionChart = useMemo(() => evolutionData.periods.length > 0 ? [{
-        id: "Socios",
-        data: evolutionData.periods.map(p => ({ x: p.period, y: p.partner_count })),
-    }] : [], [evolutionData.periods])
-
     const compositionEvolutionChart = useMemo(() => evolutionData.periods.length > 0 ? [
         { id: "Aportes", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_contributions) })) },
         { id: "Retiros", data: evolutionData.periods.map(p => ({ x: p.period, y: Number(p.total_withdrawals) })) },
@@ -199,75 +197,60 @@ export function PartnersClientView({
                     icon: PieChartIcon,
                     columns: [
                         {
-                            id: "col-main",
+                            id: "col-full",
                             sections: [
                                 {
-                                    id: "kpi-row",
+                                    id: "kpi-chart-wrapper",
                                     content: {
                                         type: "custom",
                                         render: (
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <StatCard
-                                                    label="Patrimonio Neto"
-                                                    value={formatCurrency(analyticsData.totalNetEquity)}
-                                                    icon={TrendingUp}
-                                                    accent="primary"
-                                                    valueSize="xl"
-                                                    subtext="Valor Libro de la Compañía"
-                                                />
-                                                <StatCard
-                                                    label="Socios"
-                                                    value={analyticsData.partnerCount.toString()}
-                                                    icon={PieChartIcon}
-                                                    accent="info"
-                                                    valueSize="xl"
-                                                    subtext="Total activos"
-                                                />
+                                            <div className="flex flex-col h-full gap-4">
+                                                <div className="grid grid-cols-2 gap-4 shrink-0">
+                                                    <StatCard
+                                                        label="Patrimonio Neto"
+                                                        value={formatCurrency(analyticsData.totalNetEquity)}
+                                                        icon={TrendingUp}
+                                                        accent="primary"
+                                                        valueSize="xl"
+                                                        subtext="Valor Libro de la Compañía"
+                                                    />
+                                                    <StatCard
+                                                        label="Socios"
+                                                        value={analyticsData.partnerCount.toString()}
+                                                        icon={PieChartIcon}
+                                                        accent="info"
+                                                        valueSize="xl"
+                                                        subtext="Total activos"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-h-0">
+                                                    {evolutionData.isLoading ? (
+                                                        <div className="h-full flex items-center justify-center">
+                                                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                                                        </div>
+                                                    ) : evolutionData.periods.length === 0 ? (
+                                                        <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>
+                                                    ) : (
+                                                        <StatCard
+                                                            label="Evolución del Patrimonio Neto"
+                                                            variant="chart"
+                                                            chart={
+                                                                <LineChart
+                                                                    data={equityEvolutionChart}
+                                                                    tooltipFormat="currency"
+                                                                    enableArea
+                                                                    pointSize={0}
+                                                                    margin={{ top: 8, right: 8, bottom: 24, left: 40 }}
+                                                                    axisBottom={{ tickSize: 0, tickPadding: 10 }}
+                                                                    axisLeft={{ tickSize: 0, tickPadding: 10, format: (v: number) => formatCurrency(v) }}
+                                                                />
+                                                            }
+                                                            className="h-full"
+                                                        />
+                                                    )}
+                                                </div>
                                             </div>
                                         ),
-                                    },
-                                },
-                                {
-                                    id: "chart-evolution-equity",
-                                    content: evolutionData.isLoading ? {
-                                        type: "custom",
-                                        render: <div className="h-32 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>,
-                                    } : evolutionData.periods.length === 0 ? {
-                                        type: "custom",
-                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
-                                    } : {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Evolución del Patrimonio Neto",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "line-chart",
-                                                preset: "card",
-                                                data: equityEvolutionChart,
-                                                valueFormat: "$,.0f",
-                                            },
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "chart-evolution-partners",
-                                    content: evolutionData.isLoading ? {
-                                        type: "custom",
-                                        render: <div className="h-32 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>,
-                                    } : evolutionData.periods.length === 0 ? {
-                                        type: "custom",
-                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
-                                    } : {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Evolución de Socios",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "line-chart",
-                                                preset: "card",
-                                                data: partnerCountEvolutionChart,
-                                            },
-                                        },
                                     },
                                 },
                             ],
@@ -280,79 +263,79 @@ export function PartnersClientView({
                     icon: Gauge,
                     columns: [
                         {
-                            id: "col-side",
-                            weight: 1,
+                            id: "col-full",
                             sections: [
                                 {
-                                    id: "chart-equity",
-                                    content: analyticsData.equityDistribution.length > 0 ? {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Distribución Patrimonial",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "pie-chart",
-                                                preset: "card",
-                                                data: analyticsData.equityDistribution,
-                                                valueFormat: "currency",
-                                            },
-                                        },
-                                    } : {
+                                    id: "charts-wrapper",
+                                    content: {
                                         type: "custom",
                                         render: (
-                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de distribución</p>
+                                            <div className="flex flex-col h-full gap-4">
+                                                <div className="grid grid-cols-2 gap-4 shrink-0 min-h-0">
+                                                    {analyticsData.equityDistribution.length > 0 ? (
+                                                        <StatCard
+                                                            label="Distribución Patrimonial"
+                                                            variant="chart"
+                                                            chart={
+                                                                <PieChart
+                                                                    data={analyticsData.equityDistribution}
+                                                                    tooltipFormat="currency"
+                                                                    innerRadius={0.6}
+                                                                    enableArcLinkLabels={false}
+                                                                />
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        <div className="flex items-center justify-center h-full min-h-32 border border-dashed border-muted-foreground/20 rounded-sm">
+                                                            <p className="text-sm text-muted-foreground italic">Sin datos de distribución</p>
+                                                        </div>
+                                                    )}
+                                                    <StatCard
+                                                        label="Capital Enterado vs Pendiente"
+                                                        variant="chart"
+                                                        chart={
+                                                            <BarChart
+                                                                data={analyticsData.capitalComparison}
+                                                                keys={["paid", "pending"]}
+                                                                indexBy="name"
+                                                                tooltipFormat="currency"
+                                                                margin={{ top: 8, right: 8, bottom: 40, left: 60 }}
+                                                                padding={0.3}
+                                                                borderRadius={6}
+                                                                enableGridX={false}
+                                                                enableGridY={false}
+                                                            />
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-h-0">
+                                                    {evolutionData.isLoading ? (
+                                                        <div className="h-full flex items-center justify-center">
+                                                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                                                        </div>
+                                                    ) : evolutionData.periods.length === 0 ? (
+                                                        <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>
+                                                    ) : (
+                                                        <StatCard
+                                                            label="Composición Patrimonial"
+                                                            variant="chart"
+                                                            chart={
+                                                                <LineChart
+                                                                    data={compositionEvolutionChart}
+                                                                    tooltipFormat="currency"
+                                                                    enableArea
+                                                                    pointSize={0}
+                                                                    margin={{ top: 8, right: 8, bottom: 24, left: 40 }}
+                                                                    axisBottom={{ tickSize: 0, tickPadding: 10 }}
+                                                                    axisLeft={{ tickSize: 0, tickPadding: 10, format: (v: number) => formatCurrency(v) }}
+                                                                />
+                                                            }
+                                                            className="h-full"
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
                                         ),
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-main",
-                            weight: 2,
-                            sections: [
-                                {
-                                    id: "chart-capital",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Capital Enterado vs Pendiente",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.capitalComparison,
-                                                keys: ["paid", "pending"],
-                                                indexBy: "name",
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        {
-                            id: "col-composition",
-                            weight: 3,
-                            sections: [
-                                {
-                                    id: "chart-evolution-composition",
-                                    content: evolutionData.isLoading ? {
-                                        type: "custom",
-                                        render: <div className="h-32 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div>,
-                                    } : evolutionData.periods.length === 0 ? {
-                                        type: "custom",
-                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos históricos de evolución</p>,
-                                    } : {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Composición Patrimonial",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "line-chart",
-                                                preset: "card",
-                                                data: compositionEvolutionChart,
-                                                valueFormat: "$,.0f",
-                                            },
-                                        },
                                     },
                                 },
                             ],
@@ -368,60 +351,65 @@ export function PartnersClientView({
                             id: "col-full",
                             sections: [
                                 {
-                                    id: "kpi-row",
+                                    id: "kpi-chart-wrapper",
                                     content: {
                                         type: "custom",
                                         render: (
-                                            <div className="grid grid-cols-3 gap-4">
-                                                <StatCard
-                                                    label="Retiros Provisorios Totales"
-                                                    value={formatCurrency(analyticsData.totalWithdrawals)}
-                                                    icon={Wallet}
-                                                    accent="destructive"
-                                                    valueSize="xl"
-                                                    subtext="Saldos provisorios"
-                                                />
-                                                <StatCard
-                                                    label="Utilidades Acumuladas"
-                                                    value={formatCurrency(analyticsData.totalEarnings)}
-                                                    icon={TrendingUp}
-                                                    accent="success"
-                                                    valueSize="xl"
-                                                    subtext="Resultados retenidos"
-                                                />
-                                                <StatCard
-                                                    label="Dividendos por Pagar"
-                                                    value={formatCurrency(analyticsData.totalDividendsPayable)}
-                                                    icon={Wallet}
-                                                    accent="warning"
-                                                    valueSize="xl"
-                                                    subtext="Obligaciones pendientes"
-                                                />
+                                            <div className="flex flex-col h-full gap-4">
+                                                <div className="grid grid-cols-3 gap-4 shrink-0">
+                                                    <StatCard
+                                                        label="Retiros Provisorios Totales"
+                                                        value={formatCurrency(analyticsData.totalWithdrawals)}
+                                                        icon={Wallet}
+                                                        accent="destructive"
+                                                        valueSize="xl"
+                                                        subtext="Saldos provisorios"
+                                                    />
+                                                    <StatCard
+                                                        label="Utilidades Acumuladas"
+                                                        value={formatCurrency(analyticsData.totalEarnings)}
+                                                        icon={TrendingUp}
+                                                        accent="success"
+                                                        valueSize="xl"
+                                                        subtext="Resultados retenidos"
+                                                    />
+                                                    <StatCard
+                                                        label="Dividendos por Pagar"
+                                                        value={formatCurrency(analyticsData.totalDividendsPayable)}
+                                                        icon={Wallet}
+                                                        accent="warning"
+                                                        valueSize="xl"
+                                                        subtext="Obligaciones pendientes"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-h-0">
+                                                    <StatCard
+                                                        label="Composición de Saldos por Socio"
+                                                        variant="chart"
+                                                        chart={
+                                                            <BarChart
+                                                                data={analyticsData.balanceComposition.map(b => ({
+                                                                    name: b.name,
+                                                                    patrimonio: b.equity,
+                                                                    utilidades: b.earnings,
+                                                                    pendiente: b.pending,
+                                                                    retiros: b.withdrawals,
+                                                                }))}
+                                                                keys={["patrimonio", "utilidades", "pendiente", "retiros"]}
+                                                                indexBy="name"
+                                                                tooltipFormat="currency"
+                                                                margin={{ top: 8, right: 8, bottom: 40, left: 60 }}
+                                                                padding={0.3}
+                                                                borderRadius={6}
+                                                                enableGridX={false}
+                                                                enableGridY={false}
+                                                            />
+                                                        }
+                                                        className="h-full"
+                                                    />
+                                                </div>
                                             </div>
                                         ),
-                                    },
-                                },
-                                {
-                                    id: "chart-composition",
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Composición de Saldos por Socio",
-                                            variant: "chart",
-                                            chart: {
-                                                type: "bar-chart",
-                                                preset: "card",
-                                                data: analyticsData.balanceComposition.map(b => ({
-                                                    name: b.name,
-                                                    patrimonio: b.equity,
-                                                    utilidades: b.earnings,
-                                                    pendiente: b.pending,
-                                                    retiros: b.withdrawals,
-                                                })),
-                                                keys: ["patrimonio", "utilidades", "pendiente", "retiros"],
-                                                indexBy: "name",
-                                            },
-                                        },
                                     },
                                 },
                             ],
@@ -430,7 +418,7 @@ export function PartnersClientView({
                 },
             ],
         },
-    }), [analyticsData, analyticsActiveTab, equityEvolutionChart, partnerCountEvolutionChart, compositionEvolutionChart, granularity, evolutionData])
+    }), [analyticsData, analyticsActiveTab, equityEvolutionChart, compositionEvolutionChart, granularity, evolutionData])
 
     const hasPartners = partners.length > 0
 
