@@ -784,6 +784,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     serializer_class = POSSessionSerializer
     filterset_fields = ["status", "treasury_account", "user"]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        date_from = self.request.query_params.get("date_from")
+        date_to = self.request.query_params.get("date_to")
+        if date_from:
+            qs = qs.filter(opened_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(opened_at__date__lte=date_to)
+        return qs
+
     @action(detail=False, methods=["get"])
     def current(self, request):
         from .selectors import POSSelector

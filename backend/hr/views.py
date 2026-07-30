@@ -166,10 +166,12 @@ class PayrollFilter(django_filters.FilterSet):
     period_year = django_filters.NumberFilter()
     period_month = django_filters.NumberFilter()
     status = django_filters.CharFilter()
+    date_from = django_filters.DateFilter(field_name="created_at", lookup_expr="date__gte")
+    date_to = django_filters.DateFilter(field_name="created_at", lookup_expr="date__lte")
 
     class Meta:
         model = Payroll
-        fields = ["employee", "period_year", "period_month", "status"]
+        fields = ["employee", "period_year", "period_month", "status", "date_from", "date_to"]
 
 
 class PayrollViewSet(viewsets.ModelViewSet):
@@ -325,10 +327,12 @@ class SalaryAdvanceFilter(django_filters.FilterSet):
     employee = django_filters.NumberFilter(field_name="employee__id")
     payroll = django_filters.NumberFilter(field_name="payroll__id")
     is_discounted = django_filters.BooleanFilter()
+    date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
+    date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
 
     class Meta:
         model = SalaryAdvance
-        fields = ["employee", "payroll", "is_discounted"]
+        fields = ["employee", "payroll", "is_discounted", "date_from", "date_to"]
 
 
 class SalaryAdvanceViewSet(viewsets.ModelViewSet):

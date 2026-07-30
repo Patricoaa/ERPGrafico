@@ -513,6 +513,14 @@ class SubscriptionSelector:
             except (ValueError, TypeError):
                 pass
 
+        date_from = params.get("date_from")
+        if date_from:
+            queryset = queryset.filter(start_date__gte=date_from)
+
+        date_to = params.get("date_to")
+        if date_to:
+            queryset = queryset.filter(start_date__lte=date_to)
+
         return queryset
 
     @staticmethod

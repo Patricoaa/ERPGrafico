@@ -14,6 +14,8 @@ export function usePayrolls(filters?: FilterState, initialData?: Payroll[]) {
             if (filters?.search) params.search = filters.search
             if (filters?.status) params.status = filters.status
             if (filters?.period_year) params.period_year = filters.period_year
+            if (filters?.date_from) params.date_from = filters.date_from
+            if (filters?.date_to) params.date_to = filters.date_to
             return getPayrolls(Object.keys(params).length ? params : undefined)
         },
         staleTime: 2 * 60 * 1000,
