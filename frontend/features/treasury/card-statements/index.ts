@@ -10,6 +10,7 @@ export { useCardStatements, useCardStatement, useStatementCharges, useCardStatem
 export { useUnbilledAnalyticsData } from '../hooks/useUnbilledAnalyticsData'
 export { useStatementsAnalyticsData } from '../hooks/useStatementsAnalyticsData'
 export { cardStatementsApi } from './api'
+export { statementChargeFields } from './statementChargeFields'
 export type {
     CreditCardStatement, CreditCardStatementStatus,
     CreditCardStatementCreatePayload,

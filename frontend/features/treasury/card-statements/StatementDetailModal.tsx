@@ -2,17 +2,16 @@
 
 import React, { useMemo, useState } from 'react'
 import { CheckCircle, XCircle, ShoppingCart } from 'lucide-react'
-import type { ColumnDef } from '@tanstack/react-table'
 import {
-    BaseModal, MoneyDisplay, StatusBadge, SkeletonShell,
-    DataTableView, DataTableColumnHeader, DataCell,
+    BaseModal, StatusBadge, SkeletonShell,
+    DataTableView,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useCardStatement, useStatementCharges, useCardStatementMutations } from '../hooks/useCardStatements'
 import { PayStatementModal } from './PayStatementModal'
 import { mapToStatementChargeRows } from './utils'
 import { parseDateOnly } from '@/lib/utils'
-import type { StatementChargeRow } from './types'
+import { statementChargeFields } from './statementChargeFields'
 
 interface StatementDetailModalProps {
     statementId: number | null
@@ -44,112 +43,7 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
         }
     }
 
-    const chargesColumns: ColumnDef<StatementChargeRow, unknown>[] = [
-        {
-            accessorKey: 'date',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DataCell.Date value={row.original.date} />
-                </div>
-            ),
-            sortingFn: 'datetime',
-        },
-        {
-            id: 'descripcion',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
-            ),
-            cell: ({ row }) => {
-                const item = row.original
-                const group = item.purchaseGroupDetail
-                const inst = item.originalInstallment
-                return (
-                    <div className="flex flex-col items-start gap-0.5">
-                        <span className="text-xs font-medium">
-                            {item.source === 'installment'
-                                ? `Cuota #${item.installmentNumber} de ${item.totalInstallments}${inst?.partner_name ? ` — ${inst.partner_name}` : ''}`
-                                : item.source === 'pending'
-                                    ? `${item.movementTypeDisplay || 'Cargo'}${item.reference ? `: ${item.reference}` : ''}`
-                                    : item.reference
-                                        ? item.reference
-                                        : item.movementTypeDisplay || `Movimiento #${item.originalMovement?.id}`}
-                        </span>
-                        {item.source === 'installment' && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[250px]">
-                                {[inst?.purchase_order_display_id, item.reference].filter(Boolean).join(' — ') || inst?.partner_name}
-                            </span>
-                        )}
-                        {item.source === 'pending' && item.date && (
-                            <span className="text-[10px] text-muted-foreground">
-                                {parseDateOnly(item.date).toLocaleDateString('es-CL', { year: 'numeric', month: 'long' })}
-                            </span>
-                        )}
-                        {item.source === 'movement' && item.notes && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                                {item.notes}
-                            </span>
-                        )}
-                        {group?.partner_name && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                                {group.partner_name}
-                            </span>
-                        )}
-                        {group?.client_reference && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                                {group.client_reference}
-                            </span>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
-            id: 'cuota',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cuota" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const item = row.original
-                if (!item.installmentNumber || !item.totalInstallments) return null
-                return (
-                    <div className="flex justify-center text-xs font-medium tabular-nums">
-                        {item.installmentNumber}/{item.totalInstallments}
-                    </div>
-                )
-            },
-            enableSorting: false,
-        },
-        {
-            accessorKey: 'amount',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Monto" className="justify-end" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={row.original.amount} />
-                </div>
-            ),
-        },
-        {
-            id: 'tipo',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge
-                        status={row.original.movementType || ''}
-                        label={row.original.movementTypeDisplay || ''}
-                        variant="badge"
-                    />
-                </div>
-            ),
-            enableSorting: false,
-        },
-    ]
+    const chargesColumns = statementChargeFields.toColumns()
 
     const canAct = stmt && (stmt.status === 'OPEN' || stmt.status === 'OVERDUE')
 
