@@ -170,7 +170,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 sections: [
                                     {
                                         id: "price-range",
-                                        content: { type: "stat-card", config: { label: "Órdenes por Rango de Precio", variant: "chart", subtext: "Distribución del valor total de las órdenes", chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeDistribution, keys: ["value"], indexBy: "id", valueFormat: "number", axisBottomLegend: "Rango", axisLeftLegend: "Órdenes" } } },
+                                        content: { type: "stat-card", config: { label: "Órdenes por Rango de Precio", variant: "chart", subtext: "Distribución del valor total de las órdenes", chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeDistribution, keys: ["value"], indexBy: "id", axisBottomLegend: "Rango", axisLeftLegend: "Órdenes" } } },
                                     },
                                     {
                                         id: "channel-dist",
