@@ -183,6 +183,20 @@ export function PartnersClientView({
         return result
     }, [partners, search])
 
+    const totalNetEquity = useMemo(() =>
+        (Array.isArray(partners) ? partners : [])
+            .reduce((s, p) => s + Number(p.partner_net_equity || 0), 0),
+    [partners])
+
+    const partnersWithPct = useMemo(() =>
+        filteredPartners.map(p => ({
+            ...p,
+            partner_equity_percentage: totalNetEquity > 0
+                ? String(Math.round(Number(p.partner_net_equity) / totalNetEquity * 10000) / 100)
+                : "0",
+        })),
+    [filteredPartners, totalNetEquity])
+
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
         screen: {
             entityName: "Composición Societaria",
@@ -477,7 +491,7 @@ export function PartnersClientView({
                     <DataTableView
                         entityLabel="settings.partner"
                         columns={columns}
-                        data={filteredPartners}
+                        data={partnersWithPct}
                         isRefetching={isFetching}
                         variant="embedded"
                         createAction={createAction}
