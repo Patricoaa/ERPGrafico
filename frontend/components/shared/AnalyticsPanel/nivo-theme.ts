@@ -65,24 +65,25 @@ function desaturateHex(hex: string): string {
     return `#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`
 }
 
+import { getChartPalette } from "@/lib/chart-colors"
+
 export function getCssChartColors(variant?: "pie"): string[] {
-    if (typeof window === "undefined") {
-        const fallback = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
-        return variant === "pie" ? fallback.map(desaturateHex) : fallback
-    }
-    const style = getComputedStyle(document.documentElement)
-    const vars = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5", "--chart-6"]
-    return vars.map((v) => {
-        const val = style.getPropertyValue(v).trim()
-        if (variant === "pie" && val.startsWith("oklch(")) {
-            return val.replace(
-                /oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/,
-                (_, l: string, c: string, h: string) =>
-                    `oklch(${l} ${(parseFloat(c) * 0.55).toFixed(3)} ${h})`,
-            )
-        }
-        return val || "#000"
-    })
+    return variant === "pie" ? getPieChartColors() : getChartPalette()
+}
+
+// ── Pie variant: desaturate palette for better readability on small slices ──
+
+function desaturateOklch(val: string): string {
+    return val.replace(
+        /oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/,
+        (_, l: string, c: string, h: string) =>
+            `oklch(${l} ${(parseFloat(c) * 0.55).toFixed(3)} ${h})`,
+    )
+}
+
+/** Same as getCssChartColors but with chroma reduced for pie slices */
+export function getPieChartColors(): string[] {
+    return getChartPalette().map((v) => v.startsWith("oklch(") ? desaturateOklch(v) : v)
 }
 
 // ── Card presets (centralized aesthetics for StatCard context) ──

@@ -38,6 +38,13 @@ function extractLegendItems(chart: ChartConfig): Array<{ label: string; color?: 
                 label: key.charAt(0).toUpperCase() + key.slice(1),
                 color: palette[i % palette.length],
             }))
+        case "funnel-chart":
+            return chart.data.map((item, i) => ({
+                label: item.label ?? String(item.id),
+                color: item.color ?? palette[i % palette.length],
+            }))
+        default:
+            return []
     }
 }
 

@@ -1,7 +1,8 @@
 "use client"
 
-import React, { useEffect, useCallback } from "react"
-import { DataTable, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
+import React, { useEffect, useCallback, useMemo } from "react"
+import { DataTable, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import type { UnifiedSearchConfig } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -62,6 +63,30 @@ export function MappingConfigDrawer({
             form.reset(defaults)
         }
     }, [accounts, fieldName, form])
+
+    const searchConfig: UnifiedSearchConfig = useMemo(() => ({
+        searchFields: [
+            {
+                key: 'search',
+                label: 'Búsqueda por código o nombre',
+                serverParam: 'search'
+            }
+        ]
+    }), [])
+
+    const search = useUnifiedSearch(searchConfig)
+
+    const filteredAccounts = useMemo(() => {
+        let result = accounts
+        const searchTerm = search.paramValues.search?.toLowerCase()
+        if (searchTerm) {
+            result = result.filter(a => 
+                a.code.toLowerCase().includes(searchTerm) || 
+                a.name.toLowerCase().includes(searchTerm)
+            )
+        }
+        return result
+    }, [accounts, search.paramValues.search])
 
     const getCategories = () => {
         switch (mappingType) {
@@ -164,6 +189,7 @@ export function MappingConfigDrawer({
         {
             accessorKey: "code",
             header: "Código",
+            enableSorting: true,
             cell: ({ row }) => (
                 <DataCell.Code className="justify-start opacity-70">
                     {row.getValue("code")}
@@ -173,6 +199,7 @@ export function MappingConfigDrawer({
         {
             accessorKey: "name",
             header: "Cuenta",
+            enableSorting: true,
             cell: ({ row }) => (
                 <DataCell.Text className="justify-start tracking-tight uppercase max-w-[200px] sm:max-w-[300px] truncate">
                     {row.getValue("name")}
@@ -182,6 +209,7 @@ export function MappingConfigDrawer({
         {
             accessorKey: "account_type_display",
             header: "Tipo",
+            enableSorting: true,
             cell: ({ row }) => (
                 <Chip size="xs" intent="neutral" className="h-5 rounded-sm bg-muted/30">
                     {row.getValue("account_type_display")}
@@ -191,6 +219,8 @@ export function MappingConfigDrawer({
         {
             id: "category",
             header: "Categoría Asignada",
+            accessorFn: (row) => row[fieldName as keyof Account] || "none",
+            enableSorting: true,
             cell: ({ row }) => {
                 const account = row.original
                 return (
@@ -264,9 +294,24 @@ export function MappingConfigDrawer({
             <div className="flex-1 flex flex-col min-h-0">
                 <DataTable
                     columns={columns}
-                    data={accounts}
+                    data={filteredAccounts}
                     isLoading={isLoading}
                     variant="embedded"
+                    unifiedSearch={
+                        <UnifiedSearchBar 
+                            config={searchConfig} 
+                            chips={search.chips} 
+                            isFiltered={search.isFiltered} 
+                            inputValue={search.inputValue} 
+                            onInputChange={search.setInputValue} 
+                            onApply={search.applyFilter} 
+                            onRemove={search.removeFilter} 
+                            onClearAll={search.clearAll} 
+                            groupBy={search.groupBy} 
+                            onGroupBySelect={search.setGroupBy} 
+                            paramValues={search.paramValues} 
+                        />
+                    }
                     bulkDock={(items, clear) => (
                         <ActionDock.Actions>
                             <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>

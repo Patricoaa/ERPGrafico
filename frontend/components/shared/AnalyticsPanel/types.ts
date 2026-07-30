@@ -91,7 +91,16 @@ export interface RadarChartConfig {
     valueFormat?: string
 }
 
-export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig | RadarChartConfig
+export interface FunnelChartConfig {
+    type: "funnel-chart"
+    preset?: "card"
+    data: { id: string | number; value: number; label?: string; color?: string }[]
+    valueFormat?: string
+    direction?: "horizontal" | "vertical"
+    enableLabel?: boolean
+}
+
+export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig | RadarChartConfig | FunnelChartConfig
 
 // ── Layout types ──
 

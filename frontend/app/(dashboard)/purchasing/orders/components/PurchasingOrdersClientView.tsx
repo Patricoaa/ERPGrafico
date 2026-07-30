@@ -1,9 +1,10 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
+import { formatMoney } from "@/lib/money"
 import React, {useEffect, useState, useMemo} from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, StatCard } from '@/components/shared'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
 import type { AnalyticsPanelConfig } from '@/components/shared'
@@ -85,6 +86,28 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const analyticsData = usePurchasingAnalyticsData(orders as PurchaseOrderAPI[])
 
+    const funnelData = useMemo(() => {
+        const desiredOrder = ["DRAFT", "CONFIRMED", "RECEIVED", "INVOICED", "PAID"]
+        const labelMap: Record<string, string> = {
+            DRAFT: "Borrador",
+            CONFIRMED: "Confirmada",
+            RECEIVED: "Recibida",
+            INVOICED: "Facturada",
+            PAID: "Pagada"
+        }
+        // Colors come from statusDistribution (assigned dynamically by assignChartColors)
+        return desiredOrder.map(status => {
+            const item = analyticsData.statusDistribution.find(d => d.id === status)
+            if (!item || item.value === 0) return null
+            return {
+                id: status,
+                label: labelMap[status],
+                value: item.value,
+                color: item.color,
+            }
+        }).filter((d): d is NonNullable<typeof d> => d !== null)
+    }, [analyticsData.statusDistribution])
+
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => {
         if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }
 
@@ -113,7 +136,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         columns: [
                             {
                                 id: "col-main",
-                                weight: 2,
+                                weight: 1,
                                 sections: [
                                     {
                                         id: "combo-chart",
@@ -122,6 +145,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                             config: {
                                                 label: "Volumen de Órdenes",
                                                 variant: "chart",
+                                                subtext: "Evolución histórica del monto total y cantidad de órdenes por mes",
                                                 chart: {
                                                         type: "line-chart",
                                                         preset: "card",
@@ -144,6 +168,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                             config: {
                                                 label: "Forma de Pago",
                                                 variant: "chart",
+                                                subtext: "Distribución de los medios de pago utilizados",
                                                 chart: {
                                                         type: "pie-chart",
                                                         preset: "card",
@@ -174,6 +199,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                             config: {
                                                 label: "Top Proveedores",
                                                 variant: "chart",
+                                                subtext: "Proveedores con mayor volumen de compras y recurrencia",
                                                 chart: {
                                                         type: "bar-chart",
                                                         preset: "card",
@@ -190,6 +216,24 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                             },
                                         },
                                     },
+                                    {
+                                        id: "funnel-workflow",
+                                        content: {
+                                            type: "stat-card",
+                                            config: {
+                                                label: "Flujo de Vida (Órdenes)",
+                                                variant: "chart",
+                                                subtext: "Volumen de órdenes por estado del proceso",
+                                                chart: {
+                                                    type: "funnel-chart",
+                                                    preset: "card",
+                                                    data: funnelData,
+                                                    direction: "horizontal",
+                                                    enableLabel: true,
+                                                },
+                                            }
+                                        }
+                                    }
                                 ],
                             },
                             {
@@ -236,6 +280,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                             config: {
                                                 label: "Órdenes por Almacén",
                                                 variant: "chart",
+                                                subtext: "Destino de recepción logística de las órdenes",
                                                 chart: {
                                                         type: "bar-chart",
                                                         preset: "card",
@@ -254,7 +299,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 ],
             },
         }
-    }, [analyticsData, viewMode, analyticsActiveTab])
+    }, [analyticsData, funnelData, viewMode, analyticsActiveTab])
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id

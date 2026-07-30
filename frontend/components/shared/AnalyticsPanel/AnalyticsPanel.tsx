@@ -2,9 +2,10 @@
 
 import React, { useState } from "react"
 import { LayoutDashboard } from "lucide-react"
-import { Drawer, TabBar, TabBarContent } from "@/components/shared"
+import { Drawer } from "@/components/shared"
 import { AnalyticsLayout } from "./AnalyticsLayout"
 import type { AnalyticsPanelProps, AnalyticsTab } from "./types"
+import { cn } from "@/lib/utils"
 
 export interface AnalyticsTabBarProps {
     tabs: AnalyticsTab[]
@@ -48,7 +49,7 @@ export interface AnalyticsPanelContentProps {
 }
 
 export function AnalyticsPanelContent({
-    entityName, // eslint-disable-line @typescript-eslint/no-unused-vars -- part of AnalyticsPanelContentProps interface
+    entityName,
     tabs,
     activeTab: activeTabProp,
     onTabChange,
@@ -59,27 +60,46 @@ export function AnalyticsPanelContent({
     const handleTabChange = onTabChange ?? setInternalTab
 
     return (
-        <TabBar
-            items={tabs.map((t) => ({
-                value: t.value,
-                label: t.label,
-                icon: t.icon,
-                badge: t.badge,
-            }))}
-            value={currentTab}
-            onValueChange={handleTabChange}
-            orientation="horizontal"
-            className="flex-1 flex flex-col overflow-hidden"
-            contentClassName="flex flex-col"
-        >
-            {tabs.map((tab) => (
-                <AnalyticsTabContent
-                    key={tab.value}
-                    tab={tab}
-                    isActive={tab.value === currentTab}
-                />
-            ))}
-        </TabBar>
+        <div className="flex-1 flex flex-row w-full h-full min-h-0 overflow-hidden bg-transparent">
+            <div className="w-56 shrink-0 flex flex-col pr-4 py-0 gap-2 overflow-y-auto bg-transparent">
+                {tabs.map((t) => {
+                    const Icon = t.icon
+                    const isActive = t.value === currentTab
+                    return (
+                        <button
+                            key={t.value}
+                            onClick={() => handleTabChange(t.value)}
+                            className={cn(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all duration-200",
+                                isActive 
+                                    ? "bg-primary text-primary-foreground shadow-md" 
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                        >
+                            {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                            <span className="truncate">{t.label}</span>
+                            {t.badge && (
+                                <span className={cn(
+                                    "ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-bold",
+                                    isActive ? "bg-primary-foreground/20" : "bg-muted-foreground/20"
+                                )}>
+                                    {t.badge}
+                                </span>
+                            )}
+                        </button>
+                    )
+                })}
+            </div>
+            <div className="flex-1 flex flex-col min-w-0 h-full p-0">
+                {tabs.map((tab) => (
+                    <AnalyticsTabContent
+                        key={tab.value}
+                        tab={tab}
+                        isActive={tab.value === currentTab}
+                    />
+                ))}
+            </div>
+        </div>
     )
 }
 
@@ -115,21 +135,10 @@ function AnalyticsTabContent({ tab, isActive }: { tab: AnalyticsTab; isActive: b
     if (!isActive && typeof window !== "undefined") return null
 
     return (
-        <TabBarContent
-            key={tab.value}
-            value={tab.value}
-            className="flex-1 flex flex-col"
-        >
-            <div className="p-6 flex flex-col min-h-0">
-                {tab.description && (
-                    <p className="text-xs text-muted-foreground/70 font-medium mb-4 shrink-0">
-                        {tab.description}
-                    </p>
-                )}
-                {tab.columns?.length ? (
-                    <AnalyticsLayout columns={tab.columns} />
-                ) : null}
-            </div>
-        </TabBarContent>
+        <div className={cn("flex-1 flex flex-col min-h-0 h-full w-full", !isActive && "hidden")}>
+            {tab.columns?.length ? (
+                <AnalyticsLayout columns={tab.columns} />
+            ) : null}
+        </div>
     )
 }

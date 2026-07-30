@@ -118,7 +118,7 @@ export function StatCard({
   }
 
   const baseCardClasses =
-    "rounded-md border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0"
+    "rounded-sm border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0"
 
   const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 
@@ -135,7 +135,7 @@ export function StatCard({
       ? {
         className: cn(
           baseCardClasses,
-          "p-3 rounded-md",
+          "p-3",
           accentBg[accent],
           interactiveClasses,
           active && activeRing[accent],
@@ -164,7 +164,7 @@ export function StatCard({
           className: cn(
             baseCardClasses,
             variant === "default" && "gap-0 py-3",
-            (variant === "chart" || variant === "metric-chart") && "py-0 gap-0 rounded-xl",
+            (variant === "chart" || variant === "metric-chart") && "py-0 gap-0",
             variant === "compact" && accentBg[accent],
             interactiveClasses,
             active && activeRing[accent],

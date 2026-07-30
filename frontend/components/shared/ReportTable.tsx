@@ -33,6 +33,7 @@ interface ReportTableProps {
     periodLabel?: string;
     compPeriodLabel?: string;
     varianceDirection?: 'higher-is-better' | 'lower-is-better';
+    disableDrillDown?: boolean;
 }
 
 interface DrillDownTarget {
@@ -65,7 +66,8 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     isLoading,
     periodLabel,
     compPeriodLabel,
-    varianceDirection = 'higher-is-better'
+    varianceDirection = 'higher-is-better',
+    disableDrillDown = false
 }) => {
     const [expanded, setExpanded] = useState<ExpandedState>(true);
     const [drillDown, setDrillDown] = useState<DrillDownTarget | null>(null);
@@ -73,7 +75,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     const displayData = isLoading ? SKELETON_DATA : data || [];
 
     const handleRowClick = (node: ReportNode) => {
-        if (!isDrillable(node)) return;
+        if (disableDrillDown || !isDrillable(node)) return;
         setDrillDown({
             accountId: Number(node.id),
             accountName: node.name,
@@ -143,7 +145,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                 <span className={cn(
                                     "text-sm tracking-tight truncate", 
                                     level === 0 ? "uppercase font-semibold text-foreground/90" : "font-medium text-foreground/80",
-                                    drillable && "group-hover/row:text-primary group-hover/row:underline decoration-dotted underline-offset-2 cursor-pointer transition-colors"
+                                    drillable && !disableDrillDown && "group-hover/row:text-primary group-hover/row:underline decoration-dotted underline-offset-2 cursor-pointer transition-colors"
                                 )}>
                                     {getValue()}
                                 </span>

@@ -78,6 +78,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
 
     const identity = useDrawerIdentity('accounting.account', 'view', { code: accountCode, name: accountName }, {
         overrideTitle: "Libro Mayor",
+        overrideSubtitle: accountCode && accountName ? `${accountCode} — ${accountName}` : accountName || accountCode || undefined,
         onPrint: handlePrint,
         printable: open && !!data,
     })
@@ -208,21 +209,13 @@ function LedgerContent({
 
     const search = useUnifiedSearch(ledgerSearchConfig)
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
     const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
 
     const openEntry = (id: number | string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setViewingEntry({ id })
     }
 
     const closeEntry = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setViewingEntry(null)
     }
 
@@ -384,6 +377,7 @@ function LedgerContent({
                     isLoading={isLoading}
                     variant="embedded"
                     defaultPageSize={100}
+                    defaultAction={(mov: LedgerMovement) => openEntry(mov.entry_id)}
                     unifiedSearch={<UnifiedSearchBar
                         config={ledgerSearchConfig}
                         chips={search.chips}

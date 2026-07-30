@@ -133,9 +133,17 @@ export function PieChart({
                 {...rest as Record<string, unknown>}
             />
             {centerLabel && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div 
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                    style={margin ? { 
+                        paddingTop: margin.top, 
+                        paddingRight: margin.right, 
+                        paddingBottom: margin.bottom, 
+                        paddingLeft: margin.left 
+                    } : undefined}
+                >
                     <div className="text-center">
-                        <div className="text-xl font-black  tracking-tighter text-foreground">
+                        <div className="text-xl font-black tracking-tighter text-foreground">
                             {centerLabel.value}
                         </div>
                         {centerLabel.label && (

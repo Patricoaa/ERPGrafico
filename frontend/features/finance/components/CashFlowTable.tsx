@@ -49,6 +49,7 @@ export interface CashFlowData {
     net_increase: number;
     net_increase_comp?: number;
     calculated_net_increase: number;
+    calculated_net_increase_comp?: number;
     discrepancy: number;
     is_balanced: boolean;
     culprit_accounts: CulpritAccount[];
@@ -119,7 +120,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             code: 'NET', 
             name: 'VARIACIÓN NETA DE EFECTIVO (Actividades)', 
             balance: data.calculated_net_increase, 
-            comp_balance: data.net_increase_comp,
+            comp_balance: data.calculated_net_increase_comp,
             isTotalRow: true
         },
         { 
@@ -139,6 +140,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 showComparison={showComparison}
                 periodLabel={periodLabel}
                 compPeriodLabel={compPeriodLabel}
+                disableDrillDown={true}
             />
 
             {/* Vencimientos Futuros (F5.3) */}
