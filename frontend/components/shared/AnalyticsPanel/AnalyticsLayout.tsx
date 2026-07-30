@@ -132,7 +132,11 @@ function ColRenderer({ column }: { column: AnalyticsColumn }) {
         return (
             <div className="flex flex-col gap-4 min-h-0 h-full" style={{ flex: column.weight ?? 1 }}>
                 {column.sections.map((section) => (
-                    <div key={section.id} className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
+                    <div
+                        key={section.id}
+                        className="min-h-0 flex flex-col overflow-hidden"
+                        style={section.fillRemaining === false ? { flex: "0 0 auto" } : { flex: "1 1 0%" }}
+                    >
                         <SectionRenderer section={section} />
                     </div>
                 ))}

@@ -16,6 +16,7 @@ export interface SaleOrderLine {
     product_name?: string
     description: string
     quantity: number
+    subtotal?: number
     uom: string | number
     uom_name?: string
     unit_price: number
@@ -69,10 +70,13 @@ export interface SaleOrder {
     date: string
     status: SaleOrderStatus | string
     total: string | number
+    total_net: string | number
     total_paid: number
     pending_amount: number
     customer: number
     channel_display: string
+    channel?: string
+    payment_method?: string
     delivery_status: DeliveryStatus
     has_pending_work_orders?: boolean
     related_documents?: {

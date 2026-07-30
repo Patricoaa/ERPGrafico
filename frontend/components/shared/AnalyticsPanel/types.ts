@@ -110,6 +110,8 @@ export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig | Ra
 export interface AnalyticsSection {
     id: string
     colSpan?: number
+    /** If false, section takes natural height instead of filling remaining space. Defaults to true. */
+    fillRemaining?: boolean
     content:
         | { type: "stat-card"; config: StatCardConfig }
         | { type: "custom"; render: React.ReactNode }
