@@ -30,7 +30,7 @@ import {
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
 import { usePartnerEvolutionData } from "@/features/settings/hooks/usePartnerEvolutionData"
-import type { Granularity } from "@/lib/analytics-helpers"
+import { type Granularity, granularityKey } from "@/lib/analytics-helpers"
 import { partnerFields } from '../../partnerFields'
 import { partnerActions, type PartnerActionsCtx } from './partnerActions'
 import {
@@ -241,7 +241,7 @@ export function PartnersClientView({
                                                                     enableArea
                                                                     pointSize={0}
                                                                     margin={{ top: 8, right: 8, bottom: 24, left: 40 }}
-                                                                    axisBottom={{ tickSize: 0, tickPadding: 10 }}
+                                                                    axisBottom={{ tickSize: 0, tickPadding: 10, format: (v: string) => granularityKey(v, granularity) }}
                                                                     axisLeft={{ tickSize: 0, tickPadding: 10, format: (v: number) => formatCurrency(v) }}
                                                                 />
                                                             }
@@ -271,7 +271,7 @@ export function PartnersClientView({
                                         type: "custom",
                                         render: (
                                             <div className="flex flex-col h-full gap-4">
-                                                <div className="grid grid-cols-2 gap-4 shrink-0 min-h-0">
+                                                <div className="grid grid-cols-2 gap-4 shrink-0 h-80">
                                                     {analyticsData.equityDistribution.length > 0 ? (
                                                         <StatCard
                                                             label="Distribución Patrimonial"
@@ -282,6 +282,10 @@ export function PartnersClientView({
                                                                     tooltipFormat="currency"
                                                                     innerRadius={0.6}
                                                                     enableArcLinkLabels={false}
+                                                                    arcLabel={(d: { value: number }) => {
+                                                                        const total = analyticsData.equityDistribution.reduce((s, item) => s + item.value, 0)
+                                                                        return total > 0 ? `${((d.value / total) * 100).toFixed(1)}%` : "0%"
+                                                                    }}
                                                                 />
                                                             }
                                                         />
@@ -326,7 +330,7 @@ export function PartnersClientView({
                                                                     enableArea
                                                                     pointSize={0}
                                                                     margin={{ top: 8, right: 8, bottom: 24, left: 40 }}
-                                                                    axisBottom={{ tickSize: 0, tickPadding: 10 }}
+                                                                    axisBottom={{ tickSize: 0, tickPadding: 10, format: (v: string) => granularityKey(v, granularity) }}
                                                                     axisLeft={{ tickSize: 0, tickPadding: 10, format: (v: number) => formatCurrency(v) }}
                                                                 />
                                                             }
