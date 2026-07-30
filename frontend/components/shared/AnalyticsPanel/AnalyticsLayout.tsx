@@ -96,7 +96,7 @@ function SectionRenderer({ section }: { section: AnalyticsSectionType }) {
         )
 
         return (
-            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
                 {card.tooltip ? (
                     <KPIWrapper tooltip={card.tooltip}>
                         {renderedCard}
@@ -110,15 +110,15 @@ function SectionRenderer({ section }: { section: AnalyticsSectionType }) {
 
     if (content.type === "custom") {
         return (
-            <div className="flex flex-col flex-1 min-h-0">
-                <div className="flex-1 flex flex-col">{content.render}</div>
+            <div className="flex flex-col flex-1 min-h-0 h-full">
+                <div className="flex-1 h-full flex flex-col">{content.render}</div>
             </div>
         )
     }
 
     return (
-        <div className="flex flex-col flex-1 min-h-0">
-            <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex flex-col flex-1 min-h-0 h-full">
+            <div className="flex-1 min-h-0 h-full flex flex-col">
                 <AnalyticsChart {...content} />
             </div>
         </div>
@@ -130,9 +130,9 @@ function ColRenderer({ column }: { column: AnalyticsColumn }) {
 
     if (!hasColSpan) {
         return (
-            <div className="flex flex-col gap-4 min-h-0" style={{ flex: column.weight ?? 1 }}>
+            <div className="flex flex-col gap-4 min-h-0 h-full" style={{ flex: column.weight ?? 1 }}>
                 {column.sections.map((section) => (
-                    <div key={section.id} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                    <div key={section.id} className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
                         <SectionRenderer section={section} />
                     </div>
                 ))}
@@ -172,7 +172,7 @@ export function AnalyticsLayout({ columns }: LayoutProps) {
 
     if (!hasColSpan) {
         return (
-            <div className="flex gap-4 flex-1 min-h-0">
+            <div className="flex gap-4 flex-1 min-h-0 h-full">
                 {columns.map((col) => (
                     <ColRenderer key={col.id} column={col} />
                 ))}
