@@ -120,7 +120,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={sales.total_sales} previous={cd?.sales?.total_sales} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="primary"
-                        className="h-full"
+                        className="h-full rounded-sm"
                     >
                         <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${sales.growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {sales.growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -136,7 +136,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={purchasing.purchase_total} previous={cd?.purchasing?.purchase_total} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="warning"
-                        className="h-full"
+                        className="h-full rounded-sm"
                     >
                         {showComparison && cd && (
                             <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold">
@@ -153,7 +153,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={payroll.total_cost} previous={cd?.payroll?.total_cost} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="destructive"
-                        className="h-full"
+                        className="h-full rounded-sm"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Users className="h-3 w-3" /> {payroll.employee_count} empleados
@@ -168,7 +168,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={production.efficiency} previous={cd?.production?.efficiency} showComparison={showComparison} isPercentage />}
                         valueSize="xl"
                         accent="info"
-                        className="h-full"
+                        className="h-full rounded-sm"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Factory className="h-3 w-3" /> {production.finished_wo} completadas
@@ -183,7 +183,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={inventory.total_value} previous={cd?.inventory?.total_value} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="accent"
-                        className="h-full"
+                        className="h-full rounded-sm"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Package className="h-3 w-3" /> {inventory.item_count} SKU activos
@@ -198,7 +198,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={sales.pending_deliveries} previous={cd?.sales?.pending_deliveries} showComparison={showComparison} />}
                         valueSize="xl"
                         accent="accent"
-                        className="h-full"
+                        className="h-full rounded-sm"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Truck className="h-3 w-3" /> órdenes en espera
@@ -213,6 +213,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Tendencia de Ventas" 
                     description="Evolución mensual de ventas (sin impuestos)"
                     headerRight={hasValidTrend ? <ChartLegend items={[{ label: "Ventas", color: "#1f77b4" }]} /> : undefined}
+                    className="rounded-sm"
                 >
                     <div className="h-full">
                         {hasValidTrend ? (
@@ -240,6 +241,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                 <SectionCard
                     title="Top Clientes"
                     description="Por volumen de compras facturadas"
+                    className="rounded-sm"
                 >
                     <div className="h-full">
                         {sales.top_customers && sales.top_customers.length > 0 ? (
@@ -279,7 +281,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Proveedores y CxP"
                     description="Análisis de pasivos y principales proveedores"
                     chartHeight="auto"
-                    className="h-full"
+                    className="h-full rounded-sm"
                 >
                     <div className="space-y-4 flex-1">
                         <div className="flex flex-col bg-muted/30 p-3 rounded-lg border border-border/50">
@@ -311,7 +313,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Inventario"
                     description="Composición del valor en almacén por categoría"
                     chartHeight="auto"
-                    className="h-full flex flex-col"
+                    className="h-full flex flex-col rounded-sm"
                 >
                     <div className="h-[220px] -mx-2">
                         {inventory.stock_distribution && inventory.stock_distribution.length > 0 ? (
@@ -352,7 +354,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Cuentas por Cobrar"
                     description="Facturas emitidas y pendientes de cobro"
                     chartHeight="auto"
-                    className="h-full"
+                    className="h-full rounded-sm"
                 >
                     <div className="space-y-4 flex-1">
                         <div className="flex flex-col bg-muted/30 p-3 rounded-lg border border-border/50">
