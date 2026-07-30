@@ -95,9 +95,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
         const lineVolume = [
             { id: "Total", data: analyticsData.monthlyVolume.map((m) => ({ x: m.month, y: m.total })) },
         ]
-        const lineOrders = [
-            { id: "Órdenes", data: analyticsData.monthlyCount.map((m) => ({ x: m.month, y: m.count })) },
-        ]
 
         const systemPosColors = assignChartColors([
             { id: "Sistema", value: analyticsData.systemOrderCount },
@@ -147,7 +144,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                     },
                                     {
                                         id: "kpi-avg",
-                                        content: { type: "stat-card", config: { label: "Ticket Promedio", value: formatMoney(analyticsData.avgOrderValue), variant: "tile", trend: analyticsData.avgOrderValueTrend } },
+                                        content: { type: "stat-card", config: { label: "Orden Promedio", value: formatMoney(analyticsData.avgOrderValue), variant: "tile", trend: analyticsData.avgOrderValueTrend } },
                                         fillRemaining: false,
                                     },
                                     {
@@ -165,10 +162,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                         id: "volume-trend",
                                         content: { type: "stat-card", config: { label: "Evolución del Volumen", variant: "chart", subtext: "Monto total de órdenes por período", chart: { type: "line-chart", preset: "card", data: lineVolume, valueFormat: "$,.0f" } } },
                                     },
-                                    {
-                                        id: "order-count-trend",
-                                        content: { type: "stat-card", config: { label: "Órdenes por Período", variant: "chart", subtext: "Cantidad de órdenes emitidas en cada período", chart: { type: "line-chart", preset: "card", data: lineOrders, enableArea: true } } },
-                                    },
                                 ],
                             },
                             {
@@ -176,8 +169,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                                 weight: 1,
                                 sections: [
                                     {
-                                        id: "status-dist",
-                                        content: { type: "stat-card", config: { label: "Órdenes por Estado", variant: "chart", subtext: "Distribución del estado actual", chart: { type: "pie-chart", preset: "card", data: analyticsData.statusDistribution, valueFormat: "number", compact: true } } },
+                                        id: "price-range",
+                                        content: { type: "stat-card", config: { label: "Órdenes por Rango de Precio", variant: "chart", subtext: "Distribución del valor total de las órdenes", chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeDistribution, keys: ["value"], indexBy: "id", valueFormat: "number", axisBottomLegend: "Rango", axisLeftLegend: "Órdenes" } } },
                                     },
                                     {
                                         id: "channel-dist",
