@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, Receipt } from 'lucide-react'
+import type { Granularity } from '@/components/shared'
 import {
     DataTableView,
     SkeletonShell, AutoEntityCard,
@@ -120,6 +121,7 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
     )
 
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState("costos")
+    const [granularity, setGranularity] = useState<Granularity>("month")
 
     const actionsCtx: StatementActionsCtx = {
         onPay: (stmt) => openStatement(stmt.id, "pay"),
@@ -164,6 +166,8 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                             entityName: "Gestión TC",
                             activeTab: analyticsActiveTab,
                             onTabChange: setAnalyticsActiveTab,
+                            granularity,
+                            onGranularityChange: setGranularity,
                             tabs: [
                                 {
                                     value: 'costos',
@@ -208,12 +212,13 @@ export function StatementsClientView({ bankId }: StatementsClientViewProps) {
                                                         config: {
                                                              label: 'Composición del Estado de Cuenta',
                                                             variant: 'chart',
-                                                            chart: {
-                                                                type: 'pie-chart',
-                                                                preset: 'card',
-                                                                data: hubData.costBreakdownDonut,
-                                                                enableLabels: true,
-                                                                arcLabel: (d: { value: number }) => {
+                                                             chart: {
+                                                                 type: 'pie-chart',
+                                                                 preset: 'card',
+                                                                 data: hubData.costBreakdownDonut,
+                                                                 valueFormat: "currency",
+                                                                 enableLabels: true,
+                                                                 arcLabel: (d: { value: number }) => {
                                                                     const total = hubData.costBreakdownDonut.reduce((s, item) => s + item.value, 0);
                                                                     return total > 0 ? `${Math.round((d.value / total) * 100)}%` : '';
                                                                 },

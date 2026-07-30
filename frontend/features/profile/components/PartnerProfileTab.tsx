@@ -191,6 +191,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                                     arcLinkLabel={(datum: { id: string | number }) => String(datum.id)}
                                                     margin={{ top: 20, right: 40, bottom: 20, left: 40 }}
                                                     centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
+                                                    tooltipFormat="currency"
                                                 />
                                             </div>
                                         </CardContent>

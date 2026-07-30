@@ -229,6 +229,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                 }}
                                 legends={[]}
                                 colors={{ scheme: 'category10' }}
+                                tooltipFormat="currency"
                             />
                         ) : (
                             <div className="flex h-full items-center justify-center text-sm text-center text-muted-foreground">

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { MayHaveLabel } from "@nivo/pie"
 import type { LegendProps } from "@nivo/legends"
+import { formatMoney, formatQuantity } from "@/lib/money"
 import {
     nivoTheme,
     pieDefaults,
@@ -30,6 +31,7 @@ export interface PieChartProps {
         value: number
         color: string
     }) => React.ReactNode
+    tooltipFormat?: "currency" | "number" | ((value: number) => string)
     centerLabel?: CenterLabel
     colors?: unknown
     innerRadius?: number
@@ -65,9 +67,17 @@ function getArcTextColor(d: { color: string }): string {
     return "#ffffff"
 }
 
+function formatTooltipValue(value: number, format?: "currency" | "number" | ((value: number) => string)): string {
+    if (format === "currency") return formatMoney(value)
+    if (format === "number") return formatQuantity(value)
+    if (typeof format === "function") return format(value)
+    return formatQuantity(value)
+}
+
 export function PieChart({
     data: rawData,
     renderTooltip,
+    tooltipFormat,
     centerLabel,
     colors,
     enableArcLabels,
@@ -122,10 +132,7 @@ export function PieChart({
                         ) : (
                             <>
                                 <span className="font-medium">{String(datum.label ?? datum.id)}</span>
-                                <span className="ml-2 font-bold">
-                                    {/* eslint-disable-next-line no-restricted-syntax -- Nivo chart tooltip; MoneyDisplay not applicable in SVG context */}
-                                    {Number(datum.value).toLocaleString()}
-                                </span>
+                                <span className="ml-2 font-bold">{formatTooltipValue(datum.value, tooltipFormat)}</span>
                             </>
                         )}
                     </div>

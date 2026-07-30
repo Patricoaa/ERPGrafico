@@ -167,6 +167,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     data={filteredPriceHistory as unknown as { date: string; unit_cost: number }[]}
                                                     keys={["unit_cost"]}
                                                     indexBy="date"
+                                                    tooltipFormat="currency"
                                                     axisBottom={{
                                                         tickSize: 0,
                                                         tickPadding: 10,
