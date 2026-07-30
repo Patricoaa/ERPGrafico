@@ -56,8 +56,8 @@ export function AnalyticsPanelContent({
     const handleTabChange = onTabChange ?? setInternalTab
 
     return (
-        <div className="flex-1 flex flex-row w-full h-full min-h-0 overflow-hidden bg-transparent">
-            <div className="w-56 shrink-0 flex flex-col pr-4 py-0 gap-2 overflow-y-auto bg-transparent">
+        <div className="flex-1 flex flex-row gap-4 w-full h-full min-h-0 overflow-hidden bg-transparent">
+            <div className="w-52 shrink-0 flex flex-col gap-2 overflow-y-auto bg-transparent pb-4">
                 {tabs.map((t) => {
                     const Icon = t.icon
                     const isActive = t.value === currentTab
