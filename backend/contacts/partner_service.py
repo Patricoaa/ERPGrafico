@@ -742,8 +742,8 @@ class PartnerService:
             buyer.save()
 
         settings = PartnerService._get_settings()
-        seller_receivable_account = PartnerService._resolve_partner_receivable_account(seller)
-        buyer_receivable_account = PartnerService._resolve_partner_receivable_account(buyer)
+        seller_social_account = PartnerService._resolve_partner_social_account(seller)
+        buyer_social_account = PartnerService._resolve_partner_social_account(buyer)
 
         entry = JournalEntry.objects.create(
             description=GlosaBuilder.build(GlosaBuilder.TRANSFERENCIA_CAPITAL, seller.display_id, f"{seller.name} → {buyer.name}", amount),
@@ -752,7 +752,7 @@ class PartnerService:
         )
         JournalItem.objects.create(
             entry=entry,
-            account=seller_receivable_account,
+            account=seller_social_account,
             partner=seller,
             label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"{seller.name} → {buyer.name}", seller.display_id),
             debit=amount,
@@ -760,9 +760,9 @@ class PartnerService:
         )
         JournalItem.objects.create(
             entry=entry,
-            account=buyer_receivable_account,
+            account=buyer_social_account,
             partner=buyer,
-            label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, buyer.name, seller.display_id),
+            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"{seller.name} → {buyer.name}", seller.display_id),
             debit=0,
             credit=amount,
         )
@@ -786,6 +786,33 @@ class PartnerService:
             journal_entry=entry,
             created_by=created_by,
         )
+
+        # Transfer paid-in capital proportionally
+        if seller.partner_total_contributions > 0:
+            ratio = seller.partner_total_paid_in / seller.partner_total_contributions
+            transfer_paid_in = (amount * ratio).quantize(Decimal("0"))
+        else:
+            transfer_paid_in = Decimal("0")
+
+        if transfer_paid_in > 0:
+            PartnerTransaction.objects.create(
+                partner=seller,
+                transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_TRANSFER_OUT,
+                amount=transfer_paid_in,
+                date=date,
+                description=f"Transferencia de aporte pagado a {buyer.name}",
+                journal_entry=entry,
+                created_by=created_by,
+            )
+            PartnerTransaction.objects.create(
+                partner=buyer,
+                transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_TRANSFER_IN,
+                amount=transfer_paid_in,
+                date=date,
+                description=f"Transferencia de aporte pagado recibido de {seller.name}",
+                journal_entry=entry,
+                created_by=created_by,
+            )
 
         PartnerService._recalculate_and_snapshot_stakes(
             date=date,

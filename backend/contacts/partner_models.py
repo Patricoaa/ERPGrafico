@@ -42,6 +42,10 @@ class PartnerTransaction(models.Model):
         EQUITY_TRANSFER_OUT = "TRANSFER_OUT", _("Transferencia Entregada")
         EQUITY_REDUCTION = "REDUCTION", _("Reducción de Capital")
 
+        # Paid-in transfer tracking (proportional transfer of paid capital)
+        CAPITAL_CONTRIBUTION_TRANSFER_IN = "CONTRIB_TRANSFER_IN", _("Aporte por Transferencia (Entrada)")
+        CAPITAL_CONTRIBUTION_TRANSFER_OUT = "CONTRIB_TRANSFER_OUT", _("Aporte por Transferencia (Salida)")
+
         OTHER = "OTHER", _("Otro")
 
     partner = models.ForeignKey(
