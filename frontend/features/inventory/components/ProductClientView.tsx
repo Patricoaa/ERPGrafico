@@ -294,6 +294,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 {
                                     id: "kpi-total-products",
                                     colSpan: 1,
+                                    fillRemaining: false,
                                     content: {
                                         type: "stat-card",
                                         config: {
@@ -329,6 +330,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 {
                                     id: "kpi-with-stock",
                                     colSpan: 1,
+                                    fillRemaining: false,
                                     content: {
                                         type: "stat-card",
                                         config: {
@@ -364,6 +366,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                 {
                                     id: "kpi-out-of-stock",
                                     colSpan: 1,
+                                    fillRemaining: false,
                                     content: {
                                         type: "stat-card",
                                         config: {
