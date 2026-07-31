@@ -21,6 +21,7 @@ import type { AnalyticsPanelConfig, Granularity } from "@/components/shared"
 import { TrendingUp, Package, Warehouse, ArrowDownLeft, ArrowUpRight } from "lucide-react"
 import { chartColor } from "@/lib/chart-colors"
 import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { resolveStockMoveIcon } from "@/lib/movement-icons"
 import { toast } from "sonner"
 import React from "react"
 
@@ -339,12 +340,15 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                         description: "Los movimientos se registran al recibir, despachar o ajustar inventario.",
                     }}
                     renderCard={(move: StockMove) => {
+                        const { icon, iconClassName } = resolveStockMoveIcon(move)
                         return (
                             <AutoEntityCard
                                 key={move.id}
                                 data={move}
                                 fields={stockMoveFields}
                                 entityLabel="inventory.stockmove"
+                                icon={icon}
+                                iconClassName={iconClassName}
                                 actions={stockMoveActions.render(move, actionsCtx)}
                                 defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
 
