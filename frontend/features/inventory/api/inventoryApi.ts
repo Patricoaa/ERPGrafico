@@ -1,6 +1,6 @@
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
-import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse } from '../analyticsTypes'
+import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse, ProductAnalyticsParams, ProductAnalyticsResponse } from '../analyticsTypes'
 import { toPage, type Page } from '@/lib/pagination'
 
 /**
@@ -250,6 +250,30 @@ export const inventoryApi = {
         if (params?.date_from) cleanParams.date_from = params.date_from
         if (params?.date_to) cleanParams.date_to = params.date_to
         const { data } = await api.get<StockMoveAnalyticsResponse>('inventory/moves/analytics/', { params: cleanParams })
+        return data
+    },
+
+    // ========== Product catalog analytics (server-aggregated hub) ==========
+
+    getProductAnalytics: async (
+        params?: ProductAnalyticsParams,
+    ): Promise<ProductAnalyticsResponse> => {
+        const cleanParams: Record<string, string> = {}
+        if (params?.search) cleanParams.search = params.search
+        if (params?.category !== undefined && params?.category !== null && params?.category !== '') {
+            cleanParams.category = String(params.category)
+        }
+        if (params?.product_type) cleanParams.product_type = params.product_type
+        if (params?.can_be_sold !== undefined && params?.can_be_sold !== null && params?.can_be_sold !== '') {
+            cleanParams.can_be_sold = String(params.can_be_sold)
+        }
+        if (params?.can_be_purchased !== undefined && params?.can_be_purchased !== null && params?.can_be_purchased !== '') {
+            cleanParams.can_be_purchased = String(params.can_be_purchased)
+        }
+        if (params?.is_active !== undefined && params?.is_active !== null && params?.is_active !== '') {
+            cleanParams.is_active = String(params.is_active)
+        }
+        const { data } = await api.get<ProductAnalyticsResponse>('inventory/products/analytics/', { params: cleanParams })
         return data
     },
 }

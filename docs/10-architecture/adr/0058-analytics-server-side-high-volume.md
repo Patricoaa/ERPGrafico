@@ -105,4 +105,28 @@ Métodos de Pago, Tipos). Decisiones:
 - **Colores de serie** consistentes con Kardex: `chartColor(0)` cyan
   (Ingresos), `chartColor(1)` magenta (Egresos).
 
+### Tercera implementación: inventory.product
+
+`ProductAnalyticsService` en `backend/inventory/product_analytics.py`,
+endpoint `GET /api/inventory/products/analytics/`, 2 tabs (Catálogo, Stock).
+Decisiones:
+
+- **Sin granularidad**: los productos no tienen dimensión temporal; el panel
+  omite `granularity`/`onGranularityChange` (opcional en el contrato
+  `AnalyticsPanelConfig.screen`).
+- **Snapshot de stock**: valorización `Sum(Stock.quantity) × cost_price` vía
+  `_stock_value_expression`; solo participan productos con
+  `track_inventory=True` (servicios excluidos).
+- **Catálogo filtra `parent_template__isnull`** (excluye variantes por
+  defecto). **Agotados** = stock ≤ 0 (no existe campo `min_stock`).
+- **`is_active`**: default `True` (solo activos); `"all"` incluye archivados
+  y `"false"` solo archivados.
+- **Buckets de precio** en `PRICE_RANGES` (6 rangos) aplicados con
+  `Case/When` sobre `sale_price`/`price_gross`.
+- **Clasificaciones por catálogo (tipos, categorías, rangos) se calculan sin
+  join a stock**; las dimensiones de valor agregan la expresión de stock
+  directamente (no `.annotate` sobre queryset con `.values()`).
+- **Filtros del listado respetados**: search, categoría, tipo, venta/compra,
+  activo/archivado.
+
 Candidato restante: `billing.invoice`.

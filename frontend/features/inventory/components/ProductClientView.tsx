@@ -12,7 +12,7 @@ import type { BulkAction } from "@/components/shared"
 import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
-import { Plus, AlertTriangle } from "lucide-react"
+import { Plus, AlertTriangle, BarChart3, Boxes, Package, Store, Coins } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
@@ -25,6 +25,9 @@ import { AutoEntityCard } from "@/components/shared"
 import { productFields } from "@/features/inventory/productFields"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
+import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
+import type { AnalyticsPanelConfig } from "@/components/shared"
+import { formatMoney, formatQuantity } from "@/lib/money"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -86,6 +89,16 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
     const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("catalogo")
+
+    const analyticsData = useProductAnalytics({
+        search: filters.search,
+        category: filters.category,
+        product_type: filters.product_type,
+        can_be_sold: filters.can_be_sold,
+        can_be_purchased: filters.can_be_purchased,
+        is_active: filters.is_active,
+    })
 
     const { page, products, isLoading, refetch, updateProduct } = useProducts({
         filters,
@@ -259,6 +272,256 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
         },
     ], [updateProduct, refetch])
 
+    const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
+        screen: {
+            entityName: "Inventario de Productos",
+            activeTab: analyticsActiveTab,
+            onTabChange: setAnalyticsActiveTab,
+            tabs: [
+                {
+                    value: "catalogo",
+                    label: "Catálogo",
+                    icon: BarChart3,
+                    gridRows: "max-content 1fr 1fr",
+                    columns: [
+                        {
+                            id: "col-cat-1",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-total-products",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Total Productos",
+                                            value: formatQuantity(analyticsData.summary.totalProducts),
+                                            icon: Package,
+                                            accent: "primary",
+                                            valueSize: "xl",
+                                            loading: analyticsData.analyticsLoading,
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "type-distribution",
+                                    colSpan: 2,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Distribución por Tipo",
+                                            variant: "chart",
+                                            loading: analyticsData.analyticsLoading,
+                                            subtext: "Proporción del catálogo por tipo de producto",
+                                            chart: { type: "pie-chart", preset: "card", data: analyticsData.typePie, valueFormat: "number", compact: true },
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "price-range",
+                                    colSpan: 3,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Rango de Precio de Venta",
+                                            variant: "chart",
+                                            loading: analyticsData.analyticsLoading,
+                                            subtext: "Productos por rango de precio de lista",
+                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeBar, keys: ["productos"], indexBy: "rango", axisBottomLegend: "Rango", axisLeftLegend: "Productos" },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: "col-cat-2",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-with-stock",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Con Stock",
+                                            value: formatQuantity(analyticsData.summary.withStock),
+                                            icon: Boxes,
+                                            accent: "success",
+                                            valueSize: "xl",
+                                            loading: analyticsData.analyticsLoading,
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "top-categories",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Top Categorías",
+                                            variant: "chart",
+                                            loading: analyticsData.analyticsLoading,
+                                            subtext: "Productos por categoría",
+                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.categoryBar, keys: ["productos"], indexBy: "categoria", axisLeftLegend: "Productos" },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: "col-cat-3",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-out-of-stock",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Agotados",
+                                            value: formatQuantity(analyticsData.summary.outOfStock),
+                                            icon: Store,
+                                            accent: "warning",
+                                            valueSize: "xl",
+                                            loading: analyticsData.analyticsLoading,
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    value: "stock",
+                    label: "Stock",
+                    icon: Boxes,
+                    gridRows: "max-content 1fr 1fr",
+                    columns: [
+                        {
+                            id: "col-stock-1",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-total-value",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Valor de Inventario",
+                                            value: formatMoney(analyticsData.summary.totalValue),
+                                            icon: Coins,
+                                            accent: "primary",
+                                            valueSize: "xl",
+                                            loading: analyticsData.analyticsLoading,
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "top-by-value",
+                                    colSpan: 2,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Top Productos por Valor de Stock",
+                                            variant: "chart",
+                                            loading: analyticsData.analyticsLoading,
+                                            subtext: "Productos con mayor capital inmovilizado",
+                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.topByStockValueBar, keys: ["valor"], indexBy: "producto", axisLeftLegend: "Valor" },
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "top-by-units",
+                                    colSpan: 2,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Top Productos por Unidades",
+                                            variant: "chart",
+                                            loading: analyticsData.analyticsLoading,
+                                            subtext: "Productos con mayor cantidad en stock",
+                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.topByUnitsBar, keys: ["unidades"], indexBy: "producto", axisLeftLegend: "Unidades" },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: "col-stock-2",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-total-units",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Unidades en Stock",
+                                            value: formatQuantity(analyticsData.summary.totalUnits),
+                                            icon: Package,
+                                            accent: "info",
+                                            valueSize: "xl",
+                                            loading: analyticsData.analyticsLoading,
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "value-by-category",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Valor por Categoría",
+                                            variant: "chart",
+                                            loading: analyticsData.analyticsLoading,
+                                            subtext: "Distribución del valor de stock entre categorías",
+                                            chart: { type: "pie-chart", preset: "card", data: analyticsData.stockValueByCategoryPie, valueFormat: "currency", compact: true },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                        {
+                            id: "col-stock-3",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-with-stock-stock",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Con Stock",
+                                            value: formatQuantity(analyticsData.summary.withStock),
+                                            icon: Boxes,
+                                            accent: "success",
+                                            valueSize: "xl",
+                                            loading: analyticsData.analyticsLoading,
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "value-by-type",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Valor por Tipo",
+                                            variant: "chart",
+                                            loading: analyticsData.analyticsLoading,
+                                            subtext: "Distribución del valor de stock por tipo de producto",
+                                            chart: { type: "pie-chart", preset: "card", data: analyticsData.stockValueByTypePie, valueFormat: "currency", compact: true },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    }), [analyticsActiveTab, analyticsData])
+
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
@@ -318,6 +581,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     bulkActions={bulkActions}
                     defaultPageSize={500}
                     createAction={createAction}
+                    analyticsPanel={analyticsPanel}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay productos",
