@@ -768,6 +768,17 @@ class PartnerService:
         )
         entry.check_balance()
 
+        # Transfer paid-in capital proportionally. The ratio must be computed
+        # against the seller's PRE-transfer state: partner_total_contributions
+        # subtracts EQUITY_TRANSFER_OUT, so computing it after creating
+        # seller_tx below would inflate the ratio and produce a CONTRIB_TRANSFER
+        # amount larger than the transferred capital (phantom excess).
+        if seller.partner_total_contributions > 0:
+            ratio = seller.partner_total_paid_in / seller.partner_total_contributions
+            transfer_paid_in = (amount * ratio).quantize(Decimal("0"))
+        else:
+            transfer_paid_in = Decimal("0")
+
         seller_tx = PartnerTransaction.objects.create(
             partner=seller,
             transaction_type=PartnerTransaction.Type.EQUITY_TRANSFER_OUT,
@@ -786,13 +797,6 @@ class PartnerService:
             journal_entry=entry,
             created_by=created_by,
         )
-
-        # Transfer paid-in capital proportionally
-        if seller.partner_total_contributions > 0:
-            ratio = seller.partner_total_paid_in / seller.partner_total_contributions
-            transfer_paid_in = (amount * ratio).quantize(Decimal("0"))
-        else:
-            transfer_paid_in = Decimal("0")
 
         if transfer_paid_in > 0:
             PartnerTransaction.objects.create(
