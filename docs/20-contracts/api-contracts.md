@@ -568,9 +568,25 @@ GET    /api/treasury/movements/{id}/     detail
 PATCH  /api/treasury/movements/{id}/     update (limited)
 DELETE /api/treasury/movements/{id}/     delete
 POST   /api/treasury/movements/{id}/reconcile/  action — reconcile with bank statement line
+GET    /api/treasury/movements/analytics/  analytics — agregación servidor para el panel (ADR-0058)
 ```
 
 Filter params: `?is_reconciled=true|false`, `?movement_type=INBOUND|OUTBOUND|TRANSFER`, `?payment_method=<id>`, `?contact=<id>`, `?bank=<id>`, `?treasury_account=<id>`, `?date=YYYY-MM-DD`, `?date_from=YYYY-MM-DD`, `?date_to=YYYY-MM-DD`, `?amount_min=<num>`, `?amount_max=<num>`, `?direction=IN|OUT`, `?search=<text>`
+
+Analytics params: `?granularity=day|month|year` (default `month`), `?months=12` (default), `?treasury_account=<id>`, `?bank=<id>`, `?movement_type=INBOUND|OUTBOUND|TRANSFER|ADJUSTMENT|CREDIT_LINE_DRAW|CREDIT_LINE_REPAY`, `?payment_method=CASH|CARD|TRANSFER|...`, `?amount_min=<num>`, `?amount_max=<num>`, `?date_from=YYYY-MM-DD`, `?date_to=YYYY-MM-DD`. Los movimientos `CANCELLED` siempre se excluyen. Direcciones: `CREDIT_LINE_DRAW`→Egresos, `CREDIT_LINE_REPAY`→Ingresos.
+
+Analytics response shape:
+
+```json
+{
+  "flow_trend": [{ "period": "YYYY-MM", "count": "int", "ingresos": "decimal", "egresos": "decimal", "ajustes": "decimal", "transferencias": "decimal" }],
+  "direction_distribution": [{ "id": "IN|OUT|TRANSFER|ADJUSTMENT", "label": "string", "count": "int", "amount": "decimal" }],
+  "account_distribution": [{ "id": "number|null", "account_name": "string", "count": "int", "in": "decimal", "out": "decimal" }],
+  "payment_method_distribution": [{ "id": "string", "label": "string", "count": "int", "amount": "decimal" }],
+  "type_distribution": [{ "id": "string", "label": "string", "count": "int", "amount": "decimal" }],
+  "summary": { "total_movements": "int", "ingresos_count": "int", "egresos_count": "int", "ingresos_amount": "decimal", "egresos_amount": "decimal", "ajustes_amount": "decimal", "transfer_amount": "decimal", "net_flow": "decimal" }
+}
+```
 
 Response key fields (`TreasuryMovementSerializer`):
 

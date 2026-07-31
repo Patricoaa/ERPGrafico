@@ -86,5 +86,23 @@ La valorización agrega `Sum(F("quantity") * F("unit_cost"))` vía
 
 `inventory.stockmove` (Kardex) — `StockMoveAnalyticsService` en
 `backend/inventory/analytics.py`, endpoint `GET /api/inventory/moves/analytics/`,
-3 tabs (Flujo, Productos, Bodegas). Candidatos siguientes:
-`treasury.treasurymovement`, `billing.invoice`.
+3 tabs (Flujo, Productos, Bodegas).
+
+### Segunda implementación: treasury.treasurymovement
+
+`TreasuryMovementAnalyticsService` en `backend/treasury/analytics.py`,
+endpoint `GET /api/treasury/movements/analytics/`, 4 tabs (Flujo, Cuentas,
+Métodos de Pago, Tipos). Decisiones:
+
+- **Dirección** derivada de `movement_type` vía `_direction_annotation`
+  (`CREDIT_LINE_REPAY`→Ingresos, `CREDIT_LINE_DRAW`→Egresos, además de
+  `INBOUND`/`OUTBOUND`; `TRANSFER` y `ADJUSTMENT` son dimensiones propias).
+- **Movimientos `CANCELLED` excluidos** de todos los agregados.
+- **Cuenta principal** del movimiento vía `_account_expression`
+  (favorece `to_account` en ingresos, `from_account` en egresos,
+  `Coalesce` para ajustes).
+- **Cantidad = nº de transacciones** (`count`), nunca unidades.
+- **Colores de serie** consistentes con Kardex: `chartColor(0)` cyan
+  (Ingresos), `chartColor(1)` magenta (Egresos).
+
+Candidato restante: `billing.invoice`.
