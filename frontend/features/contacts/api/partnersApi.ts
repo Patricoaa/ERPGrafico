@@ -73,12 +73,6 @@ export const partnersApi = {
         return response.data
     },
 
-    getTransactions: async () => {
-        const response = await api.get('/contacts/all_partner_transactions/')
-        // eslint-disable-next-line pagination/no-raw-response-data
-        return response.data
-    },
-
     /**
      * Profit Distributions
      */

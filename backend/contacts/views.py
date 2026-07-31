@@ -293,10 +293,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["get"])
-    def all_partner_transactions(self, request):
-        return Response(ContactSelector.list_all_partner_transactions())
-
-    @action(detail=False, methods=["get"])
     def equity_stakes_history(self, request):
         partner_id = request.query_params.get("partner_id")
         return Response(
