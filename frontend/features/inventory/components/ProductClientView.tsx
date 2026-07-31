@@ -580,6 +580,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     }}
                     bulkActions={bulkActions}
                     defaultPageSize={500}
+                    cardSkeleton={{ showBody: false, showFooter: false }}
                     createAction={createAction}
                     analyticsPanel={analyticsPanel}
                     emptyState={{
