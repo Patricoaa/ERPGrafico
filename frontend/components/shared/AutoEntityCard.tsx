@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { EntityCard } from "@/components/shared"
+import { EntityCard, headerPriorityIndex } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, getEntityIcon, type SubtitleItem } from "@/lib/entity-registry"
@@ -210,23 +210,14 @@ function classifyFields<TData>(
     )
 
     // ── Header candidate pool (priority order) ────────────────────────────────
-    // complex > primary-value (total/salary first) > flow > tag
-    const HEADER_PRIORITY: Array<(f: CardField) => boolean> = [
-        f => f.fieldRole === 'complex',
-        f => f.fieldRole === 'primary-value' && /total|salary/i.test(f.key),
-        f => f.fieldRole === 'primary-value',
-        f => f.fieldRole === 'flow',
-        f => f.fieldRole === 'tag',
-    ]
-
+    // complex > primary-value (total/salary first) > flow > tag — shared with
+    // toColumns() via headerPriorityIndex so list and card follow the same criteria.
     const headerCandidates = rest.filter(f => f.placement === 'header')
 
     // Sort candidates by priority group
-    const sortedCandidates = [...headerCandidates].sort((a, b) => {
-        const pa = HEADER_PRIORITY.findIndex(fn => fn(a))
-        const pb = HEADER_PRIORITY.findIndex(fn => fn(b))
-        return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb)
-    })
+    const sortedCandidates = [...headerCandidates].sort((a, b) =>
+        headerPriorityIndex(a.fieldRole, a.key) - headerPriorityIndex(b.fieldRole, b.key)
+    )
 
     // Determine header capacity based on role uniformity
     const uniqueRoles = new Set(sortedCandidates.map(f => f.fieldRole))

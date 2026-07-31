@@ -6,6 +6,11 @@
 // not from individual component files.
 // ─────────────────────────────────────────────────────────
 
+// Entity actions & fields — must be exported FIRST so feature modules
+// that import the barrel at eval time (e.g. *Actions) find these defined.
+export * from './entity-actions';
+export * from './entity-fields';
+
 // Charts
 export * from './charts';
 
@@ -53,7 +58,9 @@ export * from './EntityBadge';
 export * from './SourceDocumentLink';
 export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';
+
 export * from './ReportTable';
+
 export * from './DataManagement';
 export * from './CommentSystem';
 export * from './AttachmentList';
@@ -154,8 +161,6 @@ export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './CmykRing'
 export * from './PrepressPanel'
-export * from './entity-actions'
-export * from './entity-fields'
 export * from './Numpad'
 
 export * from './PrintableReceipt'
