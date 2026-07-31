@@ -1,4 +1,5 @@
 export type { Contact, ContactFilters, ContactPayload, InsightsData } from './types'
+export { netEquityPercentages, subscribedPercentages, totalNetEquity, totalSubscribedCapital } from './lib/equity'
 export type { ContactActionsCtx } from './contactActions'
 export { contactActions } from './contactActions'
 export { contactsApi, partnersApi } from './api'

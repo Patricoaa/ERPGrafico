@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import { usePartners } from "@/features/contacts"
+import { usePartners, netEquityPercentages } from "@/features/contacts"
 import type { Partner } from "@/features/contacts"
 import { formatCurrency } from "@/lib/money"
 import {
@@ -180,19 +180,14 @@ export function PartnersClientView({
         return result
     }, [partners, search])
 
-    const totalNetEquity = useMemo(() =>
-        (Array.isArray(partners) ? partners : [])
-            .reduce((s, p) => s + Number(p.partner_net_equity || 0), 0),
-    [partners])
+    const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
 
     const partnersWithPct = useMemo(() =>
         filteredPartners.map(p => ({
             ...p,
-            partner_equity_percentage: totalNetEquity > 0
-                ? String(Math.round(Number(p.partner_net_equity) / totalNetEquity * 10000) / 100)
-                : "0",
+            partner_equity_percentage: equityPctById[p.id] ?? "0",
         })),
-    [filteredPartners, totalNetEquity])
+    [filteredPartners, equityPctById])
 
     const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
         screen: {

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Chip, ChartLegend, DataCell, DataTable, DataTableColumnHeader, SectionCard, SkeletonShell, StatCard, PieChart, StaleDataBanner } from '@/components/shared'
 import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
 import { type ColumnDef } from "@tanstack/react-table"
-import { type PartnerTransaction, usePartners } from "@/features/contacts"
+import { type PartnerTransaction, usePartners, netEquityPercentages } from "@/features/contacts"
 import { LazyDrawer } from "@/features/_shared/transaction-drawer/drawerRegistry"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
@@ -55,14 +55,7 @@ export function PartnerProfileTab({ contactId }: Props) {
             .reverse()
     }, [statement])
 
-    const totalNetEquity = useMemo(
-        () =>
-            (Array.isArray(partners) ? partners : []).reduce(
-                (s, p) => s + (Number(p.partner_net_equity) || 0),
-                0
-            ),
-        [partners]
-    )
+    const equityPctById = useMemo(() => netEquityPercentages(partners ?? []), [partners])
 
     const pieData = useMemo(() => {
         const palette = getChartPalette()
@@ -71,13 +64,10 @@ export function PartnerProfileTab({ contactId }: Props) {
             .filter(p => (Number(p.partner_net_equity) || 0) > 0)
             .map((p, i) => ({
                 id: p.name,
-                value:
-                    totalNetEquity > 0
-                        ? Math.round((Number(p.partner_net_equity) / totalNetEquity) * 10000) / 100
-                        : 0,
+                value: parseFloat(equityPctById[p.id] ?? "0") || 0,
                 color: p.name === activeName ? "var(--primary)" : palette[i % palette.length],
             }))
-    }, [partners, totalNetEquity, statement?.contact?.name])
+    }, [partners, equityPctById, statement?.contact?.name])
 
     const columns: ColumnDef<PartnerTransaction & { balance_after: number }>[] = [
         {

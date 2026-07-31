@@ -2,7 +2,7 @@
 import { RadioGroup } from "@/components/ui/radio-group"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
     Wallet,
     Package,
@@ -12,7 +12,7 @@ import {
     Lock
 } from "lucide-react"
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, RadioCard, GenericWizard, type WizardStep } from "@/components/shared"
-import { partnersApi } from "@/features/contacts"
+import { partnersApi, netEquityPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
 import { type Product } from "@/features/inventory"
@@ -160,6 +160,7 @@ export function PartnerContributionWizard({
 
     // Helpers
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
+    const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
     const assetTotalValue = (Number(assetData.quantity) || 0) * (Number(assetData.unitCost) || 0)
 
     const handleComplete = async () => {
@@ -243,7 +244,7 @@ export function PartnerContributionWizard({
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[9px] text-muted-foreground font-medium uppercase">Participación</p>
-                                    <p className="text-sm font-black text-primary font-mono">{selectedPartner.partner_equity_percentage}%</p>
+                                    <p className="text-sm font-black text-primary font-mono">{equityPctById[selectedPartner.id] ?? "0"}%</p>
                                 </div>
                             </div>
                         </div>
