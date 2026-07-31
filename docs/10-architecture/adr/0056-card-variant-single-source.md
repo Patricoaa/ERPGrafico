@@ -51,8 +51,8 @@ Add `cardVariant` to every `viewPolicy` entry with `cardComponent: 'entity'`. Va
 |---------|----------|
 | `'workflow'` | saleorder, purchaseorder, invoice (already defined) |
 | `'highlights'` | contact, partner, warehouse, category, uom, uomcategory, pricingrule, budget, salaryadvance, absence, group, journalentry |
-| `'summary'` | stockmove, bankloan, taxperiod |
-| `'full'` | All remaining entities |
+| `'summary'` | bankloan, taxperiod |
+| `'full'` | stockmove, All remaining entities |
 
 ### D-03: Remove redundant `variant` prop from consumers
 

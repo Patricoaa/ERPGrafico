@@ -21,7 +21,7 @@ Root cause: the field factory only supports **one field = one column = one DataC
 
 | Pattern | Example | Features |
 |---------|---------|----------|
-| Compound multi-field columns | `product_name` + chips de código in one cell | BOM, Stock Moves, Payment Methods |
+| Compound multi-field columns | `product_name` + chips de código in one cell | BOM, Payment Methods |
 | Icon prefixes | `<CreditCard>` before account name | Payment Methods, Budgets |
 | Custom visual containers | Calendar badge (40x40 box with year/month) | Tax Periods |
 | Chip with icon | `<Layers>` icon inside a count chip | BOM |
