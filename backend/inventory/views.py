@@ -174,6 +174,7 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
                 can_be_sold=params.get("can_be_sold"),
                 can_be_purchased=params.get("can_be_purchased"),
                 is_active=params.get("is_active"),
+                price_field=params.get("price_field", "sale"),
             )
         )
 

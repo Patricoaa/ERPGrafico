@@ -111,6 +111,49 @@ class TestCatalogDistributions:
         assert by_id["100.000 – 500.000"]["value"] == 1
         assert sum(row["value"] for row in dist) == 4
 
+    def test_price_range_distribution_cost_field(self, product_analytics_setup):
+        from inventory.product_analytics import ProductAnalyticsService
+
+        dist = ProductAnalyticsService.get_price_range_distribution(
+            price_field="cost_price", is_active=None
+        )
+        by_id = {row["id"]: row for row in dist}
+
+        # costes 0 (C), 50 (Archivado), 100 (A) y 200 (B)
+        assert by_id["0 – 10.000"]["value"] == 4
+        assert sum(row["value"] for row in dist) == 4
+
+    def test_availability_distribution(self, db):
+        from inventory.product_analytics import ProductAnalyticsService
+
+        category = ProductCategory.objects.create(name="Categoría Disponibilidad")
+        Product.objects.create(name="Ambos", category=category, can_be_sold=True, can_be_purchased=True)
+        Product.objects.create(name="Solo Venta", category=category, can_be_sold=True, can_be_purchased=False)
+        Product.objects.create(name="Solo Compra", category=category, can_be_sold=False, can_be_purchased=True)
+        Product.objects.create(name="Ninguno", category=category, can_be_sold=False, can_be_purchased=False)
+
+        dist = ProductAnalyticsService.get_availability_distribution(is_active=None)
+        by_id = {row["id"]: row["value"] for row in dist}
+
+        assert by_id == {
+            "Venta y compra": 1,
+            "Solo venta": 1,
+            "Solo compra": 1,
+            "Sin disponibilidad": 1,
+        }
+
+    def test_availability_distribution_respects_filters(self, product_analytics_setup):
+        from inventory.product_analytics import ProductAnalyticsService
+
+        dist = ProductAnalyticsService.get_availability_distribution(
+            can_be_sold=True, is_active=None
+        )
+        by_id = {row["id"]: row["value"] for row in dist}
+
+        assert by_id["Venta y compra"] == 4  # fixture completo (A, B, C, Archivado)
+        assert by_id["Solo venta"] == 0
+        assert sum(row["value"] for row in dist) == 4
+
 
 @pytest.mark.django_db
 class TestStockAggregation:
@@ -133,24 +176,28 @@ class TestStockAggregation:
         summary = ProductAnalyticsService.get_stock_summary()
         assert summary["total_units"] == str(Decimal("18"))  # C (SERVICE) no suma
 
-    def test_stock_value_by_category(self, product_analytics_setup):
+    def test_consolidated_price_field(self, product_analytics_setup):
         from inventory.product_analytics import ProductAnalyticsService
 
-        dist = ProductAnalyticsService.get_stock_value_by_category()
-        by_id = {row["id"]: row for row in dist}
+        sale = ProductAnalyticsService.get_consolidated(is_active="all")
+        sale_by_id = {row["id"]: row["value"] for row in sale["price_range_distribution"]}
+        assert sale_by_id["0 – 10.000"] == 2  # sale_price 8000 y 2000
 
-        assert by_id["Categoría A"]["value"] == str(Decimal("2100"))
+        cost = ProductAnalyticsService.get_consolidated(is_active="all", price_field="cost")
+        cost_by_id = {row["id"]: row["value"] for row in cost["price_range_distribution"]}
+        assert cost_by_id["0 – 10.000"] == 4  # cost_price 0, 50, 100 y 200
 
-    def test_top_products(self, product_analytics_setup):
+        invalid = ProductAnalyticsService.get_consolidated(is_active="all", price_field="bogus")
+        invalid_by_id = {row["id"]: row["value"] for row in invalid["price_range_distribution"]}
+        assert invalid_by_id == sale_by_id  # fallback a "sale"
+
+    def test_consolidated_availability(self, product_analytics_setup):
         from inventory.product_analytics import ProductAnalyticsService
 
-        by_value = ProductAnalyticsService.get_top_products_by_stock_value()
-        assert by_value[0]["name"] == "Producto A"
-        assert by_value[0]["value"] == str(Decimal("1500"))
-
-        by_units = ProductAnalyticsService.get_top_products_by_units()
-        assert by_units[0]["name"] == "Producto A"
-        assert by_units[0]["value"] == str(Decimal("15"))
+        data = ProductAnalyticsService.get_consolidated(is_active="all")
+        by_id = {row["id"]: row["value"] for row in data["availability_distribution"]}
+        assert by_id["Venta y compra"] == 4
+        assert sum(row["value"] for row in data["availability_distribution"]) == 4
 
 
 @pytest.mark.django_db
@@ -182,6 +229,15 @@ class TestFilters:
         total = sum(row["value"] for row in dist)
         assert total == 1
 
+    def test_can_be_sold_filter(self, product_analytics_setup):
+        from inventory.product_analytics import ProductAnalyticsService
+
+        summary = ProductAnalyticsService.get_stock_summary(can_be_sold=True)
+        assert summary["total_products"] == 3  # A, B y C son vendibles
+
+        none_sellable = ProductAnalyticsService.get_stock_summary(can_be_sold=False)
+        assert none_sellable["total_products"] == 0
+
 
 @pytest.mark.django_db
 class TestEndpoint:
@@ -192,20 +248,31 @@ class TestEndpoint:
         data = response.json()
         assert set(data.keys()) == {
             "catalog_type_distribution",
+            "availability_distribution",
             "catalog_category_distribution",
             "price_range_distribution",
             "status_distribution",
-            "stock_value_by_category",
-            "stock_value_by_type",
-            "top_products_by_stock_value",
-            "top_products_by_units",
             "summary",
         }
         assert data["summary"]["total_products"] == 3
         assert data["summary"]["total_value"] == "2100"
         assert data["catalog_type_distribution"][0]["id"] == "STORABLE"
         assert data["catalog_category_distribution"][0]["id"] == "Categoría A"
-        assert data["top_products_by_stock_value"][0]["name"] == "Producto A"
+        by_availability = {row["id"]: row for row in data["availability_distribution"]}
+        assert by_availability["Venta y compra"]["value"] == 3
+
+    def test_endpoint_price_field_param(self, auth_client, product_analytics_setup):
+        response = auth_client.get("/api/inventory/products/analytics/?price_field=cost&is_active=all")
+        assert response.status_code == 200
+        data = response.json()
+        by_id = {row["id"]: row["value"] for row in data["price_range_distribution"]}
+        assert by_id["0 – 10.000"] == 4
+
+    def test_endpoint_can_be_sold(self, auth_client, product_analytics_setup):
+        response = auth_client.get("/api/inventory/products/analytics/?can_be_sold=true")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["summary"]["total_products"] == 3
 
     def test_analytics_endpoint_respects_filters(self, auth_client, product_analytics_setup):
         s = product_analytics_setup

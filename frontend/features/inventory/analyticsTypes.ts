@@ -117,29 +117,6 @@ export interface LabeledDistributionRow extends DistributionRow {
     label: string
 }
 
-export interface ValueDistributionRow {
-    id: string
-    value: string
-}
-
-export interface LabeledValueDistributionRow extends ValueDistributionRow {
-    label: string
-}
-
-export interface TopProductValueRow {
-    id: number
-    name: string
-    value: string
-    quantity: string
-}
-
-export interface TopProductUnitsRow {
-    id: number
-    name: string
-    value: string
-    amount: string
-}
-
 export interface ProductSummaryKpis {
     total_products: number
     total_units: string
@@ -152,13 +129,10 @@ export interface ProductSummaryKpis {
 
 export interface ProductAnalyticsResponse {
     catalog_type_distribution: LabeledDistributionRow[]
+    availability_distribution: LabeledDistributionRow[]
     catalog_category_distribution: DistributionRow[]
     price_range_distribution: DistributionRow[]
     status_distribution: DistributionRow[]
-    stock_value_by_category: ValueDistributionRow[]
-    stock_value_by_type: LabeledValueDistributionRow[]
-    top_products_by_stock_value: TopProductValueRow[]
-    top_products_by_units: TopProductUnitsRow[]
     summary: ProductSummaryKpis
 }
 
@@ -169,4 +143,5 @@ export interface ProductAnalyticsParams {
     can_be_sold?: string | boolean | null
     can_be_purchased?: string | boolean | null
     is_active?: string | boolean | null
+    price_field?: "sale" | "cost" | null
 }

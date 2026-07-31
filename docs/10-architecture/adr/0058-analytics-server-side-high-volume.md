@@ -108,8 +108,8 @@ Métodos de Pago, Tipos). Decisiones:
 ### Tercera implementación: inventory.product
 
 `ProductAnalyticsService` en `backend/inventory/product_analytics.py`,
-endpoint `GET /api/inventory/products/analytics/`, 2 tabs (Catálogo, Stock).
-Decisiones:
+endpoint `GET /api/inventory/products/analytics/`, 3 tabs (Resumen, Ventas,
+Compras). Decisiones:
 
 - **Sin granularidad**: los productos no tienen dimensión temporal; el panel
   omite `granularity`/`onGranularityChange` (opcional en el contrato
@@ -122,11 +122,18 @@ Decisiones:
 - **`is_active`**: default `True` (solo activos); `"all"` incluye archivados
   y `"false"` solo archivados.
 - **Buckets de precio** en `PRICE_RANGES` (6 rangos) aplicados con
-  `Case/When` sobre `sale_price`/`price_gross`.
-- **Clasificaciones por catálogo (tipos, categorías, rangos) se calculan sin
-  join a stock**; las dimensiones de valor agregan la expresión de stock
-  directamente (no `.annotate` sobre queryset con `.values()`).
+  `Case/When`; `get_consolidated(price_field="sale"|"cost")` elige el campo
+  (`sale_price` para el rango de venta, `cost_price` para el de compra).
+- **Disponibilidad** = combinaciones `can_be_sold` × `can_be_purchased`
+  (4 buckets: Venta y compra / Solo venta / Solo compra / Sin disponibilidad).
+- **Tabs Ventas/Compras**: el frontend llama al endpoint con
+  `can_be_sold=true` / `can_be_purchased=true` (+ `price_field`), reutilizando
+  el mismo servicio; el KPI es `summary.total_products` del conjunto filtrado.
+- **Clasificaciones por catálogo (tipos, disponibilidad, categorías, rangos)
+  se calculan sin join a stock**.
 - **Filtros del listado respetados**: search, categoría, tipo, venta/compra,
-  activo/archivado.
+  activo/archivado. El tab Stock (valor por categoría/tipo, top productos) fue
+  eliminado en favor de Resumen/Ventas/Compras; `get_stock_summary` conserva
+  los KPIs de stock usados en Resumen.
 
 Candidato restante: `billing.invoice`.
