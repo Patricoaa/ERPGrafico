@@ -252,7 +252,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'MOV-{id}',
     listUrl: '/inventory/stock/movements',
     detailUrlPattern: '/inventory/stock-moves/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'summary' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column', cardVariant: 'summary' },
   },
   'inventory.inventorydocument': {
     label: 'inventory.inventorydocument',
