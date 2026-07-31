@@ -35,6 +35,7 @@ export interface StockMoveFilters {
     destination_location_id?: string | number
     date_from?: string
     date_to?: string
+    direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
 }
 
 export const STOCK_MOVES_QUERY_KEY = ['inventory', 'stockMoves'] as const
