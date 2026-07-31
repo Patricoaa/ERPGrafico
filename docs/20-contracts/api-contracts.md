@@ -409,6 +409,17 @@ GET    /api/inventory/moves/{id}/         detail
 GET    /api/inventory/moves/analytics/    analytics — agregación servidor para el panel (ADR-0058)
 ```
 
+List filters (`GET /api/inventory/moves/`):
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `product_id` | int | Filtrar por producto |
+| `product_name` | string | Filtro `icontains` por nombre de producto |
+| `source_location_id` | int | Filtrar por ubicación origen |
+| `destination_location_id` | int | Filtrar por ubicación destino |
+| `date_from` / `date_to` | `YYYY-MM-DD` | Rango de fechas |
+| `direction` | `IN\|OUT\|TRANSFER\|ADJUSTMENT\|OTHER` | Tipo de movimiento (clasificación derivada de ubicaciones) |
+
 Response key fields:
 
 ```json
