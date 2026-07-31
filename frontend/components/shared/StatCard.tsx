@@ -21,7 +21,7 @@ export interface StatCardChart {
 }
 
 interface StatCardProps {
-  label: React.ReactNode
+  label?: React.ReactNode
   value?: React.ReactNode
   icon?: LucideIcon
   subtext?: string
@@ -354,10 +354,12 @@ export function StatCard({
   } else {
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
-          <CardTitle className="text-sm font-medium">{label}</CardTitle>
-          {renderArrowIcon()}
-        </CardHeader>
+        {label && (
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
+            <CardTitle className="text-sm font-medium">{label}</CardTitle>
+            {renderArrowIcon()}
+          </CardHeader>
+        )}
         <CardContent className="py-0">
           {renderValue()}
           {renderSubtext()}
