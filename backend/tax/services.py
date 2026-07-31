@@ -332,7 +332,7 @@ class F29CalculationService:
         journal_entry = JournalEntry.objects.create(
             date=accrual_date,
             description=GlosaBuilder.build(
-                GlosaBuilder.CIERRE_ANUAL, "F29", "", declaration.total_amount_due, extra=[period_label],
+                GlosaBuilder.CIERRE_F29, "F29", "", declaration.total_amount_due, extra=[period_label],
             ),
             reference=f"{EntityPrefix.F29_DECLARATION}-{folio_number}" if folio_number else "",
         )
