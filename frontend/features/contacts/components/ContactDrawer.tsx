@@ -745,16 +745,6 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
         }
     }));
 
-    if (!loading && !data.length) {
-        return (
-            <EmptyState
-                context="finance"
-                title="Sin documentos pendientes"
-                description="No hay documentos con deuda pendiente para este contacto."
-            />
-        )
-    }
-
     const columns = useMemo<ColumnDef<ContactCreditDocument>[]>(() => [
         ...contactCreditDocumentFields.toColumns().map(col => {
             const key = col.id || (col as any).accessorKey;
@@ -781,6 +771,16 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
             cell: ({ row }: any) => <DomainHubStatus data={row.original} label="sales.saleorder" />
         } as ColumnDef<ContactCreditDocument>
     ], [])
+
+    if (!loading && !data.length) {
+        return (
+            <EmptyState
+                context="finance"
+                title="Sin documentos pendientes"
+                description="No hay documentos con deuda pendiente para este contacto."
+            />
+        )
+    }
 
     return (
         <SkeletonShell isLoading={loading} ariaLabel="Cargando libro de cuenta">

@@ -18,7 +18,7 @@ function extractLegendItems(chart: ChartConfig): Array<{ label: string; color?: 
             if (chart.lineOverlay) {
                 items.push({
                     label: chart.lineOverlay.label,
-                    color: chart.lineOverlay.color ?? "#f59e0b",
+                    color: chart.lineOverlay.color ?? "var(--color-warning)",
                 })
             }
             return items

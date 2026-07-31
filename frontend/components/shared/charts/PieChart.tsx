@@ -56,15 +56,15 @@ export interface PieChartProps {
 
 function getArcTextColor(d: { color: string }): string {
     const m = d.color.match(/oklch\(\s*([\d.]+)/)
-    if (m) return parseFloat(m[1]) > 0.75 ? "hsl(var(--foreground))" : "#ffffff"
+    if (m) return parseFloat(m[1]) > 0.75 ? "hsl(var(--foreground))" : "var(--color-background)"
     if (d.color.startsWith("#")) {
         const r = parseInt(d.color.slice(1, 3), 16)
         const g = parseInt(d.color.slice(3, 5), 16)
         const b = parseInt(d.color.slice(5, 7), 16)
         const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-        return luminance > 0.6 ? "hsl(var(--foreground))" : "#ffffff"
+        return luminance > 0.6 ? "hsl(var(--foreground))" : "var(--color-background)"
     }
-    return "#ffffff"
+    return "var(--color-background)"
 }
 
 function formatTooltipValue(value: number, format?: "currency" | "number" | ((value: number) => string)): string {

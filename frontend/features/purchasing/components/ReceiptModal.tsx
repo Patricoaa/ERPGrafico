@@ -86,26 +86,27 @@ export function ReceiptModal({
         }
     }, [dateString])
 
+    const [prevOrder, setPrevOrder] = useState<PurchaseOrder | null>(null)
+
     // Initialize from hook data when it loads
-    useEffect(() => {
-        if (order) {
-            const initialQuantities: { [lineId: number]: number } = {}
-            const initialCosts: { [lineId: number]: number } = {}
+    if (order && order !== prevOrder) {
+        setPrevOrder(order)
+        const initialQuantities: { [lineId: number]: number } = {}
+        const initialCosts: { [lineId: number]: number } = {}
 
-            order.lines.forEach((line: PurchaseOrderLine) => {
-                initialQuantities[line.id] = Math.ceil(line.quantity_pending)
-                initialCosts[line.id] = Math.ceil(line.unit_cost)
-            })
-            setReceiptQuantities(initialQuantities)
-            setReceiptCosts(initialCosts)
+        order.lines.forEach((line: PurchaseOrderLine) => {
+            initialQuantities[line.id] = Math.ceil(line.quantity_pending)
+            initialCosts[line.id] = Math.ceil(line.unit_cost)
+        })
+        setReceiptQuantities(initialQuantities)
+        setReceiptCosts(initialCosts)
 
-            if (order.warehouse) {
-                setSelectedWarehouse(order.warehouse)
-            } else if (warehouses.length > 0) {
-                setSelectedWarehouse(warehouses[0].id)
-            }
+        if (order.warehouse) {
+            setSelectedWarehouse(order.warehouse)
+        } else if (warehouses.length > 0) {
+            setSelectedWarehouse(warehouses[0].id)
         }
-    }, [order, warehouses, selectedWarehouse])
+    }
 
     const handleQuantityChange = (lineId: number, value: string) => {
         const numValue = Math.ceil(parseFloat(value) || 0)

@@ -58,28 +58,29 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
         }
     }, [dateString])
 
+    const [prevFreshInvoice, setPrevFreshInvoice] = useState<unknown>(null)
+
     const isSale = !!invoice?.sale_order || !!(invoice as Record<string, unknown>)?.['sale_order_number']
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
 
     // Initialize from hook data when it loads
-    useEffect(() => {
-        if (freshInvoice) {
-            const freshLines = ((freshInvoice as Record<string, unknown>).lines || []) as InvoiceLine[]
-            setDisplayLines(freshLines)
+    if (freshInvoice && freshInvoice !== prevFreshInvoice) {
+        setPrevFreshInvoice(freshInvoice)
+        const freshLines = ((freshInvoice as Record<string, unknown>).lines || []) as InvoiceLine[]
+        setDisplayLines(freshLines)
 
-            const initial: { [pId: number]: number } = {}
-            freshLines.forEach((line: InvoiceLine) => {
-                const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
-                const pending = Math.max(0, line.quantity - processed)
-                initial[line.product_id] = pending
-            })
-            setProcessQuantities(initial)
+        const initial: { [pId: number]: number } = {}
+        freshLines.forEach((line: InvoiceLine) => {
+            const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
+            const pending = Math.max(0, line.quantity - processed)
+            initial[line.product_id] = pending
+        })
+        setProcessQuantities(initial)
 
-            if (warehouses.length > 0 && !selectedWarehouse) {
-                setSelectedWarehouse(warehouses[0].id as number)
-            }
+        if (warehouses.length > 0 && !selectedWarehouse) {
+            setSelectedWarehouse(warehouses[0].id as number)
         }
-    }, [freshInvoice, isSale, warehouses, selectedWarehouse])
+    }
 
     const handleQuantityChange = (pId: number, value: string, max: number) => {
         const num = parseFloat(value) || 0

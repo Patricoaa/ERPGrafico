@@ -314,7 +314,7 @@ export function UnbilledChargesClientView({
                 display: chargeTypeDisplayMap.get(d.id) || d.id,
                 count: countMap.get(d.id) ?? 0,
                 amount: d.value,
-                color: colorMap.get(d.id) ?? '#6b7280',
+                color: colorMap.get(d.id) ?? 'var(--color-muted-foreground)',
             }))
             .sort((a, b) => b.amount - a.amount)
     }, [analyticsData, chargeTypeDisplayMap])
