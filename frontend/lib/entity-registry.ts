@@ -506,7 +506,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
-    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
+    viewPolicy: { availableViews: ['list', 'card', 'analytics'], defaultView: 'list', cardComponent: 'entity', cardVariant: 'full' },
   },
   'hr.salaryadvance': {
     label: 'hr.salaryadvance',
