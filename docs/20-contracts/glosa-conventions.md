@@ -160,6 +160,7 @@ Capital por Cobrar: Juan Pérez (OV-88)
 | ``CONSUMO_PRODUCCION`` | `Consumo Producción` | Work order material consumption |
 | ``APERTURA`` | `Apertura` | Fiscal year opening |
 | ``CIERRE_ANUAL`` | `Cierre Anual` | Fiscal year closing |
+| ``CIERRE_F29`` | `Cierre F29` | Monthly F29 declaration closing entry |
 | ``DEVOLUCION_PAGO`` | `Devolución Pago` | Payment return |
 | ``PAGO_F29`` | `Pago F29` | Tax payment |
 | ``ANULACION_FACTURA`` | `Anulación Factura` | Invoice annulment reversal |

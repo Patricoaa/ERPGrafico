@@ -171,6 +171,7 @@ class GlosaBuilder:
     # -- Fiscal --
     APERTURA = "Apertura"
     CIERRE_ANUAL = "Cierre Anual"
+    CIERRE_F29 = "Cierre F29"
 
     # -- Devoluciones de pago --
     DEVOLUCION_PAGO = "Devolución Pago"
