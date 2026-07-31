@@ -56,17 +56,29 @@ export function PartnerProfileTab({ contactId }: Props) {
             .reverse()
     }, [statement])
 
+    const totalNetEquity = useMemo(
+        () =>
+            (Array.isArray(partners) ? partners : []).reduce(
+                (s, p) => s + (Number(p.partner_net_equity) || 0),
+                0
+            ),
+        [partners]
+    )
+
     const pieData = useMemo(() => {
         const palette = getChartPalette()
         const activeName = statement?.contact?.name
-        return (partners || [])
-            .filter(p => parseFloat(p.partner_equity_percentage) > 0)
+        return (Array.isArray(partners) ? partners : [])
+            .filter(p => (Number(p.partner_net_equity) || 0) > 0)
             .map((p, i) => ({
                 id: p.name,
-                value: parseFloat(p.partner_equity_percentage) || 0,
+                value:
+                    totalNetEquity > 0
+                        ? Math.round((Number(p.partner_net_equity) / totalNetEquity) * 10000) / 100
+                        : 0,
                 color: p.name === activeName ? "var(--primary)" : palette[i % palette.length],
             }))
-    }, [partners, statement?.contact?.name])
+    }, [partners, totalNetEquity, statement?.contact?.name])
 
     const columns: ColumnDef<PartnerTransaction & { balance_after: number }>[] = [
         {
@@ -127,7 +139,7 @@ export function PartnerProfileTab({ contactId }: Props) {
     if (!statement) return null
 
     const { contact, summary } = statement
-    const equityPct = parseFloat(summary.equity_percentage) || 0
+    const equityPct = pieData.find((d) => d.id === contact.name)?.value ?? 0
     const partnerSince = contact.partner_since || contact.created_at
 
     return (
