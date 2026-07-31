@@ -27,6 +27,7 @@ interface PartnerContributionWizardProps {
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
     initialPartnerId?: string
+    initialAmount?: string
 }
 
 type ContributionMethod = "CASH" | "ASSETS"
@@ -35,7 +36,8 @@ export function PartnerContributionWizard({
     open,
     onOpenChange,
     onSuccess,
-    initialPartnerId
+    initialPartnerId,
+    initialAmount
 }: PartnerContributionWizardProps) {
     const [loading, setLoading] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
@@ -96,10 +98,10 @@ export function PartnerContributionWizard({
                 setPartnerId(initialPartnerId || "")
                 setMethod("CASH")
                 setCashData({
-                    amount: "",
+                    amount: initialAmount || "",
                     treasuryAccountId: "",
                     date: new Date().toISOString().split('T')[0],
-                    description: ""
+                    description: initialAmount ? "Pago de capital pendiente" : ""
                 })
                 setAssetData({
                     warehouseId: "",
@@ -114,7 +116,7 @@ export function PartnerContributionWizard({
                 setProductUoMs([])
             }, 0)
         }
-    }, [open, initialPartnerId])
+    }, [open, initialPartnerId, initialAmount])
 
     // Load product details when productId changes
     useEffect(() => {

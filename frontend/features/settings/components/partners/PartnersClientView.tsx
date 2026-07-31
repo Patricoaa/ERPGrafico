@@ -22,7 +22,6 @@ import {
     UnifiedSearchBar,
     useUnifiedSearch,
     AutoEntityCard,
-    StatCard,
 } from "@/components/shared"
 import type { AnalyticsPanelConfig, UnifiedSearchConfig } from "@/components/shared"
 import { usePartnerAnalyticsData } from "@/features/settings/hooks/usePartnerAnalyticsData"
@@ -116,6 +115,7 @@ export function PartnersClientView({
     const [isDividendOpen, setIsDividendOpen] = useState(false)
     const [isMobilizeOpen, setIsMobilizeOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
+    const [contributionTarget, setContributionTarget] = useState<{ partnerId?: number, amount?: string }>({})
 
     const [subModalParams, setSubModalParams] = useState({
         partnerId: undefined as string | undefined,
@@ -449,6 +449,10 @@ export function PartnersClientView({
             setSubModalParams({ partnerId: id.toString(), amount: amount.toString() })
             setIsSubscriptionOpen(true)
         },
+        onRegisterContribution: (id, amount) => {
+            setContributionTarget({ partnerId: id, amount: amount.toString() })
+            setIsContributionOpen(true)
+        },
         onPayDividends: (id) => { setSelectedPartnerId(id); setIsDividendOpen(true) },
         onDistributeEarnings: (id) => { setSelectedPartnerId(id); setIsMobilizeOpen(true) },
         onViewLedger: (id) => {
@@ -521,6 +525,7 @@ export function PartnersClientView({
                                 ? [{ key: 'initial-setup', label: 'Configuración Inicial', icon: Plus, onClick: () => setIsInitialSetupOpen(true), intent: 'primary' }]
                                 : [
                                     { key: 'new-subscription', label: 'Nueva Suscripción', icon: Plus, onClick: () => setIsSubscriptionOpen(true), intent: 'primary' },
+                                    { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => { setContributionTarget({}); setIsContributionOpen(true) }, intent: 'success' },
                                     { key: 'transfer', label: 'Transferencia', icon: MoveHorizontal, onClick: () => setIsTransferOpen(true), intent: 'primary' },
                                 ]
                         }
@@ -554,9 +559,13 @@ export function PartnersClientView({
             />
             <PartnerContributionWizard
                 open={isContributionOpen}
-                onOpenChange={setIsContributionOpen}
+                onOpenChange={(open) => {
+                    setIsContributionOpen(open)
+                    if (!open) setContributionTarget({})
+                }}
                 onSuccess={() => refetch()}
-                initialPartnerId={selectedPartnerId?.toString()}
+                initialPartnerId={contributionTarget.partnerId?.toString()}
+                initialAmount={contributionTarget.amount}
             />
             <PartnerWithdrawalWizard
                 open={isWithdrawalOpen}
