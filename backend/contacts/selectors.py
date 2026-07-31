@@ -526,14 +526,6 @@ class ContactSelector:
         return PartnerTransaction.objects.filter(partner=partner).order_by("-date", "-created_at")
 
     @staticmethod
-    def list_all_partner_transactions():
-        from .partner_models import PartnerTransaction
-        from .serializers import PartnerTransactionSerializer
-
-        txs = PartnerTransaction.objects.all().select_related("partner", "journal_entry")
-        return PartnerTransactionSerializer(txs, many=True).data
-
-    @staticmethod
     def get_equity_stakes_history(partner_id: int | None = None):
         from .partner_models import PartnerEquityStake
         from .serializers import PartnerEquityStakeSerializer
