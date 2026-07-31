@@ -4,6 +4,8 @@ import React, { useMemo } from "react"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatMoney, formatQuantity } from "@/lib/money"
+import type { FunnelDatum, FunnelPart } from "@nivo/funnel"
+import type { InheritedColorConfig } from "@nivo/colors"
 import {
     nivoTheme,
     premiumTooltipClass,
@@ -56,10 +58,10 @@ export function FunnelChart({
     return (
         <div className="h-full w-full relative">
             <LazyFunnel
-                data={data as any}
+                data={data as unknown as FunnelDatum[]}
                 margin={margin}
-                valueFormat={valueFormat as any}
-                colors={(d: any) => colorById[d.id as string | number] ?? "var(--color-muted-foreground)"}
+                valueFormat={valueFormat}
+                colors={(d: FunnelDatum) => colorById[d.id] ?? "var(--color-muted-foreground)"}
                 direction={direction}
                 shapeBlending={shapeBlending}
                 borderWidth={0}
@@ -68,9 +70,9 @@ export function FunnelChart({
                 enableAfterSeparators={false}
                 currentPartSizeExtension={0}
                 currentBorderWidth={0}
-                motionConfig={motionConfig as any}
-                theme={nivoTheme as any}
-                labelColor={{ from: "color", modifiers: [["darker", 3]] } as any}
+                motionConfig={motionConfig}
+                theme={nivoTheme}
+                labelColor={{ from: "color", modifiers: [["darker", 3]] } as unknown as InheritedColorConfig<FunnelPart<FunnelDatum>>}
                 tooltip={({ part }: { part: { data: { id: string | number; value: number; label?: string }; color: string } }) => (
                     <div className={premiumTooltipClass}>
                         <span className="font-medium">{String(part.data.label ?? part.data.id)}</span>

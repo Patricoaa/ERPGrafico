@@ -21,6 +21,16 @@ import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 // matching the table empty-state behavior.
 const CARD_EMPTY_WRAPPER = "flex h-full min-h-[12rem] items-center justify-center"
 
+interface InjectedCardProps {
+  key?: React.Key
+  entityLabel?: string
+  selectable?: boolean
+  checked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  isAnySelected?: boolean
+  onClick?: () => void
+}
+
 /**
  * Creates a renderCustomView function for entities that use EntityCard.
  * The consumer provides a renderCard function for domain-specific card content.
@@ -74,10 +84,10 @@ export function createEntityCardView(
       rows.map((row) => {
         const node = options.renderCard(row.original, row, table)
         if (React.isValidElement(node)) {
-          const originalOnClick = (node.props as any).onClick
+          const originalOnClick = (node.props as Record<string, unknown>).onClick as (() => void) | undefined
           const isChecked = row.getIsSelected()
 
-          const injectedProps: Record<string, any> = {
+          const injectedProps: InjectedCardProps = {
             key: (row.original as Record<string, unknown>).id as React.Key ?? row.id,
             entityLabel,
           }
@@ -212,8 +222,8 @@ export function createCardGroupView<TData>(
               const row = rows.find(r => (r.original as Record<string, unknown>).id === (item as Record<string, unknown>).id)
               const node = renderCard(item, row, table)
               if (React.isValidElement(node)) {
-                const originalOnClick = (node.props as any).onClick
-                const injectedProps: Record<string, any> = {
+                const originalOnClick = (node.props as Record<string, unknown>).onClick as (() => void) | undefined
+                const injectedProps: InjectedCardProps = {
                   key: (item as Record<string, unknown>).id as React.Key,
                 }
 

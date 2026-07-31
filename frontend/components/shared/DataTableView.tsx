@@ -226,8 +226,8 @@ export function DataTableView<TData, TValue>({
     [isTableViewGrouped, tableGroups, derivedCardGroupBy, groupsMap, dataTableProps.columns],
   )
 
-    const finalColumns = useMemo(() => {
-      let cols = dataTableProps.columns as ColumnDef<TData, unknown>[]
+    const finalColumns = useMemo<ColumnDef<TData, TValue>[]>(() => {
+      let cols = dataTableProps.columns
       if (isSelected && dataTableProps.onRowClick) {
         if (!cols.some(c => c.id === "hub_trigger")) {
           cols = [
@@ -235,7 +235,7 @@ export function DataTableView<TData, TValue>({
             createHubTriggerColumn({
               isSelected,
               onToggle: dataTableProps.onRowClick,
-            }) as ColumnDef<TData, unknown>
+            }) as unknown as ColumnDef<TData, TValue>,
           ]
         }
       }
@@ -248,7 +248,7 @@ export function DataTableView<TData, TValue>({
       createAction={currentView === "analytics" ? undefined : dataTableProps.createAction}
       toolbarActions={currentView === "analytics" ? undefined : dataTableProps.toolbarActions}
       emptyState={enrichedEmptyState}
-      columns={finalColumns as any}
+      columns={finalColumns}
       data={isTableViewGrouped ? sortedData : dataTableProps.data}
       renderRow={isTableViewGrouped ? internalRenderRow : dataTableProps.renderRow}
       viewOptions={viewOptions}

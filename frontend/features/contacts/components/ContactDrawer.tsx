@@ -33,7 +33,7 @@ import { workOrderFields } from "@/features/production/workOrderFields"
 
 import { DataTable } from '@/components/shared'
 
-import { type ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef, type CellContext } from "@tanstack/react-table"
 import { type LucideIcon } from "lucide-react"
 import { contactCreditDocumentFields, type ContactCreditDocument } from '../contactCreditDocumentFields'
 
@@ -630,13 +630,13 @@ function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     }
 
     const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => {
-        let baseColumns: any[] = []
+        let baseColumns: ColumnDef<Record<string, unknown>>[] = []
         if (type === 'sale') {
-            baseColumns = salesOrderFields.toColumns({ exclude: ['contactDisplayName', 'channel'] })
+            baseColumns = salesOrderFields.toColumns({ exclude: ['contactDisplayName', 'channel'] }) as unknown as ColumnDef<Record<string, unknown>>[]
         } else if (type === 'purchase') {
-            baseColumns = purchaseOrderFields.toColumns({ exclude: ['contactDisplayName'] })
+            baseColumns = purchaseOrderFields.toColumns({ exclude: ['contactDisplayName'] }) as unknown as ColumnDef<Record<string, unknown>>[]
         } else if (type === 'work_order') {
-            baseColumns = workOrderFields.toColumns({ exclude: ['contactDisplayName'] })
+            baseColumns = workOrderFields.toColumns({ exclude: ['contactDisplayName'] }) as unknown as ColumnDef<Record<string, unknown>>[]
         }
 
         return [
@@ -747,19 +747,19 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
 
     const columns = useMemo<ColumnDef<ContactCreditDocument>[]>(() => [
         ...contactCreditDocumentFields.toColumns().map(col => {
-            const key = col.id || (col as any).accessorKey;
+            const key = col.id || (col as { accessorKey?: string | number }).accessorKey;
 
             if (key === 'number') {
                 return {
                     ...col,
-                    cell: ({ row }: any) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
+                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
                 }
             }
 
             if (key === 'balance') {
                 return {
                     ...col,
-                    cell: ({ row }: any) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
+                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
                 }
             }
 
@@ -768,7 +768,7 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
         {
             id: "status",
             header: "Estados",
-            cell: ({ row }: any) => <DomainHubStatus data={row.original} label="sales.saleorder" />
+            cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DomainHubStatus data={row.original} label="sales.saleorder" />
         } as ColumnDef<ContactCreditDocument>
     ], [])
 

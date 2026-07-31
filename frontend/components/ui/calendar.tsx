@@ -10,6 +10,8 @@ import {
   DayPicker,
   getDefaultClassNames,
   type DayButton,
+  type DropdownOption,
+  type DropdownProps,
 } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
@@ -137,20 +139,20 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Dropdown: ({ value, onChange, options, ...props }: any) => {
+        Dropdown: ({ value, onChange, options }: DropdownProps) => {
           return (
             <Select
               value={value?.toString()}
               onValueChange={(val) => {
-                onChange?.({ target: { value: val } } as any)
+                onChange?.({ target: { value: val } } as unknown as React.ChangeEvent<HTMLSelectElement>)
               }}
             >
               <SelectTrigger className="h-8 w-fit shrink-0 font-medium px-2 py-1 bg-transparent hover:bg-accent hover:text-accent-foreground text-sm gap-1 focus:ring-0 focus-visible:ring-0 shadow-none border border-input rounded-md">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent position="popper" align="start" className="max-h-64">
-                {options?.map((option: any) => (
-                  <SelectItem key={option.value} value={option.value?.toString()} disabled={option.disabled}>
+                {options?.map((option: DropdownOption) => (
+                  <SelectItem key={option.value} value={option.value.toString()} disabled={option.disabled}>
                     {option.label}
                   </SelectItem>
                 ))}

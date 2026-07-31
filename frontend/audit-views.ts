@@ -74,7 +74,7 @@ for (const file of files) {
   const availableViews = entityMeta?.viewPolicy?.availableViews?.join(', ') || 'list';
 
   let recommendation = '';
-  if ((cardComp as any) === 'domain' || cardComp === 'custom') {
+  if (cardComp === 'custom') {
     recommendation = '✅ JSX Manual Válido (Compleja)';
   } else {
     if (hasRenderCard) {
