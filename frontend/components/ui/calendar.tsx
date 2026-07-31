@@ -14,6 +14,13 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 function Calendar({
   className,
@@ -71,22 +78,19 @@ function Calendar({
           defaultClassNames.month_caption
         ),
         dropdowns: cn(
-          "w-full flex items-center text-sm font-medium justify-center h-(--cell-size) gap-1.5",
+          "flex items-center gap-1.5",
           defaultClassNames.dropdowns
         ),
         dropdown_root: cn(
-          "relative has-focus:border-ring border border-input shadow-xs has-focus:ring-ring/50 has-focus:ring-[3px] rounded-md",
+          "relative",
           defaultClassNames.dropdown_root
         ),
         dropdown: cn(
-          "absolute bg-popover inset-0 opacity-0",
+          "hidden",
           defaultClassNames.dropdown
         ),
         caption_label: cn(
-          "select-none font-medium",
-          captionLayout === "label"
-            ? "text-sm"
-            : "rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5",
+          "select-none font-medium text-sm hidden", // Hide default label since we use dropdowns directly
           defaultClassNames.caption_label
         ),
         table: "w-full border-collapse",
@@ -133,6 +137,27 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        Dropdown: ({ value, onChange, options, ...props }: any) => {
+          return (
+            <Select
+              value={value?.toString()}
+              onValueChange={(val) => {
+                onChange?.({ target: { value: val } } as any)
+              }}
+            >
+              <SelectTrigger className="h-8 w-fit shrink-0 font-medium px-2 py-1 bg-transparent hover:bg-accent hover:text-accent-foreground text-sm gap-1 focus:ring-0 focus-visible:ring-0 shadow-none border border-input rounded-md">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" align="start" className="max-h-64">
+                {options?.map((option: any) => (
+                  <SelectItem key={option.value} value={option.value?.toString()} disabled={option.disabled}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
+        },
         Root: ({ className, rootRef, ...props }) => {
           return (
             <div

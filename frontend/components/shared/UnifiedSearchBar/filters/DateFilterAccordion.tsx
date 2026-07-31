@@ -124,19 +124,30 @@ export function DateFilterAccordion({ def, activeParams, onApply, onRemove }: Da
               </Button>
             </>
           ) : (
-            <div className="py-1 space-y-2">
-              <Calendar
-                mode="range"
-                selected={tempRange}
-                onSelect={setTempRange}
-                numberOfMonths={1}
-                locale={es}
-                captionLayout="dropdown"
-                startMonth={new Date(new Date().getFullYear() - 10, 0)}
-                endMonth={new Date(new Date().getFullYear() + 10, 11)}
-                className="scale-90 origin-top-left -ml-2"
-              />
-              <div className="flex gap-2 px-1">
+            <div className="py-2 space-y-3 w-full @container">
+              <div className="w-full">
+                <Calendar
+                  mode="range"
+                  selected={tempRange}
+                  onSelect={setTempRange}
+                  numberOfMonths={2}
+                  locale={es}
+                  captionLayout="dropdown"
+                  startMonth={new Date(new Date().getFullYear() - 10, 0)}
+                  endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                  className="p-0 w-full"
+                  classNames={{
+                    root: "w-full",
+                    months: "flex flex-row gap-4 w-full",
+                    month: "w-full space-y-2",
+                    table: "w-full border-collapse space-y-1",
+                    day: "relative flex aspect-square size-auto w-full min-w-0 flex-col gap-1 text-[min(4cqw,0.85rem)] font-normal leading-none items-center justify-center",
+                    weekday: "text-muted-foreground rounded-md flex-1 font-normal text-[min(4cqw,0.85rem)] text-center",
+                    caption_label: "text-[min(5cqw,0.9rem)] font-medium",
+                  }}
+                />
+              </div>
+              <div className="flex gap-2 pr-2">
                 <Button
                   variant="outline"
                   size="sm"
