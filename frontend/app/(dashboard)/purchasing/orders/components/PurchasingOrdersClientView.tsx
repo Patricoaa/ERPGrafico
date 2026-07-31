@@ -8,7 +8,7 @@ import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityC
 import { assignChartColors } from '@/lib/chart-colors'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
-import type { AnalyticsPanelConfig, Granularity } from '@/components/shared'
+import type { AnalyticsPanelConfig, Granularity, AutoEntityCardProps } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft, BarChart3, Building2, Package, Box, Wrench, RefreshCcw, Receipt } from "lucide-react"
@@ -905,8 +905,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                             return (
                                 <AutoEntityCard
                                     key={data.id as number}
-                                    data={data}
-                                    fields={viewMode === 'orders' ? purchaseOrderFields as any : undefined as any}
+                                    data={data as unknown as PurchaseOrder}
+                                    fields={viewMode === 'orders' ? purchaseOrderFields as unknown as AutoEntityCardProps<PurchaseOrder>['fields'] : undefined as unknown as AutoEntityCardProps<PurchaseOrder>['fields']}
                                     entityLabel={label}
                                     onClick={() => toggleSelection(data.id as number)}
                                     isSelected={viewMode === 'orders' ? hubConfig?.orderId === data.id : hubConfig?.invoiceId === data.id}
