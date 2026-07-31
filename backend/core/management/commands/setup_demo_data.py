@@ -2929,8 +2929,8 @@ class Command(BaseCommand):
             max_day = num_days if month != current_month else today.day
             if max_day < 1: max_day = 1
             
-            # Generate around 100 sales per month
-            num_sales = random.randint(90, 110)
+            # Generate between 15 and 20 sales per month
+            num_sales = random.randint(15, 20)
             
             for sale_idx in range(num_sales):
                 order_date = _date(current_year, month, random.randint(1, max_day))
