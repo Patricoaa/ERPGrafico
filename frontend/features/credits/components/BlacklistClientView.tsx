@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input"
 
 import { DataCell } from '@/components/shared'
 import { blacklistFields } from "../blacklistFields"
+import { creditLedgerEntryFields } from "@/features/credits/creditLedgerEntryFields"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -136,22 +137,22 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                             {ledger.map((entry) => (
                                 <tr key={entry.id} className="text-[12px] group">
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Entity entityLabel="sales.saleorder" data={entry as unknown as Record<string, unknown>} />
+                                        {creditLedgerEntryFields.render('document', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Date value={entry.date} className="text-muted-foreground" />
+                                        {creditLedgerEntryFields.render('date', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.effective_total} />
+                                        {creditLedgerEntryFields.render('total', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.CurrencyFlow value={entry.paid_amount} direction="inflow" showIcon={false} />
+                                        {creditLedgerEntryFields.render('paid', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.balance} weight="bold" />
+                                        {creditLedgerEntryFields.render('balance', entry)}
                                     </td>
                                     <td className="py-2 text-center">
-                                        <DataCell.Status status={String(entry.aging_bucket).toUpperCase()} />
+                                        {creditLedgerEntryFields.render('status', entry)}
                                     </td>
                                 </tr>
                             ))}

@@ -5,9 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator } from "lucide-react"
 import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
-import { DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, StatCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { type ColumnDef } from "@tanstack/react-table"
+import { DataTable, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import { formatCurrency } from "@/lib/money"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
@@ -20,6 +18,7 @@ import { es } from "date-fns/locale"
 
 import type { LedgerData, LedgerMovement } from "@/features/accounting/types"
 import { ledgerMovementActions, type LedgerMovementActionsCtx } from './ledgerMovementActions'
+import { ledgerMovementFields } from "@/features/accounting/ledgerMovementFields"
 
 interface LedgerDrawerProps {
     accountId: number
@@ -223,81 +222,9 @@ function LedgerContent({
         onViewEntry: (entryId) => openEntry(entryId),
     }
 
-    const columns: ColumnDef<LedgerMovement>[] = [
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Date value={row.original.date} />
-            )
-        },
-        {
-            accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const mov = row.original
-                const glosa = mov.label || mov.description
-                return (
-                    <div className="flex justify-center w-full">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="max-w-[400px] text-xs leading-relaxed text-center">
-                                    {glosa}
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">{glosa}</TooltipContent>
-                        </Tooltip>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "debit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Debe" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("debit"))
-                return (
-                    <div className="flex justify-center w-full">
-                        <MoneyDisplay amount={val} showZeroAsDash />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "credit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Haber" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("credit"))
-                return (
-                    <div className="flex justify-center w-full">
-                        <MoneyDisplay amount={val} showZeroAsDash />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("balance"))
-                return (
-                    <div className="flex justify-center w-full">
-                        <MoneyDisplay amount={val} showColor={true} />
-                    </div>
-                )
-            },
-        },
-        ledgerMovementActions.auto(ledgerMovementActionsCtx)
+    const columns = [
+        ...ledgerMovementFields.toColumns(),
+        ledgerMovementActions.auto(ledgerMovementActionsCtx),
     ]
 
     const filteredMovements = useMemo(
