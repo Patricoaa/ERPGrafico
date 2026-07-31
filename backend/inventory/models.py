@@ -1265,6 +1265,14 @@ class Stock(models.Model):
         return self.quantity - self.reserved_quantity
 
 
+# Virtual locations that represent inventory adjustments (merma, sobrante, revalorización).
+ADJUSTMENT_VIRTUAL_NAMES = (
+    "Ajuste por Merma/Pérdida",
+    "Ajuste por Sobrante/Ganancia",
+    "Revalorización",
+)
+
+
 class StockMove(models.Model):
     class Type(models.TextChoices):
         IN = "IN", _("Entrada")
@@ -1342,6 +1350,29 @@ class StockMove(models.Model):
     def display_id(self):
         from core.prefix_registry import EntityPrefix
         return f"{EntityPrefix.STOCK_MOVE}-{self.id}"
+
+    @property
+    def direction(self) -> str:
+        """Classifies the move into IN/OUT/TRANSFER/ADJUSTMENT/OTHER.
+
+        Priority:
+          - TRANSFER:   source and destination are both INTERNAL.
+          - ADJUSTMENT: either side is a VIRTUAL adjustment location.
+          - IN:         destination is INTERNAL (not covered above).
+          - OUT:        source is INTERNAL (not covered above).
+          - OTHER:      fallback (virtual↔virtual, vendor↔customer, ...).
+        """
+        src = self.source_location
+        dst = self.destination_location
+        if src.location_type == "INTERNAL" and dst.location_type == "INTERNAL":
+            return "TRANSFER"
+        if src.name in ADJUSTMENT_VIRTUAL_NAMES or dst.name in ADJUSTMENT_VIRTUAL_NAMES:
+            return "ADJUSTMENT"
+        if dst.location_type == "INTERNAL":
+            return "IN"
+        if src.location_type == "INTERNAL":
+            return "OUT"
+        return "OTHER"
 
     def save(self, *args, **kwargs):
         # Validate Accounting Period is not closed

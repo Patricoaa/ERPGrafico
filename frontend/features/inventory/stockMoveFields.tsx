@@ -1,5 +1,6 @@
 import { createEntityFields } from '@/components/shared'
 import { DataCell } from '@/components/shared'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { ArrowRightLeft } from 'lucide-react'
 
 export interface StockMove {
@@ -16,6 +17,7 @@ export interface StockMove {
     quantity: string
     uom_name: string
     description: string
+    direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
     related_documents: Array<{
         type: string
         id: number | string
@@ -29,7 +31,7 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         type: 'code',
         label: 'Folio',
         tableOptions: { width: 100 },
-        get: (m) => m.display_id ?? String(m.id),
+        get: (m) => formatEntityDisplay('inventory.stockmove', m as unknown as Record<string, unknown>),
     },
     productName: {
         key: 'product_name',
@@ -59,7 +61,11 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         label: 'Cantidad',
         fieldRole: 'flow',
         render: (m) => (
-            <DataCell.NumericFlow value={Number(m.quantity)} unit={m.uom_name} />
+            <DataCell.NumericFlow
+                value={Math.abs(Number(m.quantity))}
+                unit={m.uom_name}
+                direction={m.direction === 'IN' ? 'inflow' : m.direction === 'OUT' ? 'outflow' : 'neutral'}
+            />
         ),
     },
 })
