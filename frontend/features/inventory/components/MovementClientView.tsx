@@ -46,11 +46,11 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
         }
     }, [isOverLimit, totalCount])
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<StockMove>({
-        endpoint: '/inventory/stock-moves'
+        endpoint: '/inventory/moves'
     })
     const { openView } = useEntityRouteActions()
 
-    const viewingTransaction = selectedFromUrl ? { type: 'inventory' as TransactionType, id: selectedFromUrl.id } : null
+    const viewingTransaction = selectedFromUrl ? { type: 'stock_move' as TransactionType, id: selectedFromUrl.id } : null
 
     const actionsCtx: StockMoveActionsCtx = {
         onViewDetails: (id) => openView(id),
