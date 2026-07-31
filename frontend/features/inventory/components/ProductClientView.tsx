@@ -12,7 +12,7 @@ import type { BulkAction } from "@/components/shared"
 import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
-import { Plus, AlertTriangle, BarChart3, Boxes, Package, Store, Coins } from "lucide-react"
+import { Plus, AlertTriangle, BarChart3, Boxes, Package, Store, ShoppingCart, ShoppingBag } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
@@ -27,7 +27,7 @@ import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useProductAnalytics } from "@/features/inventory/hooks/useProductAnalytics"
 import type { AnalyticsPanelConfig } from "@/components/shared"
-import { formatMoney, formatQuantity } from "@/lib/money"
+import { formatQuantity } from "@/lib/money"
 import { type Product, type Restriction, type ProductFilters } from "@/features/inventory/types"
 import { productActions, type ProductActionsCtx } from "@/features/inventory/productActions"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -89,16 +89,19 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
     const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("catalogo")
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("resumen")
 
-    const analyticsData = useProductAnalytics({
+    const analyticsFilters = {
         search: filters.search,
         category: filters.category,
         product_type: filters.product_type,
         can_be_sold: filters.can_be_sold,
         can_be_purchased: filters.can_be_purchased,
         is_active: filters.is_active,
-    })
+    }
+    const resumenData = useProductAnalytics(analyticsFilters)
+    const ventasData = useProductAnalytics({ ...analyticsFilters, can_be_sold: true, price_field: "sale" })
+    const comprasData = useProductAnalytics({ ...analyticsFilters, can_be_purchased: true, price_field: "cost" })
 
     const { page, products, isLoading, refetch, updateProduct } = useProducts({
         filters,
@@ -279,13 +282,13 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             onTabChange: setAnalyticsActiveTab,
             tabs: [
                 {
-                    value: "catalogo",
-                    label: "Catálogo",
+                    value: "resumen",
+                    label: "Resumen",
                     icon: BarChart3,
-                    gridRows: "max-content 1fr 1fr",
+                    gridRows: "max-content 1fr",
                     columns: [
                         {
-                            id: "col-cat-1",
+                            id: "col-resumen-1",
                             weight: 1,
                             sections: [
                                 {
@@ -295,46 +298,32 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                         type: "stat-card",
                                         config: {
                                             label: "Total Productos",
-                                            value: formatQuantity(analyticsData.summary.totalProducts),
+                                            value: formatQuantity(resumenData.summary.totalProducts),
                                             icon: Package,
                                             accent: "primary",
                                             valueSize: "xl",
-                                            loading: analyticsData.analyticsLoading,
+                                            loading: resumenData.analyticsLoading,
                                         },
                                     },
                                 },
                                 {
                                     id: "type-distribution",
-                                    colSpan: 2,
+                                    colSpan: 1,
                                     content: {
                                         type: "stat-card",
                                         config: {
                                             label: "Distribución por Tipo",
                                             variant: "chart",
-                                            loading: analyticsData.analyticsLoading,
+                                            loading: resumenData.analyticsLoading,
                                             subtext: "Proporción del catálogo por tipo de producto",
-                                            chart: { type: "pie-chart", preset: "card", data: analyticsData.typePie, valueFormat: "number", compact: true },
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "price-range",
-                                    colSpan: 3,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Rango de Precio de Venta",
-                                            variant: "chart",
-                                            loading: analyticsData.analyticsLoading,
-                                            subtext: "Productos por rango de precio de lista",
-                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeBar, keys: ["productos"], indexBy: "rango", axisBottomLegend: "Rango", axisLeftLegend: "Productos" },
+                                            chart: { type: "pie-chart", preset: "card", data: resumenData.typePie, valueFormat: "number", compact: true },
                                         },
                                     },
                                 },
                             ],
                         },
                         {
-                            id: "col-cat-2",
+                            id: "col-resumen-2",
                             weight: 1,
                             sections: [
                                 {
@@ -344,32 +333,32 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                         type: "stat-card",
                                         config: {
                                             label: "Con Stock",
-                                            value: formatQuantity(analyticsData.summary.withStock),
+                                            value: formatQuantity(resumenData.summary.withStock),
                                             icon: Boxes,
                                             accent: "success",
                                             valueSize: "xl",
-                                            loading: analyticsData.analyticsLoading,
+                                            loading: resumenData.analyticsLoading,
                                         },
                                     },
                                 },
                                 {
-                                    id: "top-categories",
+                                    id: "availability-distribution",
                                     colSpan: 1,
                                     content: {
                                         type: "stat-card",
                                         config: {
-                                            label: "Top Categorías",
+                                            label: "Disponibilidad",
                                             variant: "chart",
-                                            loading: analyticsData.analyticsLoading,
-                                            subtext: "Productos por categoría",
-                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.categoryBar, keys: ["productos"], indexBy: "categoria", axisLeftLegend: "Productos" },
+                                            loading: resumenData.analyticsLoading,
+                                            subtext: "Productos para ventas vs compras",
+                                            chart: { type: "pie-chart", preset: "card", data: resumenData.availabilityPie, valueFormat: "number", compact: true },
                                         },
                                     },
                                 },
                             ],
                         },
                         {
-                            id: "col-cat-3",
+                            id: "col-resumen-3",
                             weight: 1,
                             sections: [
                                 {
@@ -379,11 +368,25 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                                         type: "stat-card",
                                         config: {
                                             label: "Agotados",
-                                            value: formatQuantity(analyticsData.summary.outOfStock),
+                                            value: formatQuantity(resumenData.summary.outOfStock),
                                             icon: Store,
                                             accent: "warning",
                                             valueSize: "xl",
-                                            loading: analyticsData.analyticsLoading,
+                                            loading: resumenData.analyticsLoading,
+                                        },
+                                    },
+                                },
+                                {
+                                    id: "category-distribution",
+                                    colSpan: 1,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Distribución por Categoría",
+                                            variant: "chart",
+                                            loading: resumenData.analyticsLoading,
+                                            subtext: "Productos por categoría",
+                                            chart: { type: "pie-chart", preset: "card", data: resumenData.categoryPie, valueFormat: "number", compact: true },
                                         },
                                     },
                                 },
@@ -392,125 +395,124 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     ],
                 },
                 {
-                    value: "stock",
-                    label: "Stock",
-                    icon: Boxes,
-                    gridRows: "max-content 1fr 1fr",
+                    value: "ventas",
+                    label: "Ventas",
+                    icon: ShoppingCart,
+                    gridRows: "max-content 1fr",
                     columns: [
                         {
-                            id: "col-stock-1",
+                            id: "col-ventas-1",
                             weight: 1,
                             sections: [
                                 {
-                                    id: "kpi-total-value",
-                                    colSpan: 1,
+                                    id: "kpi-sellable",
+                                    colSpan: 2,
                                     content: {
                                         type: "stat-card",
                                         config: {
-                                            label: "Valor de Inventario",
-                                            value: formatMoney(analyticsData.summary.totalValue),
-                                            icon: Coins,
+                                            label: "Disponibles para Venta",
+                                            value: formatQuantity(ventasData.summary.totalProducts),
+                                            icon: ShoppingCart,
                                             accent: "primary",
                                             valueSize: "xl",
-                                            loading: analyticsData.analyticsLoading,
+                                            loading: ventasData.analyticsLoading,
                                         },
                                     },
                                 },
                                 {
-                                    id: "top-by-value",
-                                    colSpan: 2,
+                                    id: "ventas-type-distribution",
+                                    colSpan: 1,
                                     content: {
                                         type: "stat-card",
                                         config: {
-                                            label: "Top Productos por Valor de Stock",
+                                            label: "Distribución por Tipo",
                                             variant: "chart",
-                                            loading: analyticsData.analyticsLoading,
-                                            subtext: "Productos con mayor capital inmovilizado",
-                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.topByStockValueBar, keys: ["valor"], indexBy: "producto", axisLeftLegend: "Valor" },
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "top-by-units",
-                                    colSpan: 2,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Top Productos por Unidades",
-                                            variant: "chart",
-                                            loading: analyticsData.analyticsLoading,
-                                            subtext: "Productos con mayor cantidad en stock",
-                                            chart: { type: "bar-chart", preset: "card", data: analyticsData.topByUnitsBar, keys: ["unidades"], indexBy: "producto", axisLeftLegend: "Unidades" },
+                                            loading: ventasData.analyticsLoading,
+                                            subtext: "Tipos de producto vendibles",
+                                            chart: { type: "pie-chart", preset: "card", data: ventasData.typePie, valueFormat: "number", compact: true },
                                         },
                                     },
                                 },
                             ],
                         },
                         {
-                            id: "col-stock-2",
+                            id: "col-ventas-2",
                             weight: 1,
                             sections: [
                                 {
-                                    id: "kpi-total-units",
+                                    id: "ventas-price-range",
                                     colSpan: 1,
                                     content: {
                                         type: "stat-card",
                                         config: {
-                                            label: "Unidades en Stock",
-                                            value: formatQuantity(analyticsData.summary.totalUnits),
-                                            icon: Package,
-                                            accent: "info",
+                                            label: "Rango de Precio de Venta",
+                                            variant: "chart",
+                                            loading: ventasData.analyticsLoading,
+                                            subtext: "Productos vendibles por rango de precio de lista",
+                                            chart: { type: "bar-chart", preset: "card", data: ventasData.priceRangeBar, keys: ["productos"], indexBy: "rango", axisBottomLegend: "Rango", axisLeftLegend: "Productos" },
+                                        },
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    value: "compras",
+                    label: "Compras",
+                    icon: ShoppingBag,
+                    gridRows: "max-content 1fr",
+                    columns: [
+                        {
+                            id: "col-compras-1",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "kpi-purchasable",
+                                    colSpan: 2,
+                                    content: {
+                                        type: "stat-card",
+                                        config: {
+                                            label: "Disponibles para Compra",
+                                            value: formatQuantity(comprasData.summary.totalProducts),
+                                            icon: ShoppingBag,
+                                            accent: "primary",
                                             valueSize: "xl",
-                                            loading: analyticsData.analyticsLoading,
+                                            loading: comprasData.analyticsLoading,
                                         },
                                     },
                                 },
                                 {
-                                    id: "value-by-category",
+                                    id: "compras-type-distribution",
                                     colSpan: 1,
                                     content: {
                                         type: "stat-card",
                                         config: {
-                                            label: "Valor por Categoría",
+                                            label: "Distribución por Tipo",
                                             variant: "chart",
-                                            loading: analyticsData.analyticsLoading,
-                                            subtext: "Distribución del valor de stock entre categorías",
-                                            chart: { type: "pie-chart", preset: "card", data: analyticsData.stockValueByCategoryPie, valueFormat: "currency", compact: true },
+                                            loading: comprasData.analyticsLoading,
+                                            subtext: "Tipos de producto comprables",
+                                            chart: { type: "pie-chart", preset: "card", data: comprasData.typePie, valueFormat: "number", compact: true },
                                         },
                                     },
                                 },
                             ],
                         },
                         {
-                            id: "col-stock-3",
+                            id: "col-compras-2",
                             weight: 1,
                             sections: [
                                 {
-                                    id: "kpi-with-stock-stock",
+                                    id: "compras-price-range",
                                     colSpan: 1,
                                     content: {
                                         type: "stat-card",
                                         config: {
-                                            label: "Con Stock",
-                                            value: formatQuantity(analyticsData.summary.withStock),
-                                            icon: Boxes,
-                                            accent: "success",
-                                            valueSize: "xl",
-                                            loading: analyticsData.analyticsLoading,
-                                        },
-                                    },
-                                },
-                                {
-                                    id: "value-by-type",
-                                    colSpan: 1,
-                                    content: {
-                                        type: "stat-card",
-                                        config: {
-                                            label: "Valor por Tipo",
+                                            label: "Rango de Precio de Compra",
                                             variant: "chart",
-                                            loading: analyticsData.analyticsLoading,
-                                            subtext: "Distribución del valor de stock por tipo de producto",
-                                            chart: { type: "pie-chart", preset: "card", data: analyticsData.stockValueByTypePie, valueFormat: "currency", compact: true },
+                                            loading: comprasData.analyticsLoading,
+                                            subtext: "Productos comprables por rango de costo ponderado",
+                                            chart: { type: "bar-chart", preset: "card", data: comprasData.priceRangeBar, keys: ["productos"], indexBy: "rango", axisBottomLegend: "Rango", axisLeftLegend: "Productos" },
                                         },
                                     },
                                 },
@@ -520,7 +522,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                 },
             ],
         },
-    }), [analyticsActiveTab, analyticsData])
+    }), [analyticsActiveTab, resumenData, ventasData, comprasData])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

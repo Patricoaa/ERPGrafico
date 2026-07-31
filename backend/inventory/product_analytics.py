@@ -4,12 +4,12 @@ product_analytics.py — Analytics & aggregated KPIs for the products catalog.
 Provides decision-oriented metrics over Product rows plus their current stock:
 
   - Catalog type distribution (STORABLE / CONSUMABLE / SERVICE / MANUFACTURABLE / SUBSCRIPTION).
+  - Availability distribution (sellable × purchasable combos).
   - Catalog category distribution (top categories by product count).
-  - Sale-price range distribution (histogram over ``sale_price``).
+  - Price-range distribution (histogram over ``sale_price`` or ``cost_price``,
+    selected via ``price_field`` on the consolidated endpoint).
   - Status distribution (active vs archived).
   - Stock summary KPIs (total products, with stock, out-of-stock, units, value).
-  - Stock value by category and by product type.
-  - Top products by stock value and by on-hand units.
 
 Stock value = ``Sum(Stock.quantity) × Product.cost_price`` (current snapshot; products
 have no temporal dimension, so the analytics panel omits the granularity control).
@@ -48,6 +48,18 @@ PRICE_RANGES = (
     (100_000, 500_000, "100.000 – 500.000"),
     (500_000, 1_000_000, "500.000 – 1.000.000"),
     (1_000_000, None, "> 1.000.000"),
+)
+
+PRICE_FIELDS = {
+    "sale": "sale_price",
+    "cost": "cost_price",
+}
+
+AVAILABILITY_BUCKETS = (
+    (True, True, "Venta y compra"),
+    (True, False, "Solo venta"),
+    (False, True, "Solo compra"),
+    (False, False, "Sin disponibilidad"),
 )
 
 
@@ -109,14 +121,17 @@ class ProductAnalyticsService:
         )
 
     @staticmethod
-    def _price_bucket_annotation() -> Case:
-        """Classifies each product's ``sale_price`` into a fixed bucket at DB level."""
+    def _price_bucket_annotation(price_field: str = "sale_price") -> Case:
+        """Classifies each product's ``price_field`` into a fixed bucket at DB level."""
         whens = []
         for low, high, label in PRICE_RANGES:
             if high is None:
                 continue
             whens.append(
-                When(Q(sale_price__gte=low) & Q(sale_price__lt=high), then=Value(label))
+                When(
+                    Q(**{f"{price_field}__gte": low}) & Q(**{f"{price_field}__lt": high}),
+                    then=Value(label),
+                )
             )
         return Case(*whens, default=Value(PRICE_RANGES[-1][2]), output_field=CharField())
 
@@ -164,6 +179,31 @@ class ProductAnalyticsService:
         ]
 
     @staticmethod
+    def get_availability_distribution(
+        search: str | None = None,
+        category_id: int | None = None,
+        product_type: str | None = None,
+        can_be_sold: bool | None = None,
+        can_be_purchased: bool | None = None,
+        is_active: bool | None = True,
+    ) -> list[dict]:
+        """Product count per sellable × purchasable combo, in canonical order."""
+        qs = ProductAnalyticsService._base_queryset(
+            search=search,
+            category_id=category_id,
+            product_type=product_type,
+            can_be_sold=can_be_sold,
+            can_be_purchased=can_be_purchased,
+            is_active=is_active,
+        )
+        rows = qs.values("can_be_sold", "can_be_purchased").annotate(value=Count("id"))
+        by_combo = {(row["can_be_sold"], row["can_be_purchased"]): row["value"] for row in rows}
+        return [
+            {"id": label, "label": label, "value": by_combo.get((sold, purch), 0)}
+            for sold, purch, label in AVAILABILITY_BUCKETS
+        ]
+
+    @staticmethod
     def get_catalog_category_distribution(
         limit: int = 8,
         search: str | None = None,
@@ -191,6 +231,7 @@ class ProductAnalyticsService:
 
     @staticmethod
     def get_price_range_distribution(
+        price_field: str = "sale_price",
         search: str | None = None,
         category_id: int | None = None,
         product_type: str | None = None,
@@ -198,7 +239,7 @@ class ProductAnalyticsService:
         can_be_purchased: bool | None = None,
         is_active: bool | None = True,
     ) -> list[dict]:
-        """Histogram of ``sale_price`` buckets, in canonical bucket order."""
+        """Histogram of ``price_field`` buckets, in canonical bucket order."""
         qs = ProductAnalyticsService._base_queryset(
             search=search,
             category_id=category_id,
@@ -208,11 +249,10 @@ class ProductAnalyticsService:
             is_active=is_active,
         )
         rows = (
-            qs.annotate(bucket=ProductAnalyticsService._price_bucket_annotation())
+            qs.annotate(bucket=ProductAnalyticsService._price_bucket_annotation(price_field))
             .values("bucket")
             .annotate(value=Count("id"))
         )
-        order = {label: i for i, (_, _, label) in enumerate(PRICE_RANGES)}
         by_bucket = {row["bucket"]: row["value"] for row in rows}
         return [
             {"id": label, "value": by_bucket.get(label, 0)} for _, _, label in PRICE_RANGES
@@ -275,130 +315,6 @@ class ProductAnalyticsService:
         }
 
     @staticmethod
-    def get_stock_value_by_category(
-        limit: int = 8,
-        search: str | None = None,
-        category_id: int | None = None,
-        product_type: str | None = None,
-        can_be_sold: bool | None = None,
-        can_be_purchased: bool | None = None,
-        is_active: bool | None = True,
-    ) -> list[dict]:
-        """Monetary stock value grouped by category, descending."""
-        rows = (
-            ProductAnalyticsService._base_queryset(
-                search=search,
-                category_id=category_id,
-                product_type=product_type,
-                can_be_sold=can_be_sold,
-                can_be_purchased=can_be_purchased,
-                is_active=is_active,
-            )
-            .filter(track_inventory=True)
-            .values("category__name")
-            .annotate(value=Sum(ProductAnalyticsService._stock_value_expression()))
-            .order_by("-value")[:limit]
-        )
-        return [{"id": row["category__name"], "value": str(row["value"])} for row in rows]
-
-    @staticmethod
-    def get_stock_value_by_type(
-        search: str | None = None,
-        category_id: int | None = None,
-        product_type: str | None = None,
-        can_be_sold: bool | None = None,
-        can_be_purchased: bool | None = None,
-        is_active: bool | None = True,
-    ) -> list[dict]:
-        """Monetary stock value grouped by product type, descending."""
-        rows = (
-            ProductAnalyticsService._base_queryset(
-                search=search,
-                category_id=category_id,
-                product_type=product_type,
-                can_be_sold=can_be_sold,
-                can_be_purchased=can_be_purchased,
-                is_active=is_active,
-            )
-            .filter(track_inventory=True)
-            .values("product_type")
-            .annotate(value=Sum(ProductAnalyticsService._stock_value_expression()))
-            .order_by("-value")
-        )
-        return [
-            {
-                "id": row["product_type"],
-                "label": ProductAnalyticsService.PRODUCT_TYPE_LABELS.get(
-                    row["product_type"], row["product_type"]
-                ),
-                "value": str(row["value"]),
-            }
-            for row in rows
-        ]
-
-    @staticmethod
-    def get_top_products_by_stock_value(
-        limit: int = 8,
-        search: str | None = None,
-        category_id: int | None = None,
-        product_type: str | None = None,
-        can_be_sold: bool | None = None,
-        can_be_purchased: bool | None = None,
-        is_active: bool | None = True,
-    ) -> list[dict]:
-        """Top products by monetary stock value, descending."""
-        qs = ProductAnalyticsService._base_queryset(
-            search=search,
-            category_id=category_id,
-            product_type=product_type,
-            can_be_sold=can_be_sold,
-            can_be_purchased=can_be_purchased,
-            is_active=is_active,
-        )
-        rows = []
-        for product in ProductAnalyticsService._stock_queryset(qs).order_by("-stock_value")[:limit]:
-            rows.append(
-                {
-                    "id": product.id,
-                    "name": product.name,
-                    "value": str(product.stock_value),
-                    "quantity": str(product.stock_qty),
-                }
-            )
-        return rows
-
-    @staticmethod
-    def get_top_products_by_units(
-        limit: int = 8,
-        search: str | None = None,
-        category_id: int | None = None,
-        product_type: str | None = None,
-        can_be_sold: bool | None = None,
-        can_be_purchased: bool | None = None,
-        is_active: bool | None = True,
-    ) -> list[dict]:
-        """Top products by on-hand units, descending."""
-        qs = ProductAnalyticsService._base_queryset(
-            search=search,
-            category_id=category_id,
-            product_type=product_type,
-            can_be_sold=can_be_sold,
-            can_be_purchased=can_be_purchased,
-            is_active=is_active,
-        )
-        rows = []
-        for product in ProductAnalyticsService._stock_queryset(qs).order_by("-stock_qty")[:limit]:
-            rows.append(
-                {
-                    "id": product.id,
-                    "name": product.name,
-                    "value": str(product.stock_qty),
-                    "amount": str(product.stock_value),
-                }
-            )
-        return rows
-
-    @staticmethod
     def get_consolidated(
         search: str | None = None,
         category_id: int | None = None,
@@ -406,21 +322,23 @@ class ProductAnalyticsService:
         can_be_sold: bool | None = None,
         can_be_purchased: bool | None = None,
         is_active: bool | None = True,
+        price_field: str = "sale",
     ) -> dict:
         """
         Single response aggregating all product-analytics dimensions for the
         analytics panel.
 
-        Keys map to the 2 decision-oriented tabs:
+        ``price_field`` selects which price is bucketed by the
+        ``price_range_distribution`` histogram: ``"sale"`` (sale_price) or
+        ``"cost"`` (cost_price). Defaults to ``"sale"``.
+
+        Keys map to the 3 decision-oriented tabs:
 
             - catalog_type_distribution: product count by type
+            - availability_distribution: sellable × purchasable combos
             - catalog_category_distribution: top categories by count
-            - price_range_distribution: sale-price histogram
+            - price_range_distribution: price histogram (sale or cost)
             - status_distribution: active vs archived
-            - stock_value_by_category: monetary value by category
-            - stock_value_by_type: monetary value by product type
-            - top_products_by_stock_value: top-N products by monetary value
-            - top_products_by_units: top-N products by on-hand units
             - summary: top-level KPIs
         """
         is_active_parsed = is_active
@@ -436,8 +354,18 @@ class ProductAnalyticsService:
                 return None
             return str(value).lower() == "true"
 
+        price_field = PRICE_FIELDS.get(price_field, PRICE_FIELDS["sale"])
+
         return {
             "catalog_type_distribution": ProductAnalyticsService.get_catalog_type_distribution(
+                search=search,
+                category_id=category_id,
+                product_type=product_type,
+                can_be_sold=_bools(can_be_sold),
+                can_be_purchased=_bools(can_be_purchased),
+                is_active=is_active_parsed,
+            ),
+            "availability_distribution": ProductAnalyticsService.get_availability_distribution(
                 search=search,
                 category_id=category_id,
                 product_type=product_type,
@@ -454,6 +382,7 @@ class ProductAnalyticsService:
                 is_active=is_active_parsed,
             ),
             "price_range_distribution": ProductAnalyticsService.get_price_range_distribution(
+                price_field=price_field,
                 search=search,
                 category_id=category_id,
                 product_type=product_type,
@@ -462,38 +391,6 @@ class ProductAnalyticsService:
                 is_active=is_active_parsed,
             ),
             "status_distribution": ProductAnalyticsService.get_status_distribution(
-                search=search,
-                category_id=category_id,
-                product_type=product_type,
-                can_be_sold=_bools(can_be_sold),
-                can_be_purchased=_bools(can_be_purchased),
-                is_active=is_active_parsed,
-            ),
-            "stock_value_by_category": ProductAnalyticsService.get_stock_value_by_category(
-                search=search,
-                category_id=category_id,
-                product_type=product_type,
-                can_be_sold=_bools(can_be_sold),
-                can_be_purchased=_bools(can_be_purchased),
-                is_active=is_active_parsed,
-            ),
-            "stock_value_by_type": ProductAnalyticsService.get_stock_value_by_type(
-                search=search,
-                category_id=category_id,
-                product_type=product_type,
-                can_be_sold=_bools(can_be_sold),
-                can_be_purchased=_bools(can_be_purchased),
-                is_active=is_active_parsed,
-            ),
-            "top_products_by_stock_value": ProductAnalyticsService.get_top_products_by_stock_value(
-                search=search,
-                category_id=category_id,
-                product_type=product_type,
-                can_be_sold=_bools(can_be_sold),
-                can_be_purchased=_bools(can_be_purchased),
-                is_active=is_active_parsed,
-            ),
-            "top_products_by_units": ProductAnalyticsService.get_top_products_by_units(
                 search=search,
                 category_id=category_id,
                 product_type=product_type,
