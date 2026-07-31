@@ -566,6 +566,7 @@ export function PartnersClientView({
                 onSuccess={() => refetch()}
                 initialPartnerId={contributionTarget.partnerId?.toString()}
                 initialAmount={contributionTarget.amount}
+                lockAmount={!!contributionTarget.amount}
             />
             <PartnerWithdrawalWizard
                 open={isWithdrawalOpen}

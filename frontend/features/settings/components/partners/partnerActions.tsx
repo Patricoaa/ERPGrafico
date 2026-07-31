@@ -30,7 +30,7 @@ export const partnerActions = createEntityActions<
         {
             action: "pay",
             icon: HandCoins,
-            label: "Registrar Pago de Capital",
+            label: "Registrar Pago de Capital Pendiente",
             className: "text-primary",
             onClick: () => ctx.onRegisterContribution(item.id, item.partner_pending_capital),
             visible: hasPendingCapital,

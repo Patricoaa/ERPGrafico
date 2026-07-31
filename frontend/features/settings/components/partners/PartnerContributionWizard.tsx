@@ -8,7 +8,8 @@ import {
     Package,
     Users,
     ArrowDownCircle,
-    Banknote
+    Banknote,
+    Lock
 } from "lucide-react"
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, RadioCard, GenericWizard, type WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
@@ -28,6 +29,7 @@ interface PartnerContributionWizardProps {
     onSuccess: () => void
     initialPartnerId?: string
     initialAmount?: string
+    lockAmount?: boolean
 }
 
 type ContributionMethod = "CASH" | "ASSETS"
@@ -37,7 +39,8 @@ export function PartnerContributionWizard({
     onOpenChange,
     onSuccess,
     initialPartnerId,
-    initialAmount
+    initialAmount,
+    lockAmount = false
 }: PartnerContributionWizardProps) {
     const [loading, setLoading] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
@@ -78,6 +81,15 @@ export function PartnerContributionWizard({
     useEffect(() => {
         if (open) {
             setTimeout(() => setLoading(true), 0)
+            if (initialAmount) {
+                setTimeout(() => {
+                    setCashData(prev => ({
+                        ...prev,
+                        amount: initialAmount,
+                        description: "Pago de capital pendiente"
+                    }))
+                }, 0)
+            }
             Promise.all([
                 partnersApi.getPartners(),
                 settingsApi.getWarehouses(),
@@ -154,9 +166,19 @@ export function PartnerContributionWizard({
         setIsCompleting(true)
         try {
             if (method === "CASH") {
+                const amountToSubmit = lockAmount && initialAmount
+                    ? parseFloat(initialAmount)
+                    : parseFloat(cashData.amount)
+
+                if (!amountToSubmit || amountToSubmit <= 0) {
+                    toast.error("El importe del pago debe ser mayor a cero.")
+                    setIsCompleting(false)
+                    return
+                }
+
                 await partnersApi.createTransaction(parseInt(partnerId), {
                     transaction_type: 'CAPITAL_CASH',
-                    amount: parseFloat(cashData.amount),
+                    amount: amountToSubmit,
                     date: cashData.date,
                     treasury_account_id: parseInt(cashData.treasuryAccountId),
                     description: cashData.description
@@ -266,12 +288,24 @@ export function PartnerContributionWizard({
                 : (!!assetData.productId && !!assetData.warehouseId && !!assetData.quantity && Number(assetData.unitCost) > 0),
             component: method === "CASH" ? (
                 <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    {lockAmount && (
+                        <Alert variant="info" className="py-2" icon={null}>
+                            <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2 text-info">
+                                    <Lock className="h-3.5 w-3.5" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Pago total del capital pendiente</span>
+                                </div>
+                                <span className="text-sm font-black text-info font-mono">{formatCurrency(parseFloat(cashData.amount) || 0)}</span>
+                            </div>
+                        </Alert>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledInput
                             label="Importe en Efectivo"
                             type="number"
                             value={cashData.amount}
                             onChange={(e) => setCashData(prev => ({ ...prev, amount: e.target.value }))}
+                            disabled={lockAmount}
                             className="font-mono text-lg font-black"
                             placeholder="0"
                             icon={<Banknote className="h-4 w-4 opacity-50" />}
