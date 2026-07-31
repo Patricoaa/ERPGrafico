@@ -45,13 +45,13 @@ export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
         label: "Resumen",
         surfaces: ["table"],
         render: (order) => {
-            const o = order as any;
+            const o = order;
             return (
                 <DataCell.WorkflowSummary
                     lines={o.lines}
                     total={parseFloat(String(o.total || 0))}
                     pending={parseFloat(String(o.pending_amount || 0))}
-                    deliveryDate={o.receipt_date}
+                    deliveryDate={o.receipt_date ?? undefined}
                 />
             )
         },

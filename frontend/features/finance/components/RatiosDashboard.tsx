@@ -306,7 +306,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     title="Salud Financiera General"
                     description="Índice normalizado 0–100 por indicador"
                     className="rounded-sm"
-                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "#1f77b4" }, { label: "Anterior", color: "#ff7f0e" }]} /> : undefined}
+                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "var(--chart-1)" }, { label: "Anterior", color: "var(--chart-4)" }]} /> : undefined}
                 >
                     <div className="h-full">
                         <RadarChart
@@ -325,7 +325,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     title="Capital de Trabajo"
                     description={`Activos y Pasivos Corrientes — Saldo: ${formatMoney(d.liquidity.current_assets - d.liquidity.current_liabilities)}`}
                     className="rounded-sm"
-                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "#1f77b4" }, { label: "Anterior", color: "#ff7f0e" }]} /> : undefined}
+                    headerRight={showComparison && cd ? <ChartLegend items={[{ label: "Actual", color: "var(--chart-1)" }, { label: "Anterior", color: "var(--chart-4)" }]} /> : undefined}
                 >
                     <div className="h-full">
                         <BarChart
@@ -359,7 +359,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                 <SectionCard
                     title="Estructura de Financiamiento"
                     description="Distribución entre Deuda y Patrimonio"
-                    headerRight={<ChartLegend items={[{ label: "Pasivos", color: "#1f77b4" }, { label: "Patrimonio", color: "#ff7f0e" }]} />}
+                    headerRight={<ChartLegend items={[{ label: "Pasivos", color: "var(--chart-1)" }, { label: "Patrimonio", color: "var(--chart-4)" }]} />}
                     className="rounded-sm"
                 >
                     {showComparison && cd ? (
@@ -424,7 +424,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                 <SectionCard
                     title="Composición de Activos"
                     description="Corrientes vs No Corrientes"
-                    headerRight={<ChartLegend items={[{ label: "Corrientes", color: "#1f77b4" }, { label: "No Corrientes", color: "#ff7f0e" }]} />}
+                    headerRight={<ChartLegend items={[{ label: "Corrientes", color: "var(--chart-1)" }, { label: "No Corrientes", color: "var(--chart-4)" }]} />}
                     className="rounded-sm"
                 >
                     {showComparison && cd ? (

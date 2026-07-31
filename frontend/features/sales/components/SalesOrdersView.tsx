@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, type AutoEntityCardProps } from '@/components/shared'
 import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
 import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
@@ -389,8 +389,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         return (
                             <AutoEntityCard
                                 key={data.id}
-                                data={data as any}
-                                fields={viewMode === 'orders' ? salesOrderFields as any : undefined as any}
+                                data={data as unknown as SaleOrder}
+                                fields={viewMode === 'orders' ? salesOrderFields as unknown as AutoEntityCardProps<SaleOrder>['fields'] : undefined as unknown as AutoEntityCardProps<SaleOrder>['fields']}
                                 entityLabel={label}
                                 onClick={() => toggleSelection(data.id)}
                                 isSelected={getSelectionId(data)}

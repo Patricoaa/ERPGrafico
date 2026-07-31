@@ -86,7 +86,7 @@ function BarChartRenderer(props: BarChartConfig) {
             {
                 id: "line",
                 label: props.lineOverlay.label,
-                color: props.lineOverlay.color ?? "#f59e0b",
+                color: props.lineOverlay.color ?? "var(--color-warning)",
             },
         ]
         : undefined

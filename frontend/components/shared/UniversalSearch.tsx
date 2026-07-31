@@ -217,7 +217,7 @@ export function UniversalSearch() {
                             <ul
                                 id="search-results"
                                 role="listbox"
-                                className="divide-y divide-white/5"
+                                className="divide-y divide-border/40"
                             >
                                 {isLoading && (
                                     <>

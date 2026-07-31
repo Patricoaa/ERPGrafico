@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { useForm, type Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -57,20 +57,17 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
 
     const width = formDrawerWidth("simple", !!initialData?.id)
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
+    const [lastResetId, setLastResetId] = useState<number | undefined>(undefined)
+    const [wasOpen, setWasOpen] = useState(false)
 
-    useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
+    if (open) {
         const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
+        const isNewOpen = !wasOpen
+        const isNewData = currentId !== lastResetId
 
         if (isNewOpen || isNewData) {
+            setWasOpen(true)
+            setLastResetId(currentId)
             if (initialData && Object.keys(initialData).length > 0) {
                 form.reset({ name: initialData.name || "" })
                 setAttrValues(initialData.values?.map((v) => v.value) ?? [])
@@ -78,10 +75,10 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
                 form.reset({ name: "" })
                 setAttrValues([])
             }
-            lastResetId.current = currentId
-            wasOpen.current = true
         }
-    }, [open, initialData, form])
+    } else if (wasOpen) {
+        setWasOpen(false)
+    }
 
     async function onSubmit(data: AttributeFormValues) {
         try {

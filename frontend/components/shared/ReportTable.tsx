@@ -199,17 +199,17 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                 <div className="flex items-center gap-1.5">
                                     {variance !== 0 && (
                                         variance > 0 ? (
-                                            <TrendingUp className={cn("h-3 w-3", isPositiveGood ? "text-emerald-500" : "text-rose-500")} />
+                                            <TrendingUp className={cn("h-3 w-3", isPositiveGood ? "text-success" : "text-destructive")} />
                                         ) : (
-                                            <TrendingDown className={cn("h-3 w-3", isPositiveGood ? "text-rose-500" : "text-emerald-500")} />
+                                            <TrendingDown className={cn("h-3 w-3", isPositiveGood ? "text-destructive" : "text-success")} />
                                         )
                                     )}
                                     <MoneyDisplay 
                                         amount={variance} 
                                         className={cn(
                                             "font-mono text-xs font-bold",
-                                            variance > 0 ? (isPositiveGood ? "text-emerald-500" : "text-rose-500") 
-                                                : variance < 0 ? (isPositiveGood ? "text-rose-500" : "text-emerald-500") : "text-muted-foreground"
+                                            variance > 0 ? (isPositiveGood ? "text-success" : "text-destructive") 
+                                                : variance < 0 ? (isPositiveGood ? "text-destructive" : "text-success") : "text-muted-foreground"
                                         )} 
                                     />
                                 </div>
@@ -291,7 +291,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                                 "transition-colors group/row",
                                                 drillable ? "cursor-pointer" : "cursor-default",
                                                 !isTotal && "hover:bg-muted/10",
-                                                isTotal ? "bg-primary/5 hover:bg-primary/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]" : "",
+                                                isTotal ? "bg-primary/5 hover:bg-primary/10 shadow-[inset_0_1px_0_oklch(var(--foreground-raw)/0.12)]" : "",
                                                 isRoot && !isTotal ? "bg-muted/5" : ""
                                             )}
                                         >

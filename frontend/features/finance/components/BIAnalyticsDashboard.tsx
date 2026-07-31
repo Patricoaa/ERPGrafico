@@ -77,6 +77,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
 
     const { data, isLoading, isError } = useBIAnalytics(params)
     const { data: compData } = useBIAnalytics(compParams)
+    const palette = useMemo(() => getChartPalette(), []);
 
     if (!data && !isLoading) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
@@ -107,7 +108,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
     
     // Nivo LineChart crashes with NaN if there's only 1 point or if all Y values are identical (e.g., all 0) and yScale is auto.
     const hasValidTrend = salesTrendData[0].data.length > 1 && Math.max(...salesTrendData[0].data.map(d => d.y)) > 0;
-    const palette = useMemo(() => getChartPalette(), []);
 
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando analytics de negocio">
@@ -125,7 +125,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         accent="primary"
                         className="h-full rounded-sm"
                     >
-                        <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${sales.growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${sales.growth >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {sales.growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                             {Math.abs(sales.growth)}% vs período anterior
                         </div>

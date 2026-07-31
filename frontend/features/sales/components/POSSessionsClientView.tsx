@@ -1,6 +1,5 @@
 "use client"
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -42,7 +41,7 @@ interface POSSessionsClientViewProps {
     hideHeader?: boolean
 }
 
-import { usePOSSessions } from "@/features/pos"
+import { usePOSSessions, usePOSSessionSummary } from "@/features/pos"
 import { posSessionUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 
 export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
@@ -62,11 +61,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 
     const reportSessionId = selectedFromUrl ? selectedFromUrl.id : null
-    const { data: queryReportData } = useQuery({
-        queryKey: ['pos-session-summary', reportSessionId],
-        queryFn: () => fetchPOSSessionSummary<Record<string, unknown>>(reportSessionId as number),
-        enabled: !!reportSessionId
-    })
+    const { data: queryReportData } = usePOSSessionSummary<Record<string, unknown>>(reportSessionId)
 
     const isReportDialogOpen = !!selectedFromUrl || manualReportData !== null
     const finalReportData = selectedFromUrl ? queryReportData : manualReportData

@@ -59,7 +59,7 @@ export function FunnelChart({
                 data={data as any}
                 margin={margin}
                 valueFormat={valueFormat as any}
-                colors={(d: any) => colorById[d.id as string | number] ?? "#6b7280"}
+                colors={(d: any) => colorById[d.id as string | number] ?? "var(--color-muted-foreground)"}
                 direction={direction}
                 shapeBlending={shapeBlending}
                 borderWidth={0}

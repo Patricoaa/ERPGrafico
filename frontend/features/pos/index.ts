@@ -6,5 +6,5 @@ export type {
 } from './types'
 export { Cart, CartItem, DraftCartsClientView, NumpadModal, PINPadModal, POSApprovalCard, POSCartItemsSkeleton, POSCheckoutHeader, POSClientView, POSGridSkeleton, POSLayoutSkeleton, POSReport, POSSearchSkeleton, POSShell, POSVariantSelectorModal, SalesOrdersDrawer, ScannerFeedback, SessionCloseModal, SessionControl } from './components'
 export { POSProvider, usePOS } from './contexts/POSProvider'
-export { usePOSSessions, fetchPOSSessionSummary } from './hooks/usePOSSessions'
+export { usePOSSessions, usePOSSessionSummary, fetchPOSSessionSummary } from './hooks/usePOSSessions'
 export type { POSReportData } from './components/POSReport'

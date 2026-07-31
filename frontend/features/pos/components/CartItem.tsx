@@ -266,7 +266,7 @@ function CartItemComponent({
                     <Button
                         variant="ghost"
                         className={cn(
-                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10 border-none shadow-none rounded-none",
+                            "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
                         )}
                         {...(isTouchMode ? {
@@ -311,7 +311,7 @@ function CartItemComponent({
                     <Button
                         variant="ghost"
                         className={cn(
-                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10 border-none shadow-none rounded-none",
+                            "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
                         )}
                         {...(isTouchMode ? {

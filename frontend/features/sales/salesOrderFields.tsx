@@ -51,7 +51,7 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
         label: "Resumen",
         surfaces: ["table"],
         render: (order) => {
-            const o = order as any;
+            const o = order as unknown as SaleOrder & { delivery_date?: string };
             return (
                 <DataCell.WorkflowSummary
                     lines={o.lines}

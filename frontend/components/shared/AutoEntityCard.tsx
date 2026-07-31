@@ -6,8 +6,7 @@ import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, getEntityIcon, type SubtitleItem } from "@/lib/entity-registry"
 import { resolveStatus } from "@/lib/badge-resolvers"
-import type { CardField } from "@/components/shared"
-import type { EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared/entity-fields"
+import type { CardField, EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared"
 
 const SUBTITLE_DOT_COLORS: Record<string, string> = {
     neutral:     'bg-muted-foreground',
