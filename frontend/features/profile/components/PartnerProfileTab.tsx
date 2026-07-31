@@ -7,7 +7,6 @@ import React, { useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Chip, ChartLegend, DataCell, DataTable, DataTableColumnHeader, SectionCard, SkeletonShell, StatCard, PieChart, StaleDataBanner } from '@/components/shared'
 import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
-import { User } from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { type PartnerTransaction, usePartners } from "@/features/contacts"
 import { LazyDrawer } from "@/features/_shared/transaction-drawer/drawerRegistry"
@@ -146,76 +145,75 @@ export function PartnerProfileTab({ contactId }: Props) {
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
             {isError && <StaleDataBanner className="mx-4 mt-2" />}
             <div className="h-full overflow-y-auto custom-scrollbar space-y-6">
-                {/* Top: KPI row — partner card + key metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-                    <StatCard
-                        label="Socio"
-                        value={contact.name}
-                        icon={User}
-                        subtext={partnerSince ? `Socio desde ${formatPlainDate(partnerSince)}` : "Socio desde —"}
-                        variant="default"
-                        accent="primary"
-                    />
-                    <StatCard
-                        label="Capital suscrito"
-                        value={formatCurrency(summary.total_contributions)}
-                        variant="default"
-                        accent="primary"
-                    />
-                    <StatCard
-                        label="Capital pagado"
-                        value={formatCurrency(summary.total_paid_in)}
-                        variant="default"
-                        accent="success"
-                    />
-                    <StatCard
-                        label="Retiro provisorio"
-                        value={formatCurrency(summary.provisional_withdrawals)}
-                        variant="default"
-                        accent="warning"
-                    />
-                    <StatCard
-                        label="Utilidades retenidas"
-                        value={formatCurrency(summary.earnings_balance)}
-                        variant="default"
-                        accent="info"
-                    />
-                </div>
+                {/* Top: Distribution chart (left, wider) + stacked KPIs (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <SectionCard
+                        title="Distribución de capital"
+                        description="Participación porcentual de los socios"
+                        headerRight={<ChartLegend items={pieData.map((d) => ({ label: String(d.id), color: d.color }))} />}
+                        chartHeight="320px"
+                        className="rounded-sm lg:col-span-2"
+                    >
+                        <div className="h-full">
+                            <PieChart
+                                data={pieData}
+                                activeId={contact.name}
+                                activeOuterRadiusOffset={14}
+                                activeInnerRadiusOffset={8}
+                                innerRadius={0.55}
+                                padAngle={1.5}
+                                cornerRadius={4}
+                                borderWidth={1.5}
+                                borderColor={{ theme: "background" }}
+                                enableArcLabels={false}
+                                enableArcLinkLabels={false}
+                                legends={[]}
+                                margin={{ top: 16, right: 16, bottom: 20, left: 16 }}
+                                centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
+                                renderTooltip={(datum) => (
+                                    <div className="flex items-center gap-2">
+                                        <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: datum.color }} />
+                                        <span className="font-medium">{String(datum.label ?? datum.id)}</span>
+                                        <span className="font-bold">{datum.value.toFixed(1)}%</span>
+                                    </div>
+                                )}
+                            />
+                        </div>
+                    </SectionCard>
 
-                {/* Middle: Distribution chart — analytics panel style */}
-                <SectionCard
-                    title="Distribución de capital"
-                    description="Participación porcentual de los socios"
-                    headerRight={<ChartLegend items={pieData.map((d) => ({ label: String(d.id), color: d.color }))} />}
-                    chartHeight="320px"
-                    className="rounded-sm"
-                >
-                    <div className="h-full">
-                        <PieChart
-                            data={pieData}
-                            activeId={contact.name}
-                            activeOuterRadiusOffset={14}
-                            activeInnerRadiusOffset={8}
-                            innerRadius={0.55}
-                            padAngle={1.5}
-                            cornerRadius={4}
-                            borderWidth={1.5}
-                            borderColor={{ theme: "background" }}
-                            enableArcLabels={false}
-                            enableArcLinkLabels={false}
-                            legends={[]}
-                            margin={{ top: 16, right: 16, bottom: 20, left: 16 }}
-                            centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
-                            renderTooltip={(datum) => (
-                                <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: datum.color }} />
-                                    <span className="font-medium">{String(datum.label ?? datum.id)}</span>
-                                    <span className="font-bold">{datum.value.toFixed(1)}%</span>
-                                </div>
-                            )}
+                    <div className="flex flex-col gap-3">
+                        <StatCard
+                            value={contact.name}
+                            subtext={partnerSince ? `Socio desde ${formatPlainDate(partnerSince)}` : "Socio desde —"}
+                            variant="default"
+                            accent="primary"
+                        />
+                        <StatCard
+                            label="Capital suscrito"
+                            value={formatCurrency(summary.total_contributions)}
+                            variant="default"
+                            accent="primary"
+                        />
+                        <StatCard
+                            label="Capital pagado"
+                            value={formatCurrency(summary.total_paid_in)}
+                            variant="default"
+                            accent="success"
+                        />
+                        <StatCard
+                            label="Retiro provisorio"
+                            value={formatCurrency(summary.provisional_withdrawals)}
+                            variant="default"
+                            accent="warning"
+                        />
+                        <StatCard
+                            label="Utilidades retenidas"
+                            value={formatCurrency(summary.earnings_balance)}
+                            variant="default"
+                            accent="info"
                         />
                     </div>
-                </SectionCard>
+                </div>
 
                 {/* Bottom: Capital History — flows naturally, page scrolls */}
                 <Card className="w-full">
