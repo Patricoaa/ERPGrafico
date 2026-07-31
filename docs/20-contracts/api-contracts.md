@@ -398,13 +398,15 @@ POST   /api/inventory/warehouses/       create
 PATCH  /api/inventory/warehouses/{id}/  update
 ```
 
-### stock-moves/
+### stock-moves/ (`moves`)
+
+Ruta real del router: `/api/inventory/moves/` (`StockMoveViewSet`, basename `stockmove`).
+Nota: `/inventory/stock-moves/` en el frontend es solo la ruta de navegación de detalle (redirige a la lista con `?selected=`).
 
 ```
-GET    /api/inventory/stock-moves/       list, paginated (filtros vía StockMoveFilter)
-POST   /api/inventory/stock-moves/       create (manual adjustment)
-GET    /api/inventory/stock-moves/{id}/  detail
-GET    /api/inventory/moves/analytics/   analytics — agregación servidor para el panel (ADR-0058)
+GET    /api/inventory/moves/              list, paginated (filtros vía StockMoveFilter)
+GET    /api/inventory/moves/{id}/         detail
+GET    /api/inventory/moves/analytics/    analytics — agregación servidor para el panel (ADR-0058)
 ```
 
 Response key fields:
