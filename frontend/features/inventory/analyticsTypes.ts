@@ -1,11 +1,13 @@
 // ── Analytics types for the stock-moves (Kardex) panel ────────
 //
 // These types model the decision-oriented dimensions of the Kardex
-// analytics view, aligned with the 4 tabs of the panel:
+// analytics view, aligned with the 3 tabs of the panel:
 //   A. Flujo de movimientos (flow_trend)
-//   B. Valorización (value_trend)
-//   C. Productos (top_products + category_distribution)
-//   D. Bodegas / ubicaciones (location_distribution)
+//   B. Productos (top_products + category_distribution)
+//   C. Bodegas / ubicaciones (location_distribution)
+//
+// value_trend remains part of the backend response but is no longer
+// rendered in the panel.
 //
 // All monetary/quantity values arrive as strings (Decimal) from the
 // backend and are parsed client-side where needed.
@@ -23,7 +25,7 @@ export interface FlowTrendRow {
     transferencias: string
 }
 
-// ── B. Value trend (Tab: Valor) ────────────────────────────────
+// ── B. Value trend (returned by the API, not rendered) ─────────
 
 export interface ValueTrendRow {
     period: string
@@ -44,7 +46,7 @@ export interface DirectionDistributionRow {
     amount: string
 }
 
-// ── C. Products (Tab: Productos) ───────────────────────────────
+// ── B. Products (Tab: Productos) ───────────────────────────────
 
 export interface TopProductRow {
     product_id: number
@@ -58,7 +60,7 @@ export interface CategoryDistributionRow {
     value: number
 }
 
-// ── D. Locations (Tab: Bodegas) ────────────────────────────────
+// ── C. Locations (Tab: Bodegas) ────────────────────────────────
 
 export interface LocationDistributionRow {
     id: string

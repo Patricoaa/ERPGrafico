@@ -86,5 +86,5 @@ La valorización agrega `Sum(F("quantity") * F("unit_cost"))` vía
 
 `inventory.stockmove` (Kardex) — `StockMoveAnalyticsService` en
 `backend/inventory/analytics.py`, endpoint `GET /api/inventory/moves/analytics/`,
-4 tabs (Flujo, Valor, Productos, Bodegas). Candidatos siguientes:
+3 tabs (Flujo, Productos, Bodegas). Candidatos siguientes:
 `treasury.treasurymovement`, `billing.invoice`.
