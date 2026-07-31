@@ -571,7 +571,7 @@ export const DataCell = {
 
                             return (
                                 <DropdownMenuItem
-                                    key={('action' in item && item.action) ? item.action : idx}
+                                    key={idx}
                                     variant={isDestructive ? 'destructive' : 'default'}
                                     disabled={'disabled' in item ? item.disabled : false}
                                     onClick={(e) => {
