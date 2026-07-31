@@ -10,7 +10,7 @@ import { Drawer, DataTable, SkeletonShell, DataCell, UnifiedSearchBar, useUnifie
 import { partnersApi } from "@/features/contacts"
 import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts"
 import { toast } from "sonner"
-import {parseDateOnly} from "@/lib/utils"
+import {parseDateOnly, formatPlainDate} from "@/lib/utils"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 
 import { type ColumnDef } from "@tanstack/react-table"
@@ -114,9 +114,19 @@ export function PartnerLedgerDrawer({
         {
             accessorKey: "date",
             header: () => <div className="text-center">Fecha</div>,
-            cell: ({ row }) => (
-                <DataCell.Date value={row.getValue("date")} />
-            )
+            cell: ({ row }) => {
+                const created = row.original.created_at
+                return (
+                    <div className="flex justify-center items-center w-full text-center text-sm font-sans font-medium text-foreground whitespace-nowrap">
+                        {formatPlainDate(row.original.date)}
+                        {created && (
+                            <span className="text-xs text-muted-foreground/60 ml-1.5">
+                                {new Date(created).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        )}
+                    </div>
+                )
+            }
         },
         {
             accessorKey: "transaction_type",
@@ -148,7 +158,11 @@ export function PartnerLedgerDrawer({
     // We need to calculate balance_after specifically for this partner's chronological list
     const transactionsWithBalance = React.useMemo(() => {
         if (!data?.transactions) return []
-        const sorted = [...data.transactions].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
+        const sorted = [...data.transactions].sort((a, b) => {
+            const dateDiff = parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
+            if (dateDiff !== 0) return dateDiff
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        })
         let balance = 0
         const withBal = sorted.map(tx => {
             const amount = parseFloat(tx.amount) || 0

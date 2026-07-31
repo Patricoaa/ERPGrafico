@@ -41,9 +41,11 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     const txsWithBalance = useMemo(() => {
         if (!statement?.transactions) return []
-        const sorted = [...statement.transactions].sort(
-            (a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
-        )
+        const sorted = [...statement.transactions].sort((a, b) => {
+            const dateDiff = parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
+            if (dateDiff !== 0) return dateDiff
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        })
         let balance = 0
         return sorted
             .map((tx) => {
@@ -73,11 +75,21 @@ export function PartnerProfileTab({ contactId }: Props) {
         {
             accessorKey: "date",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Fecha" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("date")} className="text-center" />
-                </div>
-            ),
+            cell: ({ row }) => {
+                const created = row.original.created_at
+                return (
+                    <div className="flex justify-center w-full">
+                        <div className="flex justify-center items-center w-full text-center text-sm font-sans font-medium text-foreground whitespace-nowrap">
+                            {formatPlainDate(row.original.date)}
+                            {created && (
+                                <span className="text-xs text-muted-foreground/60 ml-1.5">
+                                    {new Date(created).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "transaction_type",

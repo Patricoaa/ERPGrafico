@@ -113,7 +113,11 @@ export function PartnerLedgerTab() {
 
     // Calculate Running Balance
     const txsWithBalance = React.useMemo(() => {
-        const sorted = [...transactions].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
+        const sorted = [...transactions].sort((a, b) => {
+            const dateDiff = parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
+            if (dateDiff !== 0) return dateDiff
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        })
         const { result } = sorted.reduce<{ result: Array<PartnerTransaction & { balance_after: number }>, balance: number }>(
             (acc, tx) => {
                 const amount = parseFloat(tx.amount) || 0
@@ -144,12 +148,20 @@ export function PartnerLedgerTab() {
         {
             accessorKey: "date",
             header: "Fecha",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2 text-[10px] font-mono whitespace-nowrap opacity-80">
-                    <Calendar className="h-3 w-3 opacity-40 shrink-0" />
-                    {formatDate(row.getValue("date"))}
-                </div>
-            )
+            cell: ({ row }) => {
+                const created = row.original.created_at
+                return (
+                    <div className="flex items-center gap-2 text-[10px] font-mono whitespace-nowrap opacity-80">
+                        <Calendar className="h-3 w-3 opacity-40 shrink-0" />
+                        {formatDate(row.getValue("date"))}
+                        {created && (
+                            <span className="text-muted-foreground/60">
+                                {new Date(created).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        )}
+                    </div>
+                )
+            }
         },
         {
             accessorKey: "partner_name",
