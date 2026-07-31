@@ -90,36 +90,41 @@ export function resolveJournalEntryIcon(e: JournalEntryLike): MovementIconResult
 
 // ─── Inventory / Stock movements ──────────────────────────────────────────────
 
-type StockMoveType = "IN" | "OUT" | "INTERNAL" | "ADJUSTMENT" | string
+type StockMoveDirection = "IN" | "OUT" | "TRANSFER" | "ADJUSTMENT" | "OTHER" | string
 
 interface StockMoveLike {
-    move_type: StockMoveType
+    direction?: StockMoveDirection
 }
 
 /**
- * Resolves icon + className for a stock movement.
- * IN → entry (success), OUT → exit (destructive), INTERNAL → transfer (info), ADJUSTMENT → scale (warning).
+ * Resolves icon + className for a stock movement by its `direction`.
+ * IN → entry (success), OUT → exit (destructive), TRANSFER → move (info),
+ * ADJUSTMENT → refresh (warning), OTHER → neutral.
  */
 export function resolveStockMoveIcon(m: StockMoveLike): MovementIconResult {
-    const type = m.move_type
+    const type = m.direction
 
     const icon: LucideIcon =
         type === "IN"
             ? PackagePlus
             : type === "OUT"
                 ? PackageMinus
-                : type === "INTERNAL"
+                : type === "TRANSFER"
                     ? ArrowLeftRight
-                    : RefreshCw
+                    : type === "ADJUSTMENT"
+                        ? RefreshCw
+                        : ArrowLeftRight
 
     const iconClassName =
         type === "IN"
             ? "text-success bg-success/10"
             : type === "OUT"
                 ? "text-destructive bg-destructive/10"
-                : type === "INTERNAL"
+                : type === "TRANSFER"
                     ? "text-info bg-info/10"
-                    : "text-warning bg-warning/10"
+                    : type === "ADJUSTMENT"
+                        ? "text-warning bg-warning/10"
+                        : "text-muted-foreground bg-muted/10"
 
     return { icon, iconClassName }
 }

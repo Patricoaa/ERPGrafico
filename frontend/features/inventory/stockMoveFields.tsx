@@ -44,8 +44,8 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         label: 'Origen → Destino',
         render: (m) => (
             <div className="flex flex-col items-center gap-0.5 text-center">
-                <DataCell.Secondary>{m.source_location_name}</DataCell.Secondary>
-                <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                <DataCell.Text>{m.source_location_name}</DataCell.Text>
+                <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
                 <DataCell.Text>{m.destination_location_name}</DataCell.Text>
             </div>
         ),
