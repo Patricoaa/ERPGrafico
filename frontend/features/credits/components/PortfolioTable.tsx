@@ -16,14 +16,7 @@ import { SkeletonShell, ActionConfirmModal, DataCell, MoneyDisplay } from "@/com
 import { DataTable, createExpanderColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { formatMoney } from "@/lib/money"
-
-const agingLabel: Record<string, string> = {
-    current: "Al día",
-    overdue_30: "1-30 días",
-    overdue_60: "31-60 días",
-    overdue_90: "61-90 días",
-    overdue_90plus: "+90 días"
-}
+import { creditLedgerEntryFields } from "@/features/credits/creditLedgerEntryFields"
 
 function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact, onRefresh: () => void }) {
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
@@ -67,69 +60,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
     }
 
     const ledgerColumns = useMemo<ColumnDef<CreditLedgerEntry>[]>(() => [
-        {
-            id: "document",
-            header: "N° Documento",
-            cell: ({ row }) => <DataCell.Entity entityLabel="sales.saleorder" data={row.original as unknown as Record<string, unknown>} />
-        },
-        {
-            id: "date",
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date} />
-        },
-        {
-            id: "due_date",
-            header: "Vencimiento",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-1.5 w-full">
-                    <DataCell.Date value={row.original.due_date} />
-                    {row.original.days_overdue > 0 && (
-                        <span className="text-destructive font-bold text-[11px]">({row.original.days_overdue}d)</span>
-                    )}
-                </div>
-            )
-        },
-        {
-            id: "total",
-            header: "Total",
-            meta: { align: "right" },
-            cell: ({ row }) => <DataCell.Currency value={row.original.effective_total} />
-        },
-        {
-            id: "paid",
-            header: "Pagado",
-            meta: { align: "right" },
-            cell: ({ row }) => <DataCell.Currency value={row.original.paid_amount} className="text-success font-medium" />
-        },
-        {
-            id: "balance",
-            header: "Saldo",
-            meta: { align: "right" },
-            cell: ({ row }) => <DataCell.Currency value={row.original.balance} className="font-bold" />
-        },
-        {
-            id: "origin",
-            header: "Origen",
-            cell: ({ row }) => row.original.credit_assignment_origin_display ? (
-                <DataCell.Chip
-                    intent={row.original.credit_assignment_origin === "MANUAL" ? "neutral" : row.original.credit_assignment_origin === "SALE" ? "info" : "warning"}
-                    size="xs"
-                    className="w-fit"
-                >
-                    {row.original.credit_assignment_origin_display}
-                </DataCell.Chip>
-            ) : <span className="text-muted-foreground/30">—</span>
-        },
-        {
-            id: "status",
-            header: "Estado",
-            cell: ({ row }) => (
-                <DataCell.Status
-                    status={row.original.aging_bucket === 'current' ? 'SUCCESS' : (row.original.days_overdue > 60 ? 'ERROR' : 'WARNING')}
-                    label={agingLabel[row.original.aging_bucket]}
-                />
-            )
-        },
+        ...creditLedgerEntryFields.toColumns(),
         {
             id: "actions",
             header: "",

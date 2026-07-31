@@ -6,32 +6,22 @@ import {
     Wallet,
     LogOut
 } from "lucide-react"
-import { Drawer, DataTable, SkeletonShell, DataCell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { Drawer, DataTable, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
-import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts"
+import { type PartnerStatement } from "@/features/contacts"
 import { toast } from "sonner"
-import {parseDateOnly, formatPlainDate} from "@/lib/utils"
+import { parseDateOnly } from "@/lib/utils"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 
-import { type ColumnDef } from "@tanstack/react-table"
+import {
+    partnerLedgerFields,
+    isInflowType,
+    isOutflowType,
+    PARTNER_TRANSACTION_TYPE_OPTIONS,
+    type PartnerLedgerRow,
+} from "@/features/settings/partnerLedgerFields"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
-
-const TRANSACTION_TYPE_OPTIONS = [
-    { value: "SUBSCRIPTION", label: "Suscripción de Capital" },
-    { value: "REDUCTION", label: "Reducción de Capital" },
-    { value: "CAPITAL_CASH", label: "Aporte Efectivo" },
-    { value: "CAPITAL_INVENTORY", label: "Aporte en Bienes" },
-    { value: "PROV_WITHDRAWAL", label: "Retiro Provisorio" },
-    { value: "WITHDRAWAL", label: "Retiro de Utilidades" },
-    { value: "DIVIDEND", label: "Distribución" },
-    { value: "DIVIDEND_PAY", label: "Pago de Dividendo" },
-    { value: "REINVESTMENT", label: "Reinversión" },
-    { value: "RETAINED", label: "Utilidades Retenidas" },
-    { value: "LOSS_ABSORB", label: "Absorción" },
-    { value: "TRANSFER_IN", label: "Transferencia (In)" },
-    { value: "TRANSFER_OUT", label: "Transferencia (Out)" },
-]
 
 interface PartnerLedgerDrawerProps {
     open: boolean
@@ -59,7 +49,7 @@ export function PartnerLedgerDrawer({
                 key: 'transaction_type',
                 label: 'Tipo',
                 serverParam: 'transaction_type',
-                options: TRANSACTION_TYPE_OPTIONS,
+                options: PARTNER_TRANSACTION_TYPE_OPTIONS,
             },
         ],
     }), [])
@@ -90,73 +80,10 @@ export function PartnerLedgerDrawer({
         }
     }, [open, partnerId])
 
-    const isInflow = (type: string) => [
-        'CAPITAL_CASH', 'CAPITAL_INVENTORY',
-        'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'
-    ].includes(type)
-
-    const isOutflow = (type: string) => [
-        'WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION',
-        'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
-    ].includes(type)
-
-    const getStatus = (type: string) => {
-        if (type === 'SUBSCRIPTION') return 'info'
-        if (type.includes('TRANSFER')) return 'warning'
-        if (isInflow(type)) return 'success'
-        if (isOutflow(type)) return 'destructive'
-        return 'neutral'
-    }
-
-    type TransactionWithBalance = PartnerTransaction & { balance_after: number }
-
-    const columns: ColumnDef<TransactionWithBalance>[] = [
-        {
-            accessorKey: "date",
-            header: () => <div className="text-center">Fecha</div>,
-            cell: ({ row }) => {
-                const created = row.original.created_at
-                return (
-                    <div className="flex justify-center items-center w-full text-center text-sm font-sans font-medium text-foreground whitespace-nowrap">
-                        {formatPlainDate(row.original.date)}
-                        {created && (
-                            <span className="text-xs text-muted-foreground/60 ml-1.5">
-                                {new Date(created).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                        )}
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "transaction_type",
-            header: () => <div className="text-center">Tipo</div>,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.original.transaction_type_display}
-                </DataCell.Text>
-            )
-        },
-        {
-            accessorKey: "amount",
-            header: () => <div className="text-center">Monto</div>,
-            cell: ({ row }) => {
-                const type = row.original.transaction_type
-                const direction = isInflow(type) ? 'inflow' : isOutflow(type) ? 'outflow' : 'neutral' as const
-                return <DataCell.CurrencyFlow value={row.getValue("amount")} direction={direction} />
-            }
-        },
-        {
-            accessorKey: "balance_after",
-            header: () => <div className="text-center">Saldo</div>,
-            cell: ({ row }) => (
-                <DataCell.Currency value={row.getValue("balance_after")} className="text-right font-mono text-[11px] font-black" />
-            )
-        },
-    ]
+    const columns = partnerLedgerFields.toColumns()
 
     // We need to calculate balance_after specifically for this partner's chronological list
-    const transactionsWithBalance = React.useMemo(() => {
+    const transactionsWithBalance = React.useMemo<PartnerLedgerRow[]>(() => {
         if (!data?.transactions) return []
         const sorted = [...data.transactions].sort((a, b) => {
             const dateDiff = parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
@@ -166,8 +93,8 @@ export function PartnerLedgerDrawer({
         let balance = 0
         const withBal = sorted.map(tx => {
             const amount = parseFloat(tx.amount) || 0
-            if (isInflow(tx.transaction_type)) balance += amount
-            else if (isOutflow(tx.transaction_type)) balance -= amount
+            if (isInflowType(tx.transaction_type)) balance += amount
+            else if (isOutflowType(tx.transaction_type)) balance -= amount
             return { ...tx, balance_after: balance }
         })
         return withBal.reverse()
