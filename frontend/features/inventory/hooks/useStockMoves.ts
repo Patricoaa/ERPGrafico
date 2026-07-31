@@ -19,6 +19,7 @@ export interface StockMove {
     quantity: string
     uom_name: string
     description: string
+    direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
     related_documents: Array<{
         type: string
         id: number | string

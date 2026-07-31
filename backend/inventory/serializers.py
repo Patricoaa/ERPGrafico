@@ -732,6 +732,7 @@ class StockMoveSerializer(serializers.ModelSerializer):
     related_documents = serializers.SerializerMethodField()
     reference = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
+    direction = serializers.CharField(read_only=True)
 
     class Meta:
         model = StockMove

@@ -22,7 +22,7 @@ from django.db.models import Case, CharField, Count, DecimalField, ExpressionWra
 from django.db.models.functions import TruncDay, TruncMonth, TruncYear
 from django.utils.timezone import now
 
-from .models import StockMove
+from .models import ADJUSTMENT_VIRTUAL_NAMES, StockMove
 
 
 class StockMoveAnalyticsService:
@@ -37,13 +37,6 @@ class StockMoveAnalyticsService:
     )
 
     DIRECTION_KEYS = ("IN", "OUT", "TRANSFER", "ADJUSTMENT", "OTHER")
-
-    # Virtual locations that represent inventory adjustments (merma, sobrante, revalorización).
-    _ADJUSTMENT_VIRTUAL_NAMES = (
-        "Ajuste por Merma/Pérdida",
-        "Ajuste por Sobrante/Ganancia",
-        "Revalorización",
-    )
 
     # ── Query building ──────────────────────────────────────────
 
@@ -98,7 +91,7 @@ class StockMoveAnalyticsService:
           - OUT:        source is INTERNAL (not covered above).
           - OTHER:      fallback (virtual↔virtual, vendor↔customer, ...).
         """
-        adjustment_names = StockMoveAnalyticsService._ADJUSTMENT_VIRTUAL_NAMES
+        adjustment_names = ADJUSTMENT_VIRTUAL_NAMES
 
         return Case(
             When(
