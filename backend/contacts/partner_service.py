@@ -560,6 +560,7 @@ class PartnerService:
         date,
         description: str = "",
         created_by=None,
+        is_payment: bool = False,
     ) -> PartnerTransaction:
         """
         Records a formal capital reduction.
@@ -745,7 +746,7 @@ class PartnerService:
         buyer_receivable_account = PartnerService._resolve_partner_receivable_account(buyer)
 
         entry = JournalEntry.objects.create(
-            description=GlosaBuilder.build(GlosaBuilder.TRANSFERENCIA_CAPITAL, transfer.display_id, f"{seller.name} → {buyer.name}", amount),
+            description=GlosaBuilder.build(GlosaBuilder.TRANSFERENCIA_CAPITAL, seller.display_id, f"{seller.name} → {buyer.name}", amount),
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -753,7 +754,7 @@ class PartnerService:
             entry=entry,
             account=seller_receivable_account,
             partner=seller,
-            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"{seller.name} → {buyer.name}", transfer.display_id),
+            label=GlosaBuilder.item(Roles.CAPITAL_SOCIAL, f"{seller.name} → {buyer.name}", seller.display_id),
             debit=amount,
             credit=0,
         )
@@ -761,7 +762,7 @@ class PartnerService:
             entry=entry,
             account=buyer_receivable_account,
             partner=buyer,
-            label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, buyer.name, transfer.display_id),
+            label=GlosaBuilder.item(Roles.CAPITAL_COBRAR, buyer.name, seller.display_id),
             debit=0,
             credit=amount,
         )
