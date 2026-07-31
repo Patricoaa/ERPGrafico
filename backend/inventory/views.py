@@ -161,6 +161,22 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
         )
         return Response(data)
 
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        from .product_analytics import ProductAnalyticsService
+
+        params = request.query_params
+        return Response(
+            ProductAnalyticsService.get_consolidated(
+                search=params.get("search"),
+                category_id=params.get("category"),
+                product_type=params.get("product_type"),
+                can_be_sold=params.get("can_be_sold"),
+                can_be_purchased=params.get("can_be_purchased"),
+                is_active=params.get("is_active"),
+            )
+        )
+
     @action(detail=True, methods=["get"])
     def insights(self, request, pk=None):
         """
