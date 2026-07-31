@@ -2,11 +2,11 @@
 import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 
 import { ActionConfirmModal, BaseModal, CancelButton, DataCell, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { partnersApi } from "@/features/contacts"
+import { partnersApi, netEquityPercentages } from "@/features/contacts"
 import { settingsApi } from "../../hooks"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
@@ -69,6 +69,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
     // Selected partner info
     const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
+    const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
     const subscribedCapital = Number(selectedPartner?.partner_total_contributions || 0)
     const isReduction = formData.type === "REDUCTION"
     const amountNum = parseFloat(formData.amount) || 0
@@ -150,7 +151,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                             </div>
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-muted-foreground font-medium">Participación Actual</span>
-                                <span className="font-bold">{selectedPartner.partner_equity_percentage}%</span>
+                                <span className="font-bold">{equityPctById[selectedPartner.id] ?? "0"}%</span>
                             </div>
                         </div>
                     )}
@@ -257,6 +258,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
     // Seller info
     const seller = partners.find(p => p.id.toString() === formData.from_contact_id)
     const buyer = partners.find(p => p.id.toString() === formData.to_contact_id)
+    const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
     const sellerCapital = Number(seller?.partner_total_contributions || 0)
     const amountNum = parseFloat(formData.amount) || 0
     const exceedsCapital = amountNum > sellerCapital && sellerCapital > 0
@@ -335,7 +337,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                         />
                         {seller && (
                             <p className="text-[10px] text-muted-foreground font-medium mt-1">
-                                Capital suscrito: <span className="font-mono font-bold text-primary">{formatCurrency(sellerCapital)}</span> — Participación: <span className="font-bold">{seller.partner_equity_percentage}%</span>
+                                Capital suscrito: <span className="font-mono font-bold text-primary">{formatCurrency(sellerCapital)}</span> — Participación: <span className="font-bold">{equityPctById[seller.id] ?? "0"}%</span>
                             </p>
                         )}
                     </div>
@@ -352,7 +354,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                         />
                         {buyer && (
                             <p className="text-[10px] text-muted-foreground font-medium mt-1">
-                                Capital actual: <span className="font-mono font-bold">{formatCurrency(buyer.partner_total_contributions || 0)}</span> — Participación: <span className="font-bold">{buyer.partner_equity_percentage}%</span>
+                                Capital actual: <span className="font-mono font-bold">{formatCurrency(buyer.partner_total_contributions || 0)}</span> — Participación: <span className="font-bold">{equityPctById[buyer.id] ?? "0"}%</span>
                             </p>
                         )}
                     </div>

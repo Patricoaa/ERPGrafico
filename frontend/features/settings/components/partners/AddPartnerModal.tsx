@@ -7,7 +7,7 @@ import React, { useEffect, useState, useMemo } from "react"
 import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
 
 import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts"
+import { partnersApi, subscribedPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import {UserPlus, TrendingDown} from "lucide-react"
@@ -211,6 +211,7 @@ const projColumns: ColumnDef<ProjectionRow>[] = [
 ]
 
 function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]; projectedTotal: number; newAmount: number }) {
+    const subscribedPctById = useMemo(() => subscribedPercentages(partners), [partners])
     const rows: ProjectionRow[] = useMemo(() => {
         const existing: ProjectionRow[] = partners.map(p => {
             const contributions = typeof p.partner_total_contributions === "string"
@@ -222,7 +223,7 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
                 name: p.name,
                 type: "existing" as const,
                 capital: contributions,
-                currentPerc: `${p.partner_equity_percentage}%`,
+                currentPerc: `${subscribedPctById[p.id] ?? "0.00"}%`,
                 projectedPerc: `${projectedPerc}%`,
             }
         })
@@ -240,7 +241,7 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
                 projectedPerc: `${(newAmount / projectedTotal * 100).toFixed(2)}%`,
             },
         ]
-    }, [partners, projectedTotal, newAmount])
+    }, [partners, projectedTotal, newAmount, subscribedPctById])
 
     return (
         <DataTable
