@@ -21,9 +21,6 @@ export interface StockMoveAnalyticsData {
     analytics: StockMoveAnalyticsResponse | undefined
     analyticsLoading: boolean
     flowLineChart: Array<{ id: string; data: Array<{ x: string; y: number }> }>
-    valueBarData: Record<string, string | number>[]
-    directionDistributionPie: PieChartItem[]
-    directionAmountPie: PieChartItem[]
     topProductsBar: Record<string, string | number>[]
     categoryPie: PieChartItem[]
     locationBar: Record<string, string | number>[]
@@ -65,8 +62,6 @@ export function useStockMoveAnalytics(params: StockMoveAnalyticsParams = {}): St
 
     return useMemo(() => {
         const flow = analytics?.flow_trend ?? []
-        const valueTrend = analytics?.value_trend ?? []
-        const directions = analytics?.direction_distribution ?? []
         const topProducts = analytics?.top_products ?? []
         const categories = analytics?.category_distribution ?? []
         const locations = analytics?.location_distribution ?? []
@@ -90,25 +85,6 @@ export function useStockMoveAnalytics(params: StockMoveAnalyticsParams = {}): St
             },
         ]
 
-        const valueBarData = valueTrend.map(row => ({
-            period: formatPeriodKey(row.period, granularity),
-            entradas: parseFloat(row.entrada),
-            salidas: parseFloat(row.salida),
-            ajustes: parseFloat(row.ajuste),
-        }))
-
-        const directionDistributionPie: PieChartItem[] = assignChartColors(
-            directions
-                .filter(d => d.count > 0)
-                .map(d => ({ id: d.label, value: d.count })),
-        )
-
-        const directionAmountPie: PieChartItem[] = assignChartColors(
-            directions
-                .filter(d => parseFloat(d.amount) > 0)
-                .map(d => ({ id: d.label, value: parseFloat(d.amount) })),
-        )
-
         const topProductsBar = [...topProducts]
             .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount))
             .slice(0, 8)
@@ -129,9 +105,6 @@ export function useStockMoveAnalytics(params: StockMoveAnalyticsParams = {}): St
             analytics,
             analyticsLoading,
             flowLineChart,
-            valueBarData,
-            directionDistributionPie,
-            directionAmountPie,
             topProductsBar,
             categoryPie,
             locationBar,

@@ -16,9 +16,10 @@ interface MovementClientViewProps {
 
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { useStockMoveAnalytics } from "@/features/inventory/hooks/useStockMoveAnalytics"
-import { UnifiedSearchBar, useUnifiedSearch, MoneyDisplay, StatCard } from "@/components/shared"
+import { UnifiedSearchBar, useUnifiedSearch, StatCard, KPIWrapper, KPIValue } from "@/components/shared"
 import type { AnalyticsPanelConfig, Granularity } from "@/components/shared"
-import { TrendingUp, Coins, Package, Warehouse, ArrowLeftRight } from "lucide-react"
+import { TrendingUp, Package, Warehouse, ArrowDownLeft, ArrowUpRight } from "lucide-react"
+import { chartColor } from "@/lib/chart-colors"
 import { stockMoveUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
 import { toast } from "sonner"
 import React from "react"
@@ -71,9 +72,16 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
     })
 
     const analyticsPanel = useMemo<AnalyticsPanelConfig>(() => {
-        const summary = analyticsData.summary
         const hasFlowData = analyticsData.flowLineChart.some(series => series.data.some(d => d.y > 0))
-        const hasValueData = analyticsData.valueBarData.length > 0
+        const directions = analyticsData.analytics?.direction_distribution ?? []
+        const inRow = directions.find(d => d.id === "IN")
+        const outRow = directions.find(d => d.id === "OUT")
+        const inCount = inRow?.count ?? 0
+        const outCount = outRow?.count ?? 0
+        const inValue = inRow ? parseFloat(inRow.amount) : 0
+        const outValue = outRow ? parseFloat(outRow.amount) : 0
+        const entradaColor = chartColor(0)
+        const salidaColor = chartColor(1)
         const hasProducts = analyticsData.topProductsBar.length > 0
         const hasLocations = analyticsData.locationBar.length > 0
 
@@ -95,6 +103,69 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                 weight: 3,
                                 sections: [
                                     {
+                                        id: "kpi-row",
+                                        fillRemaining: false,
+                                        content: {
+                                            type: 'custom',
+                                            render: (
+                                                <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
+                                                    <KPIWrapper tooltip="Número de movimientos que ingresaron al inventario en el período: compras, devoluciones de clientes, transferencias entrantes y ajustes positivos.">
+                                                        <StatCard
+                                                            label="Cantidad de Entradas"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: entradaColor }}>
+                                                                <ArrowDownLeft className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={inCount} />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                    <KPIWrapper tooltip="Valor total de las unidades que ingresaron al inventario en el período (cantidad × costo unitario).">
+                                                        <StatCard
+                                                            label="Valor Total de Entradas"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: entradaColor }}>
+                                                                <ArrowDownLeft className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={inValue} isCurrency />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                    <KPIWrapper tooltip="Número de movimientos que salieron del inventario en el período: ventas, consumos de producción, transferencias salientes y ajustes negativos.">
+                                                        <StatCard
+                                                            label="Cantidad de Salidas"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: salidaColor }}>
+                                                                <ArrowUpRight className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={outCount} />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                    <KPIWrapper tooltip="Valor total de las unidades que salieron del inventario en el período (cantidad × costo unitario).">
+                                                        <StatCard
+                                                            label="Valor Total de Salidas"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: salidaColor }}>
+                                                                <ArrowUpRight className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={outValue} isCurrency />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                </div>
+                                            ),
+                                        },
+                                    },
+                                    {
                                         id: "flow-evolution",
                                         content: hasFlowData ? {
                                             type: 'stat-card',
@@ -114,120 +185,6 @@ export function MovementClientView({ createAction }: MovementClientViewProps) {
                                             type: 'custom',
                                             render: (
                                                 <p className="text-sm text-muted-foreground italic py-4 text-center">Sin movimientos en el período</p>
-                                            ),
-                                        },
-                                    },
-                                    {
-                                        id: 'kpi-cards',
-                                        content: summary ? {
-                                            type: 'custom',
-                                            render: (
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-                                                    <StatCard
-                                                        label="Movimientos"
-                                                        value={String(summary.total_movements)}
-                                                        variant="fill"
-                                                        accent="primary"
-                                                        icon={ArrowLeftRight}
-                                                    />
-                                                    <StatCard
-                                                        label="Entradas"
-                                                        value={`${summary.total_in_qty}`}
-                                                        subtext="unidades"
-                                                        variant="fill"
-                                                        accent="success"
-                                                        icon={TrendingUp}
-                                                    />
-                                                    <StatCard
-                                                        label="Salidas"
-                                                        value={`${summary.total_out_qty}`}
-                                                        subtext="unidades"
-                                                        variant="fill"
-                                                        accent="warning"
-                                                        icon={TrendingUp}
-                                                    />
-                                                    <StatCard
-                                                        label="Valor Total"
-                                                        value={<MoneyDisplay amount={parseFloat(summary.total_value)} inline />}
-                                                        variant="fill"
-                                                        accent="info"
-                                                        icon={Coins}
-                                                    />
-                                                </div>
-                                            ),
-                                        } : {
-                                            type: 'custom',
-                                            render: (
-                                                <p className="text-sm text-muted-foreground italic py-4 text-center">Sin KPIs disponibles</p>
-                                            ),
-                                        },
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                    {
-                        value: "valor",
-                        label: "Valor",
-                        icon: Coins,
-                        columns: [
-                            {
-                                id: "col-value-trend",
-                                weight: 2,
-                                sections: [
-                                    {
-                                        id: 'value-bar',
-                                        content: hasValueData ? {
-                                            type: 'stat-card',
-                                            config: {
-                                                label: 'Valorización por Período',
-                                                variant: 'chart',
-                                                chart: {
-                                                    type: 'bar-chart',
-                                                    preset: 'card',
-                                                    data: analyticsData.valueBarData,
-                                                    keys: ['entradas', 'salidas', 'ajustes'],
-                                                    indexBy: 'period',
-                                                    valueFormat: '$,.0f',
-                                                    showLegend: true,
-                                                },
-                                            },
-                                        } : {
-                                            type: 'custom',
-                                            render: (
-                                                <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de valorización</p>
-                                            ),
-                                        },
-                                    },
-                                ],
-                            },
-                            {
-                                id: "col-direction-value",
-                                weight: 1,
-                                sections: [
-                                    {
-                                        id: 'direction-value-donut',
-                                        content: analyticsData.directionAmountPie.length > 0 ? {
-                                            type: 'stat-card',
-                                            config: {
-                                                label: 'Valor por Tipo de Movimiento',
-                                                variant: 'chart',
-                                                chart: {
-                                                    type: 'pie-chart',
-                                                    preset: 'card',
-                                                    data: analyticsData.directionAmountPie,
-                                                    valueFormat: 'currency',
-                                                    enableLabels: true,
-                                                    arcLabel: (d: { value: number }) => {
-                                                        const total = analyticsData.directionAmountPie.reduce((s, item) => s + item.value, 0);
-                                                        return total > 0 ? `${Math.round((d.value / total) * 100)}%` : '';
-                                                    },
-                                                },
-                                            },
-                                        } : {
-                                            type: 'custom',
-                                            render: (
-                                                <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de valor</p>
                                             ),
                                         },
                                     },
