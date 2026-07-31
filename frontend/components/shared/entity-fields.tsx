@@ -54,7 +54,11 @@ type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_ty
  *
  * List column ordering (left → right):
  * `title` → `subtitle` → `header` → `detail` → `metric` → `footer`
- * Within the same zone, definition order (Object.entries insertion) is preserved.
+ * The `subtitle` zone mirrors the card's auto-composed subtitle (role priority:
+ * name → relation → temporal → primary-value → explicit subtitle), so list and card
+ * share the same ordering criteria. Within the same zone, definition order
+ * (Object.entries insertion) is preserved, except `header` which follows the card's
+ * header priority (complex → total/salary → primary-value → flow → tag).
  */
 export type Placement = 'title' | 'subtitle' | 'header' | 'detail' | 'metric' | 'footer'
 
@@ -297,6 +301,20 @@ function isPresentOnSurface<T>(def: FieldDef<T>, surface: FieldSurface): boolean
 
 function resolveValue<T>(def: FieldDef<T>, entity: T): unknown {
     return def.get ? def.get(entity) : entity[def.key as keyof T]
+}
+
+/**
+ * Card header priority index — mirrors AutoEntityCard.classifyFields header ordering.
+ * Lower wins. Used by toColumns() so the list's header zone follows the same criteria
+ * as the card.
+ */
+export function headerPriorityIndex(role: FieldRole, key: string): number {
+    if (role === 'complex') return 0
+    if (role === 'primary-value' && /total|salary/i.test(key)) return 1
+    if (role === 'primary-value') return 2
+    if (role === 'flow') return 3
+    if (role === 'tag') return 4
+    return 99
 }
 
 // ─── Cell Renderers ──────────────────────────────────────────────────────────
@@ -604,59 +622,73 @@ function extractTemplateKeys<T>(template: string): Set<string> {
 }
 
 /**
- * Computes which field keys the auto-compose subtitle (Priority 4) would consume.
- * Shared between resolveSubtitle (rendering) and getSubtitleExcludeKeys (exclusion).
+ * Computes the card's auto-composed subtitle field order.
+ * Shared between resolveSubtitle (card rendering) and toColumns (list ordering) so both
+ * surfaces follow the same criteria: primary-label (name) → relation → temporal →
+ * primary-value → explicit placement:'subtitle', up to 4 slots.
  *
- * Logic: up to 4 slots in order: primary-label (name) → relation → temporal → primary-value.
- * Plus any explicit placement:'subtitle' fields not yet consumed.
- * Only includes keys whose entity value is non-null (same as resolveSubtitle).
+ * Data-aware: when `entity` is provided, only fields whose value is non-null are included
+ * (used by the card). When `entity` is omitted (static mode, used by toColumns), all
+ * candidate fields are assumed present so the column order stays stable.
  */
-function computeAutoComposeKeys<T>(
+function buildSubtitleOrder<T>(
     defs: Record<string, FieldDef<T>>,
-    entity: T,
     titleKeys: Set<string>,
-): Set<string> {
+    entity?: T,
+): string[] {
     const allDefs = Object.values(defs)
-    const consumedKeys = new Set<string>()
+    const isPresent = (key: string): boolean => {
+        if (entity === undefined) return true
+        const raw = entity?.[key as keyof T]
+        return raw != null && raw !== ''
+    }
+
+    const order: string[] = []
 
     const nameDef = allDefs.find(d => {
         if (titleKeys.has(d.key)) return false
         const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
         return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
     })
-
-    if (nameDef) {
-        const raw = entity[nameDef.key as keyof T]
-        if (raw != null && raw !== '') consumedKeys.add(nameDef.key)
-    }
+    if (nameDef && isPresent(nameDef.key)) order.push(nameDef.key)
 
     const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
     for (const slotRole of slotRoles) {
-        if (consumedKeys.size >= 4) break
+        if (order.length >= 4) break
         const candidate = allDefs.find(d => {
-            if (consumedKeys.has(d.key)) return false
+            if (titleKeys.has(d.key)) return false
+            if (order.includes(d.key)) return false
             if (d.placement && d.placement !== 'subtitle') return false
             const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
             if (r !== slotRole) return false
             if (d.type === 'currency' && !/total/i.test(d.key)) return false
             return true
         })
-        if (candidate) {
-            const raw = entity[candidate.key as keyof T]
-            if (raw != null && raw !== '') consumedKeys.add(candidate.key)
-        }
+        if (candidate && isPresent(candidate.key)) order.push(candidate.key)
     }
 
     const explicitSubtitleFields = allDefs.filter(d =>
-        d.placement === 'subtitle' && !consumedKeys.has(d.key)
+        d.placement === 'subtitle' && !titleKeys.has(d.key) && !order.includes(d.key)
     )
     for (const d of explicitSubtitleFields) {
-        if (consumedKeys.size >= 4) break
-        const raw = entity[d.key as keyof T]
-        if (raw != null && raw !== '') consumedKeys.add(d.key)
+        if (order.length >= 4) break
+        if (isPresent(d.key)) order.push(d.key)
     }
 
-    return consumedKeys
+    return order
+}
+
+/**
+ * Computes which field keys the auto-compose subtitle (Priority 4) would consume.
+ * Set view of buildSubtitleOrder — used by getSubtitleExcludeKeys to keep the card
+ * from rendering the same field twice.
+ */
+function computeAutoComposeKeys<T>(
+    defs: Record<string, FieldDef<T>>,
+    entity: T,
+    titleKeys: Set<string>,
+): Set<string> {
+    return new Set(buildSubtitleOrder(defs, titleKeys, entity))
 }
 
 /**
@@ -744,12 +776,29 @@ export function createEntityFields<T>(): (
                 resolvedPlacements.set(fallback[1].key, 'title')
             }
 
+            // Mirror the card's auto-composed subtitle (role priority) so the list follows
+            // the same ordering criteria as the card. Static mode — no entity available.
+            const titleKeys = new Set<string>()
+            for (const [key, placement] of resolvedPlacements) {
+                if (placement === 'title') titleKeys.add(key)
+            }
+            const subtitleOrder = buildSubtitleOrder(defs, titleKeys)
+
             return tableEntries
-                .sort(([, a], [, b]) => {
-                    const pa = resolvedPlacements.get(a.key) ?? 'detail'
-                    const pb = resolvedPlacements.get(b.key) ?? 'detail'
-                    return (ZONE_ORDER[pa] ?? 3) - (ZONE_ORDER[pb] ?? 3)
+                .map(([fieldKey, def], index) => {
+                    const subtitleIndex = subtitleOrder.indexOf(def.key)
+                    if (subtitleIndex !== -1) {
+                        return { entry: [fieldKey, def] as const, zone: 1, rank: subtitleIndex, index }
+                    }
+                    const zone = resolvedPlacements.get(def.key) ?? 'detail'
+                    const zoneOrder = ZONE_ORDER[zone] ?? 3
+                    const rank = zone === 'header'
+                        ? headerPriorityIndex(def.fieldRole ?? TYPE_TO_ROLE[def.type], def.key)
+                        : index
+                    return { entry: [fieldKey, def] as const, zone: zoneOrder, rank, index }
                 })
+                .sort((a, b) => a.zone - b.zone || a.rank - b.rank || a.index - b.index)
+                .map(({ entry }) => entry)
                 .map(([fieldKey, def]): ColumnDef<T> => {
                     const headerLabel = def.header ?? def.label
                     const enableSorting = def.tableOptions?.enableSorting ?? true
@@ -948,75 +997,45 @@ export function createEntityFields<T>(): (
                 }
             }
             // Priority 4: Auto-compose subtitle from field roles.
-            // Rule: up to 4 values, max 1 of each role in this order: relation → temporal → primary-value → tag.
-            // A 'primary-label' / 'subtitle' placed field (name key) is always the first slot.
-            const allDefs = Object.values(defs)
-
-            // Find the primary-label field (name key) — occupies the first subtitle slot
-            // Skip fields already assigned to title by toCardFields()
-            const titleKeys = new Set(cardFields?.filter(f => f.placement === 'title').map(f => f.key) ?? [])
-            const consumedKeys = computeAutoComposeKeys(defs, entity, titleKeys)
+            // Rule: up to 4 values in this order: name → relation → temporal → primary-value → explicit subtitle.
+            // Single source of truth with toColumns() via buildSubtitleOrder — the list's subtitle
+            // zone uses the exact same role priority so both surfaces agree.
+            const titleKeys = new Set(
+                cardFields?.filter(f => f.placement === 'title').map(f => f.key) ?? []
+            )
+            const subtitleKeys = buildSubtitleOrder(defs, titleKeys, entity)
 
             const items: SubtitleItem[] = []
 
-            // Rebuild items from consumedKeys in role order
-            const nameDef = allDefs.find(d => {
-                if (titleKeys.has(d.key)) return false
-                const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
-                return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
-            })
-
-            if (nameDef && consumedKeys.has(nameDef.key)) {
-                const raw = entity[nameDef.key as keyof T]
-                if (raw != null && raw !== '') items.push({ kind: 'text', content: String(raw) })
-            }
-
-            const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
-            for (const slotRole of slotRoles) {
+            for (const key of subtitleKeys) {
                 if (items.length >= 4) break
-                const candidate = allDefs.find(d => {
-                    if (!consumedKeys.has(d.key)) return false
-                    const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
-                    return r === slotRole
-                })
-                if (candidate) {
-                    const raw = entity[candidate.key as keyof T]
-                    if (raw != null && raw !== '') {
-                        if (items.length > 0) items.push({ kind: 'separator' })
-                        if (slotRole === 'temporal') {
-                            items.push({ kind: 'date', value: String(raw) })
-                        } else if (slotRole === 'primary-value' && candidate.type === 'currency') {
-                            items.push({ kind: 'currency', value: Number(raw) })
-                        } else if (slotRole === 'primary-value' && candidate.type === 'status') {
-                            const label = candidate.getLabel
-                                ? String(candidate.getLabel(entity))
-                                : translateStatus(String(raw))
-                            items.push({ kind: 'status', status: String(raw), label })
-                        } else {
-                            items.push({ kind: 'text', content: String(raw) })
-                        }
-                    }
-                }
-            }
+                const def = defs[key]
+                const raw = entity[key as keyof T]
+                if (!def || raw == null || raw === '') continue
+                if (items.length > 0) items.push({ kind: 'separator' })
 
-            // Explicit placement:'subtitle' fields not yet consumed by role-based slots
-    const explicitSubtitleFields = allDefs.filter(d =>
-        d.placement === 'subtitle' && consumedKeys.has(d.key)
-    )
-            for (const d of explicitSubtitleFields) {
-                if (items.length >= 4) break
-                const raw = entity[d.key as keyof T]
-                if (raw != null && raw !== '') {
-                    if (items.length > 0) items.push({ kind: 'separator' })
-                    if (d.type === 'chip' || d.type === 'chip-category') {
-                        const chipValue = d.get ? String(d.get(entity) ?? raw) : String(raw)
-                        const chipIntent = typeof d.intent === 'function'
-                            ? d.intent(entity)
-                            : d.intent
-                        items.push({ kind: 'chip', content: chipValue, intent: chipIntent })
-                    } else {
-                        items.push({ kind: 'text', content: String(raw) })
-                    }
+                const role = def.fieldRole ?? TYPE_TO_ROLE[def.type]
+                const isName = (role === 'primary-label' || role === 'descriptive') && /name/i.test(def.key)
+
+                if (isName) {
+                    items.push({ kind: 'text', content: String(raw) })
+                } else if (def.placement === 'subtitle' && (def.type === 'chip' || def.type === 'chip-category')) {
+                    const chipValue = def.get ? String(def.get(entity) ?? raw) : String(raw)
+                    const chipIntent = typeof def.intent === 'function'
+                        ? def.intent(entity)
+                        : def.intent
+                    items.push({ kind: 'chip', content: chipValue, intent: chipIntent })
+                } else if (role === 'temporal') {
+                    items.push({ kind: 'date', value: String(raw) })
+                } else if (role === 'primary-value' && def.type === 'currency') {
+                    items.push({ kind: 'currency', value: Number(raw) })
+                } else if (role === 'primary-value' && def.type === 'status') {
+                    const label = def.getLabel
+                        ? String(def.getLabel(entity))
+                        : translateStatus(String(raw))
+                    items.push({ kind: 'status', status: String(raw), label })
+                } else {
+                    items.push({ kind: 'text', content: String(raw) })
                 }
             }
 

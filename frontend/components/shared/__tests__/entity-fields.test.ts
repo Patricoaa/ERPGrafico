@@ -243,7 +243,7 @@ describe("createEntityFields", () => {
     })
 
     describe("column ordering", () => {
-        it("sorts columns by placement zone (title→subtitle→header→detail→metric→footer)", () => {
+        it("sorts columns by placement zone, mirroring the card subtitle composition", () => {
             const fields = createEntityFields<TestEntity>()({
                 detail_a: { key: "name", type: "text", label: "Detail A" },
                 header_a: { key: "status", type: "status", label: "Header A" },
@@ -251,12 +251,12 @@ describe("createEntityFields", () => {
                 detail_b: { key: "description", type: "text", label: "Detail B" },
             })
             const columns = fields.toColumns()
-            // title(0) → header(2) → detail(3)
-            // Within same zone, definition order preserved
-            expect(getAccessorKey(columns[0])).toBe("code")      // title zone
-            expect(getAccessorKey(columns[1])).toBe("status")    // header zone
-            expect(getAccessorKey(columns[2])).toBe("name")      // detail zone (first defined)
-            expect(getAccessorKey(columns[3])).toBe("description") // detail zone (second defined)
+            // title(0) → subtitle(1, card role order: name → primary-value) → detail(3)
+            // name and status join the subtitle zone exactly like the card's auto-subtitle.
+            expect(getAccessorKey(columns[0])).toBe("code")          // title zone
+            expect(getAccessorKey(columns[1])).toBe("name")          // subtitle (name slot)
+            expect(getAccessorKey(columns[2])).toBe("status")        // subtitle (primary-value slot)
+            expect(getAccessorKey(columns[3])).toBe("description")   // detail zone
         })
 
         it("uses explicit placement over type-derived placement", () => {
@@ -272,15 +272,15 @@ describe("createEntityFields", () => {
 
         it("falls back to type-derived placement when no explicit placement", () => {
             const fields = createEntityFields<TestEntity>()({
-                a: { key: "status", type: "status", label: "Status" },   // header(2)
-                b: { key: "name", type: "text", label: "Name" },         // detail(3)
-                c: { key: "code", type: "code", label: "Code" },         // header(2)
+                a: { key: "status", type: "status", label: "Status" },   // primary-value → subtitle (card role order)
+                b: { key: "name", type: "text", label: "Name" },         // name → subtitle
+                c: { key: "code", type: "code", label: "Code" },         // identifier → title(0)
             })
             const columns = fields.toColumns()
-            // Both status and code are header(2), name is detail(3)
-            expect(getAccessorKey(columns[0])).toBe("status")
-            expect(getAccessorKey(columns[1])).toBe("code")
-            expect(getAccessorKey(columns[2])).toBe("name")
+            // title(0) → subtitle(1): name → status (same role order as the card)
+            expect(getAccessorKey(columns[0])).toBe("code")
+            expect(getAccessorKey(columns[1])).toBe("name")
+            expect(getAccessorKey(columns[2])).toBe("status")
         })
 
         it("preserves definition order within same placement zone", () => {
@@ -298,15 +298,16 @@ describe("createEntityFields", () => {
 
         it("auto-titles first identifier field with code/id/display in key (no explicit placement)", () => {
             const fields = createEntityFields<TestEntity>()({
-                chip: { key: "status", type: "chip", label: "Status" },      // subtitle(1) — auto-subtitle for chip
+                chip: { key: "status", type: "chip", label: "Status" },      // header(2) — tag
                 identifier: { key: "internal_code", type: "code", label: "ID" }, // auto-title(0)
-                detail: { key: "name", type: "text", label: "Name" },         // detail(3)
+                detail: { key: "name", type: "text", label: "Name" },         // subtitle(1) — name slot
             })
             const columns = fields.toColumns()
-            // identifier should be first (title zone) due to auto-title detection
+            // identifier should be first (title zone) due to auto-title detection;
+            // name joins the subtitle zone (card name slot) before the tag chip.
             expect(getAccessorKey(columns[0])).toBe("internal_code")
-            expect(getAccessorKey(columns[1])).toBe("status")
-            expect(getAccessorKey(columns[2])).toBe("name")
+            expect(getAccessorKey(columns[1])).toBe("name")
+            expect(getAccessorKey(columns[2])).toBe("status")
         })
 
         it("respects fieldRole as fallback when no explicit placement", () => {
@@ -316,11 +317,11 @@ describe("createEntityFields", () => {
                 c: { key: "name", type: "text", label: "Name" },
             })
             const columns = fields.toColumns()
-            // 'a' has fieldRole:'identifier' → ROLE_TO_PLACEMENT['identifier'] = 'header'(2)
-            // 'b' is status → header(2), 'c' is text → detail(3)
+            // 'a' has fieldRole:'identifier' → title via fallback chain (no code/id/display in key)
+            // 'c' name → subtitle (name slot), 'b' status → subtitle (primary-value slot)
             expect(getAccessorKey(columns[0])).toBe("period_display")
-            expect(getAccessorKey(columns[1])).toBe("status")
-            expect(getAccessorKey(columns[2])).toBe("name")
+            expect(getAccessorKey(columns[1])).toBe("name")
+            expect(getAccessorKey(columns[2])).toBe("status")
         })
 
         it("falls back to first identifier field when no auto-title match", () => {
@@ -343,6 +344,57 @@ describe("createEntityFields", () => {
             // First field gets title via fallback chain
             expect(getAccessorKey(columns[0])).toBe("name")
             expect(getAccessorKey(columns[1])).toBe("description")
+        })
+
+        it("mirrors the card's auto-composed subtitle in role order (journal-entry case)", () => {
+            const fields = createEntityFields<TestEntity>()({
+                display: { key: "code", type: "code", label: "Folio" },
+                status: { key: "status", type: "status", label: "Estado" },
+                origin: { key: "origin", type: "chip", label: "Origen", placement: "subtitle", get: () => "Manual" },
+                date: { key: "date", type: "date", label: "Fecha" },
+                description: { key: "description", type: "text", label: "Descripción" },
+                total: { key: "amount", type: "currency", label: "Total Débito", get: (e) => parseFloat(e.amount) },
+            })
+            const columns = fields.toColumns()
+            // title(0) → subtitle(1): temporal(date) → primary-value(status) → explicit(origin)
+            // → header(2): total → detail(3): description — same order the card reads.
+            expect(getAccessorKey(columns[0])).toBe("code")
+            expect(getAccessorKey(columns[1])).toBe("date")
+            expect(getAccessorKey(columns[2])).toBe("status")
+            expect(getAccessorKey(columns[3])).toBe("origin")
+            expect(getAccessorKey(columns[4])).toBe("amount")
+            expect(getAccessorKey(columns[5])).toBe("description")
+        })
+
+        it("puts name first in subtitle zone, then temporal/primary-value, then explicit subtitle fields", () => {
+            const fields = createEntityFields<TestEntity>()({
+                display: { key: "code", type: "code", label: "Folio" },
+                name: { key: "name", type: "text", label: "Nombre" },
+                date: { key: "date", type: "date", label: "Fecha" },
+                status: { key: "status", type: "status", label: "Estado" },
+                tag: { key: "origin", type: "chip", label: "Origen", placement: "subtitle", get: () => "Manual" },
+            })
+            const columns = fields.toColumns()
+            expect(getAccessorKey(columns[0])).toBe("code")
+            expect(getAccessorKey(columns[1])).toBe("name")
+            expect(getAccessorKey(columns[2])).toBe("date")
+            expect(getAccessorKey(columns[3])).toBe("status")
+            expect(getAccessorKey(columns[4])).toBe("origin")
+        })
+
+        it("mirrors card header priority within the header zone (total before status)", () => {
+            const fields = createEntityFields<TestEntity>()({
+                display: { key: "code", type: "code", label: "Folio" },
+                status: { key: "status", type: "status", label: "Estado", placement: "header" },
+                total: { key: "total_amount", type: "currency", label: "Total", placement: "header", get: (e) => parseFloat(e.amount) },
+                description: { key: "description", type: "text", label: "Descripción" },
+            })
+            const columns = fields.toColumns()
+            expect(getAccessorKey(columns[0])).toBe("code")
+            // header zone: total/salary primary-value (rank 1) before generic primary-value (rank 2)
+            expect(getAccessorKey(columns[1])).toBe("total_amount")
+            expect(getAccessorKey(columns[2])).toBe("status")
+            expect(getAccessorKey(columns[3])).toBe("description")
         })
     })
 

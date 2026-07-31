@@ -2,7 +2,13 @@
 
 ## Estado
 
-Aceptado
+Aceptado — **§toColumns extendido por ADR-0059** (subtitle/header intra-zone mirror de la card).
+
+> **Nota (ADR-0059):** este ADR definió la zona `subtitle` y `header` para `toColumns()`,
+> pero con orden de definición dentro de la zona. ADR-0059 hace que `toColumns()` use los
+> mismos criterios intra-zona que la card: `buildSubtitleOrder` (name → relation → temporal →
+> primary-value → explícito) y `headerPriorityIndex` (complex → total/salary → primary-value →
+> flow → tag). La jerarquía de zonas de este ADR no cambia.
 
 ## Contexto
 
@@ -33,7 +39,7 @@ Unificar ambos sistemas usando `placement` como **única fuente de verdad** para
 })
 ```
 
-Dentro de la misma zona, los campos mantienen su **orden de definición** (insertion order de `Object.entries`).
+Dentro de la misma zona, los campos mantienen su **orden de definición** (insertion order de `Object.entries`). *(Ver ADR-0059: a partir de 0059, las zonas `subtitle` y `header` usan criterios intra-zona espejados de la card en vez de orden de definición.)*
 
 ### Jerarquía de orden (izquierda → derecha)
 
