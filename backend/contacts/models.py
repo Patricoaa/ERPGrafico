@@ -421,13 +421,20 @@ class Contact(models.Model):
 
         from contacts.partner_models import PartnerTransaction
 
-        return self.partner_transactions.filter(
+        paid_in = self.partner_transactions.filter(
             transaction_type__in=[
                 PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,
                 PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY,
                 PartnerTransaction.Type.REINVESTMENT,
+                PartnerTransaction.Type.CAPITAL_CONTRIBUTION_TRANSFER_IN,
             ]
         ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        transfer_out = self.partner_transactions.filter(
+            transaction_type=PartnerTransaction.Type.CAPITAL_CONTRIBUTION_TRANSFER_OUT
+        ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+        return paid_in - transfer_out
 
     @property
     def partner_total_withdrawals(self) -> Decimal:
