@@ -359,6 +359,31 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from .selectors import TreasuryMovementSelector
 
         return TreasuryMovementSelector.list_treasury_movements(self.queryset, self.request.query_params)
+
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        from .analytics import TreasuryMovementAnalyticsService
+
+        params = request.query_params
+        granularity = params.get("granularity", "month")
+        months = int(params.get("months", "12"))
+        treasury_account = int(params["treasury_account"]) if params.get("treasury_account") else None
+        bank = int(params["bank"]) if params.get("bank") else None
+        return Response(
+            TreasuryMovementAnalyticsService.get_consolidated(
+                granularity=granularity,
+                months=months,
+                treasury_account=treasury_account,
+                bank=bank,
+                movement_type=params.get("movement_type"),
+                payment_method=params.get("payment_method"),
+                amount_min=params.get("amount_min"),
+                amount_max=params.get("amount_max"),
+                date_from=params.get("date_from"),
+                date_to=params.get("date_to"),
+            )
+        )
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if not request.user.is_staff:
