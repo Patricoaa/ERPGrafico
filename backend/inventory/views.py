@@ -371,6 +371,29 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             )
         return Response({"stock_level": StockMoveSelector.stock_level(int(product_id), int(warehouse_id))})
 
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        from .analytics import StockMoveAnalyticsService
+
+        params = request.query_params
+        granularity = params.get("granularity", "month")
+        months = int(params.get("months", "12"))
+        product_id = int(params["product_id"]) if params.get("product_id") else None
+        source_location_id = int(params["source_location_id"]) if params.get("source_location_id") else None
+        destination_location_id = int(params["destination_location_id"]) if params.get("destination_location_id") else None
+        return Response(
+            StockMoveAnalyticsService.get_consolidated(
+                granularity=granularity,
+                months=months,
+                product_id=product_id,
+                product_name=params.get("product_name"),
+                source_location_id=source_location_id,
+                destination_location_id=destination_location_id,
+                date_from=params.get("date_from"),
+                date_to=params.get("date_to"),
+            )
+        )
+
 
 class PricingRuleViewSet(NoDestroyModelMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = PricingRule.objects.select_related("product", "category", "uom").all()

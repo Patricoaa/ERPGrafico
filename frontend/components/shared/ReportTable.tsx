@@ -8,6 +8,7 @@ import {
   flexRender,
   createColumnHelper,
   ExpandedState,
+  type ColumnDef,
 } from '@tanstack/react-table';
 import { ChevronRight, ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,14 @@ interface DrillDownTarget {
     accountName: string;
     accountCode: string;
 }
+
+// Column value variants used by ReportTable. Accessor defs are only assignable
+// across the *exact* TValue they carry (TanStack templates are contravariant in it),
+// so the array must name each variant explicitly instead of widening to `unknown`.
+type ReportTableColumn =
+    | ColumnDef<ReportNode, string>
+    | ColumnDef<ReportNode, number>
+    | ColumnDef<ReportNode, number | undefined>;
 
 const columnHelper = createColumnHelper<ReportNode>();
 
@@ -84,7 +93,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     };
 
     const columns = React.useMemo(() => {
-        const cols = [
+        const cols: ReportTableColumn[] = [
             columnHelper.accessor('name', {
                 header: ({ table }) => (
                     <div className="flex items-center gap-2">
@@ -153,7 +162,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         </div>
                     );
                 },
-            }),
+            }) as ReportTableColumn,
             columnHelper.accessor('balance', {
                 header: () => <div className="text-right">{periodLabel || 'Saldo'}</div>,
                 cell: ({ row, getValue }) => {
@@ -166,64 +175,63 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         </div>
                     );
                 },
-            }),
-        ];
-
-        if (showComparison) {
-            cols.push(
-                columnHelper.accessor('comp_balance', {
-                    header: () => <div className="text-right text-muted-foreground/70">{compPeriodLabel || 'Anterior'}</div>,
-                    cell: ({ getValue }) => (
-                        <div className="text-right font-mono text-[13px] text-muted-foreground font-medium">
-                            <MoneyDisplay amount={getValue() || 0} showColor={false} />
-                        </div>
-                    ),
-                }),
-                columnHelper.accessor('variance', {
-                    header: () => <div className="text-right">Var.</div>,
-                    cell: ({ row }) => {
-                        const node = row.original;
-                        const bal = node.balance || 0;
-                        const comp = node.comp_balance || 0;
-                        const variance = bal - comp;
-                        
-                        if (comp === 0 && bal === 0) return null;
-                        
-                        const pct = comp !== 0 ? ((variance / Math.abs(comp)) * 100).toFixed(1) : null;
-                        
-                        const rowDir = node.varianceDirection || varianceDirection;
-                        const isPositiveGood = rowDir === 'higher-is-better';
-                        
-                        return (
-                            <div className="flex flex-col items-end justify-center py-1">
-                                <div className="flex items-center gap-1.5">
-                                    {variance !== 0 && (
-                                        variance > 0 ? (
-                                            <TrendingUp className={cn("h-3 w-3", isPositiveGood ? "text-success" : "text-destructive")} />
-                                        ) : (
-                                            <TrendingDown className={cn("h-3 w-3", isPositiveGood ? "text-destructive" : "text-success")} />
-                                        )
-                                    )}
-                                    <MoneyDisplay 
-                                        amount={variance} 
-                                        className={cn(
-                                            "font-mono text-xs font-bold",
-                                            variance > 0 ? (isPositiveGood ? "text-success" : "text-destructive") 
-                                                : variance < 0 ? (isPositiveGood ? "text-destructive" : "text-success") : "text-muted-foreground"
-                                        )} 
-                                    />
-                                </div>
-                                {pct && (
-                                    <span className="text-[10px] text-muted-foreground/70 font-semibold mt-0.5 inline-block bg-muted/50 px-1.5 py-0.5 rounded-sm">
-                                        {pct}%
-                                    </span>
-                                )}
+            }) as ReportTableColumn,
+            ...(showComparison
+                ? [
+                    columnHelper.accessor('comp_balance', {
+                        header: () => <div className="text-right text-muted-foreground/70">{compPeriodLabel || 'Anterior'}</div>,
+                        cell: ({ getValue }) => (
+                            <div className="text-right font-mono text-[13px] text-muted-foreground font-medium">
+                                <MoneyDisplay amount={getValue() || 0} showColor={false} />
                             </div>
-                        )
-                    }
-                })
-            );
-        }
+                        ),
+                    }) as ReportTableColumn,
+                    columnHelper.accessor('variance', {
+                        header: () => <div className="text-right">Var.</div>,
+                        cell: ({ row }) => {
+                            const node = row.original;
+                            const bal = node.balance || 0;
+                            const comp = node.comp_balance || 0;
+                            const variance = bal - comp;
+                            
+                            if (comp === 0 && bal === 0) return null;
+                            
+                            const pct = comp !== 0 ? ((variance / Math.abs(comp)) * 100).toFixed(1) : null;
+                            
+                            const rowDir = node.varianceDirection || varianceDirection;
+                            const isPositiveGood = rowDir === 'higher-is-better';
+                            
+                            return (
+                                <div className="flex flex-col items-end justify-center py-1">
+                                    <div className="flex items-center gap-1.5">
+                                        {variance !== 0 && (
+                                            variance > 0 ? (
+                                                <TrendingUp className={cn("h-3 w-3", isPositiveGood ? "text-success" : "text-destructive")} />
+                                            ) : (
+                                                <TrendingDown className={cn("h-3 w-3", isPositiveGood ? "text-destructive" : "text-success")} />
+                                            )
+                                        )}
+                                        <MoneyDisplay 
+                                            amount={variance} 
+                                            className={cn(
+                                                "font-mono text-xs font-bold",
+                                                variance > 0 ? (isPositiveGood ? "text-success" : "text-destructive") 
+                                                    : variance < 0 ? (isPositiveGood ? "text-destructive" : "text-success") : "text-muted-foreground"
+                                            )} 
+                                        />
+                                    </div>
+                                    {pct && (
+                                        <span className="text-[10px] text-muted-foreground/70 font-semibold mt-0.5 inline-block bg-muted/50 px-1.5 py-0.5 rounded-sm">
+                                            {pct}%
+                                        </span>
+                                    )}
+                                </div>
+                            )
+                        }
+                    }) as ReportTableColumn,
+                ]
+                : []),
+        ];
 
         return cols;
     }, [showComparison, periodLabel, compPeriodLabel, varianceDirection]);

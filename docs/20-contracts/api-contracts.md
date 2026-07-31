@@ -404,6 +404,7 @@ PATCH  /api/inventory/warehouses/{id}/  update
 GET    /api/inventory/stock-moves/       list, paginated (filtros vía StockMoveFilter)
 POST   /api/inventory/stock-moves/       create (manual adjustment)
 GET    /api/inventory/stock-moves/{id}/  detail
+GET    /api/inventory/moves/analytics/   analytics — agregación servidor para el panel (ADR-0058)
 ```
 
 Response key fields:
@@ -423,6 +424,34 @@ Response key fields:
   "related_documents": "array"
 }
 ```
+
+Analytics query params (todos opcionales):
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `granularity` | `day\|month\|year` (default `month`) | Truncamiento del período para series/agrupaciones |
+| `months` | int (default `12`) | Ventana retroactiva (ignorado si viene `date_from`) |
+| `product_id` | int | Filtrar por producto |
+| `product_name` | string | Filtro `icontains` por nombre de producto |
+| `source_location_id` | int | Filtrar por ubicación origen |
+| `destination_location_id` | int | Filtrar por ubicación destino |
+| `date_from` / `date_to` | `YYYY-MM-DD` | Rango de fechas (override de `months`) |
+
+Analytics response shape (`StockMoveAnalyticsService.get_consolidated`):
+
+```json
+{
+  "flow_trend": [ { "period": "YYYY-MM-DD", "count": "int", "entradas": "decimal", "salidas": "decimal", "ajustes": "decimal", "transferencias": "decimal" } ],
+  "value_trend": [ { "period": "YYYY-MM-DD", "entrada": "decimal", "salida": "decimal", "ajuste": "decimal", "transferencia": "decimal", "total": "decimal" } ],
+  "direction_distribution": [ { "id": "IN|OUT|TRANSFER|ADJUSTMENT|OTHER", "label": "string", "count": "int", "quantity": "decimal", "amount": "decimal" } ],
+  "top_products": [ { "product_id": "number", "product_name": "string", "quantity": "decimal", "amount": "decimal" } ],
+  "category_distribution": [ { "id": "string", "value": "float" } ],
+  "location_distribution": [ { "id": "string", "value": "int", "in": "int", "out": "int" } ],
+  "summary": { "total_movements": "int", "total_in_qty": "decimal", "total_out_qty": "decimal", "total_adjustment_qty": "decimal", "total_value": "decimal" }
+}
+```
+
+Dirección del movimiento (clasificada en DB, prioridad TRANSFER > ADJUSTMENT > IN > OUT > OTHER): ver ADR-0058.
 
 ---
 

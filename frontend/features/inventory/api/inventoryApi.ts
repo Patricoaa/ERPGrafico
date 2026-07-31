@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { Product, ProductFilters, ProductUpdatePayload, InventoryDocument, InventoryDocumentFilters, InventoryCount, InventoryCountFilters } from '../types'
+import type { StockMoveAnalyticsParams, StockMoveAnalyticsResponse } from '../analyticsTypes'
 import { toPage, type Page } from '@/lib/pagination'
 
 /**
@@ -225,6 +226,30 @@ export const inventoryApi = {
 
     applyInventoryCount: async (id: number): Promise<InventoryCount> => {
         const { data } = await api.post<InventoryCount>(`inventory/counts/${id}/apply/`)
+        return data
+    },
+
+    // ========== Kardex Analytics (server-aggregated hub) ==========
+
+    getStockMoveAnalytics: async (
+        params?: StockMoveAnalyticsParams,
+    ): Promise<StockMoveAnalyticsResponse> => {
+        const cleanParams: Record<string, string> = {}
+        if (params?.months !== undefined && params?.months !== null) cleanParams.months = String(params.months)
+        if (params?.granularity) cleanParams.granularity = params.granularity
+        if (params?.product_id !== undefined && params?.product_id !== null && params?.product_id !== '') {
+            cleanParams.product_id = String(params.product_id)
+        }
+        if (params?.product_name) cleanParams.product_name = params.product_name
+        if (params?.source_location_id !== undefined && params?.source_location_id !== null && params?.source_location_id !== '') {
+            cleanParams.source_location_id = String(params.source_location_id)
+        }
+        if (params?.destination_location_id !== undefined && params?.destination_location_id !== null && params?.destination_location_id !== '') {
+            cleanParams.destination_location_id = String(params.destination_location_id)
+        }
+        if (params?.date_from) cleanParams.date_from = params.date_from
+        if (params?.date_to) cleanParams.date_to = params.date_to
+        const { data } = await api.get<StockMoveAnalyticsResponse>('inventory/moves/analytics/', { params: cleanParams })
         return data
     },
 }
