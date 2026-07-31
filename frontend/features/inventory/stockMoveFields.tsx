@@ -26,33 +26,15 @@ export interface StockMove {
 export const stockMoveFields = createEntityFields<StockMove>()({
     folio: {
         key: 'display_id',
-        type: 'computed',
+        type: 'code',
         label: 'Folio',
         tableOptions: { width: 100 },
-        render: (m) => (
-            <div className="flex flex-col items-center gap-0.5">
-                <DataCell.Code>{m.display_id ?? String(m.id)}</DataCell.Code>
-                <DataCell.Date value={m.date} />
-            </div>
-        ),
+        get: (m) => m.display_id ?? String(m.id),
     },
     productName: {
         key: 'product_name',
-        type: 'computed',
+        type: 'text',
         label: 'Producto',
-        render: (m) => (
-            <div className="flex flex-col items-center py-1 w-full">
-                <DataCell.Text>{m.product_name}</DataCell.Text>
-                <div className="flex gap-2 items-center justify-center">
-                    {m.product_internal_code && (
-                        <DataCell.Code>{m.product_internal_code}</DataCell.Code>
-                    )}
-                    {m.product_code && m.product_code !== m.product_internal_code && (
-                        <DataCell.Code>{m.product_code}</DataCell.Code>
-                    )}
-                </div>
-            </div>
-        ),
     },
     flow: {
         key: 'flow_display',
@@ -71,20 +53,13 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         type: 'date',
         label: 'Fecha',
     },
-    sourceLocation: {
-        key: 'source_location_name',
-        type: 'text',
-        label: 'Origen',
-    },
-    destinationLocation: {
-        key: 'destination_location_name',
-        type: 'text',
-        label: 'Destino',
-    },
     quantity: {
         key: 'quantity',
-        type: 'numericFlow',
+        type: 'computed',
         label: 'Cantidad',
-        get: (m) => ({ value: Number(m.quantity), unit: m.uom_name, showSign: true }),
+        fieldRole: 'flow',
+        render: (m) => (
+            <DataCell.NumericFlow value={Number(m.quantity)} unit={m.uom_name} />
+        ),
     },
 })
