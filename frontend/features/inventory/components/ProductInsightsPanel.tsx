@@ -149,11 +149,12 @@ function SplitTabLayout({
 
 // ─── Sub-tables ───────────────────────────────────────────────────────────────
 
-function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
+function PriceHistoryTable({ entries, ivaRatio }: { entries: PriceHistoryEntry[], ivaRatio: number }) {
     const columns: ColumnDef<PriceHistoryEntry>[] = [
-        { header: "Fecha",           cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span> },
-        { header: "Usuario",         cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
-        { header: "Precio de Venta", cell: ({ row }) => <DataCell.Currency value={row.original.sale_price} className="text-left font-bold" /> },
+        { header: "Fecha",              cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span> },
+        { header: "Usuario",            cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
+        { header: "Precio c/IVA",       cell: ({ row }) => <DataCell.Currency value={row.original.sale_price * ivaRatio} className="text-left font-bold" /> },
+        { header: "Precio Neto",        cell: ({ row }) => <DataCell.Currency value={row.original.sale_price} className="text-left text-muted-foreground" /> },
     ]
     return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de precios", description: "No hay cambios de precio registrados." }} />
 }
@@ -301,14 +302,19 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
         return data.purchase_analysis.history.map(e => ({ name: e.month, 'Unidades': e.qty }))
     }, [data])
 
+    // Compute IVA ratio early so price useMemos can reference it
+    const priceGross0 = product ? Number(product.sale_price_gross || product.sale_price || 0) : 0
+    const priceNet0   = product ? Number(product.sale_price || 0) : 0
+    const ivaRatio    = priceNet0 > 0 ? priceGross0 / priceNet0 : 1
+
     const priceLineData = useMemo((): LineChartConfig["data"] => {
         if (!data?.price_history?.length) return []
         const raw = [...data.price_history].reverse().map(e => ({
             name: format(new Date(e.date), "dd/MMM", { locale: es }),
-            'Precio Venta': e.sale_price,
+            'Precio Venta c/IVA': e.sale_price * ivaRatio,
         }))
-        return toLineSeries(raw, ['Precio Venta'])
-    }, [data])
+        return toLineSeries(raw, ['Precio Venta c/IVA'])
+    }, [data, ivaRatio])
 
     const costLineData = useMemo((): LineChartConfig["data"] => {
         if (!data?.price_history?.length) return []
@@ -356,17 +362,17 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
         return data.top_suppliers.slice(0, 8).map(s => ({ name: s.name, 'Costo': s.total_cost }))
     }, [data])
 
-    const currentValuation = product ? product.current_stock * Number(product.cost_price || 0) : 0
+    const currentValuation = product ? Number(product.qty_on_hand ?? product.current_stock ?? 0) * Number(product.cost_price || 0) : 0
     const margin = data ? data.sales_analysis.total_revenue - data.sales_analysis.total_cost_basis : 0
     const marginPercent = data && data.sales_analysis.total_revenue > 0 ? (margin / data.sales_analysis.total_revenue) * 100 : 0
     const palette = getCssChartColors()
 
-    // price KPIs with c/IVA + neto sub
-    const priceGross = product ? Number(product.sale_price_gross || product.sale_price || 0) : 0
-    const priceNet = product ? Number(product.sale_price || 0) : 0
-    const priceMinGross = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0
-    const priceMaxGross = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0
-    const priceAvgGross = data?.price_history?.length ? data.price_history.reduce((a, h) => a + h.sale_price, 0) / data.price_history.filter(h => h.sale_price > 0).length : 0
+    // price KPIs with c/IVA + neto sub (ivaRatio already computed above)
+    const priceGross = priceGross0
+    const priceNet   = priceNet0
+    const priceMinGross = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) * ivaRatio : 0
+    const priceMaxGross = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) * ivaRatio : 0
+    const priceAvgGross = data?.price_history?.length ? (data.price_history.reduce((a, h) => a + h.sale_price, 0) / data.price_history.filter(h => h.sale_price > 0).length) * ivaRatio : 0
     const costCurrent = product ? Number(product.cost_price || 0) : 0
     const costMin = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
     const costMax = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
@@ -453,72 +459,76 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                             {/* OVERVIEW */}
                             <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "overview" && "hidden")}>
                                 <div className="grid grid-cols-3 gap-4 shrink-0">
-                                    <StatCard label="Ventas Totales"   valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />
+                                    <StatCard label="Ventas Totales"    valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />
                                     <StatCard label="Valoración Actual" valueSize="xl" value={formatCurrency(currentValuation)} icon={Banknote} accent="success" />
-                                    <StatCard label="Stock Actual"     valueSize="xl" value={`${formatQuantity(product.current_stock)} ${product.uom_name}`} icon={Package} accent="primary" />
+                                    <StatCard label="Stock Actual"      valueSize="xl" value={`${formatQuantity(Number(product.qty_on_hand ?? 0))} ${product.uom_name}`} icon={Package} accent="primary" />
                                 </div>
                                 <StatCard
                                     label="Evolución del Stock"
                                     variant="chart"
-                                    className="flex-1 min-h-[280px]"
+                                    className="flex-1 min-h-[350px]"
                                     chart={stockHistoryData.length ? <AnalyticsChart type="line-chart" preset="card" data={stockHistoryData} enableArea /> : <EmptyChart />}
                                 />
-                                <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-                                    <StatCard
-                                        label="Unidades Vendidas"
-                                        variant="chart"
-                                        className="flex-1 min-h-[200px]"
-                                        chart={salesQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={salesQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
-                                    />
-                                    <StatCard
-                                        label="Unidades Compradas"
-                                        variant="chart"
-                                        className="flex-1 min-h-[200px]"
-                                        chart={purchaseQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={purchaseQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
-                                    />
-                                </div>
                             </div>
 
                             {/* SALES */}
-                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "sales" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4 shrink-0">
-                                    <StatCard label="Total Ingresos"        valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)}    icon={Banknote}         accent="success" />
-                                    <StatCard label="Total Costos de Venta" valueSize="xl" value={formatCurrency(data.sales_analysis.total_cost_basis)} icon={CircleDollarSign} accent="warning" />
-                                    <StatCard label="Margen Bruto"          valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={formatCurrency(margin)} icon={TrendingUp} accent={margin >= 0 ? "success" : "destructive"} />
-                                </div>
-                                <StatCard
-                                    label="Evolución Ingresos vs Costos"
-                                    variant="chart"
-                                    className="flex-1 min-h-[280px]"
-                                    chart={salesRevCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesRevCostData} showLegend valueFormat="currency" /> : <EmptyChart />}
-                                    chartLegend={salesRevCostData.length ? <ChartLegend items={['Ingresos','Costos'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
-                                />
-                                <StatCard
-                                    label="Evolución de la Demanda (unidades)"
-                                    variant="chart"
-                                    className="flex-1 min-h-[200px]"
-                                    chart={salesQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={salesQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "sales" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <StatCard label="Total Ingresos"        valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)}    icon={Banknote}         accent="success" />
+                                            <StatCard label="Total Costos de Venta" valueSize="xl" value={formatCurrency(data.sales_analysis.total_cost_basis)} icon={CircleDollarSign} accent="warning" />
+                                            <StatCard label="Margen Bruto"          valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={formatCurrency(margin)} icon={TrendingUp} accent={margin >= 0 ? "success" : "destructive"} />
+                                        </div>
+                                    }
+                                    chart={
+                                        <div className="flex flex-col gap-4 h-full min-h-0">
+                                            <StatCard
+                                                label="Evolución Ingresos vs Costos"
+                                                variant="chart"
+                                                className="flex-1 min-h-[220px]"
+                                                chart={salesRevCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesRevCostData} showLegend valueFormat="currency" /> : <EmptyChart />}
+                                                chartLegend={salesRevCostData.length ? <ChartLegend items={['Ingresos','Costos'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
+                                            />
+                                            <StatCard
+                                                label="Demanda (unidades)"
+                                                variant="chart"
+                                                className="flex-1 min-h-[160px]"
+                                                chart={salesQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={salesQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
+                                            />
+                                        </div>
+                                    }
+                                    table={<TopCustomersTable entries={data.top_customers} />}
                                 />
                             </div>
 
                             {/* PURCHASES */}
-                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "purchases" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4 shrink-0">
-                                    <StatCard label="Unidades Compradas"   valueSize="xl" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} icon={Truck} accent="info" />
-                                    <StatCard label="Costo Total Compras"  valueSize="xl" value={formatCurrency(data.purchase_analysis.total_cost)}        icon={Banknote}  accent="warning" />
-                                    <StatCard label="Costo Ponderado Actual" valueSize="xl" value={formatCurrency(costCurrent)} icon={CircleDollarSign} accent="primary" />
-                                </div>
-                                <StatCard
-                                    label="Evolución del Costo de Compra"
-                                    variant="chart"
-                                    className="flex-1 min-h-[280px]"
-                                    chart={purchaseCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={purchaseCostData} valueFormat="currency" /> : <EmptyChart />}
-                                />
-                                <StatCard
-                                    label="Unidades Recepcionadas por Mes"
-                                    variant="chart"
-                                    className="flex-1 min-h-[200px]"
-                                    chart={purchaseQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={purchaseQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "purchases" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <StatCard label="Unidades Compradas"     valueSize="xl" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} icon={Truck} accent="info" />
+                                            <StatCard label="Costo Total Compras"   valueSize="xl" value={formatCurrency(data.purchase_analysis.total_cost)}        icon={Banknote}  accent="warning" />
+                                            <StatCard label="Costo Ponderado Actual" valueSize="xl" value={formatCurrency(costCurrent)} icon={CircleDollarSign} accent="primary" />
+                                        </div>
+                                    }
+                                    chart={
+                                        <div className="flex flex-col gap-4 h-full min-h-0">
+                                            <StatCard
+                                                label="Evolución del Costo de Compra"
+                                                variant="chart"
+                                                className="flex-1 min-h-[220px]"
+                                                chart={purchaseCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={purchaseCostData} valueFormat="currency" /> : <EmptyChart />}
+                                            />
+                                            <StatCard
+                                                label="Unidades Recepcionadas por Mes"
+                                                variant="chart"
+                                                className="flex-1 min-h-[160px]"
+                                                chart={purchaseQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={purchaseQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
+                                            />
+                                        </div>
+                                    }
+                                    table={<TopSuppliersTable entries={data.top_suppliers} />}
                                 />
                             </div>
 
@@ -540,7 +550,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                             chart={priceLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={priceLineData} valueFormat="currency" /> : <EmptyChart />}
                                         />
                                     }
-                                    table={<PriceHistoryTable entries={data.price_history} />}
+                                    table={<PriceHistoryTable entries={data.price_history} ivaRatio={ivaRatio} />}
                                 />
                             </div>
 
@@ -567,18 +577,25 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                             </div>
 
                             {/* KARDEX */}
-                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "kardex" && "hidden")}>
-                                <StatCard
-                                    label="Flujo de Movimientos Recientes"
-                                    variant="chart"
-                                    className="flex-1 min-h-[300px]"
-                                    chart={kardexFlowData.length ? <AnalyticsChart type="line-chart" preset="card" data={kardexFlowData} enableArea showLegend /> : <EmptyChart />}
-                                    chartLegend={kardexFlowData.length ? <ChartLegend items={['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
-                                />
-                                <div className="flex-1 min-h-[300px] overflow-hidden flex flex-col">
-                                    {productId && <ProductStockMovesTable productId={productId} onOpenTransaction={openTransaction} />}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "kardex" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={<div />}
+                                    chart={
+                                        <StatCard
+                                            label="Flujo de Movimientos Recientes"
+                                            variant="chart"
+                                            className="h-full min-h-[300px]"
+                                            chart={kardexFlowData.length ? <AnalyticsChart type="line-chart" preset="card" data={kardexFlowData} enableArea showLegend /> : <EmptyChart />}
+                                            chartLegend={kardexFlowData.length ? <ChartLegend items={['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
+                                        />
+                                    }
+                                    table={
+                                        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                                            {productId && <ProductStockMovesTable productId={productId} onOpenTransaction={openTransaction} />}
+                                        </div>
+                                     }
+                                    />
                                 </div>
-                            </div>
 
                             {/* PRODUCTION */}
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "production" && "hidden")}>
