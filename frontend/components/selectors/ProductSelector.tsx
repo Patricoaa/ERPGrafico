@@ -216,11 +216,13 @@ export function ProductSelector({
                     )}
                 >
                     {selectedProduct ? (
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
-                            <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
-                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
-                                {selectedProduct.internal_code || selectedProduct.code}
+                        <div className="flex items-center justify-between gap-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
+                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
+                            </div>
+                            <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-[10px]" : "text-xs")}>
+                                {PricingUtils.formatCurrency(Number(selectedProduct.sale_price_gross ?? selectedProduct.sale_price))}
                             </span>
                         </div>
                     ) : (
@@ -290,9 +292,12 @@ export function ProductSelector({
                                         )}
                                     />
                                     <div className="flex flex-col w-full ml-6">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-medium">
-                                                {product.code} - {product.name}
+                                        <div className="flex items-center justify-between gap-2 w-full">
+                                            <span className="font-medium truncate text-left">
+                                                {product.name}
+                                            </span>
+                                            <span className="text-muted-foreground whitespace-nowrap text-right">
+                                                {PricingUtils.formatCurrency(Number(product.sale_price_gross ?? product.sale_price))}
                                             </span>
                                         </div>
                                         <div className="flex justify-between mt-1 items-center">
