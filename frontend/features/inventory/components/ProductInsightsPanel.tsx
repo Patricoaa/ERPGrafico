@@ -619,7 +619,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                             label="Top Clientes por Ingresos"
                                             variant="chart"
                                             className="h-full min-h-[300px]"
-                                            chart={customerBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={customerBarData} keys={['Ingresos']} indexBy="name" valueFormat="currency" /> : <EmptyChart />}
+                                            chart={customerBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={customerBarData} keys={['Ingresos']} indexBy="name" valueFormat="$,.0f" /> : <EmptyChart />}
                                         />
                                     }
                                     table={<TopCustomersTable entries={data.top_customers} />}
@@ -640,7 +640,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                             label="Top Proveedores por Costo"
                                             variant="chart"
                                             className="h-full min-h-[300px]"
-                                            chart={supplierBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={supplierBarData} keys={['Costo']} indexBy="name" valueFormat="currency" /> : <EmptyChart />}
+                                            chart={supplierBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={supplierBarData} keys={['Costo']} indexBy="name" valueFormat="$,.0f" /> : <EmptyChart />}
                                         />
                                     }
                                     table={<TopSuppliersTable entries={data.top_suppliers} />}
