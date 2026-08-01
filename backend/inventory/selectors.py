@@ -450,7 +450,7 @@ class ProductSelector:
         sales_history = list(SaleDeliveryLine.objects.filter(
             product_id__in=product_ids, delivery__status="CONFIRMED"
         ).annotate(
-            month=TruncMonth("delivery__date")
+            month=TruncMonth("delivery__delivery_date")
         ).values("month").annotate(
             revenue=Sum(F("quantity") * F("unit_price")),
             cost=Sum(F("quantity") * F("unit_cost")),
