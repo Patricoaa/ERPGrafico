@@ -32,6 +32,8 @@ interface DataTableViewProps<TData, TValue>
   > {
   entityLabel: string
   defaultView?: string
+  /** Lock to a specific view, bypassing URL params and saved preferences. Also hides the view switcher. */
+  forceView?: string
   renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
   renderLoadingView?: () => React.ReactNode
   renderCard?: (data: TData, row: Row<TData>, table?: ReactTable<TData>) => React.ReactNode
@@ -47,6 +49,7 @@ interface DataTableViewProps<TData, TValue>
 export function DataTableView<TData, TValue>({
   entityLabel,
   defaultView,
+  forceView,
   renderCustomView: externalRenderCustomView,
   renderLoadingView: externalLoadingView,
   renderCard,
@@ -60,7 +63,11 @@ export function DataTableView<TData, TValue>({
 }: DataTableViewProps<TData, TValue>) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
 
-  const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel, defaultView)
+  const { currentView: hookView, handleViewChange, viewOptions, isCustomView: hookIsCustomView } = useViewMode(entityLabel, defaultView)
+  // forceView completely bypasses URL/preference — used in embedded contexts
+  const currentView = forceView ?? hookView
+  const isCustomView = forceView ? forceView !== 'list' : hookIsCustomView
+  const effectiveViewOptions = forceView ? undefined : viewOptions
   const hasBulkActions = !!(dataTableProps.bulkActions?.length || dataTableProps.bulkDock)
 
   const enrichedEmptyState = useMemo(() => ({
@@ -251,7 +258,7 @@ export function DataTableView<TData, TValue>({
       columns={finalColumns}
       data={isTableViewGrouped ? sortedData : dataTableProps.data}
       renderRow={isTableViewGrouped ? internalRenderRow : dataTableProps.renderRow}
-      viewOptions={viewOptions}
+      viewOptions={effectiveViewOptions}
       currentView={currentView}
       onViewChange={handleViewChange}
       renderCustomView={internalCustomView}

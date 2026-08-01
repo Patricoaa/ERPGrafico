@@ -16,6 +16,7 @@ export interface StockMove {
     destination_location_name: string
     quantity: string
     uom_name: string
+    uom_abbreviation?: string
     description: string
     direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
     related_documents: Array<{
@@ -63,7 +64,7 @@ export const stockMoveFields = createEntityFields<StockMove>()({
         render: (m) => (
             <DataCell.NumericFlow
                 value={Math.abs(Number(m.quantity))}
-                unit={m.uom_name}
+                uom={m.uom_abbreviation || m.uom_name}
                 direction={m.direction === 'IN' ? 'inflow' : m.direction === 'OUT' ? 'outflow' : 'neutral'}
             />
         ),
