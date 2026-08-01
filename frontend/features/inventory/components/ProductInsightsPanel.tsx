@@ -1,5 +1,5 @@
 "use client"
-import { Chip, SkeletonShell, StatusBadge, StatCard, ChartLegend, DataTable } from '@/components/shared'
+import { Chip, SkeletonShell, StatusBadge, StatCard, ChartLegend, DataTable, DataTableView, AutoEntityCard } from '@/components/shared'
 import { useState, useMemo } from "react"
 import { AnalyticsChart } from "@/components/shared/AnalyticsPanel/AnalyticsChart"
 import { getCssChartColors } from "@/components/shared/AnalyticsPanel/nivo-theme"
@@ -27,6 +27,11 @@ import { ProductSelector } from "@/components/selectors"
 import { LazyDrawer, type TransactionType } from "@/features/_shared"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
+import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
+import { stockMoveFields, type StockMove } from "@/features/inventory/stockMoveFields"
+import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
+import { resolveStockMoveIcon } from "@/lib/movement-icons"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface PriceHistoryEntry {
     date: string
@@ -333,7 +338,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     chartLegend={kardexFlowData.length ? <ChartLegend items={['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
                                 />
                                 <div className="rounded-md border flex-1 min-h-[300px] overflow-hidden flex flex-col">
-                                    <KardexTable entries={data.kardex} onOpenWorkOrder={openWorkOrder} onOpenTransaction={openTransaction} />
+                                    {productId && <ProductStockMovesTable productId={productId} />}
                                 </div>
                             </div>
 
@@ -401,34 +406,55 @@ function CostHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
     return <DataTable columns={columns} data={entries} variant="embedded" hidePagination emptyState={{ context: "search", title: "Sin historial de costos", description: "No hay cambios de costo registrados." }} />
 }
 
-function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
-    entries: KardexEntry[]
-    onOpenWorkOrder: (id: number) => void
-    onOpenTransaction: (id: number | string, type: string) => void
-}) {
-    const columns: ColumnDef<KardexEntry>[] = [
-        { header: "Fecha",      cell: ({ row }) => <span className="text-xs">{format(parseDateOnly(row.original.date), "dd/MM/yyyy")}</span> },
-        { header: "N°",         cell: ({ row }) => <span className="font-mono text-[10px] font-bold">{row.original.display_id}</span> },
-        { header: "Tipo",       cell: ({ row }) => <StatusBadge status={row.original.type === 'IN' ? 'SUCCESS' : row.original.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'} label={row.original.type === 'IN' ? 'Entrada' : row.original.type === 'OUT' ? 'Salida' : 'Ajuste'} variant="badge" /> },
-        { header: "Cantidad",   cell: ({ row }) => <DataCell.Number value={row.original.quantity} className="text-left" suffix={row.original.uom} /> },
-        { header: "P. Unitario",cell: ({ row }) => <DataCell.Currency value={row.original.unit_price || 0} className="text-left" /> },
-        { header: "Total",      cell: ({ row }) => <DataCell.Currency value={row.original.total_price || 0} className="text-left" /> },
-        { header: "Bodega",     cell: ({ row }) => <span className="text-xs">{row.original.warehouse}</span> },
-        {
-            header: "Acciones",
-            cell: ({ row }) => {
-                const m = row.original
+function ProductStockMovesTable({ productId }: { productId: number }) {
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const { page, totalCount, isLoading } = useStockMoves({
+        product: productId,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
+    
+    const { openView } = useEntityRouteActions()
+    
+    const actionsCtx: StockMoveActionsCtx = {
+        onViewDetails: (id) => openView(id),
+    }
+
+    const columns = useMemo<ColumnDef<StockMove>[]>(() => [
+        ...stockMoveFields.toColumns(),
+        stockMoveActions.auto(actionsCtx),
+    ], [actionsCtx])
+
+    return (
+        <DataTableView
+            entityLabel="inventory.stockmove"
+            forceView="list"
+            data={(page?.results || []) as StockMove[]}
+            columns={columns}
+            manualPagination={true}
+            pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+            rowCount={totalCount}
+            pagination={pageState}
+            onPaginationChange={setPageState}
+            isLoading={isLoading}
+            variant="embedded"
+            renderCard={(move: StockMove) => {
+                const { icon, iconClassName } = resolveStockMoveIcon(move)
                 return (
-                    <div className="text-right">
-                        <DataCell.ActionGroup>
-                            <DataCell.Action action="detail" onClick={() => { if (m.related_type === 'work_order') onOpenWorkOrder(m.related_id); else onOpenTransaction(m.related_id, m.related_type) }} />
-                        </DataCell.ActionGroup>
-                    </div>
+                    <AutoEntityCard
+                        key={move.id}
+                        data={move}
+                        fields={stockMoveFields}
+                        entityLabel="inventory.stockmove"
+                        icon={icon}
+                        iconClassName={iconClassName}
+                        actions={stockMoveActions.render(move, actionsCtx)}
+                        defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
+                    />
                 )
-            },
-        },
-    ]
-    return <DataTable columns={columns} data={entries} variant="embedded" hidePagination emptyState={{ context: "search", title: "Sin movimientos", description: "Sin movimientos registrados para este producto." }} />
+            }}
+        />
+    )
 }
 
 function ProductionUsageTable({ entries, onOpenWorkOrder }: { entries: ProductionUsage[], onOpenWorkOrder: (id: number) => void }) {
