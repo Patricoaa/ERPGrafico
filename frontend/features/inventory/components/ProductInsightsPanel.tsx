@@ -370,7 +370,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
         return data.top_suppliers.slice(0, 8).map(s => ({ name: s.name, 'Costo': s.total_cost }))
     }, [data])
 
-    const currentValuation = product ? Number(product.qty_on_hand ?? product.current_stock ?? 0) * Number(product.cost_price || 0) : 0
+    const currentValuation = product ? Number(product.current_stock ?? 0) * Number(product.cost_price || 0) : 0
     const margin = data ? data.sales_analysis.total_revenue - data.sales_analysis.total_cost_basis : 0
     const marginPercent = data && data.sales_analysis.total_revenue > 0 ? (margin / data.sales_analysis.total_revenue) * 100 : 0
     const palette = getCssChartColors()
@@ -384,6 +384,16 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
     const costCurrent = product ? Number(product.cost_price || 0) : 0
     const costMin = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
     const costMax = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
+
+    const kardexStats = useMemo(() => {
+        let inQty = 0, inCost = 0, outQty = 0, outCost = 0
+        data?.kardex?.forEach(k => {
+            const price = k.total_price ?? (k.quantity * (k.unit_price || 0))
+            if (k.direction === 'IN') { inQty += k.quantity; inCost += price }
+            else if (k.direction === 'OUT') { outQty += k.quantity; outCost += price }
+        })
+        return { inQty, inCost, outQty, outCost }
+    }, [data])
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full">
@@ -469,7 +479,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                 <div className="grid grid-cols-3 gap-4 shrink-0">
                                     <StatCard label="Ventas Totales"    valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />
                                     <StatCard label="Valoración Actual" valueSize="xl" value={formatCurrency(currentValuation)} icon={Banknote} accent="success" />
-                                    <StatCard label="Stock Actual"      valueSize="xl" value={`${formatQuantity(Number(product.qty_on_hand ?? 0))} ${product.uom_name}`} icon={Package} accent="primary" />
+                                    <StatCard label="Stock Actual"      valueSize="xl" value={`${formatQuantity(Number(product.current_stock ?? 0))} ${product.uom_name}`} icon={Package} accent="primary" />
                                 </div>
                                 <StatCard
                                     label="Evolución del Stock"
@@ -485,7 +495,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     kpis={
                                         <div className="grid grid-cols-3 gap-4">
                                             <StatCard label="Total Ingresos"        valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)}    icon={Banknote}         accent="success" />
-                                            <StatCard label="Margen Bruto"          valueSize="xl" value={formatCurrency(margin)} icon={TrendingUp} accent={margin >= 0 ? "success" : "destructive"} />
+                                            <StatCard label="Total Costos"          valueSize="xl" value={formatCurrency(data.sales_analysis.total_cost_basis)} icon={CircleDollarSign} accent="warning" />
                                             <StatCard label="Margen Neto (u.)"      valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={data.sales_analysis.total_sold ? formatCurrency(margin / data.sales_analysis.total_sold) : '$0'} icon={TrendingUp} accent={marginPercent >= 0 ? "success" : "destructive"} />
                                         </div>
                                     }
@@ -545,9 +555,9 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                 <SplitTabLayout
                                     kpis={
                                         <div className="grid grid-cols-3 gap-4">
-                                            <StatCard label="Precio Actual c/IVA"  valueSize="xl" value={formatCurrency(priceGross)}    subtext={`Neto: ${formatCurrency(priceNet)}`}     icon={CircleDollarSign} accent="primary" />
-                                            <StatCard label="Precio Mínimo Hist."  valueSize="xl" value={formatCurrency(priceMinGross)} subtext={`Ponderado: ${formatCurrency(priceAvgGross)}`} icon={TrendingUp}       accent="info" />
-                                            <StatCard label="Precio Máximo Hist."  valueSize="xl" value={formatCurrency(priceMaxGross)}                                                   icon={TrendingUp}       accent="accent" />
+                                            <StatCard label="Precio Actual"        valueSize="xl" value={formatCurrency(priceGross)}    subtext={`Neto: ${formatCurrency(priceNet)}`}     icon={CircleDollarSign} accent="primary" />
+                                            <StatCard label="Precio Mínimo Hist."  valueSize="xl" value={formatCurrency(priceMinGross)} subtext={`Neto: ${formatCurrency(priceMinGross / ivaRatio)}`} icon={TrendingUp}       accent="info" />
+                                            <StatCard label="Precio Máximo Hist."  valueSize="xl" value={formatCurrency(priceMaxGross)} subtext={`Neto: ${formatCurrency(priceMaxGross / ivaRatio)}`} icon={TrendingUp}       accent="accent" />
                                         </div>
                                     }
                                     chart={
@@ -587,7 +597,12 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                             {/* KARDEX */}
                             <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "kardex" && "hidden")}>
                                 <SplitTabLayout
-                                    kpis={<div />}
+                                    kpis={
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <StatCard label="Total Entradas" valueSize="xl" value={`${formatQuantity(kardexStats.inQty)} ${product.uom_name}`} subtext={`Valorado en ${formatCurrency(kardexStats.inCost)}`} icon={ArrowRightLeft} accent="success" />
+                                            <StatCard label="Total Salidas"  valueSize="xl" value={`${formatQuantity(kardexStats.outQty)} ${product.uom_name}`} subtext={`Valorado en ${formatCurrency(kardexStats.outCost)}`} icon={ArrowRightLeft} accent="destructive" />
+                                        </div>
+                                    }
                                     chart={
                                         <StatCard
                                             label="Flujo de Movimientos Recientes"
