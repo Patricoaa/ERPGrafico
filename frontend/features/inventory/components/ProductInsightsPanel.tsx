@@ -72,7 +72,7 @@ interface SalesHistoryEntry { month: string; revenue: number; cost: number; qty:
 interface PurchaseHistoryEntry { month: string; cost: number; qty: number }
 interface ProductionHistoryEntry { month: string; qty: number }
 interface StockHistoryEntry { date: string; stock: number }
-interface TopCustomer { name: string; total_revenue: number; total_qty: number }
+interface TopCustomer { name: string; total_revenue: number; total_cost: number; total_qty: number }
 interface TopSupplier { name: string; total_cost: number; total_qty: number }
 
 interface SalesAnalysis {
@@ -180,9 +180,13 @@ function ProductionUsageTable({ entries, onOpenWorkOrder }: { entries: Productio
 
 function TopCustomersTable({ entries }: { entries: TopCustomer[] }) {
     const columns: ColumnDef<TopCustomer>[] = [
-        { header: "Cliente",    cell: ({ row }) => <span className="text-xs font-medium">{row.original.name}</span> },
-        { header: "Unidades",   cell: ({ row }) => <DataCell.Number value={row.original.total_qty} className="text-left" /> },
-        { header: "Ingresos",   cell: ({ row }) => <DataCell.Currency value={row.original.total_revenue} className="text-left font-bold" /> },
+        { header: "Cliente",     cell: ({ row }) => <span className="text-xs font-medium">{row.original.name}</span> },
+        { header: "Ingresos",    cell: ({ row }) => <DataCell.Currency value={row.original.total_revenue} className="text-left" /> },
+        { header: "Costos",      cell: ({ row }) => <DataCell.Currency value={row.original.total_cost}    className="text-left text-muted-foreground" /> },
+        { header: "Margen Neto", cell: ({ row }) => {
+            const margin = row.original.total_revenue - row.original.total_cost
+            return <DataCell.Currency value={margin} className={`text-left font-bold ${margin >= 0 ? 'text-success' : 'text-destructive'}`} />
+        }},
     ]
     return <DataTableView entityLabel="sales.customer" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin ventas registradas", description: "No hay clientes con compras de este producto." }} />
 }
@@ -280,10 +284,14 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
 
     // ── Derived chart data ───────────────────────────────────────────────────
 
-    const salesRevCostData = useMemo((): LineChartConfig["data"] => {
+    const salesUnitData = useMemo((): LineChartConfig["data"] => {
         if (!data?.sales_analysis?.history?.length) return []
-        const raw = data.sales_analysis.history.map(e => ({ name: e.month, 'Ingresos': e.revenue, 'Costos': e.cost }))
-        return toLineSeries(raw, ['Ingresos', 'Costos'])
+        const raw = data.sales_analysis.history.map(e => ({
+            name: e.month,
+            'Ingreso Unitario': e.qty > 0 ? e.revenue / e.qty : 0,
+            'Costo Unitario':   e.qty > 0 ? e.cost   / e.qty : 0,
+        }))
+        return toLineSeries(raw, ['Ingreso Unitario', 'Costo Unitario'])
     }, [data])
 
     const salesQtyData = useMemo((): BarChartConfig["data"] => {
@@ -477,8 +485,8 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     kpis={
                                         <div className="grid grid-cols-3 gap-4">
                                             <StatCard label="Total Ingresos"        valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)}    icon={Banknote}         accent="success" />
-                                            <StatCard label="Total Costos de Venta" valueSize="xl" value={formatCurrency(data.sales_analysis.total_cost_basis)} icon={CircleDollarSign} accent="warning" />
-                                            <StatCard label="Margen Bruto"          valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={formatCurrency(margin)} icon={TrendingUp} accent={margin >= 0 ? "success" : "destructive"} />
+                                            <StatCard label="Margen Bruto"          valueSize="xl" value={formatCurrency(margin)} icon={TrendingUp} accent={margin >= 0 ? "success" : "destructive"} />
+                                            <StatCard label="Margen Neto (u.)"      valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={data.sales_analysis.total_sold ? formatCurrency(margin / data.sales_analysis.total_sold) : '$0'} icon={TrendingUp} accent={marginPercent >= 0 ? "success" : "destructive"} />
                                         </div>
                                     }
                                     chart={
@@ -487,8 +495,8 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                                 label="Evolución Ingresos vs Costos"
                                                 variant="chart"
                                                 className="flex-1 min-h-[220px]"
-                                                chart={salesRevCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesRevCostData} showLegend valueFormat="currency" /> : <EmptyChart />}
-                                                chartLegend={salesRevCostData.length ? <ChartLegend items={['Ingresos','Costos'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
+                                                chart={salesUnitData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesUnitData} showLegend valueFormat="currency" /> : <EmptyChart />}
+                                                chartLegend={salesUnitData.length ? <ChartLegend items={['Ingreso Unitario','Costo Unitario'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
                                             />
                                             <StatCard
                                                 label="Demanda (unidades)"
