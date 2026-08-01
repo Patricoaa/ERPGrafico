@@ -444,6 +444,29 @@ class ProductSelector:
 
         avg_price = float(delivery_stats["avg_price"] or 0)
         avg_cost = float(delivery_stats["avg_cost"] or 0)
+        
+        from django.db.models.functions import TruncMonth
+        
+        sales_history = list(SaleDeliveryLine.objects.filter(
+            product_id__in=product_ids, delivery__status="CONFIRMED"
+        ).annotate(
+            month=TruncMonth("delivery__date")
+        ).values("month").annotate(
+            revenue=Sum(F("quantity") * F("unit_price")),
+            cost=Sum(F("quantity") * F("unit_cost")),
+            qty=Sum("quantity")
+        ).order_by("month"))
+        
+        # Convert month to string and decimals to float
+        sales_history_formatted = []
+        for s in sales_history:
+            if s["month"]:
+                sales_history_formatted.append({
+                    "month": s["month"].strftime("%Y-%m"),
+                    "revenue": float(s["revenue"] or 0),
+                    "cost": float(s["cost"] or 0),
+                    "qty": float(s["qty"] or 0)
+                })
 
         from production.models import ProductionConsumption
 
@@ -472,6 +495,22 @@ class ProductSelector:
                 }
             )
 
+        production_history = list(ProductionConsumption.objects.filter(
+            product_id__in=product_ids
+        ).annotate(
+            month=TruncMonth("date")
+        ).values("month").annotate(
+            qty=Sum("quantity")
+        ).order_by("month"))
+
+        production_history_formatted = []
+        for p in production_history:
+            if p["month"]:
+                production_history_formatted.append({
+                    "month": p["month"].strftime("%Y-%m"),
+                    "qty": float(p["qty"] or 0)
+                })
+
         return {
             "price_history": price_history,
             "kardex": kardex,
@@ -481,8 +520,10 @@ class ProductSelector:
                 "total_sold": float(net_qty),
                 "total_revenue": float(net_revenue),
                 "total_cost_basis": float(net_cost_basis),
+                "history": sales_history_formatted,
             },
             "production_usage": production_usage,
+            "production_history": production_history_formatted,
         }
 
 class SubscriptionSelector:
