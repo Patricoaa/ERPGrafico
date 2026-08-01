@@ -512,9 +512,93 @@ class ProductSelector:
                     "qty": float(p["qty"] or 0)
                 })
 
+        from purchasing.models import PurchaseReceiptLine, PurchaseReturnLine
+
+        purchase_receipt_stats = PurchaseReceiptLine.objects.filter(
+            product_id__in=product_ids, receipt__status="CONFIRMED"
+        ).aggregate(
+            total_qty=Sum("quantity_received"),
+            total_cost=Sum(F("quantity_received") * F("unit_cost")),
+        )
+
+        purchase_history = list(PurchaseReceiptLine.objects.filter(
+            product_id__in=product_ids, receipt__status="CONFIRMED"
+        ).annotate(
+            month=TruncMonth("receipt__receipt_date")
+        ).values("month").annotate(
+            cost=Sum(F("quantity_received") * F("unit_cost")),
+            qty=Sum("quantity_received")
+        ).order_by("month"))
+
+        purchase_history_formatted = []
+        for p in purchase_history:
+            if p["month"]:
+                purchase_history_formatted.append({
+                    "month": p["month"].strftime("%Y-%m"),
+                    "cost": float(p["cost"] or 0),
+                    "qty": float(p["qty"] or 0),
+                })
+
+        # Top customers by revenue
+        from django.db.models import CharField
+        top_customers_qs = list(SaleDeliveryLine.objects.filter(
+            product_id__in=product_ids, delivery__status="CONFIRMED"
+        ).values(
+            customer_name=models.F("delivery__sale_order__customer__name")
+        ).annotate(
+            total_revenue=Sum(F("quantity") * F("unit_price")),
+            total_qty=Sum("quantity"),
+        ).order_by("-total_revenue")[:10])
+
+        top_customers = [
+            {
+                "name": r["customer_name"],
+                "total_revenue": float(r["total_revenue"] or 0),
+                "total_qty": float(r["total_qty"] or 0),
+            }
+            for r in top_customers_qs
+        ]
+
+        # Top suppliers by cost
+        top_suppliers_qs = list(PurchaseReceiptLine.objects.filter(
+            product_id__in=product_ids, receipt__status="CONFIRMED"
+        ).values(
+            supplier_name=models.F("receipt__purchase_order__supplier__name")
+        ).annotate(
+            total_cost=Sum(F("quantity_received") * F("unit_cost")),
+            total_qty=Sum("quantity_received"),
+        ).order_by("-total_cost")[:10])
+
+        top_suppliers = [
+            {
+                "name": r["supplier_name"],
+                "total_cost": float(r["total_cost"] or 0),
+                "total_qty": float(r["total_qty"] or 0),
+            }
+            for r in top_suppliers_qs
+        ]
+
+        # Stock history from kardex: running balance per day
+        stock_history = []
+        if kardex:
+            running = float(instance.current_stock)
+            sorted_moves = sorted(kardex, key=lambda x: str(x["date"]))
+            # rebuild chronological running balance
+            balance_map: dict[str, float] = {}
+            for m in sorted_moves:
+                date_str = str(m["date"])[:10]
+                delta = m["quantity"] if m.get("direction") in ("IN", "ADJUSTMENT") else -m["quantity"]
+                balance_map[date_str] = balance_map.get(date_str, 0) + delta
+            # cumulative from oldest
+            cumulative = 0.0
+            for date_str in sorted(balance_map.keys()):
+                cumulative += balance_map[date_str]
+                stock_history.append({"date": date_str, "stock": cumulative})
+
         return {
             "price_history": price_history,
             "kardex": kardex,
+            "stock_history": stock_history,
             "sales_analysis": {
                 "avg_price": avg_price,
                 "avg_cost": avg_cost,
@@ -523,8 +607,15 @@ class ProductSelector:
                 "total_cost_basis": float(net_cost_basis),
                 "history": sales_history_formatted,
             },
+            "purchase_analysis": {
+                "total_purchased": float(purchase_receipt_stats["total_qty"] or 0),
+                "total_cost": float(purchase_receipt_stats["total_cost"] or 0),
+                "history": purchase_history_formatted,
+            },
             "production_usage": production_usage,
             "production_history": production_history_formatted,
+            "top_customers": top_customers,
+            "top_suppliers": top_suppliers,
         }
 
 class SubscriptionSelector:

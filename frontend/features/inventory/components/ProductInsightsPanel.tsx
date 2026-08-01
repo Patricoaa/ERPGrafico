@@ -1,5 +1,5 @@
 "use client"
-import { Chip, SkeletonShell, StatusBadge, StatCard, ChartLegend, DataTable, DataTableView, AutoEntityCard } from '@/components/shared'
+import { Chip, SkeletonShell, StatCard, ChartLegend, DataTable, DataTableView, AutoEntityCard } from '@/components/shared'
 import { useState, useMemo } from "react"
 import { AnalyticsChart } from "@/components/shared/AnalyticsPanel/AnalyticsChart"
 import { getCssChartColors } from "@/components/shared/AnalyticsPanel/nivo-theme"
@@ -15,6 +15,9 @@ import {
     Banknote,
     CircleDollarSign,
     Package,
+    Truck,
+    Users,
+    Building2,
 } from "lucide-react"
 import { useProductInsights, useProduct } from "../hooks/useProducts"
 import { format } from "date-fns"
@@ -31,7 +34,8 @@ import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { stockMoveFields, type StockMove } from "@/features/inventory/stockMoveFields"
 import { stockMoveActions, type StockMoveActionsCtx } from "@/features/inventory/stockMoveActions"
 import { resolveStockMoveIcon } from "@/lib/movement-icons"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface PriceHistoryEntry {
     date: string
@@ -64,33 +68,33 @@ interface ProductionUsage {
     description: string
 }
 
-interface SalesHistoryEntry {
-    month: string
-    revenue: number
-    cost: number
-    qty: number
-}
-
-interface ProductionHistoryEntry {
-    month: string
-    qty: number
-}
+interface SalesHistoryEntry { month: string; revenue: number; cost: number; qty: number }
+interface PurchaseHistoryEntry { month: string; cost: number; qty: number }
+interface ProductionHistoryEntry { month: string; qty: number }
+interface StockHistoryEntry { date: string; stock: number }
+interface TopCustomer { name: string; total_revenue: number; total_qty: number }
+interface TopSupplier { name: string; total_cost: number; total_qty: number }
 
 interface SalesAnalysis {
-    avg_price: number
-    avg_cost: number
-    total_sold: number
-    total_revenue: number
-    total_cost_basis: number
+    avg_price: number; avg_cost: number
+    total_sold: number; total_revenue: number; total_cost_basis: number
     history: SalesHistoryEntry[]
+}
+interface PurchaseAnalysis {
+    total_purchased: number; total_cost: number
+    history: PurchaseHistoryEntry[]
 }
 
 interface ProductInsights {
     price_history: PriceHistoryEntry[]
     kardex: KardexEntry[]
+    stock_history: StockHistoryEntry[]
     sales_analysis: SalesAnalysis
+    purchase_analysis: PurchaseAnalysis
     production_usage: ProductionUsage[]
     production_history: ProductionHistoryEntry[]
+    top_customers: TopCustomer[]
+    top_suppliers: TopSupplier[]
 }
 
 interface ProductInsightsPanelProps {
@@ -100,25 +104,171 @@ interface ProductInsightsPanelProps {
     onProductChange?: (productId: number, productName: string) => void
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function toLineSeries(
     rawData: Array<Record<string, string | number>>,
     keys: string[]
 ): LineChartConfig["data"] {
     return keys.map(key => ({
         id: key,
-        data: rawData.map(d => ({
-            x: d.name as string,
-            y: Number(d[key] ?? 0),
-        })),
+        data: rawData.map(d => ({ x: d.name as string, y: Number(d[key] ?? 0) })),
     }))
 }
 
+function EmptyChart() {
+    return (
+        <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">
+            Sin datos suficientes para el gráfico
+        </div>
+    )
+}
+
+// ─── Layout helpers ───────────────────────────────────────────────────────────
+
+/** KPI row + side-by-side [chart | table] layout used by Price, Cost, Production */
+function SplitTabLayout({
+    kpis,
+    chart,
+    table,
+}: {
+    kpis: React.ReactNode
+    chart: React.ReactNode
+    table: React.ReactNode
+}) {
+    return (
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+            <div className="shrink-0">{kpis}</div>
+            <div className="flex flex-row gap-4 flex-1 min-h-0">
+                <div className="flex-1 min-h-0">{chart}</div>
+                <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{table}</div>
+            </div>
+        </div>
+    )
+}
+
+// ─── Sub-tables ───────────────────────────────────────────────────────────────
+
+function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
+    const columns: ColumnDef<PriceHistoryEntry>[] = [
+        { header: "Fecha",           cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span> },
+        { header: "Usuario",         cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
+        { header: "Precio de Venta", cell: ({ row }) => <DataCell.Currency value={row.original.sale_price} className="text-left font-bold" /> },
+    ]
+    return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de precios", description: "No hay cambios de precio registrados." }} />
+}
+
+function CostHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
+    const columns: ColumnDef<PriceHistoryEntry>[] = [
+        { header: "Fecha",           cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span> },
+        { header: "Usuario",         cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
+        { header: "Costo Ponderado", cell: ({ row }) => <DataCell.Currency value={row.original.cost_price} className="text-left" /> },
+    ]
+    return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de costos", description: "No hay cambios de costo registrados." }} />
+}
+
+function ProductionUsageTable({ entries, onOpenWorkOrder }: { entries: ProductionUsage[], onOpenWorkOrder: (id: number) => void }) {
+    const columns: ColumnDef<ProductionUsage>[] = [
+        { header: "Fecha",              cell: ({ row }) => <span className="text-xs">{format(parseDateOnly(row.original.date), "dd/MM/yyyy")}</span> },
+        { header: "N° OT",             cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{formatEntityDisplay('production.workorder', { number: row.original.ot_number })}</Chip> },
+        { header: "Cantidad Consumida", cell: ({ row }) => <DataCell.Number value={row.original.quantity} className="text-left" /> },
+        { header: "Acciones",           cell: ({ row }) => <div className="text-right"><DataCell.ActionGroup><DataCell.Action action="detail" onClick={() => onOpenWorkOrder(row.original.ot_id)} /></DataCell.ActionGroup></div> },
+    ]
+    return <DataTableView entityLabel="production.workorder" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin uso en producción", description: "Este producto no ha sido utilizado como material en producción." }} />
+}
+
+function TopCustomersTable({ entries }: { entries: TopCustomer[] }) {
+    const columns: ColumnDef<TopCustomer>[] = [
+        { header: "Cliente",    cell: ({ row }) => <span className="text-xs font-medium">{row.original.name}</span> },
+        { header: "Unidades",   cell: ({ row }) => <DataCell.Number value={row.original.total_qty} className="text-left" /> },
+        { header: "Ingresos",   cell: ({ row }) => <DataCell.Currency value={row.original.total_revenue} className="text-left font-bold" /> },
+    ]
+    return <DataTableView entityLabel="sales.customer" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin ventas registradas", description: "No hay clientes con compras de este producto." }} />
+}
+
+function TopSuppliersTable({ entries }: { entries: TopSupplier[] }) {
+    const columns: ColumnDef<TopSupplier>[] = [
+        { header: "Proveedor",  cell: ({ row }) => <span className="text-xs font-medium">{row.original.name}</span> },
+        { header: "Unidades",   cell: ({ row }) => <DataCell.Number value={row.original.total_qty} className="text-left" /> },
+        { header: "Costo Total",cell: ({ row }) => <DataCell.Currency value={row.original.total_cost} className="text-left font-bold" /> },
+    ]
+    return <DataTableView entityLabel="purchasing.supplier" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin compras registradas", description: "No hay proveedores con recepciones de este producto." }} />
+}
+
+function ProductStockMovesTable({ productId, onOpenTransaction }: { productId: number, onOpenTransaction: (id: number | string, type: TransactionType) => void }) {
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
+    const { page, totalCount, isLoading } = useStockMoves({
+        product_id: productId,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
+
+    const actionsCtx: StockMoveActionsCtx = {
+        onViewDetails: (id) => onOpenTransaction(id, 'stock_move'),
+    }
+
+    const columns = useMemo<ColumnDef<StockMove>[]>(() => [
+        ...stockMoveFields.toColumns(),
+        stockMoveActions.auto(actionsCtx),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], [actionsCtx])
+
+    return (
+        <DataTableView
+            entityLabel="inventory.stockmove"
+            forceView="list"
+            hideToolbar={true}
+            data={(page?.results || []) as StockMove[]}
+            columns={columns}
+            manualPagination={true}
+            pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+            rowCount={totalCount}
+            pagination={pageState}
+            onPaginationChange={setPageState}
+            isLoading={isLoading}
+            variant="embedded"
+            onRowClick={(row) => onOpenTransaction(row.id, 'stock_move')}
+            renderCard={(move: StockMove) => {
+                const { icon, iconClassName } = resolveStockMoveIcon(move)
+                return (
+                    <AutoEntityCard
+                        key={move.id}
+                        data={move}
+                        fields={stockMoveFields}
+                        entityLabel="inventory.stockmove"
+                        icon={icon}
+                        iconClassName={iconClassName}
+                        actions={stockMoveActions.render(move, actionsCtx)}
+                        defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => onOpenTransaction(move.id, 'stock_move'))}
+                    />
+                )
+            }}
+        />
+    )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const TABS = [
+    { value: "overview",    label: "Resumen",    icon: LayoutDashboard },
+    { value: "sales",       label: "Ventas",     icon: TrendingUp },
+    { value: "purchases",   label: "Compras",    icon: Truck },
+    { value: "price",       label: "Precio",     icon: CircleDollarSign },
+    { value: "cost",        label: "Costos",     icon: Banknote },
+    { value: "kardex",      label: "Mov. Stock", icon: ArrowRightLeft },
+    { value: "production",  label: "Producción", icon: Factory },
+    { value: "customers",   label: "Clientes",   icon: Users },
+    { value: "suppliers",   label: "Proveedores", icon: Building2 },
+] as const
+
+type TabValue = typeof TABS[number]["value"]
+
 export function ProductInsightsPanel({ productId, productName, onBack, onProductChange }: ProductInsightsPanelProps) {
-    const { insights: data, isLoading: insightsLoading, refetch: refetchInsights } = useProductInsights<ProductInsights>(productId)
+    const { insights: data, isLoading: insightsLoading } = useProductInsights<ProductInsights>(productId)
     const { product, isLoading: productLoading } = useProduct(productId)
     const loading = insightsLoading || productLoading
 
-    const [activeTab, setActiveTab] = useState("overview")
+    const [activeTab, setActiveTab] = useState<TabValue>("overview")
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
 
@@ -127,22 +277,28 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
     const openWorkOrder = (id: number) => setActiveWorkOrderId(id)
     const closeWorkOrder = () => setActiveWorkOrderId(null)
 
-    const margin = data ? data.sales_analysis.total_revenue - data.sales_analysis.total_cost_basis : 0
-    const marginPercent = data && data.sales_analysis.total_revenue > 0
-        ? (margin / data.sales_analysis.total_revenue) * 100
-        : 0
+    // ── Derived chart data ───────────────────────────────────────────────────
 
-    const salesLineData = useMemo((): LineChartConfig["data"] => {
+    const salesRevCostData = useMemo((): LineChartConfig["data"] => {
         if (!data?.sales_analysis?.history?.length) return []
-        const raw = data.sales_analysis.history.map(e => ({
-            name: e.month, 'Ingresos': e.revenue, 'Costos': e.cost,
-        }))
+        const raw = data.sales_analysis.history.map(e => ({ name: e.month, 'Ingresos': e.revenue, 'Costos': e.cost }))
         return toLineSeries(raw, ['Ingresos', 'Costos'])
     }, [data])
 
-    const demandBarData = useMemo((): BarChartConfig["data"] => {
+    const salesQtyData = useMemo((): BarChartConfig["data"] => {
         if (!data?.sales_analysis?.history?.length) return []
-        return data.sales_analysis.history.map(e => ({ name: e.month, 'Demanda': e.qty }))
+        return data.sales_analysis.history.map(e => ({ name: e.month, 'Unidades': e.qty }))
+    }, [data])
+
+    const purchaseCostData = useMemo((): LineChartConfig["data"] => {
+        if (!data?.purchase_analysis?.history?.length) return []
+        const raw = data.purchase_analysis.history.map(e => ({ name: e.month, 'Costo Compra': e.cost }))
+        return toLineSeries(raw, ['Costo Compra'])
+    }, [data])
+
+    const purchaseQtyData = useMemo((): BarChartConfig["data"] => {
+        if (!data?.purchase_analysis?.history?.length) return []
+        return data.purchase_analysis.history.map(e => ({ name: e.month, 'Unidades': e.qty }))
     }, [data])
 
     const priceLineData = useMemo((): LineChartConfig["data"] => {
@@ -184,14 +340,55 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
         return toLineSeries(arr, ['Entradas', 'Salidas'])
     }, [data])
 
-    const currentValuation = product
-        ? product.current_stock * Number(product.cost_price || 0)
-        : 0
+    const stockHistoryData = useMemo((): LineChartConfig["data"] => {
+        if (!data?.stock_history?.length) return []
+        const raw = data.stock_history.map(e => ({ name: e.date, 'Stock': e.stock }))
+        return toLineSeries(raw, ['Stock'])
+    }, [data])
 
+    const customerBarData = useMemo((): BarChartConfig["data"] => {
+        if (!data?.top_customers?.length) return []
+        return data.top_customers.slice(0, 8).map(c => ({ name: c.name, 'Ingresos': c.total_revenue }))
+    }, [data])
+
+    const supplierBarData = useMemo((): BarChartConfig["data"] => {
+        if (!data?.top_suppliers?.length) return []
+        return data.top_suppliers.slice(0, 8).map(s => ({ name: s.name, 'Costo': s.total_cost }))
+    }, [data])
+
+    const currentValuation = product ? product.current_stock * Number(product.cost_price || 0) : 0
+    const margin = data ? data.sales_analysis.total_revenue - data.sales_analysis.total_cost_basis : 0
+    const marginPercent = data && data.sales_analysis.total_revenue > 0 ? (margin / data.sales_analysis.total_revenue) * 100 : 0
     const palette = getCssChartColors()
+
+    // price KPIs with c/IVA + neto sub
+    const priceGross = product ? Number(product.sale_price_gross || product.sale_price || 0) : 0
+    const priceNet = product ? Number(product.sale_price || 0) : 0
+    const priceMinGross = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0
+    const priceMaxGross = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0
+    const priceAvgGross = data?.price_history?.length ? data.price_history.reduce((a, h) => a + h.sale_price, 0) / data.price_history.filter(h => h.sale_price > 0).length : 0
+    const costCurrent = product ? Number(product.cost_price || 0) : 0
+    const costMin = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
+    const costMax = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full">
+            {selectedTransaction && (
+                <LazyDrawer
+                    type={selectedTransaction.type}
+                    id={Number(selectedTransaction.id)}
+                    open={!!selectedTransaction}
+                    onOpenChange={(open) => { if (!open) closeTransaction() }}
+                />
+            )}
+            {activeWorkOrderId !== null && (
+                <WorkOrderWizard
+                    mode={{ kind: 'manage', orderId: activeWorkOrderId }}
+                    open={!!activeWorkOrderId}
+                    onOpenChange={(open) => !open && closeWorkOrder()}
+                />
+            )}
+
             <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 {loading || !data || !product ? (
                     <SkeletonShell isLoading={loading} ariaLabel="Cargando insights del producto">
@@ -199,6 +396,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                     </SkeletonShell>
                 ) : (
                     <div className="flex-1 flex flex-row gap-4 w-full h-full min-h-0 overflow-hidden bg-transparent">
+                        {/* ── Sidebar nav ── */}
                         <div className="w-52 shrink-0 flex flex-col gap-2 overflow-y-auto bg-transparent pb-4">
                             {onBack && (
                                 <div className="flex flex-col gap-2 mb-2 pb-4 border-b border-border/60">
@@ -228,14 +426,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     )}
                                 </div>
                             )}
-                            {([
-                                { value: "overview",   label: "Resumen",    icon: LayoutDashboard },
-                                { value: "sales",      label: "Ventas",     icon: TrendingUp },
-                                { value: "price",      label: "Precio",     icon: CircleDollarSign },
-                                { value: "cost",       label: "Costos",     icon: Banknote },
-                                { value: "kardex",     label: "Mov. Stock", icon: ArrowRightLeft },
-                                { value: "production", label: "Producción", icon: Factory },
-                            ] as const).map((t) => {
+                            {TABS.map((t) => {
                                 const Icon = t.icon
                                 const isActive = t.value === activeTab
                                 return (
@@ -256,28 +447,34 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                             })}
                         </div>
 
+                        {/* ── Tab content ── */}
                         <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-4 min-h-0">
 
                             {/* OVERVIEW */}
                             <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "overview" && "hidden")}>
                                 <div className="grid grid-cols-3 gap-4 shrink-0">
-                                    <StatCard label="Ventas Totales"  valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />
+                                    <StatCard label="Ventas Totales"   valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />
                                     <StatCard label="Valoración Actual" valueSize="xl" value={formatCurrency(currentValuation)} icon={Banknote} accent="success" />
-                                    <StatCard label="Stock Actual"    valueSize="xl" value={`${formatQuantity(product.current_stock)} ${product.uom_name}`} icon={Package} accent="primary" />
+                                    <StatCard label="Stock Actual"     valueSize="xl" value={`${formatQuantity(product.current_stock)} ${product.uom_name}`} icon={Package} accent="primary" />
                                 </div>
+                                <StatCard
+                                    label="Evolución del Stock"
+                                    variant="chart"
+                                    className="flex-1 min-h-[280px]"
+                                    chart={stockHistoryData.length ? <AnalyticsChart type="line-chart" preset="card" data={stockHistoryData} enableArea /> : <EmptyChart />}
+                                />
                                 <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
                                     <StatCard
-                                        label="Evolución Ingresos vs Costos"
+                                        label="Unidades Vendidas"
                                         variant="chart"
-                                        className="flex-1 min-h-0"
-                                        chart={salesLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesLineData} showLegend valueFormat="currency" /> : <EmptyChart />}
-                                        chartLegend={salesLineData.length ? <ChartLegend items={['Ingresos','Costos'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
+                                        className="flex-1 min-h-[200px]"
+                                        chart={salesQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={salesQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
                                     />
                                     <StatCard
-                                        label="Consumo Mensual en OT"
+                                        label="Unidades Compradas"
                                         variant="chart"
-                                        className="flex-1 min-h-0"
-                                        chart={productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
+                                        className="flex-1 min-h-[200px]"
+                                        chart={purchaseQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={purchaseQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
                                     />
                                 </div>
                             </div>
@@ -290,43 +487,83 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     <StatCard label="Margen Bruto"          valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={formatCurrency(margin)} icon={TrendingUp} accent={margin >= 0 ? "success" : "destructive"} />
                                 </div>
                                 <StatCard
-                                    label="Evolución de la Demanda"
+                                    label="Evolución Ingresos vs Costos"
                                     variant="chart"
-                                    className="flex-1 min-h-0"
-                                    chart={demandBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={demandBarData} keys={['Demanda']} indexBy="name" /> : <EmptyChart />}
+                                    className="flex-1 min-h-[280px]"
+                                    chart={salesRevCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesRevCostData} showLegend valueFormat="currency" /> : <EmptyChart />}
+                                    chartLegend={salesRevCostData.length ? <ChartLegend items={['Ingresos','Costos'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
+                                />
+                                <StatCard
+                                    label="Evolución de la Demanda (unidades)"
+                                    variant="chart"
+                                    className="flex-1 min-h-[200px]"
+                                    chart={salesQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={salesQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
+                                />
+                            </div>
+
+                            {/* PURCHASES */}
+                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "purchases" && "hidden")}>
+                                <div className="grid grid-cols-3 gap-4 shrink-0">
+                                    <StatCard label="Unidades Compradas"   valueSize="xl" value={`${formatQuantity(data.purchase_analysis.total_purchased)} ${product.uom_name}`} icon={Truck} accent="info" />
+                                    <StatCard label="Costo Total Compras"  valueSize="xl" value={formatCurrency(data.purchase_analysis.total_cost)}        icon={Banknote}  accent="warning" />
+                                    <StatCard label="Costo Ponderado Actual" valueSize="xl" value={formatCurrency(costCurrent)} icon={CircleDollarSign} accent="primary" />
+                                </div>
+                                <StatCard
+                                    label="Evolución del Costo de Compra"
+                                    variant="chart"
+                                    className="flex-1 min-h-[280px]"
+                                    chart={purchaseCostData.length ? <AnalyticsChart type="line-chart" preset="card" data={purchaseCostData} valueFormat="currency" /> : <EmptyChart />}
+                                />
+                                <StatCard
+                                    label="Unidades Recepcionadas por Mes"
+                                    variant="chart"
+                                    className="flex-1 min-h-[200px]"
+                                    chart={purchaseQtyData.length ? <AnalyticsChart type="bar-chart" preset="card" data={purchaseQtyData} keys={['Unidades']} indexBy="name" /> : <EmptyChart />}
                                 />
                             </div>
 
                             {/* PRICE */}
-                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "price" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4 shrink-0">
-                                    <StatCard label="Precio Actual (c/IVA)" valueSize="xl" value={formatCurrency(Number(product.sale_price_gross || product.sale_price))} icon={CircleDollarSign} accent="primary" />
-                                    <StatCard label="Precio Mínimo Hist."   valueSize="xl" value={formatCurrency(data.price_history.length ? Math.min(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0)} icon={TrendingUp} accent="info" />
-                                    <StatCard label="Precio Máximo Hist."   valueSize="xl" value={formatCurrency(data.price_history.length ? Math.max(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0)} icon={TrendingUp} accent="accent" />
-                                </div>
-                                <StatCard
-                                    label="Evolución del Precio de Venta"
-                                    variant="chart"
-                                    className="flex-1 min-h-[300px]"
-                                    chart={priceLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={priceLineData} valueFormat="currency" /> : <EmptyChart />}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "price" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <StatCard label="Precio Actual c/IVA"  valueSize="xl" value={formatCurrency(priceGross)}    subtext={`Neto: ${formatCurrency(priceNet)}`}     icon={CircleDollarSign} accent="primary" />
+                                            <StatCard label="Precio Mínimo Hist."  valueSize="xl" value={formatCurrency(priceMinGross)} subtext={`Ponderado: ${formatCurrency(priceAvgGross)}`} icon={TrendingUp}       accent="info" />
+                                            <StatCard label="Precio Máximo Hist."  valueSize="xl" value={formatCurrency(priceMaxGross)}                                                   icon={TrendingUp}       accent="accent" />
+                                        </div>
+                                    }
+                                    chart={
+                                        <StatCard
+                                            label="Evolución del Precio de Venta"
+                                            variant="chart"
+                                            className="h-full min-h-[300px]"
+                                            chart={priceLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={priceLineData} valueFormat="currency" /> : <EmptyChart />}
+                                        />
+                                    }
+                                    table={<PriceHistoryTable entries={data.price_history} />}
                                 />
-                                <div className="flex-1 min-h-[250px] overflow-hidden flex flex-col"><PriceHistoryTable entries={data.price_history} /></div>
                             </div>
 
                             {/* COST */}
-                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "cost" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4 shrink-0">
-                                    <StatCard label="Costo Actual"        valueSize="xl" value={formatCurrency(Number(product.cost_price || 0))} icon={Banknote}    accent="warning" />
-                                    <StatCard label="Costo Mínimo Hist."  valueSize="xl" value={formatCurrency(data.price_history.length ? Math.min(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0)} icon={TrendingUp} accent="info" />
-                                    <StatCard label="Costo Máximo Hist."  valueSize="xl" value={formatCurrency(data.price_history.length ? Math.max(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0)} icon={TrendingUp} accent="destructive" />
-                                </div>
-                                <StatCard
-                                    label="Evolución del Costo Ponderado"
-                                    variant="chart"
-                                    className="flex-1 min-h-[300px]"
-                                    chart={costLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={costLineData} valueFormat="currency" /> : <EmptyChart />}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "cost" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <StatCard label="Costo Actual"       valueSize="xl" value={formatCurrency(costCurrent)} icon={Banknote}    accent="warning" />
+                                            <StatCard label="Costo Mínimo Hist." valueSize="xl" value={formatCurrency(costMin)}     icon={TrendingUp}  accent="info" />
+                                            <StatCard label="Costo Máximo Hist." valueSize="xl" value={formatCurrency(costMax)}     icon={TrendingUp}  accent="destructive" />
+                                        </div>
+                                    }
+                                    chart={
+                                        <StatCard
+                                            label="Evolución del Costo Ponderado"
+                                            variant="chart"
+                                            className="h-full min-h-[300px]"
+                                            chart={costLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={costLineData} valueFormat="currency" /> : <EmptyChart />}
+                                        />
+                                    }
+                                    table={<CostHistoryTable entries={data.price_history} />}
                                 />
-                                <div className="flex-1 min-h-[250px] overflow-hidden flex flex-col"><CostHistoryTable entries={data.price_history} /></div>
                             </div>
 
                             {/* KARDEX */}
@@ -344,126 +581,76 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                             </div>
 
                             {/* PRODUCTION */}
-                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "production" && "hidden")}>
-                                <StatCard
-                                    label="Consumo Mensual en OT"
-                                    variant="chart"
-                                    className="flex-1 min-h-[300px]"
-                                    chart={productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "production" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <StatCard label="Total Consumido en OT" valueSize="xl"
+                                                value={`${formatQuantity(data.production_usage.reduce((a, u) => a + u.quantity, 0))} ${product.uom_name}`}
+                                                icon={Factory} accent="primary" />
+                                            <StatCard label="N° de Órdenes de Trabajo" valueSize="xl"
+                                                value={String(new Set(data.production_usage.map(u => u.ot_id)).size)}
+                                                icon={BarChart3} accent="info" />
+                                        </div>
+                                    }
+                                    chart={
+                                        <StatCard
+                                            label="Consumo Mensual en OT"
+                                            variant="chart"
+                                            className="h-full min-h-[300px]"
+                                            chart={productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
+                                        />
+                                    }
+                                    table={<ProductionUsageTable entries={data.production_usage} onOpenWorkOrder={openWorkOrder} />}
                                 />
-                                <div className="flex-1 min-h-[300px] overflow-hidden flex flex-col">
-                                    <ProductionUsageTable entries={data.production_usage} onOpenWorkOrder={openWorkOrder} />
-                                </div>
                             </div>
+
+                            {/* CUSTOMERS */}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "customers" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <StatCard label="Clientes Únicos"  valueSize="xl" value={String(data.top_customers.length)} icon={Users} accent="info" />
+                                            <StatCard label="Ingresos Totales" valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)} icon={Banknote} accent="success" />
+                                        </div>
+                                    }
+                                    chart={
+                                        <StatCard
+                                            label="Top Clientes por Ingresos"
+                                            variant="chart"
+                                            className="h-full min-h-[300px]"
+                                            chart={customerBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={customerBarData} keys={['Ingresos']} indexBy="name" valueFormat="currency" /> : <EmptyChart />}
+                                        />
+                                    }
+                                    table={<TopCustomersTable entries={data.top_customers} />}
+                                />
+                            </div>
+
+                            {/* SUPPLIERS */}
+                            <div className={cn("flex flex-col gap-4 flex-1 min-h-0", activeTab !== "suppliers" && "hidden")}>
+                                <SplitTabLayout
+                                    kpis={
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <StatCard label="Proveedores Únicos" valueSize="xl" value={String(data.top_suppliers.length)} icon={Building2} accent="info" />
+                                            <StatCard label="Costo Total Comprado" valueSize="xl" value={formatCurrency(data.purchase_analysis.total_cost)} icon={Banknote} accent="warning" />
+                                        </div>
+                                    }
+                                    chart={
+                                        <StatCard
+                                            label="Top Proveedores por Costo"
+                                            variant="chart"
+                                            className="h-full min-h-[300px]"
+                                            chart={supplierBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={supplierBarData} keys={['Costo']} indexBy="name" valueFormat="currency" /> : <EmptyChart />}
+                                        />
+                                    }
+                                    table={<TopSuppliersTable entries={data.top_suppliers} />}
+                                />
+                            </div>
+
                         </div>
                     </div>
                 )}
             </div>
-
-            {selectedTransaction && (
-                <LazyDrawer
-                    type={selectedTransaction.type}
-                    id={Number(selectedTransaction.id)}
-                    open={!!selectedTransaction}
-                    onOpenChange={(open) => !open && closeTransaction()}
-                />
-            )}
-
-            {activeWorkOrderId && (
-                <WorkOrderWizard
-                    mode={{ kind: 'manage', orderId: activeWorkOrderId }}
-                    open={!!activeWorkOrderId}
-                    onOpenChange={(open) => !open && closeWorkOrder()}
-                    onSuccess={() => refetchInsights()}
-                />
-            )}
         </div>
     )
-}
-
-function EmptyChart() {
-    return (
-        <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">
-            Sin datos suficientes para el gráfico
-        </div>
-    )
-}
-
-function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
-    const columns: ColumnDef<PriceHistoryEntry>[] = [
-        { header: "Fecha",           cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span> },
-        { header: "Usuario",         cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
-        { header: "Precio de Venta", cell: ({ row }) => <DataCell.Currency value={row.original.sale_price} className="text-left font-bold" /> },
-    ]
-    return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de precios", description: "No hay cambios de precio registrados." }} />
-}
-
-function CostHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
-    const columns: ColumnDef<PriceHistoryEntry>[] = [
-        { header: "Fecha",            cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span> },
-        { header: "Usuario",          cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
-        { header: "Costo Ponderado",  cell: ({ row }) => <DataCell.Currency value={row.original.cost_price} className="text-left" /> },
-    ]
-    return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de costos", description: "No hay cambios de costo registrados." }} />
-}
-
-function ProductStockMovesTable({ productId, onOpenTransaction }: { productId: number, onOpenTransaction: (id: number | string, type: TransactionType) => void }) {
-    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
-    const { page, totalCount, isLoading } = useStockMoves({
-        product_id: productId,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
-    })
-    
-    const actionsCtx: StockMoveActionsCtx = {
-        onViewDetails: (id) => onOpenTransaction(id, 'stock_move'),
-    }
-
-    const columns = useMemo<ColumnDef<StockMove>[]>(() => [
-        ...stockMoveFields.toColumns(),
-        stockMoveActions.auto(actionsCtx),
-    ], [actionsCtx])
-
-    return (
-        <DataTableView
-            entityLabel="inventory.stockmove"
-            forceView="list"
-            hideToolbar={true}
-            data={(page?.results || []) as StockMove[]}
-            columns={columns}
-            manualPagination={true}
-            pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
-            rowCount={totalCount}
-            pagination={pageState}
-            onPaginationChange={setPageState}
-            isLoading={isLoading}
-            variant="embedded"
-            onRowClick={(row) => onOpenTransaction(row.id, 'stock_move')}
-            renderCard={(move: StockMove) => {
-                const { icon, iconClassName } = resolveStockMoveIcon(move)
-                return (
-                    <AutoEntityCard
-                        key={move.id}
-                        data={move}
-                        fields={stockMoveFields}
-                        entityLabel="inventory.stockmove"
-                        icon={icon}
-                        iconClassName={iconClassName}
-                        actions={stockMoveActions.render(move, actionsCtx)}
-                        defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => onOpenTransaction(move.id, 'stock_move'))}
-                    />
-                )
-            }}
-        />
-    )
-}
-
-function ProductionUsageTable({ entries, onOpenWorkOrder }: { entries: ProductionUsage[], onOpenWorkOrder: (id: number) => void }) {
-    const columns: ColumnDef<ProductionUsage>[] = [
-        { header: "Fecha",             cell: ({ row }) => <span className="text-xs">{format(parseDateOnly(row.original.date), "dd/MM/yyyy")}</span> },
-        { header: "N° OT",            cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{formatEntityDisplay('production.workorder', { number: row.original.ot_number })}</Chip> },
-        { header: "Cantidad Consumida",cell: ({ row }) => <DataCell.Number value={row.original.quantity} className="text-left" /> },
-        { header: "Acciones",          cell: ({ row }) => <div className="text-right"><DataCell.ActionGroup><DataCell.Action action="detail" onClick={() => onOpenWorkOrder(row.original.ot_id)} /></DataCell.ActionGroup></div> },
-    ]
-    return <DataTableView entityLabel="production.workorder" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin uso en producción", description: "Este producto no ha sido utilizado como material en producción." }} />
 }
