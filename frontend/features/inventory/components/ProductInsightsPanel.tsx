@@ -337,7 +337,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     chart={kardexFlowData.length ? <AnalyticsChart type="line-chart" preset="card" data={kardexFlowData} enableArea showLegend /> : <EmptyChart />}
                                     chartLegend={kardexFlowData.length ? <ChartLegend items={['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
                                 />
-                                <div className="rounded-md border flex-1 min-h-[300px] overflow-hidden flex flex-col">
+                                <div className="flex-1 min-h-[300px] overflow-hidden flex flex-col">
                                     {productId && <ProductStockMovesTable productId={productId} />}
                                 </div>
                             </div>
@@ -409,7 +409,7 @@ function CostHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
 function ProductStockMovesTable({ productId }: { productId: number }) {
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, totalCount, isLoading } = useStockMoves({
-        product: productId,
+        product_id: productId,
         page: pageState.pageIndex + 1,
         page_size: pageState.pageSize,
     })
@@ -429,6 +429,7 @@ function ProductStockMovesTable({ productId }: { productId: number }) {
         <DataTableView
             entityLabel="inventory.stockmove"
             forceView="list"
+            hideToolbar={true}
             data={(page?.results || []) as StockMove[]}
             columns={columns}
             manualPagination={true}

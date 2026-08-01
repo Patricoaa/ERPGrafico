@@ -30,7 +30,7 @@ export interface StockMove {
 export interface StockMoveFilters {
     page?: number
     page_size?: number
-    product?: string | number
+    product_id?: string | number
     source_location_id?: string | number
     destination_location_id?: string | number
     date_from?: string
