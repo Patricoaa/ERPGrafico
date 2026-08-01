@@ -547,6 +547,7 @@ class ProductSelector:
             customer_name=models.F("delivery__sale_order__customer__name")
         ).annotate(
             total_revenue=Sum(F("quantity") * F("unit_price")),
+            total_cost=Sum(F("quantity") * F("unit_cost")),
             total_qty=Sum("quantity"),
         ).order_by("-total_revenue")[:10])
 
@@ -554,6 +555,7 @@ class ProductSelector:
             {
                 "name": r["customer_name"],
                 "total_revenue": float(r["total_revenue"] or 0),
+                "total_cost": float(r["total_cost"] or 0),
                 "total_qty": float(r["total_qty"] or 0),
             }
             for r in top_customers_qs
