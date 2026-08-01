@@ -47,6 +47,7 @@ interface KardexEntry {
     related_type: string
     date: string
     type: string
+    direction?: string
     quantity: number
     unit_price?: number
     total_price?: number
@@ -173,8 +174,8 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
         data.kardex.forEach(entry => {
             const dateStr = format(parseDateOnly(entry.date), "dd/MM/yy")
             const curr = flowMap.get(dateStr) ?? { in: 0, out: 0 }
-            if (entry.type === 'IN') curr.in += entry.quantity
-            else if (entry.type === 'OUT') curr.out += entry.quantity
+            if (entry.direction === 'IN') curr.in += entry.quantity
+            else if (entry.direction === 'OUT') curr.out += entry.quantity
             flowMap.set(dateStr, curr)
         })
         const arr = Array.from(flowMap.entries())
@@ -338,7 +339,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     chartLegend={kardexFlowData.length ? <ChartLegend items={['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
                                 />
                                 <div className="flex-1 min-h-[300px] overflow-hidden flex flex-col">
-                                    {productId && <ProductStockMovesTable productId={productId} />}
+                                    {productId && <ProductStockMovesTable productId={productId} onOpenTransaction={openTransaction} />}
                                 </div>
                             </div>
 
@@ -406,7 +407,7 @@ function CostHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
     return <DataTable columns={columns} data={entries} variant="embedded" hidePagination emptyState={{ context: "search", title: "Sin historial de costos", description: "No hay cambios de costo registrados." }} />
 }
 
-function ProductStockMovesTable({ productId }: { productId: number }) {
+function ProductStockMovesTable({ productId, onOpenTransaction }: { productId: number, onOpenTransaction: (id: number | string, type: TransactionType) => void }) {
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, totalCount, isLoading } = useStockMoves({
         product_id: productId,
@@ -414,10 +415,8 @@ function ProductStockMovesTable({ productId }: { productId: number }) {
         page_size: pageState.pageSize,
     })
     
-    const { openView } = useEntityRouteActions()
-    
     const actionsCtx: StockMoveActionsCtx = {
-        onViewDetails: (id) => openView(id),
+        onViewDetails: (id) => onOpenTransaction(id, 'stock_move'),
     }
 
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
@@ -439,6 +438,7 @@ function ProductStockMovesTable({ productId }: { productId: number }) {
             onPaginationChange={setPageState}
             isLoading={isLoading}
             variant="embedded"
+            onRowClick={(row) => onOpenTransaction(row.id, 'stock_move')}
             renderCard={(move: StockMove) => {
                 const { icon, iconClassName } = resolveStockMoveIcon(move)
                 return (
@@ -450,7 +450,7 @@ function ProductStockMovesTable({ productId }: { productId: number }) {
                         icon={icon}
                         iconClassName={iconClassName}
                         actions={stockMoveActions.render(move, actionsCtx)}
-                        defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => openView(move.id))}
+                        defaultAction={stockMoveActions.defaultAction(actionsCtx)?.(move) ?? (() => onOpenTransaction(move.id, 'stock_move'))}
                     />
                 )
             }}

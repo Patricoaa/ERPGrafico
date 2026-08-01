@@ -405,6 +405,7 @@ class ProductSelector:
                     "related_type": related_type,
                     "date": m.date,
                     "type": f"{m.source_location.name if m.source_location else '?'} → {m.destination_location.name if m.destination_location else '?'}",
+                    "direction": m.direction,
                     "quantity": float(m.quantity),
                     "unit_price": unit_price,
                     "total_price": abs(float(m.quantity) * unit_price),
