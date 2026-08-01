@@ -250,35 +250,35 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                             })}
                         </div>
 
-                        <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-10">
+                        <div className="flex-1 flex flex-col gap-6 overflow-y-auto px-1 pb-4 min-h-0">
 
                             {/* OVERVIEW */}
-                            <div className={cn("flex flex-col gap-6", activeTab !== "overview" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4">
+                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "overview" && "hidden")}>
+                                <div className="grid grid-cols-3 gap-4 shrink-0">
                                     <StatCard label="Ventas Totales"  valueSize="xl" value={`${formatQuantity(data.sales_analysis.total_sold)} ${product.uom_name}`} icon={ShoppingCart} accent="info" />
                                     <StatCard label="Valoración Actual" valueSize="xl" value={formatCurrency(currentValuation)} icon={Banknote} accent="success" />
                                     <StatCard label="Stock Actual"    valueSize="xl" value={`${formatQuantity(product.current_stock)} ${product.uom_name}`} icon={Package} accent="primary" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
                                     <StatCard
                                         label="Evolución Ingresos vs Costos"
                                         variant="chart"
-                                        className="h-72"
+                                        className="flex-1 min-h-0"
                                         chart={salesLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={salesLineData} showLegend valueFormat="currency" /> : <EmptyChart />}
                                         chartLegend={salesLineData.length ? <ChartLegend items={['Ingresos','Costos'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
                                     />
                                     <StatCard
                                         label="Consumo Mensual en OT"
                                         variant="chart"
-                                        className="h-72"
+                                        className="flex-1 min-h-0"
                                         chart={productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
                                     />
                                 </div>
                             </div>
 
                             {/* SALES */}
-                            <div className={cn("flex flex-col gap-6", activeTab !== "sales" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4">
+                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "sales" && "hidden")}>
+                                <div className="grid grid-cols-3 gap-4 shrink-0">
                                     <StatCard label="Total Ingresos"        valueSize="xl" value={formatCurrency(data.sales_analysis.total_revenue)}    icon={Banknote}         accent="success" />
                                     <StatCard label="Total Costos de Venta" valueSize="xl" value={formatCurrency(data.sales_analysis.total_cost_basis)} icon={CircleDollarSign} accent="warning" />
                                     <StatCard label="Margen Bruto"          valueSize="xl" value={`${marginPercent.toFixed(1)}%`} subtext={formatCurrency(margin)} icon={TrendingUp} accent={margin >= 0 ? "success" : "destructive"} />
@@ -286,14 +286,14 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                 <StatCard
                                     label="Evolución de la Demanda"
                                     variant="chart"
-                                    className="h-80"
+                                    className="flex-1 min-h-0"
                                     chart={demandBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={demandBarData} keys={['Demanda']} indexBy="name" /> : <EmptyChart />}
                                 />
                             </div>
 
                             {/* PRICE */}
-                            <div className={cn("flex flex-col gap-6", activeTab !== "price" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4">
+                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "price" && "hidden")}>
+                                <div className="grid grid-cols-3 gap-4 shrink-0">
                                     <StatCard label="Precio Actual (c/IVA)" valueSize="xl" value={formatCurrency(Number(product.sale_price_gross || product.sale_price))} icon={CircleDollarSign} accent="primary" />
                                     <StatCard label="Precio Mínimo Hist."   valueSize="xl" value={formatCurrency(data.price_history.length ? Math.min(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0)} icon={TrendingUp} accent="info" />
                                     <StatCard label="Precio Máximo Hist."   valueSize="xl" value={formatCurrency(data.price_history.length ? Math.max(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) : 0)} icon={TrendingUp} accent="accent" />
@@ -301,15 +301,15 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                 <StatCard
                                     label="Evolución del Precio de Venta"
                                     variant="chart"
-                                    className="h-64"
+                                    className="flex-1 min-h-[300px]"
                                     chart={priceLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={priceLineData} valueFormat="currency" /> : <EmptyChart />}
                                 />
-                                <div className="rounded-md border"><PriceHistoryTable entries={data.price_history} /></div>
+                                <div className="rounded-md border flex-1 min-h-[250px] overflow-hidden flex flex-col"><PriceHistoryTable entries={data.price_history} /></div>
                             </div>
 
                             {/* COST */}
-                            <div className={cn("flex flex-col gap-6", activeTab !== "cost" && "hidden")}>
-                                <div className="grid grid-cols-3 gap-4">
+                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "cost" && "hidden")}>
+                                <div className="grid grid-cols-3 gap-4 shrink-0">
                                     <StatCard label="Costo Actual"        valueSize="xl" value={formatCurrency(Number(product.cost_price || 0))} icon={Banknote}    accent="warning" />
                                     <StatCard label="Costo Mínimo Hist."  valueSize="xl" value={formatCurrency(data.price_history.length ? Math.min(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0)} icon={TrendingUp} accent="info" />
                                     <StatCard label="Costo Máximo Hist."  valueSize="xl" value={formatCurrency(data.price_history.length ? Math.max(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0)} icon={TrendingUp} accent="destructive" />
@@ -317,35 +317,35 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                 <StatCard
                                     label="Evolución del Costo Ponderado"
                                     variant="chart"
-                                    className="h-64"
+                                    className="flex-1 min-h-[300px]"
                                     chart={costLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={costLineData} valueFormat="currency" /> : <EmptyChart />}
                                 />
-                                <div className="rounded-md border"><CostHistoryTable entries={data.price_history} /></div>
+                                <div className="rounded-md border flex-1 min-h-[250px] overflow-hidden flex flex-col"><CostHistoryTable entries={data.price_history} /></div>
                             </div>
 
                             {/* KARDEX */}
-                            <div className={cn("flex flex-col gap-6", activeTab !== "kardex" && "hidden")}>
+                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "kardex" && "hidden")}>
                                 <StatCard
                                     label="Flujo de Movimientos Recientes"
                                     variant="chart"
-                                    className="h-64"
+                                    className="flex-1 min-h-[300px]"
                                     chart={kardexFlowData.length ? <AnalyticsChart type="line-chart" preset="card" data={kardexFlowData} enableArea showLegend /> : <EmptyChart />}
                                     chartLegend={kardexFlowData.length ? <ChartLegend items={['Entradas','Salidas'].map((id,i) => ({label:id, color:palette[i%palette.length]}))} /> : undefined}
                                 />
-                                <div className="rounded-md border min-h-[300px]">
+                                <div className="rounded-md border flex-1 min-h-[300px] overflow-hidden flex flex-col">
                                     <KardexTable entries={data.kardex} onOpenWorkOrder={openWorkOrder} onOpenTransaction={openTransaction} />
                                 </div>
                             </div>
 
                             {/* PRODUCTION */}
-                            <div className={cn("flex flex-col gap-6", activeTab !== "production" && "hidden")}>
+                            <div className={cn("flex flex-col gap-6 flex-1 min-h-0", activeTab !== "production" && "hidden")}>
                                 <StatCard
                                     label="Consumo Mensual en OT"
                                     variant="chart"
-                                    className="h-64"
+                                    className="flex-1 min-h-[300px]"
                                     chart={productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
                                 />
-                                <div className="rounded-md border min-h-[300px]">
+                                <div className="rounded-md border flex-1 min-h-[300px] overflow-hidden flex flex-col">
                                     <ProductionUsageTable entries={data.production_usage} onOpenWorkOrder={openWorkOrder} />
                                 </div>
                             </div>
