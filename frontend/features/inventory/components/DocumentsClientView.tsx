@@ -127,6 +127,7 @@ export function DocumentsClientView({ documentTypeFilter, createAction }: Docume
                         title: "No se encontraron documentos",
                         description: "Los documentos de inventario registran y respaldan todas las transacciones físicas.",
                     }}
+                    cardSkeleton={{ showFooter: false }}
                     renderCard={(doc: InventoryDocument) => (
                             <AutoEntityCard
                                 key={doc.id}

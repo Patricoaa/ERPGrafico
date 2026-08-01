@@ -13,7 +13,10 @@ interface ChartLegendProps {
 
 export function ChartLegend({ items }: ChartLegendProps) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div
+      className="grid gap-x-2.5 gap-y-1"
+      style={{ gridTemplateColumns: "repeat(3, max-content)" }}
+    >
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1">
           <div

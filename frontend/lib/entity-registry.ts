@@ -322,7 +322,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
   },
   'inventory.stockreport': {
     label: 'inventory.stockreport',
-    title: 'Reporte de Stock',
+    title: 'Existencias',
     titlePlural: 'Reportes de Stock',
     icon: BarChart3,
     iconName: 'BarChart3',

@@ -12,7 +12,7 @@ import type { BulkAction } from "@/components/shared"
 import type { Page } from '@/lib/pagination'
 import { ProductDrawer } from "./ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
-import { Plus, AlertTriangle, BarChart3, Boxes, Package, Store, ShoppingCart, ShoppingBag } from "lucide-react"
+import { Plus, AlertTriangle, BarChart3, Boxes, Package, Store, ShoppingCart, ShoppingBag, Warehouse } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { toast } from "sonner"
@@ -20,6 +20,9 @@ import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
+import { StockReport } from "./StockReport"
+import { ProductInsightsPanel } from "./ProductInsightsPanel"
+import type { StockReportItem } from "@/features/inventory/stockReportFields"
 
 import { AutoEntityCard } from "@/components/shared"
 import { productFields } from "@/features/inventory/productFields"
@@ -65,6 +68,9 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     }), [categoryOptions])
 
     const search = useUnifiedSearch(config)
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
     const filters = useMemo<ProductFilters>(() => {
         const raw = { ...search.filters } as Record<string, string>
 
@@ -89,7 +95,10 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
     const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
-    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("resumen")
+    const viewParam = searchParams.get('view')
+    const initialAnalyticsTab = ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam ?? '') ? viewParam! : 'resumen'
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState(initialAnalyticsTab)
+    const [selectedStockProduct, setSelectedStockProduct] = useState<StockReportItem | null>(null)
 
     const analyticsFilters = {
         search: filters.search,
@@ -129,9 +138,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const displayProducts = React.useMemo(() => products, [products])
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
         endpoint: '/inventory/products'
@@ -523,9 +529,43 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                         },
                     ],
                 },
+                {
+                    value: "existencias",
+                    label: "Existencias",
+                    icon: Warehouse,
+                    gridRows: "1fr",
+                    columns: [
+                        {
+                            id: "col-existencias-1",
+                            weight: 1,
+                            sections: [
+                                {
+                                    id: "stock-report-embedded",
+                                    colSpan: 1,
+                                    fillRemaining: true,
+                                    content: {
+                                        type: "custom",
+                                        render: (
+                                            <StockReport
+                                                externalFilters={{
+                                                    search: filters.search,
+                                                    category: filters.category !== undefined ? String(filters.category) : undefined,
+                                                    product_type: filters.product_type,
+                                                    is_active: filters.is_active !== undefined ? String(filters.is_active) : undefined,
+                                                }}
+                                                onSelectProduct={setSelectedStockProduct}
+                                                selectedProduct={selectedStockProduct}
+                                            />
+                                        ),
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                },
             ],
         },
-    }), [analyticsActiveTab, resumenData, ventasData, comprasData])
+    }), [analyticsActiveTab, resumenData, ventasData, comprasData, filters, selectedStockProduct])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -588,6 +628,16 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     cardSkeleton={{ showBody: false, showFooter: false }}
                     createAction={createAction}
                     analyticsPanel={analyticsPanel}
+                    renderCustomView={selectedStockProduct ? () => (
+                        <div className="flex-1 flex flex-col min-h-0 h-full">
+                            <ProductInsightsPanel
+                                productId={selectedStockProduct.id as number}
+                                productName={selectedStockProduct.name ?? null}
+                                onBack={() => setSelectedStockProduct(null)}
+                                onProductChange={(id, name) => setSelectedStockProduct({ ...selectedStockProduct, id, name })}
+                            />
+                        </div>
+                    ) : undefined}
                     emptyState={{
                         context: "inventory",
                         title: "Aún no hay productos",

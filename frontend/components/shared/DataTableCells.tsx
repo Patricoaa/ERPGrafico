@@ -287,7 +287,7 @@ export const DataCell = {
      * Directional icons + semantic colors. Mirrors CurrencyFlow for quantities.
      * When `direction` is omitted, infers from sign (backward compatible).
      */
-    NumericFlow: ({ value, unit, direction: dirProp, showIcon = true, showSign = true, className, size, intent, weight, color, textTransform, letterSpacing, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
+    NumericFlow: ({ value, unit, uom, direction: dirProp, showIcon = true, showSign = true, className, size, intent, weight, color, textTransform, letterSpacing, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, uom?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
         if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center text-muted-foreground text-sm">-</div>
 
         const numValue = Number(value)
@@ -302,11 +302,13 @@ export const DataCell = {
 
         // eslint-disable-next-line no-restricted-syntax -- flow/polarity quantity format, not currency
         const formatted = Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+        
+        const displayUnit = uom || unit
 
         return (
             <div className={cn("flex items-center justify-center gap-1 font-sans text-sm font-medium text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
-                <span className={textColor}>{sign}{formatted}{unit && ` ${unit}`}</span>
+                <span className={textColor}>{sign}{formatted}{displayUnit && ` ${displayUnit}`}</span>
             </div>
         )
     },
