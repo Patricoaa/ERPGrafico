@@ -310,7 +310,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     className="flex-1 min-h-[300px]"
                                     chart={priceLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={priceLineData} valueFormat="currency" /> : <EmptyChart />}
                                 />
-                                <div className="rounded-md border flex-1 min-h-[250px] overflow-hidden flex flex-col"><PriceHistoryTable entries={data.price_history} /></div>
+                                <div className="flex-1 min-h-[250px] overflow-hidden flex flex-col"><PriceHistoryTable entries={data.price_history} /></div>
                             </div>
 
                             {/* COST */}
@@ -326,7 +326,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     className="flex-1 min-h-[300px]"
                                     chart={costLineData.length ? <AnalyticsChart type="line-chart" preset="card" data={costLineData} valueFormat="currency" /> : <EmptyChart />}
                                 />
-                                <div className="rounded-md border flex-1 min-h-[250px] overflow-hidden flex flex-col"><CostHistoryTable entries={data.price_history} /></div>
+                                <div className="flex-1 min-h-[250px] overflow-hidden flex flex-col"><CostHistoryTable entries={data.price_history} /></div>
                             </div>
 
                             {/* KARDEX */}
@@ -351,7 +351,7 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                     className="flex-1 min-h-[300px]"
                                     chart={productionBarData.length ? <AnalyticsChart type="bar-chart" preset="card" data={productionBarData} keys={['Consumo OT']} indexBy="name" /> : <EmptyChart />}
                                 />
-                                <div className="rounded-md border flex-1 min-h-[300px] overflow-hidden flex flex-col">
+                                <div className="flex-1 min-h-[300px] overflow-hidden flex flex-col">
                                     <ProductionUsageTable entries={data.production_usage} onOpenWorkOrder={openWorkOrder} />
                                 </div>
                             </div>
@@ -395,7 +395,7 @@ function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
         { header: "Usuario",         cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
         { header: "Precio de Venta", cell: ({ row }) => <DataCell.Currency value={row.original.sale_price} className="text-left font-bold" /> },
     ]
-    return <DataTable columns={columns} data={entries} variant="embedded" hidePagination emptyState={{ context: "search", title: "Sin historial de precios", description: "No hay cambios de precio registrados." }} />
+    return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de precios", description: "No hay cambios de precio registrados." }} />
 }
 
 function CostHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
@@ -404,7 +404,7 @@ function CostHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
         { header: "Usuario",          cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
         { header: "Costo Ponderado",  cell: ({ row }) => <DataCell.Currency value={row.original.cost_price} className="text-left" /> },
     ]
-    return <DataTable columns={columns} data={entries} variant="embedded" hidePagination emptyState={{ context: "search", title: "Sin historial de costos", description: "No hay cambios de costo registrados." }} />
+    return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de costos", description: "No hay cambios de costo registrados." }} />
 }
 
 function ProductStockMovesTable({ productId, onOpenTransaction }: { productId: number, onOpenTransaction: (id: number | string, type: TransactionType) => void }) {
@@ -465,5 +465,5 @@ function ProductionUsageTable({ entries, onOpenWorkOrder }: { entries: Productio
         { header: "Cantidad Consumida",cell: ({ row }) => <DataCell.Number value={row.original.quantity} className="text-left" /> },
         { header: "Acciones",          cell: ({ row }) => <div className="text-right"><DataCell.ActionGroup><DataCell.Action action="detail" onClick={() => onOpenWorkOrder(row.original.ot_id)} /></DataCell.ActionGroup></div> },
     ]
-    return <DataTable columns={columns} data={entries} variant="embedded" hidePagination emptyState={{ context: "search", title: "Sin uso en producción", description: "Este producto no ha sido utilizado como material en producción." }} />
+    return <DataTableView entityLabel="production.workorder" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin uso en producción", description: "Este producto no ha sido utilizado como material en producción." }} />
 }
