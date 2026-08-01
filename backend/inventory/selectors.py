@@ -578,22 +578,21 @@ class ProductSelector:
             for r in top_suppliers_qs
         ]
 
-        # Stock history from kardex: running balance per day
+        # Stock history: aggregate daily deltas from the kardex, then anchor
+        # backward from the current on-hand stock so the last point equals today.
         stock_history = []
         if kardex:
-            running = float(instance.current_stock)
             sorted_moves = sorted(kardex, key=lambda x: str(x["date"]))
-            # rebuild chronological running balance
             balance_map: dict[str, float] = {}
             for m in sorted_moves:
                 date_str = str(m["date"])[:10]
                 delta = m["quantity"] if m.get("direction") in ("IN", "ADJUSTMENT") else -m["quantity"]
                 balance_map[date_str] = balance_map.get(date_str, 0) + delta
-            # cumulative from oldest
+            # cumulative sum from oldest date
             cumulative = 0.0
             for date_str in sorted(balance_map.keys()):
                 cumulative += balance_map[date_str]
-                stock_history.append({"date": date_str, "stock": cumulative})
+                stock_history.append({"date": date_str, "stock": round(cumulative, 4)})
 
         return {
             "price_history": price_history,
