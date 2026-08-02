@@ -70,7 +70,7 @@ export const creditContactFields = createEntityFields<CreditContact>()({
     },
     creditLastEvaluated: {
         key: 'credit_last_evaluated',
-        type: 'date',
+        type: 'dateTime',
         label: 'Bloqueado desde',
     },
 })

@@ -50,7 +50,7 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
     },
     paidAt: {
         key: 'paid_at',
-        type: 'date',
+        type: 'dateTime',
         label: 'Pagado el',
     },
     paymentAccountName: {
