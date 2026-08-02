@@ -19,7 +19,7 @@ export const bankStatementLineFields = createEntityFields<BankStatementLine>()({
     },
     amount: {
         key: 'amount',
-        type: 'computed',
+        type: 'currency',
         label: 'Monto',
         tableOptions: { align: 'right' }
     },
