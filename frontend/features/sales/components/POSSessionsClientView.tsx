@@ -104,6 +104,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                     variant="embedded"
                     isLoading={isLoading}
                     entityLabel="pos.session"
+                    cardSkeleton={{ showBody: false, showFooter: false }}
                     unifiedSearch={<UnifiedSearchBar
                         config={posSessionUnifiedSearchDef}
                         chips={search.chips}
