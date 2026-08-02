@@ -11,7 +11,7 @@ export const blacklistFields = createEntityFields<CreditContact>()({
     },
     creditLastEvaluated: {
         key: 'credit_last_evaluated',
-        type: 'date',
+        type: 'dateTime',
         label: 'Bloqueado desde',
         tableOptions: { align: 'center' },
     },

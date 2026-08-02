@@ -21,15 +21,13 @@ export const posSessionFields = createEntityFields<POSSession>()({
     },
     openedAt: {
         key: "opened_at",
-        type: "date",
+        type: "dateTime",
         label: "Apertura",
-        cellProps: { showTime: true },
     },
     closedAt: {
         key: "closed_at",
-        type: "date",
+        type: "dateTime",
         label: "Cierre",
-        cellProps: { showTime: true },
     },
     startAmount: {
         key: "start_amount",
