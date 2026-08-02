@@ -475,7 +475,7 @@ export function DataTable<TData, TValue>({
                 )}
 
                 {!hidePagination && !isMinimal && (
-                    <div className="rounded-b-sm bg-background mt-2 px-2 py-1.5">
+                    <div className="rounded-b-sm bg-background mt-1 px-1.5 py-1">
                         <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                     </div>
                 )}
@@ -803,7 +803,7 @@ export function DataTable<TData, TValue>({
                     )}
 
                     {!hidePagination && currentView !== 'analytics' && (
-                        <div className="px-2 shrink-0 py-1.5 bg-background rounded-b-sm mt-2">
+                        <div className="px-1.5 shrink-0 py-1 bg-background rounded-b-sm mt-1">
                             <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                         </div>
                     )}
@@ -979,7 +979,7 @@ export function DataTable<TData, TValue>({
                 </div>
             )}
             {!hidePagination && currentView !== 'analytics' && (
-                <div className="rounded-b-sm bg-background mt-2 px-2 py-1.5">
+                <div className="rounded-b-sm bg-background mt-1 px-1.5 py-1">
                     <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                 </div>
             )}
