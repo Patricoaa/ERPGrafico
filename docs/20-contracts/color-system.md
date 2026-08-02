@@ -151,9 +151,9 @@ shadow-[0_0_8px_var(--{intent})]
 | Active ring | `ring-2 ring-{intent} ring-offset-2` | `ring-2 ring-primary ring-offset-2` |
 | Trend up | `text-success` | |
 | Trend down | `text-destructive` | |
-| NumericFlow positive | `text-success` | |
-| NumericFlow negative | `text-destructive` | |
-| NumericFlow zero | `text-muted-foreground` | |
+| NumericFlow positive | badge `bg-success/10 text-success` | |
+| NumericFlow negative | badge `bg-destructive/10 text-destructive` | |
+| NumericFlow zero | badge `bg-muted/60 text-muted-foreground` | |
 | MoneyDisplay positive | `text-success` | |
 | MoneyDisplay negative | `text-destructive` | |
 | Progress complete | `bg-success` + glow | |

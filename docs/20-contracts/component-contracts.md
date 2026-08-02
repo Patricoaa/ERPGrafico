@@ -182,9 +182,11 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 
 Para cantidades con polaridad visual (+/−): movimientos de stock, horas de producción, variaciones de inventario. **No usar para monedas** — usar `DataCell.Currency showColor` que delega a `MoneyDisplay`.
 
+Renderiza un **badge cuadrado (`rounded-sm`), sin borde, tintado del color del flujo** (fondo `/{10}` más tenue). Default `size sm` (`text-xs`) con `font-medium` — misma regla que el resto de DataCell (badge → `sm`). Mismo lenguaje visual que `CurrencyFlow`.
+
 ```tsx
 <DataCell.NumericFlow value={movement.qty} unit="un" />
-// → "+10.00 un" verde  |  "−5.00 un" rojo  |  "0.00" gris
+// → badge `bg-success/10 text-success` con "+10 un" | `bg-destructive/10 text-destructive` con "−5 un" | `bg-muted/60 text-muted-foreground` con "0 un"
 ```
 
 | prop | type | required | default | notes |
@@ -194,7 +196,7 @@ Para cantidades con polaridad visual (+/−): movimientos de stock, horas de pro
 | `showSign` | `boolean` | ❌ | `true` | Prefija `+` en positivos |
 | `className` | `string` | ❌ | — | |
 
-Usa `.toFixed(2)` y tokens `text-success` / `text-destructive` / `text-muted-foreground` de `globals.css`.
+Usa `.toFixed(2)` y tokens `text-success` / `text-destructive` / `text-muted-foreground` de `globals.css` como tinta del badge.
 
 ### DataCell.Progress
 
