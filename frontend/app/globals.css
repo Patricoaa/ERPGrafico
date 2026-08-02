@@ -296,7 +296,7 @@
   --color-liability: var(--warning);
   --color-liability-foreground: var(--warning-foreground);
 
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-onest), system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /*
@@ -356,6 +356,10 @@
   /* py-3 - Comfortable (default) */
   --table-cell-px: 1rem;
   /* px-4 */
+  --table-header-py: 0.375rem;
+  /* py-1.5 - Header vertical padding */
+  --table-header-px: 0.5rem;
+  /* px-2 - Header horizontal padding */
   --table-header-h: 2.75rem;
   /* ~h-11 */
   --table-row-hover: oklch(var(--muted-raw) / 0.5);
@@ -679,7 +683,7 @@
 }
 .table-header {
   height: var(--table-header-h);
-  padding: var(--table-cell-py) var(--table-cell-px);
+  padding: var(--table-header-py) var(--table-header-px);
 }
 .table-row-hover {
   transition: background-color 150ms ease;
