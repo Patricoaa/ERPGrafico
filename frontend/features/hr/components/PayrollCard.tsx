@@ -54,10 +54,10 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 </div>
             </TableCell>
             <TableCell className="text-right py-3 tabular-nums">
-                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-success" />}
+                {type === 'HABER' && <DataCell.Currency value={item.amount} weight="black" className="text-[11px] text-success" />}
             </TableCell>
             <TableCell className="text-right py-3 pr-8 tabular-nums">
-                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-expense" />}
+                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} weight="black" className="text-[11px] text-expense" />}
             </TableCell>
             {!isReadOnly && (
                 <TableCell className="w-[80px] p-0 text-right">

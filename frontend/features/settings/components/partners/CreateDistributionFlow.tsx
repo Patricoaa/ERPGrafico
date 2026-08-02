@@ -331,7 +331,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     <div className="grid grid-cols-2 gap-4">
                         <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
-                            <DataCell.Currency value={draftResolution?.net_result || 0} className="justify-start text-xl font-bold text-primary" />
+                            <DataCell.Currency value={draftResolution?.net_result || 0} weight="bold" className="justify-start text-xl text-primary" />
                         </Card>
                         <Card className="rounded-none border-dashed bg-card/50 shadow-card p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
@@ -399,7 +399,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                         ) : '0'}
                                                     </span>
                                                     <span className="font-bold text-primary text-[11px] flex items-center gap-1">
-                                                        Neto: <DataCell.Currency value={line.net_amount} className="w-auto p-0 inline-flex font-mono text-[11px] font-bold text-primary" />
+                                                        Neto: <DataCell.Currency value={line.net_amount} weight="bold" className="w-auto p-0 inline-flex font-mono text-[11px] text-primary" />
                                                     </span>
                                                 </div>
                                             </td>

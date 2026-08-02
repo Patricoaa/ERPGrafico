@@ -69,8 +69,9 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
             <div className="flex flex-col items-end">
                 <DataCell.Currency
                     value={value}
+                    weight="bold"
                     className={cn(
-                        "justify-end font-mono text-xs font-bold w-auto p-0 inline-flex",
+                        "justify-end font-mono text-xs w-auto p-0 inline-flex",
                         value === 0 ? "text-muted-foreground" : (isGood ? "text-success" : "text-destructive")
                     )}
                 />
@@ -143,7 +144,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
 
                 {/* YTD Columns */}
                 <TableCell className="text-right p-2 bg-muted/10">
-                    <DataCell.Currency value={node.ytd_actual} className="justify-end font-mono text-xs font-semibold" />
+                    <DataCell.Currency value={node.ytd_actual} weight="semibold" className="justify-end font-mono text-xs" />
                 </TableCell>
                 <TableCell className="text-right p-2 bg-muted/10">
                     <DataCell.Currency value={node.ytd_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />

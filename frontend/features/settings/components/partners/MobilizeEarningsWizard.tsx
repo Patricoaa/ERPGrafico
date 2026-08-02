@@ -111,7 +111,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         <div className="flex justify-between items-end mb-4">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Total a Movilizar</p>
-                                <DataCell.Currency value={totalMobilized} className="justify-start text-2xl font-bold text-primary mt-1" />
+                                <DataCell.Currency value={totalMobilized} weight="bold" className="justify-start text-2xl text-primary mt-1" />
                             </div>
                         </div>
 
@@ -212,11 +212,11 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1 border p-3 rounded-md bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Dividendos Pagar</p>
-                                <DataCell.Currency value={totalDividend} className="justify-start text-xl font-semibold text-foreground" />
+                                <DataCell.Currency value={totalDividend} weight="semibold" className="justify-start text-xl text-foreground" />
                             </div>
                             <div className="space-y-1 border p-3 rounded-md bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Re-Inversión</p>
-                                <DataCell.Currency value={totalReinvest} className="justify-start text-xl font-semibold text-muted-foreground" />
+                                <DataCell.Currency value={totalReinvest} weight="semibold" className="justify-start text-xl text-muted-foreground" />
                             </div>
                         </div>
 

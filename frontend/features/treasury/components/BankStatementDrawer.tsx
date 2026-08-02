@@ -55,11 +55,11 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
                             </div>
                             <div>
                                 <span className="text-muted-foreground">Saldo Inicial</span>
-                                <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline /></p>
+                                <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline weight="medium" /></p>
                             </div>
                             <div>
                                 <span className="text-muted-foreground">Saldo Final</span>
-                                <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline /></p>
+                                <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline weight="medium" /></p>
                             </div>
                         </div>
                         {statement.reconciliation_progress != null && (

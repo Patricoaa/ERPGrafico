@@ -759,7 +759,7 @@ function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], l
             if (key === 'balance') {
                 return {
                     ...col,
-                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
+                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Currency value={row.original.balance as number} weight="bold" className="text-left text-destructive" />,
                 }
             }
 

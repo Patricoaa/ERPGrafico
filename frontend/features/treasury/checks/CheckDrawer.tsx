@@ -48,7 +48,7 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Monto</span>
-                                    <p className="font-medium"><MoneyDisplay amount={parseFloat(check.amount)} inline /></p>
+                                    <p className="font-medium"><MoneyDisplay amount={parseFloat(check.amount)} inline weight="medium" /></p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Emisión</span>

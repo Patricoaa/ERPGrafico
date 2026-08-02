@@ -153,7 +153,7 @@ function PriceHistoryTable({ entries, ivaRatio }: { entries: PriceHistoryEntry[]
     const columns: ColumnDef<PriceHistoryEntry>[] = [
         { header: "Fecha",              cell: ({ row }) => <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span> },
         { header: "Usuario",            cell: ({ row }) => <Chip size="xs" className="whitespace-nowrap">{row.original.user}</Chip> },
-        { header: "Precio c/IVA",       cell: ({ row }) => <DataCell.Currency value={row.original.sale_price * ivaRatio} className="text-left font-bold" /> },
+        { header: "Precio c/IVA",       cell: ({ row }) => <DataCell.Currency value={row.original.sale_price * ivaRatio} weight="bold" className="text-left" /> },
         { header: "Precio Neto",        cell: ({ row }) => <DataCell.Currency value={row.original.sale_price} className="text-left text-muted-foreground" /> },
     ]
     return <DataTableView entityLabel="inventory.product" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin historial de precios", description: "No hay cambios de precio registrados." }} />
@@ -185,7 +185,7 @@ function TopCustomersTable({ entries }: { entries: TopCustomer[] }) {
         { header: "Costos",      cell: ({ row }) => <DataCell.Currency value={row.original.total_cost}    className="text-left text-muted-foreground" /> },
         { header: "Margen Neto", cell: ({ row }) => {
             const margin = row.original.total_revenue - row.original.total_cost
-            return <DataCell.Currency value={margin} className={`text-left font-bold ${margin >= 0 ? 'text-success' : 'text-destructive'}`} />
+            return <DataCell.Currency value={margin} weight="bold" className={`text-left ${margin >= 0 ? 'text-success' : 'text-destructive'}`} />
         }},
     ]
     return <DataTableView entityLabel="sales.customer" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin ventas registradas", description: "No hay clientes con compras de este producto." }} />
@@ -195,7 +195,7 @@ function TopSuppliersTable({ entries }: { entries: TopSupplier[] }) {
     const columns: ColumnDef<TopSupplier>[] = [
         { header: "Proveedor",  cell: ({ row }) => <span className="text-xs font-medium">{row.original.name}</span> },
         { header: "Unidades",   cell: ({ row }) => <DataCell.Number value={row.original.total_qty} className="text-left" /> },
-        { header: "Costo Total",cell: ({ row }) => <DataCell.Currency value={row.original.total_cost} className="text-left font-bold" /> },
+        { header: "Costo Total",cell: ({ row }) => <DataCell.Currency value={row.original.total_cost} weight="bold" className="text-left" /> },
     ]
     return <DataTableView entityLabel="purchasing.supplier" forceView="list" hideToolbar={true} columns={columns} data={entries} variant="embedded" emptyState={{ context: "search", title: "Sin compras registradas", description: "No hay proveedores con recepciones de este producto." }} />
 }

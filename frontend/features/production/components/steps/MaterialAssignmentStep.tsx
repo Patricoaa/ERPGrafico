@@ -139,7 +139,7 @@ export function MaterialAssignmentStep({
       id: 'costo_total',
       header: () => <div className="text-right">Costo Total</div>,
       cell: ({ row }) => (
-        <DataCell.Currency value={row.original.total_cost} className="justify-end font-bold text-xs" />
+        <DataCell.Currency value={row.original.total_cost} weight="bold" className="justify-end text-xs" />
       ),
     },
     {
@@ -291,7 +291,7 @@ export function MaterialAssignmentStep({
                           <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                           <span>•</span>
                           <span className="inline-flex items-center gap-1">
-                            <DataCell.Currency value={parseFloat(m.unit_price ?? '0') * vatMultiplier} className="w-auto justify-start font-bold text-[10px] text-muted-foreground p-0 inline-flex" />
+                            <DataCell.Currency value={parseFloat(m.unit_price ?? '0') * vatMultiplier} weight="bold" className="w-auto justify-start text-[10px] text-muted-foreground p-0 inline-flex" />
                             <span>(Bruto) c/u</span>
                           </span>
                         </div>
@@ -302,7 +302,8 @@ export function MaterialAssignmentStep({
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
                         <DataCell.Currency
                           value={parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier}
-                          className="justify-end font-bold text-sm text-primary w-auto p-0 inline-flex"
+                          className="justify-end text-sm text-primary w-auto p-0 inline-flex"
+                          weight="bold"
                         />
                       </div>
                       {isViewingCurrentStage && !m.purchase_order_number && (

@@ -108,7 +108,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                 title={`¿Castigar Documento ${formatEntityDisplay('sales.saleorder', { number: showWriteOffDocDialog?.number })}?`}
                 description={
                     <div className="space-y-3 pt-1 text-sm leading-relaxed">
-                        <p>Se castigará el saldo pendiente de <strong><MoneyDisplay amount={showWriteOffDocDialog?.balance} inline /></strong> para este documento.</p>
+                        <p>Se castigará el saldo pendiente de <strong><MoneyDisplay amount={showWriteOffDocDialog?.balance} inline weight="bold" /></strong> para este documento.</p>
                     </div>
                 }
                 variant="destructive"

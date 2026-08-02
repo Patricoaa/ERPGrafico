@@ -144,7 +144,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                                     {sourceAccount && (
                                                         <div className="absolute -bottom-5 right-1 px-1.5 py-0.5 rounded bg-muted/30 border border-muted/50">
                                                             <p className="text-[10px] font-mono leading-none">
-                                                                DISP: <span className="font-bold text-success"><MoneyDisplay amount={sourceAccount.current_balance} /></span>
+                                                                DISP: <span className="text-success"><MoneyDisplay amount={sourceAccount.current_balance} weight="bold" /></span>
                                                             </p>
                                                         </div>
                                                     )}

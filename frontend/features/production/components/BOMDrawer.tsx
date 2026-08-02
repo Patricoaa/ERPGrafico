@@ -535,11 +535,11 @@ export function BOMDrawer({
                                                 <div className="flex flex-col items-end text-[10px] font-black uppercase text-foreground/80 pr-12 gap-1">
                                                     <div className="flex items-center gap-4">
                                                         <span className="text-muted-foreground">Total Unitarios:</span>
-                                                        <DataCell.Currency value={totalUnitCost} className="text-primary w-auto justify-end font-bold text-[10px]" />
+                                                        <DataCell.Currency value={totalUnitCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
                                                     </div>
                                                     <div className="flex items-center gap-4 pt-1">
                                                         <span className="text-muted-foreground">Total Receta:</span>
-                                                        <DataCell.Currency value={totalLineCost} className="text-primary w-auto justify-end font-bold text-[10px]" />
+                                                        <DataCell.Currency value={totalLineCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
                                                     </div>
                                                 </div>
                                             )
@@ -737,7 +737,8 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={form.watch(`lines.${index}.component_cost`) || 0}
-                                                            className="justify-end font-medium text-muted-foreground pr-1 text-[10px]"
+                                                            className="justify-end text-muted-foreground pr-1 text-[10px]"
+                                                            weight="medium"
                                                         />
                                                     </TableCell>
 
@@ -745,7 +746,8 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={(Number(form.watch(`lines.${index}.quantity`)) || 0) * (Number(form.watch(`lines.${index}.component_cost`)) || 0)}
-                                                            className="justify-end font-bold text-primary pr-1 text-[10px]"
+                                                            className="justify-end text-primary pr-1 text-[10px]"
+                                                            weight="bold"
                                                         />
                                                     </TableCell>
 
@@ -806,7 +808,8 @@ export function BOMDrawer({
                                                     <span className="text-muted-foreground">Total Bruto Unit.:</span>
                                                     <DataCell.Currency
                                                         value={totalGrossPrice}
-                                                        className="w-auto font-black text-primary text-[10px]"
+                                                        className="w-auto text-primary text-[10px]"
+                                                        weight="black"
                                                     />
                                                 </div>
                                             )

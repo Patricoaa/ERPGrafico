@@ -199,7 +199,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <div>
                             <h4 className="font-black text-destructive uppercase tracking-tighter text-sm">Discrepancia detectada</h4>
                             <p className="text-xs text-muted-foreground">
-                                El flujo calculado por actividades difiere en <b><MoneyDisplay amount={data.discrepancy} inline /></b> del saldo real bancario.
+                                El flujo calculado por actividades difiere en <b><MoneyDisplay amount={data.discrepancy} inline weight="bold" /></b> del saldo real bancario.
                             </p>
                         </div>
                     </div>
