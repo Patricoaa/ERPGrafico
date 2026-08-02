@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
 import type { MyProfile } from "@/types/profile"
-import type {Payroll} from "@/types/hr"
+import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ActionSlideButton, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -132,6 +132,13 @@ function ThemeSelectionCard() {
     const { theme } = useTheme()
     const { changeTheme, isSyncing } = useThemeSync()
 
+    const handleThemeKeyDown = (e: React.KeyboardEvent, next: "light" | "dark" | "system") => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            changeTheme(next)
+        }
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -149,11 +156,14 @@ function ThemeSelectionCard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Opción Claro */}
                     <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => changeTheme('light')}
+                        onKeyDown={(e) => handleThemeKeyDown(e, 'light')}
                         className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'light'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
@@ -166,11 +176,14 @@ function ThemeSelectionCard() {
 
                     {/* Opción Oscuro */}
                     <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => changeTheme('dark')}
+                        onKeyDown={(e) => handleThemeKeyDown(e, 'dark')}
                         className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'dark'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
@@ -183,11 +196,14 @@ function ThemeSelectionCard() {
 
                     {/* Opción Sistema */}
                     <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => changeTheme('system')}
+                        onKeyDown={(e) => handleThemeKeyDown(e, 'system')}
                         className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'system'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >

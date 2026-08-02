@@ -546,43 +546,62 @@
 }
 
 /*
- * CARD ACCENT CMY — Vertical gradient accent on the left side of cards
- * Apply via className="card-accent-cmyk" on any <EntityCard> or container.
- * Renders a 4px cyan→magenta→yellow vertical gradient bar along the left edge.
- * Visible on :focus (click/keyboard) and :hover.
+ * SPINNING CMY BORDER — Full gradient border that rotates around the card
+ * Apply via className="card-focus-spin-cmyk" on any focusable card/container.
+ * Renders a 2px cyan→magenta→yellow conic-gradient ring along the entire edge.
+ * Static on hover, rotating on :focus / :focus-visible (click/tap/keyboard)
+ * and permanently when paired with `accent-visible` (selected card).
+ * Uses @property to register an animatable <angle> so the gradient rotates
+ * seamlessly (start color = end color) with a pure CSS loop.
  */
-@utility card-accent-cmyk {
-  @apply relative overflow-hidden;
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
 
-  &::before {
+@keyframes spin-border {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
+@utility card-focus-spin-cmyk {
+  @apply relative;
+
+  &::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 4px;
-    background: linear-gradient(
-      180deg,
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(
+      from var(--border-angle),
       var(--color-cyan) 0%,
-      var(--color-cyan) 15%,
-      var(--color-magenta) 50%,
-      var(--color-yellow) 85%,
-      var(--color-yellow) 100%
+      var(--color-magenta) 33%,
+      var(--color-yellow) 66%,
+      var(--color-cyan) 100%
     );
-    z-index: 1;
-    pointer-events: none;
-    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
     opacity: 0;
+    animation: spin-border 2.4s linear infinite;
+    animation-play-state: paused;
     transition: opacity 200ms ease;
+    pointer-events: none;
   }
 
-  &:focus::before,
-  &:hover::before {
+  &:hover::after {
     opacity: 1;
+    animation-play-state: paused;
   }
 
-  &.accent-visible::before {
+  &:focus::after,
+  &.accent-visible::after {
     opacity: 1;
+    animation-play-state: running;
   }
 }
 
@@ -594,7 +613,8 @@
  *   - hover → subtle border at 50% opacity
  *   - focus-visible → primary border at 60% opacity
  *   - shadow-card, transition, relative overflow-hidden
- * Pair with card-accent-cmyk for the CMY gradient accent on hover/focus.
+ * Pair with card-focus-spin-cmyk for the CMY gradient border (static on
+ * hover, rotating on focus).
  * Each card maintains its own border-radius.
  */
 @utility card-interactive {
@@ -619,7 +639,7 @@
  * CARD BASE — Standard interactive card pattern
  * Apply via className="card-base".
  * Provides:
- *   - card-accent-cmyk: CMY gradient accent on hover/focus
+ *   - card-focus-spin-cmyk: CMY gradient border (static on hover, rotating on focus/selected)
  *   - rounded-md, border border-border (15% opacity via --border token)
  *   - hover:border-primary (primary border on hover)
  *   - hover:shadow-elevated
@@ -630,7 +650,7 @@
  * Add shadow-card shadow-black/5 if base shadow is needed.
  */
 @utility card-base {
-  @apply card-accent-cmyk rounded-md border border-border outline-none transition-all;
+  @apply card-focus-spin-cmyk relative overflow-hidden rounded-md border border-border outline-none transition-all;
   @apply hover:border-primary hover:shadow-elevated;
   @apply focus-visible:ring-2 focus-visible:ring-primary;
 }
@@ -878,6 +898,10 @@ table [data-notched-field] {
     .skeleton {
       animation: none;
       opacity: 0.5;
+    }
+
+    .card-focus-spin-cmyk::after {
+      animation: none;
     }
 
     [data-skeleton-shell] p,
