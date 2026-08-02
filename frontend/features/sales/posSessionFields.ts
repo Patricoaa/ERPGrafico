@@ -19,11 +19,6 @@ export const posSessionFields = createEntityFields<POSSession>()({
         type: "text",
         label: "Terminal",
     },
-    treasuryAccountName: {
-        key: "treasury_account_name",
-        type: "text",
-        label: "Cuenta",
-    },
     openedAt: {
         key: "opened_at",
         type: "dateTime",
