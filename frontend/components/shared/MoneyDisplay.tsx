@@ -59,7 +59,7 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     return (
         <span
             className={cn(
-                "tabular-nums tracking-tight",
+                "tabular-nums",
                 weight && WEIGHT_MAP[weight],
                 inline ? "inline" : "inline-block",
                 showColor && isNegative && "text-expense",
