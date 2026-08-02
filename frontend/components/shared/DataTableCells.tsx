@@ -288,7 +288,7 @@ export const DataCell = {
      * When `direction` is omitted, infers from sign (backward compatible).
      */
     NumericFlow: ({ value, unit, uom, direction: dirProp, showIcon = true, showSign = true, className, size, intent, weight, color, textTransform, letterSpacing, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, uom?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
-        if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center text-muted-foreground text-xs">-</div>
+        if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center font-medium text-muted-foreground text-xs">-</div>
 
         const numValue = Number(value)
         if (isNaN(numValue)) return <div className="text-xs font-medium text-foreground flex justify-center items-center text-center">-</div>
@@ -344,7 +344,7 @@ export const DataCell = {
 
     /** Standard date format */
     Date: ({ value, className, showTime = false, size, intent, weight, dateWeight, timeWeight, color, textTransform, letterSpacing, ...props }: ValueCellProps<string | Date> & { showTime?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, dateWeight?: DataCellWeight, timeWeight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
-        if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-xs text-muted-foreground/50", className)} {...props}>-</div>
+        if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-xs font-medium text-muted-foreground/50", className)} {...props}>-</div>
         return (
             <div className={cn("flex justify-center items-center w-full text-center text-xs font-sans font-medium text-foreground whitespace-nowrap", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], dateWeight && WEIGHT_MAP[dateWeight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 {formatPlainDate(value)}
