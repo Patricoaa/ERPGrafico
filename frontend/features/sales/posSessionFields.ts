@@ -14,6 +14,11 @@ export const posSessionFields = createEntityFields<POSSession>()({
         type: "text",
         label: "Cajero",
     },
+    terminal: {
+        key: "terminal_name",
+        type: "text",
+        label: "Terminal",
+    },
     treasuryAccountName: {
         key: "treasury_account_name",
         type: "text",
@@ -30,7 +35,7 @@ export const posSessionFields = createEntityFields<POSSession>()({
         label: "Cierre",
     },
     startAmount: {
-        key: "start_amount",
+        key: "opening_balance",
         type: "secondary",
         label: "Fondo Inicial",
     },

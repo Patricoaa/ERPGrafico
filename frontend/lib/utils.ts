@@ -284,9 +284,9 @@ export function translateFieldName(field: string): string {
     'payment_terminal_device_name': 'Dispositivo',
     'payment_methods': 'Métodos',
     'user_name': 'Cajero',
+    'terminal_name': 'Terminal',
     'opened_at': 'Apertura',
     'closed_at': 'Cierre',
-    'start_amount': 'Fondo Inicial',
     'total_sales': 'Ventas',
     // Settings
     'full_name': 'Nombre',

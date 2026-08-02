@@ -6,13 +6,12 @@ export interface POSSession {
     id: number
     id_display: string
     user_name: string
-    treasury_account: number
-    treasury_account_name: string
+    treasury_account: number | null
+    treasury_account_name: string | null
     opened_at: string
     closed_at: string | null
     status: 'OPEN' | 'CLOSED' | 'CLOSING'
     status_display: string
-    start_amount: number
     current_cash?: number
     expected_cash: number
     terminal_name?: string
