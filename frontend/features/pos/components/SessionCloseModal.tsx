@@ -371,7 +371,7 @@ export function SessionCloseModal({
                                             value={justifyTargetId}
                                             onChange={setJustifyTargetId}
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
-                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
+                                            excludeId={session.treasury_account !== null && typeof session.treasury_account === 'object' ? session.treasury_account.id : (session.treasury_account ?? undefined)}
                                             type="CASH"
                                         />
 
@@ -491,7 +491,7 @@ export function SessionCloseModal({
                                     onChange={(val) => setCashDestinationId(val ? Number(val) : null)}
                                     placeholder="Seleccione destino..."
                                     paymentMethod="CASH"
-                                    excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
+                                    excludeId={session.treasury_account !== null && typeof session.treasury_account === 'object' ? session.treasury_account.id : (session.treasury_account ?? undefined)}
                                 />
                             </LabeledContainer>
                         </div>
