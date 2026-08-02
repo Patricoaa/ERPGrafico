@@ -706,6 +706,14 @@
   --table-header-h: 2.75rem;
 }
 
+/* Compact table headers — opt-in per context (e.g. dense list views) */
+.table-header-compact {
+  --table-header-h: 2rem;
+  --table-header-py: 0.25rem;
+  --table-header-px: 0.5rem;
+  --table-header-btn-h: 1.5rem;
+}
+
 /* Table Input Alignment - Force precision radius (8px) on all table controls */
 table input,
 table button,

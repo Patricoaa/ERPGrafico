@@ -114,6 +114,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     isLoading={isLoading}
                     entityLabel="accounting.journalentry"
                     variant="embedded"
+                    className="table-header-compact"
                     unifiedSearch={<UnifiedSearchBar
                         config={journalEntryUnifiedSearchDef}
                         chips={search.chips}
