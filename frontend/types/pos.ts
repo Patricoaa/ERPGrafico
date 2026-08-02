@@ -167,8 +167,8 @@ export interface POSSession {
         payment_terminal_device?: number
         payment_terminal_device_name?: string
     } | null
-    treasury_account: number | { id: number; name: string }
-    treasury_account_name: string
+    treasury_account: number | { id: number; name: string } | null
+    treasury_account_name: string | null
     user: number
     user_name: string
     status: 'OPEN' | 'CLOSED'

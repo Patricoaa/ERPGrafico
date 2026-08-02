@@ -574,9 +574,8 @@ class POSSessionSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
     terminal_name = serializers.CharField(source="terminal.name", read_only=True, allow_null=True)
     terminal_details = POSTerminalSerializer(source="terminal", read_only=True)
-    treasury_account_name = serializers.CharField(
-        source="treasury_account.name", read_only=True, allow_null=True
-    )
+    treasury_account_name = serializers.SerializerMethodField()
+    treasury_account = serializers.PrimaryKeyRelatedField(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
     closed_by_name = serializers.CharField(
@@ -592,6 +591,12 @@ class POSSessionSerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
+
+    def get_treasury_account_name(self, obj):
+        from treasury.pos_service import _get_session_treasury
+
+        treasury = _get_session_treasury(obj)
+        return treasury.name if treasury else None
 
 
 class POSSessionAuditSerializer(serializers.ModelSerializer):

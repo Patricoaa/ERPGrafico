@@ -212,6 +212,11 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `OPEN` | `success` | `CLOSED` |
 | `CLOSED` | `info` | — |
 
+**Terminal como fuente de verdad (ADR-0063):** la sesión se abre siempre con un `terminal`;
+`treasury_account` es un snapshot inmutable de `terminal.default_treasury_account` capturado
+al abrir. La API expone `treasury_account_name` con fallback al default del terminal.
+Campos no editables: `treasury_account` (snapshot).
+
 ## TerminalBatch
 
 | Status | Intent | Transitions allowed to |
