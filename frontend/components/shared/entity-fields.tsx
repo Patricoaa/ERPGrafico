@@ -2,6 +2,7 @@ import { type ReactNode } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { cn, translateStatus } from "@/lib/utils"
 import { DataCell } from "./DataTableCells"
+import type { DataCellWeight } from "./DataTableCells"
 import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
 import type { LucideIcon } from "lucide-react"
@@ -14,6 +15,7 @@ type FieldType =
     | "text"
     | "code"
     | "date"
+    | "dateTime"
     | "currency"
     | "status"
     | "number"
@@ -75,6 +77,7 @@ export type FieldRole =
     | 'flow'             // currencyFlow, numericFlow — header center
     | 'relation'         // contact / text referencing another entity — subtitle candidate
     | 'temporal'         // date field — subtitle candidate
+    | 'datetime'         // date+time field — always center header (never subtitle)
     | 'descriptive'      // text, number, secondary, computed — detail body
     | 'supplementary'    // secondary text — detail body
     | 'progress'         // progress bar — metric fallback
@@ -94,6 +97,7 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
     'text':          'descriptive',
     'code':          'identifier',
     'date':          'temporal',
+    'dateTime':      'datetime',       // Date+time — always center header, never subtitle
     'currency':      'primary-value',  // Header KPI — total/salary keys rank higher via classifyFields priority
     'status':        'primary-value',  // Status badges are primary KPIs
     'number':        'descriptive',    // Quantities/counts → detail body
@@ -127,6 +131,7 @@ const ROLE_TO_PLACEMENT: Record<FieldRole, Placement> = {
     'flow':             'header',      // Flow fields — routed to header center in classifyFields
     'relation':         'detail',      // Subtitle candidate in auto-subtitle; otherwise center header
     'temporal':         'detail',      // Subtitle candidate in auto-subtitle; otherwise center header
+    'datetime':         'detail',      // Date+time — center header, never subtitle
     'descriptive':      'detail',      // Default body
     'supplementary':    'detail',      // Secondary text → body
     'progress':         'metric',      // Progress bars → metric fallback
@@ -187,6 +192,12 @@ interface FieldDef<T> {
     currency?: string | ((entity: T) => string)
     /** Show zero values as dash — static or based on parsed numeric value. */
     showZeroAsDash?: boolean | ((value: number) => boolean)
+
+    // Date / DateTime
+    /** Font weight of the date portion (default 'medium'). Only meaningful with showTime. */
+    dateWeight?: DataCellWeight
+    /** Font weight of the time portion (default 'normal'). Only meaningful with showTime. */
+    timeWeight?: DataCellWeight
 
     // Status
     /** Dynamic label override for the StatusBadge (replaces translateStatus). */
@@ -367,6 +378,17 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
             )
         case "date":
             return <DataCell.Date value={value as string | Date} className={resolvedClassName} {...extra} />
+        case "dateTime":
+            return (
+                <DataCell.Date
+                    value={value as string | Date}
+                    showTime
+                    dateWeight={def.dateWeight}
+                    timeWeight={def.timeWeight}
+                    className={resolvedClassName}
+                    {...extra}
+                />
+            )
         case "currency": {
             const currencyValue = typeof def.currency === "function" ? def.currency(entity) : def.currency
             const showZeroAsDashValue = typeof def.showZeroAsDash === "function"

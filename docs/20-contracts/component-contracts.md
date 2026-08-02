@@ -156,6 +156,28 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 
 > **Regla tipográfica por defecto (ADR-0061):** todos los DataCell de texto usan `text-xs` por default (`SIZE_MAP.md` sigue en `text-sm` como escalamiento explícito). Los consumidores pueden escalar con `size="md"`/`"lg"` o override via `className` (tailwind-merge last-wins).
 
+### DataCell.Date — fecha y fecha-hora (ADR-0062)
+
+| Prop | Tipo | Requerido | Default | Descripción |
+|---|---|---|---|---|
+| `value` | `string \| Date` | ✅ | — | Fecha a mostrar |
+| `showTime` | `boolean` | ❌ | `false` | Muestra hora/minutos (`es-CL`) como sufijo |
+| `weight` | `DataCellWeight` | ❌ | `medium` | Peso base de la celda (override del segmento fecha) |
+| `dateWeight` | `DataCellWeight` | ❌ | `'medium'` | Peso del segmento fecha (gana sobre `weight`) |
+| `timeWeight` | `DataCellWeight` | ❌ | `'normal'` | Peso del segmento hora (independiente de la fecha) |
+
+Pesos disponibles (`DataCellWeight`): `light` (300) · `normal` (400) · `medium` (500) · `semibold` (600) · `bold` (700). El token `light` se añadió en ADR-0062.
+
+```tsx
+// Fecha con hora: fecha font-medium, hora font-normal (default)
+<DataCell.Date value={row.opened_at} showTime />
+
+// Fecha con hora y hora más ligera
+<DataCell.Date value={row.closed_at} showTime dateWeight="medium" timeWeight="light" />
+```
+
+**FieldType `dateTime` (entity-fields):** variante declarativa de fecha-hora. Renderiza `DataCell.Date` con `showTime` y admite `dateWeight`/`timeWeight` tipados en el `FieldDef`. El rol `datetime` lo enruta siempre a la zona **center header** del card (nunca a subtítulo); el `date` (rol `temporal`) sigue siendo candidato a subtítulo vía auto-compose.
+
 ### Identidad y Enlaces: DataCell.Entity vs DataCell.Link vs DataCell.ContactLink
 
 | Primitivo | Destino / Propósito | Cuándo usar | Requiere |

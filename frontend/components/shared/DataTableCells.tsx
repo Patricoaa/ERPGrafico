@@ -40,7 +40,7 @@ interface ValueCellProps<T> extends BaseCellProps {
 
 type DataCellSize = 'xs' | 'sm' | 'md' | 'lg'
 type DataCellIntent = 'default' | 'primary' | 'success' | 'warning' | 'destructive' | 'info' | 'muted'
-type DataCellWeight = 'normal' | 'medium' | 'semibold' | 'bold'
+export type DataCellWeight = 'light' | 'normal' | 'medium' | 'semibold' | 'bold'
 type DataCellTextTransform = 'uppercase' | 'lowercase' | 'capitalize' | 'none'
 type DataCellLetterSpacing = 'tighter' | 'tight' | 'normal' | 'wide' | 'wider' | 'widest'
 
@@ -62,6 +62,7 @@ const INTENT_MAP: Record<DataCellIntent, string> = {
 }
 
 const WEIGHT_MAP: Record<DataCellWeight, string> = {
+    light: 'font-light',
     normal: 'font-normal',
     medium: 'font-medium',
     semibold: 'font-semibold',
@@ -349,16 +350,16 @@ export const DataCell = {
     // --- Date Cells ---
 
     /** Standard date format */
-    Date: ({ value, className, showTime = false, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<string | Date> & { showTime?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
+    Date: ({ value, className, showTime = false, size, intent, weight, dateWeight, timeWeight, color, textTransform, letterSpacing, ...props }: ValueCellProps<string | Date> & { showTime?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, dateWeight?: DataCellWeight, timeWeight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
         if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-xs text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-center text-xs font-sans font-medium text-foreground whitespace-nowrap", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-center text-xs font-sans font-medium text-foreground whitespace-nowrap", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], dateWeight && WEIGHT_MAP[dateWeight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
                         ? parseDateOnly(value)
                         : new Date(value)
-                    return <span className="text-xs text-muted-foreground/60 ml-1.5">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                    return <span className={cn("text-xs text-muted-foreground/60 ml-1.5", WEIGHT_MAP[timeWeight ?? 'normal'])}>{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
                 })()}
             </div>
         )
