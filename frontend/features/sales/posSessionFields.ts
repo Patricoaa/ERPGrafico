@@ -12,12 +12,12 @@ export const posSessionFields = createEntityFields<POSSession>()({
     userName: {
         key: "user_name",
         type: "text",
-        label: "Cajero",
+        label: "Usuario",
     },
     terminal: {
         key: "terminal_name",
         type: "text",
-        label: "Terminal",
+        label: "Punto de venta",
     },
     openedAt: {
         key: "opened_at",
@@ -47,4 +47,7 @@ export const posSessionFields = createEntityFields<POSSession>()({
         get: (s) => s.status,
         getLabel: (s) => s.status_display,
     },
+}, {
+    title: { field: "user_name" },
+    subtitle: { template: "{terminal_name}" },
 })
