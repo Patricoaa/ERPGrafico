@@ -493,6 +493,38 @@ describe("createEntityFields", () => {
             expect(subtitle).toHaveLength(1)
             expect(subtitle[0].kind).toBe("text")
         })
+
+        it("skips an absent primary-value candidate and promotes the next present one", () => {
+            const fields = createEntityFields<{ total: number; status: string }>()({
+                id: { key: "id", type: "code", label: "ID" },
+                total: { key: "total_amount", type: "currency", label: "Total", get: () => 1500 },
+                status: { key: "status", type: "status", label: "Estado", get: (e) => e.status },
+            })
+            // total_amount has no raw value on the entity (computed via `get`), so the
+            // primary-value slot must continue to the next candidate: status.
+            const subtitle = fields.resolveSubtitle({ total: 1500, status: "OPEN" }, fields.toCardFields({ total: 1500, status: "OPEN" }))
+            const kinds = subtitle.map(s => s.kind)
+            expect(kinds).toContain("status")
+            expect(kinds).not.toContain("currency")
+        })
+
+        it("skips an absent name candidate and promotes the next present name field", () => {
+            const fields = createEntityFields<{ user_name: string; terminal_name: string }>()({
+                id: { key: "id", type: "code", label: "ID" },
+                user_name: { key: "user_name", type: "text", label: "Cajero" },
+                terminal_name: { key: "terminal_name", type: "text", label: "Terminal" },
+            })
+            const subtitle = fields.resolveSubtitle(
+                { user_name: "", terminal_name: "Caja 1" },
+                fields.toCardFields({ user_name: "", terminal_name: "Caja 1" }),
+            )
+            expect(subtitle).toHaveLength(1)
+            const [nameItem] = subtitle
+            expect(nameItem.kind).toBe("text")
+            if (nameItem.kind === "text") {
+                expect(nameItem.content).toBe("Caja 1")
+            }
+        })
     })
 
     describe("all field types", () => {
