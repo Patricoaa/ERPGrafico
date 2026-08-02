@@ -650,8 +650,10 @@ function extractTemplateKeys<T>(template: string): Set<string> {
  * primary-value → explicit placement:'subtitle', up to 4 slots.
  *
  * Data-aware: when `entity` is provided, only fields whose value is non-null are included
- * (used by the card). When `entity` is omitted (static mode, used by toColumns), all
- * candidate fields are assumed present so the column order stays stable.
+ * (used by the card). Each slot evaluates all matching candidates in definition order and
+ * picks the first present one — an absent candidate never blocks a later one of the same role.
+ * When `entity` is omitted (static mode, used by toColumns), all candidate fields are assumed
+ * present so the column order stays stable.
  */
 function buildSubtitleOrder<T>(
     defs: Record<string, FieldDef<T>>,
@@ -670,9 +672,10 @@ function buildSubtitleOrder<T>(
     const nameDef = allDefs.find(d => {
         if (titleKeys.has(d.key)) return false
         const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
-        return (r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key)
+        if (!((r === 'primary-label' || r === 'descriptive') && /name/i.test(d.key))) return false
+        return isPresent(d.key)
     })
-    if (nameDef && isPresent(nameDef.key)) order.push(nameDef.key)
+    if (nameDef) order.push(nameDef.key)
 
     const slotRoles: FieldRole[] = ['relation', 'temporal', 'primary-value']
     for (const slotRole of slotRoles) {
@@ -684,9 +687,9 @@ function buildSubtitleOrder<T>(
             const r = d.fieldRole ?? TYPE_TO_ROLE[d.type]
             if (r !== slotRole) return false
             if (d.type === 'currency' && !/total/i.test(d.key)) return false
-            return true
+            return isPresent(d.key)
         })
-        if (candidate && isPresent(candidate.key)) order.push(candidate.key)
+        if (candidate) order.push(candidate.key)
     }
 
     const explicitSubtitleFields = allDefs.filter(d =>
