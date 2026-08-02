@@ -865,7 +865,7 @@ POS panels, product grids, and other industrial-themed surfaces use background t
 | `dot-grid-surface-sm` | Compact panels where 24px grid feels too sparse (12px grid) | `className="bg-card dot-grid-surface-sm"` |
 | `cross-grid-surface` | Technical/engineering surfaces (production grids, Gantt charts) | `className="bg-card cross-grid-surface"` |
 | `ribbon-cmyk` | CMY gradient top border on cards | `className="bg-card ribbon-cmyk"` |
-| `card-focus-spin-cmyk` | CMY gradient border on cards — static on hover, rotating on focus/selected (`accent-visible`) | `className="card-focus-spin-cmyk"` (included in `card-base`) |
+| `card-focus-spin-cmyk` | CMY gradient border on cards — rotating on hover, faster on focus/selected (`accent-visible`) | `className="card-focus-spin-cmyk"` (included in `card-base`) |
 
 **Rules:**
 - Apply only to surfaces with `bg-card` as base.

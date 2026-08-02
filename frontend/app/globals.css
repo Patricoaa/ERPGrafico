@@ -549,7 +549,7 @@
  * SPINNING CMY BORDER — Full gradient border that rotates around the card
  * Apply via className="card-focus-spin-cmyk" on any focusable card/container.
  * Renders a 2px cyan→magenta→yellow conic-gradient ring along the entire edge.
- * Static on hover, rotating on :focus / :focus-visible (click/tap/keyboard)
+ * Rotating on hover, faster on :focus / :focus-visible (click/tap/keyboard)
  * and permanently when paired with `accent-visible` (selected card).
  * Uses @property to register an animatable <angle> so the gradient rotates
  * seamlessly (start color = end color) with a pure CSS loop.
@@ -595,13 +595,14 @@
 
   &:hover::after {
     opacity: 1;
-    animation-play-state: paused;
+    animation-play-state: running;
   }
 
   &:focus::after,
   &.accent-visible::after {
     opacity: 1;
     animation-play-state: running;
+    animation-duration: 1.1s;
   }
 }
 
