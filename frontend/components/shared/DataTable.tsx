@@ -428,7 +428,7 @@ export function DataTable<TData, TValue>({
                 {renderLoadingView ? (
                     renderLoadingView()
                 ) : (
-                    <div className={cn(!noBorder && !isEmbedded && "rounded-md border")}>
+                    <div className={cn("bg-background", !noBorder && !isEmbedded && "rounded-md border")}>
                         <SkeletonShell isLoading ariaLabel="Cargando tabla">
                             <Table>
                                 <TableHeader>
@@ -755,7 +755,7 @@ export function DataTable<TData, TValue>({
                         </div>
                     ) : (
                         <div className={cn("flex-1 flex flex-col min-h-0", !isInModal && "max-h-[calc(100vh-260px)]")}>
-                            <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden" style={{ scrollbarGutter: 'stable' }}>
+                            <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
                                 <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                     <colgroup>
                                         {embeddedHeaderGroups[0]?.headers.map(header => (
@@ -787,7 +787,7 @@ export function DataTable<TData, TValue>({
                                     </TableHeader>
                                 </table>
                             </div>
-                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar", isTableEmpty && "flex flex-col")} style={{ scrollbarGutter: 'stable' }}>
+                            <div className={cn("flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background", isTableEmpty && "flex flex-col")} style={{ scrollbarGutter: 'stable' }}>
                                 <table className={cn("w-full text-sm", isTableEmpty && "h-full")} style={{ tableLayout: 'fixed' }}>
                                     <colgroup>
                                         {embeddedHeaderGroups[0]?.headers.map(header => (
@@ -853,7 +853,7 @@ export function DataTable<TData, TValue>({
                         />
                     </div>
                     <div className={cn("flex flex-col min-h-0", !isInModal && "max-h-[calc(100vh-260px)]", tableContainerClassName)}>
-                        <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden" style={{ scrollbarGutter: 'stable' }}>
+                        <div className="flex-shrink-0 bg-background rounded-t-sm overflow-hidden mb-1" style={{ scrollbarGutter: 'stable' }}>
                             <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                 <colgroup>
                                     {classicHeaderGroups[0]?.headers.map(header => (
@@ -880,7 +880,7 @@ export function DataTable<TData, TValue>({
                                 </TableHeader>
                             </table>
                         </div>
-                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar" style={{ scrollbarGutter: 'stable' }}>
+                        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-background" style={{ scrollbarGutter: 'stable' }}>
                             <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
                                 <colgroup>
                                     {classicHeaderGroups[0]?.headers.map(header => (

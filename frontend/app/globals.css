@@ -352,10 +352,10 @@
    */
   /* TABLE SYSTEM — Shared tokens for all table variants */
   /* Used by DataTable, FormLineItemsTable, ReportTable, and variant="minimal" */
-  --table-cell-py: 0.75rem;
-  /* py-3 - Comfortable (default) */
-  --table-cell-px: 1rem;
-  /* px-4 */
+  --table-cell-py: 0.5rem;
+  /* py-2 - Compact (default) */
+  --table-cell-px: 0.75rem;
+  /* px-3 */
   --table-header-py: 0.25rem;
   /* py-1 - Header vertical padding */
   --table-header-px: 0.5rem;
