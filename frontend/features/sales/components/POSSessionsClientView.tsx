@@ -23,7 +23,6 @@ export interface POSSession {
     closed_at: string | null
     status: 'OPEN' | 'CLOSED' | 'CLOSING'
     status_display: string
-    start_amount: number
     current_cash?: number
     expected_cash: number
     terminal_name?: string
