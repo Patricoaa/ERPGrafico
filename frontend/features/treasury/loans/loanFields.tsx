@@ -1,6 +1,6 @@
 import { createEntityFields } from '@/components/shared'
 import type { BankLoan } from './types'
-import { MoneyDisplay } from '@/components/shared'
+import { cn } from '@/lib/utils'
 
 export const loanFields = createEntityFields<BankLoan>()({
     displayId: {
@@ -20,13 +20,10 @@ export const loanFields = createEntityFields<BankLoan>()({
     },
     principal: {
         key: 'principal',
-        type: 'computed',
+        type: 'currency',
         label: 'Capital',
-        render: (l) => (
-            <div className="flex justify-end">
-                <MoneyDisplay amount={parseFloat(l.principal)} />
-            </div>
-        ),
+        get: (l) => parseFloat(l.principal),
+        tableOptions: { align: 'right' },
     },
     interestRate: {
         key: 'interest_rate',
@@ -37,16 +34,12 @@ export const loanFields = createEntityFields<BankLoan>()({
     },
     outstandingBalance: {
         key: 'outstanding_balance',
-        type: 'computed',
+        type: 'currency',
         label: 'Saldo Insoluto',
-        render: (l) => (
-            <div className="flex justify-end">
-                <MoneyDisplay
-                    amount={parseFloat(l.outstanding_balance)}
-                    className={l.status === 'ACTIVE' ? 'font-bold' : 'text-muted-foreground'}
-                />
-            </div>
-        ),
+        get: (l) => parseFloat(l.outstanding_balance),
+        cellProps: { weight: 'bold' },
+        className: (_v, l) => cn(l.status === 'ACTIVE' && 'text-muted-foreground'),
+        tableOptions: { align: 'right' },
     },
     termMonths: {
         key: 'term_months',

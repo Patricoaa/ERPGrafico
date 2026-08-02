@@ -47,16 +47,10 @@ export const terminalBatchFields = createEntityFields<TerminalBatch>()({
         label: "Depósito Neto",
     },
     commissionTotal: {
-        key: "commission_total",
-        type: "computed",
-        label: "Comisión",
-        render: (b) => (
-            <div className="flex justify-center w-full">
-                <DataCell.Currency
-                    value={b.commission_total ? -Math.abs(parseFloat(b.commission_total)) : 0}
-                />
-            </div>
-        ),
+        key: 'commission_total',
+        type: 'currency',
+        label: 'Comisión',
+        get: (b) => (b.commission_total ? -Math.abs(parseFloat(b.commission_total)) : 0),
     },
     status: {
         key: "status",

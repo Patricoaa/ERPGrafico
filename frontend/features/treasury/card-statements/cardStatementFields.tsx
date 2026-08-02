@@ -1,6 +1,6 @@
 import { createEntityFields } from '@/components/shared'
 import type { CreditCardStatement } from './types'
-import { DataCell, MoneyDisplay } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 
 export const cardStatementFields = createEntityFields<CreditCardStatement>()({
     displayId: {
@@ -22,13 +22,10 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
     },
     billedAmount: {
         key: 'billed_amount',
-        type: 'computed',
+        type: 'currency',
         label: 'Facturado',
-        render: (s) => (
-            <div className="flex justify-end">
-                <MoneyDisplay amount={parseFloat(s.billed_amount)} />
-            </div>
-        ),
+        get: (s) => parseFloat(s.billed_amount),
+        tableOptions: { align: 'right' },
     },
     cutOffDate: {
         key: 'cut_off_date',
