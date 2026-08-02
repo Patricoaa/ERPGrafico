@@ -263,13 +263,19 @@ export const DataCell = {
     CurrencyFlow: ({ value, direction, currency = "CLP", digits = 0, showIcon = true, showSign = true, className, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<number | string> & { direction: 'inflow' | 'outflow' | 'neutral', currency?: string, digits?: number, showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
         const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
         const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
-        const textColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-foreground'
+        const badgeColor = direction === 'inflow'
+            ? 'bg-success/10 text-success'
+            : direction === 'outflow'
+                ? 'bg-destructive/10 text-destructive'
+                : 'bg-muted/60 text-muted-foreground'
         const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
 
         return (
-            <div className={cn("flex items-center justify-center gap-1 font-sans text-sm font-medium text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
-                {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
-                <span className={textColor}>{sign}{formatCurrency(value, currency, { maximumFractionDigits: digits })}</span>
+            <div className={cn("flex items-center justify-center gap-1 font-sans text-xs font-medium text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+                <span className={cn("inline-flex items-center gap-1 rounded-sm px-2 py-0.5 leading-none", badgeColor)}>
+                    {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
+                    <span>{sign}{formatCurrency(value, currency, { maximumFractionDigits: digits })}</span>
+                </span>
             </div>
         )
     },
@@ -297,7 +303,11 @@ export const DataCell = {
 
         const Icon = direction === 'inflow' ? ArrowUpRight : direction === 'outflow' ? ArrowDownLeft : History
         const iconColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-muted-foreground'
-        const textColor = direction === 'inflow' ? 'text-success' : direction === 'outflow' ? 'text-destructive' : 'text-foreground'
+        const badgeColor = direction === 'inflow'
+            ? 'bg-success/10 text-success'
+            : direction === 'outflow'
+                ? 'bg-destructive/10 text-destructive'
+                : 'bg-muted/60 text-muted-foreground'
         const sign = showSign ? (direction === 'inflow' ? '+' : direction === 'outflow' ? '-' : '') : ''
 
         // eslint-disable-next-line no-restricted-syntax -- flow/polarity quantity format, not currency
@@ -306,9 +316,11 @@ export const DataCell = {
         const displayUnit = uom || unit
 
         return (
-            <div className={cn("flex items-center justify-center gap-1 font-sans text-sm font-medium text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
-                {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
-                <span className={textColor}>{sign}{formatted}{displayUnit && ` ${displayUnit}`}</span>
+            <div className={cn("flex items-center justify-center gap-1 font-sans text-xs font-medium text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+                <span className={cn("inline-flex items-center gap-1 rounded-sm px-2 py-0.5 leading-none", badgeColor)}>
+                    {showIcon && <Icon className={cn("h-3.5 w-3.5", iconColor)} />}
+                    <span>{sign}{formatted}{displayUnit && ` ${displayUnit}`}</span>
+                </span>
             </div>
         )
     },

@@ -122,5 +122,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0057](0057-placement-unified-column-order.md) | Placement como fuente de verdad unificada para orden de columnas | Accepted (§toColumns parcialmente superseded por 0059) |
 | [0058](0058-analytics-server-side-high-volume.md) | Panel analytics con agregación servidor para entidades de alto volumen | Accepted |
 | [0059](0059-tocolumns-mirrors-card-ordering.md) | toColumns() mirrors card ordering — list subtitle & header follow card zones | Proposed |
+| [0060](0060-flow-cells-tinted-badge.md) | Flow DataCells as square tinted badges | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
