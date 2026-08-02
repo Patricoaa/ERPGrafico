@@ -404,7 +404,8 @@ export function DataTable<TData, TValue>({
             <div ref={containerRef} className={cn(
                 isEmbedded && "relative flex flex-col h-full w-full space-y-1 min-h-0",
                 !isEmbedded && !isMinimal && "w-full space-y-4",
-                isMinimal && "space-y-0"
+                isMinimal && "space-y-0",
+                className
             )}>
                 {kpiCardsNode}
 
@@ -721,7 +722,7 @@ export function DataTable<TData, TValue>({
         const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
-            <div ref={containerRef} className="relative flex flex-col h-full w-full space-y-1 min-h-0">
+            <div ref={containerRef} className={cn("relative flex flex-col h-full w-full space-y-1 min-h-0", className)}>
                 {/* Toolbar Section (Outside) */}
                 {kpiCardsNode}
 
