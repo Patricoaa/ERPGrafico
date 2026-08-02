@@ -130,7 +130,7 @@ export const DataCell = {
      * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
      */
     Text: ({ children, className, size, intent, weight, uppercase, color, textTransform, letterSpacing, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, uppercase?: boolean, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-sm font-sans font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-xs font-sans font-medium text-foreground", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], uppercase && "uppercase tracking-tight", color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>{children}</div>
     ),
 
     /**
@@ -138,12 +138,12 @@ export const DataCell = {
      * entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias).
      */
     Secondary: ({ children, className, size, intent, weight, color, textTransform, letterSpacing, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-sm font-sans font-medium text-muted-foreground tracking-tight", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-xs font-sans font-medium text-muted-foreground tracking-tight", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>{children}</div>
     ),
 
     /** Standard text for identifiers (simple font as per request) */
     Code: ({ children, className, size, intent, weight, color, textTransform, letterSpacing, ...props }: BaseCellProps & { size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-sm font-sans font-medium text-foreground uppercase tracking-tight", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+        <div className={cn("flex justify-center items-center text-center w-full text-xs font-sans font-medium text-foreground uppercase tracking-tight", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
             {children || "-"}
         </div>
     ),
@@ -174,7 +174,7 @@ export const DataCell = {
                         if (onClick) onClick(e);
                         else if (contactId) openEntity('contacts.contact', Number(contactId));
                     }}
-                    className={cn("flex justify-center items-center gap-1.5 text-sm font-sans font-medium hover:underline hover:text-cyan transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
+                    className={cn("flex justify-center items-center gap-1.5 text-xs font-sans font-medium hover:underline hover:text-cyan transition-colors text-foreground h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none")}
                     {...props}
                 >
                     <User className="h-3 w-3 text-cyan/50 group-hover:text-cyan transition-colors flex-shrink-0" />
@@ -188,11 +188,11 @@ export const DataCell = {
     Link: ({ children, href, onClick, className, external, ...props }: HTMLAttributes<HTMLElement> & { href?: string, onClick?: () => void, external?: boolean }) => {
         if (href) {
             return (
-                <div className={cn("text-sm font-sans font-medium text-foreground/90 flex justify-center items-center text-center", className)}>
+                <div className={cn("text-xs font-sans font-medium text-foreground/90 flex justify-center items-center text-center", className)}>
                     <Link
                         href={href}
                         target={external ? "_blank" : undefined}
-                        className={cn("text-sm font-sans font-medium text-foreground/90 flex justify-center items-center text-center hover:underline hover:text-cyan flex items-center gap-1 w-fit")}
+                        className={cn("text-xs font-sans font-medium text-foreground/90 flex justify-center items-center text-center hover:underline hover:text-cyan flex items-center gap-1 w-fit")}
                         {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
                     >
                         {children}
@@ -202,11 +202,11 @@ export const DataCell = {
             )
         }
         return (
-                <div className={cn("text-sm font-sans font-medium text-foreground/90 flex justify-center items-center text-center", className)}>
+                <div className={cn("text-xs font-sans font-medium text-foreground/90 flex justify-center items-center text-center", className)}>
                 <Button
                     variant="ghost"
                     onClick={onClick}
-                    className={cn("text-sm font-sans font-medium text-foreground/90 flex justify-center items-center text-center hover:underline hover:text-cyan text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
+                    className={cn("text-xs font-sans font-medium text-foreground/90 flex justify-center items-center text-center hover:underline hover:text-cyan text-center w-fit h-auto p-0 border-none bg-transparent hover:bg-transparent shadow-none", className)}
                     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                 >
                     {children}
@@ -219,10 +219,10 @@ export const DataCell = {
 
     /** Right-aligned number with tabular figures */
     Number: ({ value, suffix, prefix, className, decimals = 0, suffixGap = true, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number, suffixGap?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
-        if (value === null || value === undefined) return <div className={cn("text-sm font-sans font-medium tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>-</div>
+        if (value === null || value === undefined) return <div className={cn("text-xs font-sans font-medium tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("text-sm font-sans font-medium tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium tabular-nums text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 {/* eslint-disable-next-line no-restricted-syntax -- numeric quantity format, not currency; MoneyDisplay not applicable */}
                 {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix && <span className={cn("tabular-nums text-foreground flex justify-center items-center text-center", suffixGap && "ml-1")}>{suffix}</span>}
             </div>
@@ -232,7 +232,7 @@ export const DataCell = {
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
     Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, color, textTransform, letterSpacing, tooltip: tooltipContent, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing, tooltip?: ReactNode }) => {
         const cell = (
-            <div className={cn("text-sm font-sans font-medium text-foreground flex justify-center items-center text-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-center items-center text-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
             </div>
         )
@@ -282,7 +282,7 @@ export const DataCell = {
 
     Variance: ({ value, currency = "CLP", className, digits = 0, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<number> & { currency?: string, digits?: number, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
         return (
-            <div className={cn("text-sm font-sans font-medium text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+            <div className={cn("text-xs font-sans font-medium text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} />
             </div>
         )
@@ -294,10 +294,10 @@ export const DataCell = {
      * When `direction` is omitted, infers from sign (backward compatible).
      */
     NumericFlow: ({ value, unit, uom, direction: dirProp, showIcon = true, showSign = true, className, size, intent, weight, color, textTransform, letterSpacing, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, uom?: string, direction?: 'inflow' | 'outflow' | 'neutral', showIcon?: boolean, showSign?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
-        if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center text-muted-foreground text-sm">-</div>
+        if (value === null || value === undefined || value === "") return <div className="flex justify-center items-center text-center text-muted-foreground text-xs">-</div>
 
         const numValue = Number(value)
-        if (isNaN(numValue)) return <div className="text-sm font-medium text-foreground flex justify-center items-center text-center">-</div>
+        if (isNaN(numValue)) return <div className="text-xs font-medium text-foreground flex justify-center items-center text-center">-</div>
 
         const direction = dirProp ?? (numValue > 0 ? 'inflow' : numValue < 0 ? 'outflow' : 'neutral')
 
@@ -331,7 +331,7 @@ export const DataCell = {
         return (
             <div className={cn("space-y-1 w-full", className)} {...props}>
                 {(label || subLabel) && (
-                    <div className="flex justify-between items-center text-xs font-semibold uppercase tracking-wider mb-0.5 px-0.5">
+                    <div className="flex justify-between items-center text-xs font-medium uppercase tracking-wider mb-0.5 px-0.5">
                         <span className="text-foreground/80">{label}</span>
                         <span className="text-muted-foreground/60">{subLabel}</span>
                     </div>
@@ -350,9 +350,9 @@ export const DataCell = {
 
     /** Standard date format */
     Date: ({ value, className, showTime = false, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<string | Date> & { showTime?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
-        if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-sm text-muted-foreground/50", className)} {...props}>-</div>
+        if (!value) return <div className={cn("flex justify-center items-center w-full text-center text-xs text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-center text-sm font-sans font-medium text-foreground whitespace-nowrap", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-center text-xs font-sans font-medium text-foreground whitespace-nowrap", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -636,7 +636,7 @@ export const DataCell = {
 
         const EntityLink = ({ label, entityLabel, id }: { label: string; entityLabel?: string; id?: number }) => {
             if (!entityLabel || !id) {
-                return <span className="text-xs text-muted-foreground">{label}</span>
+                return <span className="text-xs font-medium text-foreground">{label}</span>
             }
             return (
                 <Button
@@ -646,7 +646,7 @@ export const DataCell = {
                         e.stopPropagation()
                         openEntity(entityLabel, id)
                     }}
-                    className="h-auto px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-semibold hover:bg-primary/20 transition-colors cursor-pointer"
+                    className="h-auto px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors cursor-pointer"
                 >
                     {label}
                 </Button>
@@ -685,15 +685,15 @@ export const DataCell = {
             <div className={cn("flex flex-col items-end justify-center gap-0.5", className)} {...props}>
                 <div className="flex items-center gap-1.5 min-w-0">
                     {lines && lines.length > 0 && (
-                        <span className="text-[9px] uppercase font-bold tracking-wider text-muted-foreground/60">{lines.length} {lines.length === 1 ? 'item' : 'items'}</span>
+                        <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground/60">{lines.length} {lines.length === 1 ? 'item' : 'items'}</span>
                     )}
-                    <span className="text-sm font-semibold tracking-tight">{formatCurrency(total)}</span>
+                    <span className="text-xs font-medium tracking-tight">{formatCurrency(total)}</span>
                 </div>
                 {(pending != null && pending > 0) && (
-                    <span className="text-[9px] text-warning font-bold uppercase tracking-widest leading-none">Pend.: {formatCurrency(pending)}</span>
+                    <span className="text-[9px] text-warning font-medium uppercase tracking-widest leading-none">Pend.: {formatCurrency(pending)}</span>
                 )}
                 {deliveryDate && (
-                    <span className="text-[9px] text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis max-w-full leading-none">
+                    <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis max-w-full leading-none">
                         {dateLabel}: {formatPlainDate(deliveryDate)}
                     </span>
                 )}

@@ -151,8 +151,10 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 
 ### Clasificación de Textos Estándar
 
-* **`DataCell.Text` (Texto Primario)**: Todo texto que no encaje en las definiciones restantes (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto (fuente `13px`, peso mediano).
-* **`DataCell.Secondary` (Texto Secundario)**: Todo dato complementario que se muestre junto a o debajo de un texto primario, entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias; fuente `11px`, peso normal, mayúsculas, tracking espaciado).
+* **`DataCell.Text` (Texto Primario)**: Todo texto que no encaje en las definiciones restantes (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto (default `text-xs` + `font-medium`).
+* **`DataCell.Secondary` (Texto Secundario)**: Todo dato complementario que se muestre junto a o debajo de un texto primario, entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias; default `text-xs` + `font-medium`, `text-muted-foreground`).
+
+> **Regla tipográfica por defecto (ADR-0061):** todos los DataCell de texto usan `text-xs` por default (`SIZE_MAP.md` sigue en `text-sm` como escalamiento explícito). Los consumidores pueden escalar con `size="md"`/`"lg"` o override via `className` (tailwind-merge last-wins).
 
 ### Identidad y Enlaces: DataCell.Entity vs DataCell.Link vs DataCell.ContactLink
 
@@ -182,7 +184,7 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 
 Para cantidades con polaridad visual (+/−): movimientos de stock, horas de producción, variaciones de inventario. **No usar para monedas** — usar `DataCell.Currency showColor` que delega a `MoneyDisplay`.
 
-Renderiza un **badge cuadrado (`rounded-sm`), sin borde, tintado del color del flujo** (fondo `/{10}` más tenue). Default `size sm` (`text-xs`) con `font-medium` — misma regla que el resto de DataCell (badge → `sm`). Mismo lenguaje visual que `CurrencyFlow`.
+Renderiza un **badge cuadrado (`rounded-sm`), sin borde, tintado del color del flujo** (fondo `/{10}` más tenue). Mismo lenguaje visual que `CurrencyFlow`. Defaults: `size sm` (`text-xs`) y `font-medium`.
 
 ```tsx
 <DataCell.NumericFlow value={movement.qty} unit="un" />

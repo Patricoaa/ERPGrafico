@@ -38,7 +38,7 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
     },
     sourceDest: {
         key: "from_account",
-        type: "text",
+        type: "sourceDest",
         label: "Cuentas",
         get: (m) => {
             let source = m.from_account_name || 'Origen'
@@ -50,7 +50,7 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
                 source = m.from_account_name || 'Caja'
                 dest = m.partner_name || 'Particular'
             }
-            return `${source} → ${dest}`
+            return { source, dest }
         },
     },
     amount: {

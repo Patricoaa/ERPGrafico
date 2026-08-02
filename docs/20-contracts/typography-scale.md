@@ -64,11 +64,11 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N2 — Wizard step** | GenericWizard step indicator | `text-[10px] font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
 | **N2 — Paginación** | DataTablePagination | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Registros por página" |
 | **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |
-| **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs text-muted-foreground` | normal | normal | "3 documentos" |
 | **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-mono font-medium` | normal | `uppercase` | "OV-000123" |
 | **N3 — Valor financiero** | DataCell.Currency, StatCard number | `text-xs font-medium tabular-nums` | normal | normal | "$1.234.567" |
-| **N3 — Fecha** | DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Fecha** | DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Descripción** | EmptyState description, notes | `text-sm text-muted-foreground` | normal | normal | "Defina la lista de materiales..." |
 | **N4 — Tab label** | PageTabs, TabBar trigger | `text-[10px] sm:text-[11px] font-black uppercase` | `tracking-wider` (PageTabs) / `tracking-widest` (TabBar) | `uppercase` | "Perfil", "Cliente" |
 | **N4 — Tooltip** | TooltipTrigger content | `text-[9px] font-black` | `tracking-widest` | `uppercase` | "Editar" |
