@@ -356,12 +356,12 @@
   /* py-3 - Comfortable (default) */
   --table-cell-px: 1rem;
   /* px-4 */
-  --table-header-py: 0.375rem;
-  /* py-1.5 - Header vertical padding */
+  --table-header-py: 0.25rem;
+  /* py-1 - Header vertical padding */
   --table-header-px: 0.5rem;
   /* px-2 - Header horizontal padding */
-  --table-header-h: 2.75rem;
-  /* ~h-11 */
+  --table-header-h: 2.25rem;
+  /* ~h-9 - Compact header height */
   --table-row-hover: oklch(var(--muted-raw) / 0.5);
   --table-header-bg: transparent;
   --table-footer-bg: oklch(var(--muted-raw) / 0.5);
