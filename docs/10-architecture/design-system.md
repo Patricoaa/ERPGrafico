@@ -26,7 +26,7 @@ ERPGrafico utilizes a unified design system. The goal is to provide a highly fun
     -   **`panel-surface`** — Shared surface treatment (`rounded-xl + border + shadow + bg-card`). Reserved for the main `<main>` shell, `CollapsibleSheet`, and `Drawer` instances. See `app/globals.css:444`.
 4.  **Accent Utilities:** Decorative flourishes for cards and surfaces:
     -   **`ribbon-cmyk`** — 2px cyan→magenta→yellow gradient top border. Use on cards that need a print-shop accent (selected product cards, active panels). See `app/globals.css:465`.
-    -   **`card-accent-cmyk`** — Vertical CMY gradient accent on the left edge. Use on entity cards. See `app/globals.css:487`.
+    -   **`card-focus-spin-cmyk`** — 2px cyan→magenta→yellow gradient border that is static on hover and rotates on focus/selected (`accent-visible`). Included in `card-base` for entity cards. See `app/globals.css`.
 3.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
 
 ## Color Palette
