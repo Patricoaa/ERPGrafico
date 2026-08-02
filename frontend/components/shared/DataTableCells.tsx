@@ -5,7 +5,9 @@ import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
-import { MoneyDisplay } from "./MoneyDisplay"
+import { MoneyDisplay, WEIGHT_MAP, type DataCellWeight } from "./MoneyDisplay"
+
+export type { DataCellWeight } from "./MoneyDisplay"
 import { StatusBadge } from "./StatusBadge"
 import { EntityBadge } from "./EntityBadge"
 import { Chip as ChipComponent } from "./Chip"
@@ -40,7 +42,6 @@ interface ValueCellProps<T> extends BaseCellProps {
 
 type DataCellSize = 'xs' | 'sm' | 'md' | 'lg'
 type DataCellIntent = 'default' | 'primary' | 'success' | 'warning' | 'destructive' | 'info' | 'muted'
-export type DataCellWeight = 'light' | 'normal' | 'medium' | 'semibold' | 'bold'
 type DataCellTextTransform = 'uppercase' | 'lowercase' | 'capitalize' | 'none'
 type DataCellLetterSpacing = 'tighter' | 'tight' | 'normal' | 'wide' | 'wider' | 'widest'
 
@@ -59,14 +60,6 @@ const INTENT_MAP: Record<DataCellIntent, string> = {
     destructive: 'text-destructive',
     info: 'text-info',
     muted: 'text-muted-foreground',
-}
-
-const WEIGHT_MAP: Record<DataCellWeight, string> = {
-    light: 'font-light',
-    normal: 'font-normal',
-    medium: 'font-medium',
-    semibold: 'font-semibold',
-    bold: 'font-bold',
 }
 
 const TEXT_TRANSFORM_MAP: Record<DataCellTextTransform, string> = {
@@ -234,7 +227,7 @@ export const DataCell = {
     Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, size, intent, weight, interactive, color, textTransform, letterSpacing, tooltip: tooltipContent, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, interactive?: boolean, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing, tooltip?: ReactNode }) => {
         const cell = (
             <div className={cn("text-xs font-sans font-medium text-foreground flex justify-center items-center text-center w-full", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], interactive && "cursor-pointer hover:underline", color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
-                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
+                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} weight={weight} />
             </div>
         )
 
@@ -284,7 +277,7 @@ export const DataCell = {
     Variance: ({ value, currency = "CLP", className, digits = 0, size, intent, weight, color, textTransform, letterSpacing, ...props }: ValueCellProps<number> & { currency?: string, digits?: number, size?: DataCellSize, intent?: DataCellIntent, weight?: DataCellWeight, color?: string, textTransform?: DataCellTextTransform, letterSpacing?: DataCellLetterSpacing }) => {
         return (
             <div className={cn("text-xs font-sans font-medium text-foreground flex justify-center items-center text-center", size && SIZE_MAP[size], intent && INTENT_MAP[intent], weight && WEIGHT_MAP[weight], color, textTransform && TEXT_TRANSFORM_MAP[textTransform], letterSpacing && LETTER_SPACING_MAP[letterSpacing], className)} {...props}>
-                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} />
+                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} weight={weight} />
             </div>
         )
     },

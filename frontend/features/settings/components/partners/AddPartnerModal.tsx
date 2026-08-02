@@ -186,7 +186,7 @@ const projColumns: ColumnDef<ProjectionRow>[] = [
         header: "Capital Actual",
         accessorKey: "capital",
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.capital} className={cn(row.original.type === "new" && "text-primary font-bold")} />
+            <DataCell.Currency value={row.original.capital} weight={row.original.type === "new" ? "bold" : undefined} className={cn(row.original.type === "new" && "text-primary")} />
         ),
         meta: { align: "right" as const },
     },

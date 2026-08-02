@@ -208,7 +208,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                             <div className="bg-muted/30 font-bold border-t flex items-center px-4 py-3 text-sm">
                                 <div className="flex-1 text-right pr-4 uppercase tracking-wider">Total Capital Suscrito</div>
                                 <div className="w-[220px] pr-2">
-                                    <DataCell.Currency value={totalCapital} className="justify-end text-lg font-black text-primary" />
+                                    <DataCell.Currency value={totalCapital} weight="black" className="justify-end text-lg text-primary" />
                                 </div>
                                 <div className="w-[100px] text-center">100%</div>
                                 <div className="w-12"></div>

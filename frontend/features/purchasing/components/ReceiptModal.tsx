@@ -315,7 +315,8 @@ export function ReceiptModal({
                                                             <span className="text-[10px] text-muted-foreground">Original:</span>
                                                             <DataCell.Currency
                                                                 value={line.unit_cost}
-                                                                className="justify-start text-[10px] text-muted-foreground font-normal w-auto"
+                                                                className="justify-start text-[10px] text-muted-foreground w-auto"
+                                                                weight="normal"
                                                             />
                                                         </div>
                                                     </div>

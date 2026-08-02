@@ -301,7 +301,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                                 {(purchasing.top_suppliers || []).slice(0, 3).map((s, i) => (
                                     <div key={i} className="flex justify-between items-center text-sm">
                                         <span className="truncate pr-2">{s.name}</span>
-                                        <span className="font-semibold tabular-nums"><MoneyDisplay amount={s.amount} /></span>
+                                        <span className="tabular-nums"><MoneyDisplay amount={s.amount} weight="semibold" /></span>
                                     </div>
                                 ))}
                                 {(!purchasing.top_suppliers || purchasing.top_suppliers.length === 0) && (

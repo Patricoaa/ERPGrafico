@@ -90,7 +90,8 @@ export function NoteStep_Review({
                                     </div>
                                     <DataCell.Currency
                                         value={line.noteQuantity * line.noteUnitPrice}
-                                        className="justify-end font-bold w-auto"
+                                        className="justify-end w-auto"
+                                        weight="bold"
                                     />
                                 </div>
                             ))}
@@ -103,15 +104,15 @@ export function NoteStep_Review({
                     <div className="bg-muted/20 p-4 rounded-md space-y-2">
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Monto Neto</span>
-                            <DataCell.Currency value={totalNet} className="justify-end font-mono font-medium w-auto" />
+                            <DataCell.Currency value={totalNet} weight="medium" className="justify-end font-mono w-auto" />
                         </div>
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">IVA (19%)</span>
-                            <DataCell.Currency value={totalTax} className="justify-end font-mono font-medium w-auto" />
+                            <DataCell.Currency value={totalTax} weight="medium" className="justify-end font-mono w-auto" />
                         </div>
                         <div className="flex justify-between items-center text-lg font-black pt-2 border-t border-dashed">
                             <span>Total Final</span>
-                            <DataCell.Currency value={total} className="justify-end text-primary w-auto text-lg" />
+                            <DataCell.Currency value={total} weight="bold" className="justify-end text-primary w-auto text-lg" />
                         </div>
                     </div>
 

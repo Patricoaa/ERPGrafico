@@ -400,15 +400,15 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                                         <div>
                                                             <span className="text-muted-foreground">Límite</span>
-                                                            <p className="font-medium"><MoneyDisplay amount={parseFloat(creditLineData.credit_limit)} /></p>
+                                                            <p className="font-medium"><MoneyDisplay amount={parseFloat(creditLineData.credit_limit)} weight="medium" /></p>
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Utilizado</span>
-                                                            <p className="font-medium"><MoneyDisplay amount={parseFloat(creditLineData.used_amount)} /></p>
+                                                            <p className="font-medium"><MoneyDisplay amount={parseFloat(creditLineData.used_amount)} weight="medium" /></p>
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Disponible</span>
-                                                            <p className="font-medium text-success"><MoneyDisplay amount={parseFloat(creditLineData.available_amount)} /></p>
+                                                            <p className="font-medium text-success"><MoneyDisplay amount={parseFloat(creditLineData.available_amount)} weight="medium" /></p>
                                                         </div>
                                                         <div>
                                                             <span className="text-muted-foreground">Estado</span>
