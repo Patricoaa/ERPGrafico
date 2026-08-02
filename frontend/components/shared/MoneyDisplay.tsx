@@ -31,7 +31,7 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     className,
     digits = 0,
     inline = false,
-    weight = "normal",
+    weight = "medium",
 }) => {
     if (amount === null || amount === undefined || amount === "") {
         return <span className={cn("text-muted-foreground", className)}>-</span>

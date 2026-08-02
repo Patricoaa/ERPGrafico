@@ -615,8 +615,9 @@ Single source of truth for money rendering. Tabular, monospace, locale-aware.
 | `className` | `string` | ❌ | — | |
 | `digits` | `number` | ❌ | `0` | Decimal places override |
 | `inline` | `boolean` | ❌ | `false` | `display: inline` vs `inline-block` |
+| `weight` | `DataCellWeight` | ❌ | `'medium'` | Peso tipográfico (via `WEIGHT_MAP`) |
 
-Font: always `font-mono font-bold tabular-nums`. Do NOT render currency with raw JS `.toLocaleString()` outside this component.
+Font: default `font-medium tabular-nums tracking-tight`. Override con `weight` (prop) o `className` (tailwind-merge last-wins). Do NOT render currency with raw JS `.toLocaleString()` outside this component.
 
 ---
 
