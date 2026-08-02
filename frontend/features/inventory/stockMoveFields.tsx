@@ -1,7 +1,6 @@
 import { createEntityFields } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from '@/lib/entity-registry'
-import { ArrowRightLeft } from 'lucide-react'
 
 export interface StockMove {
     id: number
@@ -41,15 +40,12 @@ export const stockMoveFields = createEntityFields<StockMove>()({
     },
     flow: {
         key: 'flow_display',
-        type: 'computed',
+        type: 'sourceDest',
         label: 'Origen → Destino',
-        render: (m) => (
-            <div className="flex flex-col items-center gap-0.5 text-center">
-                <DataCell.Text>{m.source_location_name}</DataCell.Text>
-                <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
-                <DataCell.Text>{m.destination_location_name}</DataCell.Text>
-            </div>
-        ),
+        get: (m) => ({
+            source: m.source_location_name,
+            dest: m.destination_location_name,
+        }),
     },
     date: {
         key: 'date',

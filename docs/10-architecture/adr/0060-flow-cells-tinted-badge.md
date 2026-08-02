@@ -26,7 +26,7 @@ Both `DataCell.CurrencyFlow` and `DataCell.NumericFlow` wrap their content in a 
 - inflow → `bg-success/10 text-success`
 - outflow → `bg-destructive/10 text-destructive`
 - neutral → `bg-muted/60 text-muted-foreground`
-- No border. Typography default: `text-xs` (DataCell size `sm`) + `font-medium` — consistent with the DataCell default rule (font-medium; badge cells → size sm). Consumer overrides via `size` / `weight` / `className` still win.
+- No border. Typography: `text-xs` (default `size sm`), `font-medium` (inherited from the wrapper so consumer `className` overrides like `font-bold` / `text-2xs` keep working).
 
 Directional icon, sign (`+`/`−`), currency/quantity formatting and `showIcon` / `showSign` props are unchanged. The props API of both cells is unchanged.
 
