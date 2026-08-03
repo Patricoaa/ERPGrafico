@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import {
     type ColumnDef
 } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTable, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { IconButton } from "@/components/shared"
 
@@ -147,12 +147,10 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge
-                        status={row.original.account_type}
-                        label={row.original.account_type_display}
-                    />
-                </div>
+                <DataCell.Status
+                    status={row.original.account_type}
+                    label={row.original.account_type_display}
+                />
             ),
         },
         {

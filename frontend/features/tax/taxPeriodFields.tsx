@@ -1,4 +1,4 @@
-import { createEntityFields, StatusBadge } from "@/components/shared"
+import { createEntityFields, DataCell } from "@/components/shared"
 import type { TaxPeriod } from "./types"
 
 export const taxPeriodFields = createEntityFields<TaxPeriod>()({
@@ -58,9 +58,9 @@ export const taxPeriodFields = createEntityFields<TaxPeriod>()({
                     {!summary ? (
                         <span className="text-muted-foreground">-</span>
                     ) : summary.is_fully_paid ? (
-                        <StatusBadge status="PAID" label="Pagado" size="sm" />
+                        <DataCell.Status status="PAID" label="Pagado" size="sm" />
                     ) : summary.vat_to_pay > 0 && e.status === 'CLOSED' ? (
-                        <StatusBadge status="VOIDED" label="Pendiente" size="sm" />
+                        <DataCell.Status status="VOIDED" label="Pendiente" size="sm" />
                     ) : (
                         <span className="text-muted-foreground">-</span>
                     )}

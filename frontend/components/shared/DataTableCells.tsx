@@ -1,5 +1,5 @@
 
-import { cn, translateStatus, formatPlainDate, parseDateOnly } from "@/lib/utils"
+import { cn, formatPlainDate, parseDateOnly } from "@/lib/utils"
 import { ArrowRight, ArrowUpRight, ArrowDownLeft, History, ExternalLink, User, type LucideIcon, MoreVertical, ChevronDown, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { type ReactNode, type HTMLAttributes } from "react"
@@ -360,17 +360,16 @@ export const DataCell = {
 
     // --- Status & Badges ---
 
-    /** Mapped status badge - Internally uses the standardized StatusBadge */
-    Status: ({ status, label, variant = "default", size = "sm", className }: { status: string, label?: string, variant?: "default" | "hub" | "dot", size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
+    /** Mapped status badge — ghost pill. Internally uses the standardized StatusBadge (ADR-0065). */
+    Status: ({ status, label, size = "sm", className }: { status: string, label?: string, size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
         return (
             <div className={cn("flex justify-center items-center w-full", className)}>
                 <StatusBadge
                     status={status}
-                    label={label || translateStatus(status)}
+                    label={label}
                     variant="badge"
                     appearance="ghost"
                     size={size}
-                    className={className}
                 />
             </div>
         )
@@ -941,17 +940,17 @@ export function createContactColumn<TData>(
 /**
  * Creates a Status badge column.
  * Default cell: `<DataCell.Status status={row.getValue(accessorKey)} />`
- * Use `opts.variant` for dot/hub variants, `opts.label` to override display text.
+ * Renders the canonical ghost pill (ADR-0065). Use `opts.label` to override display text.
  */
 export function createStatusColumn<TData>(
     accessorKey: string,
     title: string,
-    opts?: ColOpts<TData> & { variant?: "default" | "hub" | "dot"; label?: string; size?: "xs" | "sm" | "md" | "lg" | "xl" }
+    opts?: ColOpts<TData> & { label?: string; size?: "xs" | "sm" | "md" | "lg" | "xl" }
 ): ColumnDef<TData> {
     return {
         accessorKey,
         header: ({ column }) => <DataTableColumnHeader column={column} title={title} className={cn("justify-center", opts?.headerClassName)} />,
-        cell: ({ row }) => <DataCell.Status status={row.getValue(accessorKey) as string} variant={opts?.variant} label={opts?.label} size={opts?.size} />,
+        cell: ({ row }) => <DataCell.Status status={row.getValue(accessorKey) as string} label={opts?.label} size={opts?.size} />,
         enableSorting: opts?.enableSorting ?? true,
     }
 }

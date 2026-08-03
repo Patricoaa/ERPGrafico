@@ -13,7 +13,7 @@ import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChec
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedFiscalYearPreview } from '../../hooks/useSelectedFiscalYearPreview';
-import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
+import { DataTableView, EmptyState, DataCell } from '@/components/shared';
 import { type ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
 import { fiscalYearActions, type FiscalYearActionsCtx } from './fiscalYearActions';
@@ -345,7 +345,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
                 else if (status === 'CLOSING') { token = 'warning'; label = 'En Cierre'; }
                 else if (status === 'CLOSED') { token = 'info'; label = 'Cerrado'; }
 
-                return <StatusBadge status={token} label={label} />;
+                return <DataCell.Status status={token} label={label} />;
             },
         },
         {
