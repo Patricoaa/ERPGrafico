@@ -243,6 +243,24 @@ Barra de progreso para métricas de completitud (% de entrega, avance de OT, sto
 
 `value >= max` → barra completa en `bg-success` con glow. `value < max` → `bg-primary`. Valor clamped a `[0, 100]%`.
 
+### DataCell.Category (ADR-0066)
+
+Uno o varios chips resueltos por dominio (wraps `Chip.Category` → `resolveCategory`). Contenedor `flex-wrap` centrado. Valores vacíos / sin dominio → guion de datos faltantes (política null unificada).
+
+```tsx
+<DataCell.Category value={roles} domain="contact_type" />
+// → chips "Cliente" / "Proveedor" según resolveCategory
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `string \| string[] \| null \| undefined` | ✅ | — | Uno o varios valores del dominio |
+| `domain` | `CategoryDomain` | ❌ | — | `product_type` · `tax_type` · `transaction_type` · `dte_type` · `contact_type` · `payment_method` |
+| `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | |
+| `className` | `string` | ❌ | — | |
+
+**FieldType `chip-category` (entity-fields):** el motor delega a `DataCell.Category`; `domain` admite valor o `(entity) => CategoryDomain`.
+
 ---
 
 ## DataTable & ExpandableTableRow 🟢

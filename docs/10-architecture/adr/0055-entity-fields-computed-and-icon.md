@@ -1,7 +1,7 @@
 ---
 id: 0055
 title: Entity Fields — computed type, icon prefix, chipIcon, and null-safe status
-status: Accepted
+status: Superseded by 0066
 date: 2026-07-17
 author: core-team
 ---
@@ -9,7 +9,12 @@ author: core-team
 # 0055 — Entity Fields: computed type, icon prefix, chipIcon, null-safe status
 
 **Supersedes:** Part of ADR-0054 (Entity Fields Schema)
+**Superseded by:** ADR-0066 (discriminated-union `FieldDef` + total type→cell registry)
 **Related:** ADR-0054 (Entity Fields Schema), ADR-0023 (ROW_ACTIONS registry)
+
+> Vigente: `computed` como último recurso (escape hatch), `icon` prefix y `chipIcon`,
+> status null-safe. ADR-0066 refuerza la regla de `computed` (unión discriminada, `render`
+> exclusivo de `computed`) y unifica la política null en `toDisplayValue`.
 
 ---
 
