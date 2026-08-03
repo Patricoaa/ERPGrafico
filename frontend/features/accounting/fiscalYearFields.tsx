@@ -38,12 +38,8 @@ export const fiscalYearFields = createEntityFields<GroupedFiscalYear>()({
     },
     periods_summary: {
         key: 'periods_summary',
-        type: 'computed',
+        type: 'secondary',
         label: 'Periodos',
-        render: (h) => (
-            <div className="text-muted-foreground">
-                F29: {h.taxPeriods.length} · Contable: {h.periods.length}
-            </div>
-        ),
+        get: (h) => `F29: ${h.taxPeriods.length} · Contable: ${h.periods.length}`,
     },
 })

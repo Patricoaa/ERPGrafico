@@ -17,13 +17,10 @@ export const accountFields = createEntityFields<TreasuryAccount>()({
     },
     accountNameCompound: {
         key: "account_name",
-        type: "computed",
+        type: "secondary",
         label: "Cuenta Contable",
-        render: (e) => {
-            const name = e.account_name
-            if (!name) return <DataCell.Secondary className="italic">Sin vincular</DataCell.Secondary>
-            return <DataCell.Secondary>{e.account_code} - {name}</DataCell.Secondary>
-        },
+        get: (e) => e.account_name ? `${e.account_code} - ${e.account_name}` : 'Sin vincular',
+        className: (value, e) => (e.account_name ? '' : 'italic'),
     },
     bankWithProviders: {
         key: "bank_name",
