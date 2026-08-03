@@ -35,6 +35,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
         const isCmyk = variant === 'cmyk';
         const isMuted = variant === 'muted';
         const isDisabled = disabled || loading;
+        const isLg = size === 'lg';
 
         return (
             <Button
@@ -43,7 +44,8 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 size={size}
                 className={cn(
                     "relative flex items-center justify-center overflow-hidden transition-all duration-300 ease-out cursor-pointer",
-                    "h-9 px-4 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
+                    isLg ? "h-12 px-6 text-xs" : "h-9 px-4 text-[10px]",
+                    "font-black tracking-widest uppercase rounded-sm shadow-card",
                     "border",
                     isPrimary && "text-primary hover:text-primary-foreground bg-primary/5 border-primary",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",
@@ -76,13 +78,13 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 <span className="relative z-10 flex items-center justify-center gap-2">
                     {loading ? (
                         // eslint-disable-next-line no-restricted-syntax -- This IS the canonical loading implementation for ActionSlideButton
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className={cn("animate-spin", isLg ? "h-5 w-5" : "h-3.5 w-3.5")} />
                     ) : (
                         (() => {
                             if (!icon) return null;
                             if (typeof icon === 'function' || (typeof icon === 'object' && 'render' in icon)) {
                                 const Icon = icon as React.ComponentType<{ className?: string }>;
-                                return <Icon className="h-3.5 w-3.5" />;
+                                return <Icon className={isLg ? "h-5 w-5" : "h-3.5 w-3.5"} />;
                             }
                             return icon;
                         })()

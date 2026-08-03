@@ -24,6 +24,8 @@ export interface GenericWizardProps extends Omit<BaseModalProps, "children" | "t
     onComplete: () => Promise<void>
     onClose?: () => void
     initialStep?: number
+    /** Fired whenever the active step index changes (navigation, resets, external jumps) */
+    onStepChange?: (index: number) => void
     completeButtonLabel?: string
     completeButtonIcon?: React.ReactNode
     isCompleting?: boolean
@@ -31,7 +33,13 @@ export interface GenericWizardProps extends Omit<BaseModalProps, "children" | "t
     successContent?: React.ReactNode
     /** Optional footer-left element (e.g. "Suspender" button) */
     footerLeft?: React.ReactNode
-    
+    /**
+     * Touch-optimized layout: larger step counter, larger tap targets in the
+     * footer (h-12 buttons, bigger icons) and extra content padding.
+     * Intended for touch-first surfaces such as POS open/close flows.
+     */
+    touchMode?: boolean
+
     /** Surface layout. Default: "modal" */
     surface?: "modal" | "drawer"
     drawerSide?: "top" | "right" | "bottom" | "left"
@@ -53,6 +61,7 @@ export function GenericWizard({
     onComplete,
     onClose,
     initialStep = 0,
+    onStepChange,
     completeButtonLabel = "Finalizar",
     completeButtonIcon,
     isCompleting = false,
@@ -63,6 +72,7 @@ export function GenericWizard({
     surface = "modal",
     drawerSide = "right",
     drawerBoundary = "embedded",
+    touchMode = false,
     ...props
 }: GenericWizardProps) {
     const [currentStep, setCurrentStep] = React.useState(initialStep)
@@ -82,6 +92,11 @@ export function GenericWizard({
     React.useEffect(() => {
         requestAnimationFrame(() => setCurrentStep(initialStep))
     }, [initialStep])
+
+    // Notify parent of the active step (drives external shortcuts / tracking)
+    React.useEffect(() => {
+        onStepChange?.(currentStep)
+    }, [currentStep, onStepChange])
 
     const totalSteps = steps.length
     const currentStepData = steps[currentStep]
@@ -114,11 +129,17 @@ export function GenericWizard({
 
     // Industrial step indicator: "01 / 03 — Título del Paso"
     const stepDescription = (
-        <div className="flex items-center gap-3">
-            <span className="font-mono font-black text-xs text-primary tracking-wider">
+        <div className={cn("flex items-center gap-3", touchMode && "gap-4")}>
+            <span className={cn(
+                "font-mono font-black text-primary tracking-wider",
+                touchMode ? "text-sm" : "text-xs"
+            )}>
                 {String(currentStep + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
             </span>
-            <span className="text-[10px]  font-black uppercase tracking-wider text-muted-foreground">
+            <span className={cn(
+                "font-black uppercase tracking-wider text-muted-foreground",
+                touchMode ? "text-xs" : "text-[10px]"
+            )}>
                 {currentStepData.title}
             </span>
         </div>
@@ -135,9 +156,9 @@ export function GenericWizard({
                         variant="ghost"
                         onClick={handleBack}
                         disabled={isFirstStep || isCompleting || isStepTransitioning}
-                        className="gap-2"
+                        className={cn("gap-2", touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
                     >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className={cn("h-4 w-4", touchMode && "h-5 w-5")} />
                         Anterior
                     </Button>
                     {footerLeft}
@@ -146,20 +167,24 @@ export function GenericWizard({
                 {isLastStep ? (
                     <ActionSlideButton
                         variant="success"
+                        size={touchMode ? "lg" : undefined}
                         onClick={() => startTransition(handleNext)}
                         disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
                         loading={isCompleting || isStepTransitioning}
                         icon={isCompleting || isStepTransitioning ? undefined : (completeButtonIcon ?? CheckCircle2)}
+                        className={cn(touchMode && "active:scale-[0.98]")}
                     >
                         {completeButtonLabel}
                     </ActionSlideButton>
                 ) : (
                     <ActionSlideButton
                         variant="primary"
+                        size={touchMode ? "lg" : undefined}
                         onClick={() => startTransition(handleNext)}
                         disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
                         loading={isStepTransitioning}
                         icon={isStepTransitioning ? undefined : ChevronRight}
+                        className={cn(touchMode && "active:scale-[0.98]")}
                     >
                         Siguiente
                     </ActionSlideButton>
@@ -198,10 +223,13 @@ export function GenericWizard({
                         {successContent}
                     </div>
                     <div className="mt-6 flex justify-end">
-                        <Button onClick={() => {
-                            onClose?.()
-                            onOpenChange(false)
-                        }}>Cerrar</Button>
+                        <Button
+                            onClick={() => {
+                                onClose?.()
+                                onOpenChange(false)
+                            }}
+                            className={cn(touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
+                        >Cerrar</Button>
                     </div>
                 </Drawer>
             )
@@ -223,10 +251,13 @@ export function GenericWizard({
                     {successContent}
                 </div>
                 <div className="mt-6 flex justify-end">
-                    <Button onClick={() => {
-                        onClose?.()
-                        onOpenChange(false)
-                    }}>Cerrar</Button>
+                    <Button
+                        onClick={() => {
+                            onClose?.()
+                            onOpenChange(false)
+                        }}
+                        className={cn(touchMode && "h-12 px-6 text-xs active:scale-[0.98]")}
+                    >Cerrar</Button>
                 </div>
             </BaseModal>
         )
@@ -234,7 +265,8 @@ export function GenericWizard({
 
     const contentWrapper = (
         <div className={cn(
-            "animate-in fade-in slide-in-from-right-4 duration-300 px-1 py-1",
+            "animate-in fade-in slide-in-from-right-4 duration-300",
+            touchMode ? "px-2 py-2" : "px-1 py-1",
             (isStepTransitioning || isLoading) && "opacity-50 pointer-events-none"
         )}>
             {isLoading ? (
