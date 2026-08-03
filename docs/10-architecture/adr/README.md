@@ -125,5 +125,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0060](0060-flow-cells-tinted-badge.md) | Flow DataCells as square tinted badges | Proposed |
 | [0061](0061-datacell-text-default-text-xs.md) | DataCell text primitives default to text-xs | Proposed |
 | [0062](0062-datacell-date-time-weights.md) | DateTime DataCell with independent date/time weights | Proposed |
+| [0064](0064-badge-layer1-categorical-intents.md) | Badge Layer-1 categorical intents (cyan / magenta / yellow / black) | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

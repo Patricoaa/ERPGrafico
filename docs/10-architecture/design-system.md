@@ -51,7 +51,7 @@ Colors must be defined as raw OKLCH channels in `app/globals.css` to support Tai
 ### Prohibited Patterns
 - ❌ Hardcoded HEX/RGB values in components (e.g., `text-[#FF0000]`).
 - ❌ Non-semantic generic colors (plain red, plain blue). Always use the curated tokens defined in the theme.
-- ❌ Direct use of Layer 1 process tokens (`bg-cyan`, `text-magenta`) outside graphic industry components.
+- ❌ Direct use of Layer 1 process tokens (`bg-cyan`, `text-magenta`) outside graphic industry components — exception: categorical chips (`Chip.Category` with Layer 1 `BadgeIntent`, ADR-0064, `color-system.md §4.5`).
 - ✅ Use Layer 2 semantic tokens (`bg-primary`, `text-info`, `border-warning`) for all application UI.
 
 ## Typography
