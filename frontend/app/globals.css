@@ -607,6 +607,38 @@
 }
 
 /*
+ * ALWAYS-ON CMY BORDER — Permanently rotating conic gradient ring
+ * Apply via className="card-cmyk-animated-border" on any card/container.
+ * Same visual as card-focus-spin-cmyk, but always visible at a calm speed.
+ * Reuses the registered --border-angle property so the cyan→magenta→yellow
+ * loop closes seamlessly (start color = end color).
+ */
+@utility card-cmyk-animated-border {
+  @apply relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(
+      from var(--border-angle),
+      var(--color-cyan) 0%,
+      var(--color-magenta) 33%,
+      var(--color-yellow) 66%,
+      var(--color-cyan) 100%
+    );
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: spin-border 8s linear infinite;
+    pointer-events: none;
+  }
+}
+
+/*
  * CARD INTERACTIVE — Standard hover/focus interaction for interactive cards
  * Apply via className="card-interactive".
  * Provides:
@@ -902,6 +934,10 @@ table [data-notched-field] {
     }
 
     .card-focus-spin-cmyk::after {
+      animation: none;
+    }
+
+    .card-cmyk-animated-border::after {
       animation: none;
     }
 
