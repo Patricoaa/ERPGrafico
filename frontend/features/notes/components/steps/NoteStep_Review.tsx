@@ -25,7 +25,7 @@ interface NoteStep_ReviewProps {
     total: number
 }
 
-export function NoteStep_Review({
+export function NoteReviewStep({
     noteType,
     registration,
     lines,

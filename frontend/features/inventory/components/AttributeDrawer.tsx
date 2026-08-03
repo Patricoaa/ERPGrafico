@@ -14,7 +14,6 @@ import { useSuggestions } from "@/hooks/useSuggestions"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { MultiTagInput } from "@/components/shared"
-import { Tag } from "lucide-react"
 
 const attributeSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -49,7 +48,7 @@ export function AttributeDrawer({ open: openProp, onOpenChange, initialData, onS
         },
     })
 
-    const [valueInput, setValueInput] = useState("")
+    const [valueInput] = useState("")
     const { suggestions, isLoading: isLoadingSuggestions } = useSuggestions(
         "/inventory/attribute-values/filter-suggestions/",
         valueInput

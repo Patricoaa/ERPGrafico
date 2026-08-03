@@ -30,10 +30,10 @@ import { Drawer, ActionSlideButton, Chip, SkeletonShell } from '@/components/sha
 // Shared steps
 import {
     NoteStep_TypeSelector,
-    NoteStep_LineItems,
-    NoteStep_Registration,
-    NoteStep_Review,
-    NoteStep_Payment,
+    NoteLineItemsStep,
+    NoteRegistrationStep,
+    NoteReviewStep,
+    NotePaymentStep,
 } from './steps'
 
 // Sales-only steps (stay in their feature, imported directly)
@@ -151,7 +151,6 @@ export function UnifiedNoteWizard({
         setPayment,
         logisticsData,
         setLogisticsData,
-        isPeriodValid,
         setIsPeriodValid,
         currentStepId,
         currentStepIndex,
@@ -221,7 +220,7 @@ export function UnifiedNoteWizard({
             case 'items':
                 if (mode === 'sales') {
                     return (
-                        <NoteStep_LineItems
+                        <NoteLineItemsStep
                             selectionMode="select"
                             noteType={noteType}
                             lines={sourceDocument?.lines ?? []}
@@ -232,7 +231,7 @@ export function UnifiedNoteWizard({
                     )
                 }
                 return (
-                    <NoteStep_LineItems
+                    <NoteLineItemsStep
                         selectionMode="edit"
                         noteType={noteType}
                         lines={lines}
@@ -262,7 +261,7 @@ export function UnifiedNoteWizard({
 
             case 'registration':
                 return (
-                    <NoteStep_Registration
+                    <NoteRegistrationStep
                         isCreditNote={isCreditNote}
                         noteType={noteType}
                         data={registration}
@@ -273,7 +272,7 @@ export function UnifiedNoteWizard({
 
             case 'review':
                 return (
-                    <NoteStep_Review
+                    <NoteReviewStep
                         noteType={noteType}
                         registration={registration}
                         lines={lines.filter(l => l.noteQuantity > 0)}
@@ -285,7 +284,7 @@ export function UnifiedNoteWizard({
 
             case 'payment':
                 return (
-                    <NoteStep_Payment
+                    <NotePaymentStep
                         mode={mode}
                         noteType={noteType}
                         total={total}
@@ -300,10 +299,6 @@ export function UnifiedNoteWizard({
     }
 
     // ---- Next button disabled logic ----
-    const nextDisabled =
-        submitting ||
-        initializing ||
-        (currentStepId === 'registration' && !registration.isPending && !isPeriodValid)
 
     return (
         <Drawer

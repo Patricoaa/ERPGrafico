@@ -20,7 +20,14 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   "out/**",
   "build/**",
   "next-env.d.ts",
-]), // FSD boundary enforcement (eslint-plugin-boundaries v6)
+]), // React Compiler is NOT enabled in this project, so the React Compiler
+// compatibility warnings (TanStack Table useReactTable, react-hook-form,
+// etc.) are pure noise. Keep enabled if React Compiler is adopted later.
+{
+  rules: {
+    "react-hooks/incompatible-library": "off",
+  },
+}, // FSD boundary enforcement (eslint-plugin-boundaries v6)
 {
   plugins: { boundaries },
   settings: {

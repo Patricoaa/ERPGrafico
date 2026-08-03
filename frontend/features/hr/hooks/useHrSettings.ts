@@ -12,6 +12,7 @@ import {
     deleteAFP,
 } from '../api/hrApi'
 import type { AFP, PayrollConcept } from '@/types/hr'
+import { useRealtime } from '@/features/realtime'
 
 export const HR_SETTINGS_KEYS = {
     all: ['hr'] as const,
@@ -28,6 +29,7 @@ interface GlobalHRSettings {
 
 export function useHrSettings() {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const settingsQuery = useQuery<GlobalHRSettings>({
         queryKey: HR_SETTINGS_KEYS.settings(),
@@ -50,6 +52,7 @@ export function useHrSettings() {
     const updateSettingsMutation = useMutation({
         mutationFn: (data: Record<string, unknown>) => updateGlobalHRSettings(data),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: HR_SETTINGS_KEYS.settings() })
         },
     })
@@ -57,6 +60,7 @@ export function useHrSettings() {
     const createConceptMutation = useMutation({
         mutationFn: (data: Record<string, unknown>) => createPayrollConcept(data),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: HR_SETTINGS_KEYS.concepts() })
         },
     })
@@ -65,6 +69,7 @@ export function useHrSettings() {
         mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
             updatePayrollConcept(id, data),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: HR_SETTINGS_KEYS.concepts() })
         },
     })
@@ -72,6 +77,7 @@ export function useHrSettings() {
     const deleteConceptMutation = useMutation({
         mutationFn: (id: number) => deletePayrollConcept(id),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: HR_SETTINGS_KEYS.concepts() })
         },
     })
@@ -79,6 +85,7 @@ export function useHrSettings() {
     const createAfpMutation = useMutation({
         mutationFn: (data: Record<string, unknown>) => createAFP(data),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: HR_SETTINGS_KEYS.afps() })
         },
     })
@@ -87,6 +94,7 @@ export function useHrSettings() {
         mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
             updateAFP(id, data),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: HR_SETTINGS_KEYS.afps() })
         },
     })
@@ -94,6 +102,7 @@ export function useHrSettings() {
     const deleteAfpMutation = useMutation({
         mutationFn: (id: number) => deleteAFP(id),
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: HR_SETTINGS_KEYS.afps() })
         },
     })

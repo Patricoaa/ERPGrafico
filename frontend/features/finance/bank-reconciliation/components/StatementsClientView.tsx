@@ -12,7 +12,6 @@ import {DataTableView, UnifiedSearchBar, useUnifiedSearch, AutoEntityCard, Entit
 import type { ColumnDef } from "@tanstack/react-table"
 import { statementFields } from "../statementFields"
 import { statementActions, type StatementActionsCtx } from './statementActions'
-import { Progress } from "@/components/ui/progress"
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"

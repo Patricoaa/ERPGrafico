@@ -20,7 +20,6 @@ import { formatMoney } from "@/lib/money"
 
 import {Hammer, ShieldAlert, CheckCircle2, FileWarning, Truck, User} from "lucide-react"
 import {BaseModal, StepHeader} from '@/components/shared'
-import { cn } from "@/lib/utils"
 
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

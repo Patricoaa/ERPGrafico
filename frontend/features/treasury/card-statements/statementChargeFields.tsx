@@ -1,6 +1,5 @@
 import { createEntityFields } from '@/components/shared'
 import type { StatementChargeRow } from './types'
-import { DataCell, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { parseDateOnly } from '@/lib/utils'
 
 export const statementChargeFields = createEntityFields<StatementChargeRow>()({

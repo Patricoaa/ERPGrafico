@@ -43,7 +43,7 @@ export function AutoMatchProgressModal({
     onOpenChange,
     onSuccess,
 }: AutoMatchProgressModalProps) {
-    const [taskId, setTaskId] = useState<string | null>(null)
+    const [, setTaskId] = useState<string | null>(null)
     const [progress, setProgress] = useState<ProgressData>({
         status: 'idle',
         processed: 0,

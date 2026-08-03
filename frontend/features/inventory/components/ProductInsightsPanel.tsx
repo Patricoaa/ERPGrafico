@@ -1,9 +1,8 @@
 "use client"
-import { Chip, SkeletonShell, StatCard, ChartLegend, DataTable, DataTableView, AutoEntityCard } from '@/components/shared'
+import { Chip, SkeletonShell, StatCard, ChartLegend, DataTableView, AutoEntityCard, AnalyticsChart, getCssChartColors } from '@/components/shared'
+import { Button } from "@/components/ui/button"
 import { useState, useMemo } from "react"
-import { AnalyticsChart } from "@/components/shared/AnalyticsPanel/AnalyticsChart"
-import { getCssChartColors } from "@/components/shared/AnalyticsPanel/nivo-theme"
-import type { LineChartConfig, BarChartConfig } from "@/components/shared/AnalyticsPanel/types"
+import type { LineChartConfig, BarChartConfig } from '@/components/shared'
 import {
     TrendingUp,
     BarChart3,
@@ -215,7 +214,6 @@ function ProductStockMovesTable({ productId, onOpenTransaction }: { productId: n
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
         ...stockMoveFields.toColumns(),
         stockMoveActions.auto(actionsCtx),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [actionsCtx])
 
     return (
@@ -380,7 +378,6 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
     const priceNet   = priceNet0
     const priceMinGross = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) * ivaRatio : 0
     const priceMaxGross = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.sale_price > 0).map(h => h.sale_price)) * ivaRatio : 0
-    const priceAvgGross = data?.price_history?.length ? (data.price_history.reduce((a, h) => a + h.sale_price, 0) / data.price_history.filter(h => h.sale_price > 0).length) * ivaRatio : 0
     const costCurrent = product ? Number(product.cost_price || 0) : 0
     const costMin = data?.price_history?.length ? Math.min(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
     const costMax = data?.price_history?.length ? Math.max(...data.price_history.filter(h => h.cost_price > 0).map(h => h.cost_price)) : 0
@@ -424,13 +421,15 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                         <div className="w-52 shrink-0 flex flex-col gap-2 overflow-y-auto bg-transparent pb-4">
                             {onBack && (
                                 <div className="flex flex-col gap-2 mb-2 pb-4 border-b border-border/60">
-                                    <button
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
                                         onClick={onBack}
-                                        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+                                        className="group h-auto gap-1.5 px-0 text-xs text-muted-foreground hover:text-foreground transition-colors"
                                     >
                                         <ChevronLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
                                         Volver a Existencias
-                                    </button>
+                                    </Button>
                                     {productName && !onProductChange && (
                                         <div className="flex items-start gap-2 mt-1">
                                             <BarChart3 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -454,19 +453,21 @@ export function ProductInsightsPanel({ productId, productName, onBack, onProduct
                                 const Icon = t.icon
                                 const isActive = t.value === activeTab
                                 return (
-                                    <button
+                                    <Button
                                         key={t.value}
+                                        type="button"
+                                        variant="ghost"
                                         onClick={() => setActiveTab(t.value)}
                                         className={cn(
-                                            "flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all duration-200",
+                                            "flex w-full items-center justify-start gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all duration-200 h-auto",
                                             isActive
-                                                ? "bg-primary text-primary-foreground shadow-md"
+                                                ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground"
                                                 : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                                         )}
                                     >
                                         <Icon className={cn("h-4 w-4", isActive ? "opacity-100" : "opacity-70")} />
                                         {t.label}
-                                    </button>
+                                    </Button>
                                 )
                             })}
                         </div>

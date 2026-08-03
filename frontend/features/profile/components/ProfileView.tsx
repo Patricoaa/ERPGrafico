@@ -25,7 +25,7 @@ import {
     Download, Clock, FileText,
     Sun, Moon, Monitor
 } from "lucide-react"
-import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch, createExpanderColumn } from "@/components/shared"
+import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch, createExpanderColumn, StatusBadge } from "@/components/shared"
 import type { UnifiedSearchConfig } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
@@ -520,7 +520,7 @@ function PersonalTab({
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Ficha de Empleado</CardTitle>
                             <CardDescription>
-                                {employee.display_id} <span className="opacity-30">|</span> {employee.status_display}
+                                {employee.display_id} <span className="opacity-30">|</span> <StatusBadge status={employee.status} label={employee.status_display} />
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">

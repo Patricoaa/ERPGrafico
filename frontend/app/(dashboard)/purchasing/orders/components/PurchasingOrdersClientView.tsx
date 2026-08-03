@@ -1,17 +1,15 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { formatMoney } from "@/lib/money"
 import React, {useEffect, useState, useMemo} from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, StatCard } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal, AutoEntityCard, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { assignChartColors } from '@/lib/chart-colors'
 import { DataTableColumnHeader, DataCell } from '@/components/shared'
 import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
 import type { AnalyticsPanelConfig, Granularity, AutoEntityCardProps } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, ArrowLeft, BarChart3, Building2, Package, Box, Wrench, RefreshCcw, Receipt } from "lucide-react"
+import { BarChart3, Building2, Package, Box, Wrench, RefreshCcw, Receipt } from "lucide-react"
 import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 import { PurchaseOrderModal, DocumentRegistrationModal, PurchaseCheckoutWizard, usePurchasingOrders, usePurchasingNotes, purchaseOrderUnifiedSearchDef, usePurchasingAnalyticsData } from "@/features/purchasing"
 import { billingApi } from "@/features/billing"

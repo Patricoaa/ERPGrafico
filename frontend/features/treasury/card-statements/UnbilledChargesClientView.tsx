@@ -32,7 +32,6 @@ import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../
 import { mapToUnbilledItemRows } from './utils'
 import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
 import { BillChargesModal } from './BillChargesModal'
-import { PieChart } from "@/components/shared"
 import { useHubPanel } from '@/components/providers'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
@@ -45,15 +44,6 @@ import { unbilledChargeFields } from './unbilledChargeFields'
 
 interface UnbilledChargesClientViewProps {
     bankId: number
-}
-
-const chargeTypeColorMap: Record<string, string> = {
-    COMMISSION: 'bg-warning text-warning-foreground',
-    TAX: 'bg-destructive text-destructive-foreground',
-    FEE: 'bg-info text-info-foreground',
-    INSURANCE: 'bg-accent text-accent-foreground',
-    INTEREST: 'bg-success text-success-foreground',
-    OTHER: 'bg-muted text-muted-foreground',
 }
 
 interface UnbilledSummary {
@@ -270,9 +260,6 @@ export function UnbilledChargesClientView({
             ),
             cell: ({ row }) => {
                 const item = row.original
-                const colorClass = item.source === 'pending'
-                    ? (chargeTypeColorMap[item.chargeType ?? ''] || 'bg-muted text-muted-foreground')
-                    : 'bg-info text-info-foreground'
                 const label = item.chargeTypeDisplay || item.chargeType || (item.source === 'installment' ? 'Cuota' : '')
                 return (
                     <div className="flex justify-center w-full">

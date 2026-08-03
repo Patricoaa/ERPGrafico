@@ -96,7 +96,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
     const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const viewParam = searchParams.get('view')
-    const initialAnalyticsTab = ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam ?? '') ? viewParam! : 'resumen'
+    const initialAnalyticsTab = viewParam && ['resumen', 'ventas', 'compras', 'existencias'].includes(viewParam) ? viewParam : 'resumen'
     const [analyticsActiveTab, setAnalyticsActiveTab] = useState(initialAnalyticsTab)
     const [selectedStockProduct, setSelectedStockProduct] = useState<StockReportItem | null>(null)
 

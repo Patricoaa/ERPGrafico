@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useServerDate } from '@/hooks/useServerDate'
 import type { BankOverviewData, BankOverviewMaturityItem } from "../hooks/useBankOverview"
 
-interface BankUpcomingMaturitiesProps {
+interface BankUpcomingMaturitiesPanelProps {
     data: BankOverviewData
     bankId: number
     maxItems?: number
@@ -47,7 +47,7 @@ function formatTimeUntil(dateStr: string, todayDate?: Date): { label: string; is
     }
 }
 
-export function BankUpcomingMaturities({ data, bankId, maxItems = 10 }: BankUpcomingMaturitiesProps) {
+export function BankUpcomingMaturitiesPanel({ data, bankId, maxItems = 10 }: BankUpcomingMaturitiesPanelProps) {
     const router = useRouter()
     const { serverDate } = useServerDate()
     const { upcoming_maturities } = data

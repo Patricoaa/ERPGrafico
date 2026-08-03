@@ -33,7 +33,7 @@ interface NoteStep_PaymentProps {
     setPaymentData: (data: PaymentData) => void
 }
 
-export function NoteStep_Payment({
+export function NotePaymentStep({
     mode,
     noteType,
     total,

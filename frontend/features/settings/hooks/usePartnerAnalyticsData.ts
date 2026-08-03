@@ -29,6 +29,7 @@ export function usePartnerAnalyticsData(
     partners: Partner[],
     _granularity?: Granularity,
 ): PartnerAnalyticsData {
+    void _granularity
     return useMemo(() => {
         const safe = Array.isArray(partners) ? partners : []
 

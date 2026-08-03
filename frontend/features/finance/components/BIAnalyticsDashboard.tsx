@@ -98,7 +98,6 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
     const inventory = d.inventory ?? PLACEHOLDER.inventory;
     const production = d.production ?? PLACEHOLDER.production;
     const billing = d.billing ?? PLACEHOLDER.billing;
-    const treasury = d.treasury ?? PLACEHOLDER.treasury;
     const payroll = d.payroll ?? PLACEHOLDER.payroll;
 
     // Line Chart: Trend (Ventas Mensuales)

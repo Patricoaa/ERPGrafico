@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { LayoutDashboard } from "lucide-react"
 import { Drawer, TabBar } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 import { AnalyticsLayout } from "./AnalyticsLayout"
 import type { AnalyticsPanelProps, AnalyticsTab, AnalyticsPanelContentProps } from "./types"
 import { cn } from "@/lib/utils"
@@ -43,7 +44,6 @@ export function AnalyticsTabBar({
 }
 
 export function AnalyticsPanelContent({
-    entityName,
     tabs,
     activeTab: activeTabProp,
     onTabChange,
@@ -62,13 +62,15 @@ export function AnalyticsPanelContent({
                     const Icon = t.icon
                     const isActive = t.value === currentTab
                     return (
-                        <button
+                        <Button
                             key={t.value}
+                            variant="ghost"
+                            type="button"
                             onClick={() => handleTabChange(t.value)}
                             className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all duration-200",
+                                "flex w-full items-center justify-start gap-3 px-3 py-2.5 rounded-sm text-sm font-medium transition-all duration-200 h-auto",
                                 isActive 
-                                    ? "bg-primary text-primary-foreground shadow-md" 
+                                    ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground" 
                                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                             )}
                         >
@@ -82,7 +84,7 @@ export function AnalyticsPanelContent({
                                     {t.badge}
                                 </span>
                             )}
-                        </button>
+                        </Button>
                     )
                 })}
                 {granularity && onGranularityChange && (

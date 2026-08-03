@@ -547,13 +547,15 @@ export function PaymentMethodSelector({
                                     </span>
                                 )}
                             </div>
-                            <button
+                            <Button
                                 type="button"
+                                variant="ghost"
+                                size="icon-sm"
                                 onClick={exitMultiMode}
-                                className="rounded-[calc(var(--radius))] p-1 hover:bg-primary-foreground/20 transition-colors"
+                                className="size-7 rounded-[calc(var(--radius))] text-primary-foreground hover:bg-primary-foreground/20"
                             >
-                                <X className="h-5 w-5 text-primary-foreground" />
-                            </button>
+                                <X className="h-5 w-5" />
+                            </Button>
                         </div>
                     </div>
 
