@@ -4,9 +4,8 @@ import * as React from "react"
 import Image from "next/image"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "./MoneyDisplay"
-import { Badge } from "@/components/ui/badge"
-import { type VariantProps } from "class-variance-authority"
-import { type badgeVariants } from "@/components/ui/badge"
+import { Badge } from "@/components/shared"
+import type { BadgeIntent } from "@/lib/badge-resolvers"
 import { type LucideIcon, ArrowRight, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -294,16 +293,18 @@ function EntityCardFooter({ children, className }: EntityCardFooterProps) {
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-interface EntityCardBadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
+interface EntityCardBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     label: string
     dot?: boolean
+    intent?: BadgeIntent
 }
 
-function EntityCardBadge({ label, dot = false, variant = "secondary", className, ...props }: EntityCardBadgeProps) {
+function EntityCardBadge({ label, dot = false, intent = "neutral", className, ...props }: EntityCardBadgeProps) {
     return (
         <Badge
-            variant={variant}
-            className={cn("h-5 gap-1 rounded-sm px-1.5 text-[10px] font-semibold uppercase tracking-wide", className)}
+            intent={intent}
+            size="sm"
+            className={cn("gap-1", className)}
             {...props}
         >
             {dot && <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />}

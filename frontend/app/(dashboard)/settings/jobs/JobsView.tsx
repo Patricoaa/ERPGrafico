@@ -6,7 +6,6 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Download, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { 
@@ -17,6 +16,7 @@ import {
     useUnifiedSearch,
     StatusBadge,
     StaleDataBanner,
+    Chip,
 } from "@/components/shared"
 import { useBackgroundJobs, type BackgroundJob, jobUnifiedSearchDef } from "@/features/settings"
 
@@ -196,9 +196,9 @@ export default function JobsView() {
                         )}
                         <CardHeader className="pb-3">
                             <div className="flex justify-between items-start mb-2">
-                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                                <Chip size="xs" intent="neutral">
                                     {job.job_type_display}
-                                </Badge>
+                                </Chip>
                                 <StatusBadge status={job.status} label={job.status_display} size="xs" />
                             </div>
                             <CardTitle className="text-base leading-tight">{job.title}</CardTitle>

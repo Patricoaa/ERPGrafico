@@ -318,9 +318,9 @@ export function UnifiedNoteWizard({
             title={
                 <div className="flex items-center gap-3">
                     <span>{title}</span>
-                    {isExempt && <Chip intent="success" size="sm" className="h-6">Documento Exento</Chip>}
+                    {isExempt && <Chip intent="success" size="sm">Documento Exento</Chip>}
                     {referenceLabel && (
-                        <Chip intent="neutral" size="sm" className="h-6 font-mono font-bold tracking-widest text-[10px] uppercase">
+                        <Chip intent="neutral" size="sm" className="font-mono">
                             Ref: {referenceLabel}
                         </Chip>
                     )}

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
-import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
+import { BaseModal, CancelButton, SubmitButton, Chip } from '@/components/shared'
 
 import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
 import { partnersApi, subscribedPercentages } from "@/features/contacts"
@@ -141,9 +141,9 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                             <TrendingDown className="h-4 w-4" />
                             Proyección de Participación (Dilución)
                         </h4>
-                        <div className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                        <Chip size="md" intent="primary">
                             Total Proyectado: {formatCurrency(projectedTotal)}
-                        </div>
+                        </Chip>
                     </div>
 
                     <RowTable

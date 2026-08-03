@@ -164,7 +164,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Equipos Funcionales</span>
                                     <div className="flex flex-wrap justify-center gap-1.5">
                                         {functionalGroups.length > 0 ? functionalGroups.map(g => (
-                                            <Chip key={g} size="xs" intent="neutral" className="border-border/10 bg-muted">{g}</Chip>
+                                            <Chip key={g} size="xs" intent="neutral">{g}</Chip>
                                         )) : (
                                             <span className="text-xs text-muted-foreground italic leading-none">Sin equipos asignados</span>
                                         )}

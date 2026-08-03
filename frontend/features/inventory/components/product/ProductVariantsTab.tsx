@@ -324,9 +324,9 @@ export function ProductVariantsTab({ form, initialData, onTabChange }: ProductVa
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/30 border-border/50 text-muted-foreground font-mono">
+                                                <Chip size="xs" intent="neutral" className="font-mono">
                                                     {v.internal_code || v.code || 'SIN SKU'}
-                                                </span>
+                                                </Chip>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex gap-1 flex-wrap">

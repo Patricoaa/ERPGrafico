@@ -20,7 +20,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
-import { ActionConfirmModal, ActionSlideButton, BaseModal, DataTable } from '@/components/shared'
+import { ActionConfirmModal, ActionSlideButton, BaseModal, DataTable, Chip } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
@@ -281,9 +281,10 @@ export function DraftCartsClientView({
                             {lockedByOther && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-destructive/10 text-destructive border-destructive/30 gap-1 flex items-center shrink-0 cursor-help">
-                                            <Lock className="h-2.5 w-2.5" />
-                                            {lockInfo?.lockedByName || 'En uso'}
+                                        <span className="cursor-help">
+                                            <Chip size="xs" intent="destructive" icon={Lock}>
+                                                {lockInfo?.lockedByName || 'En uso'}
+                                            </Chip>
                                         </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="max-w-[200px] text-xs">
@@ -293,34 +294,29 @@ export function DraftCartsClientView({
                                 </Tooltip>
                             )}
                             {lockInfo?.isOwnLock && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-primary/10 text-primary border-primary/30 gap-1 flex items-center shrink-0">
-                                    <Lock className="h-2.5 w-2.5" />
+                                <Chip size="xs" intent="primary" icon={Lock}>
                                     Tú
-                                </span>
+                                </Chip>
                             )}
                             {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-card">
-                                    <Wallet className="h-2.5 w-2.5" />
+                                <Chip size="xs" intent="warning" icon={Wallet}>
                                     Por Pagar
-                                </span>
+                                </Chip>
                             )}
                             {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0">
-                                    <ClipboardCheck className="h-2.5 w-2.5" />
+                                <Chip size="xs" intent="warning" icon={ClipboardCheck}>
                                     P{draft.wizard_state.step}
-                                </span>
+                                </Chip>
                             )}
                             {draft.wizard_state?.isWaitingApproval && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-primary/10 text-primary border-primary/20 gap-1 flex items-center shrink-0">
-                                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                <Chip size="xs" intent="primary" icon={Loader2}>
                                     Auth
-                                </span>
+                                </Chip>
                             )}
                             {draft.wizard_state?.isApproved && (
-                                <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded-full border bg-success/10 text-success border-success/20 gap-1 flex items-center shrink-0">
-                                    <ClipboardCheck className="h-2.5 w-2.5" />
+                                <Chip size="xs" intent="success" icon={ClipboardCheck}>
                                     OK
-                                </span>
+                                </Chip>
                             )}
                         </div>
                         <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">

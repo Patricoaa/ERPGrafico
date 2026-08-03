@@ -13,7 +13,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
-import { GenericWizard, Numpad, type WizardStep } from '@/components/shared'
+import { GenericWizard, Numpad, Chip, type WizardStep } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { useTouchMode } from "@/hooks/useTouchMode"
 
@@ -361,9 +361,9 @@ export function SessionOpenModal({
                             <div className="text-xs opacity-70">{t.location}</div>
                         </div>
                         {t.default_treasury_account_balance > 0 && (
-                            <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                            <Chip size="xs" intent="neutral" className="ml-auto">
                                 Base: {formatCurrency(t.default_treasury_account_balance)}
-                            </span>
+                            </Chip>
                         )}
                     </Button>
                 ))}
@@ -552,10 +552,10 @@ export function SessionOpenModal({
                         onClick={() => setSelectedSharedSessionId(session.id.toString())}
                     >
                         <div className="text-left w-full">
-                            <div className="font-bold flex justify-between">
-                                <span>{session.treasury_account_name}</span>
-                                <span className="text-[10px] h-5 px-1.5 font-bold uppercase rounded-full border border-muted-foreground/20 bg-muted/10 text-muted-foreground flex items-center">{session.user_name}</span>
-                            </div>
+                                <div className="font-bold flex justify-between">
+                                    <span>{session.treasury_account_name}</span>
+                                    <Chip size="xs" intent="neutral" className="ml-auto">{session.user_name}</Chip>
+                                </div>
                             <div className="text-xs opacity-70 mt-1">Abierta: {new Date(session.opened_at).toLocaleTimeString()}</div>
                         </div>
                     </Button>

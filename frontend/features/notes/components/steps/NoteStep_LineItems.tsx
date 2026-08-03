@@ -199,7 +199,7 @@ function SelectModeTable({
                             />
                             {selected && isCreditNote && (
                                 <div className="absolute -top-3 -right-3">
-                                    <Chip size="xs" intent="primary" className="border-2 border-background shadow-card">
+                                    <Chip size="xs" intent="primary" className="shadow-card">
                                         MAX {maxQty}
                                     </Chip>
                                 </div>

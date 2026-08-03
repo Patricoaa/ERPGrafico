@@ -19,11 +19,10 @@ import {
 } from "@/components/ui/popover"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
 import { type Product, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
-import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay } from '@/components/shared'
+import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay, Badge } from '@/components/shared'
 
 const ProductIcon = getEntityIcon('inventory.product')
 
@@ -304,35 +303,29 @@ export function ProductSelector({
                                             <div className="flex gap-1 flex-wrap">
                                                 {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
                                                     <>
-                                                        <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                            (product.current_stock || 0) > 0 ? "border-success text-success" : "border-destructive/20 text-destructive"
-                                                        )}>
+                                                        <Badge intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs">
                                                             Stock: {product.current_stock || 0}
                                                         </Badge>
-                                                        <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                            (product.qty_available || 0) > 0 ? "border-success text-success" : "border-destructive text-destructive bg-destructive/10"
-                                                        )}>
+                                                        <Badge intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs">
                                                             Disp: {product.qty_available || 0}
                                                         </Badge>
                                                     </>
                                                 )}
 
                                                 {product.requires_advanced_manufacturing ? (
-                                                    <Badge variant="outline" className="text-[9px] px-1 h-4 border-primary/50 text-primary bg-primary/10">
+                                                    <Badge intent="primary" size="xs">
                                                         Fab: Avanzada
                                                     </Badge>
                                                 ) : product.mfg_auto_finalize ? (
-                                                    <Badge variant="outline" className="text-[9px] px-1 h-4 border-warning/50 text-warning bg-warning/10">
+                                                    <Badge intent="warning" size="xs">
                                                         Fab: Express
                                                     </Badge>
                                                 ) : product.has_bom ? (
-                                                    <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-primary/50 text-primary",
-                                                        (product.manufacturable_quantity ?? 0) <= 0 && "border-destructive text-destructive bg-destructive/10"
-                                                    )}>
+                                                    <Badge intent={(product.manufacturable_quantity ?? 0) <= 0 ? "destructive" : "primary"} size="xs">
                                                         Fab: {product.manufacturable_quantity ?? 'N/A'}
                                                     </Badge>
                                                 ) : product.product_type === 'MANUFACTURABLE' ? (
-                                                    <Badge variant="outline" className="text-[9px] px-1 h-4 border text-muted-foreground bg-muted">
+                                                    <Badge intent="neutral" size="xs">
                                                         Sin Receta
                                                     </Badge>
                                                 ) : null}
@@ -340,7 +333,7 @@ export function ProductSelector({
 
                                             <span className="text-[10px] font-bold whitespace-nowrap ml-2">
                                                 {product.is_dynamic_pricing ? (
-                                                    <Badge variant="outline" className="text-[9px] border-warning text-warning bg-warning/10 px-1 py-0 h-4">Precio Dinámico</Badge>
+                                                    <Badge intent="warning" size="xs">Precio Dinámico</Badge>
                                                 ) : (
                                                     <>
                                                         <MoneyDisplay amount={Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))} inline />
@@ -408,7 +401,7 @@ export function ProductSelector({
                                                 <span className="font-medium">{v.variant_display_name || v.name}</span>
                                                 <div className="flex gap-1 mt-1">
                                                     {v.attribute_values_data?.map((av: ProductAttributeValue) => (
-                                                        <Badge key={av.id} variant="secondary" className="text-[9px] py-0 h-4">
+                                                        <Badge key={av.id} intent="neutral" size="xs">
                                                             {av.attribute_name}: {av.value}
                                                         </Badge>
                                                     ))}
@@ -416,7 +409,7 @@ export function ProductSelector({
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Badge variant={(v.current_stock || 0) > 0 ? "success" : "secondary"} className="text-[10px]">
+                                            <Badge intent={(v.current_stock || 0) > 0 ? "success" : "neutral"} size="sm">
                                                 {v.current_stock || 0} disp.
                                             </Badge>
                                         </TableCell>

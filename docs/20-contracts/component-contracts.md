@@ -84,6 +84,8 @@ Single authorized component for **non-status, non-entity-ID** informational labe
 
 Typography invariant: `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068). Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
 
+> 🟡 **Justified exceptions** (burbujas de notificación, tag-input pills, mono para códigos/versiones/%, callouts, POS density) — ver **[component-chip.md §Documented exceptions](./component-chip.md#documented-exceptions-adr-0069)** y **[ADR-0069](../10-architecture/adr/0069-badge-consumer-migration-and-exceptions.md)**.
+
 ---
 
 ## StatusBadge 🟢
@@ -1200,6 +1202,7 @@ Componentes de uso estrictamente interno, no consumir directamente en features:
 
 - Creating a new badge component instead of using `StatusBadge` (for states) or `Chip` (for labels/tags).
 - Inline `<Badge className="text-[8px] ...">` for informational tags — use `<Chip size="xs">`.
+- Importing `@/components/ui/badge` directly in features or shared components — use `Badge`/`Chip`/`StatusBadge` from `@/components/shared` (single source of visual truth, ADR-0068/0069).
 - Passing raw Tailwind color classes to any shared component.
 - Modifying `/components/ui/` (Shadcn base).
 - Calling `.toLocaleString()` for money formatting — use `MoneyDisplay`.

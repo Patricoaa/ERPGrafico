@@ -7,7 +7,7 @@ import {CheckCircle2, Circle, User, Paperclip, MessageSquare, Download, AlertCir
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { LabeledInput, LabeledContainer } from "@/components/shared"
+import { LabeledInput, LabeledContainer, Chip } from "@/components/shared"
 
 interface TaskActionCardProps {
     task: Task
@@ -44,9 +44,9 @@ export function TaskActionCard({
                         <h4 className="text-sm font-semibold flex items-center gap-2">
                             {task.title}
                             {!isPending && (
-                                <span className="text-[10px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
+                                <Chip size="sm" intent="neutral">
                                     ✓ {task.completed_by_data?.username || 'Sistema'}
-                                </span>
+                                </Chip>
                             )}
                         </h4>
                         <p className="text-xs text-muted-foreground">{task.description}</p>
@@ -149,10 +149,9 @@ export function TaskActionCard({
             
             {/* Show permission warning even if not expanded if user can't complete */}
             {isPending && !canComplete && !isExpanded && (
-               <div className="ml-7 flex items-center gap-1.5 text-[10px] bg-destructive/10 px-2.5 py-1.5 rounded text-destructive border border-destructive/20 w-fit mt-1">
-                   <AlertCircle className="h-3 w-3 shrink-0" />
+               <Chip size="sm" intent="destructive" icon={AlertCircle} className="ml-7 mt-1 w-fit">
                    Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group}
-               </div> 
+               </Chip>
             )}
         </div>
     )

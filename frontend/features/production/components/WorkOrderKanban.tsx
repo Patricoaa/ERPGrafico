@@ -88,10 +88,9 @@ function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order
                     </div>
                 </div>
                 {order.materials?.length === 0 && order.current_stage === 'MATERIAL_ASSIGNMENT' && (
-                    <div className="flex items-center text-[10px] text-warning bg-warning/10 p-1.5 rounded border border-warning/20">
-                        <AlertCircle className="mr-1 h-3 w-3" />
+                    <Chip size="sm" intent="warning" icon={AlertCircle}>
                         Sin materiales asignados
-                    </div>
+                    </Chip>
                 )}
                 <div className="pt-2 flex justify-end border-t border-dashed">
                     {workOrderActions.render(order, actionsCtx)}

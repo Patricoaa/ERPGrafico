@@ -118,7 +118,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 const category = row.original.category
                 const isHaber = category.includes('HABER')
                 return (
-                    <Chip size="xs" intent={isHaber ? "success" : "destructive"} className="h-5 shadow-card rounded-sm">
+                    <Chip size="xs" intent={isHaber ? "success" : "destructive"}>
                         {row.getValue("category_display")}
                     </Chip>
                 )
@@ -139,9 +139,9 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
             accessorKey: "account_code",
             header: "Cuenta Contable",
             cell: ({ row }) => (
-                <div className="font-mono text-[10px] text-primary/70 bg-primary/5 px-2 py-0.5 rounded-sm border border-primary/10 w-fit">
+                <Chip size="xs" intent="primary" className="font-mono">
                     {row.getValue("account_code")}
-                </div>
+                </Chip>
             ),
             meta: { title: "Cuenta Contable" },
         },
