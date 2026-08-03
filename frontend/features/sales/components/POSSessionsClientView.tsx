@@ -135,7 +135,6 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                             fields={posSessionFields}
 
                             entityLabel="pos.session"
-                            title={session.user_name}
 
                             actions={posSessionActions.render(session, actionsCtx)}
                             defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} 
