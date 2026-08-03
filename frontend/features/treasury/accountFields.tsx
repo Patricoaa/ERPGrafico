@@ -11,7 +11,7 @@ export const accountFields = createEntityFields<TreasuryAccount>()({
     },
     account_type_display: {
         key: "account_type_display",
-        type: "text",
+        type: "secondary",
         label: "Tipología",
         get: (e) => e.account_type_display || e.account_type,
     },
@@ -35,7 +35,7 @@ export const accountFields = createEntityFields<TreasuryAccount>()({
             if (!hasBank && !hasProviders) {
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
+                        <DataCell.Secondary>Sin entidad externa</DataCell.Secondary>
                     </div>
                 )
             }
