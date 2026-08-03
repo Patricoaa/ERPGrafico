@@ -403,7 +403,7 @@ describe("createEntityFields", () => {
     })
 
     describe("zone font-weight (ADR-0067)", () => {
-        it("renders title and header zone cells bold, detail zone cells normal", () => {
+        it("renders header zone cells semibold, title/detail zone cells normal", () => {
             const fields = createEntityFields<TestEntity>()({
                 code: { key: "code", type: "code", label: "Folio" },        // title(0)
                 total: { key: "total_amount", type: "currency", label: "Total", placement: "header" }, // header(3)
@@ -421,8 +421,10 @@ describe("createEntityFields", () => {
                     ),
                 )
 
-            expect(cellMarkup(columns[0])).toContain("font-bold")
-            expect(cellMarkup(columns[2])).toContain("font-bold")
+            expect(cellMarkup(columns[0])).toContain("font-medium")
+            expect(cellMarkup(columns[0])).not.toContain("font-bold")
+            expect(cellMarkup(columns[2])).toContain("font-semibold")
+            expect(cellMarkup(columns[2])).not.toContain("font-bold")
             expect(cellMarkup(columns[1])).toContain("font-medium")
             expect(cellMarkup(columns[1])).not.toContain("font-bold")
         })

@@ -86,8 +86,8 @@ Al migrar una vista con columnas inline:
 2. `type: "computed"` requiere un `render(entity)` — con `get` solo renderiza `null`.
 3. El orden de columnas lo gobiernan las zonas (`title → subtitle → detail → header`),
    con `header` (estado/totales/flows/chips) al final antes de acciones y con peso
-   `font-bold` automático. Las celdas title/header son bold; detail/subtitle quedan en
-   `font-medium`. Si el orden visual importa, fijar `placement` explícito en el campo.
+   `font-semibold` automático. Solo las celdas header son semibold; title/detail/subtitle
+   quedan en `font-medium`. Si el orden visual importa, fijar `placement` explícito en el campo.
 4. Celdas interactivas (botones por fila) → `computed` + contexto React exportado
    del feature; el provider envuelve la vista (cubre tabla y card).
 5. Columnas de infraestructura (checkbox de selección, tree-expander) NO son campos

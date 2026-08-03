@@ -38,10 +38,10 @@ Post-ADR-0066 audit of the field engine surfaced four deltas between the declare
 
 ### D-03: Zone-driven font-weight
 
-Cells in the `title` and `header` zones render in `font-bold`; detail/subtitle keep `font-medium`.
+Cells in the `header` zone render in `font-semibold`; `title`, `detail`, and `subtitle` keep `font-medium`.
 
 - `renderCell(def, entity, opts?: { weight?: DataCellWeight })` threads a weight into the primitives that accept it (`Text`, `Code`, `Secondary`, `Date`, `Number`, `Currency`, `CurrencyFlow`, `NumericFlow`). `Status` / `Chip` / `Category` keep their badge typography. An explicit `def.weight` on a field wins over the auto-zone weight.
-- `toColumns()` passes `weight: 'bold'` when the resolved zone is `title` or `header`; `toCardFields()` does the same per resolved placement; `resolveTitle()` always renders the card title bold.
+- `toColumns()` passes `weight: 'semibold'` when the resolved zone is `header`; `toCardFields()` does the same per resolved placement. The `title` zone receives no auto weight (its cells render at the default `font-medium`). `resolveTitle()` always renders the card title bold.
 - Card: `EntityCard` title wrapper bumps to `font-bold`; `AutoEntityCard` header trailing value span adds `font-bold`. The card center's existing `[&>*]:font-normal` keeps detail values normal.
 
 ### D-04: `numericFlow` fieldtype reintroduced
@@ -54,12 +54,12 @@ Cells in the `title` and `header` zones render in `font-bold`; detail/subtitle k
 
 ### Positivas
 - The placement contract again equals what is rendered; dead zones and the dead `progress` role are gone (one code path for card body content).
-- Lists get a clear visual hierarchy (title/header KPIs bold) and header KPIs read last, adjacent to row actions — matching the card's "distinctive data" semantics.
+- Lists get a clear visual hierarchy (header KPIs semibold, title at `font-medium`) and header KPIs read last, adjacent to row actions — matching the card's "distinctive data" semantics.
 - `numericFlow` restores a declarative, typed option surface for directional quantities; the hand-rolled `computed` pattern disappears.
 - `weight` threading is additive and backward-compatible (no field change required; explicit `def.weight` wins).
 
 ### Negativas
-- **Behavior change in every list**: header-zone columns move from position 2 to last; title/header cells change weight. Intended per this ADR.
+- **Behavior change in every list**: header-zone columns move from position 2 to last; header cells change weight to `semibold` and title cells drop the auto `bold`. Intended per this ADR.
 - `Placement` / `FieldRole` / `renderCell` are layer-20 contracts — changed here with this ADR as authorization.
 - Card variants that previously (theoretically) drained `metric`/`footer` now have no such route; those zones were unreachable in practice.
 

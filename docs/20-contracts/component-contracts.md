@@ -149,6 +149,12 @@ Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refe
 > **File**: `frontend/components/shared/DataTableCells.tsx`  
 > **Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
 
+> ⚠️ **Para campos de entidad**, la asignación canónica es declarar `FieldDef.type` en `*Fields.ts`
+> vía `createEntityFields<T>()` — el motor resuelve el `DataCell` correcto. La **fuente de verdad**
+> de la asignación `type` → celda (los 15 FieldTypes, opciones, null policy y zonas) es
+> **[component-fields.md](./component-fields.md)**. Los primitivos de esta sección se usan
+> directamente solo en renderers `computed` y columnas de excepción.
+
 Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica tipografía consistente.
 
 ### Clasificación de Textos Estándar
@@ -170,9 +176,10 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 
 Pesos disponibles (`DataCellWeight`): `light` (300) · `normal` (400) · `medium` (500) · `semibold` (600) · `bold` (700). El token `light` se añadió en ADR-0062.
 
-**Peso por zona (ADR-0067):** el motor `entity-fields` aplica `weight: 'bold'` automático a
-las celdas resueltas en zona `title` / `header` (lista y card) vía threading en `renderCell`.
-Un `weight` explícito en el `FieldDef` gana sobre el automático. `Status` / `Chip` / `Category`
+**Peso por zona (ADR-0067):** el motor `entity-fields` aplica `weight: 'semibold'` automático a
+las celdas resueltas en zona `header` (lista y card) vía threading en `renderCell`. La zona
+`title` no recibe peso automático (queda en `font-medium`). Un `weight` explícito en el
+`FieldDef` gana sobre el automático. `Status` / `Chip` / `Category`
 conservan su tipografía de badge (no aceptan `weight`). Zonas de lista: `title → subtitle →
 detail → header` (header al final, antes de acciones).
 
@@ -254,7 +261,7 @@ Barra de progreso para métricas de completitud (% de entrega, avance de OT, sto
 
 `value >= max` → barra completa en `bg-success` con glow. `value < max` → `bg-primary`. Valor clamped a `[0, 100]%`.
 
-### DataCell.Category (ADR-0068)
+### DataCell.Category (ADR-0066 D-05)
 
 Uno o varios chips resueltos por dominio (wraps `Chip.Category` → `resolveCategory`). Contenedor `flex-wrap` centrado. Valores vacíos / sin dominio → guion de datos faltantes (política null unificada).
 
