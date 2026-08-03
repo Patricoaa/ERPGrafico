@@ -154,7 +154,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                         </div>
                     ) : null}
                     <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
+                        <div className="truncate text-sm font-bold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                             {title}
                         </div>
                         {subtitle && (
@@ -189,7 +189,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                     </div>
                 ) : null}
                 <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
+                    <div className="truncate text-sm font-bold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                         {title}
                     </div>
                     {subtitle && (

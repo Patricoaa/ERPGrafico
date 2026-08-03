@@ -9,7 +9,13 @@ author: core-team
 # 0066 — Entity Fields: discriminated-union FieldDef and total type→cell registry
 
 **Supersedes:** Part of ADR-0054 (Entity Fields Schema), part of ADR-0055 (computed / icon)
-**Related:** ADR-0054 (Entity Fields Schema), ADR-0055 (computed/icon/chipIcon/null-safe status), ADR-0062 (dateTime weights), ADR-0065 (DataCell.Status), `component-contracts.md` (DataCell primitives)
+**Related:** ADR-0054 (Entity Fields Schema), ADR-0055 (computed/icon/chipIcon/null-safe status), ADR-0062 (dateTime weights), ADR-0065 (DataCell.Status), ADR-0067 (placement surface, header order, zone weight, numericFlow), `component-contracts.md` (DataCell primitives)
+
+> **Revisado por ADR-0067 (2026-08-03):** este ADR queda enmendado en tres puntos:
+> - D-01: el tipo `numericFlow` se **reintroduce** (un llamador real: `stockMoveFields.quantity` con rol flow).
+> - D-04: la frase «`FieldRole 'progress'` stays» queda anulada — `progress` se elimina junto con las zonas `metric`/`footer`.
+> - D-04 / `Placement`: las zonas `metric`/`footer` y el orden de zonas de lista cambian (header al final).
+> Ver ADR-0067 para los detalles completos.
 
 ---
 
@@ -20,7 +26,7 @@ author: core-team
 1. **`computed` is the de-facto primary type.** 44 of ~150 field definitions (~30%) use `type: 'computed'`, on par with `text` (39) and `currency` (35). Many are trivial — e.g. `productFields.name` is `computed` only to wrap `DataCell.Text` in a centered div, which `type: 'text'` already produces. The escape hatch became the default because the flat `FieldDef<T>` cannot express per-type options, so features fall back to `render`.
 
 2. **Dead / ignored props and types.**
-   - Fieldtypes `icon`, `progress`, `numericFlow` have **zero** uses; `icon`'s functionality is covered by the `icon` prefix prop on `text`/`code`/`secondary`.
+   - Fieldtypes `icon` and `progress` have **zero** uses; `icon`'s functionality is covered by the `icon` prefix prop on `text`/`code`/`secondary`. *(`numericFlow` also had zero uses at the time; ADR-0067 reintroduces it once `stockMoveFields.quantity` becomes a real caller.)*
    - `render` is **silently ignored** on non-`computed`/`complex` types — `productFields.availability` (`type: 'chip'` + multi-chip `render`) renders a single `String(value)`; the multi-chip is dead code.
    - `cellProps: Record<string, unknown>` (18 uses) bypasses the typed system.
    - The `type: 'icon'` renderer reads its icon from `extra.icon` (`cellProps`) while every other type uses the dedicated `icon` FieldDef prop — inconsistent.
@@ -85,7 +91,7 @@ A single `toDisplayValue(value)` centralizes the missing-data convention: text-l
 
 ### D-04: Type surface = what is actually used
 
-- **Remove** `icon`, `progress`, `numericFlow` fieldtypes (zero uses). Their renderers remain available as `DataCell.Icon` / `DataCell.Progress` / `DataCell.NumericFlow` components for `computed` renderers and direct columns; `FieldRole 'progress'` stays.
+- **Remove** `icon` and `progress` fieldtypes (zero uses). Their renderers remain available as `DataCell.Icon` / `DataCell.Progress` components for `computed` renderers and direct columns. *(`numericFlow` was also removed at the time; ADR-0067 reintroduces it — see the revision note above.)*
 - **Merge** `complex` → `computed`. Migration rule: `type: 'complex'` becomes `type: 'computed'` with `fieldRole: 'complex'` (the role drives the always-header routing via `headerPriorityIndex` / `ROLE_TO_PLACEMENT`, unchanged).
 - **Fix** `productFields.availability` dead `render`: multi-chip goes through `computed`, or the field uses `chip-category`.
 

@@ -1,5 +1,4 @@
 import { createEntityFields } from '@/components/shared'
-import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from '@/lib/entity-registry'
 
 export interface StockMove {
@@ -54,15 +53,10 @@ export const stockMoveFields = createEntityFields<StockMove>()({
     },
     quantity: {
         key: 'quantity',
-        type: 'computed',
+        type: 'numericFlow',
         label: 'Cantidad',
-        fieldRole: 'flow',
-        render: (m) => (
-            <DataCell.NumericFlow
-                value={Math.abs(Number(m.quantity))}
-                uom={m.uom_abbreviation || m.uom_name}
-                direction={m.direction === 'IN' ? 'inflow' : m.direction === 'OUT' ? 'outflow' : 'neutral'}
-            />
-        ),
+        get: (m) => Math.abs(Number(m.quantity)),
+        direction: (m) => m.direction === 'IN' ? 'inflow' : m.direction === 'OUT' ? 'outflow' : 'neutral',
+        unit: (m) => m.uom_abbreviation || m.uom_name,
     },
 })
