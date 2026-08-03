@@ -1,14 +1,19 @@
 ---
 id: 0054
 title: Entity Fields Schema — declarative field mapping for DataTable / EntityCard / Kanban
-status: Proposed
+status: Superseded by 0066
 date: 2026-07-14
 author: core-team
 ---
 
 # 0054 — Entity Fields Schema
 
+**Superseded by:** ADR-0066 (discriminated-union `FieldDef` + total type→cell registry).
 **Related:** ADR-0023 (ROW_ACTIONS registry), ADR-0028 (entity-drawer registry)
+
+> El factory `createEntityFields<T>()` introducido aquí sigue vigente. La estructura de
+> `FieldDef<T>` fue reemplazada por una unión discriminada (ADR-0066) y la tabla D-03 a
+> continuación refleja el mapeo actual.
 
 ---
 
@@ -92,16 +97,22 @@ function createEntityFields<T>() {
 | `text` | `DataCell.Text` | `DataCell.Text` | `DataCell.Text` (truncated) |
 | `code` | `DataCell.Code` | `DataCell.Code` | `DataCell.Code` (sm) |
 | `date` | `DataCell.Date` | `DataCell.Date` | `DataCell.Date` |
+| `dateTime` | `DataCell.Date` (showTime) | `DataCell.Date` (showTime) | `DataCell.Date` (showTime) |
 | `currency` | `DataCell.Currency` | `DataCell.Currency` | `DataCell.Currency` (sm) |
 | `status` | `DataCell.Status` | `DataCell.Status` | `DataCell.Status` (sm) |
 | `number` | `DataCell.Number` | `DataCell.Number` | `DataCell.Number` |
 | `secondary` | `DataCell.Secondary` | `DataCell.Secondary` | `DataCell.Secondary` |
 | `contact` | `DataCell.ContactLink` | `DataCell.ContactLink` | `DataCell.ContactLink` |
 | `chip` | `DataCell.Chip` | `DataCell.Chip` | `DataCell.Chip` (xs) |
-| `icon` | `DataCell.Icon` | `DataCell.Icon` | `DataCell.Icon` |
-| `progress` | `DataCell.Progress` | `DataCell.Progress` | `DataCell.Progress` |
-| `numericFlow` | `DataCell.NumericFlow` | `DataCell.NumericFlow` | `DataCell.NumericFlow` |
+| `chip-category` | `DataCell.Category` | `DataCell.Category` | `DataCell.Category` |
 | `currencyFlow` | `DataCell.CurrencyFlow` | `DataCell.CurrencyFlow` | `DataCell.CurrencyFlow` |
+| `sourceDest` | `DataCell.SourceDest` | `DataCell.SourceDest` | `DataCell.SourceDest` |
+| `computed` | `render(entity)` | `render(entity)` | `render(entity)` |
+
+> Nota (ADR-0066): los fieldtypes `icon`, `progress` y `numericFlow` fueron removidos
+> (cero usos); sus renderers siguen disponibles como componentes `DataCell.Icon`,
+> `DataCell.Progress`, `DataCell.NumericFlow`. `computed` es el único escape hatch y
+> `fieldRole: 'complex'` reproduce el routing always-header del antiguo `complex`.
 
 ### D-04: Convención de archivos
 
