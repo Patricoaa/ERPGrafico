@@ -60,6 +60,6 @@ export const ledgerMovementFields = createEntityFields<LedgerMovement>()({
         type: "currency",
         label: "Saldo",
         placement: "detail",
-        cellProps: { showColor: true },
+        showColor: true,
     },
 })

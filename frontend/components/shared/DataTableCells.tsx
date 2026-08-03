@@ -40,8 +40,8 @@ interface ValueCellProps<T> extends BaseCellProps {
 
 // ─── DataCell style token maps ───────────────────────────────────────────────
 
-type DataCellSize = 'xs' | 'sm' | 'md' | 'lg'
-type DataCellIntent = 'default' | 'primary' | 'success' | 'warning' | 'destructive' | 'info' | 'muted'
+export type DataCellSize = 'xs' | 'sm' | 'md' | 'lg'
+export type DataCellIntent = 'default' | 'primary' | 'success' | 'warning' | 'destructive' | 'info' | 'muted'
 type DataCellTextTransform = 'uppercase' | 'lowercase' | 'capitalize' | 'none'
 type DataCellLetterSpacing = 'tighter' | 'tight' | 'normal' | 'wide' | 'wider' | 'widest'
 

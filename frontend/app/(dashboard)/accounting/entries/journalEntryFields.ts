@@ -38,7 +38,7 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
         key: "description",
         type: "text",
         label: "Descripción",
-        cellProps: { className: "truncate max-w-[300px]" },
+        className: "truncate max-w-[300px]",
     },
     totalDebit: {
         key: "total_debit",

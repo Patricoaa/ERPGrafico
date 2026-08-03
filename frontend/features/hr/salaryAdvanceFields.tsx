@@ -24,7 +24,8 @@ export const salaryAdvanceFields = createEntityFields<SalaryAdvance>()({
         type: "currency",
         label: "Monto",
         get: (a) => parseFloat(a.amount as unknown as string) || 0,
-        cellProps: { intent: "warning", weight: "bold" },
+        intent: "warning",
+        weight: "bold",
     },
     isDiscounted: {
         key: "is_discounted",

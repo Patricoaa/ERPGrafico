@@ -2,7 +2,7 @@ import { type ReactNode } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { cn, translateStatus } from "@/lib/utils"
 import { DataCell } from "./DataTableCells"
-import type { DataCellWeight } from "./DataTableCells"
+import type { DataCellIntent, DataCellSize, DataCellWeight } from "./DataTableCells"
 import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
 import type { LucideIcon } from "lucide-react"
@@ -137,13 +137,15 @@ const ROLE_TO_PLACEMENT: Record<FieldRole, Placement> = {
     'progress':         'metric',      // Progress bars → metric fallback
 }
 
-interface FieldDef<T> {
+/**
+ * Surface-agnostic field definition — shared across every FieldType.
+ * Type-specific options live on the discriminated union below.
+ */
+interface SharedFieldDef<T> {
     key: (keyof T & string) | (string & {}) // allow virtual keys when `get` is provided
-    type: FieldType
     label: string
     header?: string
     get?: (entity: T) => unknown
-    cellProps?: Record<string, unknown>
     surfaces?: FieldSurface[]
     /**
      * Ubicación semántica del campo — fuente de verdad para orden en card Y list.
@@ -180,63 +182,73 @@ interface FieldDef<T> {
         priority?: "primary" | "secondary"
     }
 
-    // ── Per-row dynamic props ──────────────────────────────────────────────
-    // Static value OR callback resolved per-row by the factory.
-    // Callbacks return scalars only, never JSX.
-
     /** Conditional className — resolves per row via (parsedValue, entity). */
     className?: string | ((value: unknown, entity: T) => string)
-
-    // Currency / CurrencyFlow
-    /** Currency code — static or derived per entity. */
-    currency?: string | ((entity: T) => string)
-    /** Show zero values as dash — static or based on parsed numeric value. */
-    showZeroAsDash?: boolean | ((value: number) => boolean)
-
-    // Date / DateTime
-    /** Font weight of the date portion (default 'medium'). Only meaningful with showTime. */
-    dateWeight?: DataCellWeight
-    /** Font weight of the time portion (default 'normal'). Only meaningful with showTime. */
-    timeWeight?: DataCellWeight
-
-    // Status
-    /** Dynamic label override for the StatusBadge (replaces translateStatus). */
-    getLabel?: (entity: T) => string
-
-    // Chip
-    /** Chip intent — static or derived from entity fields. */
-    intent?: ChipIntent | ((entity: T) => ChipIntent)
-
-    // Chip.Category
-    /** Domain registry for category-based color resolution. Required for chip-category type. */
-    domain?: CategoryDomain | ((entity: T) => CategoryDomain)
-
-    // CurrencyFlow / NumericFlow
-    /** Flow direction — static or derived from entity. */
-    direction?: FlowDirection | ((entity: T) => FlowDirection)
-
-    // Number / Text
-    /** Suffix text — static or derived per entity (e.g. uom_name, "%"). */
-    suffix?: string | ((entity: T) => string)
-    /** Whether to add left margin to the suffix (default true). Set false for number+uom without space. */
-    suffixGap?: boolean
-
-    // Currency
-    /** Tooltip content — static or derived per entity. Shows on hover for currency cells. */
-    tooltip?: string | ((entity: T) => string)
-
-    // Icon prefix (text, code, secondary, chip)
-    /** Optional icon prepended to the cell content. Ignored for card header rendering. */
-    icon?: LucideIcon | ((entity: T) => LucideIcon)
-
-    // Chip icon
-    /** Optional icon rendered inside Chip cells. */
-    chipIcon?: LucideIcon | ((entity: T) => LucideIcon)
-
-    // Computed type
-    /** Custom render callback — only used when type is 'computed'. Returns arbitrary ReactNode. */
-    render?: (entity: T) => ReactNode
 }
+
+/**
+ * Discriminated union — each FieldType carries ONLY its valid options.
+ * A type-specific prop outside its member is a compile error.
+ * `render` exists exclusively on `computed`/`complex`.
+ */
+type FieldDef<T> = SharedFieldDef<T> & (
+    // ── Text-like (optional icon prefix) ─────────────────────────────────────
+    | { type: 'text'; icon?: LucideIcon | ((entity: T) => LucideIcon) }
+    | { type: 'secondary'; icon?: LucideIcon | ((entity: T) => LucideIcon) }
+    | { type: 'code'; icon?: LucideIcon | ((entity: T) => LucideIcon) }
+
+    // ── Dates ────────────────────────────────────────────────────────────────
+    | { type: 'date' }
+    | { type: 'dateTime'; dateWeight?: DataCellWeight; timeWeight?: DataCellWeight }
+
+    // ── Money & quantities ───────────────────────────────────────────────────
+    | {
+        type: 'currency'
+        currency?: string | ((entity: T) => string)
+        showZeroAsDash?: boolean | ((value: number) => boolean)
+        tooltip?: string | ((entity: T) => string)
+        showColor?: boolean
+        intent?: DataCellIntent
+        weight?: DataCellWeight
+        size?: DataCellSize
+    }
+    | {
+        type: 'number'
+        suffix?: string | ((entity: T) => string)
+        suffixGap?: boolean
+        weight?: DataCellWeight
+    }
+
+    // ── Status ───────────────────────────────────────────────────────────────
+    | { type: 'status'; getLabel?: (entity: T) => string }
+
+    // ── Relation ─────────────────────────────────────────────────────────────
+    | { type: 'contact' }
+
+    // ── Tags ─────────────────────────────────────────────────────────────────
+    | {
+        type: 'chip'
+        intent?: ChipIntent | ((entity: T) => ChipIntent)
+        chipIcon?: LucideIcon | ((entity: T) => LucideIcon)
+    }
+    | { type: 'chip-category'; domain?: CategoryDomain | ((entity: T) => CategoryDomain) }
+    | { type: 'icon'; icon?: LucideIcon }
+    | { type: 'progress' }
+    | { type: 'numericFlow' }
+
+    // ── Flow ─────────────────────────────────────────────────────────────────
+    | {
+        type: 'currencyFlow'
+        direction?: FlowDirection | ((entity: T) => FlowDirection)
+        currency?: string | ((entity: T) => string)
+        showIcon?: boolean
+    }
+    | { type: 'sourceDest' }
+
+    // ── Custom renderers ─────────────────────────────────────────────────────
+    | { type: 'computed'; render: (entity: T) => ReactNode }
+    | { type: 'complex'; render: (entity: T) => ReactNode }
+)
 
 // ─── Card Metadata (Title / Subtitle) ────────────────────────────────────────
 
@@ -330,9 +342,8 @@ export function headerPriorityIndex(role: FieldRole, key: string): number {
 
 // ─── Cell Renderers ──────────────────────────────────────────────────────────
 
-function resolveIcon<T>(def: FieldDef<T>, entity: T): LucideIcon | undefined {
+function resolveIcon<T>(def: { icon?: LucideIcon | ((entity: T) => LucideIcon) }, entity: T): LucideIcon | undefined {
     if (!def.icon) return undefined
-     
     return typeof def.icon === 'function' ? (def.icon as (e: T) => LucideIcon)(entity) : def.icon
 }
 
@@ -341,43 +352,61 @@ function IconPrefix({ icon: Icon }: { icon?: LucideIcon }) {
     return <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
 }
 
+/** Unified missing-data convention: null / undefined / '' → fallback (default '-'). */
+function toDisplayValue(value: unknown, fallback = "-"): string {
+    if (value === null || value === undefined || value === "") return fallback
+    return String(value)
+}
+
 function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
     const value = resolveValue(def, entity)
-    const extra = def.cellProps ?? {}
     const resolvedClassName = typeof def.className === "function"
         ? def.className(value, entity)
         : def.className
-    const icon = resolveIcon(def, entity)
 
     switch (def.type) {
         case "computed":
         case "complex":
-            // Both computed and complex delegate to the render callback.
+            // Both delegate to the render callback.
             // 'complex' fields are additionally routed to the header zone by the placement engine.
             return def.render ? def.render(entity) : null
+
         case "text": {
-            const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
-            const text = (value as string) ?? "-"
+            const icon = resolveIcon(def, entity)
             return (
-                <DataCell.Text className={resolvedClassName} {...extra}>
+                <DataCell.Text className={resolvedClassName}>
                     <span className="flex items-center gap-1.5 justify-center">
                         <IconPrefix icon={icon} />
-                        {suffixValue ? `${text}${suffixValue}` : text}
+                        {toDisplayValue(value)}
                     </span>
                 </DataCell.Text>
             )
         }
-        case "code":
+        case "code": {
+            const icon = resolveIcon(def, entity)
             return (
-                <DataCell.Code className={resolvedClassName} {...extra}>
+                <DataCell.Code className={resolvedClassName}>
                     <span className="flex items-center gap-1.5 justify-center">
                         <IconPrefix icon={icon} />
-                        {(value as string) ?? "-"}
+                        {toDisplayValue(value)}
                     </span>
                 </DataCell.Code>
             )
+        }
+        case "secondary": {
+            const icon = resolveIcon(def, entity)
+            return (
+                <DataCell.Secondary className={resolvedClassName}>
+                    <span className="flex items-center gap-1.5 justify-center">
+                        <IconPrefix icon={icon} />
+                        {toDisplayValue(value)}
+                    </span>
+                </DataCell.Secondary>
+            )
+        }
+
         case "date":
-            return <DataCell.Date value={value as string | Date} className={resolvedClassName} {...extra} />
+            return <DataCell.Date value={value as string | Date} className={resolvedClassName} />
         case "dateTime":
             return (
                 <DataCell.Date
@@ -386,9 +415,9 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     dateWeight={def.dateWeight}
                     timeWeight={def.timeWeight}
                     className={resolvedClassName}
-                    {...extra}
                 />
             )
+
         case "currency": {
             const currencyValue = typeof def.currency === "function" ? def.currency(entity) : def.currency
             const showZeroAsDashValue = typeof def.showZeroAsDash === "function"
@@ -402,21 +431,10 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     {...(currencyValue !== undefined && { currency: currencyValue })}
                     {...(showZeroAsDashValue !== undefined && { showZeroAsDash: showZeroAsDashValue })}
                     {...(tooltipValue !== undefined && { tooltip: tooltipValue })}
-                    {...extra}
-                />
-            )
-        }
-        case "status": {
-            if (value === null || value === undefined || value === "") {
-                return <DataCell.Text className={resolvedClassName} {...extra}>-</DataCell.Text>
-            }
-            const labelValue = def.getLabel ? def.getLabel(entity) : undefined
-            return (
-                <DataCell.Status
-                    status={value as string}
-                    className={resolvedClassName}
-                    {...(labelValue !== undefined && { label: labelValue })}
-                    {...extra}
+                    {...(def.showColor !== undefined && { showColor: def.showColor })}
+                    {...(def.intent !== undefined && { intent: def.intent })}
+                    {...(def.weight !== undefined && { weight: def.weight })}
+                    {...(def.size !== undefined && { size: def.size })}
                 />
             )
         }
@@ -428,21 +446,28 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     className={resolvedClassName}
                     {...(suffixValue !== undefined && { suffix: suffixValue })}
                     {...(def.suffixGap !== undefined && { suffixGap: def.suffixGap })}
-                    {...extra}
+                    {...(def.weight !== undefined && { weight: def.weight })}
                 />
             )
         }
-        case "secondary":
+
+        case "status": {
+            if (value === null || value === undefined || value === "") {
+                return <DataCell.Text className={resolvedClassName}>-</DataCell.Text>
+            }
+            const labelValue = def.getLabel ? def.getLabel(entity) : undefined
             return (
-                <DataCell.Secondary className={resolvedClassName} {...extra}>
-                    <span className="flex items-center gap-1.5 justify-center">
-                        <IconPrefix icon={icon} />
-                        {(value as string) ?? "-"}
-                    </span>
-                </DataCell.Secondary>
+                <DataCell.Status
+                    status={value as string}
+                    className={resolvedClassName}
+                    {...(labelValue !== undefined && { label: labelValue })}
+                />
             )
+        }
+
         case "contact":
-            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{(value as string) ?? "-"}</DataCell.ContactLink>
+            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{toDisplayValue(value)}</DataCell.ContactLink>
+
         case "chip": {
             const intentValue = typeof def.intent === "function" ? def.intent(entity) : def.intent
             const chipIconValue = typeof def.chipIcon === "function"
@@ -453,9 +478,8 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     className={resolvedClassName}
                     {...(intentValue !== undefined && { intent: intentValue })}
                     {...(chipIconValue != null && { icon: chipIconValue })}
-                    {...extra}
                 >
-                    {String(value ?? "")}
+                    {toDisplayValue(value)}
                 </DataCell.Chip>
             )
         }
@@ -470,14 +494,16 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                 </div>
             )
         }
+
         case "icon": {
-            const icon = extra.icon as LucideIcon | undefined
-            return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} {...extra} /> : null
+            const icon = def.icon
+            return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} /> : null
         }
         case "progress":
-            return <DataCell.Progress value={value as number} className={resolvedClassName} {...extra} />
+            return <DataCell.Progress value={value as number} className={resolvedClassName} />
         case "numericFlow":
-            return <DataCell.NumericFlow value={value as number | string} className={resolvedClassName} {...extra} />
+            return <DataCell.NumericFlow value={value as number | string} className={resolvedClassName} />
+
         case "currencyFlow": {
             const directionValue = typeof def.direction === "function" ? def.direction(entity) : def.direction
             const currencyValue = typeof def.currency === "function" ? def.currency(entity) : def.currency
@@ -487,16 +513,14 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     direction={directionValue ?? "neutral"}
                     className={resolvedClassName}
                     {...(currencyValue !== undefined && { currency: currencyValue })}
-                    {...extra}
+                    {...(def.showIcon !== undefined && { showIcon: def.showIcon })}
                 />
             )
         }
         case "sourceDest": {
             const v = value as { source: string; dest: string; sourceEntity?: { label: string; entityLabel: string; id: number }; destEntity?: { label: string; entityLabel: string; id: number } }
-            return <DataCell.SourceDest {...v} className={resolvedClassName} {...extra} />
+            return <DataCell.SourceDest {...v} className={resolvedClassName} />
         }
-        default:
-            return <DataCell.Text className={resolvedClassName}>{String(value ?? "-")}</DataCell.Text>
     }
 }
 
@@ -1046,9 +1070,9 @@ export function createEntityFields<T>(): (
                     items.push({ kind: 'text', content: String(raw) })
                 } else if (def.placement === 'subtitle' && (def.type === 'chip' || def.type === 'chip-category')) {
                     const chipValue = def.get ? String(def.get(entity) ?? raw) : String(raw)
-                    const chipIntent = typeof def.intent === 'function'
-                        ? def.intent(entity)
-                        : def.intent
+                    const chipIntent = def.type === 'chip'
+                        ? (typeof def.intent === 'function' ? def.intent(entity) : def.intent)
+                        : undefined
                     items.push({ kind: 'chip', content: chipValue, intent: chipIntent })
                 } else if (role === 'temporal') {
                     items.push({ kind: 'date', value: String(raw) })

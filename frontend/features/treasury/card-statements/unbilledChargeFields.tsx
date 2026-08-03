@@ -47,6 +47,6 @@ export const unbilledChargeFields = createEntityFields<UnbilledItemRow>()({
         key: 'amount',
         type: 'currency',
         label: 'Monto',
-        cellProps: { weight: 'bold' },
+        weight: 'bold',
     },
 }, { title: { field: 'reference' } })

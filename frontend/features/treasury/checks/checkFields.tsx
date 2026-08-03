@@ -23,7 +23,7 @@ export const checkFields = createEntityFields<Check>()({
         type: "currency",
         label: "Monto",
         get: (c) => parseFloat(c.amount) || 0,
-        cellProps: { weight: "bold" },
+        weight: "bold",
     },
     saleOrder: {
         key: "sale_order_display",

@@ -12,7 +12,6 @@ export const absenceFields = createEntityFields<Absence>()({
         type: "status",
         label: "Tipo",
         get: (a) => a.absence_type,
-        cellProps: { label: undefined },
     },
     startDate: {
         key: "start_date",

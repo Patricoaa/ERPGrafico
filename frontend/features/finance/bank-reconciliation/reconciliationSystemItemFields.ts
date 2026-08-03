@@ -14,7 +14,7 @@ export const reconciliationSystemItemFields = createEntityFields<ReconciliationS
     },
     type: {
         key: 'movement_type',
-        type: 'computed',
+        type: 'text',
         label: 'Tipo',
     },
     amount: {

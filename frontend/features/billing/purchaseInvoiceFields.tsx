@@ -41,7 +41,7 @@ export const purchaseInvoiceFields = createEntityFields<Invoice>()({
         key: "total",
         type: "currency",
         label: "Total",
-        cellProps: { intent: "success" },
+        intent: "success",
     },
 }, {
     title: { field: 'partner_name', template: '{partner_name|reference}' },
