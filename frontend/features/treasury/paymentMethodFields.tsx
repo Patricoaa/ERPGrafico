@@ -42,4 +42,10 @@ export const paymentMethodFields = createEntityFields<PaymentMethod>()({
             </div>
         ),
     },
+}, {
+    subtitle: {
+        template: '{method_type_display}',
+        suffixTemplate: '{treasury_account_name}',
+        excludeKeys: ['method_type_display', 'treasury_account_name'],
+    },
 })

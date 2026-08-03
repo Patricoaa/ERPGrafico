@@ -33,7 +33,7 @@ class BillingConfig(AppConfig):
                     search_fields=("number", "contact__name", "contact__tax_id"),
                     short_display_template=f"{EntityPrefix.INVOICE_FACTURA}-{{number}}",
                     display_template="{dte_type} {number}",
-                    subtitle_template="{contact.name} · {contact.tax_id}",
+                    subtitle_template="{partner_name}",
                     extra_info_template="{status}",
                     list_url="/billing/sales",
                     detail_url_pattern="/billing/invoices/{id}",
