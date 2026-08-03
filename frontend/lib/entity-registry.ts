@@ -81,16 +81,10 @@ export interface EntityMetadata {
     }
   }
 
-  // ── Legacy subtitle fallbacks (used by renderEntitySubtitleItems / getSubtitleFieldKeys) ──
-  // These are fallback mechanisms when Fields.ts meta is unavailable.
-  // Prefer configuring subtitle via createEntityFields() meta param instead.
+  // ── String subtitle templates (used by renderEntitySubtitle / renderEntitySubtitleSuffix) ──
+  // These power the DRAWER/search string identity. Card subtitles come exclusively from
+  // createEntityFields() meta.subtitle + auto-compose (entity-fields resolveSubtitle).
 
-  /** @deprecated Use createEntityFields meta.subtitle.field instead */
-  subtitleField?: string
-  /** @deprecated Use createEntityFields meta.subtitle.renderer instead */
-  subtitleRenderer?: (data: Record<string, unknown>) => SubtitleItem[]
-  /** @deprecated Explicit keys excluded from card zones when subtitleRenderer is used */
-  subtitleKeys?: string[]
   /** @deprecated Use createEntityFields meta.subtitle.template instead */
   subtitleTemplate?: string
   /** @deprecated Use createEntityFields meta.subtitle.suffixTemplate instead */
@@ -1209,142 +1203,6 @@ export type SubtitleItem =
   | { kind: 'chip'; content: string; intent?: string }
   | { kind: 'separator' }
 
-/**
- * Builds a structured SubtitleItem[] from subtitleField, subtitleRenderer, or subtitleTemplate + subtitleSuffixTemplate.
- * Used by AutoEntityCard and useDrawerIdentity — single source of truth for card subtitles.
- */
-export function renderEntitySubtitleItems(
-  label: string,
-  data?: Record<string, unknown> | null
-): SubtitleItem[] {
-  if (!data) {
-    const desc = ENTITY_REGISTRY[label]?.description;
-    return desc ? [{ kind: 'text', content: desc }] : [];
-  }
-
-  const config = getEntityConfig(label);
-  const entity = ENTITY_REGISTRY[label];
-
-  // Priority 1: subtitleRenderer function (for complex JSX/computed subtitles)
-  if (entity?.subtitleRenderer) {
-    return entity.subtitleRenderer(data);
-  }
-
-  // Priority 2: subtitleField — simple single-field subtitle
-  if (entity?.subtitleField) {
-    const value = data[entity.subtitleField];
-    if (value != null) {
-      const items: SubtitleItem[] = [{ kind: 'text', content: String(value) }];
-      // Add suffix template if present
-      const suffixTemplate = config?.subtitleSuffixTemplate ?? entity?.subtitleSuffixTemplate;
-      if (suffixTemplate) {
-        const suffixItems = parseTemplateToItems(suffixTemplate, data);
-        if (suffixItems.length > 0) {
-          items.push({ kind: 'separator' });
-          items.push(...suffixItems);
-        }
-      }
-      return items;
-    }
-  }
-
-  // Priority 3: subtitleTemplate (legacy mechanism)
-  const mainTemplate = config?.subtitleTemplate ?? entity?.subtitleTemplate;
-  const suffixTemplate = config?.subtitleSuffixTemplate ?? entity?.subtitleSuffixTemplate;
-
-  const items: SubtitleItem[] = [];
-
-  if (mainTemplate) {
-    items.push(...parseTemplateToItems(mainTemplate, data));
-  }
-
-  if (suffixTemplate) {
-    const suffixItems = parseTemplateToItems(suffixTemplate, data);
-    if (suffixItems.length > 0) {
-      if (items.length > 0) {
-        items.push({ kind: 'separator' });
-      }
-      items.push(...suffixItems);
-    }
-  }
-
-  if (items.length === 0) {
-    const desc = entity?.description;
-    if (desc) items.push({ kind: 'text', content: desc });
-  }
-
-  return items;
-}
-
-function resolvePath(path: string, data: Record<string, unknown>): unknown {
-  let value: unknown = data;
-  for (const part of path.split('.')) {
-    if (value !== null && typeof value === 'object') {
-      value = (value as Record<string, unknown>)[part];
-    } else {
-      return undefined;
-    }
-  }
-  return value;
-}
-
-function parseTemplateToItems(template: string, data: Record<string, unknown>): SubtitleItem[] {
-  const items: SubtitleItem[] = [];
-  const trimmed = template.trim();
-  if (!trimmed) return items;
-  // Support: {field}, {?field} (conditional), {f1|f2|'default'} (fallback), {field:date}, {field:currency}
-  const regex = /\{(\??)([^}]+)\}/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-  let hasPlaceholder = false;
-  while ((match = regex.exec(trimmed)) !== null) {
-    hasPlaceholder = true;
-    const isConditional = match[1] === '?';
-    const inner = match[2];
-    const [rawPath, format] = inner.split(':');
-    // Fallback chain: split by '|', try each in order, skip quoted literals
-    const alternatives = rawPath.split('|');
-    let resolved: unknown = undefined;
-    for (const alt of alternatives) {
-      const a = alt.trim();
-      if (a.startsWith("'") && a.endsWith("'")) {
-        if (resolved == null || resolved === undefined) resolved = a.slice(1, -1);
-      } else {
-        const v = resolvePath(a, data);
-        if (v != null) { resolved = v; break; }
-      }
-    }
-    if (resolved == null || resolved === undefined) {
-      // Conditional placeholder: also suppress the preceding literal
-      if (isConditional && items.length > 0 && items[items.length - 1].kind === 'text') {
-        items.pop();
-      }
-      lastIndex = regex.lastIndex;
-      continue;
-    }
-    // Push literal text before this placeholder (skip if conditional and no value)
-    if (match.index > lastIndex && !(isConditional && (resolved == null || resolved === undefined))) {
-      items.push({ kind: 'text', content: trimmed.slice(lastIndex, match.index) });
-    }
-    if (format === 'date') {
-      items.push({ kind: 'date', value: String(resolved) });
-    } else if (format === 'currency') {
-      items.push({ kind: 'currency', value: Number(resolved) });
-    } else {
-      items.push({ kind: 'text', content: String(resolved) });
-    }
-    lastIndex = regex.lastIndex;
-  }
-  if (!hasPlaceholder) {
-    // Pure literal text (no placeholders at all)
-    items.push({ kind: 'text', content: trimmed });
-  } else if (lastIndex < trimmed.length) {
-    // Trailing literal text after last placeholder
-    items.push({ kind: 'text', content: trimmed.slice(lastIndex) });
-  }
-  return items;
-}
-
 export function getEntityIcon(label: string) {
   return ENTITY_REGISTRY[label]?.icon || Package;
 }
@@ -1391,60 +1249,6 @@ export function getViewOptions(label: string) {
   }));
 }
 
-/**
- * Extracts field keys referenced by subtitleField, subtitleKeys, subtitleTemplate + subtitleSuffixTemplate.
- * Used by AutoEntityCard to exclude subtitle fields from other layout zones,
- * preventing duplicate rendering (e.g. customer_name in subtitle AND body).
- *
- * Checks API config first (getEntityConfig), then falls back to ENTITY_REGISTRY.
- */
-export function getSubtitleFieldKeys(label: string): Set<string> {
-  const config = getEntityConfig(label)
-  const entity = ENTITY_REGISTRY[label]
-
-  // Priority 1: explicit subtitleField (new mechanism)
-  if (entity?.subtitleField) {
-    const keys = new Set<string>([entity.subtitleField])
-    // Also include subtitleKeys if present (for subtitleRenderer cases)
-    if (entity.subtitleKeys) {
-      for (const k of entity.subtitleKeys) keys.add(k)
-    }
-    return keys
-  }
-
-  // Priority 2: explicit subtitleKeys (required when subtitleRenderer is used)
-  if (entity?.subtitleKeys) {
-    return new Set(entity.subtitleKeys)
-  }
-
-  // Priority 3: subtitleRenderer without subtitleKeys — can't extract keys, return empty
-  if (entity?.subtitleRenderer) {
-    return new Set<string>()
-  }
-
-  // Priority 4: parse keys from template strings
-  const mainTemplate = config?.subtitleTemplate ?? entity?.subtitleTemplate
-  const suffixTemplate = config?.subtitleSuffixTemplate ?? entity?.subtitleSuffixTemplate
-
-  const keys = new Set<string>()
-  for (const tpl of [mainTemplate, suffixTemplate]) {
-    if (!tpl) continue
-    const regex = /\{(\??)([^}]+)\}/g
-    let match: RegExpExecArray | null
-    while ((match = regex.exec(tpl)) !== null) {
-      const inner = match[2]
-      const [rawPath] = inner.split(':')
-      // Fallback chains: split by '|', skip quoted literals, take top-level key
-      const alternatives = rawPath.split('|')
-      for (const alt of alternatives) {
-        const a = alt.trim()
-        if (a.startsWith("'") && a.endsWith("'")) continue // skip literal fallbacks
-        keys.add(a.split('.')[0])
-      }
-    }
-  }
-  return keys
-}
 
 
 

@@ -4,7 +4,7 @@ import React from "react"
 import { EntityCard, headerPriorityIndex } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { renderEntitySubtitleItems, getEntityMetadata, getSubtitleFieldKeys, getEntityIcon, type SubtitleItem } from "@/lib/entity-registry"
+import { getEntityMetadata, getEntityIcon, type SubtitleItem } from "@/lib/entity-registry"
 import { resolveStatus } from "@/lib/badge-resolvers"
 import type { CardField, EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared"
 
@@ -268,33 +268,6 @@ function classifyFields<TData>(
 
 
 /**
- * Builds structured SubtitleItem[] for the card.
- * Falls back to explicit subtitle/title → text items if no registry data available.
- */
-function buildSubtitleItems<TData>(
-    entityLabel: string | undefined,
-    data: TData,
-    explicitSubtitle: React.ReactNode | undefined,
-    explicitTitle: React.ReactNode | undefined,
-    firstField: { value: React.ReactNode } | undefined
-): SubtitleItem[] {
-    if (explicitSubtitle !== undefined) {
-        return [{ kind: 'text', content: explicitSubtitle }]
-    }
-    if (entityLabel && typeof data === 'object' && data !== null) {
-        const items = renderEntitySubtitleItems(entityLabel, data as Record<string, unknown>)
-        if (items.length > 0) return items
-    }
-    if (explicitTitle === undefined && firstField) {
-        const val = firstField.value
-        if (val !== undefined && val !== null) {
-            return [{ kind: 'text', content: String(val) }]
-        }
-    }
-    return []
-}
-
-/**
  * AutoEntityCard - A standardized card component for Master Data entities.
  *
  * Automatically generates the EntityCard layout using the fields defined in `createEntityFields`.
@@ -337,12 +310,8 @@ export function AutoEntityCard<TData>({
 
     const cardFields = fields.toCardFields(data)
 
-    // Resolve subtitle field keys — fields API first (data-aware), then entity-registry fallback
-    const fieldsSubtitleKeys = fields.getSubtitleExcludeKeys?.(data, cardFields)
-    const registrySubtitleKeys = entityLabel ? getSubtitleFieldKeys(entityLabel) : new Set<string>()
-    const subtitleFieldKeys = fieldsSubtitleKeys && fieldsSubtitleKeys.size > 0
-        ? fieldsSubtitleKeys
-        : registrySubtitleKeys
+    // Resolve subtitle field keys — Fields.ts API (data-aware); consumed fields excluded from center
+    const subtitleFieldKeys = fields.getSubtitleExcludeKeys?.(data, cardFields) ?? new Set<string>()
 
     // 1. Classify fields into layout zones (subtitle keys exclude consumed fields from center)
     const classified = classifyFields(cardFields, effectiveVariant, subtitleFieldKeys)
@@ -351,11 +320,12 @@ export function AutoEntityCard<TData>({
     const fieldsTitle = fields.resolveTitle?.(data)
     const displayTitle = fieldsTitle ?? explicitTitle ?? classified.title?.value ?? cardFields[0]?.value ?? '---'
 
-    // 3. Build subtitle — Fields.ts meta first, then explicit, then registry
+    // 3. Build subtitle — Fields.ts meta + auto-compose is the single source of truth.
+    //    The explicit subtitle prop only applies when no field-based subtitle resolves.
     const fieldsSubtitle = fields.resolveSubtitle?.(data, cardFields)
     const subtitleItems: SubtitleItem[] = (fieldsSubtitle && fieldsSubtitle.length > 0)
         ? fieldsSubtitle
-        : buildSubtitleItems(entityLabel, data, explicitSubtitle, explicitTitle, cardFields[0])
+        : (explicitSubtitle !== undefined ? [{ kind: 'text', content: explicitSubtitle }] : [])
 
     // 4. Build Header trailing content (header fields + explicit trailing)
     const showHeaderLabels = classified.header.length > 1

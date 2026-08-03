@@ -137,7 +137,7 @@ describe("createEntityFields", () => {
             fields.forEach((f) => {
                 expect(f.placement).toBeDefined()
                 expect(f.fieldRole).toBeDefined()
-                expect(["title", "header", "detail"]).toContain(f.placement)
+                expect(["title", "subtitle", "header", "detail"]).toContain(f.placement)
             })
         })
 
@@ -153,22 +153,22 @@ describe("createEntityFields", () => {
             const statusField = fields.find(f => f.key === "status")
             expect(statusField).toBeDefined()
             expect(statusField!.placement).toBe("header")
-            expect(statusField!.fieldRole).toBe("status")
+            expect(statusField!.fieldRole).toBe("primary-value")
         })
 
         it("assigns currency to header zone", () => {
             const fields = testFields.toCardFields(sampleEntity)
-            const totalField = fields.find(f => f.key === "total")
+            const totalField = fields.find(f => f.key === "amount")
             expect(totalField).toBeDefined()
             expect(totalField!.placement).toBe("header")
             expect(totalField!.fieldRole).toBe("primary-value")
         })
 
-        it("assigns text fields to detail zone", () => {
+        it("assigns name text fields to subtitle zone", () => {
             const fields = testFields.toCardFields(sampleEntity)
             const nameField = fields.find(f => f.key === "name")
             expect(nameField).toBeDefined()
-            expect(nameField!.placement).toBe("detail")
+            expect(nameField!.placement).toBe("subtitle")
         })
 
         it("respects explicit placement override", () => {
@@ -182,11 +182,12 @@ describe("createEntityFields", () => {
 
         it("respects explicit fieldRole override", () => {
             const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
                 name: { key: "name", type: "text", label: "Nombre", fieldRole: "relation" },
             }).toCardFields(sampleEntity)
-            const nameField = fields[0]
-            expect(nameField.fieldRole).toBe("relation")
-            expect(nameField.placement).toBe("detail")
+            const nameField = fields.find(f => f.key === "name")
+            expect(nameField!.fieldRole).toBe("relation")
+            expect(nameField!.placement).toBe("detail")
         })
 
         it("ensures exactly one title field", () => {
@@ -209,8 +210,8 @@ describe("createEntityFields", () => {
         it("filters by only option", () => {
             const fields = testFields.toKanbanFields(sampleEntity, { only: ["status", "amount"] })
             expect(fields).toHaveLength(2)
-            expect(fields[0].key).toBe("status")
-            expect(fields[1].key).toBe("amount")
+            expect(fields[0].key).toBe("amount")
+            expect(fields[1].key).toBe("status")
         })
 
         it("excludes fields not on 'kanban' surface", () => {

@@ -619,13 +619,17 @@ function parseSubtitleTemplate<T>(template: string, entity: T): SubtitleItem[] {
                 if (resolved == null) resolved = a.slice(1, -1)
             } else {
                 const v = resolvePath(a, entity)
-                if (v != null) { resolved = v; break }
+                if (v != null && v !== '') { resolved = v; break }
             }
         }
 
-        if (resolved == null || resolved === undefined) {
-            if (isConditional && items.length > 0 && items[items.length - 1].kind === 'text') {
-                items.pop()
+        if (resolved == null || resolved === undefined || resolved === '') {
+            if (isConditional) {
+                const literalBefore = template.slice(lastIndex, match.index)
+                const last = items[items.length - 1]
+                if (last && last.kind === 'text' && literalBefore && last.content === literalBefore) {
+                    items.pop()
+                }
             }
             lastIndex = regex.lastIndex
             continue
@@ -1068,10 +1072,15 @@ export function createEntityFields<T>(): (
             const subtitleKeys = buildSubtitleOrder(defs, titleKeys, entity)
 
             const items: SubtitleItem[] = []
+            // defs is keyed by definition name (e.g. contactDisplayName), but subtitleKeys
+            // are data keys (d.key, e.g. customer_name) — resolve the def by data key.
+            const defByDataKey = new Map(
+                Object.values(defs).map((d) => [d.key, d]),
+            )
 
             for (const key of subtitleKeys) {
                 if (items.length >= 4) break
-                const def = defs[key]
+                const def = defByDataKey.get(key)
                 const raw = entity[key as keyof T]
                 if (!def || raw == null || raw === '') continue
                 if (items.length > 0) items.push({ kind: 'separator' })

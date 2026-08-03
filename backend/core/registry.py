@@ -45,7 +45,11 @@ class SearchableEntity:
 
 
 class _DotAccessor:
-    """Wraps a model instance so that display_template can access related attrs."""
+    """Wraps a model instance so that display_template can access related attrs.
+
+    Supports nested model paths ({customer.name}) and flat serializer keys
+    ({customer_name}) by decomposing snake_case parts into model relations.
+    """
 
     def __init__(self, instance: models.Model) -> None:
         self._instance = instance
@@ -53,12 +57,33 @@ class _DotAccessor:
     def __getitem__(self, key: str) -> str:
         obj = self._instance
         for part in key.split("."):
-            obj = getattr(obj, part, "")
+            if obj is None:
+                return ""
+            obj = getattr(obj, part, None)
             if callable(obj):
                 obj = obj()
             if obj is None:
+                obj = self._resolve_flat(part)
+            if obj is None:
                 return ""
-        return obj
+        return str(obj) if obj is not None else ""
+
+    def _resolve_flat(self, key: str) -> object:
+        """Resolve a flat serializer key (customer_name) against model relations (customer.name)."""
+        segments = key.split("_")
+        for i in range(len(segments) - 1, 0, -1):
+            value = getattr(self._instance, "_".join(segments[:i]), None)
+            if value is None:
+                continue
+            for segment in segments[i:]:
+                value = getattr(value, segment, None)
+                if value is None:
+                    break
+            if value is not None:
+                if callable(value):
+                    value = value()
+                return value if value is not None else ""
+        return ""
 
 
 class UniversalRegistry:
