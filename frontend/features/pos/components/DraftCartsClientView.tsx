@@ -242,6 +242,11 @@ export function DraftCartsClientView({
         } catch { return dateString }
     }
 
+    // Excepción documentada al patrón *Fields.toColumns(): este componente es un
+    // picker-modal (no una lista/card/kanban de entidad) cuyas celdas dependen de
+    // locks en tiempo real (WebSocket), chips de estado del wizard y un ticker de
+    // tiempo relativo — imposible de expresar como campos estáticos sin un contexto
+    // React que no aporta valor aquí. Ver docs/30-playbooks/refactor-workflow.md.
     const draftColumns = useMemo<ColumnDef<DraftCart>[]>(() => [
         {
             id: 'id',

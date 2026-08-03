@@ -1,20 +1,40 @@
-import { createEntityFields } from '@/components/shared'
+import { createEntityFields, DataCell } from '@/components/shared'
+import { AlertCircle } from 'lucide-react'
 import type { CreditContact } from './api/creditsApi'
+
+const RISK_STATUS: Record<CreditContact['credit_risk_level'], string> = {
+    LOW: 'RISK_LOW',
+    MEDIUM: 'RISK_MEDIUM',
+    HIGH: 'RISK_HIGH',
+    CRITICAL: 'RISK_CRITICAL',
+}
+
+const RISK_LABEL: Record<CreditContact['credit_risk_level'], string> = {
+    LOW: 'Bajo',
+    MEDIUM: 'Medio',
+    HIGH: 'Alto',
+    CRITICAL: 'Crítico',
+}
+
 export const creditContactFields = createEntityFields<CreditContact>()({
     name: {
         key: 'name',
-        type: 'text',
+        type: 'computed',
         label: 'Cliente',
-        tableOptions: { align: 'left' },
+        tableOptions: { align: 'center' },
+        render: (c) => (
+            <DataCell.ContactLink contactId={c.id}>
+                {c.name}
+                {c.credit_auto_blocked && <AlertCircle className="h-3 w-3 text-warning ml-2" />}
+            </DataCell.ContactLink>
+        ),
     },
     creditRiskLevel: {
         key: 'credit_risk_level',
         type: 'status',
         label: 'Riesgo',
-        getLabel: (c) => {
-            const r = c.credit_risk_level;
-            return r === 'LOW' ? 'Bajo' : r === 'MEDIUM' ? 'Medio' : r === 'HIGH' ? 'Alto' : 'Crítico'
-        },
+        get: (c) => RISK_STATUS[c.credit_risk_level],
+        getLabel: (c) => RISK_LABEL[c.credit_risk_level],
     },
     creditLimit: {
         key: 'credit_limit',

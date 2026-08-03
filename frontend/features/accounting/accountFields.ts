@@ -24,15 +24,18 @@ export const accountFields = createEntityFields<Account>()({
         key: "debit_total",
         type: "currency",
         label: "Debe",
+        placement: "detail",
     },
     creditTotal: {
         key: "credit_total",
         type: "currency",
         label: "Haber",
+        placement: "detail",
     },
     balance: {
         key: "balance",
         type: "currency",
         label: "Saldo",
+        placement: "detail",
     },
 })

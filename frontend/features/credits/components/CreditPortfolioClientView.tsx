@@ -6,7 +6,9 @@ import { type CreditContact, type CreditHistoryEntry, writeOffDebt } from '@/fea
 import CreditAssignmentModal from "./CreditAssignmentModal"
 import { DataTable, ActionConfirmModal, MoneyDisplay } from '@/components/shared'
 import { PortfolioTable } from "./PortfolioTable"
-import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"
+import { creditContactFields } from "../creditContactFields"
+import { creditHistoryEntryFields } from "../creditHistoryEntryFields"
+import { portfolioActions, type PortfolioActionsCtx } from "../portfolioActions"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
@@ -15,6 +17,7 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
 import { formatMoney } from "@/lib/money"
+import { type ColumnDef } from "@tanstack/react-table"
 
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
@@ -35,11 +38,13 @@ export function CreditPortfolioClientView({
         useSelectedEntity<CreditContact>({ endpoint: '/contacts' })
     const { openSelected } = useEntityRouteActions()
 
-    const handleEditLimit = useCallback((contact: CreditContact) => {
-        openSelected(contact.id)
-    }, [openSelected])
-
     const [writeOffContact, setWriteOffContact] = useState<CreditContact | null>(null)
+
+    const portfolioCtx = useMemo<PortfolioActionsCtx>(() => ({
+        onEdit: (id) => openSelected(id),
+        onWriteOff: (contact) => setWriteOffContact(contact),
+        canWriteOff: (contact) => !contact.is_default_customer && Number(contact.credit_balance_used) > 0,
+    }), [openSelected])
 
     const handleWriteOff = useCallback(async () => {
         if (!writeOffContact) return
@@ -55,13 +60,12 @@ export function CreditPortfolioClientView({
         }
     }, [writeOffContact, refetch])
 
-    const handleWriteOffColumn = useCallback((contact: CreditContact) => {
-        setWriteOffContact(contact)
-    }, [])
-
-    const portfolioCols = useMemo(
-        () => getPortfolioColumns(handleEditLimit, handleWriteOffColumn),
-        [handleEditLimit, handleWriteOffColumn],
+    const portfolioCols = useMemo<ColumnDef<CreditContact>[]>(
+        () => [
+            ...creditContactFields.toColumns({ exclude: ['creditLastEvaluated'] }),
+            portfolioActions.auto(portfolioCtx),
+        ],
+        [portfolioCtx],
     )
 
     const contactConfig: UnifiedSearchConfig = useMemo(() => ({
@@ -179,7 +183,7 @@ export function CreditPortfolioClientView({
             ) : (
                 <div className="mt-2 flex-1 min-h-0">
                     <DataTable
-                        columns={historyColumns}
+                        columns={creditHistoryEntryFields.toColumns()}
                         data={history ?? EMPTY_HISTORY}
                         variant="embedded"
                         isLoading={loadingHistory}

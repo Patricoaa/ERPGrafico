@@ -1,4 +1,5 @@
 import { createEntityFields } from "@/components/shared"
+import { AttributeValuesSummary } from "./components/AttributeValuesSummary"
 import type { Attribute } from "./hooks/useAttributes"
 
 export const attributeFields = createEntityFields<Attribute>()({
@@ -9,9 +10,10 @@ export const attributeFields = createEntityFields<Attribute>()({
     },
     values: {
         key: "values",
-        type: "chip",
+        type: "computed",
         label: "Valores",
-        get: (a) => a.values?.map(v => v.value).join(', ') ?? '',
+        fieldRole: "tag",
+        render: (a) => <AttributeValuesSummary attribute={a} />,
     },
 }, {
     subtitle: { renderer: () => [] },
