@@ -89,7 +89,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                 {unifiedSearch ? (
                     <div className="flex items-center gap-2 w-full">
                         <div className="flex-1 min-w-0">
-                            {React.isValidElement(unifiedSearch)
+                            {React.isValidElement(unifiedSearch) && typeof unifiedSearch.type !== 'string'
                                 ? React.cloneElement(unifiedSearch as React.ReactElement<Record<string, unknown>>, {
                                     viewOptions,
                                     currentView,

@@ -147,61 +147,61 @@ export function PaymentMethodClientView({ externalOpen, onOpenChange, createActi
                     columns={columns}
                     data={filteredMethods}
                     variant="embedded"
-                    unifiedSearch={<div className="flex items-center gap-2 w-full">
-                        <div className="flex-1 min-w-0">
-                            <UnifiedSearchBar
-                                config={paymentMethodUnifiedSearchDef}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
-                                placeholder="Buscar método de pago..."
-                            />
-                        </div>
-                        <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className={cn(
-                                            'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
-                                            usageFilter.length > 0
-                                                ? 'bg-accent/50 text-foreground'
-                                                : 'text-muted-foreground hover:text-foreground',
-                                        )}
-                                    >
-                                        <span>{usageFilter.length > 0 ? `Disponible (${usageFilter.length})` : 'Disponible'}</span>
-                                        <ChevronDown className="h-3 w-3" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-44">
-                                    <DropdownMenuCheckboxItem
-                                        checked={usageFilter.includes('sales')}
-                                        onCheckedChange={(checked) => {
-                                            setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
-                                        }}
-                                    >
-                                        Ventas
-                                    </DropdownMenuCheckboxItem>
-                                    <DropdownMenuCheckboxItem
-                                        checked={usageFilter.includes('purchases')}
-                                        onCheckedChange={(checked) => {
-                                            setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
-                                        }}
-                                    >
-                                        Compras
-                                    </DropdownMenuCheckboxItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>}
+                    unifiedSearch={
+                        <UnifiedSearchBar
+                            config={paymentMethodUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            placeholder="Buscar método de pago..."
+                            toolbarActions={
+                                <div className="flex items-center shrink-0 bg-background rounded-sm px-1 h-9">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className={cn(
+                                                    'h-7 px-2 text-[10px] uppercase font-bold tracking-widest gap-1 rounded-sm shrink-0',
+                                                    usageFilter.length > 0
+                                                        ? 'bg-accent/50 text-foreground'
+                                                        : 'text-muted-foreground hover:text-foreground',
+                                                )}
+                                            >
+                                                <span>{usageFilter.length > 0 ? `Disponible (${usageFilter.length})` : 'Disponible'}</span>
+                                                <ChevronDown className="h-3 w-3" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="start" className="w-44">
+                                            <DropdownMenuCheckboxItem
+                                                checked={usageFilter.includes('sales')}
+                                                onCheckedChange={(checked) => {
+                                                    setUsageFilter(prev => checked ? [...prev, 'sales'] : prev.filter(v => v !== 'sales'))
+                                                }}
+                                            >
+                                                Ventas
+                                            </DropdownMenuCheckboxItem>
+                                            <DropdownMenuCheckboxItem
+                                                checked={usageFilter.includes('purchases')}
+                                                onCheckedChange={(checked) => {
+                                                    setUsageFilter(prev => checked ? [...prev, 'purchases'] : prev.filter(v => v !== 'purchases'))
+                                                }}
+                                            >
+                                                Compras
+                                            </DropdownMenuCheckboxItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            }
+                        />
+                    }
                     showReset={isFiltered}
                     onReset={() => { search.clearAll(); setUsageFilter([]) }}
                     createAction={createAction}
