@@ -361,7 +361,7 @@ export const DataCell = {
 
     // --- Status & Badges ---
 
-    /** Mapped status badge — ghost pill. Internally uses the standardized StatusBadge (ADR-0065). */
+    /** Mapped status badge — tinted square badge. Internally uses the standardized StatusBadge (ADR-0065 / ADR-0066). */
     Status: ({ status, label, size = "sm", className }: { status: string, label?: string, size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
         return (
             <div className={cn("flex justify-center items-center w-full", className)}>
@@ -369,7 +369,6 @@ export const DataCell = {
                     status={status}
                     label={label}
                     variant="badge"
-                    appearance="ghost"
                     size={size}
                 />
             </div>
@@ -379,7 +378,7 @@ export const DataCell = {
     /** Chip for intent-based labels within table cells (wraps shared Chip component) */
     Chip: ({ children, intent = "neutral", size = "sm", icon, className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", icon?: LucideIcon, className?: string } & HTMLAttributes<HTMLDivElement>) => (
         <div className={cn("flex justify-center items-center w-full", className)} {...props}>
-            <ChipComponent intent={intent} size={size} icon={icon} appearance="ghost">{children}</ChipComponent>
+            <ChipComponent intent={intent} size={size} icon={icon}>{children}</ChipComponent>
         </div>
     ),
 

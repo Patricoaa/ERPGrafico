@@ -49,5 +49,7 @@ Directional icon, sign (`+`/`−`), currency/quantity formatting and `showIcon` 
 ## Alternatives considered
 
 - **Reuse the `Badge` primitive** (`shape="square"`): rejected — forces `font-mono font-black uppercase` typography on monetary/quantity values and its fixed badge sizes; not requested.
+
+> **Amendment (ADR-0068):** the rationale above is now obsolete. [ADR-0068](./0068-badge-currencyflow-default.md) makes `font-sans font-medium text-xs` borderless `rounded-sm` the Badge default, so reusing the `Badge` primitive no longer forces the legacy typography.
 - **Solid fill badge**: rejected — "más tenue" means a faded tint, not a solid block.
 - **Border retained**: rejected — requested borderless.

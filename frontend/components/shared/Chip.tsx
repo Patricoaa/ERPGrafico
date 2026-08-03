@@ -20,7 +20,6 @@ export function Chip({ children, intent = 'neutral', size = 'sm', icon, classNam
         <Badge
             intent={intent}
             size={size}
-            tracking={appearance === 'ghost' ? 'tight' : 'wide'}
             icon={icon}
             appearance={appearance}
             className={className}

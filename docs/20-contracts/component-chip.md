@@ -48,7 +48,7 @@ import { Chip } from "@/components/shared"
 |------|------|----------|---------|-------|
 | `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | See size matrix below |
 | `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary' \| 'cyan' \| 'magenta' \| 'yellow' \| 'black'` | ❌ | `'neutral'` | Maps to semantic tokens (Layer 2) or, for categorical chips, the fixed process inks `cyan`/`magenta`/`yellow`/`black` (Layer 1, ADR-0064) |
-| `appearance` | `'solid' \| 'ghost'` | ❌ | `'solid'` | `ghost` removes the background tint (keeps border + intent text). Never changes typography. Used by `DataCell.Chip` / `DataCell.Status` (ADR-0065) |
+| `appearance` | `'solid' \| 'ghost'` | ❌ | `'solid'` | `ghost` removes the background tint (borderless default). Never changes typography |
 | `icon` | `LucideIcon` | ❌ | — | Rendered at 10–11px, same color as text |
 | `className` | `string` | ❌ | — | **Layout/position only.** Never override typography or color here. |
 | `children` | `ReactNode` | ✅ | — | Label text |
@@ -61,9 +61,9 @@ import { Chip } from "@/components/shared"
 |--------|--------|---------|-----------|-----|-------------|
 | `xs` | `h-[18px]` | `px-2` | `text-[9px]` | `gap-1` | Table cells, dense lists, inline annotations |
 | `sm` (default) | `h-[22px]` | `px-2.5` | `text-[10px]` | `gap-1` | General UI chrome, form labels, sidebar |
-| `md` | `h-[26px]` | `px-3` | `text-[11px]` | `gap-1.5` | Detail views, modal sections, emphasis |
+| `md` | auto | `px-2 py-0.5` | `text-xs` | `gap-1` | Detail views, modal sections, emphasis |
 
-**Invariant typography** (never override): `font-mono font-black uppercase tracking-widest`
+**Invariant typography** (never override): `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068).
 
 ---
 
@@ -71,12 +71,12 @@ import { Chip } from "@/components/shared"
 
 | `intent` | Background | Text | Border |
 |----------|-----------|------|--------|
-| `neutral` (default) | `bg-muted/60` | `text-muted-foreground` | `border-border/50` |
-| `info` | `bg-info/10` | `text-info` | `border-info/20` |
-| `success` | `bg-success/10` | `text-success` | `border-success/20` |
-| `warning` | `bg-warning/10` | `text-warning` | `border-warning/20` |
-| `destructive` | `bg-destructive/10` | `text-destructive` | `border-destructive/20` |
-| `primary` | `bg-primary/10` | `text-primary` | `border-primary/20` |
+| `neutral` (default) | `bg-muted/60` | `text-muted-foreground` | none (borderless) |
+| `info` | `bg-info/10` | `text-info` | none (borderless) |
+| `success` | `bg-success/10` | `text-success` | none (borderless) |
+| `warning` | `bg-warning/10` | `text-warning` | none (borderless) |
+| `destructive` | `bg-destructive/10` | `text-destructive` | none (borderless) |
+| `primary` | `bg-primary/10` | `text-primary` | none (borderless) |
 
 ### Layer 1 categorical intents (ADR-0064)
 
@@ -84,10 +84,10 @@ For categorical chips only (`Chip.Category`, field type `chip-category`) — nev
 
 | `intent` | Background | Text | Border |
 |----------|-----------|------|--------|
-| `cyan` | `bg-cyan/10` | `text-cyan` | `border-cyan/20` |
-| `magenta` | `bg-magenta/10` | `text-magenta` | `border-magenta/20` |
-| `yellow` | `bg-yellow/10` | `text-yellow` | `border-yellow/20` |
-| `black` | `bg-black/10` | `text-black` | `border-black/20` |
+| `cyan` | `bg-cyan/10` | `text-cyan` | none (borderless) |
+| `magenta` | `bg-magenta/10` | `text-magenta` | none (borderless) |
+| `yellow` | `bg-yellow/10` | `text-yellow` | none (borderless) |
+| `black` | `bg-black/10` | `text-black` | none (borderless) |
 
 Domain mapping: `payment_method` → CASH=`cyan`, CARD/CARD_TERMINAL/DEBIT_CARD/CREDIT_CARD=`magenta`, TRANSFER=`yellow`, CHECK=`black`, OTHER=`neutral` (`color-system.md §4.5`).
 
@@ -95,9 +95,9 @@ Domain mapping: `payment_method` → CASH=`cyan`, CARD/CARD_TERMINAL/DEBIT_CARD/
 
 ## Appearance (`ghost`)
 
-`appearance="ghost"` renders the chip without its background tint — it keeps the intent border and text color, and removes **only** the background. It never changes typography: `font-mono font-black uppercase` applies to both `solid` and `ghost`.
+`appearance="ghost"` renders the chip without its background tint — it keeps the intent text color and removes **only** the background (borderless by default, ADR-0068). It never changes typography: `font-sans font-medium text-xs` applies to both `solid` and `ghost`.
 
-**Dense-table exception (ADR-0065):** `DataCell.Chip` and `DataCell.Status` render ghost pills with `tracking-tight` (instead of the default `tracking-widest`) so long labels don't overflow small table cells. This is the only place the tracking may diverge from the invariant — do not use `tracking-tight` elsewhere. `StatusBadge` uses `tracking-tight` by design (see typography alignment below).
+**Dense-table note:** `DataCell.Chip` and `DataCell.Status` render the standard solid tinted badge (same as CurrencyFlow columns). The legacy ghost-pill presentation (ADR-0065) was superseded by ADR-0068.
 
 ---
 
@@ -153,15 +153,15 @@ These are part of the invariant and are applied internally by `intent` and `size
 
 ## Typography alignment across badge components
 
-All three components share `font-mono uppercase` and `rounded-full border`. The differences below are **intentional** — do not "fix" them:
+All three components share the **CurrencyFlow aesthetic** (ADR-0068): `font-sans font-medium text-xs`, borderless, `rounded-sm`, normal tracking. The legacy `font-mono font-black uppercase border rounded-full` look is no longer a default — it is only reachable via explicit `className` overrides in legacy consumers.
 
 | Component | Font weight | Letter spacing | Rationale |
 |-----------|-------------|----------------|-----------|
-| `Chip` | `font-black` | `tracking-widest` | Short tags at small sizes (9–11px) need maximum weight and wide spacing to remain legible |
-| `StatusBadge` | `font-black` | `tracking-tight` | Longer state labels ("En Proceso", "Sin Conciliar") at medium sizes — tight tracking prevents overflow |
-| `EntityBadge` | `font-black` | `tracking-tight` | ID codes can be long ("OC-2025-001") — same rationale as StatusBadge |
+| `Chip` | `font-medium` | normal | Tags and annotations follow the standard data-cell typography |
+| `StatusBadge` | `font-medium` | normal | Same unified look as every other badge in the app |
+| `EntityBadge` | `font-medium` | normal | ID codes render at `text-xs` with the standard weight |
 
-All three now share `font-black` weight for visual consistency. The tracking difference is load-bearing.
+All three share `font-sans font-medium text-xs` for visual consistency with `DataCell.CurrencyFlow`.
 
 ---
 

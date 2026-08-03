@@ -12,7 +12,7 @@
  * Contract: docs/20-contracts/component-badge.md
  *
  * Typography invariants (never override in consumers):
- *   font-mono + font-black + uppercase + border
+ *   font-sans + font-medium + text-xs + borderless (CurrencyFlow aesthetic, ADR-0068)
  *   tracking controlled by `tracking` prop (see contract rationale)
  *
  * DO NOT import Badge directly in features or pages.
@@ -34,7 +34,7 @@ import {
 
 const badgeVariants = cva(
     // Base — invariant across all uses
-    'inline-flex items-center justify-center font-mono font-black uppercase border transition-all duration-200 leading-none shrink-0',
+    'inline-flex items-center justify-center font-sans font-medium leading-none shrink-0 transition-all duration-200',
     {
         variants: {
             /**
@@ -63,24 +63,26 @@ const badgeVariants = cva(
             size: {
                 xs: 'h-[18px] px-2 text-[9px] gap-1',
                 sm: 'h-[22px] px-2.5 text-[10px] gap-1',
-                md: 'h-6 px-3 text-[12px] gap-1.5',
+                md: 'px-2 py-0.5 text-xs gap-1',
                 lg: 'h-8 px-4 text-[14px] gap-2',
                 xl: 'h-10 px-6 text-base gap-2.5',
             },
 
             /**
              * tracking — letter spacing variant.
+             * "normal" (no tracking) is the CurrencyFlow default.
              * "wide"  (tracking-widest) → Chip: short tags at 9-11px need max spacing.
              * "tight" (tracking-tight)  → Status/Entity: longer labels, prevents overflow.
              * This distinction is load-bearing — see component-badge.md §typography.
              */
             tracking: {
+                normal: '',
                 wide:  'tracking-widest',
                 tight: 'tracking-tight',
             },
 
             /**
-             * shape — pill (default) or square.
+             * shape — square (default, rounded-sm CurrencyFlow) or pill.
              * hub and dot are separate render paths (see below).
              */
             shape: {
@@ -90,7 +92,7 @@ const badgeVariants = cva(
 
             /**
              * appearance — solid (default) or ghost (transparent background).
-             * ghost keeps the border and text color from intent but removes the background.
+             * ghost removes the background tint only; badges are borderless (ADR-0068).
              */
             appearance: {
                 solid: '',
@@ -100,8 +102,8 @@ const badgeVariants = cva(
         defaultVariants: {
             intent:   'neutral',
             size:     'md',
-            tracking: 'tight',
-            shape:    'pill',
+            tracking: 'normal',
+            shape:    'square',
             appearance: 'solid',
         },
     }
@@ -167,10 +169,10 @@ export function Badge({
         <span className={cn(badgeVariants({ intent, size, tracking, shape }), className)}>
             {Icon && (
                 <Icon
-                    className={cn(iconSize, 'shrink-0 opacity-80 translate-y-[-0.5px]')}
+                    className={cn(iconSize, 'shrink-0')}
                 />
             )}
-            <span className="translate-y-[0.5px]">{children}</span>
+            {children}
         </span>
     )
 }
@@ -199,7 +201,7 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
         <div className={cn('inline-flex items-center gap-1.5', className)}>
             <div className={cn('h-2 w-2 rounded-full animate-pulse', dotColor[intent ?? 'neutral'])} />
             <span className={cn(
-                'font-mono font-black uppercase tracking-tight leading-none translate-y-[0.5px]',
+                'font-sans font-medium tracking-tight leading-none',
                 size === 'xs' || size === 'sm' ? 'text-[10px]' : 'text-[11px] text-muted-foreground',
             )}>
                 {children}
