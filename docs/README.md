@@ -49,6 +49,7 @@ last_review: 2026-06-19
 | “which component”, “component decision”, “what to use” | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
 | “Schema-driven form”, “EntityForm”, “backend form” | ~~[schema-driven-forms.md](20-contracts/schema-driven-forms.md)~~ — **superseded** por [ADR-0020](10-architecture/adr/0020-modal-on-list-edit-ux.md). No usar `EntityForm` en código nuevo. | 20 |
 | “component API”, “prop signature”, “StatusBadge usage” | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
+| “field type”, “DataCell assignment”, “text vs secondary”, “cómo asignar tipo de campo”, “createEntityFields”, “\*Fields.ts”, “FieldType” | [component-fields.md](20-contracts/component-fields.md) | 20 |
 | “Drawer API”, “drawer contract”, “BaseDrawer”, “cómo usar Drawer”, “tamaño de drawer”, “formDrawerWidth” | [component-drawer.md](20-contracts/component-drawer.md) | 20 |
 | “selector component”, “entity search”, “combobox”, “AccountSelector” | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
 | “module layout”, “navigation pattern”, “dynamic header”, “module tabs” | [module-layout-navigation.md](20-contracts/module-layout-navigation.md) | 20 |

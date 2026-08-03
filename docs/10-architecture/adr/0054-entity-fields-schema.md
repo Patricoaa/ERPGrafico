@@ -13,7 +13,9 @@ author: core-team
 
 > El factory `createEntityFields<T>()` introducido aquí sigue vigente. La estructura de
 > `FieldDef<T>` fue reemplazada por una unión discriminada (ADR-0066) y la tabla D-03 a
-> continuación refleja el mapeo actual.
+> continuación es **histórica** — el mapeo vigente `type` → `DataCell` vive en el motor
+> `entity-fields` (ADR-0066/0067) y está documentado en
+> [component-fields.md](../../20-contracts/component-fields.md).
 
 ---
 
@@ -109,9 +111,10 @@ function createEntityFields<T>() {
 | `sourceDest` | `DataCell.SourceDest` | `DataCell.SourceDest` | `DataCell.SourceDest` |
 | `computed` | `render(entity)` | `render(entity)` | `render(entity)` |
 
-> Nota (ADR-0066): los fieldtypes `icon`, `progress` y `numericFlow` fueron removidos
-> (cero usos); sus renderers siguen disponibles como componentes `DataCell.Icon`,
-> `DataCell.Progress`, `DataCell.NumericFlow`. `computed` es el único escape hatch y
+> Nota (ADR-0066/0067): los fieldtypes `icon`, `progress` y `numericFlow` fueron removidos
+> por ADR-0066 (cero usos); sus renderers siguen disponibles como componentes `DataCell.Icon`,
+> `DataCell.Progress`, `DataCell.NumericFlow`. `numericFlow` fue **reintroducido** por ADR-0067
+> como tipo declarativo (rol `flow`). `computed` es el único escape hatch y
 > `fieldRole: 'complex'` reproduce el routing always-header del antiguo `complex`.
 
 ### D-04: Convención de archivos
@@ -179,7 +182,7 @@ const columns = [...orderFields.toColumns(), orderActions.auto(ctx)]
 
 ## References
 
-- Contrato: `docs/20-contracts/component-datatable-views.md`, `docs/20-contracts/component-contracts.md`
+- Contrato: `docs/20-contracts/component-fields.md`, `docs/20-contracts/component-datatable-views.md`, `docs/20-contracts/component-contracts.md`
 - Implementación: `frontend/components/shared/entity-fields.tsx`
 - Patrón base: `frontend/components/shared/entity-actions.tsx` (ADR-0023)
 - DataCell: `frontend/components/shared/DataTableCells.tsx`
