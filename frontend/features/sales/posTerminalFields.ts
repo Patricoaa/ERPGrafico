@@ -32,6 +32,7 @@ export const posTerminalFields = createEntityFields<Terminal>()({
         key: "payment_terminal_device_name",
         type: "text",
         label: "Dispositivo",
+        header: "Terminal de cobro",
         get: (t) => t.payment_terminal_device_name || (t.payment_terminal_device ? 'Vinculado' : undefined),
     },
     payment_methods: {
