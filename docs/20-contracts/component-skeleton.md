@@ -25,6 +25,7 @@ Controla los **estados de carga** de la aplicación. Existen tres estrategias bi
 │       ├─ Página con formulario                      → PageLayoutSkeleton contentType="form"
 │       ├─ Tabla de datos                             → TableSkeleton
 │       ├─ Tarjetas en grilla                         → CardSkeleton variant="grid"|"product"
+│       ├─ Selector de contacto en modo card          → CardSkeleton variant="contact-card"
 │       └─ Formulario                                 → PageLayoutSkeleton contentType="form"
 │
 ├─ Datos ya visibles, el usuario filtra / pagina / mutates (refetch)
@@ -253,7 +254,7 @@ Nunca importar directamente desde `@/components/ui/skeleton`.
 | prop | type | default | notas |
 |------|------|---------|-------|
 | `count` | `number` | `3` | Tarjetas a renderizar |
-| `variant` | `'grid' \| 'list' \| 'product' \| 'compact'` | `'grid'` | Forma de las tarjetas |
+| `variant` | `'grid' \| 'list' \| 'product' \| 'compact' \| 'contact-card'` | `'grid'` | Forma de las tarjetas |
 | `gridClassName` | `string` | — | Configuración de columnas del grid |
 | `className` | `string` | — | Clase del contenedor |
 | `ariaLabel` | `string` | `'Cargando contenido'` | Label para lectores de pantalla |
