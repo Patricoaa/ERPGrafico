@@ -15,6 +15,7 @@ export const fiscalYearFields = createEntityFields<GroupedFiscalYear>()({
         key: 'year',
         type: 'text',
         label: 'Ejercicio',
+        className: 'font-bold',
     },
     status: {
         key: 'status',
@@ -39,10 +40,10 @@ export const fiscalYearFields = createEntityFields<GroupedFiscalYear>()({
         key: 'periods_summary',
         type: 'computed',
         label: 'Periodos',
-        get: (h) => {
-            const acctCount = h.periods.length
-            const taxCount = h.taxPeriods.length
-            return `F29: ${taxCount} · Contable: ${acctCount}`
-        }
-    }
+        render: (h) => (
+            <div className="text-muted-foreground">
+                F29: {h.taxPeriods.length} · Contable: {h.periods.length}
+            </div>
+        ),
+    },
 })

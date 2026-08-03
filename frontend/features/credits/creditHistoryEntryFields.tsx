@@ -1,4 +1,4 @@
-import { createEntityFields } from '@/components/shared'
+import { createEntityFields, DataCell } from '@/components/shared'
 import type { CreditHistoryEntry } from './api/creditsApi'
 
 export const creditHistoryEntryFields = createEntityFields<CreditHistoryEntry>()({
@@ -10,15 +10,23 @@ export const creditHistoryEntryFields = createEntityFields<CreditHistoryEntry>()
     },
     customerName: {
         key: 'customer_name',
-        type: 'text',
+        type: 'computed',
         label: 'Cliente',
         tableOptions: { align: 'center' },
+        render: (h) => (
+            <DataCell.ContactLink contactId={h.customer_id}>
+                {h.customer_name}
+            </DataCell.ContactLink>
+        ),
     },
     saleOrderNumber: {
         key: 'number',
-        type: 'code',
+        type: 'computed',
         label: 'Nota Venta',
         tableOptions: { align: 'center' },
+        render: (h) => (
+            <DataCell.Entity entityLabel="sales.saleorder" data={h as unknown as Record<string, unknown>} size="sm" />
+        ),
     },
     effectiveTotal: {
         key: 'effective_total',

@@ -14,6 +14,7 @@ import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { type Account } from "@/features/accounting/types"
 import { DataCell } from '@/components/shared'
 import { accountActions, type AccountActionsCtx } from './accountActions'
+import { accountFields } from "../accountFields"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
@@ -134,64 +135,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             },
             meta: { title: "Código" },
         },
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
-            ),
-            cell: ({ row }) => <DataCell.Text>{row.original.name}</DataCell.Text>,
-        },
-        {
-            accessorKey: "account_type",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Status
-                    status={row.original.account_type}
-                    label={row.original.account_type_display}
-                />
-            ),
-        },
-        {
-            accessorKey: "debit_total",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Debe" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency
-                        value={parseFloat(row.getValue("debit_total") || "0")}
-                    />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "credit_total",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Haber" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency
-                        value={parseFloat(row.getValue("credit_total") || "0")}
-                    />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency
-                        value={parseFloat(row.getValue("balance") || "0")}
-                    />
-                </div>
-            ),
-        },
+        ...accountFields.toColumns({ exclude: ["code"] }),
         accountActions.auto(actionCtx),
         ]
     }, [pathname, router, searchParams])

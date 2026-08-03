@@ -13,10 +13,10 @@ import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChec
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedFiscalYearPreview } from '../../hooks/useSelectedFiscalYearPreview';
-import { DataTableView, EmptyState, DataCell } from '@/components/shared';
+import { DataTableView, EmptyState } from '@/components/shared';
 import { type ColumnDef } from '@tanstack/react-table';
-import { DataTableColumnHeader } from '@/components/shared';
 import { fiscalYearActions, type FiscalYearActionsCtx } from './fiscalYearActions';
+import { fiscalYearFields } from '../../fiscalYearFields';
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
 import { SkeletonShell } from '@/components/shared';
 import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
@@ -328,35 +328,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     }
 
     const columns: ColumnDef<typeof groupedData[0]>[] = [
-        {
-            accessorKey: "year",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Ejercicio" />,
-            cell: ({ row }) => <div className="font-bold">{row.getValue("year")}</div>,
-        },
-        {
-            id: "status",
-            accessorFn: (row) => row.fiscalYear?.status || 'OPEN',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => {
-                const status = row.getValue("status") as string;
-                let token: "success" | "warning" | "info" | "generic" = "generic";
-                let label = status;
-                if (status === 'OPEN') { token = 'success'; label = 'Abierto'; }
-                else if (status === 'CLOSING') { token = 'warning'; label = 'En Cierre'; }
-                else if (status === 'CLOSED') { token = 'info'; label = 'Cerrado'; }
-
-                return <DataCell.Status status={token} label={label} />;
-            },
-        },
-        {
-            id: "periods",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Periodos" />,
-            cell: ({ row }) => {
-                const acctCount = row.original.periods.length;
-                const taxCount = row.original.taxPeriods.length;
-                return <div className="text-muted-foreground">F29: {taxCount} · Contable: {acctCount}</div>;
-            },
-        },
+        ...(fiscalYearFields.toColumns() as ColumnDef<typeof groupedData[0]>[]),
         fiscalYearActions.auto(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
     ];
 
