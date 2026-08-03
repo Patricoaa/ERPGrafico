@@ -20,23 +20,23 @@ export const employeeFields = createEntityFields<Employee>()({
     },
     position: {
         key: "position",
-        type: "text",
+        type: "secondary",
         label: "Cargo",
     },
     department: {
         key: "department",
-        type: "text",
+        type: "secondary",
         label: "Dpto.",
     },
     afp: {
         key: "afp_detail",
-        type: "text",
+        type: "secondary",
         label: "Previsión",
         get: (e) => e.afp_detail?.name || 'No disp.',
     },
     salud: {
         key: "salud_type_display",
-        type: "text",
+        type: "secondary",
         label: "Salud",
         get: (e) => e.salud_type_display || 'No disp.',
     },

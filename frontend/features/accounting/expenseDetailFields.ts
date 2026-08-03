@@ -21,7 +21,7 @@ export const expenseDetailFields = createEntityFields<ExpenseDetail>()({
     },
     description: {
         key: "description",
-        type: "text",
+        type: "secondary",
         label: "Descripción",
     },
     date: {
@@ -42,7 +42,7 @@ export const expenseDetailFields = createEntityFields<ExpenseDetail>()({
     },
     costCenterName: {
         key: "cost_center_name",
-        type: "text",
+        type: "secondary",
         label: "Centro de Costo",
     },
     accountingAccountName: {
