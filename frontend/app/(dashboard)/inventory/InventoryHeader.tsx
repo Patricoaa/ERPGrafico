@@ -17,8 +17,6 @@ export function InventoryHeader() {
 
     const subActiveValue = (() => {
         if (activeValue === 'products') {
-            const viewParam = searchParams.get('view')
-            if (viewParam === 'existencias') return 'existencias'
             return segments[2] || 'products'
         }
         if (activeValue === 'reports') return segments[2] || 'stock'
@@ -54,7 +52,6 @@ export function InventoryHeader() {
                 { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: getViewModeUrl('inventory.subscription', "/inventory/products/subscriptions") },
                 { value: "categories", label: "Categorías", iconName: getEntityIconName('inventory.productcategory'), href: "/inventory/products/categories" },
                 { value: "attributes", label: "Atributos", iconName: getEntityIconName('inventory.attribute'), href: "/inventory/products/attributes" },
-                { value: "existencias", label: "Existencias", iconName: "warehouse", href: "/inventory/products?view=existencias" },
             ]
         },
         {
@@ -108,7 +105,6 @@ export function InventoryHeader() {
             if (subActiveValue === 'attributes') return { title: "Atributos de Variantes", description: "Propiedades variables: tallas, colores, materiales y más.", iconName: getEntityIconName('inventory.attribute') }
             if (subActiveValue === 'subscriptions') return { title: "Suscripciones y Recurrentes", description: "Gestión de servicios mensuales, contratos y facturación automática.", iconName: "calendar-clock" as const }
             if (subActiveValue === 'pricing-rules') return { title: "Reglas de Precios", description: "Políticas de tarifas, descuentos y márgenes por cliente o volumen.", iconName: getEntityIconName('inventory.pricingrule') }
-            if (subActiveValue === 'existencias') return { title: "Existencias", description: "Estado actual del inventario por almacén, valorizado en tiempo real.", iconName: "warehouse" as const }
             return { title: "Catálogo de Productos", description: "Gestión de bienes físicos, servicios y consumibles.", iconName: getEntityIconName('inventory.product') }
         }
         if (activeValue === 'reports') {
