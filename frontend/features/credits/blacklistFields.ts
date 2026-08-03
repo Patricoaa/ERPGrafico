@@ -7,7 +7,9 @@ export const blacklistFields = createEntityFields<CreditContact>()({
         type: 'currencyFlow',
         label: 'Deuda Actual',
         tableOptions: { align: 'center' },
-        cellProps: { direction: 'outflow', showIcon: false, className: 'font-black' },
+        direction: 'outflow',
+        showIcon: false,
+        className: 'font-black',
     },
     creditLastEvaluated: {
         key: 'credit_last_evaluated',

@@ -312,7 +312,7 @@ describe("createEntityFields", () => {
 
         it("respects fieldRole as fallback when no explicit placement", () => {
             const fields = createEntityFields<TestEntity>()({
-                a: { key: "period_display", type: "computed", label: "Period", fieldRole: "identifier" },
+                a: { key: "period_display", type: "computed", label: "Period", fieldRole: "identifier", render: () => null },
                 b: { key: "status", type: "status", label: "Status" },
                 c: { key: "name", type: "text", label: "Name" },
             })

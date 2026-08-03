@@ -33,7 +33,7 @@ export const expenseDetailFields = createEntityFields<ExpenseDetail>()({
         key: "total",
         type: "currency",
         label: "Total",
-        cellProps: { intent: "success" },
+        intent: "success",
     },
     contactDisplayName: {
         key: "contact_display_name",

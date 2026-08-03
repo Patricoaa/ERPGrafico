@@ -41,6 +41,6 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
         key: "total",
         type: "currency",
         label: "Total",
-        cellProps: { intent: "success" },
+        intent: "success",
     },
 })

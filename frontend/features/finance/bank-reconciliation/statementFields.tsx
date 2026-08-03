@@ -10,7 +10,7 @@ export const statementFields = createEntityFields<BankStatement>()({
         key: "opening_balance",
         type: "currency",
         label: "Apertura",
-        cellProps: { intent: "muted" },
+        intent: "muted",
         tableOptions: { align: "right" },
     },
     closing_balance: {

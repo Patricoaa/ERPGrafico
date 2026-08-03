@@ -14,7 +14,7 @@ export const bankStatementLineFields = createEntityFields<BankStatementLine>()({
     },
     type: {
         key: 'type',
-        type: 'computed',
+        type: 'text',
         label: 'Tipo',
     },
     amount: {

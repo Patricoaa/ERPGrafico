@@ -23,7 +23,7 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
             if (m.movement_type === 'OUTBOUND') return "Retiro"
             return m.movement_type === 'TRANSFER' ? "Traspaso" : "Ajuste"
         },
-        cellProps: { className: "uppercase font-bold tracking-tight" },
+        className: "uppercase font-bold tracking-tight",
     },
     date: {
         key: "date",

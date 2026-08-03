@@ -37,7 +37,7 @@ export const loanFields = createEntityFields<BankLoan>()({
         type: 'currency',
         label: 'Saldo Insoluto',
         get: (l) => parseFloat(l.outstanding_balance),
-        cellProps: { weight: 'bold' },
+        weight: 'bold',
         className: (_v, l) => cn(l.status === 'ACTIVE' && 'text-muted-foreground'),
         tableOptions: { align: 'right' },
     },

@@ -43,15 +43,9 @@ export const productFields = createEntityFields<Product>()({
     },
     availability: {
         key: 'can_be_sold',
-        type: 'chip',
+        type: 'computed',
         label: 'Disponible para',
         placement: 'subtitle',
-        get: (p) => {
-            if (p.can_be_sold && p.can_be_purchased) return 'Venta y Compra'
-            if (p.can_be_sold) return 'Venta'
-            if (p.can_be_purchased) return 'Compra'
-            return 'Ninguno'
-        },
         render: (p) => (
             <div className="flex justify-center gap-1">
                 {p.can_be_sold && <Chip size="xs">Venta</Chip>}
