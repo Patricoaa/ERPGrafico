@@ -53,11 +53,11 @@ export function NoteItemsSummary({
                                             <TooltipContent side="top">{item.productName || `Producto ${item.productId}`}</TooltipContent>
                                         </Tooltip>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                            <Chip size="xs" intent="neutral" className="bg-muted">
+                                            <Chip size="xs" intent="neutral">
                                                 {item.noteQuantity} {item.uomName || 'un'}
                                             </Chip>
                                             {item.reason && (
-                                                <Chip size="xs" intent="neutral" className="h-3 px-1 font-normal opacity-70 italic truncate max-w-[120px]">
+                                                <Chip size="xs" intent="neutral" className="opacity-70 truncate max-w-[120px]">
                                                     {item.reason}
                                                 </Chip>
                                             )}

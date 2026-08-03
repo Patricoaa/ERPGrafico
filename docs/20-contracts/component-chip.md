@@ -201,3 +201,19 @@ Do **not** use `Chip` for workflow states (order status, payment status, work or
 // ✅ Correct
 <StatusBadge status="POSTED" variant="badge" />
 ```
+
+---
+
+## Documented exceptions (ADR-0069)
+
+The CurrencyFlow default applies to every badge/chip/tag. A small set of **justified** exceptions exists; they are the only places where the rules above may be relaxed. All are audited and must be referenced from ADR-0069.
+
+| Exception | Where | Rationale | Allowed deviation |
+|-----------|-------|-----------|-------------------|
+| **Notification bubbles** | `UserActions.tsx:193`, `DraftCartsClientView.tsx:383`, `QuickActionsMenu` | Unread-count convention on icons (`99+`, dot bubbles) | `rounded-full border-2 border-background`, `font-black`, `text-[9px]`. Do **not** use `Chip`/`Badge` for these. |
+| **Interactive tag-input pills** | `MultiTagInput.tsx`, `MultiSelectTagInput.tsx` | Removable tag pills with an X button — interactive, not static labels | Use shared `Badge intent="neutral" size="sm"` + `animate-in zoom-in-95` + `IconButton` close. No typography overrides. |
+| **Monospace for codes/SKU/version/%** | `ProductVariantsTab` SKU, `ReconciliationPanel` codes, `SettingsPageClient` versions, `ReconciliationIntelligencePanel` %, `ProductManufacturingTab` item count, `UnifiedNoteWizard` ref, `bomFields` hints | Technical identifiers and numeric readouts read better in `font-mono` | `className="font-mono"` is the **only** authorized typographic override. Never combine with `uppercase`/`font-bold`/custom sizes. |
+| **Inline notice/validation callouts** | `TaskActionCard` (validation boxes), `ManualTerminalNotice` (`/* intentional: badge density */`), `SessionCloseModal`, `Step1_Customer`, `Step2_PurchaseDTE`, `ProductClientView` | Alert/notice boxes with icon + sentence text — not badges | Rendered as plain `div`/`Alert`. Border is allowed for affordance. Do not apply the Chip stencil. |
+| **POS touch density** | `ProductSelector` (POS grid) | High-density touch UI uses the smallest standard size | Standard `size="xs"` (18px). No pixel-level `h-4`/`text-[9px]` overrides. |
+
+These exceptions exist so the invariant stays strict everywhere else. If a new consumer needs one of these patterns, reuse the named exception — never invent a new one without an ADR.

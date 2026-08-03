@@ -3,8 +3,7 @@
 import React, { useState, useMemo, useRef } from "react"
 import { Check, ChevronDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { IconButton } from "@/components/shared"
+import { Badge, IconButton } from "@/components/shared"
 import { Separator } from "@/components/ui/separator"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 
@@ -134,8 +133,9 @@ export function MultiSelectTagInput({
                                 {selectedOptions.map((opt) => (
                                     <Badge
                                         key={opt.value}
-                                        variant="secondary"
-                                        className="flex items-center gap-1 px-2 py-0.5 h-6 text-[11px] font-bold border-secondary/50 animate-in zoom-in-95 duration-200"
+                                        intent="neutral"
+                                        size="sm"
+                                        className="flex items-center gap-1 animate-in zoom-in-95 duration-200"
                                     >
                                         {opt.label}
                                         <IconButton

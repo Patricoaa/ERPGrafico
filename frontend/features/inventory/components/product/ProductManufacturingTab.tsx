@@ -2,7 +2,7 @@
 "use client"
 
 import { type UoM, type Product } from "@/types/entities"
-import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, RadioCard} from '@/components/shared'
+import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch, RadioCard, Badge} from '@/components/shared'
 import { FormField } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,6 @@ import { useBOMs } from "@/features/production"
 import { BOMDrawer } from "@/features/production"
 import { type BOM, type ProductMinimal } from "@/features/production"
 import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
 import { Edit } from "lucide-react"
 
 interface ProductManufacturingTabProps {
@@ -220,7 +219,7 @@ export function ProductManufacturingTab({ form, initialData }: ProductManufactur
                                             {bom.name}
                                         </TableCell>
                                         <TableCell className="p-3 align-middle text-center">
-                                            <Badge variant="outline" className="text-[10px] font-mono">
+                                            <Badge intent="neutral" size="sm" className="font-mono">
                                                 {bom.lines?.length || 0} items
                                             </Badge>
                                         </TableCell>

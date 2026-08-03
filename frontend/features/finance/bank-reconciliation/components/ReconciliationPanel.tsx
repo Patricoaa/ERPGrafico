@@ -1289,9 +1289,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         </div>
                                     </Button>
                                 ) : (
-                                    <div className="bg-warning/10 border border-warning/20 rounded-full py-1 px-3 shadow-card">
-                                        <span className="text-xs text-warning">{suggestions.length} Coincidencias</span>
-                                    </div>
+                                    <Chip size="sm" intent="warning">
+                                        {suggestions.length} Coincidencias
+                                    </Chip>
                                 )}
                             </div>
                         </ActionDock.Section>

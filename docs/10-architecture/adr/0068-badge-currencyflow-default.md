@@ -8,7 +8,9 @@ author: core-team
 
 # 0068 — CurrencyFlow aesthetic as the default badge style
 
-**Related:** ADR-0029 (Color system), ADR-0060 (flow cells tinted badge), ADR-0064 (Layer-1 categorical intents), ADR-0065 (DataCell.Status ghost pill unification), `component-chip.md` (typography invariants), `typography-scale.md` (§N2), `color-system.md` (§3.3), GOVERNANCE §15
+**Related:** ADR-0029 (Color system), ADR-0060 (flow cells tinted badge), ADR-0064 (Layer-1 categorical intents), ADR-0065 (DataCell.Status ghost pill unification), ADR-0069 (consumer migration + justified exceptions), `component-chip.md` (typography invariants), `typography-scale.md` (§N2), `color-system.md` (§3.3), GOVERNANCE §15
+
+> **Amendment (ADR-0069):** consumer-side scope. [ADR-0069](./0069-badge-consumer-migration-and-exceptions.md) migrates every direct `ui/badge` consumer to the shared `intent` system, replaces all legacy ad-hoc badge stencils with `Chip`/`StatusBadge`, and codifies the audited justified exceptions (notification bubbles, tag-input pills, monospace codes, inline callouts, POS touch density).
 
 ---
 

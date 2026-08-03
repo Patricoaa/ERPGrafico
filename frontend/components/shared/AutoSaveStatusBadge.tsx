@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { AlertCircle, CheckCircle2, CloudOff, Loader2, Pencil, RefreshCcw } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/shared"
+import type { BadgeIntent } from "@/lib/badge-resolvers"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
@@ -18,18 +19,18 @@ export interface AutoSaveStatusBadgeProps {
 
 interface Descriptor {
     label: string
-    variant: React.ComponentProps<typeof Badge>["variant"]
+    intent: BadgeIntent
     icon: React.ComponentType<{ className?: string }>
     spin?: boolean
 }
 
 const STATUS_DESCRIPTORS: Record<AutoSaveStatus, Descriptor> = {
-    idle: { label: "Sin cambios", variant: "outline", icon: CheckCircle2 },
-    dirty: { label: "Cambios pendientes", variant: "secondary", icon: Pencil },
-    saving: { label: "Guardando…", variant: "info", icon: Loader2, spin: true },
-    synced: { label: "Guardado", variant: "success", icon: CheckCircle2 },
-    invalid: { label: "Cambios sin guardar", variant: "warning", icon: AlertCircle },
-    error: { label: "Error al guardar", variant: "destructive", icon: CloudOff },
+    idle: { label: "Sin cambios", intent: "neutral", icon: CheckCircle2 },
+    dirty: { label: "Cambios pendientes", intent: "neutral", icon: Pencil },
+    saving: { label: "Guardando…", intent: "info", icon: Loader2, spin: true },
+    synced: { label: "Guardado", intent: "success", icon: CheckCircle2 },
+    invalid: { label: "Cambios sin guardar", intent: "warning", icon: AlertCircle },
+    error: { label: "Error al guardar", intent: "destructive", icon: CloudOff },
 }
 
 function formatRelativeTime(date: Date): string {
@@ -64,7 +65,8 @@ export function AutoSaveStatusBadge({
 
     const badge = (
         <Badge
-            variant={descriptor.variant}
+            intent={descriptor.intent}
+            size="sm"
             className={cn("gap-1.5 font-medium", className)}
             data-status={status}
         >

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useReducer } from 'react'
-import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
+import { BaseModal, CancelButton, SubmitButton, Chip } from '@/components/shared'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CheckCircle2, AlertTriangle, Loader2, ClipboardCheck } from 'lucide-react'
 import { accountingApi } from '../../api/accountingApi'
@@ -196,10 +196,10 @@ export function AccountingPeriodCloseChecklistModal({
                                                 {item.label}
                                             </span>
                                             {item.critical && !item.passed && (
-                                                <span className="text-[8px] uppercase tracking-wider text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-sm font-bold">Obligatorio</span>
+                                                <Chip size="xs" intent="destructive">Obligatorio</Chip>
                                             )}
                                             {!item.critical && !item.passed && (
-                                                <span className="text-[8px] uppercase tracking-wider text-warning bg-warning/10 px-1.5 py-0.5 rounded-sm font-bold">Sugerido</span>
+                                                <Chip size="xs" intent="warning">Sugerido</Chip>
                                             )}
                                         </div>
                                         {item.detail && (

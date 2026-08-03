@@ -3,8 +3,7 @@
 import React, { useState, useRef, useCallback, type KeyboardEvent } from "react"
 import { X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { IconButton } from '@/components/shared'
+import { Badge, IconButton } from '@/components/shared'
 
 interface MultiTagInputProps {
     label?: string
@@ -111,8 +110,9 @@ export function MultiTagInput({
                         {values.map((tag, index) => (
                             <Badge
                                 key={`${tag}-${index}`}
-                                variant="secondary"
-                                className="flex items-center gap-1 px-2 py-0.5 h-6 text-[11px] font-bold border-secondary/50 animate-in zoom-in-95 duration-200"
+                                intent="neutral"
+                                size="sm"
+                                className="flex items-center gap-1 animate-in zoom-in-95 duration-200"
                             >
                                 {tag}
                                 <IconButton
