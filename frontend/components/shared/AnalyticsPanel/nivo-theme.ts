@@ -53,18 +53,6 @@ export const lineDefaults = {
 export const premiumTooltipClass =
     "bg-popover text-popover-foreground border border-border rounded-md px-3 py-2 text-xs shadow-floating whitespace-nowrap"
 
-function desaturateHex(hex: string): string {
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
-    const gray = 0.299 * r + 0.587 * g + 0.114 * b
-    const factor = 0.55
-    const nr = Math.round(r + factor * (gray - r))
-    const ng = Math.round(g + factor * (gray - g))
-    const nb = Math.round(b + factor * (gray - b))
-    return `#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`
-}
-
 import { getChartPalette } from "@/lib/chart-colors"
 
 export function getCssChartColors(variant?: "pie"): string[] {

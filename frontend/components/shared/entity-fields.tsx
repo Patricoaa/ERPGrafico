@@ -660,7 +660,7 @@ function parseSubtitleTemplate<T>(template: string, entity: T): SubtitleItem[] {
 /**
  * Extracts field keys referenced by a subtitle template string.
  */
-function extractTemplateKeys<T>(template: string): Set<string> {
+function extractTemplateKeys(template: string): Set<string> {
     const keys = new Set<string>()
     const regex = /\{(\??)([^}]+)\}/g
     let match: RegExpExecArray | null
@@ -810,7 +810,7 @@ export function createEntityFields<T>(): (
                 ([k, d]) => isPresentOnSurface(d, "table") && !excluded.has(k),
             )
 
-            for (const [fieldKey, def] of tableEntries) {
+            for (const [, def] of tableEntries) {
                 if (def.placement) {
                     resolvedPlacements.set(def.key, def.placement)
                     if (def.placement === 'title') titleAssigned = true
@@ -1007,7 +1007,8 @@ export function createEntityFields<T>(): (
             }
             // Priority 2: meta.title.field
             if (meta?.title?.field) {
-                const def = Object.values(defs).find(d => d.key === meta.title!.field)
+                const titleField = meta.title.field
+                const def = Object.values(defs).find(d => d.key === titleField)
                 if (def) return renderCell(def, entity, { weight: 'bold' })
                 // Fallback: raw value from entity
                 const raw = entity[meta.title.field as keyof T]

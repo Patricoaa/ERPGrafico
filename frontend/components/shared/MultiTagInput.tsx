@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback, type KeyboardEvent } from "react"
 import { X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge, IconButton } from '@/components/shared'
+import { Button } from "@/components/ui/button"
 
 interface MultiTagInputProps {
     label?: string
@@ -156,17 +157,18 @@ export function MultiTagInput({
             {showSuggestions && (
                 <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-[150px] overflow-y-auto">
                     {filteredSuggestions.map((suggestion) => (
-                        <button
+                        <Button
                             key={suggestion}
                             type="button"
-                            className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer outline-none"
+                            variant="ghost"
+                            className="h-auto w-full justify-start rounded-md px-3 py-1.5 text-sm font-normal hover:bg-accent hover:text-accent-foreground"
                             onMouseDown={(e) => {
                                 e.preventDefault()
                                 handleSelectSuggestion(suggestion)
                             }}
                         >
                             {suggestion}
-                        </button>
+                        </Button>
                     ))}
                 </div>
             )}

@@ -444,7 +444,7 @@ function EditModeTable({
 // Main exported component
 // ---------------------------------------------------------------------------
 
-export function NoteStep_LineItems({
+export function NoteLineItemsStep({
     selectionMode,
     noteType,
     lines,

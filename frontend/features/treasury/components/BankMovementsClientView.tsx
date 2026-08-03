@@ -113,23 +113,7 @@ export function BankMovementsClientView({ bankId }: BankMovementsClientViewProps
                         description: "Los movimientos registrados en las cuentas de este banco aparecerán aquí.",
                     }}
                     renderCard={(m) => {
-                        const type = m.movement_type
-                        const isTransferOrAdj = type === 'TRANSFER' || type === 'ADJUSTMENT'
                         const { icon, iconClassName } = resolveTreasuryMovementIcon(m)
-
-                        let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
-                        let destLabel = m.to_account_name || m.partner_name || 'Destino'
-
-                        if (type === 'INBOUND') {
-                            sourceLabel = m.partner_name || 'Particular'
-                            destLabel = m.to_account_name || 'Caja'
-                        } else if (type === 'OUTBOUND') {
-                            sourceLabel = m.from_account_name || 'Caja'
-                            destLabel = m.partner_name || 'Particular'
-                        } else if (isTransferOrAdj) {
-                            sourceLabel = m.from_account_name || 'Origen'
-                            destLabel = m.to_account_name || 'Destino'
-                        }
 
                         return (
                             <AutoEntityCard 

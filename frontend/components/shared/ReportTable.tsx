@@ -7,11 +7,12 @@ import {
   getExpandedRowModel,
   flexRender,
   createColumnHelper,
-  ExpandedState,
+  type ExpandedState,
   type ColumnDef,
 } from '@tanstack/react-table';
 import { ChevronRight, ChevronDown, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared';
 import { LedgerDrawer } from '@/features/accounting';
 
@@ -97,9 +98,10 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             columnHelper.accessor('name', {
                 header: ({ table }) => (
                     <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                            type="button"
                             onClick={table.getToggleAllRowsExpandedHandler()}
-                            className="p-1 hover:bg-muted/50 rounded-md transition-colors flex-shrink-0 -ml-1"
+                            className="p-1 bg-transparent text-muted-foreground hover:bg-muted/50 transition-colors flex-shrink-0 -ml-1"
                             title="Expandir/contraer todo"
                         >
                             {table.getIsAllRowsExpanded() ? (
@@ -107,7 +109,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             ) : (
                                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
                             )}
-                        </button>
+                        </Button>
                         <span>Cuenta / Concepto</span>
                     </div>
                 ),
@@ -131,16 +133,17 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     return (
                         <div className="flex items-center gap-2 py-1.5" style={{ paddingLeft: `${paddingLeft}px` }}>
                             {hasChildren ? (
-                                <button
+                                <Button
+                                    type="button"
                                     onClick={(e) => { e.stopPropagation(); row.getToggleExpandedHandler()(); }}
-                                    className="p-1 hover:bg-muted/50 rounded-md transition-colors flex-shrink-0"
+                                    className="p-1 bg-transparent text-muted-foreground hover:bg-muted/50 transition-colors flex-shrink-0"
                                 >
                                     {row.getIsExpanded() ? (
                                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                     ) : (
                                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                                     )}
-                                </button>
+                                </Button>
                             ) : (
                                 <div className="w-6 flex-shrink-0" />
                             )}

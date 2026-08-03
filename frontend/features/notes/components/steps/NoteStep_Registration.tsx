@@ -26,7 +26,7 @@ interface NoteStep_RegistrationProps {
     onPeriodValidityChange?: (isValid: boolean) => void
 }
 
-export function NoteStep_Registration({
+export function NoteRegistrationStep({
     isCreditNote,
     noteType,
     data,

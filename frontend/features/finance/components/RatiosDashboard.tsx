@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react';
-import { EmptyState, MoneyDisplay, PieChart, BarChart, LineChart, RadarChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard, ChartLegend } from '@/components/shared'
+import { EmptyState, PieChart, BarChart, RadarChart, SkeletonShell, StatCard, StaleDataBanner, KPIWrapper, KPIValue, DeltaBadge, SectionCard, ChartLegend } from '@/components/shared'
 import { formatMoney } from "@/lib/money"
 import { useAnalysis } from "../hooks/useAnalysis";
 import { type DateRange } from "react-day-picker";

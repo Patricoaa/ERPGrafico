@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react"
 
-import { FadeIn, MoneyDisplay, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner } from '@/components/shared'
+import { FadeIn, ReportTable, SkeletonShell, ReportToolbar, StaleDataBanner } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
 import { CashFlowTable, type CashFlowData } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { useMappingDrawer } from "@/features/finance/hooks/useMappingDrawer"
-import type { BalanceSheetData, PLData, PLSection } from "@/features/finance/types"
+import type { BalanceSheetData, PLData } from "@/features/finance/types"
 import { type DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
 import { es } from 'date-fns/locale'

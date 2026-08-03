@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useState, useMemo, useCallback } from "react"
+import React, { useMemo, useCallback } from "react"
 import { Trash2, Tag } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"

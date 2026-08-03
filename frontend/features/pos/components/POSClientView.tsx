@@ -153,7 +153,7 @@ export function POSClientView() {
         forceSync,
     })
 
-    const [isWithdrawing, setIsWithdrawing] = useState(false)
+    const [, setIsWithdrawing] = useState(false)
     const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null)
     const [, setSelectedPartnerName] = useState<string>("")

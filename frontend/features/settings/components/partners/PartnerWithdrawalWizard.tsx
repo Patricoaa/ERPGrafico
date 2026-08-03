@@ -71,7 +71,7 @@ export function PartnerWithdrawalWizard({
 
     // Product details for assets
     const [productDetails, setProductDetails] = useState<Product | null>(null)
-    const [productUoMs, setProductUoMs] = useState<UoM[]>([])
+    const [, setProductUoMs] = useState<UoM[]>([])
 
     // Load initial data
     useEffect(() => {

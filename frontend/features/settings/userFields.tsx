@@ -1,6 +1,6 @@
 import { createEntityFields } from "@/components/shared"
 import type { AppUser } from "@/types/entities"
-import { DataCell, Chip } from "@/components/shared"
+import { Chip } from "@/components/shared"
 import { Users } from "lucide-react"
 
 const SYSTEM_ROLES = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY'] as const

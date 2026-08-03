@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation"
 import { EntityCard, PageSectionHeader, StaleDataBanner } from "@/components/shared"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
-import { BankUpcomingMaturities } from "./BankUpcomingMaturities"
+import { BankUpcomingMaturitiesPanel } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
 import { BankCheckingSection } from "./BankCheckingSection"
 import { BankLoanSection } from "./BankLoanSection"
@@ -67,7 +67,7 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
                     <div className="border-b border-border/40" />
                     <section className="py-4">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                            <BankUpcomingMaturities data={overviewData} bankId={bankId} />
+                            <BankUpcomingMaturitiesPanel data={overviewData} bankId={bankId} />
                             <BankRecentActivity data={overviewData} bankId={bankId} />
                         </div>
                     </section>
