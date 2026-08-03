@@ -8,13 +8,8 @@ export const productFields = createEntityFields<Product>()({
     code: { key: 'code', type: 'code', label: 'SKU' },
     name: {
         key: 'name',
-        type: 'computed',
+        type: 'text',
         label: 'Nombre',
-        render: (p) => (
-            <div className="flex items-center justify-center w-full">
-                <DataCell.Text>{p.name}</DataCell.Text>
-            </div>
-        ),
     },
     category_name: { key: 'category_name', type: 'text', label: 'Categoría' },
     product_type: {

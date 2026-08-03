@@ -54,12 +54,10 @@ export const contactFields = createEntityFields<Contact>()({
     },
     tax_id: {
         key: 'tax_id',
-        type: 'computed',
+        type: 'text',
         label: 'RUT / Identificación',
         tableOptions: { align: 'center' },
-        render: (c) => (
-            <DataCell.Text>{c.tax_id ? formatRUT(c.tax_id) : 'S/Rut'}</DataCell.Text>
-        ),
+        get: (c) => c.tax_id ? formatRUT(c.tax_id) : 'S/Rut',
     },
     display_id: { key: 'display_id', type: 'code', label: 'Código Interno' },
     email: { key: 'email', type: 'text', label: 'Email' },

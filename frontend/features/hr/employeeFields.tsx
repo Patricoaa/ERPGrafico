@@ -30,19 +30,15 @@ export const employeeFields = createEntityFields<Employee>()({
     },
     afp: {
         key: "afp_detail",
-        type: "computed",
+        type: "text",
         label: "Previsión",
-        render: (e) => (
-            <DataCell.Text>{e.afp_detail?.name || 'No disp.'}</DataCell.Text>
-        ),
+        get: (e) => e.afp_detail?.name || 'No disp.',
     },
     salud: {
         key: "salud_type_display",
-        type: "computed",
+        type: "text",
         label: "Salud",
-        render: (e) => (
-            <DataCell.Text>{e.salud_type_display || 'No disp.'}</DataCell.Text>
-        ),
+        get: (e) => e.salud_type_display || 'No disp.',
     },
     baseSalary: {
         key: "base_salary",

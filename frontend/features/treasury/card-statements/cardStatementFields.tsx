@@ -1,13 +1,11 @@
 import { createEntityFields } from '@/components/shared'
 import type { CreditCardStatement } from './types'
-import { DataCell } from '@/components/shared'
 
 export const cardStatementFields = createEntityFields<CreditCardStatement>()({
     displayId: {
         key: 'display_id',
-        type: 'computed',
+        type: 'code',
         label: 'Folio',
-        render: (s) => <DataCell.Code>{s.display_id}</DataCell.Code>,
     },
     cardAccountName: {
         key: 'card_account_name',
@@ -16,9 +14,9 @@ export const cardStatementFields = createEntityFields<CreditCardStatement>()({
     },
     period: {
         key: 'period_month',
-        type: 'computed',
+        type: 'text',
         label: 'Período',
-        render: (s) => <>{String(s.period_month).padStart(2, '0')}/{s.period_year}</>,
+        get: (s) => `${String(s.period_month).padStart(2, '0')}/${s.period_year}`,
     },
     billedAmount: {
         key: 'billed_amount',

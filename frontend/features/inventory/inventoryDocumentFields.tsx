@@ -13,9 +13,9 @@ const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutr
 export const inventoryDocumentFields = createEntityFields<InventoryDocument>()({
     folio: {
         key: "id",
-        type: "computed",
+        type: "code",
         label: "Folio",
-        render: (d) => <DataCell.Code>{`DOC-${d.id}`}</DataCell.Code>,
+        get: (d) => `DOC-${d.id}`,
     },
     date: {
         key: "date",

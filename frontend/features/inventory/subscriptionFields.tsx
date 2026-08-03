@@ -46,10 +46,8 @@ export const subscriptionFields = createEntityFields<Subscription>()({
     },
     frequency: {
         key: "recurrence_display",
-        type: "computed",
+        type: "secondary",
         label: "Frecuencia",
-        render: (sub) => (
-            <DataCell.Secondary>{getPaymentScheduleText(sub)}</DataCell.Secondary>
-        ),
+        get: (sub) => getPaymentScheduleText(sub),
     },
 })
