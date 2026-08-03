@@ -29,11 +29,6 @@ export const posSessionFields = createEntityFields<POSSession>()({
         type: "dateTime",
         label: "Cierre",
     },
-    startAmount: {
-        key: "opening_balance",
-        type: "secondary",
-        label: "Fondo Inicial",
-    },
     totalSales: {
         key: "total_sales",
         type: "currency",
