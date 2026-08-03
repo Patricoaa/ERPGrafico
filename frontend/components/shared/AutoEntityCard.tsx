@@ -71,10 +71,10 @@ export interface AutoEntityCardProps<TData> {
     children?: React.ReactNode
     /**
      * Unified card variant — controls layout zones, field placement, and root styling.
-     * - 'highlights': dashboard/summary — header only, detail/metric fields hidden
-     * - 'summary': management, dense — header + metrics, detail hidden
-     * - 'full': management, complete — header + detail + metrics (DEFAULT)
-     * - 'workflow': documents with line items — header + detail + metrics + workflow body (driven by cardConfig.workflow in entity-registry)
+     * - 'highlights': dashboard/summary — header only, detail fields hidden
+     * - 'summary': management, dense — header only, detail hidden
+     * - 'full': management, complete — header + detail (DEFAULT)
+     * - 'workflow': documents with line items — header + detail + workflow body (driven by cardConfig.workflow in entity-registry)
      * - 'overview': external DTO data — header + overviewMetrics (entity fields hidden, metrics come from overviewMetrics prop)
      */
     variant?: 'highlights' | 'summary' | 'full' | 'workflow' | 'overview'
@@ -171,8 +171,6 @@ interface ClassifiedFields {
     header: CardField[]
     centerDetail: CardField[]
     bodyDetail: CardField[]
-    metric: CardField[]
-    footer: CardField[]
 }
 
 /**
@@ -182,15 +180,14 @@ interface ClassifiedFields {
  * - Fields are prioritised: complex → primary-value → flow → tag (chip/icon)
  * - If ALL selected header fields share the SAME semantic role → max 3
  * - If they have MIXED roles → max 1
- * - Overflow from header is demoted: tag/progress → metric, others → detail
+ * - Overflow from header is demoted to detail.
  *
  * Subtitle fields (placement === 'subtitle') and title field are excluded from all zones.
  * Detail is capped at 10 fields.
- * Metric receives: progress + any tag/flow that overflowed from header.
  *
  * Variant visibility:
- * - 'highlights': body detail/metric hidden, but centerDetail (header center) preserved
- * - 'summary': detail hidden, metric visible
+ * - 'highlights': body detail hidden, but centerDetail (header center) preserved
+ * - 'summary': header only — detail hidden
  * - 'full' / 'workflow': all zones visible
  */
 function classifyFields<TData>(
@@ -226,41 +223,31 @@ function classifyFields<TData>(
     const header = sortedCandidates.slice(0, maxHeader)
     const headerOverflow = sortedCandidates.slice(maxHeader)
 
-    // ── Metric: ONLY explicit progress fields ─────────────────────────────────
-    // All header overflow cascades to centerDetail — metric is a final fallback
-    // exclusively for progress bars (placement: 'metric').
-    const progressFields = rest.filter(f => f.placement === 'metric')
-    const metric = [...progressFields]
-
     // ── Detail: explicit detail fields + ALL header overflow, max 10 ──────────
-    // Cascade order: header trailing → center header → metric (progress only)
+    // Cascade order: header trailing → center header
     const assignedKeys = new Set([
         ...header.map(f => f.key),
-        ...metric.map(f => f.key),
     ])
     const detailBase = rest.filter(
         f => f.placement === 'detail' && !assignedKeys.has(f.key)
     )
     let detail = [...detailBase, ...headerOverflow].slice(0, 10)
 
-    const footer = rest.filter(f => f.placement === 'footer')
-
     // ── Variant visibility rules ──────────────────────────────────────────────
     switch (variant) {
         case 'highlights':
-            // Header + center only — no body detail or metric.
+            // Header + center only — no body detail.
             // detail feeds into centerDetail (header center zone), so keep it.
             break
 
         case 'summary':
-            // Header + metric — no detail
+            // Header only — no detail
             detail = []
             break
 
         case 'overview':
             // All entity-derived body zones hidden (overviewMetrics prop drives content)
             detail = []
-            // metric intentionally kept empty — overviewMetrics prop used instead
             break
 
         case 'workflow':
@@ -276,7 +263,7 @@ function classifyFields<TData>(
     const centerDetail = [...detail]
     const bodyDetail: CardField[] = []
 
-    return { title, header, centerDetail, bodyDetail, metric, footer }
+    return { title, header, centerDetail, bodyDetail }
 }
 
 
@@ -311,7 +298,7 @@ function buildSubtitleItems<TData>(
  * AutoEntityCard - A standardized card component for Master Data entities.
  *
  * Automatically generates the EntityCard layout using the fields defined in `createEntityFields`.
- * - Uses `placement` metadata ('title', 'header', 'detail', 'metric', 'footer') to position fields.
+ * - Uses `placement` metadata ('title', 'subtitle', 'header', 'detail') to position fields.
  * - Uses `variant` to control which layout zones are visible.
  * - `variant='workflow'` automatically renders the workflow body from cardConfig.workflow in entity-registry.
  * - Auto-generates subtitle from registry when no explicit subtitle is provided.
@@ -379,7 +366,7 @@ export function AutoEntityCard<TData>({
                 return (
                     <div key={f.key} className={cn(showHeaderLabels ? "flex flex-col items-end" : "flex items-end gap-1.5", f.cardClassName)}>
                         {showHeaderLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
-                        <span className="text-xs">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
+                        <span className="text-xs font-bold">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
                     </div>
                 )
             })}
@@ -442,8 +429,8 @@ export function AutoEntityCard<TData>({
         })
         : undefined
 
-    // 7. Determine EntityCard variant (compact padding if no body detail/metric and no footer/workflow)
-    const hasBodyContent = classified.bodyDetail.length > 0 || classified.metric.length > 0 || classified.footer.length > 0
+    // 7. Determine EntityCard variant (compact padding if no body detail/workflow)
+    const hasBodyContent = classified.bodyDetail.length > 0
         || (effectiveVariant === 'overview' && overviewMetrics && overviewMetrics.length > 0)
     const entityCardVariant = hasBodyContent ? "full" : "compact"
 
@@ -488,24 +475,8 @@ export function AutoEntityCard<TData>({
                     ))}
                 </EntityCard.Body>
             )}
-            {classified.metric.length > 0 && (
-                <EntityCard.Metrics metrics={classified.metric.map(f => ({
-                    label: f.label,
-                    value: f.value,
-                }))} />
-            )}
             {effectiveVariant === 'overview' && overviewMetrics && overviewMetrics.length > 0 && (
                 <EntityCard.Metrics metrics={overviewMetrics} />
-            )}
-            {classified.footer.length > 0 && (
-                <EntityCard.Footer>
-                    {classified.footer.map(field => (
-                        <div key={field.key} className={cn("flex flex-col items-end", field.cardClassName)}>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{field.label}</span>
-                            {field.value}
-                        </div>
-                    ))}
-                </EntityCard.Footer>
             )}
             {children}
             {workflowData && (

@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest"
+import React, { createElement } from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { createEntityFields } from "../entity-fields"
 import type { ColumnDef } from "@tanstack/react-table"
 
@@ -135,7 +137,7 @@ describe("createEntityFields", () => {
             fields.forEach((f) => {
                 expect(f.placement).toBeDefined()
                 expect(f.fieldRole).toBeDefined()
-                expect(["title", "header", "detail", "metric"]).toContain(f.placement)
+                expect(["title", "header", "detail"]).toContain(f.placement)
             })
         })
 
@@ -251,7 +253,7 @@ describe("createEntityFields", () => {
                 detail_b: { key: "description", type: "text", label: "Detail B" },
             })
             const columns = fields.toColumns()
-            // title(0) → subtitle(1, card role order: name → primary-value) → detail(3)
+            // title(0) → subtitle(1, card role order: name → primary-value) → detail(2)
             // name and status join the subtitle zone exactly like the card's auto-subtitle.
             expect(getAccessorKey(columns[0])).toBe("code")          // title zone
             expect(getAccessorKey(columns[1])).toBe("name")          // subtitle (name slot)
@@ -265,7 +267,7 @@ describe("createEntityFields", () => {
                 b: { key: "code", type: "code", label: "B" },
             })
             const columns = fields.toColumns()
-            // 'name' is explicitly title(0), 'code' is type-derived header(2)
+            // 'name' is explicitly title(0), 'code' is type-derived header(3)
             expect(getAccessorKey(columns[0])).toBe("name")
             expect(getAccessorKey(columns[1])).toBe("code")
         })
@@ -357,13 +359,13 @@ describe("createEntityFields", () => {
             })
             const columns = fields.toColumns()
             // title(0) → subtitle(1): temporal(date) → primary-value(status) → explicit(origin)
-            // → header(2): total → detail(3): description — same order the card reads.
+            // → detail(2): description → header(3): total — KPIs last, before actions.
             expect(getAccessorKey(columns[0])).toBe("code")
             expect(getAccessorKey(columns[1])).toBe("date")
             expect(getAccessorKey(columns[2])).toBe("status")
             expect(getAccessorKey(columns[3])).toBe("origin")
-            expect(getAccessorKey(columns[4])).toBe("amount")
-            expect(getAccessorKey(columns[5])).toBe("description")
+            expect(getAccessorKey(columns[4])).toBe("description")
+            expect(getAccessorKey(columns[5])).toBe("amount")
         })
 
         it("puts name first in subtitle zone, then temporal/primary-value, then explicit subtitle fields", () => {
@@ -391,10 +393,37 @@ describe("createEntityFields", () => {
             })
             const columns = fields.toColumns()
             expect(getAccessorKey(columns[0])).toBe("code")
-            // header zone: total/salary primary-value (rank 1) before generic primary-value (rank 2)
-            expect(getAccessorKey(columns[1])).toBe("total_amount")
-            expect(getAccessorKey(columns[2])).toBe("status")
-            expect(getAccessorKey(columns[3])).toBe("description")
+            // header zone (last, before actions): total/salary primary-value (rank 1)
+            // before generic primary-value (rank 2); detail zone (2) sorts before header (3)
+            expect(getAccessorKey(columns[1])).toBe("description")
+            expect(getAccessorKey(columns[2])).toBe("total_amount")
+            expect(getAccessorKey(columns[3])).toBe("status")
+        })
+    })
+
+    describe("zone font-weight (ADR-0067)", () => {
+        it("renders title and header zone cells bold, detail zone cells normal", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },        // title(0)
+                total: { key: "total_amount", type: "currency", label: "Total", placement: "header" }, // header(3)
+                description: { key: "description", type: "text", label: "Descripción" }, // detail(2)
+            })
+            const columns = fields.toColumns()
+            const cellMarkup = (col: ColumnDef<TestEntity>): string =>
+                renderToStaticMarkup(
+                    createElement(
+                        React.Fragment,
+                        null,
+                        (col.cell as unknown as (ctx: { row: { original: TestEntity } }) => React.ReactNode)({
+                            row: { original: sampleEntity },
+                        }),
+                    ),
+                )
+
+            expect(cellMarkup(columns[0])).toContain("font-bold")
+            expect(cellMarkup(columns[2])).toContain("font-bold")
+            expect(cellMarkup(columns[1])).toContain("font-medium")
+            expect(cellMarkup(columns[1])).not.toContain("font-bold")
         })
     })
 

@@ -170,6 +170,12 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 
 Pesos disponibles (`DataCellWeight`): `light` (300) · `normal` (400) · `medium` (500) · `semibold` (600) · `bold` (700). El token `light` se añadió en ADR-0062.
 
+**Peso por zona (ADR-0067):** el motor `entity-fields` aplica `weight: 'bold'` automático a
+las celdas resueltas en zona `title` / `header` (lista y card) vía threading en `renderCell`.
+Un `weight` explícito en el `FieldDef` gana sobre el automático. `Status` / `Chip` / `Category`
+conservan su tipografía de badge (no aceptan `weight`). Zonas de lista: `title → subtitle →
+detail → header` (header al final, antes de acciones).
+
 ```tsx
 // Fecha con hora: fecha font-medium, hora font-normal (default)
 <DataCell.Date value={row.opened_at} showTime />
@@ -207,6 +213,11 @@ Pesos disponibles (`DataCellWeight`): `light` (300) · `normal` (400) · `medium
 ### DataCell.NumericFlow
 
 Para cantidades con polaridad visual (+/−): movimientos de stock, horas de producción, variaciones de inventario. **No usar para monedas** — usar `DataCell.Currency showColor` que delega a `MoneyDisplay`.
+
+**FieldType `numericFlow` (entity-fields, ADR-0067):** variante declarativa reintroducida.
+Admite `direction?: FlowDirection | (e) => FlowDirection` (inferencia por signo si se omite),
+`unit?: string | (e) => string`, `showIcon?`, `showSign?`. Rol `flow` → zona header.
+`stockMoveFields.quantity` es la referencia de migración.
 
 Renderiza un **badge cuadrado (`rounded-sm`), sin borde, tintado del color del flujo** (fondo `/{10}` más tenue). Mismo lenguaje visual que `CurrencyFlow`. Defaults: `size sm` (`text-xs`) y `font-medium`.
 

@@ -9,7 +9,12 @@ author: core-team
 # 0059 — toColumns() mirrors card ordering
 
 **Supersedes:** Part of ADR-0057 (Placement unified column order)
-**Related:** ADR-0054 (Entity Fields Schema), ADR-0057 (Placement unified column order), ADR-0056 (Card Variant — Entity Registry SSOT)
+**Related:** ADR-0054 (Entity Fields Schema), ADR-0057 (Placement unified column order), ADR-0056 (Card Variant — Entity Registry SSOT), ADR-0067 (header zone position, metric/footer removal)
+
+> **Enmendado por ADR-0067:** los criterios intra-zona de este ADR se mantienen, pero la
+> posición de la zona `header` cambia — `toColumns()` pasa a ordenar `title → subtitle →
+> detail → header` (header al final, antes de acciones). Las zonas `metric`/`footer`
+> desaparecen. Ver ADR-0067.
 
 ---
 
@@ -31,7 +36,7 @@ Both surfaces already shared the *zone* taxonomy; what was missing was a shared 
    - `toColumns()` consumes it to rank the `subtitle` zone.
    - `computeAutoComposeKeys()` is a thin Set-view wrapper over it (used by `getSubtitleExcludeKeys`).
 2. **`headerPriorityIndex(role, key)`** — exported rank function for the header zone: `complex → 0`, total/salary `primary-value → 1`, other `primary-value → 2`, `flow → 3`, `tag → 4`, else `99`. `AutoEntityCard.classifyFields` and `toColumns()` both use it; the card's inline `HEADER_PRIORITY` map is removed.
-3. Within `title`, `detail`, `metric`, `footer` zones the definition order is preserved (unchanged from ADR-0057).
+3. Within `title`, `detail`, and (for card ordering) `subtitle` zones the definition order is preserved (unchanged from ADR-0057). *(ADR-0067: the list's `detail` now sorts before `header`; `metric`/`footer` zones were removed.)*
 
 Resulting column order for `/accounting/entries?view=list`: `Folio · Fecha · Estado · Origen · Total Débito · Descripción`.
 

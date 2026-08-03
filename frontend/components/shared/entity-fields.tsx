@@ -24,6 +24,7 @@ type FieldType =
     | "chip"
     | "chip-category"
     | "currencyFlow"
+    | "numericFlow"
     | "sourceDest"
     | "computed"
 
@@ -42,18 +43,17 @@ type FlowDirection = "inflow" | "outflow" | "neutral"
  * - `subtitle`: replaces the auto-generated subtitle
  * - `header`: compact badges/values in the header trailing area
  * - `detail`: **routed to the header center zone** (label:value columns alongside flows).
- * - `metric`: equal-width columns in EntityCard.Metrics (progress bars, overflowed tags)
- * - `footer`: summary row in EntityCard.Footer (always explicit)
  *
  * List column ordering (left → right):
- * `title` → `subtitle` → `header` → `detail` → `metric` → `footer`
+ * `title` → `subtitle` → `detail` → `header`
  * The `subtitle` zone mirrors the card's auto-composed subtitle (role priority:
  * name → relation → temporal → primary-value → explicit subtitle), so list and card
- * share the same ordering criteria. Within the same zone, definition order
- * (Object.entries insertion) is preserved, except `header` which follows the card's
- * header priority (complex → total/salary → primary-value → flow → tag).
+ * share the same ordering criteria. The `header` zone (status, totals, flows, chips)
+ * sorts last — distinctive KPIs right before the actions column. Within the same zone,
+ * definition order (Object.entries insertion) is preserved, except `header` which
+ * follows the card's header priority (complex → total/salary → primary-value → flow → tag).
  */
-export type Placement = 'title' | 'subtitle' | 'header' | 'detail' | 'metric' | 'footer'
+export type Placement = 'title' | 'subtitle' | 'header' | 'detail'
 
 /**
  * Semantic role of a field — determines its default Placement.
@@ -71,7 +71,6 @@ export type FieldRole =
     | 'datetime'         // date+time field — always center header (never subtitle)
     | 'descriptive'      // text, number, secondary, computed — detail body
     | 'supplementary'    // secondary text — detail body
-    | 'progress'         // progress bar — metric fallback
 
 /**
  * FieldType → FieldRole mapping.
@@ -96,6 +95,7 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
     'contact':       'relation',
     'chip':          'tag',
     'currencyFlow':  'flow',
+    'numericFlow':   'flow',
     'sourceDest':    'complex',        // Rich route display → always header
     'chip-category': 'tag',
     'computed':      'descriptive',
@@ -105,15 +105,15 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
  * FieldRole → default Placement mapping.
  * Explicit placement in FieldDef always overrides this.
  *
- * Hierarchy: title → header → subtitle → detail → metric
+ * Hierarchy: title → header → subtitle → detail
  * - Header is controlled by classifyFields() capacity rules, not just this map.
- * - 'tag', 'progress', 'flow' default to 'header' but fall back to 'metric' when header is full.
+ * - 'tag' and 'flow' default to 'header'.
  */
 const ROLE_TO_PLACEMENT: Record<FieldRole, Placement> = {
     'identifier':       'header',      // Promoted to 'title' by auto-detect in toCardFields
     'primary-label':    'subtitle',    // Promoted to 'subtitle' when key contains 'name'
     'complex':          'header',      // Always header — highest priority zone
-    'tag':              'header',      // Chips/icons — fall back to metric if header full
+    'tag':              'header',      // Chips/icons — header
     'primary-value':    'header',      // Totals/status badges — header
     'flow':             'header',      // Flow fields — routed to header center in classifyFields
     'relation':         'detail',      // Subtitle candidate in auto-subtitle; otherwise center header
@@ -121,7 +121,6 @@ const ROLE_TO_PLACEMENT: Record<FieldRole, Placement> = {
     'datetime':         'detail',      // Date+time — center header, never subtitle
     'descriptive':      'detail',      // Default body
     'supplementary':    'detail',      // Secondary text → body
-    'progress':         'metric',      // Progress bars → metric fallback
 }
 
 /**
@@ -136,7 +135,7 @@ interface SharedFieldDef<T> {
     surfaces?: FieldSurface[]
     /**
      * Ubicación semántica del campo — fuente de verdad para orden en card Y list.
-     * En lista: title(0) → subtitle(1) → header(2) → detail(3) → metric(4) → footer(5).
+     * En lista: title(0) → subtitle(1) → detail(2) → header(3).
      * Dentro de la misma zona, los campos siguen el orden de definición.
      * Evitar cuando `fieldRole` puede expresar la misma intención —
      * el auto-detector convierte `fieldRole` → `Placement` automáticamente.
@@ -226,6 +225,13 @@ type FieldDef<T> = SharedFieldDef<T> & (
         direction?: FlowDirection | ((entity: T) => FlowDirection)
         currency?: string | ((entity: T) => string)
         showIcon?: boolean
+    }
+    | {
+        type: 'numericFlow'
+        direction?: FlowDirection | ((entity: T) => FlowDirection)
+        unit?: string | ((entity: T) => string)
+        showIcon?: boolean
+        showSign?: boolean
     }
     | { type: 'sourceDest' }
 
@@ -343,8 +349,9 @@ function toDisplayValue(value: unknown, fallback = "-"): string {
     return String(value)
 }
 
-function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
+function renderCell<T>(def: FieldDef<T>, entity: T, opts?: { weight?: DataCellWeight }): ReactNode {
     const value = resolveValue(def, entity)
+    const { weight } = opts ?? {}
     const resolvedClassName = typeof def.className === "function"
         ? def.className(value, entity)
         : def.className
@@ -358,7 +365,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
         case "text": {
             const icon = resolveIcon(def, entity)
             return (
-                <DataCell.Text className={resolvedClassName}>
+                <DataCell.Text className={resolvedClassName} {...(weight !== undefined && { weight })}>
                     <span className="flex items-center gap-1.5 justify-center">
                         <IconPrefix icon={icon} />
                         {toDisplayValue(value)}
@@ -369,7 +376,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
         case "code": {
             const icon = resolveIcon(def, entity)
             return (
-                <DataCell.Code className={resolvedClassName}>
+                <DataCell.Code className={resolvedClassName} {...(weight !== undefined && { weight })}>
                     <span className="flex items-center gap-1.5 justify-center">
                         <IconPrefix icon={icon} />
                         {toDisplayValue(value)}
@@ -380,7 +387,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
         case "secondary": {
             const icon = resolveIcon(def, entity)
             return (
-                <DataCell.Secondary className={resolvedClassName}>
+                <DataCell.Secondary className={resolvedClassName} {...(weight !== undefined && { weight })}>
                     <span className="flex items-center gap-1.5 justify-center">
                         <IconPrefix icon={icon} />
                         {toDisplayValue(value)}
@@ -390,7 +397,13 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
         }
 
         case "date":
-            return <DataCell.Date value={value as string | Date} className={resolvedClassName} />
+            return (
+                <DataCell.Date
+                    value={value as string | Date}
+                    className={resolvedClassName}
+                    {...(weight !== undefined && { weight })}
+                />
+            )
         case "dateTime":
             return (
                 <DataCell.Date
@@ -399,6 +412,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     dateWeight={def.dateWeight}
                     timeWeight={def.timeWeight}
                     className={resolvedClassName}
+                    {...(weight !== undefined && { weight })}
                 />
             )
 
@@ -408,6 +422,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                 ? def.showZeroAsDash(value as number)
                 : def.showZeroAsDash
             const tooltipValue = typeof def.tooltip === "function" ? def.tooltip(entity) : def.tooltip
+            const resolvedWeight = def.weight ?? weight
             return (
                 <DataCell.Currency
                     value={value as number | string}
@@ -417,27 +432,32 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     {...(tooltipValue !== undefined && { tooltip: tooltipValue })}
                     {...(def.showColor !== undefined && { showColor: def.showColor })}
                     {...(def.intent !== undefined && { intent: def.intent })}
-                    {...(def.weight !== undefined && { weight: def.weight })}
+                    {...(resolvedWeight !== undefined && { weight: resolvedWeight })}
                     {...(def.size !== undefined && { size: def.size })}
                 />
             )
         }
         case "number": {
             const suffixValue = typeof def.suffix === "function" ? def.suffix(entity) : def.suffix
+            const resolvedWeight = def.weight ?? weight
             return (
                 <DataCell.Number
                     value={value as number | string}
                     className={resolvedClassName}
                     {...(suffixValue !== undefined && { suffix: suffixValue })}
                     {...(def.suffixGap !== undefined && { suffixGap: def.suffixGap })}
-                    {...(def.weight !== undefined && { weight: def.weight })}
+                    {...(resolvedWeight !== undefined && { weight: resolvedWeight })}
                 />
             )
         }
 
         case "status": {
             if (value === null || value === undefined || value === "") {
-                return <DataCell.Text className={resolvedClassName}>-</DataCell.Text>
+                return (
+                    <DataCell.Text className={resolvedClassName} {...(weight !== undefined && { weight })}>
+                        -
+                    </DataCell.Text>
+                )
             }
             const labelValue = def.getLabel ? def.getLabel(entity) : undefined
             return (
@@ -484,6 +504,22 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                     className={resolvedClassName}
                     {...(currencyValue !== undefined && { currency: currencyValue })}
                     {...(def.showIcon !== undefined && { showIcon: def.showIcon })}
+                    {...(weight !== undefined && { weight })}
+                />
+            )
+        }
+        case "numericFlow": {
+            const directionValue = typeof def.direction === "function" ? def.direction(entity) : def.direction
+            const unitValue = typeof def.unit === "function" ? def.unit(entity) : def.unit
+            return (
+                <DataCell.NumericFlow
+                    value={value as number | string}
+                    className={resolvedClassName}
+                    {...(directionValue !== undefined && { direction: directionValue })}
+                    {...(unitValue !== undefined && { unit: unitValue })}
+                    {...(def.showIcon !== undefined && { showIcon: def.showIcon })}
+                    {...(def.showSign !== undefined && { showSign: def.showSign })}
+                    {...(weight !== undefined && { weight })}
                 />
             )
         }
@@ -759,7 +795,7 @@ export function createEntityFields<T>(): (
         toColumns: (opts?: { exclude?: string[] }): ColumnDef<T>[] => {
             const excluded = new Set(opts?.exclude ?? [])
             const ZONE_ORDER: Record<Placement, number> = {
-                title: 0, subtitle: 1, header: 2, detail: 3, metric: 4, footer: 5,
+                title: 0, subtitle: 1, detail: 2, header: 3,
             }
 
             // Pre-resolve effective placement per field (mirrors toCardFields auto-title logic).
@@ -837,7 +873,12 @@ export function createEntityFields<T>(): (
                                 className={cn(headerAlign)}
                             />
                         ),
-                        cell: ({ row }) => renderCell(def, row.original),
+                        cell: ({ row }) => {
+                            const zone = resolvedPlacements.get(def.key)
+                            return renderCell(def, row.original, {
+                                weight: zone === 'title' || zone === 'header' ? 'bold' : undefined,
+                            })
+                        },
                         meta: { title: headerLabel },
                         enableSorting,
                         size: def.tableOptions?.width,
@@ -893,7 +934,9 @@ export function createEntityFields<T>(): (
                     return {
                         key: def.key,
                         label: def.label,
-                        value: renderCell(def, entity),
+                        value: renderCell(def, entity, {
+                            weight: resolvedPlacement === 'title' || resolvedPlacement === 'header' ? 'bold' : undefined,
+                        }),
                         placement: resolvedPlacement,
                         fieldRole: role,
                         ...(def.cardClassName && { cardClassName: def.cardClassName }),
@@ -912,16 +955,16 @@ export function createEntityFields<T>(): (
             }
 
             // ── Cascade resolution — enforce capacity per zone, overflow to next zone ──
-            // Cascade order: title → subtitle → detail → metric → footer
+            // Cascade order: title → subtitle → detail (header overflow demoted to detail)
             const CAP: Record<Placement, number> = {
                 title: 1, subtitle: 1, header: 3,
-                detail: 10, metric: 1, footer: Infinity,
+                detail: 10,
             }
             const CASCADE_NEXT: Record<Placement, Placement> = {
                 title: 'subtitle', subtitle: 'detail', header: 'detail',
-                detail: 'metric', metric: 'footer', footer: 'footer',
+                detail: 'detail',
             }
-            for (const zone of ['title', 'subtitle', 'header', 'detail', 'metric'] as const) {
+            for (const zone of ['title', 'subtitle', 'header', 'detail'] as const) {
                 const inZone = fields.filter(f => f.placement === zone)
                 if (inZone.length <= CAP[zone]) continue
                 const overflow = inZone.slice(CAP[zone])
@@ -961,23 +1004,23 @@ export function createEntityFields<T>(): (
             // Priority 2: meta.title.field
             if (meta?.title?.field) {
                 const def = Object.values(defs).find(d => d.key === meta.title!.field)
-                if (def) return renderCell(def, entity)
+                if (def) return renderCell(def, entity, { weight: 'bold' })
                 // Fallback: raw value from entity
                 const raw = entity[meta.title.field as keyof T]
                 if (raw != null) return String(raw)
             }
             // Priority 3: field with placement:'title' (backwards compat)
             const cardTitleField = Object.values(defs).find(d => d.placement === 'title')
-            if (cardTitleField) return renderCell(cardTitleField, entity)
+            if (cardTitleField) return renderCell(cardTitleField, entity, { weight: 'bold' })
             // Priority 4: first identifier field
             const identifier = Object.values(defs).find(d => {
                 const role = d.fieldRole ?? TYPE_TO_ROLE[d.type]
                 return role === 'identifier'
             })
-            if (identifier) return renderCell(identifier, entity)
+            if (identifier) return renderCell(identifier, entity, { weight: 'bold' })
             // Priority 5: first field
             const first = Object.values(defs)[0]
-            if (first) return renderCell(first, entity)
+            if (first) return renderCell(first, entity, { weight: 'bold' })
             return '---'
         },
 

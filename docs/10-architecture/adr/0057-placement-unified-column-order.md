@@ -10,6 +10,10 @@ Aceptado — **§toColumns extendido por ADR-0059** (subtitle/header intra-zone 
 > primary-value → explícito) y `headerPriorityIndex` (complex → total/salary → primary-value →
 > flow → tag). La jerarquía de zonas de este ADR no cambia.
 
+> **Enmendado por ADR-0067:** la jerarquía de zonas cambia — la zona `header` pasa al
+> índice 3 (última, antes de la columna de acciones) y las zonas `metric` / `footer` se
+> eliminan (cero productores). Ver ADR-0067.
+
 ## Contexto
 
 Históricamente existían dos sistemas de ordenación independientes en `entity-fields.tsx`:
@@ -43,14 +47,14 @@ Dentro de la misma zona, los campos mantienen su **orden de definición** (inser
 
 ### Jerarquía de orden (izquierda → derecha)
 
+*Actualizada por ADR-0067: `header` al final, `metric`/`footer` eliminadas.*
+
 | ZONE_ORDER | Placement | Descripción |
 |------------|-----------|-------------|
 | 0 | `title` | Campo identificador principal |
 | 1 | `subtitle` | Nombre / etiqueta principal |
-| 2 | `header` | Badges, valores KPI, estados |
-| 3 | `detail` | Campos descriptivos (default) |
-| 4 | `metric` | Progreso, métricas |
-| 5 | `footer` | Resumen |
+| 2 | `detail` | Campos descriptivos (default) |
+| 3 | `header` | Badges, valores KPI, estados — KPIs distintivos antes de acciones |
 
 ### Resolución de placement para `toColumns()`
 
