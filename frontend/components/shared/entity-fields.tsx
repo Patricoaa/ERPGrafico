@@ -3,8 +3,8 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { cn, translateStatus } from "@/lib/utils"
 import { DataCell } from "./DataTableCells"
 import type { DataCellIntent, DataCellSize, DataCellWeight } from "./DataTableCells"
-import { Chip } from "./Chip"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
+import type { CategoryDomain } from "@/lib/badge-resolvers"
 import type { LucideIcon } from "lucide-react"
 export type { SubtitleItem } from "@/lib/entity-registry"
 import type { SubtitleItem } from "@/lib/entity-registry"
@@ -31,7 +31,6 @@ type FieldSurface = "table" | "card" | "kanban"
 
 type ChipIntent = "neutral" | "primary" | "success" | "warning" | "destructive" | "info"
 type FlowDirection = "inflow" | "outflow" | "neutral"
-type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method'
 
 // ─── Placement System ─────────────────────────────────────────────────────────
 
@@ -469,14 +468,9 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
             )
         }
         case "chip-category": {
-            const domainValue = (typeof def.domain === "function" ? def.domain(entity) : def.domain) as CategoryDomain
-            const values = (Array.isArray(value) ? value : value ? [value] : []) as string[]
+            const domainValue = typeof def.domain === "function" ? def.domain(entity) : def.domain
             return (
-                <div className={cn("flex gap-1 flex-wrap", resolvedClassName)}>
-                    {values.map((v, i) => (
-                        <Chip.Category key={i} domain={domainValue} value={v} size="sm" />
-                    ))}
-                </div>
+                <DataCell.Category value={value as string | string[]} domain={domainValue} className={resolvedClassName} />
             )
         }
 

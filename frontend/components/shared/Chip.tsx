@@ -2,7 +2,7 @@
 
 import { type LucideIcon } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
-import type { BadgeIntent } from '@/lib/badge-resolvers'
+import type { BadgeIntent, CategoryDomain } from '@/lib/badge-resolvers'
 import { Badge } from '@/components/shared'
 import { resolveCategory } from '@/lib/badge-resolvers'
 
@@ -45,7 +45,7 @@ Chip.Category = function ChipCategory({
     size = 'sm',
     className
 }: {
-    domain: 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method'
+    domain: CategoryDomain
     value: string
     size?: 'xs' | 'sm' | 'md'
     className?: string

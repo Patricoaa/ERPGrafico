@@ -8,6 +8,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import { MoneyDisplay, WEIGHT_MAP, type DataCellWeight } from "./MoneyDisplay"
 
 export type { DataCellWeight } from "./MoneyDisplay"
+import type { CategoryDomain } from "@/lib/badge-resolvers"
 import { StatusBadge } from "./StatusBadge"
 import { EntityBadge } from "./EntityBadge"
 import { Chip as ChipComponent } from "./Chip"
@@ -381,6 +382,23 @@ export const DataCell = {
             <ChipComponent intent={intent} size={size} icon={icon} appearance="ghost">{children}</ChipComponent>
         </div>
     ),
+
+    /** One or more domain-resolved category chips (wraps shared Chip.Category). Empty renders the unified null dash. */
+    Category: ({ value, domain, size = "sm", className, ...props }: { value: string | string[] | null | undefined, domain?: CategoryDomain, size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => {
+        const values = (Array.isArray(value) ? value : value ? [value] : []) as string[]
+        if (values.length === 0 || !domain) {
+            return (
+                <div className={cn("flex justify-center items-center w-full text-xs font-medium text-muted-foreground/50", className)} {...props}>-</div>
+            )
+        }
+        return (
+            <div className={cn("flex justify-center items-center flex-wrap gap-1 w-full", className)} {...props}>
+                {values.map((v, i) => (
+                    <ChipComponent.Category key={`${v}-${i}`} domain={domain} value={v} size={size} />
+                ))}
+            </div>
+        )
+    },
 
     /** Icon with optional tooltip (wrapper needed in parent for tooltip provider usually, but here just the icon structure) */
     Icon: ({ icon: Icon, className, color, ...props }: { icon: LucideIcon, className?: string, color?: string } & HTMLAttributes<HTMLDivElement>) => (
