@@ -45,9 +45,7 @@ export function ContactCardGrid({ selectedId, onSelect, placeholder = "Buscar co
             />
 
             {loading ? (
-                <div className={cn("grid gap-3", gridCols)}>
-                    <CardSkeleton variant="compact" count={6} />
-                </div>
+                <CardSkeleton variant="contact-card" count={6} gridClassName={gridCols} />
             ) : contacts.length === 0 ? (
                 <EmptyState
                     context="search"
