@@ -37,6 +37,10 @@ const definesVar = (haystack: string, token: string) =>
 const definesColor = (token: string) => definesVar(css, `color-${token}`);
 
 const INTENTS = ['primary', 'info', 'success', 'warning', 'destructive', 'neutral'] as const;
+// Layer 1 categorical intents (ADR-0064) — allowed only for categorical chips,
+// they map to process inks (--color-cyan etc.) and have NO -foreground token.
+const CATEGORY_INTENTS = ['cyan', 'magenta', 'yellow', 'black'] as const;
+const KNOWN_BADGE_INTENTS = [...INTENTS, ...CATEGORY_INTENTS];
 const DOMAIN = ['income', 'expense', 'asset', 'liability'] as const;
 // Layer 1 = fixed inks + overprints: must NOT be re-declared in `.dark`.
 const LAYER1 = ['cyan', 'magenta', 'yellow', 'black', 'red', 'green', 'blue', 'pantone-orange', 'pantone-violet'] as const;
@@ -99,6 +103,14 @@ describe('color-system contract', () => {
     }
   });
 
+  it('Layer 1 categorical intents map to process-ink tokens (no foreground)', () => {
+    for (const ink of CATEGORY_INTENTS) {
+      expect(definesColor(ink), `--color-${ink}`).toBe(true);
+      expect(definesColor(`${ink}-foreground`), `${ink} has no foreground token`).toBe(false);
+      expect(definesVar(darkBlock, `${ink}-raw`), `${ink}-raw must NOT appear in .dark`).toBe(false);
+    }
+  });
+
   it('exposes a 6-color data-viz palette (--chart-1..6)', () => {
     for (let i = 1; i <= 6; i++) {
       expect(definesVar(rootBlock, `chart-${i}`), `--chart-${i}`).toBe(true);
@@ -106,7 +118,7 @@ describe('color-system contract', () => {
   });
 
   it('STATUS_MAP only emits known BadgeIntent values', () => {
-    const allowed = new Set(INTENTS as readonly string[]);
+    const allowed = new Set(KNOWN_BADGE_INTENTS as readonly string[]);
     const intents = [...resolvers.matchAll(/intent:\s*'([^']+)'/g)].map((m) => m[1]);
     expect(intents.length).toBeGreaterThan(0);
     for (const intent of intents) {

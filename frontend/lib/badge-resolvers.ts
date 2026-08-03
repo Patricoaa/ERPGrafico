@@ -21,6 +21,10 @@ export type BadgeIntent =
     | 'warning'
     | 'destructive'
     | 'primary'
+    | 'cyan'
+    | 'magenta'
+    | 'yellow'
+    | 'black'
 
 // ─── Status resolver ──────────────────────────────────────────────────────────
 
@@ -251,11 +255,13 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
         // Fallback for strings from backend
     },
     payment_method: {
-        'CASH':          { intent: 'success', label: 'Efectivo', icon: 'Banknote' },
-        'CARD':          { intent: 'info', label: 'Tarjeta', icon: 'CreditCard' },
-        'CARD_TERMINAL': { intent: 'info', label: 'Terminal', icon: 'Smartphone' },
-        'TRANSFER':      { intent: 'primary', label: 'Transferencia', icon: 'Landmark' },
-        'CHECK':         { intent: 'warning', label: 'Cheque', icon: 'FileCheck' },
+        'CASH':          { intent: 'cyan', label: 'Efectivo', icon: 'Banknote' },
+        'CARD':          { intent: 'magenta', label: 'Tarjeta', icon: 'CreditCard' },
+        'CARD_TERMINAL': { intent: 'magenta', label: 'Terminal', icon: 'Smartphone' },
+        'DEBIT_CARD':    { intent: 'magenta', label: 'Débito', icon: 'CreditCard' },
+        'CREDIT_CARD':   { intent: 'magenta', label: 'Crédito', icon: 'CreditCard' },
+        'TRANSFER':      { intent: 'yellow', label: 'Transferencia', icon: 'Landmark' },
+        'CHECK':         { intent: 'black', label: 'Cheque', icon: 'FileCheck' },
         'OTHER':         { intent: 'neutral', label: 'Otro', icon: 'MoreHorizontal' },
     }
 }

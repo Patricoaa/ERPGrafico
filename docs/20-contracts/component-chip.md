@@ -47,7 +47,8 @@ import { Chip } from "@/components/shared"
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | See size matrix below |
-| `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary'` | ❌ | `'neutral'` | Maps to semantic color tokens |
+| `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary' \| 'cyan' \| 'magenta' \| 'yellow' \| 'black'` | ❌ | `'neutral'` | Maps to semantic tokens (Layer 2) or, for categorical chips, the fixed process inks `cyan`/`magenta`/`yellow`/`black` (Layer 1, ADR-0064) |
+| `appearance` | `'solid' \| 'ghost'` | ❌ | `'solid'` | `ghost` removes the background tint (keeps border + intent text). Never changes typography. Used by `DataCell.Chip` / `DataCell.Status` (ADR-0065) |
 | `icon` | `LucideIcon` | ❌ | — | Rendered at 10–11px, same color as text |
 | `className` | `string` | ❌ | — | **Layout/position only.** Never override typography or color here. |
 | `children` | `ReactNode` | ✅ | — | Label text |
@@ -76,6 +77,27 @@ import { Chip } from "@/components/shared"
 | `warning` | `bg-warning/10` | `text-warning` | `border-warning/20` |
 | `destructive` | `bg-destructive/10` | `text-destructive` | `border-destructive/20` |
 | `primary` | `bg-primary/10` | `text-primary` | `border-primary/20` |
+
+### Layer 1 categorical intents (ADR-0064)
+
+For categorical chips only (`Chip.Category`, field type `chip-category`) — never for workflow state. Fixed process inks, no dark-mode override:
+
+| `intent` | Background | Text | Border |
+|----------|-----------|------|--------|
+| `cyan` | `bg-cyan/10` | `text-cyan` | `border-cyan/20` |
+| `magenta` | `bg-magenta/10` | `text-magenta` | `border-magenta/20` |
+| `yellow` | `bg-yellow/10` | `text-yellow` | `border-yellow/20` |
+| `black` | `bg-black/10` | `text-black` | `border-black/20` |
+
+Domain mapping: `payment_method` → CASH=`cyan`, CARD/CARD_TERMINAL/DEBIT_CARD/CREDIT_CARD=`magenta`, TRANSFER=`yellow`, CHECK=`black`, OTHER=`neutral` (`color-system.md §4.5`).
+
+---
+
+## Appearance (`ghost`)
+
+`appearance="ghost"` renders the chip without its background tint — it keeps the intent border and text color, and removes **only** the background. It never changes typography: `font-mono font-black uppercase` applies to both `solid` and `ghost`.
+
+**Dense-table exception (ADR-0065):** `DataCell.Chip` and `DataCell.Status` render ghost pills with `tracking-tight` (instead of the default `tracking-widest`) so long labels don't overflow small table cells. This is the only place the tracking may diverge from the invariant — do not use `tracking-tight` elsewhere. `StatusBadge` uses `tracking-tight` by design (see typography alignment below).
 
 ---
 
@@ -177,5 +199,5 @@ Do **not** use `Chip` for workflow states (order status, payment status, work or
 <Chip intent="success">POSTED</Chip>  // This is a status → use StatusBadge
 
 // ✅ Correct
-<StatusBadge variant="invoice" status="POSTED" />
+<StatusBadge status="POSTED" variant="badge" />
 ```

@@ -48,6 +48,12 @@ const badgeVariants = cva(
                 warning:     'bg-warning/10 text-warning border-warning/20',
                 destructive: 'bg-destructive/10 text-destructive border-destructive/20',
                 primary:     'bg-primary/10 text-primary border-primary/20',
+                /* Layer 1 categorical intents (ADR-0064) — fixed process inks,
+                   only for categorical chips (e.g. payment_method), never for state. */
+                cyan:        'bg-cyan/10 text-cyan border-cyan/20',
+                magenta:     'bg-magenta/10 text-magenta border-magenta/20',
+                yellow:      'bg-yellow/10 text-yellow border-yellow/20',
+                black:       'bg-black/10 text-black border-black/20',
             },
 
             /**
@@ -183,6 +189,10 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
         warning:     'bg-warning',
         destructive: 'bg-destructive',
         primary:     'bg-primary',
+        cyan:        'bg-cyan',
+        magenta:     'bg-magenta',
+        yellow:      'bg-yellow',
+        black:       'bg-black',
     }
 
     return (
@@ -213,6 +223,10 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
         warning:     'text-warning bg-warning/10 border-warning/20',
         destructive: 'text-destructive bg-destructive/10 border-destructive/20',
         primary:     'text-primary bg-primary/10 border-primary/20',
+        cyan:        'text-cyan bg-cyan/10 border-cyan/20',
+        magenta:     'text-magenta bg-magenta/10 border-magenta/20',
+        yellow:      'text-yellow bg-yellow/10 border-yellow/20',
+        black:       'text-black bg-black/10 border-black/20',
     }
 
     const ringColor: Record<string, string> = {
@@ -222,6 +236,10 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
         warning:     'text-warning',
         destructive: 'text-destructive',
         primary:     'text-primary',
+        cyan:        'text-cyan',
+        magenta:     'text-magenta',
+        yellow:      'text-yellow',
+        black:       'text-black',
     }
 
     const hasProgress = progress !== undefined
