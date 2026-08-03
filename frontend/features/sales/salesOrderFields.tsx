@@ -20,13 +20,14 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
     },
     /**
      * domainStatus — Declarative DomainHubStatus field.
-     * type: 'complex' ensures:
+     * `fieldRole: 'complex'` ensures:
      *   - Card view: auto-placed in header with highest priority (complex > primary-value > flow > tag)
      *   - Table view: rendered as a column via toColumns() — no manual column needed in the view
      */
     domainStatus: {
         key: "status",
-        type: "complex",
+        type: "computed",
+        fieldRole: "complex",
         label: "Estado",
         render: (order) => (
             <DomainHubStatus
@@ -47,7 +48,8 @@ export const salesOrderFields = createEntityFields<SaleOrder>()({
     },
     workflow: {
         key: "workflow",
-        type: "complex",
+        type: "computed",
+        fieldRole: "complex",
         label: "Resumen",
         surfaces: ["table"],
         render: (order) => {

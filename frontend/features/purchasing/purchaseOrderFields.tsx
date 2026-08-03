@@ -25,7 +25,8 @@ export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
     },
     domainStatus: {
         key: "status",
-        type: "complex",
+        type: "computed",
+        fieldRole: "complex",
         label: "Estado",
         render: (order) => (
             <DomainHubStatus
@@ -41,7 +42,8 @@ export const purchaseOrderFields = createEntityFields<PurchaseOrderAPI>()({
     },
     workflow: {
         key: "workflow",
-        type: "complex",
+        type: "computed",
+        fieldRole: "complex",
         label: "Resumen",
         surfaces: ["table"],
         render: (order) => {

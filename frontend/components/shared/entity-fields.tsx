@@ -22,18 +22,10 @@ type FieldType =
     | "secondary"
     | "contact"
     | "chip"
-    | "icon"
-    | "progress"
-    | "numericFlow"
+    | "chip-category"
     | "currencyFlow"
     | "sourceDest"
-    | "chip-category"
     | "computed"
-    /**
-     * `complex` — Rich, multi-dimensional cell (e.g. source→dest routes, domain hub statuses).
-     * Always promoted to the header zone. Use `render` callback to produce the ReactNode.
-     */
-    | "complex"
 
 type FieldSurface = "table" | "card" | "kanban"
 
@@ -104,14 +96,10 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
     'secondary':     'supplementary',
     'contact':       'relation',
     'chip':          'tag',
-    'icon':          'tag',
-    'progress':      'progress',
-    'numericFlow':   'flow',
     'currencyFlow':  'flow',
     'sourceDest':    'complex',        // Rich route display → always header
     'chip-category': 'tag',
     'computed':      'descriptive',
-    'complex':       'complex',        // Explicit rich-cell type → always header
 }
 
 /**
@@ -232,9 +220,6 @@ type FieldDef<T> = SharedFieldDef<T> & (
         chipIcon?: LucideIcon | ((entity: T) => LucideIcon)
     }
     | { type: 'chip-category'; domain?: CategoryDomain | ((entity: T) => CategoryDomain) }
-    | { type: 'icon'; icon?: LucideIcon }
-    | { type: 'progress' }
-    | { type: 'numericFlow' }
 
     // ── Flow ─────────────────────────────────────────────────────────────────
     | {
@@ -245,9 +230,10 @@ type FieldDef<T> = SharedFieldDef<T> & (
     }
     | { type: 'sourceDest' }
 
-    // ── Custom renderers ─────────────────────────────────────────────────────
+    // ── Custom renderer ──────────────────────────────────────────────────────
+    // `computed` is the sole escape hatch. `fieldRole: 'complex'` reproduces the
+    // legacy always-header rich-cell routing (see headerPriorityIndex).
     | { type: 'computed'; render: (entity: T) => ReactNode }
-    | { type: 'complex'; render: (entity: T) => ReactNode }
 )
 
 // ─── Card Metadata (Title / Subtitle) ────────────────────────────────────────
@@ -366,9 +352,8 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
 
     switch (def.type) {
         case "computed":
-        case "complex":
-            // Both delegate to the render callback.
-            // 'complex' fields are additionally routed to the header zone by the placement engine.
+            // Sole escape hatch — arbitrary ReactNode via `render`.
+            // `fieldRole: 'complex'` routes to the header zone (headerPriorityIndex).
             return def.render ? def.render(entity) : null
 
         case "text": {
@@ -494,15 +479,6 @@ function renderCell<T>(def: FieldDef<T>, entity: T): ReactNode {
                 </div>
             )
         }
-
-        case "icon": {
-            const icon = def.icon
-            return icon ? <DataCell.Icon icon={icon} className={resolvedClassName} /> : null
-        }
-        case "progress":
-            return <DataCell.Progress value={value as number} className={resolvedClassName} />
-        case "numericFlow":
-            return <DataCell.NumericFlow value={value as number | string} className={resolvedClassName} />
 
         case "currencyFlow": {
             const directionValue = typeof def.direction === "function" ? def.direction(entity) : def.direction

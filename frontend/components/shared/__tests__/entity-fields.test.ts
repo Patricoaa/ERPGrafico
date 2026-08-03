@@ -537,8 +537,6 @@ describe("createEntityFields", () => {
             f_number: { key: "number", type: "number", label: "Number" },
             f_secondary: { key: "secondary", type: "secondary", label: "Secondary" },
             f_chip: { key: "chip", type: "chip", label: "Chip" },
-            f_progress: { key: "progress", type: "progress", label: "Progress" },
-            f_numericFlow: { key: "numericFlow", type: "numericFlow", label: "NumericFlow" },
             f_currencyFlow: { key: "currencyFlow", type: "currencyFlow", label: "CurrencyFlow" },
         })
 
@@ -551,19 +549,17 @@ describe("createEntityFields", () => {
             number: 42,
             secondary: "secondary text",
             chip: "label",
-            progress: 75,
-            numericFlow: -10,
             currencyFlow: 1000,
         }
 
         it("generates columns for all types", () => {
             const columns = allTypeFields.toColumns()
-            expect(columns).toHaveLength(11)
+            expect(columns).toHaveLength(9)
         })
 
         it("generates card fields for all types", () => {
             const fields = allTypeFields.toCardFields(entity as never)
-            expect(fields).toHaveLength(11)
+            expect(fields).toHaveLength(9)
             fields.forEach((f) => {
                 expect(f.key).toBeTruthy()
                 expect(f.label).toBeTruthy()
@@ -573,7 +569,7 @@ describe("createEntityFields", () => {
 
         it("generates kanban fields for all types", () => {
             const fields = allTypeFields.toKanbanFields(entity as never)
-            expect(fields).toHaveLength(11)
+            expect(fields).toHaveLength(9)
         })
     })
 })
