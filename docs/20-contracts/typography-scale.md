@@ -58,8 +58,8 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N2 — Etiqueta de campo** | LabeledInput legend | `text-[10px] font-black` | `tracking-[0.15em]` | `uppercase` | "Nombre / Razón Social" |
 | **N2 — Botón acción** | SubmitButton, CancelButton | `text-[10px] font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
 | **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
-| **N2 — Badge/Chip** | Chip, EntityBadge | `text-[9-12px] font-black font-mono` | `tracking-widest` | `uppercase` | "Pagado", "Pendiente" |
-| **N2 — StatusBadge** | StatusBadge (pill/badge) | `text-[9-12px] font-black font-mono` | `tracking-tight` | `uppercase` | "En Proceso", "Sin Conciliar" |
+| **N2 — Badge/Chip** | Chip, EntityBadge | `text-xs font-medium font-sans` | `normal` | normal | "Pagado", "Pendiente" |
+| **N2 — StatusBadge** | StatusBadge (badge) | `text-xs font-medium font-sans` | `normal` | normal | "En Proceso", "Sin Conciliar" |
 | **N2 — Drawer/Modal title** | SheetTitle, DialogTitle | `text-xl font-black` | `tracking-tight` | normal | "Nuevo Contacto" |
 | **N2 — Drawer subtitle** | description prop | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Ficha Maestra • CRM" |
 | **N2 — Wizard step** | GenericWizard step indicator | `text-[10px] font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
@@ -105,11 +105,13 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 
 | Tamaño | Clase | Cuándo usar | Componente |
 |--------|-------|-------------|------------|
-| **Estándar** | `text-[10px] font-black uppercase tracking-widest` | Badge/chip genérico de UI chrome | `<Chip size="sm">` |
-| **Compacto** | `text-[9px] font-black uppercase tracking-widest` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
-| **Énfasis** | `text-[11px] font-black uppercase tracking-widest` | Detail views, modal sections | `<Chip size="md">` |
+| **Estándar** | `text-xs font-medium font-sans` | Badge/chip genérico de UI chrome | `<Chip size="sm">` |
+| **Compacto** | `text-[9px] font-medium` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
+| **Énfasis** | `text-xs font-medium` | Detail views, modal sections | `<Chip size="md">` |
 | **Header de tabla** | `text-[10px] font-black uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
 | **Fine print excepción** | `text-[9px] font-medium` | Timestamps, conteos mínimos sin pill | Inline `<span>` |
+
+Todos los badges son **borderless + `rounded-sm`** (CurrencyFlow aesthetic, ADR-0068).
 
 > **PROHIBIDO:** `text-[8px]` en features. Excepciones documentadas: `PrintableReceipt.tsx` (papel físico), POS `CartItem`/`POSCheckoutHeader` (espacio táctil crítico), `AvatarFallback` (imagen).
 
@@ -119,7 +121,7 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 |-------------|--------|------|-----|
 | `xs` | `h-[18px]` | `text-[9px]` | Table cells, dense lists, overlaid counters |
 | `sm` (default) | `h-[22px]` | `text-[10px]` | General UI chrome, wizard steps |
-| `md` | `h-[26px]` | `text-[11px]` | Detail panels, modal sub-headers |
+| `md` | auto | `text-xs` (`px-2 py-0.5`) | Detail panels, modal sub-headers |
 
 ### StatusBadge — matriz de tamaños
 
@@ -127,9 +129,9 @@ El componente `<StatusBadge>` tiene su propio sistema de tamaños intencional:
 
 | Prop `size` | Altura | Font | Uso |
 |-------------|--------|------|-----|
-| `sm` (default) | `h-6` | `text-[12px]` | Tablas, listas densas |
-| `md` | `h-8` | `text-[14px]` | Modales, panels de detalle |
-| `lg` | `h-10` | `text-base` | Pantallas de detalle full |
+| `xs` | `h-[18px]` | `text-[9px]` | Tablas, listas densas |
+| `sm` | `h-[22px]` | `text-[10px]` | Tablas, listas densas |
+| `md` (default) | auto | `text-xs` | Modales, panels de detalle |
 
 ---
 

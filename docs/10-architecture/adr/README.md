@@ -130,5 +130,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0065](0065-datacell-status-ghost-pill-unification.md) | DataCell.Status ghost pill unification (dead variant + ghost typography invariant) | Proposed |
 | [0066](0066-entity-fields-discriminated-union.md) | Entity Fields — discriminated-union FieldDef + total type→cell registry | Accepted |
 | [0067](0067-entity-fields-placement-surface-and-weight.md) | Entity Fields — placement surface, header-last list order, zone-driven font-weight, numericFlow reintroduced | Accepted |
+| [0068](0068-badge-currencyflow-default.md) | Badge default adopts the CurrencyFlow aesthetic (font-sans text-xs font-medium, borderless rounded-sm); supersedes ghost-pill table cells | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

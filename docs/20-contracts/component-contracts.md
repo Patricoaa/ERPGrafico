@@ -82,25 +82,25 @@ Single authorized component for **non-status, non-entity-ID** informational labe
 | `icon` | `LucideIcon` | ❌ | — | Same color as text |
 | `className` | `string` | ❌ | — | Layout/position only — never override typography |
 
-Typography invariant: `font-mono font-black uppercase tracking-widest`. Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
+Typography invariant: `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068). Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
 
 ---
 
 ## StatusBadge 🟢
 
-Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`. Only authorized status renderer (GOVERNANCE §18). **In DataTable cells render via `DataCell.Status` (canonical ghost pill, ADR-0065).** Typography invariant: `font-mono font-black uppercase tracking-tight`.
+Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`. Only authorized status renderer (GOVERNANCE §18). **In DataTable cells render via `DataCell.Status` (tinted badge, ADR-0068).** Typography invariant: `font-sans font-medium text-xs`, borderless, `rounded-sm`.
 
 ```tsx
 <StatusBadge status="IN_PROGRESS" />
 <StatusBadge status="PAID" variant="badge" />
-<DataCell.Status status={row.status} />   // table cells — ghost pill
+<DataCell.Status status={row.status} />   // table cells — tinted badge
 ```
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `status` | `string` | ✅ | — | Business token, case-insensitive; resolved via `resolveStatus()` / `STATUS_MAP` |
 | `label` | `string` | ❌ | — | Overrides the resolved label |
-| `variant` | `'default' \| 'dot' \| 'badge' \| 'hub'` | ❌ | `'default'` | `default`/`dot` = compact dot+text (cards, kanban); `badge` = pill+dot (drawers, detail); `hub` = circular icon |
+| `variant` | `'default' \| 'dot' \| 'badge' \| 'hub'` | ❌ | `'default'` | `default`/`dot` = compact dot+text (cards, kanban); `badge` = square tinted badge + dot (drawers, detail); `hub` = circular icon |
 | `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | ❌ | `'md'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
 | `className` | `string` | ❌ | — | Layout/position only — never typography or colors |
 
@@ -254,7 +254,7 @@ Barra de progreso para métricas de completitud (% de entrega, avance de OT, sto
 
 `value >= max` → barra completa en `bg-success` con glow. `value < max` → `bg-primary`. Valor clamped a `[0, 100]%`.
 
-### DataCell.Category (ADR-0066)
+### DataCell.Category (ADR-0068)
 
 Uno o varios chips resueltos por dominio (wraps `Chip.Category` → `resolveCategory`). Contenedor `flex-wrap` centrado. Valores vacíos / sin dominio → guion de datos faltantes (política null unificada).
 

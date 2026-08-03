@@ -5,7 +5,7 @@
  *
  * Two presentation modes:
  *   - "default" / "dot" → compact dot + text (DataTable, card lists)
- *   - "badge"            → pill badge with dot indicator (Modal, Drawer, detail views)
+ *   - "badge"            → square tinted badge with dot indicator (Modal, Drawer, detail views)
  *   - "hub"              → circular icon badge (workflow dashboards, preserved)
  *
  * Rule (GOVERNANCE §18): StatusBadge is the ONLY authorized status renderer.
@@ -13,7 +13,7 @@
  *
  * @example
  * <StatusBadge status="PAID" />                                   // dot + text
- * <StatusBadge status="PAID" variant="badge" />                   // pill + dot
+ * <StatusBadge status="PAID" variant="badge" />                   // square badge + dot
  * <StatusBadge status="IN_PROGRESS" variant="hub" icon={Activity} tooltip="En Proceso" />
  */
 
@@ -98,7 +98,7 @@ export function StatusBadge({
 
     if (variant === 'badge') {
         return (
-            <Badge intent={intent} size={size} tracking="tight" appearance={appearance} className={className}>
+            <Badge intent={intent} size={size} appearance={appearance} className={className}>
                 <span className="inline-flex items-center gap-1.5">
                     <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', DOT_COLORS[intent])} />
                     {displayLabel}

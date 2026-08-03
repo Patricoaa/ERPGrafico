@@ -67,6 +67,10 @@ Documentation also drifted: `component-contracts.md` §StatusBadge documents a n
 - **Solid pills in tables:** rejected — heavier visual weight in dense rows; the solid pill stays for drawers/detail views where it already is.
 - **Normalize flow cells (CurrencyFlow/NumericFlow) to chips:** rejected — ADR-0060 already documents the square tinted badge as intentional.
 
+## Amendment (ADR-0068)
+
+[ADR-0068](./0068-badge-currencyflow-default.md) supersedes decisions **1** (ghost pill as canonical table presentation) and **5** (ghost `tracking-tight` dense-table exception): `DataCell.Status` / `DataCell.Chip` now render the standard **solid tinted badge** (same recipe as `DataCell.CurrencyFlow`), and the whole badge system defaults to `font-sans font-medium text-xs` borderless `rounded-sm`. The typography-invariant restoration and label-unification decisions of this ADR remain in force.
+
 ## References
 
 - `docs/20-contracts/component-chip.md` — typography invariants, tracking rationale
