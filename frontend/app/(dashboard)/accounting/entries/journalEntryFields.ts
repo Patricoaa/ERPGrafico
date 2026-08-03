@@ -36,7 +36,7 @@ export const journalEntryFields = createEntityFields<JournalEntry>()({
     },
     description: {
         key: "description",
-        type: "text",
+        type: "secondary",
         label: "Descripción",
         className: "truncate max-w-[300px]",
     },

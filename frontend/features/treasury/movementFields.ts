@@ -32,7 +32,7 @@ export const movementFields = createEntityFields<TreasuryMovement>()({
     },
     paymentMethod: {
         key: "payment_method",
-        type: "text",
+        type: "secondary",
         label: "Método",
         get: (m) => m.payment_method_display ?? m.payment_method ?? "",
     },

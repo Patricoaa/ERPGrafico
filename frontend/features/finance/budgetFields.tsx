@@ -27,7 +27,7 @@ export const budgetFields = createEntityFields<Budget>()({
     },
     period: {
         key: "start_date",
-        type: "text",
+        type: "secondary",
         label: "Periodo",
         icon: Calendar,
         get: (e) => `${e.start_date} - ${e.end_date}`,

@@ -63,7 +63,7 @@ export const partnerLedgerFields = createEntityFields<PartnerLedgerRow>()({
     },
     transactionType: {
         key: "transaction_type",
-        type: "text",
+        type: "secondary",
         label: "Tipo",
         placement: "detail",
         get: (tx) => tx.transaction_type_display,
