@@ -880,7 +880,7 @@ export function createEntityFields<T>(): (
                         cell: ({ row }) => {
                             const zone = resolvedPlacements.get(def.key)
                             return renderCell(def, row.original, {
-                                weight: zone === 'title' || zone === 'header' ? 'bold' : undefined,
+                                weight: zone === 'header' ? 'semibold' : undefined,
                             })
                         },
                         meta: { title: headerLabel },
@@ -939,7 +939,7 @@ export function createEntityFields<T>(): (
                         key: def.key,
                         label: def.label,
                         value: renderCell(def, entity, {
-                            weight: resolvedPlacement === 'title' || resolvedPlacement === 'header' ? 'bold' : undefined,
+                            weight: resolvedPlacement === 'header' ? 'semibold' : undefined,
                         }),
                         placement: resolvedPlacement,
                         fieldRole: role,
