@@ -25,7 +25,8 @@ export const salesInvoiceFields = createEntityFields<Invoice>()({
     },
     domainStatus: {
         key: "status",
-        type: "complex",
+        type: "computed",
+        fieldRole: "complex",
         label: "Flujo",
         render: (inv) => (
             <DomainHubStatus label="billing.invoice" data={inv} />
