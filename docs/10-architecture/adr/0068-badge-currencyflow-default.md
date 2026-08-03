@@ -1,12 +1,12 @@
 ---
-id: 0066
+id: 0068
 title: CurrencyFlow aesthetic as the default badge style
 status: Proposed
 date: 2026-08-03
 author: core-team
 ---
 
-# 0066 — CurrencyFlow aesthetic as the default badge style
+# 0068 — CurrencyFlow aesthetic as the default badge style
 
 **Related:** ADR-0029 (Color system), ADR-0060 (flow cells tinted badge), ADR-0064 (Layer-1 categorical intents), ADR-0065 (DataCell.Status ghost pill unification), `component-chip.md` (typography invariants), `typography-scale.md` (§N2), `color-system.md` (§3.3), GOVERNANCE §15
 

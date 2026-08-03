@@ -79,6 +79,12 @@ graph TD
     T -->|Reporte jerárquico contable| TE(ReportTable)
 ```
 
+**¿Cómo renderizo un campo de una entidad (text vs secondary, código, fecha, moneda, chip…)?** →
+Declarar el `type` del campo en `*Fields.ts` con `createEntityFields<T>()`. El motor resuelve el
+`DataCell` correcto en las tres superficies. Ver **[component-fields.md](./component-fields.md)**
+(tabla de decisión de `type` y referencia FieldType → renderer). No se instancia `DataCell.*`
+inline en columnas regulares de entidad.
+
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
 - **`SectionHeader`**: **Obligatorio** para títulos de sección dentro de cards y listados. 2 variantes (`card` y `list`). [Ver contrato completo](./component-section-header.md).
 - **`StatCard`**: **Obligatorio** para tarjetas de métrica/resumen con label + valor. 3 variantes (default, compact, minimal), 7 acentos, trend, href, onClick. [Ver contrato completo](./component-statcard.md).
