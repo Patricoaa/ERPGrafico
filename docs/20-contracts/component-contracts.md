@@ -88,19 +88,21 @@ Typography invariant: `font-mono font-black uppercase tracking-widest`. Decision
 
 ## StatusBadge 🟢
 
-Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`.
+Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`. Only authorized status renderer (GOVERNANCE §18). **In DataTable cells render via `DataCell.Status` (canonical ghost pill, ADR-0065).** Typography invariant: `font-mono font-black uppercase tracking-tight`.
 
 ```tsx
 <StatusBadge status="IN_PROGRESS" />
-<StatusBadge status="PAID" variant="dot" />
+<StatusBadge status="PAID" variant="badge" />
+<DataCell.Status status={row.status} />   // table cells — ghost pill
 ```
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
-| `variant` | `'sale-order' \| 'purchase-order' \| 'work-order' \| 'invoice' \| 'payment' \| 'generic'` | ✅ | — | Maps to state-map entity |
-| `status` | entity-specific union (see [state-map](state-map.md)) | ✅ | — | Must be valid for variant |
-| `size` | `'sm' \| 'md' \| 'lg'` | ❌ | `'sm'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
-| `className` | `string` | ❌ | — | Merged via `cn()` |
+| `status` | `string` | ✅ | — | Business token, case-insensitive; resolved via `resolveStatus()` / `STATUS_MAP` |
+| `label` | `string` | ❌ | — | Overrides the resolved label |
+| `variant` | `'default' \| 'dot' \| 'badge' \| 'hub'` | ❌ | `'default'` | `default`/`dot` = compact dot+text (cards, kanban); `badge` = pill+dot (drawers, detail); `hub` = circular icon |
+| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | ❌ | `'md'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
+| `className` | `string` | ❌ | — | Layout/position only — never typography or colors |
 
 States handled: — (pure presentational, no async).
 

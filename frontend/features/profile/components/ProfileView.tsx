@@ -10,7 +10,7 @@ import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollP
 import type { MyProfile } from "@/types/profile"
 import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ActionSlideButton, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
+import { ActionSlideButton, FadeIn, MoneyDisplay } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -472,9 +472,7 @@ function PersonalTab({
             cell: ({ row }) => {
                 const s = row.original.remuneration_paid_status
                 return (
-                    <div className="flex justify-center">
-                        <StatusBadge status={s || "PENDING"} />
-                    </div>
+                    <DataCell.Status status={s || "PENDING"} />
                 )
             },
             meta: { title: "Pago" },
@@ -505,9 +503,7 @@ function PersonalTab({
             cell: ({ row }) => {
                 const s = row.original.statusKey
                 return (
-                    <div className="flex justify-center">
-                        <StatusBadge status={s} size="xs" />
-                    </div>
+                    <DataCell.Status status={s} size="xs" />
                 )
             }
         }

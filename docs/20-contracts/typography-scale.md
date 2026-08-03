@@ -58,7 +58,8 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N2 — Etiqueta de campo** | LabeledInput legend | `text-[10px] font-black` | `tracking-[0.15em]` | `uppercase` | "Nombre / Razón Social" |
 | **N2 — Botón acción** | SubmitButton, CancelButton | `text-[10px] font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
 | **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
-| **N2 — Badge/Chip** | Chip, StatusBadge, EntityBadge | `text-[9-12px] font-black font-mono` | `tracking-widest` | `uppercase` | "Pagado", "Pendiente" |
+| **N2 — Badge/Chip** | Chip, EntityBadge | `text-[9-12px] font-black font-mono` | `tracking-widest` | `uppercase` | "Pagado", "Pendiente" |
+| **N2 — StatusBadge** | StatusBadge (pill/badge) | `text-[9-12px] font-black font-mono` | `tracking-tight` | `uppercase` | "En Proceso", "Sin Conciliar" |
 | **N2 — Drawer/Modal title** | SheetTitle, DialogTitle | `text-xl font-black` | `tracking-tight` | normal | "Nuevo Contacto" |
 | **N2 — Drawer subtitle** | description prop | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Ficha Maestra • CRM" |
 | **N2 — Wizard step** | GenericWizard step indicator | `text-[10px] font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |

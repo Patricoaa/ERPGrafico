@@ -94,7 +94,7 @@ const badgeVariants = cva(
              */
             appearance: {
                 solid: '',
-                ghost: 'bg-transparent font-semibold',
+                ghost: 'bg-transparent',
             },
         },
         defaultVariants: {

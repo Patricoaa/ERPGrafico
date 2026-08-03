@@ -6,7 +6,7 @@ import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { BaseModal, DataTable, LabeledContainer, SearchablePopover, StatusBadge } from '@/components/shared'
+import { BaseModal, DataTable, LabeledContainer, SearchablePopover, DataCell } from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
 import { type Account } from "@/types/entities"
@@ -47,7 +47,7 @@ const accountColumns: ColumnDef<Account, unknown>[] = [
         id: 'type',
         header: 'Tipo',
         cell: ({ row }) => (
-            <StatusBadge status={row.original.account_type} size="xs" />
+            <DataCell.Status status={row.original.account_type} size="xs" />
         ),
     },
 ]

@@ -338,7 +338,7 @@ export function InventoryCountClientView() {
                 return (
                     <div className="flex justify-center w-full">
                         {diffCount > 0 ? (
-                            <StatusBadge status="WARNING" label={`${diffCount} diferencias`} />
+                            <DataCell.Status status="WARNING" label={`${diffCount} diferencias`} />
                         ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                         )}
