@@ -576,11 +576,6 @@
     border-radius: inherit;
     padding: 2px;
     background: conic-gradient(
-      var(--color-cyan) 0 33%,
-      var(--color-magenta) 33% 66%,
-      var(--color-yellow) 66% 100%
-    );
-    background: conic-gradient(
       from var(--border-angle),
       var(--color-cyan) 0%,
       var(--color-magenta) 33%,
@@ -628,11 +623,6 @@
     border-radius: inherit;
     padding: 2px;
     background: conic-gradient(
-      var(--color-cyan) 0 33%,
-      var(--color-magenta) 33% 66%,
-      var(--color-yellow) 66% 100%
-    );
-    background: conic-gradient(
       from var(--border-angle),
       var(--color-cyan) 0%,
       var(--color-magenta) 33%,
@@ -645,6 +635,26 @@
     mask-composite: exclude;
     animation: spin-border 8s linear infinite;
     pointer-events: none;
+  }
+}
+
+/*
+ * CMY RING FALLBACK — Static conic gradient for browsers without @property
+ * (custom-property animation). In those engines `conic-gradient(from
+ * var(--border-angle), …)` is invalid at computed-value time, so the utility's
+ * animated `background` is dropped and this base-layer rule supplies a static
+ * ring. When @property IS supported the utilities layer wins and the ring
+ * rotates. Kept as a separate @layer base rule so CSS minifiers cannot
+ * deduplicate it away with the utility declaration.
+ */
+@layer base {
+  .card-cmyk-animated-border::after,
+  .card-focus-spin-cmyk::after {
+    background: conic-gradient(
+      var(--color-cyan) 0 33%,
+      var(--color-magenta) 33% 66%,
+      var(--color-yellow) 66% 100%
+    );
   }
 }
 
