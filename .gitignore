@@ -45,3 +45,4 @@ memory/*
 # Scratch
 scratch.tsx
 scratch_rewrite.ts
+.gstack/

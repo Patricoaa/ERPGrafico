@@ -135,7 +135,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                     />
                                 ) : (
                                     <div className="flex flex-col w-min">
-                                        <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
+                                        <h1 className="text-base font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
                                             {config.icon ? (
                                                 <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
                                             ) : config.iconName ? (
@@ -150,12 +150,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 <div className="flex items-center gap-2 shrink-0">
                                     {config.status && (
                                         config.status.type === 'saving' ? (
-                                            <Skeleton className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                                            <Skeleton className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
                                                 {config.status.label}
                                             </Skeleton>
                                         ) : (
                                             <div className={cn(
-                                                "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",
+                                                "px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0",
                                                 config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
                                                 config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
                                                 !config.status.type && "bg-muted text-muted-foreground border-border"
