@@ -13,8 +13,6 @@ import { CONTACTS_KEYS } from './queryKeys'
 export { CONTACTS_KEYS }
 
 export function useContacts({ filters, initialData }: { filters?: ContactFilters, initialData?: Contact[] } = {}) {
-    const queryClient = useQueryClient()
-
     const query = useQuery({
         queryKey: CONTACTS_KEYS.list(filters || {}),
         queryFn: () => contactsApi.getContacts(filters),

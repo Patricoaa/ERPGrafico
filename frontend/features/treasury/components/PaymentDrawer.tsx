@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { type PaymentInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -14,17 +14,15 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { financeApi } from "@/features/finance"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Landmark, Printer, ArrowRightLeft, Hash, Wallet, ClipboardList, CreditCard } from "lucide-react"
+import { Landmark, ArrowRightLeft, Hash, Wallet, ClipboardList, CreditCard } from "lucide-react"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, SkeletonShell, FormSplitLayout, StatusBadge } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useBillingInvoices } from "@/features/finance"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
 import { ActivitySidebar } from "@/features/audit"
 import { usePayment } from "@/features/treasury/hooks/usePayment"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
@@ -74,8 +72,7 @@ export function PaymentDrawer({
     const mode: DrawerMode = modeProp ?? (entityId ? 'view' : initialData ? 'edit' : 'create')
     const isViewMode = mode === 'view'
     const { data: paymentData, isLoading: isViewLoading } = usePayment(isViewMode ? entityId : null)
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [loading, setLoading] = useState(false)
 
@@ -169,6 +166,8 @@ export function PaymentDrawer({
             : initialData
                 ? "Actualice la información del pago."
                 : "Ingrese los datos para el flujo de tesorería.",
+        printable: !!entityId && (mode === 'view' || mode === 'edit'),
+        onPrint: handlePrint,
     })
 
     const showPrintable = entityId && (mode === 'view' || mode === 'edit')
@@ -203,6 +202,7 @@ export function PaymentDrawer({
                 </Button>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
@@ -210,7 +210,7 @@ export function PaymentDrawer({
                 icon={identity.icon}
                 contentClassName="p-0"
                 title={identity.title}
-                headerActions={showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 mode={mode}
                 footer={isViewMode ? undefined : (
@@ -230,7 +230,7 @@ export function PaymentDrawer({
                     <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="payment" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
                         {isViewMode && paymentData ? (
                             <div className="p-4 space-y-5">
-                                <StatusBadge status={paymentData.status} />
+                                <StatusBadge status={paymentData.status} variant="badge" />
 
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
@@ -325,9 +325,6 @@ export function PaymentDrawer({
                                                 differencePositiveLabel: "Excedente",
                                                 differenceNegativeLabel: "Deuda Pendiente",
                                                 amountModalTitle: paymentType === "INBOUND" ? "Monto Recibido" : "Monto a Pagar",
-                                                amountModalDescription: paymentType === "INBOUND"
-                                                    ? "Ingrese el monto recibido."
-                                                    : "Ingrese el monto a pagar.",
                                             }}
                                         />
 

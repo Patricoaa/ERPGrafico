@@ -1,5 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { Pencil, FileText } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
 import type { Budget } from './hooks/useBudgets'
 
 export interface BudgetActionsCtx {
@@ -10,9 +9,7 @@ export interface BudgetActionsCtx {
 export const budgetActions = createEntityActions<
     Budget,
     BudgetActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action icon={Pencil} title="Editar Montos" onClick={() => ctx.onEdit(item.id)} />
-        <DataCell.Action icon={FileText} title="Ver Ejecución" onClick={() => ctx.onViewExecution(item.id)} />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", label: "Editar Montos", onClick: () => ctx.onEdit(item.id) },
+    { action: "report", label: "Ver Ejecución", onClick: () => ctx.onViewExecution(item.id) },
+])

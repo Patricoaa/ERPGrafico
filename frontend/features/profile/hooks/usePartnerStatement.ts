@@ -10,5 +10,6 @@ export function usePartnerStatement(contactId: number | null) {
         queryFn: () => partnersApi.getStatement(contactId ?? 0),
         enabled: !!contactId,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }

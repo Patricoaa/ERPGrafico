@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { workOrderActions, type WorkOrderActionsCtx } from './workOrderActions'
+import { ActionConfirmModal, DataTableView } from '@/components/shared'
+import { DataTableColumnHeader, DataCell } from '@/components/shared'
+import { workOrderActions, type WorkOrderActionsCtx } from '@/features/production'
 import { type ColumnDef, type Row, type Table } from "@tanstack/react-table"
 import type { Page } from '@/lib/pagination'
 
@@ -22,9 +21,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { workOrderUnifiedSearchDef } from "@/features/production"
+import { workOrderUnifiedSearchDef, workOrderFields } from "@/features/production"
+import { toast } from "sonner"
 
 import type { WorkOrder, WizardMode, StageId } from "@/features/production/types"
 
@@ -33,19 +32,30 @@ interface WorkOrdersPageClientProps {
 }
 
 export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageClientProps) {
-    const { currentView, handleViewChange, viewOptions } = useViewMode("production.workorder")
+    const { currentView } = useViewMode("production.workorder")
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
 
     const search = useUnifiedSearch(workOrderUnifiedSearchDef)
     const allFilters = { ...search.filters }
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, orders, isLoading: loading, isRefetching, refetch: refetchOrders } = useWorkOrders({
         ...allFilters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     }, initialOrders ? { results: initialOrders, count: initialOrders?.length ?? 0 } as Page<WorkOrder> : undefined)
+
+    const totalCount = page?.count ?? 0
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
 
     const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
@@ -114,131 +124,76 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
         onDelete: handleDelete,
     }
 
-    const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    className="translate-y-[2px]"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-            minSize: 40,
-        },
-        {
-            accessorKey: "number",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DataCell.Entity
-                        entityLabel="production.workorder"
-                        number={row.getValue("number")}
+    const columns = useMemo<ColumnDef<WorkOrder>[]>(() => {
+        const [, saleOrderCol, startDateCol, productDescCol, stageCol, dueDateCol] = workOrderFields.toColumns()
+        return [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                        className="translate-y-[2px]"
+                        variant="circle"
                     />
-                </div>
-            ),
-            meta: { title: "Folio" },
-        },
-        {
-            id: "sale_order_number",
-            accessorFn: (row) => row.sale_order_number ?? null,
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const nvNumber = row.original.sale_order_number
-                if (!nvNumber) return <div className="flex justify-center"></div>
-                return (
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        className="translate-y-[2px]"
+                        variant="circle"
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+                size: 40,
+                minSize: 40,
+            },
+            {
+                accessorKey: "number",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
+                ),
+                cell: ({ row }) => (
                     <div className="flex justify-center">
                         <DataCell.Entity
-                            entityLabel="sales.saleorder"
-                            number={nvNumber}
-
+                            entityLabel="production.workorder"
+                            number={row.getValue("number")}
                         />
                     </div>
-                )
+                ),
             },
-            meta: { title: "NV Asociada" },
-        },
-        {
-            accessorKey: "start_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha Inicio" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("start_date")} /></div>,
-            meta: { title: "Fecha Inicio" },
-        },
-        {
-            accessorKey: "product_description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción del Trabajo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text className="text-center">{row.getValue("product_description")}</DataCell.Text>
-                </div>
-            ),
-            meta: { title: "Descripción del Trabajo" },
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const status = row.original.status
-                return (
-                <div className="flex justify-center gap-1.5 items-center flex-wrap">
-                    <DataCell.Status status={status} />
-                    {isWorkOrderOverdue(row.original) && (
-                        <Chip size="sm" intent="destructive">Atrasada</Chip>
-                    )}
-                </div>
-                )
+            saleOrderCol,
+            startDateCol,
+            productDescCol,
+            {
+                accessorKey: "status",
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
+                ),
+                cell: ({ row }) => {
+                    const status = row.original.status
+                    return (
+                    <div className="flex justify-center gap-1.5 items-center flex-wrap">
+                        <DataCell.Status status={status} />
+                        {isWorkOrderOverdue(row.original) && (
+                            <Chip size="sm" intent="destructive">Atrasada</Chip>
+                        )}
+                    </div>
+                    )
+                },
+                filterFn: (row, id, value) => {
+                    return value.includes(row.getValue(id))
+                },
             },
-            filterFn: (row, id, value) => {
-                return value.includes(row.getValue(id))
-            },
-            meta: { title: "Estado" },
-        },
-        {
-            accessorKey: "current_stage",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Etapa" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {translateProductionStage(row.original.current_stage)}
-                </DataCell.Text>
-            ),
-            meta: { title: "Etapa" },
-        },
-        {
-            accessorKey: "due_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha Entrega" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
-            meta: { title: "Fecha Entrega" },
-        },
-        workOrderActions.column(workOrderActionsCtx) as ColumnDef<WorkOrder>,
-    ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])
+            stageCol,
+            dueDateCol,
+            workOrderActions.auto(workOrderActionsCtx) as ColumnDef<WorkOrder>,
+        ]
+    }, [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])
 
     const renderKanbanView = useCallback((table: Table<WorkOrder>) => (
         <div className="relative">
@@ -282,18 +237,19 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
 
             <div className="mt-2 flex-1 min-h-0 flex flex-col">
                 <FadeIn key={currentView} className="h-full">
-                    <DataTable
+                    <DataTableView
+                        entityLabel="production.workorder"
                         columns={columns}
                         data={orders}
                         isLoading={loading}
                         isRefetching={isRefetching}
                         variant="embedded"
                         defaultPageSize={50}
-                        manualPagination
-                        pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                        manualPagination={!effectiveGrouping}
+                        pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                         rowCount={page?.count ?? 0}
-                        pagination={pageState}
-                        onPaginationChange={setPageState}
+                        pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                        onPaginationChange={effectiveGrouping ? undefined : setPageState}
                         isFiltered={search.isFiltered}
                         emptyState={{
                             context: "production",
@@ -314,11 +270,10 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                             paramValues={search.paramValues}
                             placeholder="Buscar OTs..."
                         />}
+                        unifiedSearchConfig={workOrderUnifiedSearchDef}
+                        currentGroupBy={effectiveGrouping ? search.groupBy : null}
                         showReset={search.isFiltered}
                         onReset={search.clearAll}
-                        viewOptions={viewOptions}
-                        currentView={currentView}
-                        onViewChange={handleViewChange}
                         renderCustomView={
                             currentView === "kanban" ? renderKanbanView :
                                 currentView === "timeline" ? renderTimelineView :
@@ -357,7 +312,7 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                 onOpenChange={(open) => { if (!open) duplicateConfirm.cancel() }}
                 onConfirm={duplicateConfirm.confirm}
                 title="Duplicar OT"
-                description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Nota de Venta original."
+                description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Orden de Venta original."
                 variant="default"
             />
         </div >

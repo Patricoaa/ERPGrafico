@@ -24,6 +24,7 @@ export function useLoans(params?: Record<string, string>) {
         queryKey: LOANS_KEYS.list(params),
         queryFn: () => loansApi.list(params),
         staleTime: 2 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }
 
@@ -33,6 +34,7 @@ export function useLoan(id: number | null) {
         queryFn: () => loansApi.get(id as number),
         enabled: id != null,
         staleTime: 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }
 

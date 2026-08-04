@@ -50,6 +50,7 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
       </PrintableLayout>
 
       <Drawer
+                fillContent
         mode="view"
         open={open}
         onOpenChange={onOpenChange}

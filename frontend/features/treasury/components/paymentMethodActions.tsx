@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { PaymentMethod } from '@/features/treasury/types'
 
 export interface PaymentMethodActionsCtx {
@@ -11,18 +11,17 @@ export const paymentMethodActions = createEntityActions<
     PaymentMethodActionsCtx
 >((item, ctx) => {
     if (item.is_terminal_integration) {
-        return (
-            <DataCell.Action
-                action="lock"
-                title="Gestionado por terminal — modifique el dispositivo"
-                className="text-muted-foreground cursor-default opacity-50"
-            />
-        )
+        return [
+            {
+                action: "lock",
+                label: "Gestionado por terminal — modifique el dispositivo",
+                className: "text-muted-foreground cursor-default opacity-50",
+                onClick: () => {},
+            },
+        ]
     }
-    return (
-        <>
-            <DataCell.Action action="edit" onClick={() => ctx.onEdit(item)} />
-            <DataCell.Action action="delete" onClick={() => ctx.onDelete(item.id)} />
-        </>
-    )
+    return [
+        { action: "edit", onClick: () => ctx.onEdit(item) },
+        { action: "delete", onClick: () => ctx.onDelete(item.id) },
+    ]
 })

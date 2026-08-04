@@ -276,7 +276,6 @@ export function TreasuryPhase({
                             differencePositiveLabel: 'Diferencia',
                             differenceNegativeLabel: 'Deuda Pendiente',
                             amountModalTitle: 'Monto a devolver',
-                            amountModalDescription: 'Ingrese el monto a devolver en esta anulación.',
                         }}
                         methodTitle={
                             <p className="text-xs text-muted-foreground font-medium mb-1">

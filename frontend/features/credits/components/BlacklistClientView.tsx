@@ -13,19 +13,20 @@ import {UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
 
-import { DataTable } from '@/components/shared'
+import { DataTable, createExpanderColumn } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { Button } from "@/components/ui/button"
-import { UserCheck, DollarSign, AlertCircle, ChevronDown, ChevronRight } from "lucide-react"
+import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
 
 import { toast } from "sonner"
 import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 
 import { DataCell } from '@/components/shared'
-import { formatEntityDisplay } from "@/lib/entity-registry"
+import { blacklistFields } from "../blacklistFields"
+import { creditLedgerEntryFields } from "@/features/credits/creditLedgerEntryFields"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -136,22 +137,22 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                             {ledger.map((entry) => (
                                 <tr key={entry.id} className="text-[12px] group">
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Entity entityLabel="sales.saleorder" data={entry as unknown as Record<string, unknown>} />
+                                        {creditLedgerEntryFields.render('document', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Date value={entry.date} className="text-muted-foreground" />
+                                        {creditLedgerEntryFields.render('date', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.effective_total} />
+                                        {creditLedgerEntryFields.render('total', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.paid_amount} className="text-success" />
+                                        {creditLedgerEntryFields.render('paid', entry)}
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <DataCell.Currency value={entry.balance} className="font-bold" />
+                                        {creditLedgerEntryFields.render('balance', entry)}
                                     </td>
                                     <td className="py-2 text-center">
-                                        <DataCell.Status status={String(entry.aging_bucket).toUpperCase()} />
+                                        {creditLedgerEntryFields.render('status', entry)}
                                     </td>
                                 </tr>
                             ))}
@@ -202,6 +203,9 @@ export function BlacklistClientView() {
                 { label: 'Crítico', value: 'CRITICAL' },
             ]},
         ],
+        groupBy: [
+            { key: 'credit_risk_level', label: 'Riesgo', field: 'credit_risk_level' },
+        ],
     }), [])
     const search = useUnifiedSearch(config)
     const contacts = useMemo(() => {
@@ -210,29 +214,10 @@ export function BlacklistClientView() {
         return search.filterFn(result)
     }, [rawContacts, search.filterFn, search.filters.risk_level])
 
+    const [balanceCol, evaluatedCol] = blacklistFields.toColumns()
+
     const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
-        {
-            id: "expander",
-            header: () => null,
-            cell: ({ row }) => (
-                <Button
-                    onClick={(e) => {
-                        e.stopPropagation()
-                        row.toggleExpanded()
-                    }}
-                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    {row.getIsExpanded() ? (
-                        <ChevronDown className="h-4 w-4" />
-                    ) : (
-                        <ChevronRight className="h-4 w-4" />
-                    )}
-                </Button>
-            ),
-            size: 40,
-            enableSorting: false,
-            enableHiding: false,
-        },
+        createExpanderColumn<CreditContact>(),
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
@@ -241,26 +226,11 @@ export function BlacklistClientView() {
                     {row.original.name}
                 </DataCell.ContactLink>
             ),
+            meta: { title: "Cliente" },
         },
-        {
-            accessorKey: "credit_balance_used",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Deuda Actual" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.original.credit_balance_used} className="text-destructive font-black" />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "credit_last_evaluated",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Bloqueado desde" className="justify-center text-muted-foreground" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.credit_last_evaluated} />
-                </div>
-            ),
-        }
-    ], [])
+        balanceCol,
+        evaluatedCol,
+    ], [balanceCol, evaluatedCol])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

@@ -41,7 +41,7 @@ export function F29DeclarationDrawer({ declarationId, open, onOpenChange }: F29D
                         </div>
                         <div>
                             <span className="text-muted-foreground">Estado</span>
-                            <p><StatusBadge status={declaration.is_registered ? "POSTED" : "DRAFT"} /></p>
+                            <p><StatusBadge status={declaration.is_registered ? "POSTED" : "DRAFT"} variant="badge" /></p>
                         </div>
                         <div>
                             <span className="text-muted-foreground">Fecha de Registro</span>

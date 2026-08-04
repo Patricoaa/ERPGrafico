@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { CmykRing } from "@/components/shared"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { LayoutDashboard } from "lucide-react"
@@ -31,8 +31,6 @@ export default function DashboardNotFound() {
                             {initials}
                         </div>
                     )}
-
-                    <CmykRing size="lg" className="opacity-50" />
 
                     <div>
                         <h2 className="text-4xl font-black tracking-tighter">404</h2>

@@ -262,8 +262,21 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         ]
 
     def get_serialized_payments(self, obj):
-        from treasury.serializers import TreasuryMovementSerializer
-        return TreasuryMovementSerializer(obj.payments.all(), many=True).data
+        return [
+            {
+                "id": p.id,
+                "display_id": getattr(p, "display_id", str(p.id)),
+                "amount": str(p.amount),
+                "date": str(p.date) if p.date else None,
+                "payment_method": p.payment_method,
+                "payment_method_display": p.get_payment_method_display(),
+                "transaction_number": p.transaction_number,
+                "reference": p.reference,
+                "is_pending_registration": p.is_pending_registration,
+                "invoice_id": p.invoice_id,
+            }
+            for p in obj.payments.all()
+        ]
 
     def get_related_documents(self, obj):
         return SaleOrderSelector.get_related_documents(obj)
@@ -274,10 +287,9 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return SaleLineSerializer(lines, many=True).data
 
     def get_work_orders(self, obj):
-        # Only include OTs NOT linked to a note (original order OTs)
+        from production.serializers import WorkOrderListSerializer
         ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None]
-        from production.serializers import WorkOrderSerializer
-        return WorkOrderSerializer(ots, many=True).data
+        return WorkOrderListSerializer(ots, many=True).data
 
     def get_has_pending_work_orders(self, obj):
         ots = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "FINISHED"]
@@ -290,14 +302,28 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         return obj.effective_total - self.get_total_paid(obj)
 
     def get_production_progress(self, obj):
-        from production.serializers import WorkOrderSerializer
-        wos = [ot for ot in obj.work_orders.all() if getattr(ot, "related_note_id", None) is None and ot.status != "CANCELLED"]
+        from production.models import WorkOrder
+        _WEIGHTS = {
+            WorkOrder.Stage.MATERIAL_ASSIGNMENT.value: 0,
+            WorkOrder.Stage.MATERIAL_APPROVAL.value: 15,
+            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT.value: 30,
+            WorkOrder.Stage.PREPRESS.value: 45,
+            WorkOrder.Stage.PRESS.value: 60,
+            WorkOrder.Stage.POSTPRESS.value: 75,
+            WorkOrder.Stage.OUTSOURCING_VERIFICATION.value: 88,
+            WorkOrder.Stage.RECTIFICATION.value: 95,
+            WorkOrder.Stage.FINISHED.value: 100,
+            WorkOrder.Stage.CANCELLED.value: 0,
+        }
+        wos = [
+            ot for ot in obj.work_orders.all()
+            if getattr(ot, "related_note_id", None) is None
+            and ot.status != "CANCELLED"
+        ]
         if not wos:
             return 0
-        total_progress = sum(
-            WorkOrderSerializer(wo).data.get("production_progress", 0) for wo in wos
-        )
-        return total_progress / len(wos)
+        total = sum(_WEIGHTS.get(ot.current_stage, 0) for ot in wos)
+        return total / len(wos)
 
 
 class CreateSaleOrderSerializer(serializers.ModelSerializer):

@@ -4,12 +4,13 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
 import { DataCell } from '@/components/shared'
 import { uomActions, type UoMActionsCtx } from "@/features/inventory/uomActions"
+import { uomFields } from "../uomFields"
 
 import type { BulkAction } from "@/components/shared"
 import { UoMDrawer } from "./UoMDrawer"
@@ -73,75 +74,51 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
         onEdit: (id) => openSelected(id),
         onDelete: (id) => handleDelete(id),
     }
-    const columns = useMemo<ColumnDef<UoM>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("id")}</DataCell.Code>,
-            size: 80,
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.getValue("name")}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: "category_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Secondary>
-                    {row.getValue("category_name")}
-                </DataCell.Secondary>
-            ),
-        },
-        {
-            accessorKey: "uom_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => {
-                const type = row.getValue("uom_type") as UoM['uom_type']
-                return (
-                    <DataCell.Status
-                        status={UOM_TYPE_CONFIG[type]?.status || 'NEUTRAL'}
-                        label={UOM_TYPE_CONFIG[type]?.label || type}
+    const columns = useMemo<ColumnDef<UoM>[]>(() => {
+        const [idCol, nameCol, categoryCol, , ratioCol] = uomFields.toColumns()
+        return [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                        variant="circle"
                     />
-                )
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        variant="circle"
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+                size: 40,
             },
-        },
-        {
-            accessorKey: "ratio",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Ratio" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Number value={row.getValue("ratio")} />
-            ),
-        },
-        uomActions.column(actionsCtx),
-    ], [actionsCtx])
+            idCol,
+            nameCol,
+            categoryCol,
+            {
+                accessorKey: "uom_type",
+                header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
+                cell: ({ row }) => {
+                    const type = row.getValue("uom_type") as UoM['uom_type']
+                    return (
+                        <DataCell.Status
+                            status={UOM_TYPE_CONFIG[type]?.status || 'NEUTRAL'}
+                            label={UOM_TYPE_CONFIG[type]?.label || type}
+                        />
+                    )
+                },
+            },
+            ratioCol,
+            uomActions.auto(actionsCtx),
+        ]
+    }, [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
         {
@@ -189,22 +166,15 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                         description: "Define unidades para medir, comprar y vender tus productos.",
                     }}
                     renderCard={(uom: UoM) => (
-                        <EntityCard onClick={() => openSelected(uom.id)}>
-                            <EntityCard.Header
-                                title={uom.name}
-                                subtitle={uom.category_name}
-                                trailing={
-                                    <StatusBadge
-                                        status={UOM_TYPE_CONFIG[uom.uom_type]?.status || 'NEUTRAL'}
-                                        label={UOM_TYPE_CONFIG[uom.uom_type]?.label || uom.uom_type}
-                                        size="sm"
-                                    />
-                                }
-                            />
-                            <EntityCard.Body actions={uomActions.render(uom, actionsCtx)}>
-                                <EntityCard.Field label="Ratio" value={<DataCell.Number value={uom.ratio} />} />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={uom.id}
+                            data={uom}
+                            fields={uomFields}
+                            entityLabel="inventory.uom"
+                            actions={uomActions.render(uom, actionsCtx)}
+                            defaultAction={uomActions.defaultAction(actionsCtx)?.(uom) ?? (() => openSelected(uom.id))}
+
+                        />
                     )}
                 />
             </div>

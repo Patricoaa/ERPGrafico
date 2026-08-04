@@ -21,7 +21,7 @@
  */
 
 import { showApiError } from '@/lib/errors'
-import { ChevronLeft, ChevronRight, CheckCircle2, FileText, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -30,10 +30,10 @@ import { Drawer, ActionSlideButton, Chip, SkeletonShell } from '@/components/sha
 // Shared steps
 import {
     NoteStep_TypeSelector,
-    NoteStep_LineItems,
-    NoteStep_Registration,
-    NoteStep_Review,
-    NoteStep_Payment,
+    NoteLineItemsStep,
+    NoteRegistrationStep,
+    NoteReviewStep,
+    NotePaymentStep,
 } from './steps'
 
 // Sales-only steps (stay in their feature, imported directly)
@@ -151,10 +151,8 @@ export function UnifiedNoteWizard({
         setPayment,
         logisticsData,
         setLogisticsData,
-        isPeriodValid,
         setIsPeriodValid,
         currentStepId,
-        stepsSequence,
         currentStepIndex,
         totalStepsCount,
         isLastStep,
@@ -222,7 +220,7 @@ export function UnifiedNoteWizard({
             case 'items':
                 if (mode === 'sales') {
                     return (
-                        <NoteStep_LineItems
+                        <NoteLineItemsStep
                             selectionMode="select"
                             noteType={noteType}
                             lines={sourceDocument?.lines ?? []}
@@ -233,7 +231,7 @@ export function UnifiedNoteWizard({
                     )
                 }
                 return (
-                    <NoteStep_LineItems
+                    <NoteLineItemsStep
                         selectionMode="edit"
                         noteType={noteType}
                         lines={lines}
@@ -263,7 +261,7 @@ export function UnifiedNoteWizard({
 
             case 'registration':
                 return (
-                    <NoteStep_Registration
+                    <NoteRegistrationStep
                         isCreditNote={isCreditNote}
                         noteType={noteType}
                         data={registration}
@@ -274,7 +272,7 @@ export function UnifiedNoteWizard({
 
             case 'review':
                 return (
-                    <NoteStep_Review
+                    <NoteReviewStep
                         noteType={noteType}
                         registration={registration}
                         lines={lines.filter(l => l.noteQuantity > 0)}
@@ -286,7 +284,7 @@ export function UnifiedNoteWizard({
 
             case 'payment':
                 return (
-                    <NoteStep_Payment
+                    <NotePaymentStep
                         mode={mode}
                         noteType={noteType}
                         total={total}
@@ -301,10 +299,6 @@ export function UnifiedNoteWizard({
     }
 
     // ---- Next button disabled logic ----
-    const nextDisabled =
-        submitting ||
-        initializing ||
-        (currentStepId === 'registration' && !registration.isPending && !isPeriodValid)
 
     return (
         <Drawer
@@ -319,9 +313,9 @@ export function UnifiedNoteWizard({
             title={
                 <div className="flex items-center gap-3">
                     <span>{title}</span>
-                    {isExempt && <Chip intent="success" size="sm" className="h-6">Documento Exento</Chip>}
+                    {isExempt && <Chip intent="success" size="sm">Documento Exento</Chip>}
                     {referenceLabel && (
-                        <Chip intent="neutral" size="sm" className="h-6 font-mono font-bold tracking-widest text-[10px] uppercase">
+                        <Chip intent="neutral" size="sm" className="font-mono">
                             Ref: {referenceLabel}
                         </Chip>
                     )}
@@ -345,17 +339,14 @@ export function UnifiedNoteWizard({
                     </Button>
 
                     {!isLastStep ? (
-                        <Button
+                        <ActionSlideButton
                             onClick={handleNext}
+                            loading={submitting || initializing}
                             className="w-40 h-12 font-bold shadow-elevated transition-all"
-                            disabled={nextDisabled}
                         >
-                            {(submitting || initializing) && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />
-                        </Button>
+                        </ActionSlideButton>
                     ) : (
                         <ActionSlideButton
                             onClick={handleFinish}

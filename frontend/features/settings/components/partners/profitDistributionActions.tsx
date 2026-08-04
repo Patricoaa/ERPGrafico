@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import { Wand2, Play, Wallet } from 'lucide-react'
 import type { ProfitDistribution } from '@/features/contacts'
 
@@ -12,22 +12,30 @@ export interface ProfitDistributionActionsCtx {
 export const profitDistributionActions = createEntityActions<
     ProfitDistribution,
     ProfitDistributionActionsCtx
->((item, ctx) => {
-    if (item.status === 'CANCELLED') {
-        return <DataCell.Action action="detail" onClick={() => ctx.onViewDetail(item)} />
-    }
-    return (
-        <>
-            <DataCell.Action action="detail" onClick={() => ctx.onViewDetail(item)} />
-            {item.status === 'DRAFT' && (
-                <DataCell.Action icon={Wand2} title="Retomar Proceso" className="text-success" onClick={() => ctx.onRetake(item)} />
-            )}
-            {item.status === 'APPROVED' && (
-                <DataCell.Action icon={Play} title="Ejecutar Contablemente" className="text-primary" onClick={() => ctx.onExecute(item)} />
-            )}
-            {item.status === 'EXECUTED' && (item.lines?.some((l) => l.destination === 'DIVIDEND')) && (
-                <DataCell.Action icon={Wallet} title="Pagar Dividendos" className="text-primary" onClick={() => ctx.onPayDividends(item)} />
-            )}
-        </>
-    )
-})
+>((item, ctx) => [
+    { action: "detail", onClick: () => ctx.onViewDetail(item) },
+    {
+        action: "detail",
+        icon: Wand2,
+        label: "Retomar Proceso",
+        className: "text-success",
+        onClick: () => ctx.onRetake(item),
+        visible: item.status === 'DRAFT',
+    },
+    {
+        action: "post",
+        icon: Play,
+        label: "Ejecutar Contablemente",
+        className: "text-primary",
+        onClick: () => ctx.onExecute(item),
+        visible: item.status === 'APPROVED',
+    },
+    {
+        action: "pay",
+        icon: Wallet,
+        label: "Pagar Dividendos",
+        className: "text-primary",
+        onClick: () => ctx.onPayDividends(item),
+        visible: item.status === 'EXECUTED' && (item.lines?.some((l) => l.destination === 'DIVIDEND')),
+    },
+])

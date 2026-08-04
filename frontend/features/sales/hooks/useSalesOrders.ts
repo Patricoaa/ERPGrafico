@@ -36,11 +36,11 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         mutationFn: salesApi.createOrder,
         onSuccess: () => {
             markLocalMutation()
-            toast.success('Nota de venta creada')
+            toast.success('Orden de venta creada')
             invalidateSales()
         },
         onError: (error: Error) => {
-            showApiError(error, 'Error al crear la nota de venta')
+            showApiError(error, 'Error al crear la orden de venta')
         }
     })
 
@@ -49,11 +49,11 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
             salesApi.updateOrder(id, payload),
         onSuccess: () => {
             markLocalMutation()
-            toast.success('Nota de venta actualizada')
+            toast.success('Orden de venta actualizada')
             invalidateSales()
         },
         onError: (error: Error) => {
-            showApiError(error, 'Error al actualizar la nota de venta')
+            showApiError(error, 'Error al actualizar la orden de venta')
         }
     })
 
@@ -61,7 +61,7 @@ export function useSalesOrders({ filters, initialData }: { filters?: SaleOrderFi
         mutationFn: salesApi.deleteOrder,
         onSuccess: () => {
             markLocalMutation()
-            toast.success('Nota de venta eliminada')
+            toast.success('Orden de venta eliminada')
             invalidateSales()
         },
         onError: () => {

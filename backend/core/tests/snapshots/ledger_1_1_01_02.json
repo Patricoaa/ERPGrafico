@@ -19,12 +19,12 @@
       "credit": 0.0,
       "date": "2026-01-02",
       "debit": 415310.0,
-      "description": "Venta NV-000065",
+      "description": "Venta OV-000065",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000065",
+      "reference": "OV-000065",
       "source_document": null
     },
     {
@@ -45,12 +45,12 @@
       "credit": 0.0,
       "date": "2026-01-06",
       "debit": 508130.0,
-      "description": "Venta NV-000093",
+      "description": "Venta OV-000093",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000093",
+      "reference": "OV-000093",
       "source_document": null
     },
     {
@@ -58,12 +58,12 @@
       "credit": 0.0,
       "date": "2026-01-20",
       "debit": 108290.0,
-      "description": "Venta NV-000069",
+      "description": "Venta OV-000069",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000069",
+      "reference": "OV-000069",
       "source_document": null
     },
     {
@@ -71,12 +71,12 @@
       "credit": 0.0,
       "date": "2026-01-21",
       "debit": 387940.0,
-      "description": "Venta NV-000058",
+      "description": "Venta OV-000058",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000058",
+      "reference": "OV-000058",
       "source_document": null
     },
     {
@@ -84,12 +84,12 @@
       "credit": 0.0,
       "date": "2026-01-24",
       "debit": 339150.0,
-      "description": "Venta NV-000010",
+      "description": "Venta OV-000010",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000010",
+      "reference": "OV-000010",
       "source_document": null
     },
     {
@@ -97,12 +97,12 @@
       "credit": 0.0,
       "date": "2026-02-01",
       "debit": 337960.0,
-      "description": "Venta NV-000073",
+      "description": "Venta OV-000073",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000073",
+      "reference": "OV-000073",
       "source_document": null
     },
     {
@@ -123,12 +123,12 @@
       "credit": 0.0,
       "date": "2026-02-11",
       "debit": 71400.0,
-      "description": "Venta NV-000045",
+      "description": "Venta OV-000045",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000045",
+      "reference": "OV-000045",
       "source_document": null
     },
     {
@@ -136,12 +136,12 @@
       "credit": 0.0,
       "date": "2026-02-12",
       "debit": 593810.0,
-      "description": "Venta NV-000037",
+      "description": "Venta OV-000037",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000037",
+      "reference": "OV-000037",
       "source_document": null
     },
     {
@@ -149,12 +149,12 @@
       "credit": 0.0,
       "date": "2026-02-18",
       "debit": 238000.0,
-      "description": "Venta NV-000011",
+      "description": "Venta OV-000011",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000011",
+      "reference": "OV-000011",
       "source_document": null
     },
     {
@@ -162,12 +162,12 @@
       "credit": 0.0,
       "date": "2026-02-20",
       "debit": 99960.0,
-      "description": "Venta NV-000067",
+      "description": "Venta OV-000067",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000067",
+      "reference": "OV-000067",
       "source_document": null
     },
     {
@@ -175,12 +175,12 @@
       "credit": 0.0,
       "date": "2026-02-24",
       "debit": 354620.0,
-      "description": "Venta NV-000039",
+      "description": "Venta OV-000039",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000039",
+      "reference": "OV-000039",
       "source_document": null
     },
     {
@@ -188,12 +188,12 @@
       "credit": 0.0,
       "date": "2026-03-05",
       "debit": 460530.0,
-      "description": "Venta NV-000040",
+      "description": "Venta OV-000040",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000040",
+      "reference": "OV-000040",
       "source_document": null
     },
     {
@@ -214,12 +214,12 @@
       "credit": 0.0,
       "date": "2026-03-09",
       "debit": 380800.0,
-      "description": "Venta NV-000041",
+      "description": "Venta OV-000041",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000041",
+      "reference": "OV-000041",
       "source_document": null
     },
     {
@@ -227,12 +227,12 @@
       "credit": 0.0,
       "date": "2026-03-12",
       "debit": 101150.0,
-      "description": "Venta NV-000075",
+      "description": "Venta OV-000075",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000075",
+      "reference": "OV-000075",
       "source_document": null
     },
     {
@@ -240,12 +240,12 @@
       "credit": 0.0,
       "date": "2026-03-21",
       "debit": 155890.0,
-      "description": "Venta NV-000027",
+      "description": "Venta OV-000027",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000027",
+      "reference": "OV-000027",
       "source_document": null
     },
     {
@@ -253,12 +253,12 @@
       "credit": 0.0,
       "date": "2026-04-02",
       "debit": 205870.0,
-      "description": "Venta NV-000038",
+      "description": "Venta OV-000038",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000038",
+      "reference": "OV-000038",
       "source_document": null
     },
     {
@@ -266,12 +266,12 @@
       "credit": 0.0,
       "date": "2026-04-03",
       "debit": 78540.0,
-      "description": "Venta NV-000047",
+      "description": "Venta OV-000047",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000047",
+      "reference": "OV-000047",
       "source_document": null
     },
     {
@@ -279,12 +279,12 @@
       "credit": 0.0,
       "date": "2026-04-04",
       "debit": 117810.0,
-      "description": "Venta NV-000051",
+      "description": "Venta OV-000051",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000051",
+      "reference": "OV-000051",
       "source_document": null
     },
     {
@@ -292,12 +292,12 @@
       "credit": 0.0,
       "date": "2026-04-05",
       "debit": 286790.0,
-      "description": "Venta NV-000035",
+      "description": "Venta OV-000035",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000035",
+      "reference": "OV-000035",
       "source_document": null
     },
     {
@@ -318,12 +318,12 @@
       "credit": 0.0,
       "date": "2026-04-06",
       "debit": 307020.0,
-      "description": "Venta NV-000059",
+      "description": "Venta OV-000059",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000059",
+      "reference": "OV-000059",
       "source_document": null
     },
     {
@@ -331,12 +331,12 @@
       "credit": 0.0,
       "date": "2026-04-07",
       "debit": 385560.0,
-      "description": "Venta NV-000055",
+      "description": "Venta OV-000055",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000055",
+      "reference": "OV-000055",
       "source_document": null
     },
     {
@@ -344,12 +344,12 @@
       "credit": 0.0,
       "date": "2026-04-08",
       "debit": 366520.0,
-      "description": "Venta NV-000004",
+      "description": "Venta OV-000004",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000004",
+      "reference": "OV-000004",
       "source_document": null
     },
     {
@@ -357,12 +357,12 @@
       "credit": 0.0,
       "date": "2026-04-18",
       "debit": 518840.0,
-      "description": "Venta NV-000042",
+      "description": "Venta OV-000042",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000042",
+      "reference": "OV-000042",
       "source_document": null
     },
     {
@@ -370,12 +370,12 @@
       "credit": 0.0,
       "date": "2026-04-22",
       "debit": 221340.0,
-      "description": "Venta NV-000016",
+      "description": "Venta OV-000016",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000016",
+      "reference": "OV-000016",
       "source_document": null
     },
     {
@@ -383,12 +383,12 @@
       "credit": 0.0,
       "date": "2026-04-22",
       "debit": 257040.0,
-      "description": "Venta NV-000019",
+      "description": "Venta OV-000019",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000019",
+      "reference": "OV-000019",
       "source_document": null
     },
     {
@@ -396,12 +396,12 @@
       "credit": 0.0,
       "date": "2026-04-22",
       "debit": 445060.0,
-      "description": "Venta NV-000081",
+      "description": "Venta OV-000081",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000081",
+      "reference": "OV-000081",
       "source_document": null
     },
     {
@@ -409,12 +409,12 @@
       "credit": 0.0,
       "date": "2026-04-23",
       "debit": 454580.0,
-      "description": "Venta NV-000005",
+      "description": "Venta OV-000005",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000005",
+      "reference": "OV-000005",
       "source_document": null
     },
     {
@@ -422,12 +422,12 @@
       "credit": 0.0,
       "date": "2026-04-27",
       "debit": 78540.0,
-      "description": "Venta NV-000020",
+      "description": "Venta OV-000020",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000020",
+      "reference": "OV-000020",
       "source_document": null
     },
     {
@@ -435,12 +435,12 @@
       "credit": 0.0,
       "date": "2026-05-03",
       "debit": 188020.0,
-      "description": "Venta NV-000021",
+      "description": "Venta OV-000021",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000021",
+      "reference": "OV-000021",
       "source_document": null
     },
     {
@@ -448,12 +448,12 @@
       "credit": 0.0,
       "date": "2026-05-04",
       "debit": 123760.0,
-      "description": "Venta NV-000079",
+      "description": "Venta OV-000079",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000079",
+      "reference": "OV-000079",
       "source_document": null
     },
     {
@@ -474,12 +474,12 @@
       "credit": 0.0,
       "date": "2026-05-06",
       "debit": 326060.0,
-      "description": "Venta NV-000076",
+      "description": "Venta OV-000076",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000076",
+      "reference": "OV-000076",
       "source_document": null
     },
     {
@@ -487,12 +487,12 @@
       "credit": 0.0,
       "date": "2026-05-12",
       "debit": 543830.0,
-      "description": "Venta NV-000088",
+      "description": "Venta OV-000088",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000088",
+      "reference": "OV-000088",
       "source_document": null
     },
     {
@@ -500,12 +500,12 @@
       "credit": 0.0,
       "date": "2026-05-22",
       "debit": 122570.0,
-      "description": "Venta NV-000078",
+      "description": "Venta OV-000078",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000078",
+      "reference": "OV-000078",
       "source_document": null
     },
     {
@@ -513,12 +513,12 @@
       "credit": 0.0,
       "date": "2026-05-26",
       "debit": 536690.0,
-      "description": "Venta NV-000061",
+      "description": "Venta OV-000061",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000061",
+      "reference": "OV-000061",
       "source_document": null
     },
     {
@@ -526,12 +526,12 @@
       "credit": 0.0,
       "date": "2026-05-28",
       "debit": 101150.0,
-      "description": "Venta NV-000099",
+      "description": "Venta OV-000099",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000099",
+      "reference": "OV-000099",
       "source_document": null
     },
     {
@@ -552,12 +552,12 @@
       "credit": 0.0,
       "date": "2026-06-10",
       "debit": 559300.0,
-      "description": "Venta NV-000097",
+      "description": "Venta OV-000097",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000097",
+      "reference": "OV-000097",
       "source_document": null
     },
     {
@@ -565,12 +565,12 @@
       "credit": 0.0,
       "date": "2026-06-19",
       "debit": 176120.0,
-      "description": "Venta NV-000012",
+      "description": "Venta OV-000012",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000012",
+      "reference": "OV-000012",
       "source_document": null
     },
     {
@@ -578,12 +578,12 @@
       "credit": 0.0,
       "date": "2026-06-25",
       "debit": 399840.0,
-      "description": "Venta NV-000090",
+      "description": "Venta OV-000090",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000090",
+      "reference": "OV-000090",
       "source_document": null
     },
     {
@@ -604,12 +604,12 @@
       "credit": 0.0,
       "date": "2026-07-14",
       "debit": 343910.0,
-      "description": "Venta NV-000052",
+      "description": "Venta OV-000052",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000052",
+      "reference": "OV-000052",
       "source_document": null
     },
     {
@@ -630,12 +630,12 @@
       "credit": 0.0,
       "date": "2026-08-08",
       "debit": 180880.0,
-      "description": "Venta NV-000096",
+      "description": "Venta OV-000096",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000096",
+      "reference": "OV-000096",
       "source_document": null
     },
     {
@@ -643,12 +643,12 @@
       "credit": 0.0,
       "date": "2026-08-26",
       "debit": 584290.0,
-      "description": "Venta NV-000057",
+      "description": "Venta OV-000057",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000057",
+      "reference": "OV-000057",
       "source_document": null
     },
     {
@@ -656,12 +656,12 @@
       "credit": 0.0,
       "date": "2026-09-05",
       "debit": 499800.0,
-      "description": "Venta NV-000049",
+      "description": "Venta OV-000049",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000049",
+      "reference": "OV-000049",
       "source_document": null
     },
     {
@@ -682,12 +682,12 @@
       "credit": 0.0,
       "date": "2026-09-08",
       "debit": 228480.0,
-      "description": "Venta NV-000048",
+      "description": "Venta OV-000048",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000048",
+      "reference": "OV-000048",
       "source_document": null
     },
     {
@@ -695,12 +695,12 @@
       "credit": 0.0,
       "date": "2026-09-09",
       "debit": 396270.0,
-      "description": "Venta NV-000029",
+      "description": "Venta OV-000029",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000029",
+      "reference": "OV-000029",
       "source_document": null
     },
     {
@@ -708,12 +708,12 @@
       "credit": 0.0,
       "date": "2026-09-16",
       "debit": 114240.0,
-      "description": "Venta NV-000026",
+      "description": "Venta OV-000026",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000026",
+      "reference": "OV-000026",
       "source_document": null
     },
     {
@@ -721,12 +721,12 @@
       "credit": 0.0,
       "date": "2026-09-25",
       "debit": 167790.0,
-      "description": "Venta NV-000033",
+      "description": "Venta OV-000033",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000033",
+      "reference": "OV-000033",
       "source_document": null
     },
     {
@@ -747,12 +747,12 @@
       "credit": 0.0,
       "date": "2026-10-16",
       "debit": 207060.0,
-      "description": "Venta NV-000050",
+      "description": "Venta OV-000050",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000050",
+      "reference": "OV-000050",
       "source_document": null
     },
     {
@@ -760,12 +760,12 @@
       "credit": 0.0,
       "date": "2026-10-17",
       "debit": 251090.0,
-      "description": "Venta NV-000070",
+      "description": "Venta OV-000070",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000070",
+      "reference": "OV-000070",
       "source_document": null
     },
     {
@@ -773,12 +773,12 @@
       "credit": 0.0,
       "date": "2026-10-18",
       "debit": 148750.0,
-      "description": "Venta NV-000087",
+      "description": "Venta OV-000087",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000087",
+      "reference": "OV-000087",
       "source_document": null
     },
     {
@@ -786,12 +786,12 @@
       "credit": 0.0,
       "date": "2026-10-21",
       "debit": 163030.0,
-      "description": "Venta NV-000017",
+      "description": "Venta OV-000017",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000017",
+      "reference": "OV-000017",
       "source_document": null
     },
     {
@@ -799,12 +799,12 @@
       "credit": 0.0,
       "date": "2026-10-24",
       "debit": 153510.0,
-      "description": "Venta NV-000091",
+      "description": "Venta OV-000091",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000091",
+      "reference": "OV-000091",
       "source_document": null
     },
     {
@@ -812,12 +812,12 @@
       "credit": 0.0,
       "date": "2026-10-26",
       "debit": 456960.0,
-      "description": "Venta NV-000077",
+      "description": "Venta OV-000077",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000077",
+      "reference": "OV-000077",
       "source_document": null
     },
     {
@@ -825,12 +825,12 @@
       "credit": 0.0,
       "date": "2026-11-04",
       "debit": 73780.0,
-      "description": "Venta NV-000001",
+      "description": "Venta OV-000001",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000001",
+      "reference": "OV-000001",
       "source_document": null
     },
     {
@@ -851,12 +851,12 @@
       "credit": 0.0,
       "date": "2026-11-09",
       "debit": 157080.0,
-      "description": "Venta NV-000084",
+      "description": "Venta OV-000084",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000084",
+      "reference": "OV-000084",
       "source_document": null
     },
     {
@@ -864,12 +864,12 @@
       "credit": 0.0,
       "date": "2026-11-10",
       "debit": 571200.0,
-      "description": "Venta NV-000034",
+      "description": "Venta OV-000034",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000034",
+      "reference": "OV-000034",
       "source_document": null
     },
     {
@@ -877,12 +877,12 @@
       "credit": 0.0,
       "date": "2026-11-24",
       "debit": 128520.0,
-      "description": "Venta NV-000030",
+      "description": "Venta OV-000030",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000030",
+      "reference": "OV-000030",
       "source_document": null
     },
     {
@@ -890,12 +890,12 @@
       "credit": 0.0,
       "date": "2026-11-28",
       "debit": 506940.0,
-      "description": "Venta NV-000094",
+      "description": "Venta OV-000094",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000094",
+      "reference": "OV-000094",
       "source_document": null
     },
     {
@@ -916,12 +916,12 @@
       "credit": 0.0,
       "date": "2026-12-10",
       "debit": 302260.0,
-      "description": "Venta NV-000043",
+      "description": "Venta OV-000043",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000043",
+      "reference": "OV-000043",
       "source_document": null
     },
     {
@@ -929,12 +929,12 @@
       "credit": 0.0,
       "date": "2026-12-11",
       "debit": 188020.0,
-      "description": "Venta NV-000022",
+      "description": "Venta OV-000022",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000022",
+      "reference": "OV-000022",
       "source_document": null
     },
     {
@@ -942,12 +942,12 @@
       "credit": 0.0,
       "date": "2026-12-11",
       "debit": 546210.0,
-      "description": "Venta NV-000054",
+      "description": "Venta OV-000054",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000054",
+      "reference": "OV-000054",
       "source_document": null
     },
     {
@@ -955,12 +955,12 @@
       "credit": 0.0,
       "date": "2026-12-24",
       "debit": 536690.0,
-      "description": "Venta NV-000062",
+      "description": "Venta OV-000062",
       "entry_id": "<id>",
       "id": "<id>",
       "label": "",
       "partner": "",
-      "reference": "NV-000062",
+      "reference": "OV-000062",
       "source_document": null
     }
   ],

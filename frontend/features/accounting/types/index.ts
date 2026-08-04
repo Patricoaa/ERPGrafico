@@ -37,6 +37,7 @@ export interface LedgerData {
 export interface LedgerMovement {
     id: number
     date: string
+    created_at?: string
     description: string
     label?: string
     debit: string | number

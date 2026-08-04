@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState } from "react"
 import {
     type ColumnDef
 } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTable, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { IconButton } from "@/components/shared"
 
@@ -14,6 +14,7 @@ import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { type Account } from "@/features/accounting/types"
 import { DataCell } from '@/components/shared'
 import { accountActions, type AccountActionsCtx } from './accountActions'
+import { accountFields } from "../accountFields"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
@@ -34,18 +35,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const search = useUnifiedSearch(accountUnifiedSearchDef)
     const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters: search.filters as unknown as Record<string, unknown> })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingAccount, setEditingAccount] = useState<Account | null>(null)
     const [formParentId, setFormParentId] = useState<string | null>(null)
     const [ledgerTarget, setLedgerTarget] = useState<{ id: number; name: string; code: string } | null>(null)
-
-    // Guard for async operations during mount/unmount
-    const isMounted = useRef(false)
-
-    useEffect(() => {
-        isMounted.current = true
-        return () => { isMounted.current = false }
-    }, [])
 
     const accounts = React.useMemo(() => {
         if (flatAccounts.length > 0) {
@@ -62,45 +53,20 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         endpoint: '/accounting/accounts'
     })
 
-    // Open edit form if ?selected= is present (ADR-0020).
-    // Depends ONLY on selectedFromUrl — see CategoryList for explanation
-    // of why isFormOpen/editingAccount must NOT be in the dependency array.
-    useEffect(() => {
-        requestAnimationFrame(() => {
-            if (selectedFromUrl) {
-                setEditingAccount(selectedFromUrl)
-                setIsFormOpen(true)
-            } else {
-                setIsFormOpen(false)
-                setEditingAccount(null)
-            }
-        })
-    }, [selectedFromUrl])
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isFormOpen = isCreateOpen || !!selectedFromUrl
+    const editingAccount = selectedFromUrl ?? null
 
     const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingAccount(null)
         setFormParentId(null)
         onExternalOpenChange?.(false)
         clearSelection()
-    }
-
-
-
-    const handleEditAccount = React.useCallback((account: Account) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(account.id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [pathname, router, searchParams])
-
-    // Synchronize external modal trigger
-    useEffect(() => {
-        if (externalOpen && isMounted.current) {
-            requestAnimationFrame(() => setIsFormOpen(true))
+        if (isCreateOpen) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
-    }, [externalOpen])
-
-
+    }
 
     const confirmDelete = async () => {
         if (!deleteTarget) return
@@ -121,7 +87,11 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                 setLedgerTarget({ id: account.id, name: account.name, code: account.code })
             },
-            onEdit: handleEditAccount,
+            onEdit: (account) => {
+                const params = new URLSearchParams(searchParams.toString())
+                params.set('selected', String(account.id))
+                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+            },
             onDelete: (id) => setDeleteTarget(id),
         }
         return [
@@ -163,70 +133,12 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     </div>
                 )
             },
+            meta: { title: "Código" },
         },
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text>{row.original.name}</DataCell.Text></div>,
-        },
-        {
-            accessorKey: "account_type",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge
-                        status={row.original.account_type}
-                        label={row.original.account_type_display}
-                    />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "debit_total",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Debe" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency
-                        value={parseFloat(row.getValue("debit_total") || "0")}
-                    />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "credit_total",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Haber" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency
-                        value={parseFloat(row.getValue("credit_total") || "0")}
-                    />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency
-                        value={parseFloat(row.getValue("balance") || "0")}
-                    />
-                </div>
-            ),
-        },
-        accountActions.column(actionCtx),
+        ...accountFields.toColumns({ exclude: ["code"] }),
+        accountActions.auto(actionCtx),
         ]
-    }, [handleEditAccount, pathname, router, searchParams])
+    }, [pathname, router, searchParams])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

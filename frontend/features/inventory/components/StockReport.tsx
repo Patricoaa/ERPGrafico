@@ -1,36 +1,48 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
-import React, { useState, useMemo } from "react"
-import { ArrowRightLeft } from "lucide-react"
+import React, { useMemo } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
-import { BaseModal, DataCell, DataTableView, EntityCard, DataTableColumnHeader, UnifiedSearchBar, useUnifiedSearch, CancelButton, SubmitButton, FormFooter } from '@/components/shared'
-import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
+import { DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import type { MultiSelectOption } from '@/types/unified-search'
 import { type ColumnDef } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
 
-import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
+import { ProductInsightsPanel } from "@/features/inventory/components/ProductInsightsPanel"
 import { stockReportActions, type StockReportActionsCtx } from './stockReportActions'
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 import { useCategories, useWarehouses } from '@/features/inventory'
+import { stockReportUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { stockReportFields, type StockReportItem } from "@/features/inventory/stockReportFields"
 
-interface StockReportItem {
-    id: number | string
-    name?: string
-    code?: string
-    internal_code?: string
-    category_id?: number | string
-    category_name?: string
-    stock_qty?: number | string
-    qty_reserved?: number | string
-    qty_available?: number | string
-    uom_name?: string
-    unit_cost?: number | string
-    total_value?: number | string
+export interface StockReportExternalFilters {
+    search?: string
+    category?: string
+    product_type?: string
+    is_active?: string
 }
 
-export function StockReport() {
+interface StockReportProps {
+    /** When provided, disables the internal toolbar and uses these filters instead (embedded mode) */
+    externalFilters?: StockReportExternalFilters
+    /**
+     * Embedded drill-down: when the user clicks a product row in embedded mode,
+     * call this instead of opening the modal. The parent controls the transition.
+     */
+    onSelectProduct?: (item: StockReportItem) => void
+    /**
+     * Embedded drill-down: currently selected product. When set, render is
+     * handled by the parent — this component renders nothing in that state.
+     */
+    selectedProduct?: StockReportItem | null
+}
+
+export function StockReport({ externalFilters, onSelectProduct, selectedProduct }: StockReportProps = {}) {
+    const embedded = externalFilters !== undefined
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
     const { categories } = useCategories()
     const { warehouses } = useWarehouses()
 
@@ -39,197 +51,119 @@ export function StockReport() {
         warehouse: warehouses.map((w) => ({ label: w.name, value: String(w.id) })),
     }), [categories, warehouses])
 
-    const config: UnifiedSearchConfig = useMemo(() => ({
-        searchFields: [
-            { key: 'search', label: 'Producto / SKU', serverParam: 'search', clientKey: ['name', 'code', 'internal_code'] },
-        ],
-        filters: [
-            { key: 'category', label: 'Categoría', type: 'single', serverParam: 'category', dynamic: true },
-            { key: 'warehouse', label: 'Bodega', type: 'single', serverParam: 'warehouse_id', dynamic: true },
-            { key: 'stock_qty', label: 'Stock (Físico)', type: 'range', serverParamFrom: 'stock_qty_from', serverParamTo: 'stock_qty_to' },
-            { key: 'qty_available', label: 'Disponible', type: 'range', serverParamFrom: 'qty_available_from', serverParamTo: 'qty_available_to' },
-            { key: 'qty_reserved', label: 'Reservado', type: 'range', serverParamFrom: 'qty_reserved_from', serverParamTo: 'qty_reserved_to' },
-            { key: 'total_value', label: 'Valorización', type: 'range', serverParamFrom: 'total_value_from', serverParamTo: 'total_value_to' },
-        ],
-    }), [])
+    const search = useUnifiedSearch(stockReportUnifiedSearchDef, filterOptions)
 
-    const search = useUnifiedSearch(config, filterOptions)
-    const { report, isLoading, refetch } = useStockReport(search.paramValues.warehouse_id as string | null)
+    // Standalone: reads product_id from URL for drill-down
+    const urlProductId = embedded ? null : searchParams.get('product_id')
+    const urlProductName = embedded ? null : searchParams.get('product_name')
 
-    const [adjustingProduct, setAdjustingProduct] = useState<StockReportItem | null>(null)
-    const [insightsProduct, setInsightsProduct] = useState<StockReportItem | null>(null)
-    const [isFormLoading, setIsFormLoading] = useState(false)
+    const warehouseId = embedded ? null : (search.paramValues.warehouse_id as string | null)
+    const { report, isLoading } = useStockReport(warehouseId)
 
-    const stockReportActionsCtx: StockReportActionsCtx = {
-        onAdjust: (product) => setAdjustingProduct(product as StockReportItem | null),
-        onHistory: (product) => setInsightsProduct(product as StockReportItem | null),
+    // ── Action context ────────────────────────────────────────────────────────
+
+    const handleSelectProduct = (item: StockReportItem) => {
+        if (embedded && onSelectProduct) {
+            // Embedded: delegate to parent
+            onSelectProduct(item)
+        } else {
+            // Standalone: write to URL
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('product_id', String(item.id))
+            params.set('product_name', item.name ?? '')
+            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        }
     }
 
-    const isFiltered = search.isFiltered
+    const handleBack = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('product_id')
+        params.delete('product_name')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const stockReportActionsCtx: StockReportActionsCtx = {
+        onHistory: (product) => handleSelectProduct(product as StockReportItem),
+    }
+
+    // ── Filtering ─────────────────────────────────────────────────────────────
+
+    const activeFilters = embedded
+        ? { search: externalFilters?.search, category: externalFilters?.category }
+        : search.filters
+
+    const isFiltered = embedded
+        ? Boolean(externalFilters?.search || externalFilters?.category)
+        : search.isFiltered
 
     const clearAll = async () => {
-        await search.clearAll()
+        if (!embedded) await search.clearAll()
     }
 
     const filteredReport = useMemo(() => {
         const items = report as unknown as StockReportItem[]
-        if (!isFiltered) return items;
+        if (!isFiltered) return items
 
         return items.filter((item: StockReportItem) => {
-            // Text search (Product/SKU)
-            if (search.filters.search) {
-                const searchVal = String(search.filters.search).toLowerCase();
+            if (activeFilters.search) {
+                const searchVal = String(activeFilters.search).toLowerCase()
                 const matchesSearch =
                     item.name?.toLowerCase().includes(searchVal) ||
                     item.code?.toLowerCase().includes(searchVal) ||
-                    item.internal_code?.toLowerCase().includes(searchVal);
-                if (!matchesSearch) return false;
+                    item.internal_code?.toLowerCase().includes(searchVal)
+                if (!matchesSearch) return false
             }
 
-            // Category filter
-            if (search.filters.category) {
-                if (String(item.category_id) !== search.filters.category) return false;
+            if (activeFilters.category) {
+                if (String(item.category_id) !== activeFilters.category) return false
             }
 
-            // Stock qty range
-            if (search.filters.stock_qty_from) {
-                if (Number(item.stock_qty) < Number(search.filters.stock_qty_from)) return false;
-            }
-            if (search.filters.stock_qty_to) {
-                if (Number(item.stock_qty) > Number(search.filters.stock_qty_to)) return false;
-            }
-
-            // Available qty range
-            if (search.filters.qty_available_from) {
-                if (Number(item.qty_available) < Number(search.filters.qty_available_from)) return false;
-            }
-            if (search.filters.qty_available_to) {
-                if (Number(item.qty_available) > Number(search.filters.qty_available_to)) return false;
+            if (!embedded) {
+                const sf = search.filters
+                if (sf.stock_qty_from && Number(item.stock_qty) < Number(sf.stock_qty_from)) return false
+                if (sf.stock_qty_to && Number(item.stock_qty) > Number(sf.stock_qty_to)) return false
+                if (sf.qty_available_from && Number(item.qty_available) < Number(sf.qty_available_from)) return false
+                if (sf.qty_available_to && Number(item.qty_available) > Number(sf.qty_available_to)) return false
+                if (sf.qty_reserved_from && Number(item.qty_reserved) < Number(sf.qty_reserved_from)) return false
+                if (sf.qty_reserved_to && Number(item.qty_reserved) > Number(sf.qty_reserved_to)) return false
+                if (sf.total_value_from && Number(item.total_value) < Number(sf.total_value_from)) return false
+                if (sf.total_value_to && Number(item.total_value) > Number(sf.total_value_to)) return false
             }
 
-            // Reserved qty range
-            if (search.filters.qty_reserved_from) {
-                if (Number(item.qty_reserved) < Number(search.filters.qty_reserved_from)) return false;
-            }
-            if (search.filters.qty_reserved_to) {
-                if (Number(item.qty_reserved) > Number(search.filters.qty_reserved_to)) return false;
-            }
+            return true
+        })
+    }, [activeFilters, search.filters, report, isFiltered, embedded])
 
-            // Valuation range
-            if (search.filters.total_value_from) {
-                if (Number(item.total_value) < Number(search.filters.total_value_from)) return false;
-            }
-            if (search.filters.total_value_to) {
-                if (Number(item.total_value) > Number(search.filters.total_value_to)) return false;
-            }
+    const columns: ColumnDef<StockReportItem>[] = useMemo(() => [
+        ...stockReportFields.toColumns(),
+        stockReportActions.auto(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
+    ], [stockReportActionsCtx])
 
-            return true;
-        });
-    }, [search.filters, report, isFiltered])
+    // ── Standalone drill-down: render insights panel from URL param ───────────
 
-    const columns = useMemo<ColumnDef<StockReportItem>[]>(() => [
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Producto" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center py-1">
-                    <DataCell.Text className="text-center">{row.original.name}</DataCell.Text>
-                    <div className="flex gap-2 items-center justify-center">
-                        {row.original.internal_code && (
-                            <DataCell.Code>{row.original.internal_code}</DataCell.Code>
-                        )}
-                        {row.original.code && row.original.code !== row.original.internal_code && (
-                            <DataCell.Code>
-                                {row.original.code}
-                            </DataCell.Code>
-                        )}
-                    </div>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "category_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.getValue("category_name")}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: "stock_qty",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Físico" className="justify-center" />,
-            cell: ({ row }) => {
-                const qty = Number(row.getValue("stock_qty"))
-                return (
-                    <div className="flex flex-col items-center">
-                        <DataCell.Number
-                            value={qty}
-                            className={cn(
-                                "text-[14px]",
-                                qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
-                            )}
-                        />
-                        <DataCell.Secondary className="text-[10px] opacity-50 uppercase tracking-tighter">
-                            {row.original.uom_name}
-                        </DataCell.Secondary>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "qty_reserved",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.Number
-                        value={row.getValue("qty_reserved")}
-                    />
-                    <DataCell.Secondary className="text-[10px] opacity-50 uppercase tracking-tighter">
-                        {row.original.uom_name}
-                    </DataCell.Secondary>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "qty_available",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-center" />,
-            cell: ({ row }) => {
-                const qty = Number(row.getValue("qty_available"))
-                return (
-                    <div className="flex flex-col items-center">
-                        <DataCell.Number
-                            value={qty}
-                            className={cn(
-                                "text-[14px]",
-                                qty <= 0 ? "text-destructive" : "text-primary font-black"
-                            )}
-                        />
-                        <DataCell.Secondary className="text-[10px] opacity-50 uppercase tracking-tighter">
-                            {row.original.uom_name}
-                        </DataCell.Secondary>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "total_value",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Valorización" className="justify-center" />,
-            cell: ({ row }) => {
-                const item = row.original;
-                return (
-                    <div className="flex flex-col items-center w-full">
-                        <DataCell.Currency value={item.total_value} className="text-sm text-primary" />
-                        <DataCell.Secondary className="text-[9px] opacity-40 uppercase tracking-tighter">
-                            {formatCurrency(item.unit_cost)} c/{item.uom_name}
-                        </DataCell.Secondary>
-                    </div>
-                )
-            },
-        },
+    if (!embedded && urlProductId) {
+        return (
+            <ProductInsightsPanel
+                productId={Number(urlProductId)}
+                productName={urlProductName}
+                onBack={handleBack}
+                onProductChange={(id, name) => {
+                    const params = new URLSearchParams(searchParams.toString())
+                    params.set('product_id', String(id))
+                    params.set('product_name', name)
+                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                }}
+            />
+        )
+    }
 
-        stockReportActions.column(stockReportActionsCtx) as unknown as ColumnDef<StockReportItem>,
-    ], [setAdjustingProduct, setInsightsProduct, stockReportActionsCtx])
+    // ── Embedded: if parent drives drill-down, render nothing here ───────────
+    // (parent renders ProductInsightsPanel in the analytics tab content)
+    if (embedded && selectedProduct !== undefined && selectedProduct !== null) {
+        return null
+    }
+
+    // ── Normal table view ─────────────────────────────────────────────────────
 
     return (
         <div className="flex-1 flex flex-col min-h-0">
@@ -240,22 +174,26 @@ export function StockReport() {
                     data={filteredReport}
                     isLoading={isLoading}
                     variant="embedded"
-                    unifiedSearch={<UnifiedSearchBar
-                        config={config}
-                        chips={search.chips}
-                        isFiltered={search.isFiltered}
-                        inputValue={search.inputValue}
-                        onInputChange={search.setInputValue}
-                        onApply={search.applyFilter}
-                        onRemove={search.removeFilter}
-                        onClearAll={search.clearAll}
-                        groupBy={search.groupBy}
-                        onGroupBySelect={search.setGroupBy}
-                        paramValues={search.paramValues}
-                        filterOptions={search.filterOptions}
-                        placeholder="Buscar por producto o SKU..."
-                    />}
-                    showReset={isFiltered}
+                    forceView={embedded ? "list" : undefined}
+                    hideToolbar={embedded}
+                    unifiedSearch={embedded ? undefined : (
+                        <UnifiedSearchBar
+                            config={stockReportUnifiedSearchDef}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                            filterOptions={search.filterOptions}
+                            placeholder="Buscar por producto o SKU..."
+                        />
+                    )}
+                    showReset={!embedded && isFiltered}
                     onReset={clearAll}
                     defaultPageSize={50}
                     isFiltered={isFiltered}
@@ -264,68 +202,27 @@ export function StockReport() {
                         title: "Sin productos para reportar",
                         description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
                     }}
-                    renderCard={(item: StockReportItem) => (
-                        <EntityCard key={item.id}>
-                            <EntityCard.Header
-                                title={item.name}
-                                subtitle={item.category_name}
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Stock" value={`${item.stock_qty ?? 0} ${item.uom_name ?? ''}`} />
-                                <EntityCard.Field label="Disponible" value={`${item.qty_available ?? 0} ${item.uom_name ?? ''}`} />
-                                <EntityCard.Field label="Valorización" value={<DataCell.Currency value={item.total_value} />} />
-                            </EntityCard.Body>
-                        </EntityCard>
+                    renderCard={embedded ? undefined : (item: StockReportItem) => (
+                        <AutoEntityCard
+                            key={item.id}
+                            data={item}
+                            fields={stockReportFields}
+                            entityLabel="inventory.stockreport"
+                            actions={stockReportActions.render(item, stockReportActionsCtx)}
+                        />
                     )}
                 />
             </div>
 
-            <BaseModal
-                open={!!adjustingProduct}
-                onOpenChange={(open) => !open && setAdjustingProduct(null)}
-                size="lg"
-                hideScrollArea={true}
-                contentClassName="p-0"
-                icon={ArrowRightLeft}
-                title="Ajuste de Stock"
-                description={adjustingProduct ? `${adjustingProduct.name} • SKU: ${adjustingProduct.internal_code || 'N/A'}` : undefined}
-                footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={() => setAdjustingProduct(null)} />
-                                <SubmitButton
-                                    form="adjustment-form"
-                                    loading={isFormLoading}
-                                    variant="primary"
-                                    className="px-8"
-                                >
-                                    Confirmar Ajuste
-                                </SubmitButton>
-                            </>
-                        }
-                    />
-                }
-            >
-                {adjustingProduct && (
-                    <AdjustmentForm
-                        onLoadingChange={setIsFormLoading}
-                        preSelectedProduct={adjustingProduct.id.toString()}
-                        onSuccess={() => {
-                            setAdjustingProduct(null);
-                            refetch();
-                        }}
-                        onCancel={() => setAdjustingProduct(null)}
-                    />
-                )}
-            </BaseModal>
-
-            <ProductInsightsModal
-                open={!!insightsProduct}
-                onOpenChange={(open) => !open && setInsightsProduct(null)}
-                productId={(insightsProduct?.id as number) ?? null}
-                productName={insightsProduct?.name ?? null}
-            />
+            {/* Standalone modal (kept for backward compat, won't render when product_id is in URL) */}
+            {!embedded && !urlProductId && (
+                <ProductInsightsModal
+                    open={false}
+                    onOpenChange={() => undefined}
+                    productId={null}
+                    productName={null}
+                />
+            )}
         </div>
     )
 }

@@ -9,7 +9,11 @@ stability: beta
 
 # Export Formats — PDF / Excel / CSV
 
-> **Estado de implementación al 2026-05-21:** contrato definido, sin implementación en el codebase. Este doc fija la convención canónica para que el primer playbook (`add-export-pdf-excel.md`, Tier 2 — Sesión 4) tenga rieles. Cualquier export que se implemente debe seguir esto o levantar ADR.
+> **Estado de implementación al 2026-08-04 (reconciliado con código):**
+> - **WeasyPrint → IMPLEMENTADO** (sync): PDFs de órdenes de producción (`production.services.WorkOrderPdfService.generate_pdf` / `generate_bulk_pdf`, [production/services.py:2159](../../backend/production/services.py#L2159)) y reportes POS de tesorería (`treasury/pos_report_pdf.render_pos_report_pdf`, [treasury/views.py:869](../../backend/treasury/views.py#L869)). `weasyprint` en [requirements.txt:33](../../backend/requirements.txt#L33).
+> - **openpyxl → presente** en [requirements.txt:21](../../backend/requirements.txt#L21) (sin export xlsx en producción todavía).
+> - **NO implementado:** el pipeline async (`ExportJob`, `/api/jobs/`, subida a storage + signed URL, cron de purge de 7 días) y `core/excel.py` helpers. Los PDFs actuales son sync.
+> - Este doc sigue siendo la convención canónica: cualquier export nuevo debe seguir esto o levantar ADR.
 
 ## Stack elegido
 
@@ -168,21 +172,9 @@ def write_csv(rows, fieldnames) -> bytes:
 
 ---
 
-## Storage async (R2 / MinIO)
+## Storage async (MinIO via django-storages)
 
-> **SDK:** El object storage de producción es **Cloudflare R2 (S3-compatible)**. El cliente se configura con `boto3` apuntando al endpoint R2:
-> ```python
-> # backend/core/storage.py
-> import boto3
-> storage_client = boto3.client(
->     "s3",
->     endpoint_url=settings.R2_ENDPOINT_URL,       # e.g. https://<account>.r2.cloudflarestorage.com
->     aws_access_key_id=settings.R2_ACCESS_KEY_ID,
->     aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY,
->     region_name="auto",
-> )
-> ```
-> En dev local se puede usar MinIO como sustituto S3-compatible con la misma interfaz boto3. Los snippets de este doc usan `storage_client` como alias del cliente configurado.
+> **Configuración real (2026-08-04):** el storage NO es un cliente `boto3` raw en `core/storage.py` (ese módulo no existe). Se usa `django-storages[boto3]` con `S3Boto3Storage` ([settings.py:251-267](../../backend/config/settings.py#L251)): toggle `USE_S3`, endpoint `AWS_S3_ENDPOINT_URL` (default `http://minio:9000`, S3-compatible — también compatible con Cloudflare R2 cambiando el endpoint), firmas `s3v4`, `AWS_S3_FILE_OVERWRITE=False`. Los snippets de este doc usan `storage_client` como alias conceptual del backend de storage activo.
 
 Generados async se suben a MinIO y se sirven via signed URL:
 
@@ -194,12 +186,11 @@ Generados async se suben a MinIO y se sirven via signed URL:
 | Signed URL TTL | **15 min** — coherente con [security.md](../40-quality/security.md) |
 | Filename de descarga | Setear `response-content-disposition` en la signed URL: `attachment; filename="ventas-2026-05.xlsx"` |
 
-Cron de cleanup:
+Cron de cleanup (especificación — la tarea `purge_old_exports` NO existe aún en `core/tasks.py`):
 
 ```python
-# backend/core/tasks.py
-# Nota: storage_client es boto3 configurado contra R2 (ver §Storage async R2/MinIO)
-from core.storage import storage_client
+# backend/core/tasks.py — a implementar
+from core.storage import storage_client  # backend de storage activo (S3Boto3Storage/MinIO)
 
 @shared_task
 def purge_old_exports():
@@ -214,6 +205,8 @@ def purge_old_exports():
 ---
 
 ## Modelo Job (compartido con import)
+
+> **Estado 2026-08-04:** el modelo `ExportJob` NO existe en el codebase (tampoco `ImportJob` ni el endpoint `GET /api/jobs/{id}/`). Es parte de la especificación async pendiente. Definición canónica de contrato:
 
 ```python
 class ExportJob(models.Model):

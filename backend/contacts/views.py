@@ -2,6 +2,7 @@ from core.api.pagination import StandardResultsSetPagination
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -13,7 +14,12 @@ from core.mixins import AuditHistoryMixin
 
 from .models import Contact
 from .selectors import ContactSelector, list_contacts, list_credit_portfolio
-from .serializers import ContactListSerializer, ContactSerializer
+from .serializers import (
+    ContactListSerializer,
+    ContactSerializer,
+    ContactWriteSerializer,
+    PartnerListSerializer,
+)
 
 
 class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -44,9 +50,13 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return super().destroy(request, *args, **kwargs)
 
     def get_serializer_class(self):
-        """Use lightweight serializer for list action"""
+        """Use lightweight serializer for list and partners actions"""
         if self.action == "list":
             return ContactListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return ContactWriteSerializer
+        if self.action == "partners":
+            return PartnerListSerializer
         return ContactSerializer
 
     def get_queryset(self):
@@ -215,8 +225,24 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get', 'post'])
     def partner_transactions(self, request, pk=None):
+        if request.method == 'POST':
+            from .partner_service import PartnerService
+            from rest_framework.exceptions import ValidationError
+            try:
+                ptx = PartnerService.partner_transactions_from_request(request, self.get_object())
+                return Response(
+                    {
+                        "message": "Transacción registrada.",
+                        "journal_entry": ptx.journal_entry.display_id if ptx.journal_entry else None,
+                    }
+                )
+            except ValidationError as e:
+                return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=400)
+            except Exception as e:
+                return Response({"error": str(e)}, status=500)
+
         from .serializers import PartnerTransactionSerializer
         transactions = ContactSelector.list_partner_transactions(self.get_object())
         page = self.paginate_queryset(transactions)
@@ -267,10 +293,6 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({"error": str(e)}, status=500)
 
     @action(detail=False, methods=["get"])
-    def all_partner_transactions(self, request):
-        return Response(ContactSelector.list_all_partner_transactions())
-
-    @action(detail=False, methods=["get"])
     def equity_stakes_history(self, request):
         partner_id = request.query_params.get("partner_id")
         return Response(
@@ -278,6 +300,13 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 partner_id=int(partner_id) if partner_id else None
             )
         )
+
+    @action(detail=False, methods=['get'])
+    def partner_evolution(self, request):
+        from .partner_analytics import PartnerAnalyticsService
+        months = int(request.query_params.get('months', '24'))
+        granularity = request.query_params.get('granularity', 'month')
+        return Response(PartnerAnalyticsService.get_evolution(months, granularity))
 
     @action(detail=False, methods=['post'])
     def initial_setup(self, request):

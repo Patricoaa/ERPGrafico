@@ -110,6 +110,7 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
                 "id": item.id,
                 "date": item.entry.date,
                 "entry_id": item.entry.id,
+                "created_at": item.entry.created_at,
                 "reference": item.entry.reference,
                 "description": item.entry.description,
                 "debit": d,

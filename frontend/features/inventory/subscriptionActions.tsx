@@ -1,6 +1,6 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { Subscription } from './hooks/useSubscriptions'
-import { Pencil, Pause, Play, History, Archive } from "lucide-react"
+import { Pause, Play } from "lucide-react"
 
 export interface SubscriptionActionsCtx {
     onEdit: (productId: number) => void
@@ -13,40 +13,10 @@ export interface SubscriptionActionsCtx {
 export const subscriptionActions = createEntityActions<
     Subscription,
     SubscriptionActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action
-            icon={Pencil}
-            title="Editar Producto"
-            onClick={() => ctx.onEdit(item.product)}
-        />
-        {item.status === "ACTIVE" && (
-            <DataCell.Action
-                icon={Pause}
-                title="Pausar Suscripción"
-                color="text-warning"
-                onClick={() => ctx.onPause(item.id)}
-            />
-        )}
-        {item.status === "PAUSED" && (
-            <DataCell.Action
-                icon={Play}
-                title="Reanudar Suscripción"
-                color="text-success"
-                onClick={() => ctx.onResume(item.id)}
-            />
-        )}
-        <DataCell.Action
-            icon={History}
-            title="Ver Historial"
-            color="text-primary"
-            onClick={() => ctx.onViewHistory(item.id)}
-        />
-        <DataCell.Action
-            icon={Archive}
-            title="Archivar Producto"
-            className="text-destructive/70 hover:text-destructive"
-            onClick={() => ctx.onArchive({ id: item.product, name: item.product_name })}
-        />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", label: "Editar Producto", onClick: () => ctx.onEdit(item.product) },
+    { action: "lock", icon: Pause, label: "Pausar Suscripción", iconColor: "text-warning", onClick: () => ctx.onPause(item.id), visible: item.status === "ACTIVE" },
+    { action: "disburse", icon: Play, label: "Reanudar Suscripción", iconColor: "text-success", onClick: () => ctx.onResume(item.id), visible: item.status === "PAUSED" },
+    { action: "history", label: "Ver Historial", iconColor: "text-primary", onClick: () => ctx.onViewHistory(item.id) },
+    { action: "archive", label: "Archivar Producto", className: "text-destructive/70 hover:text-destructive", onClick: () => ctx.onArchive({ id: item.product, name: item.product_name }) },
+])

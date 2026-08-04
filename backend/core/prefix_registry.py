@@ -22,7 +22,7 @@ class EntityPrefix(StrEnum):
     """Canonical prefix strings for all ERP document entities."""
 
     # ── Sales ──────────────────────────────────────────────────────────
-    SALE_ORDER = "NV"
+    SALE_ORDER = "OV"
     SALE_DELIVERY = "DES"
     SALE_RETURN = "DEV"
 
@@ -47,6 +47,7 @@ class EntityPrefix(StrEnum):
     BOM = "BOM"
 
     # ── Inventory ──────────────────────────────────────────────────────
+    INVENTORY_DOCUMENT = "DOC"
     STOCK_MOVE = "MOV"
     PRODUCT = "PRD"
     CATEGORY = "CAT"

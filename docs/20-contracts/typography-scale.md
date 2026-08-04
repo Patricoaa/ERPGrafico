@@ -55,20 +55,22 @@ Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el dis
 | **N0 — Empty state** | EmptyState title | `text-lg font-black` | `tracking-tighter` | `uppercase` | "Sin resultados" |
 | **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-black` | `tracking-tighter` | `uppercase` | "Algo salió mal" |
 | **N1 — Sección** | FormSection, SectionHeader, sidebar título | `text-[11px] font-black` | `tracking-[0.25em]` | `uppercase` | "Roles", "Identidad del Contacto" |
-| **N2 — Etiqueta de campo** | LabeledInput legend | `text-[10px] font-black` | `tracking-[0.15em]` | `uppercase` | "Nombre / Razón Social" |
+| **N2 — Etiqueta de campo** | LabeledInput legend | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Nombre / Razón Social" |
 | **N2 — Botón acción** | SubmitButton, CancelButton | `text-[10px] font-black h-9` | `tracking-widest` | `uppercase` | "Guardar", "Cancelar" |
 | **N2 — Header de tabla** | DataTableColumnHeader, `<th>` | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Fecha", "Total", "Estado" |
-| **N2 — Badge/Chip** | Chip, StatusBadge, EntityBadge | `text-[9-12px] font-black font-mono` | `tracking-widest` | `uppercase` | "Pagado", "Pendiente" |
+| **N2 — Badge/Chip** | Chip, EntityBadge | `text-xs font-medium font-sans` | `normal` | normal | "Pagado", "Pendiente" |
+| **N2 — StatusBadge** | StatusBadge (badge) | `text-xs font-medium font-sans` | `normal` | normal | "En Proceso", "Sin Conciliar" |
 | **N2 — Drawer/Modal title** | SheetTitle, DialogTitle | `text-xl font-black` | `tracking-tight` | normal | "Nuevo Contacto" |
-| **N2 — Drawer subtitle** | description prop | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Ficha Maestra • CRM" |
+| **N2 — Drawer subtitle** | `subtitle` prop (PanelHeader, via `PanelBaseProps`) | `text-xs font-medium text-muted-foreground` | normal | normal | "Ficha Maestra • CRM" |
 | **N2 — Wizard step** | GenericWizard step indicator | `text-[10px] font-black` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
 | **N2 — Paginación** | DataTablePagination | `text-[10px] font-black` | `tracking-widest` | `uppercase` | "Registros por página" |
 | **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |
-| **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
 | **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs text-muted-foreground` | normal | normal | "3 documentos" |
-| **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-mono font-medium` | normal | `uppercase` | "NV-000123" |
+| **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-mono font-medium` | normal | `uppercase` | "OV-000123" |
 | **N3 — Valor financiero** | DataCell.Currency, StatCard number | `text-xs font-medium tabular-nums` | normal | normal | "$1.234.567" |
-| **N3 — Fecha** | DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Fecha** | DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Fecha-hora** | DataCell.Date `showTime`, FieldType `dateTime` | fecha `text-xs font-medium` + hora `text-xs font-normal` (`light` opcional, ADR-0062) | normal | normal | "15/03/2026 · 14:30" |
 | **N3 — Descripción** | EmptyState description, notes | `text-sm text-muted-foreground` | normal | normal | "Defina la lista de materiales..." |
 | **N4 — Tab label** | PageTabs, TabBar trigger | `text-[10px] sm:text-[11px] font-black uppercase` | `tracking-wider` (PageTabs) / `tracking-widest` (TabBar) | `uppercase` | "Perfil", "Cliente" |
 | **N4 — Tooltip** | TooltipTrigger content | `text-[9px] font-black` | `tracking-widest` | `uppercase` | "Editar" |
@@ -103,11 +105,13 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 
 | Tamaño | Clase | Cuándo usar | Componente |
 |--------|-------|-------------|------------|
-| **Estándar** | `text-[10px] font-black uppercase tracking-widest` | Badge/chip genérico de UI chrome | `<Chip size="sm">` |
-| **Compacto** | `text-[9px] font-black uppercase tracking-widest` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
-| **Énfasis** | `text-[11px] font-black uppercase tracking-widest` | Detail views, modal sections | `<Chip size="md">` |
+| **Estándar** | `text-xs font-medium font-sans` | Badge/chip genérico de UI chrome | `<Chip size="sm">` |
+| **Compacto** | `text-[9px] font-medium` | Tabla, inline, overlaid counters | `<Chip size="xs">` |
+| **Énfasis** | `text-xs font-medium` | Detail views, modal sections | `<Chip size="md">` |
 | **Header de tabla** | `text-[10px] font-black uppercase tracking-widest` | `<TableHead>` columnas | `data-table-column-header.tsx` |
 | **Fine print excepción** | `text-[9px] font-medium` | Timestamps, conteos mínimos sin pill | Inline `<span>` |
+
+Todos los badges son **borderless + `rounded-sm`** (CurrencyFlow aesthetic, ADR-0068).
 
 > **PROHIBIDO:** `text-[8px]` en features. Excepciones documentadas: `PrintableReceipt.tsx` (papel físico), POS `CartItem`/`POSCheckoutHeader` (espacio táctil crítico), `AvatarFallback` (imagen).
 
@@ -117,7 +121,7 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 |-------------|--------|------|-----|
 | `xs` | `h-[18px]` | `text-[9px]` | Table cells, dense lists, overlaid counters |
 | `sm` (default) | `h-[22px]` | `text-[10px]` | General UI chrome, wizard steps |
-| `md` | `h-[26px]` | `text-[11px]` | Detail panels, modal sub-headers |
+| `md` | auto | `text-xs` (`px-2 py-0.5`) | Detail panels, modal sub-headers |
 
 ### StatusBadge — matriz de tamaños
 
@@ -125,9 +129,9 @@ El componente `<StatusBadge>` tiene su propio sistema de tamaños intencional:
 
 | Prop `size` | Altura | Font | Uso |
 |-------------|--------|------|-----|
-| `sm` (default) | `h-6` | `text-[12px]` | Tablas, listas densas |
-| `md` | `h-8` | `text-[14px]` | Modales, panels de detalle |
-| `lg` | `h-10` | `text-base` | Pantallas de detalle full |
+| `xs` | `h-[18px]` | `text-[9px]` | Tablas, listas densas |
+| `sm` | `h-[22px]` | `text-[10px]` | Tablas, listas densas |
+| `md` (default) | auto | `text-xs` | Modales, panels de detalle |
 
 ---
 
@@ -188,7 +192,7 @@ Solo usar tokens semánticos. Nunca `text-blue-500`, `text-red-400`, etc.
 |-------|---------------|-----|
 | `text-foreground` | Casi negro/blanco según modo | Texto principal, valores de datos |
 | `text-muted-foreground` | Gris medio | Descripciones, labels de campos |
-| `text-primary` | Process Cyan | Acciones primarias, énfasis de marca |
+| `text-primary` | Process Black K100 | Acciones primarias, foco, superficie de alto contraste (ADR-0070) |
 | `text-accent` | Golden amber | Acentos cálidos, highlights |
 | `text-success` | Verde | Positivo, activo, aprobado |
 | `text-warning` | Ámbar | Pendiente, atención requerida |

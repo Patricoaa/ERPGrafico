@@ -18,11 +18,7 @@ import { CancelButton, LabeledInput, LabeledSelect, LabeledCheckboxGroup, FormSe
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { ActivitySidebar } from "@/features/audit"
-import { Printer } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 export interface Terminal {
     id: number
@@ -78,8 +74,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
 
     const mode: DrawerMode = modeProp ?? (terminal ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -156,29 +151,6 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
         }
     }
 
-    const toggleAccountSelection = (accountId: number, currentSelections: number[], onChange: (val: number[]) => void, defaultAccountValue: string | null | undefined, setDefaultAccount: (val: string) => void) => {
-        const account = treasuryAccounts.find(a => a.id === accountId)
-        const isSelected = currentSelections.includes(accountId)
-
-        if (!isSelected) {
-            if (account?.allows_cash) {
-                const hasCashDetails = treasuryAccounts
-                    .filter(a => currentSelections.includes(a.id) && a.allows_cash)
-
-                if (hasCashDetails.length > 0) {
-                    toast.warning("Solo se permite una cuenta de efectivo por terminal.")
-                    return
-                }
-            }
-            onChange([...currentSelections, accountId])
-        } else {
-            if (defaultAccountValue === accountId.toString()) {
-                setDefaultAccount("")
-            }
-            onChange(currentSelections.filter(id => id !== accountId))
-        }
-    }
-
     const onSubmit = async (data: FormValues) => {
         if (data.allowed_treasury_account_ids.length === 0) {
             toast.error("Seleccione al menos una cuenta de tesorería")
@@ -232,6 +204,8 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                 <span>{form.watch("name") || "Configuración básica del TPV"}</span>
             </div>
         ),
+        onPrint: handlePrint,
+        printable: (mode === 'view' || mode === 'edit') && !!terminal?.id,
     })
 
     return (
@@ -251,6 +225,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -258,11 +233,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                 mode={mode}
                 title={identity.title}
                 icon={identity.icon}
-                headerActions={(mode === 'view' || mode === 'edit') && terminal?.id && (
-                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                        <Printer className="h-4 w-4" />
-                    </Button>
-                )}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

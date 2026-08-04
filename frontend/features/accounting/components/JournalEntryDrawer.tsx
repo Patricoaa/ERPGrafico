@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/incompatible-library */
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -7,7 +6,7 @@ import { useForm, type Control, type FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { type JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
-import { Plus, Pencil, Printer, ExternalLink } from "lucide-react"
+import { Plus, Pencil, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 import { toDate } from "@/lib/utils"
@@ -22,16 +21,13 @@ import { toast } from "sonner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { useReactToPrint } from "react-to-print"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { formatCurrency } from "@/lib/money"
-
-import { PrintableLayout } from "@/features/_shared"
 import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge, SourceDocumentLink } from "@/components/shared";
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit";
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -105,8 +101,7 @@ export function JournalEntryDrawer({
         reversal_of?: { id?: number; display_id?: string } | null;
         status?: string;
     } | undefined;
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [loading, setLoading] = useState(false)
     const [isPeriodValid, setIsPeriodValid] = useState(true)
@@ -326,7 +321,7 @@ export function JournalEntryDrawer({
                         <div className="col-span-3">
                             <fieldset className="notched-field pointer-events-none" aria-disabled="true">
                                 <legend>Estado</legend>
-                                <StatusBadge status={entryStatus} size="sm" />
+                                <StatusBadge status={entryStatus} size="sm" variant="badge" />
                             </fieldset>
                         </div>
                         <div className="col-span-3">
@@ -466,6 +461,8 @@ export function JournalEntryDrawer({
         overrideSubtitle: isViewMode
             ? form.watch("description") || 'Vista de detalle'
             : form.watch("description") || "Registro manual de movimiento",
+        onPrint: handlePrint,
+        printable: !!entityId && (mode === 'view' || mode === 'edit'),
     })
 
     const showPrintable = entityId && (mode === 'view' || mode === 'edit')
@@ -522,6 +519,7 @@ export function JournalEntryDrawer({
             )}
             <Trigger />
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
@@ -529,10 +527,7 @@ export function JournalEntryDrawer({
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={showPrintable && (
-                    // eslint-disable-next-line no-restricted-syntax -- header action, not a row/card action
-                    <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>
-                )}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isViewMode ? undefined : (
                     <FormFooter

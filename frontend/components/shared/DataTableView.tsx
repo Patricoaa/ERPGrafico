@@ -4,15 +4,16 @@ import React, { useMemo, useRef, useCallback } from "react"
 import { type Row, type Table as ReactTable } from "@tanstack/react-table"
 import { useViewMode } from "@/hooks/useViewMode"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
-import { createDomainCardView, createEntityCardView, createCardLoadingView, createCardGroupView, createCardGroupLoadingView } from "@/lib/view-helpers"
+import { createEntityCardView, createCardLoadingView, createCardGroupView, createCardGroupLoadingView } from "@/lib/view-helpers"
 import { DataTable, type DataTableProps } from "./DataTable"
-import { DomainCard } from "./DomainCard"
 import type { EntityCardSkeletonProps } from "./EntityCard"
 import type { Group } from "@/lib/group-utils"
 import { groupItems } from "@/lib/group-utils"
 import type { UnifiedSearchConfig } from "@/types/unified-search"
 import { TableRow, TableCell } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
+import { AnalyticsPanelContent } from "./AnalyticsPanel"
+import type { ColumnDef } from "@tanstack/react-table"
+import { createHubTriggerColumn } from "./DataTableCells"
 
 interface CardGroupByDef {
   field: string
@@ -30,6 +31,9 @@ interface DataTableViewProps<TData, TValue>
     "viewOptions" | "currentView" | "onViewChange" | "renderCustomView" | "renderLoadingView" | "sortOptions"
   > {
   entityLabel: string
+  defaultView?: string
+  /** Lock to a specific view, bypassing URL params and saved preferences. Also hides the view switcher. */
+  forceView?: string
   renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
   renderLoadingView?: () => React.ReactNode
   renderCard?: (data: TData, row: Row<TData>, table?: ReactTable<TData>) => React.ReactNode
@@ -44,6 +48,8 @@ interface DataTableViewProps<TData, TValue>
 
 export function DataTableView<TData, TValue>({
   entityLabel,
+  defaultView,
+  forceView,
   renderCustomView: externalRenderCustomView,
   renderLoadingView: externalLoadingView,
   renderCard,
@@ -57,8 +63,17 @@ export function DataTableView<TData, TValue>({
 }: DataTableViewProps<TData, TValue>) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
 
-  const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode(entityLabel)
+  const { currentView: hookView, handleViewChange, viewOptions, isCustomView: hookIsCustomView } = useViewMode(entityLabel, defaultView)
+  // forceView completely bypasses URL/preference — used in embedded contexts
+  const currentView = forceView ?? hookView
+  const isCustomView = forceView ? forceView !== 'list' : hookIsCustomView
+  const effectiveViewOptions = forceView ? undefined : viewOptions
   const hasBulkActions = !!(dataTableProps.bulkActions?.length || dataTableProps.bulkDock)
+
+  const enrichedEmptyState = useMemo(() => ({
+    ...dataTableProps.emptyState,
+    entityLabel,
+  }), [dataTableProps.emptyState, entityLabel])
 
   const derivedCardGroupBy = useMemo((): CardGroupByDef | undefined => {
     if (unifiedSearchConfig?.groupBy?.length && currentGroupBy) {
@@ -84,44 +99,25 @@ export function DataTableView<TData, TValue>({
     if (externalRenderCustomView) return externalRenderCustomView
     if (!policy) return undefined
 
+    const analyticsScreen = dataTableProps.analyticsPanel?.screen
+    if (currentView === "analytics" && analyticsScreen) {
+      return function AnalyticsCustomView() {
+        return (
+          <div className="flex-1 flex flex-col min-h-0 h-full">
+            <AnalyticsPanelContent
+              entityName={analyticsScreen.entityName}
+              tabs={analyticsScreen.tabs}
+              activeTab={analyticsScreen.activeTab}
+              onTabChange={analyticsScreen.onTabChange}
+              granularity={analyticsScreen.granularity}
+              onGranularityChange={analyticsScreen.onGranularityChange}
+            />
+          </div>
+        )
+      }
+    }
+
     switch (policy.cardComponent) {
-      case "domain":
-        if (derivedCardGroupBy) {
-          return createCardGroupView({
-            renderCard: (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => {
-              const isAnySelected = table ? table.getSelectedRowModel().rows.length > 0 : false
-              return React.createElement(DomainCard, {
-                label: entityLabel,
-                data,
-                isSelected: isSelected?.(data as TData) ?? false,
-                isHubOpen: isHubOpen ?? false,
-                onClick: () => {
-                  if (hasBulkActions && isAnySelected && row) {
-                    row.toggleSelected()
-                  } else {
-                    dataTableProps.onRowClick?.(data as TData)
-                  }
-                },
-                selectable: hasBulkActions,
-                checked: row?.getIsSelected() ?? false,
-                onCheckedChange: (checked) => row?.toggleSelected(checked),
-                isAnySelected,
-              })
-            },
-            cardGroupBy: derivedCardGroupBy,
-            gridLayout: policy.gridLayout,
-            emptyState: dataTableProps.emptyState,
-            isFiltered: dataTableProps.isFiltered,
-          }) as unknown as (table: ReactTable<TData>) => React.ReactNode
-        }
-        return createDomainCardView(entityLabel, {
-          onRowClick: dataTableProps.onRowClick as (data: Record<string, unknown>) => void,
-          isSelected: isSelected as (data: Record<string, unknown>) => boolean,
-          isHubOpen: isHubOpen ?? false,
-          emptyState: dataTableProps.emptyState,
-          isFiltered: dataTableProps.isFiltered,
-          hasBulkActions,
-        }) as unknown as (table: ReactTable<TData>) => React.ReactNode
       case "entity":
         if (!renderCard) return undefined
         if (derivedCardGroupBy) {
@@ -129,7 +125,7 @@ export function DataTableView<TData, TValue>({
             renderCard: renderCard as (data: Record<string, unknown>, row?: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode,
             cardGroupBy: derivedCardGroupBy,
             gridLayout: policy.gridLayout,
-            emptyState: dataTableProps.emptyState,
+            emptyState: enrichedEmptyState,
             isFiltered: dataTableProps.isFiltered,
             hasBulkActions,
           }) as unknown as (table: ReactTable<TData>) => React.ReactNode
@@ -137,26 +133,28 @@ export function DataTableView<TData, TValue>({
         return createEntityCardView(entityLabel, {
           renderCard: renderCard as (data: Record<string, unknown>, row: Row<Record<string, unknown>>, table?: ReactTable<Record<string, unknown>>) => React.ReactNode,
           gridLayout: policy.gridLayout,
-          emptyState: dataTableProps.emptyState,
+          emptyState: enrichedEmptyState,
           isFiltered: dataTableProps.isFiltered,
           hasBulkActions,
         }) as unknown as (table: ReactTable<TData>) => React.ReactNode
       default:
         return undefined
     }
-  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, derivedCardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered, hasBulkActions, dataTableProps.bulkActions, dataTableProps.bulkDock])
+  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, derivedCardGroupBy, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered, dataTableProps.analyticsPanel, currentView, hasBulkActions, dataTableProps.bulkActions, dataTableProps.bulkDock])
 
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView
     if (!isCustomView) return undefined
-    if (policy?.cardComponent === "domain" || policy?.cardComponent === "entity" || externalRenderCustomView) {
+    if (currentView === "analytics") return undefined
+    if (policy?.cardComponent === "entity" || externalRenderCustomView) {
       if (derivedCardGroupBy) {
         return createCardGroupLoadingView({
           gridLayout: policy?.gridLayout,
           skeletonProps: cardSkeleton,
+          cardVariant: policy?.cardVariant,
         })
       }
-      return createCardLoadingView(policy?.gridLayout ?? "single-column", undefined, cardSkeleton)
+      return createCardLoadingView(policy?.gridLayout ?? "single-column", undefined, cardSkeleton, policy?.cardVariant)
     }
     return undefined
   }, [externalLoadingView, externalRenderCustomView, isCustomView, policy, cardSkeleton, derivedCardGroupBy])
@@ -235,12 +233,32 @@ export function DataTableView<TData, TValue>({
     [isTableViewGrouped, tableGroups, derivedCardGroupBy, groupsMap, dataTableProps.columns],
   )
 
+    const finalColumns = useMemo<ColumnDef<TData, TValue>[]>(() => {
+      let cols = dataTableProps.columns
+      if (isSelected && dataTableProps.onRowClick) {
+        if (!cols.some(c => c.id === "hub_trigger")) {
+          cols = [
+            ...cols,
+            createHubTriggerColumn({
+              isSelected,
+              onToggle: dataTableProps.onRowClick,
+            }) as unknown as ColumnDef<TData, TValue>,
+          ]
+        }
+      }
+      return cols
+    }, [dataTableProps.columns, isSelected, dataTableProps.onRowClick])
+
   return (
     <DataTable
       {...dataTableProps}
+      createAction={currentView === "analytics" ? undefined : dataTableProps.createAction}
+      toolbarActions={currentView === "analytics" ? undefined : dataTableProps.toolbarActions}
+      emptyState={enrichedEmptyState}
+      columns={finalColumns}
       data={isTableViewGrouped ? sortedData : dataTableProps.data}
       renderRow={isTableViewGrouped ? internalRenderRow : dataTableProps.renderRow}
-      viewOptions={viewOptions}
+      viewOptions={effectiveViewOptions}
       currentView={currentView}
       onViewChange={handleViewChange}
       renderCustomView={internalCustomView}

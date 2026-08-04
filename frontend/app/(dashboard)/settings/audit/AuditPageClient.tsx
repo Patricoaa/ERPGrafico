@@ -70,7 +70,8 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                         </DataCell.Secondary>
                     </div>
                 );
-            }
+            },
+            meta: { title: "Fecha y Hora" },
         },
         {
             accessorKey: "user_name",
@@ -181,6 +182,10 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
             { key: 'action_type_label', label: 'Acción', type: 'multi', serverParam: 'action_type_label', options: actionTypeOptions },
         ],
         searchFields: [],
+        groupBy: [
+            { key: 'source', label: 'Origen', field: 'source' },
+            { key: 'entity_label', label: 'Entidad', field: 'entity_label' },
+        ],
     }), [actionTypeOptions])
     const auditSearch = useUnifiedSearch(auditSearchConfig)
 

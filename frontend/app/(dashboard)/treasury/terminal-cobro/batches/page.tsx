@@ -6,12 +6,7 @@ export const metadata: Metadata = {
     title: "Liquidaciones | ERPGrafico",
 }
 
-interface PageProps {
-    searchParams: Promise<{ modal?: string }>
-}
-
-export default async function TerminalCobroBatchesPage({ searchParams }: PageProps) {
-    const { modal } = await searchParams
+export default async function TerminalCobroBatchesPage() {
     const createAction = (
         <ToolbarCreateButton label="Registrar Liquidación" href="/treasury/terminal-cobro/batches?modal=batch" />
     )
@@ -20,8 +15,7 @@ export default async function TerminalCobroBatchesPage({ searchParams }: PagePro
         <>
             <PageSectionHeader title="Liquidaciones" description="Gestión de liquidaciones y cierres de lote" />
             <TerminalBatchesClientView
-                externalOpenBatch={modal === 'batch'}
-                externalOpenInvoice={modal === 'invoice'}
+
                 createAction={createAction}
             />
         </>)

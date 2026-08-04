@@ -108,17 +108,17 @@ def test_broadcast_noops_when_channel_layer_is_unconfigured(monkeypatch):
 
 @pytest.mark.django_db
 def test_saleorder_create_broadcasts_created(broadcast_spy, customer):
-    order = SaleOrder.objects.create(customer=customer, number="NV-RT-001")
+    order = SaleOrder.objects.create(customer=customer, number="OV-RT-001")
 
     assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "created"} in broadcast_spy
 
 
 @pytest.mark.django_db
 def test_saleorder_update_broadcasts_updated(broadcast_spy, customer):
-    order = SaleOrder.objects.create(customer=customer, number="NV-RT-002")
+    order = SaleOrder.objects.create(customer=customer, number="OV-RT-002")
     broadcast_spy.clear()
 
-    order.number = "NV-RT-002-rev"
+    order.number = "OV-RT-002-rev"
     order.save()
 
     assert {"app": "sales", "model": "saleorder", "id": order.id, "op": "updated"} in broadcast_spy
@@ -126,7 +126,7 @@ def test_saleorder_update_broadcasts_updated(broadcast_spy, customer):
 
 @pytest.mark.django_db
 def test_saleorder_delete_broadcasts_deleted(broadcast_spy, customer):
-    order = SaleOrder.objects.create(customer=customer, number="NV-RT-003")
+    order = SaleOrder.objects.create(customer=customer, number="OV-RT-003")
     order_id = order.id
     broadcast_spy.clear()
 
@@ -140,7 +140,7 @@ def test_saleorder_delete_broadcasts_deleted(broadcast_spy, customer):
 
 @pytest.mark.django_db
 def test_saleline_create_broadcasts_parent_updated_and_no_own_topic(broadcast_spy, customer):
-    order = SaleOrder.objects.create(customer=customer, number="NV-RT-004")
+    order = SaleOrder.objects.create(customer=customer, number="OV-RT-004")
     broadcast_spy.clear()
 
     SaleLine.objects.create(
@@ -158,7 +158,7 @@ def test_saleline_create_broadcasts_parent_updated_and_no_own_topic(broadcast_sp
 
 @pytest.mark.django_db
 def test_saleline_update_broadcasts_parent_updated(broadcast_spy, customer):
-    order = SaleOrder.objects.create(customer=customer, number="NV-RT-005")
+    order = SaleOrder.objects.create(customer=customer, number="OV-RT-005")
     line = SaleLine.objects.create(
         order=order,
         description="widget",
@@ -176,7 +176,7 @@ def test_saleline_update_broadcasts_parent_updated(broadcast_spy, customer):
 
 @pytest.mark.django_db
 def test_saleline_delete_broadcasts_parent_updated(broadcast_spy, customer):
-    order = SaleOrder.objects.create(customer=customer, number="NV-RT-006")
+    order = SaleOrder.objects.create(customer=customer, number="OV-RT-006")
     line = SaleLine.objects.create(
         order=order,
         description="widget",

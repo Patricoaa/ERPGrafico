@@ -1,24 +1,24 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, {useState, useMemo, useCallback} from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
-import { type AccountingPeriod, type FiscalYearPreviewResult, type FiscalYear, type TaxPeriod } from '../../types';
+import { type AccountingPeriod, type TaxPeriod } from '../../types';
 import { useTaxPeriods, useClosePeriod as useCloseTaxPeriod, useReopenPeriod as useReopenTaxPeriod, useCreateTaxPayment, DeclarationWizard, F29PaymentModal, F29CloseModal } from '@/features/tax';
 import type { TaxDeclaration, TaxPaymentData } from '@/features/tax';
 import { AccountingPeriodCloseChecklistModal } from './AccountingPeriodCloseChecklist';
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedFiscalYearPreview } from '../../hooks/useSelectedFiscalYearPreview';
-import { DataTableView, EmptyState, StatusBadge } from '@/components/shared';
+import { DataTableView, EmptyState } from '@/components/shared';
 import { type ColumnDef } from '@tanstack/react-table';
-import { DataTableColumnHeader } from '@/components/shared';
 import { fiscalYearActions, type FiscalYearActionsCtx } from './fiscalYearActions';
+import { fiscalYearFields } from '../../fiscalYearFields';
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared';
-import { ClosuresSkeleton } from './ClosuresSkeleton';
+import { SkeletonShell } from '@/components/shared';
 import { fiscalYearUnifiedSearchDef } from '../../unifiedSearchDef';
 import { toast } from 'sonner';
 
@@ -62,10 +62,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const { reopenPeriod: reopenTaxPeriod, isReopeningPeriod: isReopeningTaxPeriod } = useReopenTaxPeriod();
     const isLoadingTaxAction = isClosingTaxPeriod || isReopeningTaxPeriod;
 
-    const [previewModalOpen, setPreviewModalOpen] = useState(false);
-    const [newFYModalOpen, setNewFYModalOpen] = useState(false);
-    const [previewData, setPreviewData] = useState<FiscalYearPreviewResult | null>(null);
-    const [activeYearToClose, setActiveYearToClose] = useState<number | null>(null);
+    const [activeYearToClose] = useState<number | null>(null);
     const [declarationTarget, setDeclarationTarget] = useState<{ id?: number; year?: number; month?: number } | undefined>(undefined);
     const [declarationWizardOpen, setDeclarationWizardOpen] = useState(false);
 
@@ -86,14 +83,14 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
 
     const isLoading = isLoadingYr || isLoadingPeriods || isLoadingTax;
 
-    useEffect(() => {
-        if (externalOpen) {
-            requestAnimationFrame(() => setNewFYModalOpen(true));
-        }
-    }, [externalOpen]);
+    // Derivado de URL: abrir nuevo año fiscal si ?modal=new o externalOpen
+    const newFYModalOpen = externalOpen || searchParams.get('modal') === 'new';
+
+    // Derivado de URL: abrir preview wizard si hay ?selected= con datos
+    const previewModalOpen = !!selectedFromUrl;
+    const previewData = selectedFromUrl ?? null;
 
     const handleCloseNewFY = () => {
-        setNewFYModalOpen(false);
         onExternalOpenChange?.(false);
 
         const params = new URLSearchParams(searchParams.toString());
@@ -104,19 +101,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const clearSelection = () => {
         clearUrlSelection();
     };
-
-    useEffect(() => {
-        if (selectedFromUrl) {
-            const year = selectedFromUrl.year;
-            if (!previewModalOpen && activeYearToClose !== year) {
-                requestAnimationFrame(() => {
-                    setActiveYearToClose(year);
-                    setPreviewData(selectedFromUrl);
-                    setPreviewModalOpen(true);
-                })
-            }
-        }
-    }, [selectedFromUrl, previewModalOpen, activeYearToClose]);
 
     const handleCreateFY = async (year: number) => {
         try {
@@ -166,8 +150,6 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     const handleConfirmClosing = async () => {
         if (activeYearToClose) {
             await closeFiscalYear(activeYearToClose);
-            setPreviewModalOpen(false);
-            setActiveYearToClose(null);
             clearSelection();
             fetchPeriods();
             refetchTaxPeriods();
@@ -317,7 +299,7 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     }, [groupedData, search.filters.status, search.filterFn, search])
 
     if (isLoading) {
-        return <ClosuresSkeleton />;
+        return <SkeletonShell isLoading ariaLabel="Cargando ejercicios..." />;
     }
 
     if (groupedData.length === 0) {
@@ -346,36 +328,8 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
     }
 
     const columns: ColumnDef<typeof groupedData[0]>[] = [
-        {
-            accessorKey: "year",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Ejercicio" />,
-            cell: ({ row }) => <div className="font-bold">{row.getValue("year")}</div>,
-        },
-        {
-            id: "status",
-            accessorFn: (row) => row.fiscalYear?.status || 'OPEN',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => {
-                const status = row.getValue("status") as string;
-                let token: "success" | "warning" | "info" | "generic" = "generic";
-                let label = status;
-                if (status === 'OPEN') { token = 'success'; label = 'Abierto'; }
-                else if (status === 'CLOSING') { token = 'warning'; label = 'En Cierre'; }
-                else if (status === 'CLOSED') { token = 'info'; label = 'Cerrado'; }
-
-                return <StatusBadge status={token} label={label} />;
-            },
-        },
-        {
-            id: "periods",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Periodos" />,
-            cell: ({ row }) => {
-                const acctCount = row.original.periods.length;
-                const taxCount = row.original.taxPeriods.length;
-                return <div className="text-muted-foreground">F29: {taxCount} · Contable: {acctCount}</div>;
-            },
-        },
-        fiscalYearActions.column(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
+        ...(fiscalYearFields.toColumns() as ColumnDef<typeof groupedData[0]>[]),
+        fiscalYearActions.auto(fiscalYearActionsCtx) as ColumnDef<typeof groupedData[0]>
     ];
 
     return (
@@ -444,11 +398,10 @@ export function AccountingClosuresClientView({ externalOpen, onExternalOpenChang
             <FiscalYearClosingWizard
                 isOpen={previewModalOpen}
                 onClose={() => {
-                    setPreviewModalOpen(false);
                     clearSelection();
                 }}
                 onConfirm={handleConfirmClosing}
-                year={activeYearToClose || 0}
+                year={activeYearToClose || (selectedFromUrl?.year ?? 0)}
                 preview={previewData}
                 isLoading={!previewData && previewModalOpen}
             />

@@ -50,8 +50,9 @@ function SheetPortal({
 function SheetOverlay({
   className,
   isPlain = false,
+  style,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay> & { isPlain?: boolean }) {
+}: React.ComponentProps<typeof SheetPrimitive.Overlay> & { isPlain?: boolean; style?: React.CSSProperties }) {
   const classes = cn(
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-[var(--header-height)] inset-x-0 bottom-0 z-50 bg-overlay/50 backdrop-blur-sm ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
     className
@@ -65,6 +66,7 @@ function SheetOverlay({
         data-slot="sheet-overlay"
         data-state="open"
         className={classes}
+        style={style}
         {...divProps}
       />
     )
@@ -74,6 +76,7 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={classes}
+      style={style}
       {...props}
     />
   )
@@ -98,20 +101,22 @@ function SheetContent({
   onInteractOutside?: (event: Event) => void
   container?: HTMLElement
   overlayClassName?: string
+  overlayStyle?: React.CSSProperties
   isPlainOverlay?: boolean
 }) {
-  const { hideCloseButton, container, overlayClassName, ...restProps } = props
+  const { hideCloseButton, container, overlayClassName, overlayStyle, ...restProps } = props
   return (
     <SheetPortal container={container}>
-      {!hideOverlay && <SheetOverlay className={overlayClassName} isPlain={isPlainOverlay} />}
+      {!hideOverlay && <SheetOverlay className={overlayClassName} style={overlayStyle} isPlain={isPlainOverlay} />}
       <SheetPrimitive.Content
         data-slot="sheet-content"
+        data-side={side}
         className={cn(
           "bg-card text-card-foreground rounded-xl border border-border/15 shadow-overlay data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
           side === "right" &&
-            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] w-3/4 sm:max-w-sm",
+            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
           side === "left" &&
-            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] left-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] w-3/4 sm:max-w-sm",
+            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
           side === "top" &&
             "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 border-b border-border/15",
           side === "bottom" &&

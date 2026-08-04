@@ -1,7 +1,7 @@
 ---
 id: 0030
 title: DataTable compact variant (CSS Grid for modals/drawers)
-status: Proposed
+status: Accepted
 date: 2026-05-30
 author: core-team
 ---
@@ -81,6 +81,10 @@ Add `variant="compact"` to `DataTable` that renders rows as CSS Grid `<div>` ele
 
 - ADR-0030 required (contract change to `component-datatable-views.md`).
 - `DraftCartsList` migration included in the same PR as proof of concept.
+
+### Status: Accepted (2026-08-04)
+
+`variant="compact"` was implemented in `DataTable.tsx` (prop `variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'` with `gridTemplate` / `gridGap` / `compactMaxHeight` / `renderRowActions`). Promoted to Accepted after verification. The density *defaults* (compact rows) are governed separately by [density-system.md](../../20-contracts/density-system.md) and ADR-0070.
 
 ## Alternatives considered
 

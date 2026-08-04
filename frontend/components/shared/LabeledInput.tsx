@@ -127,7 +127,7 @@ export const LabeledInput = forwardRef<
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-[10px] font-black uppercase tracking-widest transition-colors duration-200",
+                        "px-1.5 text-[11px] font-black uppercase tracking-widest transition-colors duration-200",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
                         labelClassName
                     )}>
@@ -175,14 +175,14 @@ export const LabeledInput = forwardRef<
             {hasError && (
                 <div
                     role="alert"
-                    className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1"
+                    className="text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1"
                 >
                     {error}
                 </div>
             )}
 
             {hint && !hasError && (
-                <div className={cn("text-[10px] text-muted-foreground pl-1", hintClassName)}>
+                <div className={cn("text-[11px] text-muted-foreground pl-1", hintClassName)}>
                     {hint}
                 </div>
             )}

@@ -613,8 +613,13 @@ class FinanceService:
 
         total_financing = sum(item["amount"] for item in financing_activities)
 
+        total_operating_comp = sum(item.get("amount_comp", 0) for item in operating_activities)
+        total_investing_comp = sum(item.get("amount_comp", 0) for item in investing_activities)
+        total_financing_comp = sum(item.get("amount_comp", 0) for item in financing_activities)
+
         # 4. Reconciliation & Anomaly Detection
         calculated_net_increase = total_operating + total_investing + total_financing
+        calculated_net_increase_comp = total_operating_comp + total_investing_comp + total_financing_comp
         discrepancy = float(actual_net_increase) - calculated_net_increase
 
         culprit_accounts = []
@@ -625,11 +630,13 @@ class FinanceService:
                 mapped_ids = FiscalYearAccountMapping.objects.filter(
                     fiscal_year_id=fiscal_year_id, cf_category__isnull=True
                 ).values_list("account_id", flat=True)
-                unmapped_accs = Account.objects.filter(id__in=mapped_ids).exclude(pk__in=cash_pool_ids)
+                unmapped_accs = Account.objects.filter(id__in=mapped_ids).exclude(
+                    pk__in=cash_pool_ids
+                ).exclude(account_type__in=[AccountType.INCOME, AccountType.EXPENSE])
             else:
                 unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(
                     pk__in=cash_pool_ids
-                )
+                ).exclude(account_type__in=[AccountType.INCOME, AccountType.EXPENSE])
             for acc in unmapped_accs:
                 if not acc.is_selectable:
                     continue  # parent accounts logic
@@ -658,6 +665,7 @@ class FinanceService:
             "net_increase": float(actual_net_increase),
             "net_increase_comp": float(actual_net_increase_comp),
             "calculated_net_increase": calculated_net_increase,
+            "calculated_net_increase_comp": calculated_net_increase_comp,
             "discrepancy": discrepancy,
             "culprit_accounts": culprit_accounts,
             "is_balanced": abs(discrepancy) < 0.01,
@@ -730,12 +738,16 @@ class FinanceService:
         solvency_ratio = (total_assets / total_liabilities) if total_liabilities else 0
 
         # Extract income statement totals for margin calculations
+        # get_income_statement returns {"sections": [...], "net_income": float}
+        # We need to extract revenue/profit from the sections list by name.
         is_res = FinanceService.get_income_statement(start_date, end_date, fiscal_year_id=fiscal_year_id)
 
-        total_revenue = is_res.get("total_revenue", 0)
-        gross_profit = is_res.get("gross_profit", 0)
-        operating_profit = is_res.get("operating_profit", 0)
-        net_income = is_res.get("net_income", 0)
+        sections_by_name = {s["name"]: s for s in is_res.get("sections", [])}
+        total_revenue = sections_by_name.get("Ingresos Operacionales", {}).get("total", 0) or 0
+        total_cogs = sections_by_name.get("Costo de Ventas", {}).get("total", 0) or 0
+        gross_profit = sections_by_name.get("Resultado Bruto", {}).get("total", total_revenue - total_cogs)
+        operating_profit = sections_by_name.get("Resultado Operacional", {}).get("total", 0) or 0
+        net_income = is_res.get("net_income", 0) or 0
 
         # Margin calculations
         gross_margin = (gross_profit / total_revenue) if total_revenue else 0
@@ -760,6 +772,9 @@ class FinanceService:
             "solvency": {"solvency_ratio": solvency_ratio},
             "profitability": {
                 "total_revenue": total_revenue,
+                "gross_profit": gross_profit,
+                "operating_profit": operating_profit,
+                "net_income": net_income,
                 "gross_margin": gross_margin,
                 "operating_margin": operating_margin,
                 "net_margin": net_margin,
@@ -767,147 +782,10 @@ class FinanceService:
         }
 
     @staticmethod
+    @staticmethod
     def get_bi_analytics(start_date=None, end_date=None):
-        """
-        Aggregates cross-module data for BI Analytics.
-        """
-        from billing.models import Invoice
-        from inventory.models import Product, ProductCategory, StockMove
-        from purchasing.models import PurchaseOrder
-        from sales.models import SaleOrder
-
-        if not end_date:
-            end_date = timezone.now().date()
-        if not start_date:
-            start_date = end_date - datetime.timedelta(days=180)  # Last 6 months by default
-
-        # 1. Sales Analytics
-        sales_qs = SaleOrder.objects.filter(
-            date__range=(start_date, end_date), status__in=["CONFIRMED", "INVOICED", "PAID"]
-        )
-        total_sales = sales_qs.aggregate(total=Sum("total"))["total"] or Decimal("0.00")
-        sales_count = sales_qs.count()
-        avg_ticket = total_sales / sales_count if sales_count > 0 else Decimal("0.00")
-
-        # Monthly Trend
-        monthly_sales = (
-            sales_qs.annotate(month=TruncMonth("date"))
-            .values("month")
-            .annotate(total=Sum("total"))
-            .order_by("month")
-        )
-        trend = []
-        for ms in monthly_sales:
-            trend.append({"month": ms["month"].strftime("%b"), "sales": float(ms["total"])})
-
-        # Top Customers
-        top_customers_qs = (
-            sales_qs.values("customer__name").annotate(total=Sum("total")).order_by("-total")[:5]
-        )
-        top_customers = [
-            {"name": c["customer__name"], "amount": float(c["total"])} for c in top_customers_qs
-        ]
-
-        # 2. Inventory Analytics
-        # Get all storable products
-        products = Product.objects.filter(product_type="STORABLE", track_inventory=True)
-
-        asset_vals = {}
-        for product in products:
-            total_qty = StockMove.objects.filter(product=product).aggregate(total=Sum("quantity"))[
-                "total"
-            ] or Decimal("0")
-
-            if total_qty != Decimal("0"):
-                val = total_qty * product.cost_price
-                asset_vals[product.id] = val
-
-        # Breakdown by category
-        dist = []
-        categories = ProductCategory.objects.all()
-        total_inventory_value = Decimal("0")
-        for cat in categories:
-            cat_products = Product.objects.filter(
-                category=cat, product_type="STORABLE", track_inventory=True
-            )
-            cat_val = 0
-            items_count = 0
-            for p in cat_products:
-                balance = (
-                    StockMove.objects.filter(product=p, date__lte=end_date).aggregate(
-                        total=Sum("quantity")
-                    )["total"]
-                    or 0
-                )
-                cat_val += float(balance) * float(p.cost_price)
-                if balance > 0:
-                    items_count += 1
-            if cat_val > 0:
-                dist.append({"category": cat.name, "value": cat_val, "items": items_count})
-
-        # 3. Production Analytics
-        from production.models import WorkOrder
-
-        wo_qs = WorkOrder.objects.all()
-        wo_status_dist = wo_qs.values("status").annotate(count=Count("id"))
-        finished_wo = wo_qs.filter(status="FINISHED").count()
-        total_wo = wo_qs.count()
-        prod_efficiency = (finished_wo / total_wo * 100) if total_wo > 0 else 0
-
-        # 4. Performance / Finance Indicators
-        # Accounts Receivable (Invoices POSTED but not PAID)
-        ar_total = (
-            Invoice.objects.filter(status="POSTED", sale_order__isnull=False).aggregate(
-                total=Sum("total")
-            )["total"]
-            or 0
-        )
-
-        # Accounts Payable
-        ap_total = (
-            Invoice.objects.filter(status="POSTED", purchase_order__isnull=False).aggregate(
-                total=Sum("total")
-            )["total"]
-            or 0
-        )
-
-        # Purchase Volume
-        purchase_vol = (
-            PurchaseOrder.objects.filter(
-                date__range=(start_date, end_date),
-                status__in=["CONFIRMED", "RECEIVED", "INVOICED", "PAID"],
-            ).aggregate(total=Sum("total"))["total"]
-            or 0
-        )
-
-        return {
-            "sales": {
-                "total_sales": float(total_sales),
-                "sales_count": sales_count,
-                "average_ticket": float(avg_ticket),
-                "monthly_trend": trend,
-                "top_customers": top_customers,
-                "growth": 0,
-            },
-            "inventory": {
-                "total_value": float(total_inventory_value),
-                "item_count": products.count(),
-                "stock_distribution": dist,
-                "turnover_ratio": 0,
-                "low_stock_alerts": 0,
-            },
-            "production": {
-                "total_wo": total_wo,
-                "finished_wo": finished_wo,
-                "efficiency": round(prod_efficiency, 1),
-                "status_distribution": list(wo_status_dist),
-            },
-            "performance": {
-                "ar_total": float(ar_total),
-                "ap_total": float(ap_total),
-                "purchase_total": float(purchase_vol),
-            },
-        }
+        from .bi_analytics import BIAnalyticsService
+        return BIAnalyticsService.get_bi_analytics(start_date, end_date)
 
     @staticmethod
     def get_trial_balance(start_date=None, end_date=None):

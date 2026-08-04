@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 import { type ColumnDef } from "@tanstack/react-table"
-import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge} from '@/components/shared'
+import {ActionConfirmModal, Chip, DataTable, StatusBadge} from '@/components/shared'
 import { profitDistributionActions, type ProfitDistributionActionsCtx } from './profitDistributionActions'
 
 import { partnersApi } from "@/features/contacts"
@@ -127,16 +127,6 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
         }
     }
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'DRAFT': return 'bg-warning/10 text-warning border-warning/20'
-            case 'APPROVED': return 'bg-info/10 text-info border-info/20'
-            case 'EXECUTED': return 'bg-success/10 text-success border-success/20'
-            case 'CANCELLED': return 'bg-muted text-muted-foreground border-muted-foreground/20'
-            default: return 'bg-muted text-muted-foreground'
-        }
-    }
-
     const getStatusText = (status: string) => {
         switch (status) {
             case 'DRAFT': return 'Borrador'
@@ -248,7 +238,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, createAction }
                 )
             }
         },
-        profitDistributionActions.column(actionsCtx)
+        profitDistributionActions.auto(actionsCtx)
     ], [])
 
     return (

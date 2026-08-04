@@ -34,55 +34,53 @@ export function RadioCard({
         <Label
             htmlFor={id}
             className={cn(
-                "relative group flex rounded-sm border border-input p-3 transition-all h-full",
-                isVertical 
-                    ? "flex-col items-center justify-center text-center gap-2 p-4 min-h-[110px]" 
-                    : "flex-row items-center gap-3",
-                !disabled && "cursor-pointer hover:border-primary/50 hover:bg-accent/50",
+                "relative group flex rounded-sm border border-input p-3 transition-all h-full bg-card",
+                isVertical
+                    ? "flex-col items-center justify-center text-center gap-2 p-4 min-h-[110px]"
+                    : "flex-row items-start gap-3",
+                !disabled && "cursor-pointer hover:border-primary/50",
                 disabled && "opacity-50 cursor-not-allowed",
-                "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5 [&:has([data-state=checked])]:ring-1 [&:has([data-state=checked])]:ring-primary/20",
+                "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:ring-1 [&:has([data-state=checked])]:ring-primary/20",
                 className
             )}
         >
-            {/* Círculo decorativo que envuelve al Radio */}
+            {/* Contenido: Icono + Título + Descripción */}
             <div className={cn(
-                "relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10",
-                isVertical && "absolute top-2.5 right-2.5"
-            )}>
-                <RadioGroupItem 
-                    value={value} 
-                    id={id} 
-                    disabled={disabled}
-                    className="peer border-none shadow-none ring-0 focus-visible:ring-0 w-3 h-3 m-0" 
-                />
-                <CmykRing 
-                    size="sm" 
-                    className="absolute inset-0 m-auto pointer-events-none opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200" 
-                />
-            </div>
-
-            {/* Opcional: Ícono sin fondo */}
-            {icon && (
-                <div className={cn("shrink-0", iconColor)}>
-                    {icon}
-                </div>
-            )}
-            
-            {/* Textos */}
-            <div className={cn(
-                "flex flex-col gap-1 min-w-0 flex-1 justify-center",
+                "flex-1 min-w-0 flex flex-col gap-1 justify-center",
                 isVertical && "items-center"
             )}>
-                <span className="text-sm font-bold truncate leading-none">{label}</span>
+                <div className={cn("flex items-center gap-2", isVertical && "justify-center")}>
+                    {icon && (
+                        <div className={cn("shrink-0", iconColor)}>
+                            {icon}
+                        </div>
+                    )}
+                    <span className="text-sm font-bold truncate leading-none">{label}</span>
+                </div>
                 {description && (
                     <span className="text-xs text-muted-foreground line-clamp-2 leading-tight mt-0.5">
                         {description}
                     </span>
                 )}
-                {/* Por si queremos inyectar un badge o código interno */}
                 {children}
+            </div>
+
+            {/* Radio Circle + CmykRing — lado derecho */}
+            <div className={cn(
+                "relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-muted bg-background transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10",
+                isVertical && "absolute top-2.5 right-2.5"
+            )}>
+                <RadioGroupItem
+                    value={value}
+                    id={id}
+                    disabled={disabled}
+                    className="peer border-none shadow-none ring-0 focus-visible:ring-0 w-3 h-3 m-0 [&>span]:hidden"
+                />
+                <CmykRing
+                    size="sm"
+                    className="absolute inset-0 m-auto pointer-events-none opacity-0 peer-data-[state=checked]:opacity-100 transition-opacity duration-200"
+                />
             </div>
         </Label>
     )
 }
-

@@ -30,7 +30,7 @@ class Command(BaseCommand):
             },
             {
                 "task_type": "SALE_NOTE_VERIFICATION",
-                "description": "Verificación de notas de venta críticas",
+                "description": "Verificación de ordenes de venta críticas",
             },
         ]
 

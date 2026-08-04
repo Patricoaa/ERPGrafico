@@ -16,6 +16,7 @@ from .models import (
 class PurchaseLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_type = serializers.CharField(source="product.product_type", read_only=True)
+    category_name = serializers.CharField(source="product.category.name", read_only=True)
     product_id = serializers.ReadOnlyField(source="product.id")
     quantity_pending = serializers.ReadOnlyField()
     uom_name = serializers.CharField(source="uom.name", read_only=True, allow_null=True)
@@ -32,6 +33,7 @@ class PurchaseLineSerializer(serializers.ModelSerializer):
             "product_id",
             "product_name",
             "product_type",
+            "category_name",
             "quantity",
             "uom",
             "uom_name",

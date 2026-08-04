@@ -4,71 +4,19 @@ import { useMemo } from "react"
 import { useSearchParams, usePathname, useRouter } from "next/navigation"
 import { usePosTerminals } from "@/features/sales"
 import type { Terminal } from "@/features/treasury"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { ActionConfirmModal, DataTableView, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { Badge } from "@/components/ui/badge"
-
-import { DataTableColumnHeader } from '@/components/shared'
-import {DataCell} from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { posTerminalActions, type PosTerminalActionsCtx } from "@/features/sales/posTerminalActions"
 import { terminalPosUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 import { type ColumnDef } from "@tanstack/react-table"
-import { Plus, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
+import { posTerminalFields } from "../posTerminalFields"
+import { Plus } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
-
-const PAYMENT_TYPE_ORDER = ['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER', 'CHECK', 'OTHER'] as const
-
-type PaymentTypeMeta = {
-    label: string
-    Icon: typeof Banknote
-    iconColorClass: string
-    badgeVariant: "default" | "secondary" | "info" | "warning" | "success" | "outline"
-}
-
-const PAYMENT_TYPE_META: Record<string, PaymentTypeMeta> = {
-    CASH: {
-        label: "Efectivo",
-        Icon: Banknote,
-        iconColorClass: "text-success",
-        badgeVariant: "outline",
-    },
-    CARD: {
-        label: "Tarjeta",
-        Icon: CreditCard,
-        iconColorClass: "text-info",
-        badgeVariant: "outline",
-    },
-    CARD_TERMINAL: {
-        label: "Terminal",
-        Icon: Smartphone,
-        iconColorClass: "text-primary",
-        badgeVariant: "outline",
-    },
-    TRANSFER: {
-        label: "Transferencia",
-        Icon: Landmark,
-        iconColorClass: "text-primary",
-        badgeVariant: "outline",
-    },
-    CHECK: {
-        label: "Cheque",
-        Icon: FileCheck,
-        iconColorClass: "text-warning",
-        badgeVariant: "outline",
-    },
-    OTHER: {
-        label: "Otros",
-        Icon: MoreHorizontal,
-        iconColorClass: "text-muted-foreground",
-        badgeVariant: "outline",
-    },
-}
 
 interface PosTerminalClientViewProps {
     externalOpen?: boolean
@@ -132,29 +80,8 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
     }
 
     const columns: ColumnDef<Terminal>[] = [
-        {
-            accessorKey: "code",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Code>{row.getValue("code")}</DataCell.Code></div>,
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "location",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Ubicación" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("location")}</DataCell.Secondary>,
-        },
-        {
-            accessorKey: "is_active",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
-            ),
-        },
-        posTerminalActions.column(actionsCtx),
+        ...posTerminalFields.toColumns(),
+        posTerminalActions.auto(actionsCtx),
     ]
 
     return (
@@ -190,84 +117,22 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                             params.set("modal", "new")
                             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
                         }} className="h-9">
-                            <Plus className="mr-2 h-4 w-4" /> Crear Caja
+                            <Plus className="mr-2 h-4 w-4" /> Crear Punto de Venta
                         </Button>
                     )}
-                    renderCard={(terminal: Terminal) => {
-                        const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
-                            let type = method.method_type
-                            if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
-                                type = 'CARD'
-                            }
-                            if (!acc[type]) acc[type] = 0
-                            acc[type]++
-                            return acc
-                        }, {} as Record<string, number>)
+                    renderCard={(terminal: Terminal) => (
+                            <AutoEntityCard 
+                                key={terminal.id} 
+                                data={terminal}
+                                fields={posTerminalFields}
 
-                        const orderedTypes = PAYMENT_TYPE_ORDER.filter(t => methodsByType[t] !== undefined)
-                        const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
-
-                        return (
-                            <EntityCard key={terminal.id} onClick={() => openSelected(terminal.id)} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
-                                <EntityCard.Header
-                                    title={terminal.name}
-                                    subtitle={terminal.code}
-                                    trailing={
-                                        <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                                    }
-                                />
-                                <EntityCard.Body actions={posTerminalActions.render(terminal, actionsCtx)}>
-                                    <EntityCard.Field
-                                        label="Ubicación"
-                                        value={
-                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                <MapPin className="h-3.5 w-3.5" />
-                                                {terminal.location || "No especificada"}
-                                            </div>
-                                        }
-                                    />
-                                    {terminal.payment_terminal_device && (
-                                        <EntityCard.Field
-                                            label="Dispositivo"
-                                            value={
-                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
-                                                    <Smartphone className="h-3 w-3" />
-                                                    {terminal.payment_terminal_device_name || "Vinculado"}
-                                                </div>
-                                            }
-                                        />
-                                    )}
-                                </EntityCard.Body>
-                                <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t gap-2">
-                                    <div className="flex flex-wrap items-center gap-1.5">
-                                        {orderedTypes.map(type => {
-                                            const meta = PAYMENT_TYPE_META[type]
-                                            const Icon = meta.Icon
-                                            return (
-                                                <Badge
-                                                    key={type}
-                                                    variant={meta.badgeVariant}
-                                                    className="h-5 gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-wide"
-                                                >
-                                                    <Icon className={cn("h-3 w-3", meta.iconColorClass)} />
-                                                    {meta.label}
-                                                </Badge>
-                                            )
-                                        })}
-                                        {totalMethods === 0 && (
-                                            <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
-                                        )}
-                                    </div>
-                                    {totalMethods > 0 && (
-                                        <span className="text-[10px] font-semibold text-muted-foreground/70 whitespace-nowrap">
-                                            {totalMethods} {totalMethods === 1 ? "método" : "métodos"}
-                                        </span>
-                                    )}
-                                </EntityCard.Footer>
-                            </EntityCard>
-                        )
-                    }}
-                    cardSkeleton={{ showFooter: true }}
+                                entityLabel="sales.posterminal"
+                                onClick={() => openSelected(terminal.id)} 
+                                defaultAction={posTerminalActions.defaultAction(actionsCtx)?.(terminal) ?? null} 
+                                className={!terminal.is_active ? "grayscale bg-muted/20" : ""}
+                                actions={posTerminalActions.render(terminal, actionsCtx)}
+                            />
+                        )}
                 />
             </div>
 
@@ -284,8 +149,8 @@ export function PosTerminalClientView({ externalOpen, onExternalOpenChange, crea
                 open={deleteConfirm.isOpen}
                 onOpenChange={(open: boolean) => { if (!open) deleteConfirm.cancel() }}
                 onConfirm={deleteConfirm.confirm}
-                title="Eliminar Caja POS"
-                description={`¿Está seguro de eliminar la caja POS "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
+                title="Eliminar Punto de Venta"
+                description={`¿Está seguro de eliminar el punto de venta "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
                 variant="destructive"
             />
         </div>

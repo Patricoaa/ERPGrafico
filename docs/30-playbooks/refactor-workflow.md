@@ -76,6 +76,30 @@ One refactor per PR. Do not bundle:
 - Refactor + feature
 - Refactor + dependency upgrade
 
+## Migración de columnas inline → `*Fields.toColumns()`
+
+La regla de gobernanza exige que las columnas de lista/card/kanban salgan de
+`*Fields.ts` vía `toColumns()` (inline solo permitido vía `type: "computed"`).
+Al migrar una vista con columnas inline:
+
+1. Reusar el `*Fields` existente si ya está definido (aunque esté huérfano).
+2. `type: "computed"` requiere un `render(entity)` — con `get` solo renderiza `null`.
+3. El orden de columnas lo gobiernan las zonas (`title → subtitle → detail → header`),
+   con `header` (estado/totales/flows/chips) al final antes de acciones y con peso
+   `font-semibold` automático. Solo las celdas header son semibold; title/detail/subtitle
+   quedan en `font-medium`. Si el orden visual importa, fijar `placement` explícito en el campo.
+4. Celdas interactivas (botones por fila) → `computed` + contexto React exportado
+   del feature; el provider envuelve la vista (cubre tabla y card).
+5. Columnas de infraestructura (checkbox de selección, tree-expander) NO son campos
+   y pueden quedarse inline — el expander de árbol usa `row.depth`/`toggleExpanded`,
+   imposible vía `computed`.
+
+### Excepción documentada: `DraftCartsClientView` (pos)
+
+Picker-modal con locks en tiempo real (WebSocket), chips de estado del wizard y
+ticker de tiempo relativo; no tiene superficie card/kanban. Se mantiene con
+`ColumnDef` inline a propósito — ver comentario en `DraftCartsClientView.tsx`.
+
 ## Validation
 
 ```bash

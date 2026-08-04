@@ -45,4 +45,8 @@ export const jobUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'job_type', label: 'Tipo proceso', field: 'job_type' },
+  ],
 }

@@ -1,6 +1,7 @@
 from django.db import models
-from django.db.models import QuerySet
-from django.db.models.functions import Replace
+from django.db.models import Exists, OuterRef, QuerySet, Subquery, Sum, DecimalField as Df, Value
+from django.db.models.functions import Coalesce, Replace
+from decimal import Decimal
 
 from .models import Contact
 
@@ -64,7 +65,50 @@ def list_contacts(*, params: dict) -> QuerySet:
         queryset = queryset.filter(terminal_providers__is_active=True).distinct()
 
     queryset = queryset.annotate(
-        last_sale_date=models.Max("sale_orders__date")
+        last_sale_date=models.Max("sale_orders__date"),
+    )
+
+    from sales.models import SaleOrder
+    from purchasing.models import PurchaseOrder
+    from production.models import WorkOrder
+    from hr.models import Employee
+    from core.models import User
+    from treasury.models import TreasuryMovement as _TM
+
+    credit_additions_sq = (
+        _TM.objects.filter(
+            contact_id=OuterRef("pk"),
+            payment_method="CREDIT_BALANCE",
+            movement_type="OUTBOUND",
+            is_pending_registration=False,
+        )
+        .values("contact_id")
+        .annotate(total=Sum("amount"))
+        .values("total")
+    )
+    credit_consumptions_sq = (
+        _TM.objects.filter(
+            contact_id=OuterRef("pk"),
+            payment_method="CREDIT_BALANCE",
+            movement_type="INBOUND",
+            is_pending_registration=False,
+        )
+        .values("contact_id")
+        .annotate(total=Sum("amount"))
+        .values("total")
+    )
+    queryset = queryset.annotate(
+        _has_sales=Exists(SaleOrder.objects.filter(customer=OuterRef("pk"))),
+        _has_purchases=Exists(PurchaseOrder.objects.filter(supplier=OuterRef("pk"))),
+        _has_work_orders=Exists(WorkOrder.objects.filter(related_contact=OuterRef("pk"))),
+        _has_employees=Exists(Employee.objects.filter(contact=OuterRef("pk"))),
+        _has_system_user=Exists(User.objects.filter(contact=OuterRef("pk"))),
+        _credit_balance_additions=Coalesce(
+            Subquery(credit_additions_sq, output_field=Df()), Value(Decimal("0"), output_field=Df())
+        ),
+        _credit_balance_consumptions=Coalesce(
+            Subquery(credit_consumptions_sq, output_field=Df()), Value(Decimal("0"), output_field=Df())
+        ),
     )
 
     return queryset
@@ -460,7 +504,9 @@ class ContactSelector:
 
     @staticmethod
     def list_partners():
-        return Contact.objects.filter(is_partner=True).distinct()
+        return Contact.objects.filter(is_partner=True).distinct().prefetch_related(
+            "partner_transactions",
+        )
 
     @staticmethod
     def get_credit_history(contact):
@@ -478,14 +524,6 @@ class ContactSelector:
         from .serializers import PartnerTransactionSerializer
 
         return PartnerTransaction.objects.filter(partner=partner).order_by("-date", "-created_at")
-
-    @staticmethod
-    def list_all_partner_transactions():
-        from .partner_models import PartnerTransaction
-        from .serializers import PartnerTransactionSerializer
-
-        txs = PartnerTransaction.objects.all().select_related("partner", "journal_entry")
-        return PartnerTransactionSerializer(txs, many=True).data
 
     @staticmethod
     def get_equity_stakes_history(partner_id: int | None = None):
@@ -537,7 +575,13 @@ class ContactSelectorExt:
         if not contact.is_partner: raise ValidationError('El contacto no está marcado como socio.')
         from .partner_models import PartnerTransaction
         from .serializers import PartnerTransactionSerializer
+        from .partner_service import PartnerService
         transactions = PartnerTransaction.objects.filter(partner=contact).order_by('-date', '-created_at')
+        try:
+            account = PartnerService._resolve_partner_receivable_account(contact)
+            account_detail = {'id': account.id, 'name': account.name, 'code': account.code} if account else None
+        except Exception:
+            account_detail = None
         return {
             'contact': serializer_class(contact).data,
             'summary': {
@@ -547,7 +591,9 @@ class ContactSelectorExt:
                 'total_paid_in': str(contact.partner_total_paid_in),
                 'pending_capital': str(contact.partner_pending_capital),
                 'provisional_withdrawals': str(contact.partner_provisional_withdrawals_balance),
-                'total_formal_withdrawals': str(contact.partner_total_withdrawals)
+                'total_formal_withdrawals': str(contact.partner_total_withdrawals),
+                'earnings_balance': str(contact.partner_earnings_balance),
             },
+            'partner_account_detail': account_detail,
             'transactions': PartnerTransactionSerializer(transactions, many=True).data
         }

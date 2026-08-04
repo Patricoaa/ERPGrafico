@@ -1,6 +1,6 @@
 "use client"
 
-import { LabeledInput, StepHeader, DataCell, MoneyDisplay } from "@/components/shared"
+import {LabeledInput, StepHeader} from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -181,7 +181,7 @@ export function Step1_Items({
                                             />
                                             {selected && showMaxBadge && (
                                                 <div className="absolute -top-3 -right-3">
-                                                    <Chip size="xs" intent={isCreditNote ? "primary" : "warning"} className="border-2 border-background shadow-card">
+                                                    <Chip size="xs" intent={isCreditNote ? "primary" : "warning"} className="shadow-card">
                                                         MAX {maxQty}
                                                     </Chip>
                                                 </div>
@@ -233,4 +233,3 @@ export function Step1_Items({
         </div>
     )
 }
-

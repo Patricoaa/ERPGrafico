@@ -1,16 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useEmployeeFormDeps } from "../hooks/useEmployees"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createEmployee, updateEmployee } from '@/features/hr/api/hrApi'
+import { useEmployeeMutations } from '../hooks/useEmployeeMutations'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
-import { UserCog, CalendarCheck2, Plus, ShieldCheck, Printer } from "lucide-react"
+import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
 import { FormSplitLayout } from "@/components/shared"
 
@@ -22,11 +22,8 @@ import { cn, toDateOnlyISO } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Drawer, LabeledInput, LabeledSelect, TabBar, TabBarContent, FormSection, type TabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
 import { useServerDate } from "@/hooks/useServerDate"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -69,14 +66,13 @@ const parseLocalDate = (dateStr?: string) => {
     return new Date(year, month - 1, day)
 }
 
-export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger, mode: modeProp }: EmployeeDrawerProps) {
-    const [saving, setSaving] = useState(false)
-    const printRef = useRef<HTMLDivElement>(null)
+export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: modeProp }: EmployeeDrawerProps) {
+    const { saveEmployee, isSaving: saving } = useEmployeeMutations()
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const mode: DrawerMode = modeProp ?? (employee ? 'edit' : 'create')
     const isView = mode === 'view'
     const { dateString } = useServerDate()
-    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const [activeTab, setActiveTab] = useState("contratacion")
 
@@ -164,7 +160,6 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
     }, [employee, form, open])
 
     const onSubmit = async (data: EmployeeFormValues) => {
-        setSaving(true)
         try {
             const conceptAmountsList = Object.entries(data.concept_amounts || {}).map(([conceptId, amount]) => ({
                 concept: parseInt(conceptId),
@@ -180,18 +175,13 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 jornada_hours: parseFloat(String(data.jornada_hours)) || 0,
                 concept_amounts: conceptAmountsList
             }
-            if (employee) {
-                await updateEmployee(employee.id, payload as unknown as Parameters<typeof updateEmployee>[1])
-                toast.success("Empleado actualizado")
-            } else {
-                await createEmployee(payload as unknown as Parameters<typeof createEmployee>[0])
-                toast.success("Empleado creado")
-            }
+            await saveEmployee({
+                id: employee?.id ?? null,
+                payload: payload as unknown as Partial<Employee>
+            })
             onSaved()
         } catch (e: unknown) {
             showApiError(e, "Error al guardar empleado")
-        } finally {
-            setSaving(false)
         }
     }
 
@@ -250,6 +240,8 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
 
     const identity = useDrawerIdentity('hr.employee', mode, employee, {
         overrideSubtitle: employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos",
+        printable: (mode === 'view' || mode === 'edit') && !!employee?.id,
+        onPrint: handlePrint,
     })
 
     const footer = isView ? undefined : (
@@ -286,11 +278,12 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 defaultSize={formDrawerWidth("master", !!employee)}
                 className="h-[90vh]"

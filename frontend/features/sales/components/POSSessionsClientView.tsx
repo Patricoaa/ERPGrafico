@@ -1,14 +1,13 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import {DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
+import { posSessionFields } from "../posSessionFields"
 import { posSessionActions, type POSSessionActionsCtx } from "@/features/sales/posSessionActions"
-import { toast } from "sonner"
 import { POSReport, type POSReportData } from "@/features/pos"
 import { SessionCloseModal } from "@/features/pos"
 import type { POSSession as POSSessionModal } from "@/features/pos"
@@ -18,13 +17,12 @@ export interface POSSession {
     id: number
     id_display: string
     user_name: string
-    treasury_account: number
-    treasury_account_name: string
+    treasury_account: number | null
+    treasury_account_name: string | null
     opened_at: string
     closed_at: string | null
     status: 'OPEN' | 'CLOSED' | 'CLOSING'
     status_display: string
-    start_amount: number
     current_cash?: number
     expected_cash: number
     terminal_name?: string
@@ -42,7 +40,7 @@ interface POSSessionsClientViewProps {
     hideHeader?: boolean
 }
 
-import { usePOSSessions } from "@/features/pos"
+import { usePOSSessions, usePOSSessionSummary } from "@/features/pos"
 import { posSessionUnifiedSearchDef } from "@/features/pos/unifiedSearchDef"
 
 export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
@@ -57,42 +55,23 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     })
 
     const [selectedSession, setSelectedSession] = useState<POSSession | null>(null)
-    const [reportDialogOpen, setReportDialogOpen] = useState(false)
-    const [reportData, setReportData] = useState<Record<string, unknown> | null>(null)
-    const [reportType, setReportType] = useState<"X" | "Z">("X")
+    const [manualReportData, setManualReportData] = useState<Record<string, unknown> | null>(null)
+    const [manualReportType, setManualReportType] = useState<"X" | "Z">("X")
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 
-    const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
-        try {
-            const data = await fetchPOSSessionSummary<Record<string, unknown>>(session.id)
-            setReportData(data)
-            setReportType(type)
-            setReportDialogOpen(true)
-        } catch (error) {
-            console.error("Error fetching report:", error)
-            toast.error("Error al generar el reporte")
-        }
-    }
+    const reportSessionId = selectedFromUrl ? selectedFromUrl.id : null
+    const { data: queryReportData } = usePOSSessionSummary<Record<string, unknown>>(reportSessionId)
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setSelectedSession(selectedFromUrl)
-                // Decide what to open. If it's closed, maybe show report Z.
-                // If it's open, maybe show report X.
-                // For now, let's just open report X by default if selected.
-                handleShowReport(selectedFromUrl, selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X')
-            })
-        }
-    }, [selectedFromUrl])
+    const isReportDialogOpen = !!selectedFromUrl || manualReportData !== null
+    const finalReportData = selectedFromUrl ? queryReportData : manualReportData
+    const finalReportType = selectedFromUrl ? (selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X') : manualReportType
 
     const handleCloseSuccess = async () => {
         if (!selectedSession) return
         try {
             const data = await fetchPOSSessionSummary<Record<string, unknown>>(selectedSession.id)
-            setReportData(data)
-            setReportType("Z")
-            setReportDialogOpen(true)
+            setManualReportData(data)
+            setManualReportType("Z")
             refetch()
         } catch (error) {
             console.error("Error fetching Z report:", error)
@@ -112,61 +91,8 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
     }
 
     const columns: ColumnDef<POSSession>[] = [
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="ID" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Code className="font-bold">SES-{row.original.id}</DataCell.Code>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "user_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cajero" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text>{row.getValue("user_name")}</DataCell.Text>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "opened_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("opened_at")} showTime />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "closed_at",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cierre" className="justify-center" />,
-            cell: ({ row }) => {
-                const val = row.getValue("closed_at") as string
-                return (
-                    <div className="flex justify-center w-full">
-                        {val ? <DataCell.Date value={val} showTime /> : <span className="text-muted-foreground">-</span>}
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "start_amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fondo Inicial" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.getValue("start_amount")} className="text-muted-foreground" />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={row.original.status} />,
-        },
-        posSessionActions.column(actionsCtx),
+        ...posSessionFields.toColumns(),
+        posSessionActions.auto(actionsCtx),
     ]
 
     return (
@@ -178,6 +104,7 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                     variant="embedded"
                     isLoading={isLoading}
                     entityLabel="pos.session"
+                    cardSkeleton={{ showBody: false, showFooter: false }}
                     unifiedSearch={<UnifiedSearchBar
                         config={posSessionUnifiedSearchDef}
                         chips={search.chips}
@@ -199,46 +126,43 @@ export const POSSessionsClientView = ({}: POSSessionsClientViewProps) => {
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "pos",
-                        title: "Aún no hay sesiones de caja",
-                        description: "Las sesiones del punto de venta aparecerán aquí al abrir caja.",
+                        title: "Aún no hay sesiones POS",
+                        description: "Las sesiones del punto de venta aparecerán aquí al iniciar sesión.",
                     }}
                     renderCard={(session: POSSession) => (
-                        <EntityCard onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(session.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
-                            <EntityCard.Header
-                                title={session.id_display}
-                                subtitle={session.user_name}
-                                trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
-                            />
-                            <EntityCard.Body actions={posSessionActions.render(session, actionsCtx)}>
-                                <EntityCard.Field label="Cuenta" value={session.treasury_account_name} />
-                                <EntityCard.Field label="Apertura" value={<DataCell.Date value={session.opened_at} showTime />} />
-                            </EntityCard.Body>
-                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                <span className="text-[10px] font-black text-muted-foreground uppercase">Ventas</span>
-                                <DataCell.Currency value={(session.total_cash_sales ?? 0) + (session.total_card_sales ?? 0)} className="font-bold" />
-                            </EntityCard.Footer>
-                        </EntityCard>
+                        <AutoEntityCard
+                            data={session}
+                            fields={posSessionFields}
+
+                            entityLabel="pos.session"
+
+                            actions={posSessionActions.render(session, actionsCtx)}
+                            defaultAction={posSessionActions.defaultAction(actionsCtx)?.(session) ?? null} 
+                            onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(session.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}
+                        />
                     )}
-                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 
             {/* Custom Overlay for POS Reports (X and Z) - Consistency with POS */}
-            {reportDialogOpen && (
+            {isReportDialogOpen && (
                 <div className="fixed inset-0 z-[100] bg-background/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
                     <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
-                        {reportData && (
+                        {finalReportData && (
                             <POSReport
-                                data={reportData as unknown as POSReportData}
-                                type={reportType}
-                                title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
+                                data={finalReportData as unknown as POSReportData}
+                                type={finalReportType}
+                                title={finalReportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
                                 onClose={() => {
-                                    setReportDialogOpen(false)
-                                    clearSelection()
+                                    if (selectedFromUrl) {
+                                        clearSelection()
+                                    } else {
+                                        setManualReportData(null)
+                                    }
                                 }}
                             />
                         )}

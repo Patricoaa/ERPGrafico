@@ -34,6 +34,8 @@ class PurchaseOrderFilterSet(FilterSet):
     receipt_date_before = django_filters.DateFilter(field_name="receipt_date", lookup_expr="lte")
     total_min = django_filters.NumberFilter(field_name="total", lookup_expr="gte")
     total_max = django_filters.NumberFilter(field_name="total", lookup_expr="lte")
+    created_at_after = django_filters.DateFilter(field_name="created_at", lookup_expr="date__gte")
+    created_at_before = django_filters.DateFilter(field_name="created_at", lookup_expr="date__lte")
 
     supplier_name = django_filters.CharFilter(field_name="supplier__name", lookup_expr="icontains")
     number = django_filters.CharFilter(field_name="number", lookup_expr="icontains")
@@ -57,6 +59,8 @@ class PurchaseOrderFilterSet(FilterSet):
             "origin_status",
             "billing_status",
             "treasury_status",
+            "created_at_after",
+            "created_at_before",
             "supplier_name",
             "number",
             "product_name",

@@ -2,18 +2,16 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { Upload, Activity, ChevronDown, CheckCircle2, Loader2 } from "lucide-react"
+import { Upload, Activity, ChevronDown, CheckCircle2 } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useStatementQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal, StatementDetailPanel, ReconciliationPanel } from "@/features/finance"
 import { useConfirmStatement } from "@/features/treasury"
-import { DataTableView, StatusBadge, UnifiedSearchBar, useUnifiedSearch, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import {DataTableView, UnifiedSearchBar, useUnifiedSearch, AutoEntityCard, EntityCard, ToolbarCreateButton, Drawer, EmptyState, ActionConfirmModal, ActionSlideButton} from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from '@/components/shared'
+import { statementFields } from "../statementFields"
 import { statementActions, type StatementActionsCtx } from './statementActions'
-import { Progress } from "@/components/ui/progress"
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -177,104 +175,12 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
         onView: (id) => router.push(statementDetailUrl(id)),
     }
 
-    const columns: ColumnDef<BankStatement>[] = [
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="ID" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Code className="font-bold">{row.getValue("display_id")}</DataCell.Code>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "treasury_account_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cuenta" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text>{row.getValue("treasury_account_name")}</DataCell.Text>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "statement_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("statement_date")} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "opening_balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Apertura" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.getValue("opening_balance")} className="text-muted-foreground" />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "closing_balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cierre" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={row.getValue("closing_balance")} className="font-bold text-foreground" />
-                </div>
-            ),
-        },
-        {
-            id: "lines_info",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Líneas" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center justify-center w-full">
-                    <span className="font-semibold text-xs">{row.original.total_lines} total</span>
-                    <span className="text-xs text-muted-foreground">
-                        {row.original.reconciled_lines} rec.
-                    </span>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "reconciliation_progress",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Progreso" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const progress = parseFloat(row.getValue("reconciliation_progress") as string)
-                return (
-                    <div className="flex items-center justify-center gap-2 min-w-[120px] w-full">
-                        <Progress value={progress} className="h-1.5 w-16" />
-                        <span className="text-xs font-mono font-bold w-10 text-right">
-                            {Math.round(progress)}%
-                        </span>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "state",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.getValue("state") as string} label={row.original.state_display} />
-                </div>
-            ),
-        },
-        statementActions.column(actionsCtx)
-    ]
+    const columns = useMemo<ColumnDef<BankStatement>[]>(() => {
+        return [
+            ...statementFields.toColumns(),
+            statementActions.auto(actionsCtx)
+        ]
+    }, [])
 
     const internalImportButton = accounts !== undefined ? (
         <ToolbarCreateButton
@@ -316,27 +222,15 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                     const stmt = row.original
                     const isExpanded = expandedStmtId === stmt.id
                     return (
-                        <EntityCard key={stmt.id} className="overflow-hidden">
-                            <EntityCard.Header
-                                title={stmt.display_id}
-                                subtitle={stmt.treasury_account_name}
-                                trailing={<StatusBadge status={stmt.state} label={stmt.state_display} />}
-                            />
-                            <EntityCard.Body>
-                                <div className="flex items-start justify-between gap-4">
-                                    <EntityCard.Field label="Apertura" value={<DataCell.Currency value={stmt.opening_balance} />} />
-                                    <EntityCard.Field label="Cierre" value={<DataCell.Currency value={stmt.closing_balance} />} />
-                                    <EntityCard.Field
-                                        label="Progreso"
-                                        value={
-                                            <div className="flex items-center gap-2 min-w-[100px]">
-                                                <Progress value={stmt.reconciliation_progress} className="h-1.5 w-16" />
-                                                <span className="text-xs font-mono font-bold">{Math.round(stmt.reconciliation_progress)}%</span>
-                                            </div>
-                                        }
-                                    />
-                                </div>
-                            </EntityCard.Body>
+                        <AutoEntityCard 
+                            key={stmt.id} 
+                            data={stmt} 
+                            fields={statementFields}
+
+                            className="overflow-hidden"
+                            entityLabel="treasury.bankstatement"
+                        >
+                            {/* Escape hatch: action buttons (Reconciliar, Ver Detalle) — not expressible as fields */}
                             <EntityCard.Footer>
                                 <div className="flex items-center gap-2">
                                     {stmt.state !== 'CONFIRMED' && stmt.reconciliation_progress < 100 && (
@@ -365,7 +259,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                                     />
                                 </div>
                             )}
-                        </EntityCard>
+                        </AutoEntityCard>
                     )
                 })}
             </div>
@@ -388,7 +282,7 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
     })
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.bankstatement"
@@ -447,17 +341,15 @@ export function StatementsClientView({ externalOpen = false, createAction, bankI
                 contentClassName="p-0 flex flex-col overflow-hidden"
                 headerActions={
                     workbenchStatement && workbenchStatement.reconciliation_progress === 100 && workbenchStatement.state !== 'CONFIRMED' ? (
-                        <Button
+                        <ActionSlideButton
                             onClick={() => confirmAction.requestConfirm()}
-                            disabled={confirmAction.isConfirming}
+                            loading={confirmAction.isConfirming}
+                            icon={CheckCircle2}
+                            variant="success"
                             className="bg-success hover:bg-success/90 shadow-card px-5 font-bold text-sm"
                         >
-                            {confirmAction.isConfirming ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finalizando...</>
-                            ) : (
-                                <><CheckCircle2 className="mr-2 h-4 w-4" />Confirmar Cartola</>
-                            )}
-                        </Button>
+                            {confirmAction.isConfirming ? 'Finalizando...' : 'Confirmar Cartola'}
+                        </ActionSlideButton>
                     ) : undefined
                 }
             >

@@ -122,7 +122,7 @@ A continuación se realiza una auditoría completa del árbol de páginas del fr
 
 | Módulo / Ruta | Tipo de Navegación | Criterio de Animación Local | Estado | Archivos Clave a Modificar |
 |---|---|---|---|---|
-| **Mi Perfil** (`/profile`) | Pestañas y Sub-pestañas vía Query Params | **Requerido**. Mantiene el mismo pathname pero alterna sub-vistas pesadas. | 🟢 Implementado (Refactorizar a `<FadeIn>`) | `features/profile/components/ProfileView.tsx` |
+| **Mi Perfil** (`/profile`) | Pestañas y Sub-pestañas vía Query Params | **Requerido**. Mantiene el mismo pathname pero alterna sub-vistas pesadas. | 🟢 Implementado (`<FadeIn>` en `ProfileView.tsx`) | Ninguno |
 | **Tablero** (`/`) | Ruta simple / Dashboards estáticos | **No Requerido**. El Shell maneja la entrada principal. | 🟢 Conforme | Ninguno |
 | **Contactos** (`/contacts`) | Lista unificada con hojas colapsables | **No Requerido**. Usa Skeletons + hojas laterales dinámicas. | 🟢 Conforme | Ninguno |
 | **Ventas** (`/sales`) | Pestañas múltiples (`orders`, `quotes`, `customers`) | **Requerido**. Cambia de sub-tablas pesadas sin cambiar de ruta. | 🔴 Pendiente | `app/(dashboard)/sales/page.tsx` o vistas de pestañas. |
@@ -139,6 +139,6 @@ A continuación se realiza una auditoría completa del árbol de páginas del fr
 
 Para ejecutar la unificación estética módulo a módulo con el menor riesgo:
 
-1. **Refactorizar el módulo Perfil**: Reemplazar los `<motion.div>` manuales en [ProfileView.tsx](../../frontend/features/profile/components/ProfileView.tsx) por el nuevo componente unificado `<FadeIn>`. Esto servirá como *Proof of Concept* (Prueba de Concepto).
+1. **Refactorizar el módulo Perfil** — ✅ **Completado**: los `<motion.div>` manuales de `ProfileView.tsx` fueron reemplazados por `<FadeIn>` (sirvió de PoC del contrato).
 2. **Implementar en Ventas y Compras**: Identificar los archivos contenedores de pestañas y envolverlos en `<FadeIn>`.
 3. **Auditar Rendimiento**: Monitorear las métricas de rendimiento (FPS y renderizados acumulados) tras la migración de cada módulo.

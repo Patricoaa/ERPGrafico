@@ -90,7 +90,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                         <div className="flex justify-between items-end mb-2">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Suma a Pagar</p>
-                                <DataCell.Currency value={totalToPay} className="justify-start text-2xl font-bold text-success mt-1" />
+                                <DataCell.Currency value={totalToPay} weight="bold" className="justify-start text-2xl text-success mt-1" />
                             </div>
                             <div className="flex gap-4">
                                 <Button
@@ -170,7 +170,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                     <div className="space-y-4">
                         <div className="bg-success/5 border border-success/20 rounded-sm p-4 flex flex-col items-center justify-center">
                             <span className="text-[10px] uppercase font-black text-success tracking-widest opacity-80 mb-1">Monto de la Transacción ({partnersCount} pagos)</span>
-                            <DataCell.Currency value={totalToPay} className="justify-center text-3xl font-bold text-success w-auto" />
+                            <DataCell.Currency value={totalToPay} weight="bold" className="justify-center text-3xl text-success w-auto" />
                         </div>
 
                         <div>
@@ -207,7 +207,7 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
                         <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
                             <div className="flex items-center gap-3 text-xs font-medium">
                                 <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span className="flex items-center gap-1">Total Neto Desembolsado: <DataCell.Currency value={totalToPay} className="w-auto p-0 inline-flex font-bold" /></span>
+                                <span className="flex items-center gap-1">Total Neto Desembolsado: <DataCell.Currency value={totalToPay} weight="bold" className="w-auto p-0 inline-flex" /></span>
                             </div>
                         </div>
                     </div>

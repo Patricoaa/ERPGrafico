@@ -22,10 +22,10 @@ export {
 
 // Steps
 export {
-    NoteStep_Registration,
-    NoteStep_Payment,
-    NoteStep_LineItems,
+    NoteRegistrationStep,
+    NotePaymentStep,
+    NoteLineItemsStep,
     NoteStep_TypeSelector,
-    NoteStep_Review,
+    NoteReviewStep,
     type NoteLineItemsSelectionMode,
 } from './components/steps'

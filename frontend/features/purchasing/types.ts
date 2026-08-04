@@ -10,6 +10,7 @@ export interface PurchaseOrderLineAPI {
     uom_name: string
     tax_rate: string | number
     product_type?: string
+    category_name?: string
     quantity_received?: number
     quantity_pending?: number
     subtotal?: number

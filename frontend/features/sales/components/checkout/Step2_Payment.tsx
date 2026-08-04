@@ -53,7 +53,6 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, 
                     differencePositiveLabel: 'Vuelto',
                     differenceNegativeLabel: 'Crédito Asignado',
                     amountModalTitle: 'Monto Recibido',
-                    amountModalDescription: 'Ingrese el monto recibido para este pago.'
                 }}
             />
         </div>

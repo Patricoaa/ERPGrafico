@@ -17,6 +17,7 @@ from .serializers import (
     AccountingPeriodSerializer,
     F29CalculationRequestSerializer,
     F29DeclarationSerializer,
+    F29DeclarationWriteSerializer,
     F29PaymentSerializer,
     F29RegistrationSerializer,
     TaxPeriodSerializer,
@@ -31,7 +32,7 @@ from .services import (
 
 class TaxPeriodViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
-    queryset = TaxPeriod.objects.all()
+    queryset = TaxPeriod.objects.select_related("closed_by").all()
     serializer_class = TaxPeriodSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ["year", "month", "status"]
@@ -83,12 +84,17 @@ class TaxPeriodViewSet(viewsets.ModelViewSet):
 
 class F29DeclarationViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
-    queryset = F29Declaration.objects.all()
+    queryset = F29Declaration.objects.select_related("tax_period", "closed_by").all()
     serializer_class = F29DeclarationSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ["tax_period__year", "tax_period__month", "tax_period__status"]
     ordering_fields = ["tax_period__year", "tax_period__month", "declaration_date"]
     ordering = ["-tax_period__year", "-tax_period__month"]
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return F29DeclarationWriteSerializer
+        return F29DeclarationSerializer
 
     def create(self, request, *args, **kwargs):
         from .services_ext import TaxServiceExt
@@ -153,7 +159,7 @@ class F29DeclarationViewSet(viewsets.ModelViewSet):
 
 class F29PaymentViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
-    queryset = F29Payment.objects.all()
+    queryset = F29Payment.objects.select_related("declaration", "treasury_account", "payment_method", "journal_entry").all()
     serializer_class = F29PaymentSerializer
     permission_classes = [IsAuthenticated]
     filterset_fields = ["declaration", "payment_date", "payment_method"]
@@ -180,7 +186,7 @@ class F29PaymentViewSet(viewsets.ModelViewSet):
 
 
 class AccountingPeriodViewSet(viewsets.ModelViewSet):
-    queryset = AccountingPeriod.objects.all()
+    queryset = AccountingPeriod.objects.select_related("journal_entry").all()
     serializer_class = AccountingPeriodSerializer
     pagination_class = None  # Master data
     permission_classes = [IsAuthenticated]

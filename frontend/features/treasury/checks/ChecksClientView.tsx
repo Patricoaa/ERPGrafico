@@ -1,12 +1,10 @@
 "use client"
 
 import React, { useMemo, useCallback } from 'react'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, Skeleton, EntityCard,
+    DataTableView,
+    SkeletonShell, AutoEntityCard,
     UnifiedSearchBar, useUnifiedSearch,
 } from '@/components/shared'
 import type { UnifiedSearchConfig, MultiSelectOption } from '@/types/unified-search'
@@ -15,7 +13,9 @@ import { useChecks, useCheckMutations } from '../hooks/useChecks'
 import { CheckDepositModal } from './CheckDepositModal'
 import { checkActions, type CheckActionsCtx } from './checkActions'
 import { useBanks } from '@/features/treasury'
+import { checkFields } from './checkFields'
 import type { Check, CheckDirection } from './types'
+import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
     deposit:     ['IN_PORTFOLIO'],
@@ -31,8 +31,6 @@ interface ChecksClientViewProps {
 }
 
 export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = {}) {
-    const router = useRouter()
-    const pathname = usePathname()
     const searchParams = useSearchParams()
 
     const { openEntity } = useGlobalModals()
@@ -65,6 +63,10 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                 { label: 'Personalizado', value: 'custom', serverParamFrom: 'due_date_after', serverParamTo: 'due_date_before' },
             ],
         }],
+        groupBy: [
+            { key: 'status', label: 'Estado', field: 'status' },
+            { key: 'direction', label: 'Dirección', field: 'direction' },
+        ],
     }), [])
     const search = useUnifiedSearch(config, filterOptions)
 
@@ -82,6 +84,7 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
     const isDepositOpen = !!selectedId && action === "deposit"
+    const { openAction, clearActions } = useEntityRouteActions()
 
     const depositCheck = useMemo(
         () => isDepositOpen ? checks.find(c => c.id === selectedId) ?? null : null,
@@ -89,15 +92,8 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     )
 
     const clearModalParams = useCallback(() => {
-        const params = new URLSearchParams(searchParams.toString())
-        const changed = params.has("selected") || params.has("action")
-        params.delete("selected")
-        params.delete("action")
-        if (changed) {
-            const query = params.toString()
-            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        }
-    }, [router, pathname, searchParams])
+        clearActions()
+    }, [clearActions])
 
     const isFiltered = search.isFiltered
 
@@ -116,94 +112,26 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
 
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
-
     const isIssued = direction === 'ISSUED'
 
     const actionsCtx: CheckActionsCtx = {
         isIssued,
         canDo,
         onViewDetail: handleViewDetail,
-        onDeposit: (check) => {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set("selected", String(check.id))
-            params.set("action", "deposit")
-            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        },
+        onDeposit: (check) => openAction(check.id, "deposit"),
         onClear: (id) => clear(id),
         onBounce: (id) => bounce({ id }),
         onMarkCashed: (id) => markCashed(id),
         onVoid: (id) => voidCheck({ id }),
     }
 
-    const columns: ColumnDef<Check>[] = [
-        {
-            accessorKey: 'check_number',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="N° Cheque" />,
-            cell: ({ row }) => (
-                <DataCell.Code>{row.original.check_number}</DataCell.Code>
-            ),
-        },
-        {
-            accessorKey: 'bank_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Banco" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.bank_name}</DataCell.Text>,
-        },
-        {
-            accessorKey: 'counterparty_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title={isIssued ? 'Beneficiario' : 'Girador'} />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.counterparty_name ?? row.original.drawer_name ?? '—'}</DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={parseFloat(row.original.amount)} className="font-bold" />
-                </div>
-            ),
-        },
-        {
-            id: 'sale_order',
-            accessorFn: (row) => row.sale_order_display?.number ?? null,
-            header: ({ column }) => <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />,
-            cell: ({ row }) => {
-                const so = row.original.sale_order_display
-                if (!so) return null
-                return (
-                    <div className="flex justify-center">
-                        <DataCell.Entity entityLabel="sales.saleorder" number={so.number} />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: 'due_date',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Vencimiento" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center gap-0.5">
-                    <DataCell.Text>{row.original.due_date}</DataCell.Text>
-                    {row.original.is_overdue && (
-                        <span className="flex items-center gap-1 text-[11px] text-destructive font-bold">
-                            <AlertTriangle className="h-3 w-3" /> Vencido
-                        </span>
-                    )}
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'status',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
-        },
-        checkActions.column(actionsCtx),
+    const columns = [
+        ...checkFields.toColumns(),
+        checkActions.auto(actionsCtx),
     ]
 
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cheques">
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -236,35 +164,15 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                     showReset={isFiltered}
                     onReset={handleReset}
                     renderCard={(check: Check) => (
-                        <EntityCard>
-                            <EntityCard.Header
-                                title={check.check_number}
-                                trailing={<StatusBadge status={check.status} />}
-                            />
-                            <EntityCard.Body actions={checkActions.render(check, actionsCtx)}>
-                                <EntityCard.Field
-                                    label={isIssued ? 'Beneficiario' : 'Girador'}
-                                    value={check.counterparty_name ?? check.drawer_name ?? '—'}
-                                />
-                                <EntityCard.Field
-                                    label="Monto"
-                                    value={<MoneyDisplay amount={parseFloat(check.amount)} className="font-bold" />}
-                                />
-                                <EntityCard.Field
-                                    label="Vencimiento"
-                                    value={
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <span>{check.due_date}</span>
-                                            {check.is_overdue && (
-                                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-destructive uppercase">
-                                                    <AlertTriangle className="h-3 w-3" /> Vencido
-                                                </span>
-                                            )}
-                                        </span>
-                                    }
-                                />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard 
+                            key={check.id}
+                            data={check}
+                            fields={checkFields}
+
+                            entityLabel="treasury.check"
+
+                            actions={checkActions.render(check, actionsCtx)}
+                        />
                     )}
                 />
             </div>
@@ -277,5 +185,6 @@ export function ChecksClientView({ bankId, direction }: ChecksClientViewProps = 
                 />
             )}
         </div>
+        </SkeletonShell>
     )
 }

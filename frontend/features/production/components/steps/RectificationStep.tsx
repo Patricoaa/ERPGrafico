@@ -311,7 +311,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 )
             },
         },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     ], [actualQuantities])
 
     const outsourcedColumns = useMemo<ColumnDef<WorkOrderMaterial>[]>(() => [
@@ -378,7 +378,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 )
             },
         },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     ], [actualOutsourced])
 
     return (

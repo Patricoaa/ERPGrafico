@@ -19,11 +19,10 @@ import {
 } from "@/components/ui/popover"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
 import { type Product, type ProductVariant, type ProductAttributeValue } from "@/types/entities"
-import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay } from '@/components/shared'
+import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay, Badge } from '@/components/shared'
 
 const ProductIcon = getEntityIcon('inventory.product')
 
@@ -216,11 +215,13 @@ export function ProductSelector({
                     )}
                 >
                     {selectedProduct ? (
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
-                            <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
-                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
-                                {selectedProduct.internal_code || selectedProduct.code}
+                        <div className="flex items-center justify-between gap-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
+                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
+                            </div>
+                            <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-[10px]" : "text-xs")}>
+                                {PricingUtils.formatCurrency(Number(selectedProduct.sale_price_gross ?? selectedProduct.sale_price))}
                             </span>
                         </div>
                     ) : (
@@ -234,7 +235,10 @@ export function ProductSelector({
                     <div className="flex items-center px-3 border rounded-md mb-2 relative">
                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                         <input
-                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            className={cn(
+                                "flex h-10 w-full rounded-md bg-transparent py-3 outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+                                variant === 'inline' ? "text-xs" : "text-sm"
+                            )}
                             placeholder="Buscar código o nombre..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -262,7 +266,8 @@ export function ProductSelector({
                                     key={product.id}
                                     data-disabled={isStockRestricted(product) || isCustomDisabled(product)}
                                     className={cn(
-                                        "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+                                        "relative flex cursor-default select-none items-start rounded-sm px-2 py-2 outline-none hover:bg-accent hover:text-accent-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+                                        variant === 'inline' ? "text-xs" : "text-sm",
                                         selectedProduct?.id === product.id && "bg-accent"
                                     )}
                                     onClick={() => handleSelect(product)}
@@ -286,44 +291,41 @@ export function ProductSelector({
                                         )}
                                     />
                                     <div className="flex flex-col w-full ml-6">
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-medium">
-                                                {product.code} - {product.name}
+                                        <div className="flex items-center justify-between gap-2 w-full">
+                                            <span className="font-medium truncate text-left">
+                                                {product.name}
+                                            </span>
+                                            <span className="text-muted-foreground whitespace-nowrap text-right">
+                                                {PricingUtils.formatCurrency(Number(product.sale_price_gross ?? product.sale_price))}
                                             </span>
                                         </div>
                                         <div className="flex justify-between mt-1 items-center">
                                             <div className="flex gap-1 flex-wrap">
                                                 {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
                                                     <>
-                                                        <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                            (product.current_stock || 0) > 0 ? "border-success text-success" : "border-destructive/20 text-destructive"
-                                                        )}>
+                                                        <Badge intent={(product.current_stock || 0) > 0 ? "success" : "destructive"} size="xs">
                                                             Stock: {product.current_stock || 0}
                                                         </Badge>
-                                                        <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                            (product.qty_available || 0) > 0 ? "border-success text-success" : "border-destructive text-destructive bg-destructive/10"
-                                                        )}>
+                                                        <Badge intent={(product.qty_available || 0) > 0 ? "success" : "destructive"} size="xs">
                                                             Disp: {product.qty_available || 0}
                                                         </Badge>
                                                     </>
                                                 )}
 
                                                 {product.requires_advanced_manufacturing ? (
-                                                    <Badge variant="outline" className="text-[9px] px-1 h-4 border-primary/50 text-primary bg-primary/10">
+                                                    <Badge intent="primary" size="xs">
                                                         Fab: Avanzada
                                                     </Badge>
                                                 ) : product.mfg_auto_finalize ? (
-                                                    <Badge variant="outline" className="text-[9px] px-1 h-4 border-warning/50 text-warning bg-warning/10">
+                                                    <Badge intent="warning" size="xs">
                                                         Fab: Express
                                                     </Badge>
                                                 ) : product.has_bom ? (
-                                                    <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-primary/50 text-primary",
-                                                        (product.manufacturable_quantity ?? 0) <= 0 && "border-destructive text-destructive bg-destructive/10"
-                                                    )}>
+                                                    <Badge intent={(product.manufacturable_quantity ?? 0) <= 0 ? "destructive" : "primary"} size="xs">
                                                         Fab: {product.manufacturable_quantity ?? 'N/A'}
                                                     </Badge>
                                                 ) : product.product_type === 'MANUFACTURABLE' ? (
-                                                    <Badge variant="outline" className="text-[9px] px-1 h-4 border text-muted-foreground bg-muted">
+                                                    <Badge intent="neutral" size="xs">
                                                         Sin Receta
                                                     </Badge>
                                                 ) : null}
@@ -331,7 +333,7 @@ export function ProductSelector({
 
                                             <span className="text-[10px] font-bold whitespace-nowrap ml-2">
                                                 {product.is_dynamic_pricing ? (
-                                                    <Badge variant="outline" className="text-[9px] border-warning text-warning bg-warning/10 px-1 py-0 h-4">Precio Dinámico</Badge>
+                                                    <Badge intent="warning" size="xs">Precio Dinámico</Badge>
                                                 ) : (
                                                     <>
                                                         <MoneyDisplay amount={Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))} inline />
@@ -399,7 +401,7 @@ export function ProductSelector({
                                                 <span className="font-medium">{v.variant_display_name || v.name}</span>
                                                 <div className="flex gap-1 mt-1">
                                                     {v.attribute_values_data?.map((av: ProductAttributeValue) => (
-                                                        <Badge key={av.id} variant="secondary" className="text-[9px] py-0 h-4">
+                                                        <Badge key={av.id} intent="neutral" size="xs">
                                                             {av.attribute_name}: {av.value}
                                                         </Badge>
                                                     ))}
@@ -407,7 +409,7 @@ export function ProductSelector({
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Badge variant={(v.current_stock || 0) > 0 ? "success" : "secondary"} className="text-[10px]">
+                                            <Badge intent={(v.current_stock || 0) > 0 ? "success" : "neutral"} size="sm">
                                                 {v.current_stock || 0} disp.
                                             </Badge>
                                         </TableCell>

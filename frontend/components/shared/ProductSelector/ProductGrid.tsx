@@ -131,35 +131,39 @@ function ProductGridComponent({
                                 </div>
                             )}
 
-                            {/* Left side Favorite Badge */}
-                            {onToggleFavorite && (
-                                <Button
-                                    variant="ghost"
-                                    className={cn(
-                                        "absolute top-2 left-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
-                                        product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
-                                    )}
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onToggleFavorite(product.id)
-                                    }}
-                                    title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
-                                >
-                                    <Heart
+                            {/* Top overlay: Favorites + Availability badges */}
+                            <div className="absolute top-2 left-2 right-2 z-20 flex items-center justify-between">
+                                {/* Left side Favorite Badge */}
+                                {onToggleFavorite && (
+                                    <Button
+                                        variant="ghost"
                                         className={cn(
-                                            "h-3.5 w-3.5 transition-colors",
-                                            product.is_favorite ? "fill-current" : ""
+                                            "flex items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
+                                            isTouchPOS ? "h-10 w-10" : "h-7 w-7",
+                                            product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
                                         )}
-                                    />
-                                </Button>
-                            )}
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            onToggleFavorite(product.id)
+                                        }}
+                                        title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
+                                    >
+                                        <Heart
+                                            className={cn(
+                                                "transition-colors",
+                                                isTouchPOS ? "h-5 w-5" : "h-3.5 w-3.5",
+                                                product.is_favorite ? "fill-current" : ""
+                                            )}
+                                        />
+                                    </Button>
+                                )}
 
-                            {/* Right side badges (Availability) */}
-                            <div className="absolute top-2 right-2 flex flex-col gap-2 items-end z-20">
+                                {/* Right side badges (Availability) */}
+                                <div className="flex flex-col gap-2 items-end">
 
                                 {/* Stock/Availability Badge */}
                                 {product.product_type === 'STORABLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
@@ -167,7 +171,7 @@ function ProductGridComponent({
 
                                 {/* MANUFACTURABLE badges */}
                                 {isManufacturable && mfgSubType === 'SIMPLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
@@ -213,6 +217,7 @@ function ProductGridComponent({
                                             Disponible
                                         </div>
                                     )}
+                                </div>
                             </div>
                         </div>
 

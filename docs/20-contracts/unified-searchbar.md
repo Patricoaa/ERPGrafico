@@ -193,11 +193,24 @@ interface UnifiedSearchBarProps {
   groupBy: string | null
   onGroupBySelect: (key: string | null) => Promise<void>
   paramValues: Record<string, string | null>
+  filterOptions?: Record<string, MultiSelectOption[]>
   placeholder?: string
   className?: string
   prefix?: React.ReactNode
+  viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
+  currentView?: string
+  onViewChange?: (view: string) => void
+  toolbarActions?: React.ReactNode
 }
 ```
+
+| Prop | Propósito |
+|------|-----------|
+| `filterOptions` | Opciones dinámicas para filtros `multi` resueltas en runtime (las fijas vienen del `config.filters`) |
+| `viewOptions` | Selector de vista (cards/table) renderizado en el menú; array de `{ label, value, icon }` |
+| `currentView` | Vista activa actual (sync con `viewOptions`) |
+| `onViewChange` | Callback al cambiar de vista |
+| `toolbarActions` | Slot para acciones extra del toolbar (right side del searchbar) |
 
 ### prefix — Controles inline
 

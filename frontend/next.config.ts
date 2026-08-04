@@ -1,5 +1,18 @@
 import type { NextConfig } from "next";
+import { execSync } from "child_process";
 import packageJson from "./package.json";
+
+function getVersion(): string {
+  try {
+    const tag = execSync("git describe --tags --abbrev=0", {
+      encoding: "utf-8",
+      cwd: process.cwd(),
+    }).trim();
+    return tag.replace(/^v/, "");
+  } catch {
+    return packageJson.version;
+  }
+}
 
 // Git hash: Vercel inyecta VERCEL_GIT_COMMIT_SHA; en Docker se puede pasar GIT_HASH como ARG/ENV
 const gitHash =
@@ -19,7 +32,7 @@ const nextConfig: NextConfig = {
   output: process.env.VERCEL ? undefined : "standalone",
   allowedDevOrigins: ["192.168.1.93", "192.168.1.195", "localhost", "127.0.0.1"],
   env: {
-    NEXT_PUBLIC_APP_VERSION: packageJson.version,
+    NEXT_PUBLIC_APP_VERSION: getVersion(),
     NEXT_PUBLIC_GIT_HASH: gitHash,
     NEXT_PUBLIC_BUILD_DATE: new Date().toISOString(),
   },
@@ -48,7 +61,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
   },
-  transpilePackages: ["react-day-picker", "@nivo/core", "@nivo/bar", "@nivo/pie", "@nivo/line"],
+  transpilePackages: ["react-day-picker", "@nivo/core", "@nivo/bar", "@nivo/funnel", "@nivo/pie", "@nivo/line"],
   devIndicators: {
   },
 };

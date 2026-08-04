@@ -1,6 +1,6 @@
 "use client"
 
-import { Banknote, CreditCard, Building2, ClipboardList, Wallet, Trash2, Pencil, Layers } from "lucide-react"
+import { Banknote, CreditCard, Building2, ClipboardList, Wallet, Trash2, Pencil, Layers, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAllowedPaymentMethods, type PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
 import { useBanks } from '../hooks/useMasterData'
@@ -51,7 +51,6 @@ interface PaymentMethodCardSelectorProps {
         differencePositiveLabel?: string
         differenceNegativeLabel?: string
         amountModalTitle?: string
-        amountModalDescription?: string
     }
     customerCreditBalance?: number
     allowCreditBalanceAccumulation?: boolean
@@ -82,7 +81,6 @@ export function PaymentMethodSelector({
 }: PaymentMethodCardSelectorProps) {
     const {
         amountModalTitle = 'Monto',
-        amountModalDescription = 'Ingrese el monto para este pago.'
     } = labels
 
     const { methods: allowedMethods, loading: loadingMethods } = useAllowedPaymentMethods({
@@ -206,8 +204,6 @@ export function PaymentMethodSelector({
             onPaymentDataChange({
                 ...paymentData,
                 amount: finalAmount,
-                treasuryAccountId: pendingTreasuryAccountId,
-                paymentMethodId: pendingPaymentMethodId,
             })
         }
     }
@@ -303,7 +299,7 @@ export function PaymentMethodSelector({
         if (!method) return false
         if (method === 'CHECK') return true
         if (method === 'CREDIT_CARD') return true
-        if (['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER'].includes(method)) {
+        if (['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER', 'DEBIT_CARD'].includes(method)) {
             return methodsForType.filter(m => m.treasury_account != null).length > 1
         }
         return false
@@ -369,7 +365,7 @@ export function PaymentMethodSelector({
                     <p className="text-xs text-muted-foreground">Débito directo desde la cuenta vinculada.</p>
                 )}
 
-                {(method === 'CREDIT_CARD' || method === 'DEBIT_CARD' || methodsForType.filter(m => m.treasury_account != null).length > 1) && (
+                {methodsForType.filter(m => m.treasury_account != null).length > 1 && (
                     <LabeledSelect
                         label={method === 'TRANSFER' ? 'Banco / Cuenta' : method === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : method === 'DEBIT_CARD' ? 'Tarjeta Débito' : 'Cuenta'}
                         value={currentAlloc.treasuryAccountId || ""}
@@ -390,13 +386,13 @@ export function PaymentMethodSelector({
         )
     }
 
-    const methodCardClass = "card-base bg-card p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start"
+    const methodCardClass = "card-base bg-card text-card-foreground p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start"
 
     const renderMethodGrid = () => {
         if (!isMultiPayment) {
             // ── Single mode: original grid + "Múltiple" card ──
             const allMethods = availableMethods.map(m => ({ ...m, isMultiple: false }))
-            allMethods.push({
+            allMethods.unshift({
                 id: '__MULTIPLE__',
                 label: 'Múltiple',
                 description: 'Varios métodos',
@@ -418,6 +414,7 @@ export function PaymentMethodSelector({
                             <Button
                                 key={m.id}
                                 type="button"
+                                variant="ghost"
                                 onClick={() => {
                                     if (isMultiCard) {
                                         enterMultiMode()
@@ -430,19 +427,18 @@ export function PaymentMethodSelector({
                                             isTerminalIntegration,
                                         })
                                         if (!isReClick) {
-                                            setTempAmount((paymentData.amount || 0).toString())
+                                            setTempAmount((total || 0).toString())
                                             setIsAmountModalOpen(true)
                                         } else if (m.id !== 'TRANSFER' && m.id !== 'CREDIT_BALANCE') {
-                                            setTempAmount((paymentData.amount || 0).toString())
+                                            setTempAmount((total || 0).toString())
                                             setIsAmountModalOpen(true)
                                         }
                                     }
                                 }}
                                 disabled={!m.isAllowed}
                                 className={cn(
-                                    methodCardClass,
+                                    isMultiCard ? "col-span-full self-start h-auto p-8 border-2 border-dashed border-primary/40 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/60" : "card-base bg-card text-card-foreground p-8 shadow-card shadow-black/5 h-full text-left flex flex-col items-start",
                                     isSingleSelected ? "border-2 border-primary accent-visible" : undefined,
-                                    isMultiCard && "hover:border-primary",
                                     !m.isAllowed && "opacity-40 grayscale cursor-not-allowed"
                                 )}
                             >
@@ -497,16 +493,16 @@ export function PaymentMethodSelector({
                 {paymentData.amount > 0 && paymentData.amount < total && (
                     <div className={cn(
                         methodCardClass,
-                        "self-start h-auto border-2 border-primary accent-visible"
+                        "self-start h-auto border-2 border-primary accent-visible rounded-sm"
                     )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-warning" />
+                                <Wallet className="h-9 w-9 shrink-0 text-primary" />
                                 <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
                             </div>
                             <div className="text-right shrink-0">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                <div className="text-base font-semibold tabular-nums text-warning">
+                                <div className="text-base font-semibold tabular-nums">
                                     <MoneyDisplay amount={total - paymentData.amount} showColor={false} />
                                 </div>
                             </div>
@@ -517,27 +513,52 @@ export function PaymentMethodSelector({
             )
         }
 
-        // ── Multi mode: unified grid + header ──
+        // ── Multi mode: unified grid + exit card ──
         return (
             <div className="space-y-4">
-                {/* Multi header: badge + exit */}
-                <div className="flex items-center justify-between gap-3 p-3 rounded-sm bg-primary/5 border border-primary/10">
-                    <div className="flex items-center gap-2">
-                        <Layers className="h-5 w-5 text-primary" />
-                        <span className="text-sm font-semibold uppercase tracking-wider text-primary">Modo múltiple</span>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        type="button"
-                        onClick={exitMultiMode}
-                        className="text-sm font-semibold text-destructive hover:text-destructive/80 px-4 py-2"
-                    >
-                        Salir
-                    </Button>
-                </div>
-
-                {/* Unified grid: all methods in strict columns */}
+                {/* Unified grid: exit card + methods */}
                 <div className="grid gap-3 items-start grid-cols-2 xl:grid-cols-3">
+                    {/* Card "Múltiple" para salir */}
+                    <div
+                        className="col-span-full self-start p-8 flex flex-row items-center justify-between gap-3 border-2 border-primary bg-primary text-primary-foreground rounded-[calc(var(--radius))]"
+                    >
+                        <div className="flex items-center gap-3 min-w-0">
+                            <Layers className="h-9 w-9 shrink-0 text-primary-foreground" />
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <div className="text-base font-semibold leading-tight">Múltiple</div>
+                                    <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap gap-1.5">
+                                {paymentsList.map((p, i) => (
+                                    <span
+                                        key={i}
+                                        className="text-[10px] font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
+                                    >
+                                        {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
+                                    </span>
+                                ))}
+                                {!isFullyPaid && remaining > 0 && (
+                                    <span className="text-[10px] font-semibold bg-primary-foreground/15 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap">
+                                        Crédito: {formatMoney(remaining)}
+                                    </span>
+                                )}
+                            </div>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={exitMultiMode}
+                                className="size-7 rounded-[calc(var(--radius))] text-primary-foreground hover:bg-primary-foreground/20"
+                            >
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    </div>
+
                     {availableMethods.map((m) => {
                         const allocIndex = paymentsList.findIndex(p => p.method === m.id)
                         const isAllocated = allocIndex >= 0
@@ -620,6 +641,7 @@ export function PaymentMethodSelector({
                             <Button
                                 key={m.id}
                                 type="button"
+                                variant="ghost"
                                 onClick={() => handlePaymentMethodSelect(m.id)}
                                 disabled={!m.isAllowed}
                                 className={cn(
@@ -651,16 +673,16 @@ export function PaymentMethodSelector({
                 {!isFullyPaid && remaining > 0 && (
                     <div className={cn(
                         methodCardClass,
-                        "self-start h-auto border-2 border-primary accent-visible"
+                        "self-start h-auto border-2 border-primary accent-visible rounded-sm"
                     )}>
                         <div className="flex items-center justify-between w-full gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                                <Wallet className="h-9 w-9 shrink-0 text-warning" />
+                                <Wallet className="h-9 w-9 shrink-0 text-primary" />
                                 <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
                             </div>
                             <div className="text-right shrink-0">
                                 <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
-                                <div className="text-base font-semibold tabular-nums text-warning">
+                                <div className="text-base font-semibold tabular-nums">
                                     <MoneyDisplay amount={remaining} showColor={false} />
                                 </div>
                             </div>
@@ -699,11 +721,14 @@ export function PaymentMethodSelector({
                 open={isAmountModalOpen}
                 onOpenChange={setIsAmountModalOpen}
                 title={amountModalTitle || "Monto"}
-                description={amountModalDescription}
+                icon={Wallet}
                 className="sm:max-w-md"
+                headerClassName="border-b-0"
+                footerClassName="border-t-0"
+                centered
                 footer={
                     <Button
-                        className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
+                        className="w-full h-12 lg:h-14 bg-primary hover:bg-primary font-black uppercase tracking-widest text-sm lg:text-base active:scale-95 transition-transform"
                         onClick={handleAmountConfirm}
                     >
                         CONFIRMAR
@@ -711,22 +736,6 @@ export function PaymentMethodSelector({
                 }
             >
                 <div className="flex flex-col items-center gap-4 overflow-y-auto">
-                    {pendingMethod && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Método:</span>
-                            <span className="font-semibold text-foreground">
-                                {METHOD_META[pendingMethod]?.label || pendingMethod}
-                            </span>
-                        </div>
-                    )}
-                    {isMultiPayment && (
-                        <div className="text-xs text-muted-foreground">
-                            {editingIndex !== null
-                                ? `Editando monto para ${METHOD_META[pendingMethod || '']?.label || ''}`
-                                : `Restante por cobrar: ${formatMoney(remaining)}`
-                            }
-                        </div>
-                    )}
                     <Numpad
                         value={tempAmount}
                         onChange={setTempAmount}

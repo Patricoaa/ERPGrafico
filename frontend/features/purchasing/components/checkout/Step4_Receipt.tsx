@@ -14,11 +14,8 @@ import {
 } from "@/components/ui/table"
 import { type ReceiptData, type CheckoutLine, type PartialReceiptLine } from "../../types"
 import { type Warehouse, type UoM } from "@/types/entities"
-import { Package, Receipt, FileText, FileCheck } from "lucide-react"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-
+import {Receipt, FileText, FileCheck} from "lucide-react"
+import {RadioGroup} from "@/components/ui/radio-group"
 interface Step4_ReceiptProps {
     receiptData: ReceiptData
     setReceiptData: (data: ReceiptData | ((prev: ReceiptData) => ReceiptData)) => void

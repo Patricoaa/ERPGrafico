@@ -235,9 +235,7 @@ export interface WarehouseInitialData {
     id?: number
     name?: string
     code?: string
-    location?: string
-    is_default_receiving?: boolean
-    is_pos_warehouse?: boolean
+    address?: string
 }
 
 // ─── Service Contract Form ───────────────────────────────

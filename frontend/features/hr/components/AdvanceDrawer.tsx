@@ -1,24 +1,19 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { toast } from "sonner"
+import {useEffect} from "react"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { updateAdvance } from '@/features/hr/api/hrApi'
+import { useAdvanceMutations } from '../hooks/useAdvanceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import { usePayrolls } from '@/features/hr/hooks/usePayrolls'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { ActivitySidebar } from "@/features/audit"
-import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
-import { Printer } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { useServerDate } from "@/hooks/useServerDate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -49,9 +44,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const payrolls = payrollsProp ?? fetchedPayrolls
     const mode: DrawerMode = modeProp ?? (advance ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
-    const [saving, setSaving] = useState(false)
+    const { printRef, handlePrint } = usePrintableDrawer()
+    const { saveAdvance, isSaving: saving } = useAdvanceMutations()
     const { dateString } = useServerDate()
 
     const width = formDrawerWidth("medium", !!advance)
@@ -88,7 +82,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     }, [advance, open, form])
 
     const onSubmit = async (data: AdvanceFormValues) => {
-        setSaving(true)
         try {
             const payload = {
                 employee: parseInt(data.employee),
@@ -98,8 +91,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 notes: data.notes || "",
             }
             if (advance) {
-                await updateAdvance(advance.id, payload)
-                toast.success("Anticipo actualizado")
+                await saveAdvance({ id: advance.id, payload })
                 onSaved()
             } else {
                 // For NEW advances, we just pass the data to the next step (PaymentDialog)
@@ -107,8 +99,6 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             }
         } catch (e: unknown) {
             showApiError(e, "Error al guardar anticipo")
-        } finally {
-            setSaving(false)
         }
     }
 
@@ -117,6 +107,8 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
 
     const identity = useDrawerIdentity('hr.salaryadvance', mode, advance, {
         overrideSubtitle: advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación.",
+        printable: (mode === 'view' || mode === 'edit') && !!advance?.id,
+        onPrint: handlePrint,
     })
 
     return (
@@ -132,13 +124,14 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={width}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 mode={mode}
                 footer={isView ? undefined : (
@@ -189,7 +182,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     {...field}
                                                 />
                                             )} />
-                                            <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                            <FormField control={form.control} name="date" render={({ field }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Propuesta"
                                                     required
@@ -268,7 +261,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                                     {...field}
                                                 />
                                             )} />
-                                            <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                            <FormField control={form.control} name="date" render={({ field }) => (
                                                 <PeriodValidationDateInput
                                                     label="Fecha Propuesta"
                                                     required

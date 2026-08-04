@@ -204,10 +204,8 @@ export function StatementDetailPanel({
                 )
             },
         },
-        statementLineUnmatchActions.column(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
+        statementLineUnmatchActions.auto(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
     ]
-
-    if (loading) return <div className="flex-1"><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
 
     if (!statement) {
         return (
@@ -234,6 +232,7 @@ export function StatementDetailPanel({
     const netMovement = totalCredits - totalDebits
 
     return (
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando cartola">
         <div className={detailOnly ? "" : "space-y-4"}>
             {!detailOnly && (
                 <>
@@ -271,7 +270,7 @@ export function StatementDetailPanel({
                                 <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-xl font-bold font-mono text-expense">{formatCurrency(totalDebits)}</div>
+                                <div className="text-xl font-bold font-mono"><DataCell.CurrencyFlow value={totalDebits} direction="outflow" showIcon={false} /></div>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
                                     {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
                                 </p>
@@ -283,7 +282,7 @@ export function StatementDetailPanel({
                                 <TrendingUp className="h-3.5 w-3.5 text-success/50" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-xl font-bold font-mono text-income">{formatCurrency(totalCredits)}</div>
+                                <div className="text-xl font-bold font-mono"><DataCell.CurrencyFlow value={totalCredits} direction="inflow" showIcon={false} /></div>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
                                     {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados
                                 </p>
@@ -369,5 +368,6 @@ export function StatementDetailPanel({
                 confirmText="Confirmar"
             />
         </div>
+        </SkeletonShell>
     )
 }

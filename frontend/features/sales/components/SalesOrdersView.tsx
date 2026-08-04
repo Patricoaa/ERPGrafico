@@ -1,16 +1,21 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTableView, DataCell, DomainHubStatus, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, createDateColumn, createContactColumn, createCurrencyColumn, createCodeColumn } from '@/components/shared'
+import { DataTableView, DataCell, DomainHubStatus, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, DataTableColumnHeader, type AutoEntityCardProps } from '@/components/shared'
+import { salesOrderFields } from "@/features/sales/salesOrderFields"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { ENTITY_REGISTRY, getEntityIcon } from "@/lib/entity-registry"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
+import { useSalesOrders, useSalesNotes, useSalesAnalyticsData, type SaleOrder, type SaleNote } from "@/features/sales"
+import type { AnalyticsPanelConfig, Granularity } from '@/components/shared'
+import { assignChartColors } from '@/lib/chart-colors'
+import { formatMoney, formatQuantity } from '@/lib/money'
+import { BarChart3, Smartphone, Users, Package, Truck } from "lucide-react"
 import { salesOrderUnifiedSearchDef, salesNoteUnifiedSearchDef } from "@/features/sales/unifiedSearchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
-import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface SalesOrdersViewProps {
     viewMode: 'orders' | 'notes'
@@ -49,6 +54,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
     const unifiedSearchDef = viewMode === 'orders' ? salesOrderUnifiedSearchDef : salesNoteUnifiedSearchDef
     const search = useUnifiedSearch(unifiedSearchDef)
     const isFiltered = search.isFiltered
+    const isGrouping = search.groupBy !== null
 
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const [pageStateNotes, setPageStateNotes] = useState({ pageIndex: 0, pageSize: 20 })
@@ -57,55 +63,269 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
         filters: {
             ...(search.filters as SaleOrderFilters),
             pos_session: posSessionId || undefined,
-            page: pageState.pageIndex + 1,
-            page_size: pageState.pageSize,
+            page: isGrouping ? 1 : pageState.pageIndex + 1,
+            page_size: isGrouping ? 5000 : pageState.pageSize,
         },
     })
     const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes } = useSalesNotes({
         filters: {
             ...(search.filters as Record<string, string>),
-            page: pageStateNotes.pageIndex + 1,
-            page_size: pageStateNotes.pageSize,
+            page: isGrouping ? 1 : pageStateNotes.pageIndex + 1,
+            page_size: isGrouping ? 5000 : pageStateNotes.pageSize,
         }
     })
 
-    const columns: ColumnDef<SaleOrder>[] = [
-        createCodeColumn<SaleOrder>("number", "Folio", {
-            render: (entity) => <DataCell.Code>{entity.display_id ?? entity.number}</DataCell.Code>,
-        }),
-        createDateColumn<SaleOrder>("date", "Fecha"),
-        createContactColumn<SaleOrder>("customer_name", "Cliente", "customer"),
-        createCurrencyColumn<SaleOrder>("total", "Total"),
-        {
-            accessorKey: "status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center items-center"><DomainHubStatus label="sales.saleorder" data={row.original} /></div>,
-            meta: { title: "Estado" },
-        },
-        {
-            id: "hub_trigger",
-            header: () => null,
-            enableHiding: false,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.orderId === item.id && isHubOpen)
-                return (
-                    <div className="flex justify-end pr-2">
-                        <DataCell.Action
-                            icon={isSelected ? ArrowLeft : ArrowRight}
-                            title={isSelected ? "Cerrar Panel" : "Abrir Panel"}
-                            className={cn(
-                                "transition-all",
-                                isSelected
-                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
-                                    : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
-                            )}
-                            onClick={() => toggleSelection(item.id)}
-                        />
-                    </div>
-                )
+    const totalCount = viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
+
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("resumen")
+    const [granularity, setGranularity] = useState<Granularity>("month")
+    const analyticsData = useSalesAnalyticsData(orders, null, granularity)
+
+    const analyticsPanel: AnalyticsPanelConfig = useMemo(() => {
+        if (viewMode !== "orders") return { screen: { entityName: "", tabs: [] } }
+
+        const lineVolume = [
+            { id: "Total", data: analyticsData.monthlyVolume.map((m) => ({ x: m.month, y: m.total })) },
+        ]
+
+        const systemPosColors = assignChartColors([
+            { id: "Sistema", value: analyticsData.systemOrderCount },
+            { id: "POS", value: analyticsData.posOrderCount },
+        ])
+
+        const deliveryDist = assignChartColors([
+            { id: "Entregado", value: analyticsData.deliveredCount },
+            { id: "Pendiente", value: analyticsData.pendingDeliveryCount },
+        ])
+
+        return {
+            screen: {
+                entityName: "Órdenes de Venta",
+                activeTab: analyticsActiveTab,
+                onTabChange: setAnalyticsActiveTab,
+                granularity,
+                onGranularityChange: setGranularity,
+                tabs: [
+                    {
+                        value: "resumen",
+                        label: "Resumen",
+                        icon: BarChart3,
+                        gridRows: "max-content 1fr",
+                        columns: [
+                            {
+                                id: "col-1",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-volume",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Volumen Total", value: formatMoney(analyticsData.totalVolume), variant: "hero", trend: analyticsData.volumeTrend } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-2",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-paid",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Cobrado", value: formatMoney(analyticsData.totalPaid), variant: "hero", trend: analyticsData.paidTrend, accent: "success" } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-3",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-pending",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Pendiente", value: formatMoney(analyticsData.totalPending), variant: "hero", accent: "warning" } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-4",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-orders",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Órdenes", value: formatQuantity(analyticsData.orderCount), variant: "tile", trend: analyticsData.orderCountTrend } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-5",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-avg",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Orden Promedio", value: formatMoney(analyticsData.avgOrderValue), variant: "tile", trend: analyticsData.avgOrderValueTrend } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-6",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "kpi-customers",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Clientes", value: formatQuantity(analyticsData.customerCount), variant: "tile" } },
+                                    },
+                                    {
+                                        id: "volume-trend",
+                                        colSpan: 3,
+                                        content: { type: "stat-card", config: { label: "Evolución del Volumen", variant: "chart", subtext: "Monto total de órdenes por período", chart: { type: "line-chart", preset: "card", data: lineVolume, valueFormat: "$,.0f" } } },
+                                    },
+                                    {
+                                        id: "price-range",
+                                        colSpan: 2,
+                                        content: { type: "stat-card", config: { label: "Órdenes por Rango de Precio", variant: "chart", subtext: "Distribución del valor total de las órdenes", chart: { type: "bar-chart", preset: "card", data: analyticsData.priceRangeDistribution, keys: ["value"], indexBy: "id", axisBottomLegend: "Rango", axisLeftLegend: "Órdenes" } } },
+                                    },
+                                    {
+                                        id: "channel-dist",
+                                        colSpan: 1,
+                                        content: { type: "stat-card", config: { label: "Canal de Venta", variant: "chart", subtext: "Sistema vs Punto de Venta", chart: { type: "pie-chart", preset: "card", data: systemPosColors, valueFormat: "number", compact: true } } },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        value: "canales",
+                        label: "Canales",
+                        icon: Smartphone,
+                        columns: [
+                            {
+                                id: "col-channel-main",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "channel-trend",
+                                        content: { type: "stat-card", config: { label: "Tendencia por Canal", variant: "chart", subtext: "Volumen mensual desglosado por canal de venta", chart: { type: "line-chart", preset: "card", data: [{ id: "Sistema", data: analyticsData.channelTrend.map(m => ({ x: m.month, y: m.system })) }, { id: "POS", data: analyticsData.channelTrend.map(m => ({ x: m.month, y: m.pos })) }], valueFormat: "$,.0f", showLegend: true } } },
+                                    },
+                                    {
+                                        id: "payment-dist",
+                                        content: { type: "stat-card", config: { label: "Método de Pago", variant: "chart", subtext: "Formas de pago más utilizadas", chart: { type: "pie-chart", preset: "card", data: analyticsData.paymentMethodDistribution, valueFormat: "number", compact: true } } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-channel-side",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "channel-pie",
+                                        content: { type: "stat-card", config: { label: "Distribución por Canal", variant: "chart", subtext: "Proporción Sistema vs POS", chart: { type: "pie-chart", preset: "card", data: analyticsData.channelDistribution, valueFormat: "number", compact: true } } },
+                                    },
+                                    {
+                                        id: "delivery-status-channel",
+                                        content: { type: "stat-card", config: { label: "Estado de Despachos", variant: "chart", subtext: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: deliveryDist, valueFormat: "number", compact: true } } },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        value: "clientes",
+                        label: "Clientes",
+                        icon: Users,
+                        columns: [
+                            {
+                                id: "col-customers-main",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "top-customers",
+                                        content: { type: "stat-card", config: { label: "Top Clientes por Volumen", variant: "chart", subtext: "Clientes con mayor facturación acumulada", chart: { type: "bar-chart", preset: "card", data: analyticsData.topCustomers, keys: ["total"], indexBy: "customer", valueFormat: "$,.0f" } } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-customers-side",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "customer-dist",
+                                        content: { type: "stat-card", config: { label: "Concentración por Cliente", variant: "chart", subtext: "Distribución del volumen entre clientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.customerDistribution, valueFormat: "currency", compact: true } } },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        value: "productos",
+                        label: "Productos",
+                        icon: Package,
+                        columns: [
+                            {
+                                id: "col-products-main",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "top-products",
+                                        content: { type: "stat-card", config: { label: "Top Productos por Volumen", variant: "chart", subtext: "Productos con mayor facturación", chart: { type: "bar-chart", preset: "card", data: analyticsData.topProducts, keys: ["total"], indexBy: "product", valueFormat: "$,.0f" } } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-products-side",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "product-type-dist",
+                                        content: { type: "stat-card", config: { label: "Tipo de Producto", variant: "chart", subtext: "Distribución por tipo (Almacenable, Servicio, etc.)", chart: { type: "pie-chart", preset: "card", data: analyticsData.productTypeBreakdown, valueFormat: "currency", compact: true } } },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        value: "despachos",
+                        label: "Despachos",
+                        icon: Truck,
+                        columns: [
+                            {
+                                id: "col-dispatch-main",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: "monthly-deliveries",
+                                        content: { type: "stat-card", config: { label: "Despachos por Período", variant: "chart", subtext: "Órdenes entregadas en cada período", chart: { type: "line-chart", preset: "card", data: [{ id: "Entregadas", data: analyticsData.monthlyDeliveries.map(m => ({ x: m.month, y: m.count })) }], enableArea: true } } },
+                                    },
+                                ],
+                            },
+                            {
+                                id: "col-dispatch-side",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: "dispatch-status",
+                                        content: { type: "stat-card", config: { label: "Estado de Despachos", variant: "chart", subtext: "Órdenes entregadas vs pendientes", chart: { type: "pie-chart", preset: "card", data: analyticsData.deliveryStatusDistribution, valueFormat: "number", compact: true } } },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
             },
         }
+    }, [analyticsData, viewMode, analyticsActiveTab, granularity])
+
+    const columns: ColumnDef<SaleOrder>[] = [
+        ...salesOrderFields.toColumns(),
     ]
 
     const noteColumns: ColumnDef<SaleNote>[] = [
@@ -113,25 +333,21 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
             cell: ({ row }) => <DataCell.Text className="font-normal uppercase text-[11px]">{row.original.dte_type_display}</DataCell.Text>,
-            meta: { title: "Documento" },
         },
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Número" className="justify-center" />,
             cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
-            meta: { title: "Número" },
         },
         {
             accessorKey: "customer_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
             cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as unknown as Record<string, unknown>).customer as number || row.original.partner}>{(row.original as unknown as Record<string, unknown>).customer_name as string || row.original.partner_name}</DataCell.ContactLink>,
-            meta: { title: "Cliente" },
         },
         {
             accessorKey: "total",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Total" className="justify-center" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
-            meta: { title: "Total" },
         },
         {
             accessorKey: "status",
@@ -142,30 +358,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                 </div>
             ),
         },
-        {
-            id: "hub_trigger",
-            header: () => null,
-            enableHiding: false,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = onSelectOrder ? selectedId === item.id : (hubConfig?.invoiceId === item.id && isHubOpen)
-                return (
-                    <div className="flex justify-end pr-2">
-                        <DataCell.Action
-                            icon={isSelected && isHubOpen ? ArrowLeft : ArrowRight}
-                            title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
-                            className={cn(
-                                "transition-all",
-                                isSelected && isHubOpen
-                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
-                                    : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
-                            )}
-                            onClick={() => toggleSelection(item.id)}
-                        />
-                    </div>
-                )
-            },
-        }
     ]
 
     // Determine entity label based on tab
@@ -186,16 +378,40 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                     data={(viewMode === 'orders' ? orders : notes) as unknown as (SaleOrder | SaleNote)[]}
                     onRowClick={(row: SaleOrder | SaleNote) => toggleSelection(row.id)}
                     variant="embedded"
+                    analyticsPanel={viewMode === 'orders' ? analyticsPanel : undefined}
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     isRefetching={viewMode === 'orders' ? isRefetching : isRefetchingNotes}
-                    manualPagination
-                    pageCount={viewMode === 'orders'
+                    renderCard={(data: SaleOrder | SaleNote) => {
+                        const label = viewMode === 'orders' ? 'sales.saleorder' : 'billing.invoice'
+                        const d = data as unknown as Record<string, unknown>
+                        const config = ENTITY_REGISTRY[label]?.cardConfig
+                        const iconClassName = typeof config?.iconClassName === 'function' ? config.iconClassName(d) : config?.iconClassName
+                        return (
+                            <AutoEntityCard
+                                key={data.id}
+                                data={data as unknown as SaleOrder}
+                                fields={viewMode === 'orders' ? salesOrderFields as unknown as AutoEntityCardProps<SaleOrder>['fields'] : undefined as unknown as AutoEntityCardProps<SaleOrder>['fields']}
+                                entityLabel={label}
+                                onClick={() => toggleSelection(data.id)}
+                                isSelected={getSelectionId(data)}
+                                className={isHubOpen && getSelectionId(data) ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                icon={getEntityIcon(label)}
+                                iconClassName={iconClassName}
+                                hubTrigger={{
+                                    isSelected: getSelectionId(data),
+                                    onToggle: () => toggleSelection(data.id),
+                                }}
+                            />
+                        )
+                    }}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : viewMode === 'orders'
                         ? (page ? Math.ceil(page.count / page.pageSize) : 0)
                         : (pageNotes ? Math.ceil(pageNotes.count / pageNotes.pageSize) : 0)
                     }
                     rowCount={viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)}
-                    pagination={viewMode === 'orders' ? pageState : pageStateNotes}
-                    onPaginationChange={(viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : viewMode === 'orders' ? pageState : pageStateNotes}
+                    onPaginationChange={effectiveGrouping ? undefined : (viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
                     unifiedSearch={<UnifiedSearchBar
                         config={unifiedSearchDef}
                         chips={search.chips}
@@ -211,7 +427,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         placeholder={viewMode === 'orders' ? 'Buscar órdenes...' : 'Buscar notas...'}
                     />}
                     unifiedSearchConfig={unifiedSearchDef}
-                    currentGroupBy={search.groupBy}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={isFiltered}
                     onReset={search.clearAll}
                     defaultPageSize={20}

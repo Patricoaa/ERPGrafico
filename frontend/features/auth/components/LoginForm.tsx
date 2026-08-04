@@ -34,7 +34,7 @@ export function LoginForm() {
         },
     })
 
-    const { login, isLoggingIn } = useAuthLogin()
+    const { login } = useAuthLogin()
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")
@@ -56,9 +56,9 @@ export function LoginForm() {
         >
             {/* Form header */}
             <div className="mb-8 text-center">
-                <h2 className=" font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
+                <h1 className=" font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
                     Iniciar sesión
-                </h2>
+                </h1>
                 <p className="text-sm text-muted-foreground">
                     Ingresa tus credenciales para acceder al sistema.
                 </p>
@@ -108,7 +108,7 @@ export function LoginForm() {
                     {/* Submit */}
                     <SubmitButton
                         loading={form.formState.isSubmitting}
-
+                        size="lg"
                         className="w-full"
                         icon={false}
                     >

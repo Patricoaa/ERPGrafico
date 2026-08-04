@@ -9,6 +9,7 @@ export type EmptyStateCopy = {
     icon?: LucideIcon
     action?: React.ReactNode
     context?: EmptyStateContext
+    entityLabel?: string
 }
 
 /**
@@ -27,6 +28,7 @@ export type ResolvedEmptyState = {
     description?: string
     icon?: LucideIcon
     action?: React.ReactNode
+    entityLabel?: string
 }
 
 /**
@@ -51,6 +53,7 @@ export function resolveEmptyState(
             title: f?.title ?? "No se encontraron resultados",
             description: f?.description ?? "Ajusta o limpia los filtros de búsqueda para ver más resultados.",
             action: f?.action,
+            entityLabel: f?.entityLabel ?? emptyState?.entityLabel,
         }
     }
     // Explicit "no records at all" → entity-specific copy (context drives icon/title).
@@ -61,6 +64,7 @@ export function resolveEmptyState(
             title: emptyState?.title,
             description: emptyState?.description,
             action: emptyState?.action,
+            entityLabel: emptyState?.entityLabel,
         }
     }
     // Legacy (signal not provided): preserve the prior single empty-state.
@@ -70,5 +74,6 @@ export function resolveEmptyState(
         title: emptyState?.title ?? "No se encontraron resultados",
         description: emptyState?.description ?? "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas.",
         action: emptyState?.action,
+        entityLabel: emptyState?.entityLabel,
     }
 }

@@ -1,25 +1,21 @@
 "use client"
 
-import React, { useEffect, useState, useRef, useMemo } from "react"
-import {
-    type ColumnDef,
-} from "@tanstack/react-table"
+import React, { useEffect, useState, useMemo } from "react"
 
 import { JournalEntryDrawer, usePostJournalEntry, useReverseJournalEntry, useDeleteJournalEntry } from "@/features/accounting"
 
-import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
-import { DataCell, Chip } from '@/components/shared'
+import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { FileEdit, RotateCcw, FileText } from "lucide-react"
 import { journalEntryActions, type JournalEntryActionsCtx } from './journalEntryActions'
-import { resolveStatus } from '@/lib/badge-resolvers'
+import { journalEntryFields } from './journalEntryFields'
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { journalEntryUnifiedSearchDef } from "@/features/accounting"
+import { toast } from "sonner"
 import type { JournalEntryInitialData } from '@/types/forms'
 
 interface EntriesPageProps {
@@ -31,86 +27,46 @@ interface EntriesPageProps {
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
     const search = useUnifiedSearch(journalEntryUnifiedSearchDef)
     const allFilters = { ...search.filters }
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 20 })
     const { page, entries, isLoading, refetch } = useJournalEntries({
         ...allFilters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     } as unknown as Parameters<typeof useJournalEntries>[0])
+
+    const totalCount = page?.count ?? 0
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
-
-    // Guard for async operations
-    const isMounted = useRef(true)
-
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
     const { entity: selectedFromUrl } = useSelectedEntity<JournalEntry>({
         endpoint: '/accounting/entries'
     })
-    const { detailId, openSelected, openDetail, clearActions } = useEntityRouteActions()
+    const { selectedId, viewAction, openSelected, openView, clearActions } = useEntityRouteActions()
 
-    // ?selected=<id> → abre el form de edición
-    useEffect(() => {
-        if (!selectedFromUrl) return
-        requestAnimationFrame(() => {
-            setEditingEntry(selectedFromUrl)
-            setIsFormOpen(true)
-            setViewingTransaction(null)
-        })
-    }, [selectedFromUrl])
+    // ?selected=<id>&action=view → abre el visor de transacción (read-only)
+    const viewingTransaction = selectedId && viewAction === 'view'
+        ? { type: 'journal_entry' as const, id: Number(selectedId) }
+        : null
 
-    // ?detail=<id> → abre el visor de transacción (read-only)
-    useEffect(() => {
-        if (!detailId) return
-        requestAnimationFrame(() => {
-            setViewingTransaction({ type: 'journal_entry', id: Number(detailId) })
-            setIsFormOpen(false)
-            setEditingEntry(null)
-        })
-    }, [detailId])
+    // ?selected=<id> (sin action=view) → abre el form de edición
+    const editingEntry = selectedFromUrl && viewAction !== 'view' ? selectedFromUrl : null
+    const isFormOpen = (!!editingEntry) || !!externalOpen
 
     const clearSelection = () => {
         clearActions()
     }
 
-    // Initialize/Cleanup mount guard
-    useEffect(() => {
-        isMounted.current = true
-        return () => { isMounted.current = false }
-    }, [])
-
-    // Synchronize external modal trigger (guard against repeated opens)
-    const didOpenExternal = useRef(false)
-    useEffect(() => {
-        if (externalOpen && !didOpenExternal.current) {
-            didOpenExternal.current = true
-            setIsFormOpen(true)
-        }
-        if (!externalOpen) {
-            didOpenExternal.current = false
-        }
-    }, [externalOpen])
-
     const handleFormOpenChange = (open: boolean) => {
-        setIsFormOpen(open)
         if (!open) {
-            setEditingEntry(null)
             onExternalOpenChange?.(false)
-            // Clean all action params + modal so URL doesn't stay ?modal=new forever
-            const params = new URLSearchParams(searchParams.toString())
-            let changed = false
-            for (const p of ['selected', 'detail', 'hub', 'modal'] as const) {
-                if (params.has(p)) { params.delete(p); changed = true }
-            }
-            if (changed) {
-                const query = params.toString()
-                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-            }
+            clearActions()
         }
     }
 
@@ -137,65 +93,16 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
     const journalEntryActionsCtx: JournalEntryActionsCtx = {
         onEdit: (id) => openSelected(id),
-        onDetail: (id) => openDetail(id),
+        onView: (id) => openView(id),
         onPublish: (id) => handlePost(id),
         onDelete: (id) => handleDelete(id),
         onReverse: (id) => handleReverse(id),
     }
 
-    const columns: ColumnDef<JournalEntry>[] = useMemo(() => [
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
-            ),
-            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("date")} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    <span className="truncate max-w-[300px]">{row.getValue("description")}</span>
-                </DataCell.Text>
-            )
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) =>
-                <DataCell.Status status={row.getValue("status")} />,
-        },
-        {
-            id: "origin",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Origen" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const entry = row.original
-                if (entry.is_manual) return <Chip size="sm" intent="neutral">Manual</Chip>
-                if (entry.reversal_of) return <Chip size="sm" intent="warning">Reversión</Chip>
-                return <Chip size="sm" intent="info">Automático</Chip>
-            },
-            enableSorting: false,
-        },
-        journalEntryActions.column(journalEntryActionsCtx),
-    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse, journalEntryActionsCtx])
+    const columns = useMemo(() => [
+        ...journalEntryFields.toColumns(),
+        journalEntryActions.auto(journalEntryActionsCtx),
+    ], [journalEntryActionsCtx])
 
 
     return (
@@ -207,6 +114,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     isLoading={isLoading}
                     entityLabel="accounting.journalentry"
                     variant="embedded"
+                    className="table-header-compact"
                     unifiedSearch={<UnifiedSearchBar
                         config={journalEntryUnifiedSearchDef}
                         chips={search.chips}
@@ -224,11 +132,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
                     defaultPageSize={20}
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={page?.count ?? 0}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     createAction={createAction}
                     isFiltered={search.isFiltered}
                     emptyState={{
@@ -236,11 +144,8 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         title: "Aún no hay asientos contables",
                         description: "Los asientos se registran al confirmar operaciones o puedes crear uno manualmente.",
                     }}
-                    cardGroupBy={{
-                        field: 'date',
-                        sort: 'desc',
-                    }}
-                    onRowClick={(m) => openDetail(m.id)}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
+                    onRowClick={(m) => openView(m.id)}
                     renderCard={(m) => {
                         const Icon = m.is_manual ? FileEdit : m.reversal_of ? RotateCcw : FileText
                         const iconStyle = m.is_manual
@@ -248,28 +153,18 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                             : m.reversal_of
                                 ? "text-warning bg-warning/10"
                                 : "text-success bg-success/10"
-                        const total = m.items?.reduce((sum: number, item) => sum + (Number(item.debit) || 0), 0) || 0
-                        const originLabel = m.is_manual ? 'Manual' : m.reversal_of ? 'Reversión' : 'Automático'
-                        const statusLabel = resolveStatus(m.status).label
+                        const totalDebit = m.items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0
                         return (
-                            <EntityCard key={m.id} onClick={() => openDetail(m.id)}>
-                                <EntityCard.Header
-                                    icon={Icon}
-                                    iconClassName={iconStyle}
-                                    title={m.display_id}
-                                    subtitle={
-                                        <span className="text-xs text-muted-foreground/70">
-                                            {statusLabel} · {originLabel}
-                                        </span>
-                                    }
-                                    center={
-                                        <span className="text-xs text-muted-foreground line-clamp-2 text-center max-w-[400px]">
-                                            {m.description}
-                                        </span>
-                                    }
-                                    trailing={<DataCell.Currency value={total} />}
-                                />
-                            </EntityCard>
+                            <AutoEntityCard
+                                key={m.id}
+                                data={{ ...m, total_debit: totalDebit }}
+                                fields={journalEntryFields}
+                                entityLabel="accounting.journalentry"
+                                icon={Icon}
+                                iconClassName={iconStyle}
+                                actions={journalEntryActions.render(m, journalEntryActionsCtx)}
+                                defaultAction={(e) => { e.stopPropagation(); openView(m.id) }}
+                            />
                         )
                     }}
                     cardSkeleton={{ showBody: false }}
@@ -293,7 +188,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                         open={!!viewingTransaction}
                         onOpenChange={(open) => {
                             if (!open) {
-                                setViewingTransaction(null)
                                 clearSelection()
                             }
                         }}

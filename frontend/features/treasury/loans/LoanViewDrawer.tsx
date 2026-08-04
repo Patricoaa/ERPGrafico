@@ -1,9 +1,9 @@
 "use client"
 
 import React from 'react'
-import { AlertCircle, Banknote } from 'lucide-react'
+import { Banknote } from 'lucide-react'
 import {
-    Drawer, EmptyState, FormSection, SkeletonShell,
+    Drawer, FormSection, SkeletonShell, StaleDataBanner,
 } from '@/components/shared'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -46,15 +46,7 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
             title={identity.title}
             subtitle={identity.subtitle}
         >
-            {isError ? (
-                <div className="p-4">
-                    <EmptyState
-                        title="Error al cargar crédito"
-                        description="No se pudo cargar la información del crédito."
-                        icon={AlertCircle}
-                    />
-                </div>
-            ) : (
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando crédito">
                 {loan ? (
                     <div className="space-y-5 px-4 pb-4 pt-4">
@@ -107,7 +99,6 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
                     </div>
                 ) : null}
             </SkeletonShell>
-            )}
         </Drawer>
     )
 }
@@ -115,7 +106,7 @@ export function LoanViewDrawer({ loanId, open, onOpenChange }: Props) {
 function formatMoney(value: string, currency: string) {
     const n = parseFloat(value || '0')
     if (currency === 'UF') {
-        return `${n.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} UF`
+        return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)} UF`
     }
     return new Intl.NumberFormat('es-CL', {
         style: 'currency', currency: 'CLP',

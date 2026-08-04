@@ -3,11 +3,10 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { ActionConfirmModal, DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createSecondaryColumn, createContactColumn } from '@/components/shared'
-import { type ColumnDef } from "@tanstack/react-table"
-import {IconButton, UnifiedSearchBar, useUnifiedSearch} from "@/components/shared"
+import {ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
+import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
-import { ArrowRight, ArrowLeft } from "lucide-react"
+import { GitBranch } from "lucide-react"
 import { treasuryApi } from "@/features/treasury"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
@@ -17,12 +16,12 @@ import { PaymentModal } from "@/features/treasury"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { getDtePrefix } from "@/lib/entity-registry"
+import { getEntityIcon, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
     const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...search.filters, mode: 'sale' } as InvoiceFilters })
-    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
+    const { openHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const router = useRouter()
@@ -66,10 +65,6 @@ export function SalesInvoicesClientView() {
         }
     })
 
-    const handleAnnul = (id: number) => {
-        annulConfirm.requestConfirm(id)
-    }
-
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingInv) return
         const d = data as unknown as { amount: number; paymentMethod: string; transaction_number?: string; is_pending_registration?: boolean; treasury_account_id?: string | number; dteType?: string; documentReference?: string; documentDate?: string; documentAttachment?: File | Blob }
@@ -102,38 +97,7 @@ export function SalesInvoicesClientView() {
         }
     }
 
-    const columns: ColumnDef<Invoice>[] = [
-        createCodeColumn<Invoice>("number", "Folio", {
-            render: (row) => <>{row.display_id ?? row.number}</>,
-        }),
-        createDateColumn<Invoice>("date", "Fecha"),
-        createSecondaryColumn<Invoice>("dte_type_display", "Tipo"),
-        createContactColumn<Invoice>("partner_name", "Cliente", "partner"),
-        createCurrencyColumn<Invoice>("total", "Total"),
-        {
-            id: "hub_trigger",
-            header: () => null,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = hubConfig?.invoiceId === item.id
-                return (
-                    <div className="flex justify-end pr-2">
-                        <IconButton
-                            circular
-                            className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => toggleSelection(item)}
-                        >
-                            {isSelected && isHubOpen ? (
-                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </IconButton>
-                    </div>
-                )
-            },
-        },
-    ]
+    const columns = salesInvoiceFields.toColumns()
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -141,12 +105,62 @@ export function SalesInvoicesClientView() {
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="billing.invoice"
+                    defaultView="card"
                     columns={columns}
                     data={invoices}
                     isLoading={isLoading}
                     isRefetching={isRefetching}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
+                    renderCard={(data: Invoice) => {
+                        const label = 'billing.invoice'
+                        const d = data as unknown as Record<string, unknown>
+                        const isNC = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(d.dte_type ?? ''))
+                        const adjustments = (d.adjustments || []) as Array<Record<string, unknown>>
+
+                        return (
+                            <AutoEntityCard
+                                key={data.id}
+                                data={data}
+                                fields={salesInvoiceFields}
+                                entityLabel={label}
+                                onClick={() => toggleSelection(data)}
+                                isSelected={hubConfig?.invoiceId === data.id}
+                                className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
+                                icon={getEntityIcon(label)}
+                                iconClassName={isNC ? "text-warning bg-warning/10" : undefined}
+                                hubTrigger={{
+                                    isSelected: hubConfig?.invoiceId === data.id,
+                                    onToggle: () => toggleSelection(data),
+                                }}
+                                hubStatusRenderer={(hubData) => {
+                                    const hubD = hubData as unknown as Record<string, unknown>
+                                    return (
+                                    <div className="hidden sm:flex items-center gap-3">
+                                        {adjustments.length > 0 && (
+                                            <div className="flex items-center gap-1.5">
+                                                {adjustments.map((adj) => (
+                                                    <span
+                                                        key={adj.id as number}
+                                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/10 cursor-pointer hover:bg-primary/10"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            openHub({ invoiceId: adj.id as number, type: 'sale' })
+                                                        }}
+                                                    >
+                                                        <GitBranch className="h-3 w-3" />
+                                                        {formatEntityDisplay(label, hubD)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    )
+                                }}
+
+                            />
+                        )
+                    }}
                     unifiedSearch={<UnifiedSearchBar
                         config={invoiceUnifiedSearchDef}
                         chips={search.chips}
@@ -174,7 +188,6 @@ export function SalesInvoicesClientView() {
                         title: "Aún no hay documentos de venta",
                         description: "Las boletas y facturas que emitas aparecerán aquí.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                 />
             </div>
 

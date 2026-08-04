@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { Landmark, CreditCard, Wallet, ArrowRight } from "lucide-react"
-import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
+import {MoneyDisplay, SectionHeader} from "@/components/shared"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { cn } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"

@@ -2,9 +2,10 @@
 import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Eye } from "lucide-react"
+import { Check, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { DataCell } from "@/components/shared"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 import { SaleOrderDrawer } from "@/features/sales/components/SaleOrderDrawer"
@@ -30,7 +31,7 @@ interface AdvancedSaleOrderSelectorProps {
 export function AdvancedSaleOrderSelector({
     value,
     onChange,
-    placeholder = "Seleccionar nota de venta...",
+    placeholder = "Seleccionar orden de venta...",
     disabled = false,
     customFilter,
     label,
@@ -137,15 +138,11 @@ export function AdvancedSaleOrderSelector({
                             </div>
 
                             <div className="flex items-center gap-1">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                <DataCell.Action
+                                    action="detail"
                                     onClick={(e) => openPreview(e, order.id)}
-                                    title="Previsualizar"
-                                >
-                                    <Eye className="h-4 w-4 text-primary" />
-                                </Button>
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                />
                                 {selectedOrder?.id === order.id && (
                                     <Check className="h-4 w-4 text-primary flex-shrink-0" />
                                 )}

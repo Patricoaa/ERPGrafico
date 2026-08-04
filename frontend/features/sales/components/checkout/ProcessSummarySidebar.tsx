@@ -1,7 +1,7 @@
 "use client"
 
 import { User, Wallet, Truck, Hammer, FileText } from "lucide-react"
-import { cn, formatPlainDate } from "@/lib/utils"
+import {formatPlainDate} from "@/lib/utils"
 import { MoneyDisplay, WizardStepsSidebar, type WizardSidebarStep } from "@/components/shared"
 
 interface ProcessSummarySidebarProps {

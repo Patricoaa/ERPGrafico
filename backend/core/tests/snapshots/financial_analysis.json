@@ -6,10 +6,13 @@
     "current_ratio": 1.087194178471451
   },
   "profitability": {
-    "gross_margin": 0,
-    "net_margin": 0,
-    "operating_margin": 0,
-    "total_revenue": 0
+    "gross_margin": "__NEEDS_REGEN__",
+    "gross_profit": "__NEEDS_REGEN__",
+    "net_income": "__NEEDS_REGEN__",
+    "net_margin": "__NEEDS_REGEN__",
+    "operating_margin": "__NEEDS_REGEN__",
+    "operating_profit": "__NEEDS_REGEN__",
+    "total_revenue": "__NEEDS_REGEN__"
   },
   "solvency": {
     "solvency_ratio": 1.0195942154486308

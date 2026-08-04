@@ -49,7 +49,7 @@ export interface DrawerBaseProps {
 | `edit` | con `initialData`/`id` | pre-fill, dirty tracking, footer "Guardar Cambios" |
 | `view` | lectura | campos read-only, sin footer de edición; reemplaza el rol del difunto `TransactionViewModal` |
 
-- Un drawer **deriva** el modo por defecto: `modeProp ?? (initialData ? 'edit' : 'create')`.
+- Un drawer **deriva** el modo con el hook canónico: `const { mode, isView } = useDrawerMode({ mode: modeProp, initialData })`. **Jamás resolver el modo inline**.
 - Un drawer de entidad es un componente con sufijo `Drawer` (ver [naming-conventions.md](../90-governance/naming-conventions.md)) que monta su propia `<Drawer>` ([component-drawer.md](./component-drawer.md)).
 
 ---
@@ -81,7 +81,7 @@ skeleton), y (b) mapea las props genéricas a la forma específica del drawer.
 ```tsx
 // frontend/lib/entity-drawers.tsx
 const SaleOrderDrawer = dynamic(() => import("@/features/sales").then(m => m.SaleOrderDrawer), {
-  ssr: false, loading: () => skeleton("nota de venta"),
+  ssr: false, loading: () => skeleton("orden de venta"),
 })
 
 export const ENTITY_DRAWERS = {
@@ -91,17 +91,16 @@ export const ENTITY_DRAWERS = {
   "contacts.contact": ({ id, data, open, onOpenChange, onSuccess }) => (
     <ContactDrawer contact={data ?? { id }} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
   ),
-  // … 34 entidades registradas
+  // … 37 entidades registradas
 }
 ```
 
 > El `label` es la clave Django `app.model` — la **misma** que usa `ENTITY_REGISTRY`
 > ([entity-identity.md](./entity-identity.md)). Mantenelas alineadas.
 
-> **Prop canónico `id`:** los transaction drawers extienden `TransactionDrawerProps` (`id: number | null`
-> requerido) y resuelven `id ?? <specificId>` internamente. En el adaptador pasá **`id={id}`** — no el
-> alias específico (`orderId`/`invoiceId`/…), que solo existe por compatibilidad y deja el `id`
-> requerido sin setear.
+> **Prop canónico `id`:** los transaction drawers extienden `TransactionDrawerProps` (`id: number | null` requerido) y resuelven `id ?? <specificId>` internamente. En el adaptador pasá **`id={id}`** — no el alias específico (`orderId`/`invoiceId`/…), que solo existe por compatibilidad y deja el `id` requerido sin setear. El adaptador de `ENTITY_DRAWERS` DEBE usar `id`, `initialData` (o `data`) y `onSuccess` estandarizados. Nunca mapear a eventos custom como `onSaved` o `onUpdate`.
+
+> **Una sola estrategia de datos:** Un drawer elige UNA estrategia de datos. O recibe `initialData` (objeto completo provisto por la lista) y NO hace fetch interno, o recibe un `id` y hace su propio fetch. JAMÁS mezclar `initialData` y fetch interno (evita doble fuente de verdad).
 
 ### 2.2 Opener — `GlobalModalProvider`
 
@@ -122,8 +121,7 @@ closeEntity()
 | `useGlobalModals()` | hook | Acciones + estado de stacking de sheets (offsets de `CollapsibleSheet`) |
 | `useGlobalModalActions()` | hook | Solo acciones (sin re-render por estado de sheets) |
 
-**Openers deprecados** (delegan en `openEntity`, no usar en código nuevo):
-`openWorkOrder(id)`, `openContact(id, data?)`, `openTreasuryAccount(id)`.
+> **Histórico:** los openers `openWorkOrder(id)`, `openContact(id, data?)` y `openTreasuryAccount(id)` fueron **eliminados** — todo pasa por `openEntity(label, id, data?)`. No reintroducirlos.
 
 ### 2.3 `segmenter` — segmentador de datos opcional
 
@@ -163,7 +161,7 @@ Renderiza el link a un documento origen (GFK de [ADR-0016](../10-architecture/ad
 resolviendo en 3 niveles:
 
 ```tsx
-<SourceDocumentLink doc={{ type: 'sales.saleorder', id: 123, display: 'NV-123' }} />
+<SourceDocumentLink doc={{ type: 'sales.saleorder', id: 123, display: 'OV-123' }} />
 ```
 
 | Prioridad | Condición | Acción |
@@ -180,7 +178,24 @@ resolviendo en 3 niveles:
 
 ---
 
-## 4. Relación con los query params (`?selected` / `?detail`)
+## 4. Checklist de Drawer CRUD canónico (Template)
+
+Todos los drawers deben adherirse a esta estructura unificada:
+
+- [ ] Usa `useDrawerMode({ mode: modeProp, initialData })` (no resolución inline de modo)
+- [ ] Usa `useDrawerIdentity` para título, subtítulo e icono
+- [ ] Usa `formDrawerWidth(complexity, !!initialData?.id)` para el ancho
+- [ ] Reset de form: patrón "adjust-during-render" con `prevResetKeyRef` (sin `useEffect` + `form.reset`) — ver [component-state-sync.md](./component-state-sync.md)
+- [ ] Mutaciones: usa hook dedicado `use*Mutations()` (ej. `useCategoryMutations`) que invoca `markLocalMutation()` e `invalidateCrossFeature()`. Cero `api.*()` directos en el componente.
+- [ ] `FormSplitLayout` + `ActivitySidebar` con `showSidebar={!!initialData?.id}` (solo para edición)
+- [ ] `FormFooter` canónico (o ausente si drawer read-only)
+- [ ] `contentClassName="p-0"` cuando usa `FormSplitLayout`
+- [ ] Callbacks estandarizados: Usa `onSuccess` (no `onSaved`, no `onUpdate`)
+- [ ] Registrado en `ENTITY_DRAWERS` si necesita apertura global desde link
+
+---
+
+## 5. Relación con los query params (`?selected` / `?detail`)
 
 | Mecanismo | Para qué | Deep-linkeable | Estado |
 |-----------|----------|:---:|--------|
@@ -194,7 +209,7 @@ resolviendo en 3 niveles:
 
 ---
 
-## 5. Anti-patrones
+## 6. Anti-patrones
 
 | Anti-patrón | Correcto |
 |-------------|----------|
@@ -203,10 +218,13 @@ resolviendo en 3 niveles:
 | Importar un `*Drawer` y montarlo a mano para drill-down genérico | registrar en `ENTITY_DRAWERS` + `openEntity` |
 | `label` distinto entre `ENTITY_DRAWERS` y `ENTITY_REGISTRY` | misma clave `app.model` en ambos |
 | Drawer de entidad sin `mode` (dos componentes view/edit separados) | un drawer con `mode?: DrawerMode` |
+| Calcular modo manualmente: `mode ?? (initialData ? "view" : "create")` | Usar `useDrawerMode({ mode, initialData })` |
+| Combinar `initialData` con fetch interno (`useQuery` dentro del drawer) | Elegir UNA estrategia: O `initialData`, O fetch con `id` |
+| Adaptador con aliases: `<Drawer accountId={id} onSaved={onSuccess} />` | Estandarizar props en el Drawer a `id` y `onSuccess` |
 
 ---
 
-## 6. Cross-references
+## 7. Cross-references
 
 - ADR de la decisión: [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md)
 - Primitiva `Drawer` (API, tamaños): [component-drawer.md](./component-drawer.md)

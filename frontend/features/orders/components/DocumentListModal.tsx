@@ -64,7 +64,7 @@ function InvoiceColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_ord
         { header: "Tipo", cell: ({ row }) => <DataCell.Text>{row.original.type_display || 'Factura'}</DataCell.Text> },
         { header: "Fecha", cell: ({ row }) => <DataCell.Date value={row.original.date || row.original.created_at} /> },
         { header: "Monto", cell: ({ row }) => <DataCell.Currency value={row.original.total} /> },
-        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status_display || row.original.status || ""} /> },
+        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status || ""} label={row.original.status_display} /> },
         { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
     ]
 }
@@ -75,7 +75,7 @@ function WorkOrderColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_o
         { header: "Producto", cell: ({ row }) => <DataCell.Text>{row.original.product_name}</DataCell.Text> },
         { header: "Cantidad", cell: ({ row }) => <DataCell.Number value={row.original.quantity ?? 0} suffix={row.original.unit} /> },
         { header: "Vencimiento", cell: ({ row }) => <DataCell.Date value={row.original.due_date} /> },
-        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status_display || row.original.status || ""} /> },
+        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status || ""} label={row.original.status_display} /> },
         { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
     ]
 }

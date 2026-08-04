@@ -1,5 +1,5 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { Eye, FileDown } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
+import { Download } from 'lucide-react'
 
 export interface ProfilePayrollActionsCtx {
     onViewDetail: (id: number) => void
@@ -8,24 +8,23 @@ export interface ProfilePayrollActionsCtx {
 
 export const profilePayrollActions = createEntityActions<unknown, ProfilePayrollActionsCtx>((item, ctx) => {
     const p = item as { id: number }
-    return (
-        <>
-            <DataCell.Action
-                icon={Eye}
-                title="Ver detalle"
-                onClick={(e) => {
-                    e.stopPropagation()
-                    ctx.onViewDetail(p.id)
-                }}
-            />
-            <DataCell.Action
-                icon={FileDown}
-                title="Descargar PDF"
-                onClick={async (e) => {
-                    e.stopPropagation()
-                    await ctx.onDownloadPdf(p.id)
-                }}
-            />
-        </>
-    )
+    return [
+        {
+            action: "detail",
+            label: "Ver detalle",
+            onClick: (e) => {
+                e.stopPropagation()
+                ctx.onViewDetail(p.id)
+            },
+        },
+        {
+            action: "download",
+            icon: Download,
+            label: "Descargar PDF",
+            onClick: async (e) => {
+                e.stopPropagation()
+                await ctx.onDownloadPdf(p.id)
+            },
+        },
+    ]
 })

@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { POSSession } from './components/POSSessionsClientView'
 import { FileText, Lock } from "lucide-react"
 
@@ -13,29 +13,30 @@ export const posSessionActions = createEntityActions<
 >((item, ctx) => {
     const isOpen = item.status === 'OPEN'
 
-    return <>
-        {isOpen ? (
-            <>
-                <DataCell.Action
-                    icon={FileText}
-                    title="Reporte X"
-                    className="text-info"
-                    onClick={() => ctx.onReport(item, 'X')}
-                />
-                <DataCell.Action
-                    icon={Lock}
-                    title="Cerrar Caja"
-                    className="text-destructive"
-                    onClick={() => ctx.onCloseRegister(item)}
-                />
-            </>
-        ) : (
-            <DataCell.Action
-                icon={FileText}
-                title="Reporte Z"
-                className="text-success"
-                onClick={() => ctx.onReport(item, 'Z')}
-            />
-        )}
-    </>
+    return [
+        {
+            action: "report",
+            icon: FileText,
+            label: "Reporte X",
+            className: "text-info",
+            onClick: () => ctx.onReport(item, 'X'),
+            visible: isOpen,
+        },
+        {
+            action: "lock",
+            icon: Lock,
+            label: "Cerrar Sesión",
+            className: "text-destructive",
+            onClick: () => ctx.onCloseRegister(item),
+            visible: isOpen,
+        },
+        {
+            action: "report",
+            icon: FileText,
+            label: "Reporte Z",
+            className: "text-success",
+            onClick: () => ctx.onReport(item, 'Z'),
+            visible: !isOpen,
+        },
+    ]
 })

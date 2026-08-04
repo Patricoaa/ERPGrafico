@@ -431,7 +431,7 @@ export function MovementWizard({
                                     return (
                                         <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-md text-xs text-success">
                                             <Info className="h-3.5 w-3.5" />
-                                            <span>Pendiente de entero: <strong><MoneyDisplay amount={partnerCapitalInfo.pending} /></strong></span>
+                                            <span>Pendiente de entero: <strong><MoneyDisplay amount={partnerCapitalInfo.pending} weight="bold" /></strong></span>
                                         </div>
                                     )
                                 })()}
@@ -527,7 +527,7 @@ export function MovementWizard({
                                 )}
                                 <div className="p-4 flex justify-between items-center py-4">
                                     <span className="text-muted-foreground font-bold">MONTO TOTAL:</span>
-                                    <span className="text-2xl font-black text-primary"><MoneyDisplay amount={amountNum} /></span>
+                                    <span className="text-2xl text-primary"><MoneyDisplay amount={amountNum} weight="black" /></span>
                                 </div>
                             </div>
 

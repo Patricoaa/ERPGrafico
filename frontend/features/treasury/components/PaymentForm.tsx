@@ -8,7 +8,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
 import { PaymentMethodSelector, type PaymentData } from "@/features/treasury"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Hash, User, FileText } from "lucide-react"
+import {User, FileText} from "lucide-react"
 import { useBillingInvoices } from "@/features/finance"
 
 const paymentFormSchema = z.object({
@@ -117,9 +117,6 @@ export function PaymentForm({
                             differencePositiveLabel: "Excedente",
                             differenceNegativeLabel: "Deuda Pendiente",
                             amountModalTitle: paymentType === "INBOUND" ? "Monto Recibido" : "Monto a Pagar",
-                            amountModalDescription: paymentType === "INBOUND"
-                                ? "Ingrese el monto recibido."
-                                : "Ingrese el monto a pagar.",
                         }}
                     />
 

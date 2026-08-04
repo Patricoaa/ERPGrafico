@@ -1,5 +1,4 @@
-const PREFIXES_ENDPOINT = '/api/core/entity-prefixes/';
-const CONFIG_ENDPOINT = '/api/core/entity-config/';
+import api from '@/lib/api';
 
 const DTE_LABELS: Record<string, string> = {
   FACTURA: 'Factura',
@@ -29,9 +28,7 @@ let cachedPrefixes: Record<string, string> | null = null;
 
 export async function fetchEntityPrefixes(): Promise<Record<string, string>> {
   try {
-    const res = await fetch(PREFIXES_ENDPOINT);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as Record<string, string>;
+    const { data } = await api.get<Record<string, string>>('core/entity-prefixes/');
     cachedPrefixes = data;
     return data;
   } catch {
@@ -69,9 +66,7 @@ let entityConfigCache: Map<string, EntityConfig> | null = null;
 
 export async function fetchEntityConfig(): Promise<Map<string, EntityConfig>> {
   try {
-    const res = await fetch(CONFIG_ENDPOINT);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as EntityConfig[];
+    const { data } = await api.get<EntityConfig[]>('core/entity-config/');
     entityConfigCache = new Map(data.map((c) => [c.label, c]));
     return entityConfigCache;
   } catch {

@@ -22,6 +22,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # --- SYSTEM VERSIONING ---
 def get_version():
     try:
+        import subprocess
+
+        tag = (
+            subprocess.check_output(
+                ["git", "describe", "--tags", "--abbrev=0"], cwd=BASE_DIR
+            )
+            .decode("ascii")
+            .strip()
+            .lstrip("v")
+        )
+        if tag:
+            return tag
+    except Exception:
+        pass
+    try:
         with open(BASE_DIR / "VERSION", "r") as f:
             return f.read().strip()
     except Exception:
@@ -50,12 +65,21 @@ GIT_HASH = get_git_hash()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "django-insecure-z_@n0q5=yw43a$i1x61*cq*t4k=6@3g4##a-%!k88yk391g52g"
-)
-
-# SECURITY WARNING: don't run with debug turned on in production!
+# In production (DEBUG=False), SECRET_KEY MUST be set via environment variable.
+# Default DEBUG=1 for local dev convenience; production deployments MUST set DEBUG=0.
 DEBUG = os.environ.get("DEBUG", "1") == "1"
+
+_secret_key = os.environ.get("SECRET_KEY", "")
+if not _secret_key:
+    if DEBUG:
+        _secret_key = "django-insecure-dev-only-key-CHANGE-IN-PRODUCTION"
+    else:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured(
+            "SECRET_KEY environment variable is required in production. "
+            "Set it in your .env file or deployment environment."
+        )
+SECRET_KEY = _secret_key
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -476,6 +500,14 @@ CELERY_BEAT_SCHEDULE = {
     "accrue_monthly_loan_interest": {
         "task": "treasury.tasks.accrue_monthly_loan_interest",
         "schedule": crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
+    },
+    # ── Core / Idempotency ───────────────────────────────────────────────────
+    # Purges IdempotencyRecord rows older than the 24h TTL defined by contract
+    # (docs/20-contracts/idempotency.md). Runs off-peak so a reused key after
+    # 24h is treated as a fresh request instead of colliding with the cached one.
+    "purge_idempotency_records_daily": {
+        "task": "core.tasks.purge_idempotency_records",
+        "schedule": crontab(hour=2, minute=30),  # Daily at 02:30 AM
     },
 }
 

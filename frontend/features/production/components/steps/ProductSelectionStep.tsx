@@ -6,7 +6,7 @@ import {FileText, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BaseProduct } from "@/features/inventory";
 import { resolveMediaUrl } from '@/lib/media-url';
-import { ProductSelector } from '@/components/shared';
+import { ProductSelector, StaleDataBanner } from '@/components/shared';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
 interface ProductSelectionStepProps {
@@ -76,11 +76,8 @@ export function ProductSelectionStep({
 
       <div className="flex flex-col flex-1 min-h-0">
 
-        {isError ? (
-          <div className="text-center py-6">
-            <p className="text-destructive">Error al cargar productos</p>
-          </div>
-        ) : (
+        {isError && <StaleDataBanner className="mx-4" />}
+
           <div className="flex flex-col flex-1 min-h-0">
             {isLoading && products.length === 0 ? (
               <div className="flex-1 flex items-center justify-center py-8">
@@ -99,7 +96,6 @@ export function ProductSelectionStep({
               />
             )}
           </div>
-        )}
       </div>
 
       {selectedProduct && (

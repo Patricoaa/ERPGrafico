@@ -16,6 +16,7 @@ Layer map:
 | Layer | Folder | When to read |
 |-------|--------|--------------|
 | 00 | [docs/00-context/](docs/00-context/) | First contact: project overview, domain glossary, stack rationale |
+| 00 (design) | [DESIGN.md](DESIGN.md) | Any UI/design decision — consolidated design source of truth (concept, principles, contract map) |
 | 10 | [docs/10-architecture/](docs/10-architecture/) | Before any structural change; includes ADRs |
 | 20 | [docs/20-contracts/](docs/20-contracts/) | Before consuming or exposing components, hooks, endpoints, states |
 | 30 | [docs/30-playbooks/](docs/30-playbooks/) | Every implementation task |
@@ -40,6 +41,7 @@ Task routing — common intents:
 | N+1 query / selector / prefetch | [add-selector.md](docs/30-playbooks/add-selector.md) |
 | Settings panel / config section | [add-settings-panel.md](docs/30-playbooks/add-settings-panel.md) |
 | Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
+| Field type / DataCell assignment / text vs secondary / createEntityFields / \*Fields.ts | [component-fields.md](docs/20-contracts/component-fields.md) |
 | Badge / chip / pill for a label or tag | [component-chip.md](docs/20-contracts/component-chip.md) |
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
@@ -69,7 +71,7 @@ Before writing any code, verify:
 
 ## Global invariants (violate = PR rejected)
 
-> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 12 appear in [docs/README.md](docs/README.md). Keep all three in sync.
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 13 appear in [docs/README.md](docs/README.md). Keep all three in sync.
 
 1. **Zero `any`** in TypeScript — use Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](docs/90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`, `text-blue-600`) — semantic tokens only (`bg-primary`, `text-muted-foreground`).
@@ -83,6 +85,7 @@ Before writing any code, verify:
 10. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
 11. **Component suffix matches surface** — `Drawer`/`Modal`/`Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` prohibited. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
+13. **`*Fields.ts` is the single source of truth** for entity list/card/kanban fields. Table columns must use `*Fields.toColumns()`. Inline columns only via `computed` type.
 
 ## Rule precedence
 
@@ -160,6 +163,7 @@ celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:Database
 
 Reading order for a new agent:
 
+0. [DESIGN.md](DESIGN.md) — consolidated design source of truth (concept, principles, contract map) before any UI/design work.
 1. [docs/00-context/project-overview.md](docs/00-context/project-overview.md) — what ERPGrafico is, 13 Django apps.
 2. [docs/10-architecture/system-diagram.md](docs/10-architecture/system-diagram.md) — runtime topology, request lifecycle, trust boundaries.
 3. [docs/10-architecture/frontend-fsd.md](docs/10-architecture/frontend-fsd.md) — Feature-Sliced layout, import rules, data flow (`lib/api` → feature hook → component).

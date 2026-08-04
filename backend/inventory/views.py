@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -11,6 +12,7 @@ from core.idempotency import idempotent_endpoint
 
 from .filters import ProductFilter, StockMoveFilter, UoMFilter
 from .models import (
+    InventoryCount,
     PricingRule,
     Product,
     ProductAttribute,
@@ -25,6 +27,7 @@ from .models import (
     InventoryDocument,
 )
 from .selectors import (
+    ProductAttributeValueSelector,
     ProductSelector,
     StockMoveSelector,
     get_product_base_queryset,
@@ -32,11 +35,15 @@ from .selectors import (
     list_products,
 )
 from .serializers import (
+    InventoryCountCreateSerializer,
+    InventoryCountSerializer,
     PricingRuleSerializer,
     ProductAttributeSerializer,
     ProductAttributeValueSerializer,
     ProductCategorySerializer,
     ProductSerializer,
+    ProductListSerializer,
+    ProductWriteSerializer,
     ProductSimpleSerializer,
     ProductUoMPriceSerializer,
     StockMoveSerializer,
@@ -46,12 +53,19 @@ from .serializers import (
     WarehouseSerializer,
     InventoryDocumentSerializer,
 )
-from .services import StockService, UoMService, ProductService, PricingService
+from .services import InventoryCountService, StockService, UoMService, ProductService, PricingService
 
 
 class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ProductListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return ProductWriteSerializer
+        return ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = ProductFilter
     pagination_class = StandardResultsSetPagination
@@ -146,6 +160,23 @@ class ProductViewSet(NoDestroyModelMixin, BulkImportMixin, AuditHistory, viewset
             generator=lambda: get_stock_report_data(warehouse_id=warehouse_id),
         )
         return Response(data)
+
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        from .product_analytics import ProductAnalyticsService
+
+        params = request.query_params
+        return Response(
+            ProductAnalyticsService.get_consolidated(
+                search=params.get("search"),
+                category_id=params.get("category"),
+                product_type=params.get("product_type"),
+                can_be_sold=params.get("can_be_sold"),
+                can_be_purchased=params.get("can_be_purchased"),
+                is_active=params.get("is_active"),
+                price_field=params.get("price_field", "sale"),
+            )
+        )
 
     @action(detail=True, methods=["get"])
     def insights(self, request, pk=None):
@@ -271,6 +302,13 @@ class ProductAttributeValueViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, A
     pagination_class = None  # Master data
     filterset_fields = ["attribute"]
 
+    @action(detail=False, methods=["get"], url_path="filter-suggestions")
+    def filter_suggestions(self, request):
+        q = request.query_params.get("q", "").strip()
+        if len(q) < 2:
+            return Response([])
+        return Response(ProductAttributeValueSelector.filter_suggestions(q))
+
 
 class CategoryViewSet(NoDestroyModelMixin, viewsets.ModelViewSet, AuditHistory):
     queryset = ProductCategory.objects.all()
@@ -327,8 +365,12 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             "product__uom",
             "product__category",
             "uom",
-            "warehouse",
+            "source_location",
+            "destination_location",
             "journal_entry",
+        ).prefetch_related(
+            "purchase_receipt_line__receipt__purchase_order__invoices",
+            "sale_delivery_line__delivery__sale_order__invoices",
         ).all()
     serializer_class = StockMoveSerializer
     pagination_class = StandardResultsSetPagination
@@ -346,30 +388,32 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
             )
         return Response({"stock_level": StockMoveSelector.stock_level(int(product_id), int(warehouse_id))})
 
-    @idempotent_endpoint(scope="inventory.move.create")
-    @action(detail=False, methods=["post"])
-    def adjust(self, request):
-        """
-        [DEPRECATED] Custom endpoint to perform manual stock adjustment.
-        Please use the InventoryDocument endpoints (create document -> confirm document).
-        """
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.warning("DEPRECATED: /inventory/moves/adjust/ called. Migrate to POST /inventory/documents/")
-        
-        from django.core.exceptions import ValidationError
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        from .analytics import StockMoveAnalyticsService
 
-        try:
-            move = StockService.adjust_stock_from_payload(request.data)
-            return Response(StockMoveSerializer(move).data, status=status.HTTP_201_CREATED)
-        except ValidationError as e:
-            return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        params = request.query_params
+        granularity = params.get("granularity", "month")
+        months = int(params.get("months", "12"))
+        product_id = int(params["product_id"]) if params.get("product_id") else None
+        source_location_id = int(params["source_location_id"]) if params.get("source_location_id") else None
+        destination_location_id = int(params["destination_location_id"]) if params.get("destination_location_id") else None
+        return Response(
+            StockMoveAnalyticsService.get_consolidated(
+                granularity=granularity,
+                months=months,
+                product_id=product_id,
+                product_name=params.get("product_name"),
+                source_location_id=source_location_id,
+                destination_location_id=destination_location_id,
+                date_from=params.get("date_from"),
+                date_to=params.get("date_to"),
+            )
+        )
 
 
 class PricingRuleViewSet(NoDestroyModelMixin, AuditHistory, viewsets.ModelViewSet):
-    queryset = PricingRule.objects.all()
+    queryset = PricingRule.objects.select_related("product", "category", "uom").all()
     serializer_class = PricingRuleSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -389,7 +433,12 @@ class ProductUoMPriceViewSet(NoDestroyModelMixin, viewsets.ModelViewSet):
 class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = InventoryDocument.objects.select_related(
         "partner", "created_by", "confirmed_by"
-    ).prefetch_related("details", "details__product", "details__warehouse").all()
+    ).prefetch_related(
+        "details",
+        "details__product",
+        "details__source_location",
+        "details__destination_location",
+    ).all()
     serializer_class = InventoryDocumentSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
@@ -422,4 +471,47 @@ class InventoryDocumentViewSet(viewsets.ModelViewSet, AuditHistory):
             return Response({"error": str(e.message if hasattr(e, 'message') else e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class InventoryCountViewSet(viewsets.ModelViewSet):
+    queryset = (
+        InventoryCount.objects.select_related("warehouse", "created_by", "document")
+        .prefetch_related("lines", "lines__product")
+        .annotate(
+            total_products_count=Count("lines"),
+            counted_products_count=Count("lines", filter=Q(lines__counted_qty__isnull=False)),
+        )
+        .all()
+    )
+    serializer_class = InventoryCountSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status", "warehouse"]
+
+    def create(self, request):
+        s = InventoryCountCreateSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        count = InventoryCountService.create_count(
+            warehouse_id=s.validated_data["warehouse"],
+            user=request.user,
+            notes=s.validated_data.get("notes", ""),
+        )
+        return Response(self.get_serializer(count).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def save_lines(self, request, pk=None):
+        from .services import InventoryCountService
+
+        count = InventoryCountService.save_lines(
+            count_id=pk, updates=request.data.get("lines", [])
+        )
+        return Response(self.get_serializer(count).data)
+
+    @action(detail=True, methods=["post"])
+    def apply(self, request, pk=None):
+        from .services import InventoryCountService
+
+        doc = InventoryCountService.apply_count(count_id=pk, user=request.user)
+        count = self.get_object()
+        return Response(self.get_serializer(count).data)
 

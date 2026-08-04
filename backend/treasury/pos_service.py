@@ -30,8 +30,7 @@ class POSService:
     def open_session(
         *,
         user,
-        terminal_id: int | None = None,
-        treasury_account_id: int | None = None,
+        terminal_id: int,
         opening_balance: Decimal,
         fund_source_id: int | None = None,
         justify_reason: str | None = None,
@@ -41,7 +40,8 @@ class POSService:
         """
         Opens a POS session.
 
-        - Uses terminal_id (preferred) or treasury_account_id (legacy).
+        - Requires a terminal_id; the session treasury account is snapshotted
+          from terminal.default_treasury_account at open time.
         - If fund_source_id is provided, computes the diff between the declared
           opening_balance and the fund source book balance and creates an
           adjustment movement.
@@ -51,38 +51,25 @@ class POSService:
         if POSSession.objects.filter(user=user, status="OPEN").exists():
             raise ValidationError("Ya tiene una sesión abierta.")
 
-        if terminal_id:
-            try:
-                terminal = POSTerminal.objects.select_related("default_treasury_account").get(
-                    id=terminal_id, is_active=True
-                )
-            except POSTerminal.DoesNotExist:
-                raise ValidationError("Terminal no encontrado o inactivo.")
+        try:
+            terminal = POSTerminal.objects.select_related("default_treasury_account").get(
+                id=terminal_id, is_active=True
+            )
+        except POSTerminal.DoesNotExist:
+            raise ValidationError("Terminal no encontrado o inactivo.")
 
-            session = POSSession.objects.create(
-                terminal=terminal,
-                treasury_account=terminal.default_treasury_account,
-                user=user,
-                opening_balance=opening_balance,
-                status="OPEN",
+        if not terminal.default_treasury_account:
+            raise ValidationError(
+                "El terminal no tiene una cuenta de tesorería por defecto; no se puede abrir la sesión."
             )
 
-        elif treasury_account_id:
-            try:
-                treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
-            except TreasuryAccount.DoesNotExist:
-                raise ValidationError("Caja no encontrada.")
-
-            session = POSSession.objects.create(
-                treasury_account=treasury_account,
-                terminal=None,
-                user=user,
-                opening_balance=opening_balance,
-                status="OPEN",
-            )
-
-        else:
-            raise ValidationError("Debe especificar terminal_id o treasury_account_id.")
+        session = POSSession.objects.create(
+            terminal=terminal,
+            treasury_account=terminal.default_treasury_account,
+            user=user,
+            opening_balance=opening_balance,
+            status="OPEN",
+        )
 
         if fund_source_id:
             _apply_opening_fund_adjustment(
@@ -199,7 +186,6 @@ class POSService:
         return POSService.open_session(
             user=request.user,
             terminal_id=request.data.get("terminal_id"),
-            treasury_account_id=request.data.get("treasury_account_id"),
             opening_balance=Decimal(str(request.data.get("opening_balance", "0"))),
             fund_source_id=request.data.get("fund_source_id"),
             justify_reason=request.data.get("justify_reason"),

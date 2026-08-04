@@ -49,7 +49,7 @@ export function useSaleOrderSearch(): UseSaleOrderSearchReturn {
             globalCache[cacheKey] = data
             setOrders(data)
         } catch (err) {
-            showApiError(err, "Error al buscar notas de venta")
+            showApiError(err, "Error al buscar ordenes de venta")
             setOrders([])
         } finally {
             setLoading(false)

@@ -16,6 +16,7 @@ from accounting.models import (
     BSCategory,
     Budget,
     BudgetItem,
+    ClosingChecklistTemplate,
     FiscalYear,
     JournalEntry,
     JournalItem,
@@ -25,8 +26,25 @@ from accounting.utils import get_default_vat_rate
 from billing.models import Invoice
 from billing.note_workflow import NoteWorkflow
 from contacts.models import Contact
-from contacts.partner_models import PartnerEquityStake, PartnerTransaction
-from core.models import Attachment, CompanySettings, GlobalSearchIndex, IdempotencyRecord, User
+from contacts.partner_models import (
+    PartnerEquityStake,
+    PartnerTransaction,
+    ProfitDistributionLine,
+    ProfitDistributionLineDestination,
+    ProfitDistributionPayment,
+    ProfitDistributionResolution,
+)
+from core.models import (
+    ActionLog,
+    Attachment,
+    BackgroundJob,
+    CompanySettings,
+    GlobalSearchIndex,
+    IdempotencyRecord,
+    PeriodReopenLog,
+    User,
+    UserPreference,
+)
 from hr.models import (
     AFP,
     Absence,
@@ -40,19 +58,23 @@ from hr.models import (
     SalaryAdvance,
 )
 from inventory.models import (
+    InventoryCount,
+    InventoryCountLine,
+    InventoryDocument,
+    InventoryDocumentDetail,
+    Location,
     PricingRule,
     Product,
     ProductAttribute,
     ProductAttributeValue,
     ProductCategory,
+    ProductUoMPrice,
+    Stock,
     StockMove,
     Subscription,
     UoM,
     UoMCategory,
     Warehouse,
-    InventoryDocument,
-    InventoryDocumentDetail,
-    Location,
 )
 from inventory.services import InventoryService
 from production.models import (
@@ -130,7 +152,7 @@ def compute_rut_dv(rut_body: str) -> str:
     multiplier = 2
     for digit in reversed(clean):
         total += int(digit) * multiplier
-        multiplier = 8 if multiplier == 7 else multiplier + 1
+        multiplier = 2 if multiplier == 7 else multiplier + 1
     remainder = total % 11
     dv = 11 - remainder
     if dv == 11:
@@ -293,9 +315,13 @@ class Command(BaseCommand):
                 n_inv = Invoice.objects.count()
                 n_tm = TreasuryMovement.objects.count()
                 self.stdout.write(
-                    f"  ✓ {n_po} OC, {n_so} NV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería"
+                    f"  ✓ {n_po} OC, {n_so} OV, {n_ot} OT, {n_inv} facturas, {n_tm} movs. tesorería"
                 )
-
+                
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Historical Purchases & POS Demo...")
+                self._create_historical_purchases_and_pos(accounts, partners, inventory, uoms)
             section_start = time.time()
             self.stdout.write(f"\n{'─' * 50}")
             self.stdout.write("  Company Settings...")
@@ -318,6 +344,20 @@ class Command(BaseCommand):
             self.stdout.write(f"\n{'─' * 50}")
             self.stdout.write("  Demo Budget...")
             self._create_demo_budget(accounts)
+            self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
+
+            if not options["no_demo_flows"] and not options["only_infra"]:
+                section_start = time.time()
+                self.stdout.write(f"\n{'─' * 50}")
+                self.stdout.write("  Closing Past Periods (F29 + Accounting)...")
+                self._close_past_periods(accounts)
+                self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
+
+            section_start = time.time()
+            self.stdout.write(f"\n{'─' * 50}")
+            self.stdout.write("  Syncing Permissions...")
+            from django.core.management import call_command
+            call_command("sync_permissions", verbosity=0)
             self.stdout.write(f"  ({time.time() - section_start:.1f}s)")
 
         elapsed = time.time() - seed_start
@@ -399,6 +439,22 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(self.style.WARNING(f"     ⚠ {name}: NOT CONFIGURED"))
 
+        # Sync Location.account for VIRTUAL locations from AccountingSettings
+        virtual_account_map = {
+            "Ajuste por Sobrante/Ganancia": settings.adjustment_income_account,
+            "Ajuste por Merma/Pérdida": settings.adjustment_expense_account,
+            "Capital de Socios": settings.partner_capital_contribution_account,
+        }
+        synced = 0
+        for loc_name, account in virtual_account_map.items():
+            if account:
+                updated = Location.objects.filter(
+                    location_type="VIRTUAL", name=loc_name
+                ).update(account=account)
+                synced += updated
+        if synced:
+            self.stdout.write(f"  ✓ Synced {synced} virtual location accounts from AccountingSettings")
+
         # ADR-0038: Verifica que las TreasuryAccount puente de Cheque fueron
         # auto-creadas por el signal post_save de AccountingSettings al
         # cablear check_portfolio_account / issued_checks_account. Si el
@@ -418,8 +474,6 @@ class Command(BaseCommand):
         import time
 
         from django.db import connection
-
-        from core.models import ActionLog
 
         purge_start = time.time()
         total_records = 0
@@ -462,8 +516,11 @@ class Command(BaseCommand):
         _section_header("0. System & Logs")
         _safe_delete(ActionLog, "ActionLog")
         _safe_delete(Attachment, "Attachment")
+        _safe_delete(BackgroundJob, "BackgroundJob")
         _safe_delete(GlobalSearchIndex, "GlobalSearchIndex")
         _safe_delete(IdempotencyRecord, "IdempotencyRecord")
+        _safe_delete(PeriodReopenLog, "PeriodReopenLog")
+        _safe_delete(UserPreference, "UserPreference")
         _safe_delete(Transition, "Transition")
         _safe_delete(Comment, "Comment")
         _safe_delete(WorkflowSettings, "WorkflowSettings")
@@ -548,6 +605,7 @@ class Command(BaseCommand):
         _section_header("7.5. Checks & Loans")
         _safe_delete(Check, "Check")
         _safe_delete(Checkbook, "Checkbook")
+        _safe_delete(CreditLine, "CreditLine")
         _safe_delete(LoanInstallment, "LoanInstallment")
         _safe_delete(BankLoan, "BankLoan")
         self.stdout.write(f"  {' ':<45} {section_records:>6} total")
@@ -563,8 +621,16 @@ class Command(BaseCommand):
         _safe_delete(CardPurchaseGroup, "CardPurchaseGroup")
         self.stdout.write(f"  {' ':<45} {section_records:>6} total")
 
-        # ── 9. Financial Core ────────────────────────────────
-        _section_header("9. Financial Core")
+        # ── 9. Partner Distributions (must purge BEFORE FiscalYear — PROTECT FK) ──
+        _section_header("9. Partner Distributions")
+        _safe_delete(ProfitDistributionPayment, "ProfitDistributionPayment")
+        _safe_delete(ProfitDistributionLineDestination, "ProfitDistributionLineDestination")
+        _safe_delete(ProfitDistributionLine, "ProfitDistributionLine")
+        _safe_delete(ProfitDistributionResolution, "ProfitDistributionResolution")
+        self.stdout.write(f"  {' ':<45} {section_records:>6} total")
+
+        # ── 9.5. Financial Core ────────────────────────────────
+        _section_header("9.5. Financial Core")
         _safe_delete(JournalEntry, "JournalEntry")
         _safe_delete(BudgetItem, "BudgetItem")
         _safe_delete(Budget, "Budget")
@@ -588,11 +654,16 @@ class Command(BaseCommand):
 
         # ── 10. Master Data & Basics ─────────────────────────
         _section_header("10. Master Data & Basics")
+        _safe_delete(ClosingChecklistTemplate, "ClosingChecklistTemplate")
         _safe_delete(PricingRule, "PricingRule")
         _safe_delete(ProductAttributeValue, "ProductAttributeValue")
         _safe_delete(ProductAttribute, "ProductAttribute")
+        _safe_delete(ProductUoMPrice, "ProductUoMPrice")
         _safe_delete(Product, "Product")
         _safe_delete(ProductCategory, "ProductCategory")
+        _safe_delete(InventoryCountLine, "InventoryCountLine")
+        _safe_delete(InventoryCount, "InventoryCount")
+        _safe_delete(Stock, "Stock")
         _safe_delete(Warehouse, "Warehouse")
         _safe_delete(PartnerEquityStake, "PartnerEquityStake")
         _safe_delete(Contact, "Contact")
@@ -742,12 +813,15 @@ class Command(BaseCommand):
                 "name": "Socio Administrador (Socio A)",
                 "email": "socio.a@empresa.cl",
                 "is_partner": True,
-                "partner_equity_percentage": Decimal("50.00"),
+                "partner_equity_percentage": Decimal("35.00"),
             },
         )
+        if socio_a.partner_equity_percentage != Decimal("35.00"):
+            socio_a.partner_equity_percentage = Decimal("35.00")
+            socio_a.save(update_fields=["partner_equity_percentage"])
         if not PartnerEquityStake.objects.filter(partner=socio_a).exists():
             PartnerEquityStake.objects.create(
-                partner=socio_a, percentage=Decimal("50.00"), effective_from=timezone.now().date()
+                partner=socio_a, percentage=Decimal("35.00"), effective_from=timezone.now().date()
             )
 
         # Socio B: Capitalista
@@ -762,18 +836,51 @@ class Command(BaseCommand):
                 "name": "Socio Capitalista (Socio B)",
                 "email": "socio.b@empresa.cl",
                 "is_partner": True,
-                "partner_equity_percentage": Decimal("50.00"),
+                "partner_equity_percentage": Decimal("35.00"),
             },
         )
+        if socio_b.partner_equity_percentage != Decimal("35.00"):
+            socio_b.partner_equity_percentage = Decimal("35.00")
+            socio_b.save(update_fields=["partner_equity_percentage"])
         if not PartnerEquityStake.objects.filter(partner=socio_b).exists():
             PartnerEquityStake.objects.create(
-                partner=socio_b, percentage=Decimal("50.00"), effective_from=timezone.now().date()
+                partner=socio_b, percentage=Decimal("35.00"), effective_from=timezone.now().date()
             )
+
+        # Socio C: Admin/Owner (linked to the admin system user)
+        socio_admin_capital = get_or_create_subaccount("3.1.01", "Socio Admin", "003")
+        get_or_create_subaccount("3.2.01", "Socio Admin", "003")
+        socio_admin_receivable = get_or_create_subaccount("1.1.05.01", "Socio Admin", "003")
+        get_or_create_subaccount("2.1.07", "Socio Admin", "003")
+
+        admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
+        if admin_contact:
+            if not admin_contact.is_partner:
+                admin_contact.is_partner = True
+                admin_contact.partner_equity_percentage = Decimal("30.00")
+                admin_contact.partner_since = timezone.now().date()
+                admin_contact.save(update_fields=["is_partner", "partner_equity_percentage", "partner_since"])
+            elif admin_contact.partner_equity_percentage != Decimal("30.00"):
+                admin_contact.partner_equity_percentage = Decimal("30.00")
+                admin_contact.save(update_fields=["partner_equity_percentage"])
+            if not PartnerEquityStake.objects.filter(partner=admin_contact).exists():
+                PartnerEquityStake.objects.create(
+                    partner=admin_contact, percentage=Decimal("30.00"),
+                    effective_from=timezone.now().date(),
+                    notes="Socio fundador — usuario admin del sistema",
+                )
 
         owner_accounts = {
             socio_a.id: {"capital": socio_a_capital, "receivable": socio_a_receivable},
             socio_b.id: {"capital": socio_b_capital, "receivable": socio_b_receivable},
         }
+        owners_list = [socio_a, socio_b]
+        if admin_contact:
+            owner_accounts[admin_contact.id] = {
+                "capital": socio_admin_capital,
+                "receivable": socio_admin_receivable,
+            }
+            owners_list.append(admin_contact)
 
         # 3. Regular Customers and Suppliers
         c1, _ = Contact.objects.get_or_create(
@@ -800,7 +907,7 @@ class Command(BaseCommand):
 
         return {
             "default_customer": c_default,
-            "owners": [socio_a, socio_b],
+            "owners": owners_list,
             "owner_accounts": owner_accounts,
             "customers": [c1, c2],
             "suppliers": [s1, s2, s3],
@@ -812,32 +919,60 @@ class Command(BaseCommand):
         cat_graphic, _ = UoMCategory.objects.get_or_create(name="Medidas Gráficas")
 
         # Basic
-        uom_un, _ = UoM.objects.get_or_create(
+        uom_un, created = UoM.objects.get_or_create(
             name="Unidad",
-            defaults={"category": cat_units, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+            defaults={"category": cat_units, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE,
+                       "name_singular": "Unidad", "name_plural": "Unidades", "abbreviation": "un"},
         )
-        uom_kg, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_un.pk).update(
+                name_singular="Unidad", name_plural="Unidades", abbreviation="un")
+
+        uom_kg, created = UoM.objects.get_or_create(
             name="Kilogramo (kg)",
-            defaults={"category": cat_weight, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+            defaults={"category": cat_weight, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE,
+                       "name_singular": "Kilogramo", "name_plural": "Kilogramos", "abbreviation": "kg"},
         )
+        if not created:
+            UoM.objects.filter(pk=uom_kg.pk).update(
+                name_singular="Kilogramo", name_plural="Kilogramos", abbreviation="kg")
 
         # Graphic specifics
-        uom_hoja, _ = UoM.objects.get_or_create(
+        uom_hoja, created = UoM.objects.get_or_create(
             name="Hoja",
-            defaults={"category": cat_graphic, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE},
+            defaults={"category": cat_graphic, "ratio": 1.0, "uom_type": UoM.Type.REFERENCE,
+                       "name_singular": "Hoja", "name_plural": "Hojas", "abbreviation": "hj"},
         )
-        uom_millar, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_hoja.pk).update(
+                name_singular="Hoja", name_plural="Hojas", abbreviation="hj")
+
+        uom_millar, created = UoM.objects.get_or_create(
             name="Millar (1000u)",
-            defaults={"category": cat_units, "ratio": 1000.0, "uom_type": UoM.Type.BIGGER},
+            defaults={"category": cat_units, "ratio": 1000.0, "uom_type": UoM.Type.BIGGER,
+                       "name_singular": "Millar", "name_plural": "Miles", "abbreviation": "ml"},
         )
-        uom_resma, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_millar.pk).update(
+                name_singular="Millar", name_plural="Miles", abbreviation="ml")
+
+        uom_resma, created = UoM.objects.get_or_create(
             name="Resma (500 pl)",
-            defaults={"category": cat_graphic, "ratio": 500.0, "uom_type": UoM.Type.BIGGER},
+            defaults={"category": cat_graphic, "ratio": 500.0, "uom_type": UoM.Type.BIGGER,
+                       "name_singular": "Resma", "name_plural": "Resmas", "abbreviation": "rsm"},
         )
-        uom_paquete, _ = UoM.objects.get_or_create(
+        if not created:
+            UoM.objects.filter(pk=uom_resma.pk).update(
+                name_singular="Resma", name_plural="Resmas", abbreviation="rsm")
+
+        uom_paquete, created = UoM.objects.get_or_create(
             name="Paquete (100u)",
-            defaults={"category": cat_units, "ratio": 100.0, "uom_type": UoM.Type.BIGGER},
+            defaults={"category": cat_units, "ratio": 100.0, "uom_type": UoM.Type.BIGGER,
+                       "name_singular": "Paquete", "name_plural": "Paquetes", "abbreviation": "paq"},
         )
+        if not created:
+            UoM.objects.filter(pk=uom_paquete.pk).update(
+                name_singular="Paquete", name_plural="Paquetes", abbreviation="paq")
 
         return {
             "un": uom_un,
@@ -1554,8 +1689,8 @@ class Command(BaseCommand):
         count = 0
 
         for product in products:
-            # Random initial quantity between 50 and 500
-            qty = Decimal(str(random.randint(50, 500)))
+            # Random initial quantity between 5000 and 15000 to support large historical sales
+            qty = Decimal(str(random.randint(5000, 15000)))
 
             # Determine a realistic cost based on sale price (approx 40-70% of sale price)
             if product.sale_price > 0:
@@ -1567,9 +1702,18 @@ class Command(BaseCommand):
                 cost = Decimal(str(random.randint(500, 5000)))
 
             # 1. Create InventoryDocument + confirm via Motor Documental
-            # This generates a proper StockMove with source/destination locations
-            vendor_loc = Location.objects.filter(location_type="VENDOR").first()
-            internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse=warehouse).first()
+            # This generates a proper StockMove with source/destination locations.
+            # Use get_or_create so this works on fresh databases where seed migrations
+            # may not have populated Location objects yet.
+            vendor_loc, _ = Location.objects.get_or_create(
+                location_type="VENDOR",
+                defaults={"name": "Proveedor (Virtual)"}
+            )
+            internal_loc, _ = Location.objects.get_or_create(
+                location_type="INTERNAL",
+                warehouse=warehouse,
+                defaults={"name": warehouse.name}
+            )
 
             doc = InventoryDocument.objects.create(
                 document_type=InventoryDocument.Type.RECEIPT,
@@ -1581,7 +1725,6 @@ class Command(BaseCommand):
             InventoryDocumentDetail.objects.create(
                 document=doc,
                 product=product,
-                warehouse=warehouse,
                 source_location=vendor_loc,
                 destination_location=internal_loc,
                 quantity=qty,
@@ -2112,36 +2255,28 @@ class Command(BaseCommand):
             )
 
     def _create_periods(self):
-        """Creates tax and accounting periods for the current year."""
+        """Creates tax and accounting periods for the current year — all OPEN.
+
+        Periods are closed later by _close_past_periods() after all
+        transactions and F29 declarations have been created.
+        """
         current_year = timezone.now().year
-        current_month = timezone.now().month
         periods = []
-        # Create periods from January to current_month
-        for month in range(1, current_month + 1):
-            status = TaxPeriod.Status.OPEN
-            if month < current_month:
-                status = TaxPeriod.Status.CLOSED
-
+        for month in range(1, 13):
             tax_period, _ = TaxPeriod.objects.get_or_create(
-                year=current_year, month=month, defaults={"status": status}
+                year=current_year, month=month,
+                defaults={"status": TaxPeriod.Status.OPEN},
             )
-
             acc_period, _ = AccountingPeriod.objects.get_or_create(
-                year=current_year,
-                month=month,
-                defaults={"status": status, "tax_period": tax_period},
+                year=current_year, month=month,
+                defaults={
+                    "status": AccountingPeriod.Status.OPEN,
+                    "tax_period": tax_period,
+                },
             )
-
-            # Close them if they are in the past
-            if status == TaxPeriod.Status.CLOSED:
-                tax_period.closed_at = timezone.now()
-                tax_period.save()
-                acc_period.closed_at = timezone.now()
-                acc_period.save()
-
             periods.append({"tax": tax_period, "acc": acc_period})
 
-        self.stdout.write(f"    ✓ {len(periods)} periods created/verified for {current_year}.")
+        self.stdout.write(f"    ✓ {len(periods)} periods created (all OPEN) for {current_year}.")
         return periods
 
     def _create_sales_purchasing_demo(self, accounts, partners, inventory, periods):
@@ -2149,7 +2284,7 @@ class Command(BaseCommand):
         from billing.models import Invoice
         from sales.services import SalesService
 
-        # 1. SAMPLE SALE: NV -> GD -> FACT
+        # 1. SAMPLE SALE: OV -> GD -> FACT
         customer = partners["customers"][0]
         warehouse = inventory["warehouse"]
         # Use a storable product (no manufacturing validation)
@@ -2188,7 +2323,7 @@ class Command(BaseCommand):
                 date=timezone.now().date(),
             )
             self.stdout.write(
-                f"  ✓ NV-{order.number}: {customer.name} → {order.lines.first().quantity}u {product.name} (FACT-{invoice.number})"
+                f"  ✓ OV-{order.number}: {customer.name} → {order.lines.first().quantity}u {product.name} (FACT-{invoice.number})"
             )
         else:
             self.stdout.write("  — No se encontró producto storable para demo flow")
@@ -2398,7 +2533,7 @@ class Command(BaseCommand):
             PurchasingService.receive_order(po1, wh)
             BillingService.create_purchase_bill(
                 po1,
-                supplier_invoice_number="FAC-SUP-001",
+                supplier_invoice_number=f"OC-{po1.number}",
                 date=today,
             )
             TreasuryService.create_movement(
@@ -2453,7 +2588,7 @@ class Command(BaseCommand):
             PurchasingService.receive_order(po2, wh)
             BillingService.create_purchase_bill(
                 po2,
-                supplier_invoice_number="FAC-SUP-002",
+                supplier_invoice_number=f"OC-{po2.number}",
                 date=today,
             )
             TreasuryService.create_card_purchase(
@@ -2511,7 +2646,7 @@ class Command(BaseCommand):
             PurchasingService.receive_order(po3, wh)
             BillingService.create_purchase_bill(
                 po3,
-                supplier_invoice_number="FAC-SUP-003",
+                supplier_invoice_number=f"OC-{po3.number}",
                 date=today,
             )
             chile_bank = Bank.objects.get(code="CHILE")
@@ -2532,6 +2667,57 @@ class Command(BaseCommand):
             )
 
         self.stdout.write("  ── 3 órdenes de compra, 3 receipts, 3 facturas, 3 pagos")
+
+        # ── Multi-month purchases (Jan-Jun 2026) ──────────────────────────
+        from datetime import date as _date
+
+        s3 = partners["suppliers"][2]  # Servicios Eléctricos Enel
+        tinta_m = Product.objects.get(code="MP-TIN-MAG")
+        tinta_y = Product.objects.get(code="MP-TIN-YEL")
+        multi_month_products = [
+            (s1, papel, uoms["resma"], 30, 5000, "Compra mensual resmas"),
+            (s2, tinta_c, uoms["kg"], 5, 12000, "Compra mensual tinta cyan"),
+            (s1, cartulina, uoms["paquete"], 3, 22000, "Compra mensual cartulina"),
+            (s2, tinta_m, uoms["kg"], 5, 12000, "Compra mensual tinta magenta"),
+            (s2, tinta_y, uoms["kg"], 5, 12000, "Compra mensual tinta yellow"),
+            (s1, papel, uoms["resma"], 40, 5000, "Compra semestral resmas"),
+        ]
+        for i, month in enumerate(range(1, 7)):
+            order_date = _date(2026, month, 15)
+            supplier, product, uom, qty, cost, note = multi_month_products[i]
+            note_tag = f"Seed-MultiMonth-{month:02d}"
+            if PurchaseOrder.objects.filter(notes=note_tag).exists():
+                continue
+            po = PurchaseOrder.objects.create(
+                supplier=supplier,
+                date=order_date,
+                payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
+                warehouse=wh,
+                notes=note_tag,
+            )
+            PurchaseLine.objects.create(
+                order=po, product=product, quantity=qty,
+                uom=uom, unit_cost=cost, tax_rate=get_default_vat_rate(),
+            )
+            po.save()
+            PurchaseOrderService().confirm(po, user=admin)
+            PurchasingService.receive_order(po, wh)
+            BillingService.create_purchase_bill(
+                po, supplier_invoice_number=f"OC-{po.number}", date=order_date,
+            )
+            TreasuryService.create_movement(
+                amount=po.total,
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                date=order_date, created_by=admin,
+                from_account=bco_estado, partner=supplier,
+                purchase_order=po, reference=f"Pago OC MultiMonth {month:02d}",
+            )
+            self.stdout.write(
+                f"  ✓ OCS-{po.number}: {supplier.name} → {qty}u {product.name} "
+                f"(${po.total:,.0f}) — {order_date.strftime('%b %Y')}"
+            )
+        self.stdout.write(f"  ── +6 compras multi-mes (Ene-Jun 2026)")
 
     def _create_sales_demo(self, accounts, partners, inventory, uoms):
         from billing.services import BillingService
@@ -2590,7 +2776,6 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.FACTURA,
                 payment_method="TRANSFER",
                 date=today,
-                number="1002",
             )
             TreasuryService.create_movement(
                 amount=inv1.total,
@@ -2605,7 +2790,7 @@ class Command(BaseCommand):
                 reference="Cobro Venta Transfer",
             )
             self.stdout.write(
-                f"  ✓ NV-{so1.number}: {c1.name} → 500 {impresion.name} "
+                f"  ✓ OV-{so1.number}: {c1.name} → 500 {impresion.name} "
                 f"(${inv1.total:,.0f}) — Transferencia BCO-ESTADO"
             )
 
@@ -2665,7 +2850,7 @@ class Command(BaseCommand):
                 reference="Cobro Venta Efectivo",
             )
             self.stdout.write(
-                f"  ✓ NV-{so2.number}: {c2.name} → 3 Diseño + 10 Encuadernación "
+                f"  ✓ OV-{so2.number}: {c2.name} → 3 Diseño + 10 Encuadernación "
                 f"(${inv2.total:,.0f}) — Efectivo CAJA-TALLER"
             )
 
@@ -2699,7 +2884,6 @@ class Command(BaseCommand):
                 dte_type=Invoice.DTEType.FACTURA,
                 payment_method="CHECK",
                 date=today,
-                number="1003",
             )
             CheckService.receive(
                 bank_id=chile_bank.pk,
@@ -2714,11 +2898,191 @@ class Command(BaseCommand):
                 created_by=admin,
             )
             self.stdout.write(
-                f"  ✓ NV-{so3.number}: {c_default.name} → 10 {papel.name} "
+                f"  ✓ OV-{so3.number}: {c_default.name} → 10 {papel.name} "
                 f"(${inv3.total:,.0f}) — Cheque #2001 recibido (IN_PORTFOLIO)"
             )
 
         self.stdout.write("  ── 3 ventas, 2 OT, 3 deliveries, 3 facturas, 3 cobros")
+
+        # ── Multi-month sales (Historical to Current Month) ─────────────
+        import random
+        from datetime import date as _date
+        import calendar
+
+        current_month = today.month
+        current_year = today.year
+
+        available_products = [
+            (Product.objects.get(code="PT-0001"), uoms["hoja"]),
+            (Product.objects.get(code="SRV-DIS-GRA"), uoms["un"]),
+            (Product.objects.get(name="Servicio Encuadernación"), uoms["un"]),
+            (Product.objects.get(name="Banner Roller Up (80x200cm)"), uoms["un"]),
+            (Product.objects.get(name="Calendario de Escritorio"), uoms["un"]),
+            (Product.objects.get(name="Afiche Publicitario (Couché 170g)"), uoms["un"]),
+        ]
+        
+        customers = [c1, c2, c_default]
+        total_hist_sales = 0
+
+        for month in range(1, current_month + 1):
+            num_days = calendar.monthrange(current_year, month)[1]
+            max_day = num_days if month != current_month else today.day
+            if max_day < 1: max_day = 1
+            
+            # Generate between 15 and 20 sales per month
+            num_sales = random.randint(15, 20)
+            
+            for sale_idx in range(num_sales):
+                order_date = _date(current_year, month, random.randint(1, max_day))
+                customer = random.choice(customers)
+                product, uom = random.choice(available_products)
+                
+                target_value = Decimal(random.randint(1000, 150000))
+                price = product.sale_price if product.sale_price > 0 else Decimal("1000")
+                qty = max(1, int(target_value / price))
+                
+                note_tag = f"Seed-HistSale-{month:02d}-{sale_idx:02d}"
+                if SaleOrder.objects.filter(notes=note_tag).exists():
+                    continue
+                    
+                so = SaleOrder.objects.create(
+                    customer=customer, date=order_date,
+                    payment_method=SaleOrder.PaymentMethod.TRANSFER,
+                    notes=note_tag,
+                )
+                SaleLine.objects.create(
+                    order=so, product=product, description=f"{product.name} (Auto Histórico)",
+                    quantity=qty, uom=uom, unit_price=price,
+                    tax_rate=get_default_vat_rate(),
+                )
+                so.save()
+                SalesService.confirm_sale(so)
+                
+                # Dispatch if required (for services, this might return None or empty)
+                delivery = SalesService.dispatch_order(so, wh, delivery_date=order_date)
+                if delivery:
+                    SalesService.confirm_delivery(delivery)
+
+                inv = BillingService.create_sale_invoice(
+                    so, dte_type=Invoice.DTEType.FACTURA,
+                    payment_method="TRANSFER", date=order_date,
+                )
+                
+                TreasuryService.create_movement(
+                    amount=inv.total,
+                    movement_type=TreasuryMovement.Type.INBOUND,
+                    payment_method=TreasuryMovement.Method.TRANSFER,
+                    date=order_date, created_by=admin,
+                    to_account=bco_estado, partner=customer,
+                    sale_order=so, invoice=inv,
+                    reference=f"Cobro Venta Hist. {note_tag}",
+                )
+                total_hist_sales += 1
+
+        self.stdout.write(f"  ✓ {total_hist_sales} ventas multi-mes generadas (Ene-{today.strftime('%b')} {current_year})")
+
+    def _create_historical_purchases_and_pos(self, accounts, partners, inventory, uoms):
+        import calendar
+        import random
+        from datetime import date as _date
+        from billing.services import BillingService
+        from purchasing.models import PurchaseOrder, PurchaseLine
+        from purchasing.services import PurchaseOrderService, PurchasingService
+        from treasury.services import TreasuryService, TerminalBatchService
+        from treasury.models import PaymentTerminalProvider, PaymentMethod, TreasuryAccount, TreasuryMovement
+        from inventory.models import Product
+
+        admin = User.objects.filter(is_superuser=True).first()
+        today = timezone.now().date()
+        current_year = today.year
+        current_month = today.month
+
+        # Subscriptions
+        electric_prod = Product.objects.get(code="SUB-ELEC")
+        maint_prod = Product.objects.get(code="SUB-MNT-OFF")
+        internet_prod, _ = Product.objects.get_or_create(
+            code="SUB-INT",
+            defaults={
+                "name": "Servicios de Internet",
+                "category": electric_prod.category,
+                "product_type": Product.Type.SUBSCRIPTION,
+                "uom": uoms["un"],
+                "sale_price": 0,
+                "can_be_sold": False,
+                "can_be_purchased": True,
+            }
+        )
+
+        suppliers = partners["suppliers"]
+        s_enel = suppliers[2]
+        s_maint = suppliers[1]
+        s_internet = suppliers[0] # Ejemplo
+
+        # POS setup
+        tuu_prov = PaymentTerminalProvider.objects.filter(name="TUU").first()
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        pm_deposit = PaymentMethod.objects.filter(
+            treasury_account=bco_estado, allow_for_sales=True, is_active=True,
+            method_type=PaymentMethod.Type.TRANSFER
+        ).first()
+
+        for month in range(1, current_month + 1):
+            num_days = calendar.monthrange(current_year, month)[1]
+            max_day = num_days if month != current_month else today.day
+            if max_day < 1: max_day = 1
+
+            # 1. Purchase Invoices (Subscriptions)
+            subs = [
+                (s_enel, electric_prod, Decimal(random.randint(60000, 150000))),
+                (s_maint, maint_prod, Decimal("250000")),
+                (s_internet, internet_prod, Decimal("45000")),
+            ]
+            for supp, prod, cost in subs:
+                order_date = _date(current_year, month, random.randint(1, 10))
+                po = PurchaseOrder.objects.create(
+                    supplier=supp, date=order_date,
+                    payment_method=PurchaseOrder.PaymentMethod.TRANSFER,
+                    notes=f"Subscripción Histórica {month:02d}",
+                )
+                PurchaseLine.objects.create(
+                    order=po, product=prod, quantity=1, uom=prod.uom,
+                    unit_cost=cost, tax_rate=get_default_vat_rate(),
+                )
+                po.save()
+                PurchaseOrderService().confirm(po, user=admin)
+                PurchasingService.receive_order(po, inventory["warehouse"])
+                inv = BillingService.create_purchase_bill(
+                    po, supplier_invoice_number=f"SUB-{prod.code}-{month:02d}", date=order_date,
+                )
+                TreasuryService.create_movement(
+                    amount=po.total, movement_type=TreasuryMovement.Type.OUTBOUND,
+                    payment_method=TreasuryMovement.Method.TRANSFER, date=order_date,
+                    created_by=admin, from_account=bco_estado, partner=supp,
+                    purchase_order=po, invoice=inv, reference=f"Pago SUB {month:02d}"
+                )
+
+            # 2. POS Terminal Settlements (TUU)
+            if tuu_prov and pm_deposit:
+                sales_date = _date(current_year, month, max_day)
+                gross = Decimal(random.randint(2000000, 5000000))
+                base_comm = (gross * Decimal("0.02")).quantize(Decimal("1")) # 2%
+                iva_comm = (base_comm * Decimal("0.19")).quantize(Decimal("1"))
+                net = gross - base_comm - iva_comm
+                
+                TerminalBatchService.create_batch(
+                    provider=tuu_prov, payment_method=pm_deposit,
+                    sales_date=sales_date, gross_amount=gross,
+                    commission_base=base_comm, commission_tax=iva_comm,
+                    net_amount=net, terminal_reference=f"SETTLE-{month:02d}",
+                    user=admin
+                )
+                
+                TerminalBatchService.generate_monthly_invoice(
+                    provider=tuu_prov, year=current_year, month=month,
+                    user=admin, number=f"TUU-{month:02d}", date=sales_date
+                )
+                
+        self.stdout.write(f"  ✓ Compras históricas (Suscripciones) y Liquidaciones TC generadas (Ene-{today.strftime('%b')} {current_year})")
 
     def _initialize_company_settings(self):
         """
@@ -2916,30 +3280,220 @@ class Command(BaseCommand):
             PayrollConcept.objects.update_or_create(name=name, defaults=data)
         self.stdout.write("    ✓ Payroll Concepts created.")
 
-        # 4. Demo Employee
-        admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
-        if admin_contact:
+        # 4. Demo Employees
+        from datetime import date
+
+        from hr.services import PayrollPaymentService, PayrollService, post_payroll
+
+        employees_data = [
+            {
+                "tax_id": f"11111111-{compute_rut_dv('11111111')}",
+                "position": "Gerente de Operaciones",
+                "department": "Gerencia",
+                "base_salary": Decimal("590000"),
+                "afp_name": "Habitat",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.TRAMO_D,
+                "cargas_familiares": 0,
+                "colacion": Decimal("65000"),
+                "movilizacion": Decimal("45000"),
+            },
+            {
+                "tax_id": f"22222222-{compute_rut_dv('22222222')}",
+                "position": "Jefe de Ventas",
+                "department": "Ventas",
+                "base_salary": Decimal("580000"),
+                "afp_name": "Provida",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.TRAMO_B,
+                "cargas_familiares": 2,
+                "colacion": Decimal("55000"),
+                "movilizacion": Decimal("40000"),
+            },
+            {
+                "tax_id": f"33333333-{compute_rut_dv('33333333')}",
+                "position": "Operador de Máquina Offset",
+                "department": "Taller",
+                "base_salary": Decimal("570000"),
+                "afp_name": "Modelo",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": True,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.TRAMO_A,
+                "cargas_familiares": 3,
+                "colacion": Decimal("50000"),
+                "movilizacion": Decimal("35000"),
+            },
+            {
+                "tax_id": f"44444444-{compute_rut_dv('44444444')}",
+                "position": "Encargado de Bodega",
+                "department": "Bodega",
+                "base_salary": Decimal("550000"),
+                "afp_name": "Habitat",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.PARCIAL_40BIS,
+                "jornada_hours": Decimal("36.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.TRAMO_C,
+                "cargas_familiares": 1,
+                "colacion": Decimal("45000"),
+                "movilizacion": Decimal("30000"),
+            },
+            {
+                "tax_id": f"55555555-{compute_rut_dv('55555555')}",
+                "position": "Ejecutivo de Ventas",
+                "department": "Ventas",
+                "base_salary": Decimal("560000"),
+                "afp_name": "Provida",
+                "salud_type": Employee.SaludType.ISAPRE,
+                "isapre_amount_uf": Decimal("1.5000"),
+                "jornada_type": Employee.JornadaType.EXENTA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.TRAMO_D,
+                "cargas_familiares": 0,
+                "colacion": Decimal("50000"),
+                "movilizacion": Decimal("40000"),
+            },
+            {
+                "tax_id": f"66666666-{compute_rut_dv('66666666')}",
+                "position": "Diseñador Gráfico",
+                "department": "Diseño",
+                "base_salary": Decimal("540000"),
+                "afp_name": "Modelo",
+                "salud_type": Employee.SaludType.FONASA,
+                "jornada_type": Employee.JornadaType.ORDINARIA_22,
+                "jornada_hours": Decimal("44.00"),
+                "contract_type": Employee.ContractType.INDEFINIDO,
+                "trabajo_pesado": False,
+                "asignacion_familiar": Employee.AsignacionFamiliarTramo.TRAMO_A,
+                "cargas_familiares": 4,
+                "colacion": Decimal("55000"),
+                "movilizacion": Decimal("35000"),
+            },
+        ]
+
+        created_employees = []
+        for emp_data in employees_data:
+            contact = Contact.objects.filter(tax_id=emp_data["tax_id"]).first()
+            if not contact:
+                continue
+            afp = AFP.objects.filter(name=emp_data["afp_name"]).first()
             emp, created = Employee.objects.get_or_create(
-                contact=admin_contact,
+                contact=contact,
                 defaults={
-                    "position": "Gerente de Operaciones",
-                    "base_salary": Decimal("1200000"),
-                    "afp": AFP.objects.filter(name="Habitat").first(),
-                    "salud_type": Employee.SaludType.FONASA,
-                    "start_date": timezone.now().date().replace(month=1, day=1),
+                    "position": emp_data["position"],
+                    "department": emp_data.get("department", ""),
+                    "base_salary": emp_data["base_salary"],
+                    "afp": afp,
+                    "salud_type": emp_data["salud_type"],
+                    "isapre_amount_uf": emp_data.get("isapre_amount_uf", Decimal("0")),
+                    "jornada_type": emp_data["jornada_type"],
+                    "jornada_hours": emp_data["jornada_hours"],
+                    "contract_type": emp_data["contract_type"],
+                    "trabajo_pesado": emp_data["trabajo_pesado"],
+                    "asignacion_familiar": emp_data["asignacion_familiar"],
+                    "cargas_familiares": emp_data["cargas_familiares"],
+                    "start_date": date(2026, 1, 1),
                 },
             )
             if created:
-                # Add some specific amounts
                 colacion = PayrollConcept.objects.get(name="Asignación de Colación")
                 movilidad = PayrollConcept.objects.get(name="Asignación de Movilización")
-                EmployeeConceptAmount.objects.create(
-                    employee=emp, concept=colacion, amount=Decimal("60000")
+                EmployeeConceptAmount.objects.get_or_create(
+                    employee=emp, concept=colacion, defaults={"amount": emp_data["colacion"]}
                 )
-                EmployeeConceptAmount.objects.create(
-                    employee=emp, concept=movilidad, amount=Decimal("40000")
+                EmployeeConceptAmount.objects.get_or_create(
+                    employee=emp, concept=movilidad, defaults={"amount": emp_data["movilizacion"]}
                 )
-            self.stdout.write(f"    ✓ Demo Employee '{admin_contact.name}' created.")
+                self.stdout.write(f"    ✓ Employee '{contact.name}' — {emp_data['position']} (${emp_data['base_salary']:,.0f})")
+            created_employees.append(emp)
+
+        # 5. Payrolls: Ene-Jun 2026 for each employee
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+
+        from treasury.services import TreasuryService as _TS
+
+        admin_contact = Contact.objects.filter(tax_id="11111111-1").first()
+        _funding_amount = Decimal("30000000")
+        if bco_estado.current_balance < _funding_amount:
+            _TS.create_movement(
+                amount=_funding_amount,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.TRANSFER,
+                to_account=bco_estado,
+                partner=admin_contact,
+                justify_reason=TreasuryMovement.JustifyReason.CAPITAL_CONTRIBUTION,
+                created_by=User.objects.filter(is_superuser=True).first(),
+                date=timezone.now().date(),
+                reference="Aporte de Capital — Nóminas Demo",
+                notes=f"Aporte de ${_funding_amount:,.0f} para cubrir pagos de remuneraciones.",
+            )
+            bco_estado.refresh_from_db()
+            self.stdout.write(
+                f"    ✓ Aporte de capital ${_funding_amount:,.0f} → BCO-ESTADO "
+                f"(saldo ahora: ${bco_estado.current_balance:,.0f})"
+            )
+
+        payroll_months = [(2026, m) for m in range(1, 7)]
+        payroll_count = 0
+        payment_count = 0
+
+        for emp in created_employees:
+            for year, month in payroll_months:
+                existing = Payroll.objects.filter(
+                    employee=emp, period_year=year, period_month=month
+                ).first()
+                if existing:
+                    continue
+
+                try:
+                    payroll = PayrollService.generate_proforma_payroll(
+                        employee_id=emp.pk, year=year, month=month
+                    )
+                    post_payroll(payroll)
+                    payroll_count += 1
+
+                    PayrollPaymentService.pay_salary(
+                        payroll,
+                        treasury_account_id=bco_estado.pk,
+                        payment_date=date(year, month, 28),
+                        payment_method="TRANSFER",
+                        notes="Pago remuneración demo",
+                        created_by=User.objects.filter(is_superuser=True).first(),
+                    )
+                    PayrollPaymentService.pay_previred(
+                        payroll,
+                        treasury_account_id=bco_estado.pk,
+                        payment_date=date(year, month, 28),
+                        payment_method="TRANSFER",
+                        notes="Pago previred demo",
+                        created_by=User.objects.filter(is_superuser=True).first(),
+                    )
+                    payment_count += 2
+                except Exception as e:
+                    import traceback
+                    self.stdout.write(self.style.ERROR(
+                        f"    ✗ Payroll {emp.code} {year}/{month:02d}: {str(e)[:120]}"
+                    ))
+                    traceback.print_exc()
+
+        self.stdout.write(
+            f"    ✓ {len(created_employees)} empleados, "
+            f"{payroll_count} nóminas posteadas, {payment_count} pagos registrados"
+        )
 
     def _initialize_workflow_settings(self):
         """Seeds the WorkflowSettings singleton and standard NotificationRules."""
@@ -3087,4 +3641,121 @@ class Command(BaseCommand):
 
         self.stdout.write(
             f"    ✓ Budget '{budget.name}' created/updated with {total_items} monthly items."
+        )
+
+    def _close_past_periods(self, accounts):
+        """Close past tax/accounting periods with full F29 lifecycle.
+
+        For each month before the current month:
+        1. Create F29 declaration (auto-calculates from invoices)
+        2. Register F29 (creates VAT clearing journal entry)
+        3. Pay F29 if amount due > 0
+        4. Close TaxPeriod
+        5. Close AccountingPeriod
+        """
+        from tax.services import (
+            AccountingPeriodService,
+            F29CalculationService,
+            F29PaymentService,
+            TaxPeriodService,
+        )
+
+        admin = User.objects.filter(is_superuser=True).first()
+        bco_estado = TreasuryAccount.objects.get(code="BCO-ESTADO")
+        current_year = timezone.now().year
+        current_month = timezone.now().month
+
+        self.stdout.write(f"\n{'─' * 50}")
+        self.stdout.write("  Closing past periods (F29 + Accounting)...")
+
+        for month in range(1, current_month):
+            self.stdout.write(f"\n  ── Periodo {month:02d}/{current_year} ──")
+
+            # 1. Create F29 declaration
+            try:
+                declaration = F29CalculationService.create_or_update_declaration(
+                    year=current_year, month=month,
+                )
+                self.stdout.write(
+                    f"    ✓ F29 creado: ventas=${declaration.sales_taxed:,.0f}, "
+                    f"compras=${declaration.purchases_taxed:,.0f}, "
+                    f"IVA por pagar=${declaration.vat_to_pay:,.0f}"
+                )
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f"    ⚠ F29 création falló: {str(e)[:80]}"
+                ))
+                continue
+
+            # 2. Register F29 (journal entry)
+            if not declaration.is_registered:
+                try:
+                    F29CalculationService.register_declaration(
+                        declaration_id=declaration.pk,
+                        folio_number=f"SII-{current_year}-{month:02d}",
+                    )
+                    self.stdout.write(f"    ✓ F29 registrado (folio: SII-{current_year}-{month:02d})")
+                except Exception as e:
+                    self.stdout.write(self.style.WARNING(
+                        f"    ⚠ F29 registro falló: {str(e)[:80]}"
+                    ))
+                    continue
+
+            # 3. Pay F29 if amount due > 0
+            if declaration.total_amount_due > 0:
+                already_paid = sum(p.amount for p in declaration.payments.all())
+                remaining = declaration.total_amount_due - already_paid
+                if remaining > 0:
+                    try:
+                        from datetime import date as _date
+
+                        F29PaymentService.register_payment(
+                            declaration_id=declaration.pk,
+                            payment_data={
+                                "amount": remaining,
+                                "treasury_account_id": bco_estado.pk,
+                                "payment_date": _date(current_year, month, 28),
+                                "payment_method": "TRANSFER",
+                                "reference": f"Pago F29 {month:02d}/{current_year}",
+                            },
+                            user=admin,
+                        )
+                        self.stdout.write(
+                            f"    ✓ F29 pagado: ${remaining:,.0f} vía Transferencia BCO-ESTADO"
+                        )
+                    except Exception as e:
+                        self.stdout.write(self.style.WARNING(
+                            f"    ⚠ F29 pago falló: {str(e)[:80]}"
+                        ))
+                else:
+                    self.stdout.write(f"    ✓ F29 ya pagado completamente")
+            else:
+                self.stdout.write(f"    ✓ F29 sin saldo a pagar")
+
+            # 4. Close TaxPeriod
+            try:
+                TaxPeriodService.close_period(
+                    year=current_year, month=month, user=admin,
+                )
+                self.stdout.write(f"    ✓ Período tributario cerrado")
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f"    ⚠ Cierre tributario falló: {str(e)[:80]}"
+                ))
+                continue
+
+            # 5. Close AccountingPeriod
+            try:
+                AccountingPeriodService.close_period(
+                    year=current_year, month=month, user=admin,
+                )
+                self.stdout.write(f"    ✓ Período contable cerrado")
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f"    ⚠ Cierre contable falló: {str(e)[:80]}"
+                ))
+
+        closed_count = current_month - 1
+        self.stdout.write(
+            f"\n  ✓ {closed_count} períodos procesados para cierre ({current_year})"
         )

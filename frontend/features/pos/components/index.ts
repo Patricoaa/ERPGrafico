@@ -1,3 +1,4 @@
+export { POSApprovalCard } from './POSApprovalCard'
 export { Cart } from './Cart'
 export { CartItem } from './CartItem'
 export { DraftCartsClientView } from './DraftCartsClientView'

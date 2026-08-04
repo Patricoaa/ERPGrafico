@@ -233,7 +233,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                 <span className="font-bold text-sm tracking-tight text-foreground">Notificaciones</span>
                             </div>
                             {unreadCount > 0 && (
-                                <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold uppercase" onClick={handleMarkAllRead}>
+                                <Button variant="ghost" size="sm" className="h-7 text-[11px] font-bold uppercase" onClick={handleMarkAllRead}>
                                     Leer Todo
                                 </Button>
                             )}
@@ -246,7 +246,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                     <DropdownMenuItem key={n.id} className="p-3 cursor-pointer" onClick={() => handleNotificationClick(n)}>
                                         <div className="flex flex-col gap-1">
                                             <span className="font-bold text-xs">{n.title}</span>
-                                            <p className="text-[10px] text-muted-foreground line-clamp-2">{n.message}</p>
+                                            <p className="text-[11px] text-muted-foreground line-clamp-2">{n.message}</p>
                                         </div>
                                     </DropdownMenuItem>
                                 ))
@@ -280,8 +280,8 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <DropdownMenuContent className="w-56 border-sidebar-border shadow-overlay" align="end" sideOffset={12}>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
-                                <Avatar className="h-7 w-7 rounded-full">
-                                    <AvatarFallback className=" font-black text-[10px]">
+                                <Avatar className="h-7 w-7 rounded-md">
+                                    <AvatarFallback className="rounded-md font-black text-[10px]">
                                         {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                     </AvatarFallback>
                                 </Avatar>
@@ -289,7 +289,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                     <p className="text-xs font-bold text-foreground leading-tight">
                                         {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'Usuario'}
                                     </p>
-                                    <p className="text-[9px] uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
+                                    <p className="text-[10px] uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
                                 </div>
                             </div>
                         </DropdownMenuLabel>

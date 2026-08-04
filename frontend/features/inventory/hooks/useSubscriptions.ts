@@ -41,6 +41,8 @@ export function useSubscriptions(filters?: FilterState) {
             const params = new URLSearchParams()
             if (filters?.status) params.append('status', filters.status)
             if (filters?.search) params.append('search', filters.search)
+            if (filters?.date_from) params.append('date_from', filters.date_from)
+            if (filters?.date_to) params.append('date_to', filters.date_to)
             const response = await api.get<{ results: Subscription[] }>('/inventory/subscriptions/', { params })
             return response.data.results
         },

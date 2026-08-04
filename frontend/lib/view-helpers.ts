@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import React from "react"
 import type { Table as ReactTable, Row, VisibilityState } from "@tanstack/react-table"
-import { DomainCard, EntityCard, EmptyState, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
+import { EntityCard, EmptyState, resolveEmptyState, SkeletonShell, type DataTableEmptyState, type EntityCardSkeletonProps } from "@/components/shared"
 import { Skeleton } from "@/components/ui/skeleton"
 import { groupByDate, groupItems, type Group } from "@/lib/group-utils"
 
@@ -21,75 +21,14 @@ import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 // matching the table empty-state behavior.
 const CARD_EMPTY_WRAPPER = "flex h-full min-h-[12rem] items-center justify-center"
 
-/**
- * Creates a renderCustomView function for entities that use DomainCard (workflow entities).
- * Eliminates the ~25 lines of duplicated renderCustomView boilerplate per consumer.
- *
- * Usage:
- *   renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', {
- *     onRowClick: handleRowClick,
- *     isSelected: (data) => hubConfig?.orderId === data.id,
- *     isHubOpen,
- *   }) : undefined}
- */
-export function createDomainCardView(
-  entityLabel: string,
-  options: {
-    onRowClick?: (data: Record<string, unknown>) => void
-    isSelected?: (data: Record<string, unknown>) => boolean
-    isHubOpen?: boolean
-    emptyState?: DataTableEmptyState
-    isFiltered?: boolean
-    hasBulkActions?: boolean
-  }
-) {
-  const DomainCardView = (table: ReactTable<Record<string, unknown>>) => {
-    const rows = table.getRowModel().rows
-    if (rows.length === 0) {
-      const resolved = resolveEmptyState(options.emptyState, options.isFiltered)
-      return React.createElement(
-        "div",
-        { className: CARD_EMPTY_WRAPPER },
-        React.createElement(EmptyState, {
-          context: resolved.context,
-          icon: resolved.icon,
-          title: resolved.title,
-          description: resolved.description,
-          action: resolved.action,
-          className: "h-full w-full",
-        })
-      )
-    }
-    const isAnySelected = table.getSelectedRowModel().rows.length > 0
-
-    return React.createElement(
-      "div",
-      { className: "grid gap-3 pt-1" },
-      rows.map((row) =>
-        React.createElement(DomainCard, {
-          key: row.original.id as React.Key,
-          label: entityLabel,
-          data: row.original,
-          isSelected: options.isSelected?.(row.original) ?? false,
-          isHubOpen: options.isHubOpen ?? false,
-          onClick: () => {
-            if (options.hasBulkActions && isAnySelected) {
-              row.toggleSelected()
-            } else {
-              options.onRowClick?.(row.original)
-            }
-          },
-          visibleColumns: table.getState().columnVisibility,
-          selectable: options.hasBulkActions,
-          checked: row.getIsSelected(),
-          onCheckedChange: (checked) => row.toggleSelected(checked),
-          isAnySelected,
-        })
-      )
-    )
-  }
-  DomainCardView.displayName = "DomainCardView"
-  return DomainCardView
+interface InjectedCardProps {
+  key?: React.Key
+  entityLabel?: string
+  selectable?: boolean
+  checked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  isAnySelected?: boolean
+  onClick?: () => void
 }
 
 /**
@@ -115,7 +54,6 @@ export function createEntityCardView(
 ) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
   const layout = options.gridLayout ?? policy?.gridLayout ?? 'single-column'
-
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-2"
@@ -133,6 +71,7 @@ export function createEntityCardView(
           title: resolved.title,
           description: resolved.description,
           action: resolved.action,
+          entityLabel: resolved.entityLabel,
           className: "h-full w-full",
         })
       )
@@ -145,11 +84,12 @@ export function createEntityCardView(
       rows.map((row) => {
         const node = options.renderCard(row.original, row, table)
         if (React.isValidElement(node)) {
-          const originalOnClick = (node.props as any).onClick
+          const originalOnClick = (node.props as Record<string, unknown>).onClick as (() => void) | undefined
           const isChecked = row.getIsSelected()
 
-          const injectedProps: Record<string, any> = {
-            key: (row.original as Record<string, unknown>).id as React.Key ?? row.id
+          const injectedProps: InjectedCardProps = {
+            key: (row.original as Record<string, unknown>).id as React.Key ?? row.id,
+            entityLabel,
           }
 
           if (options.hasBulkActions) {
@@ -219,6 +159,7 @@ export function createCardGroupView<TData>(
           title: resolved.title,
           description: resolved.description,
           action: resolved.action,
+          entityLabel: resolved.entityLabel,
           className: "h-full w-full",
         }),
       )
@@ -281,8 +222,8 @@ export function createCardGroupView<TData>(
               const row = rows.find(r => (r.original as Record<string, unknown>).id === (item as Record<string, unknown>).id)
               const node = renderCard(item, row, table)
               if (React.isValidElement(node)) {
-                const originalOnClick = (node.props as any).onClick
-                const injectedProps: Record<string, any> = {
+                const originalOnClick = (node.props as Record<string, unknown>).onClick as (() => void) | undefined
+                const injectedProps: InjectedCardProps = {
                   key: (item as Record<string, unknown>).id as React.Key,
                 }
 
@@ -321,15 +262,23 @@ export function createCardGroupView<TData>(
  *   renderLoadingView={isCustomView ? createCardLoadingView('single-column', 8) : undefined}
  *   // With section control:
  *   renderLoadingView={createCardLoadingView('single-column', 6, { showBody: false, showFooter: true })}
+ *   // With cardVariant from registry:
+ *   renderLoadingView={createCardLoadingView('single-column', 8, undefined, 'compact')}
  */
 export function createCardLoadingView(
   layout: 'single-column' | 'multi-column' = 'single-column',
   count: number = 8,
-  skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+  skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>,
+  cardVariant?: 'highlights' | 'summary' | 'full' | 'workflow',
 ) {
   const gridClass = layout === 'multi-column'
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-2"
     : "grid gap-3 pt-1"
+
+  const isCompact = cardVariant === 'highlights' || cardVariant === 'summary'
+  const effectiveSkeletonProps = isCompact
+    ? { ...skeletonProps, showBody: false, showFooter: false }
+    : skeletonProps
 
   const CardLoadingView = () =>
     React.createElement(
@@ -338,8 +287,8 @@ export function createCardLoadingView(
       Array.from({ length: count }).map((_, i) =>
         React.createElement(EntityCard.Skeleton, {
           key: i,
-          variant: layout === 'multi-column' ? 'compact' : undefined,
-          ...skeletonProps,
+          variant: isCompact || layout === 'multi-column' ? 'compact' : undefined,
+          ...effectiveSkeletonProps,
         })
       )
     )
@@ -361,6 +310,7 @@ export function createCardGroupLoadingView(
     itemsPerGroup?: number
     gridLayout?: 'single-column' | 'multi-column'
     skeletonProps?: Pick<EntityCardSkeletonProps, 'showHeader' | 'showBody' | 'showFooter'>
+    cardVariant?: 'highlights' | 'summary' | 'full' | 'workflow'
   }
 ) {
   const {
@@ -368,7 +318,13 @@ export function createCardGroupLoadingView(
     itemsPerGroup = 2,
     gridLayout = 'single-column',
     skeletonProps,
+    cardVariant,
   } = options ?? {}
+
+  const isCompact = cardVariant === 'highlights' || cardVariant === 'summary'
+  const effectiveSkeletonProps = isCompact
+    ? { ...skeletonProps, showBody: false, showFooter: false }
+    : skeletonProps
 
   const innerGridClass = gridLayout === "multi-column"
     ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3"
@@ -407,8 +363,8 @@ export function createCardGroupLoadingView(
             Array.from({ length: itemsPerGroup }).map((_, j) =>
               React.createElement(EntityCard.Skeleton, {
                 key: `skel-card-${i}-${j}`,
-                variant: gridLayout === 'multi-column' ? 'compact' : undefined,
-                ...skeletonProps,
+                variant: isCompact || gridLayout === 'multi-column' ? 'compact' : undefined,
+                ...effectiveSkeletonProps,
               })
             ),
           ),
@@ -417,76 +373,6 @@ export function createCardGroupLoadingView(
     )
   CardGroupLoadingView.displayName = "CardGroupLoadingView"
   return CardGroupLoadingView
-}
-
-/**
- * Creates a renderSubComponent callback for DataTable with optional lazy-loading
- * and a built-in loading state. Eliminates the boilerplate of managing expand
- * state + fetch-on-expand per consumer.
- *
- * Usage:
- *   renderSubComponent={createExpandableRowView({
- *     lazyLoad: (row) => fetchDetail(row.id),
- *     renderDetail: (row, detail) => <DetailPanel data={detail} />,
- *   })}
- */
-export function createExpandableRowView<TData, TDetail = unknown>(
-  config: {
-    /** Called when the row expands for the first time. Return a promise for lazy data. */
-    lazyLoad?: (row: TData) => Promise<TDetail>
-    /** Renders the expanded detail panel. Receives the row data and optional lazy-loaded detail. */
-    renderDetail: (row: TData, detail: TDetail | null) => React.ReactNode
-    /** Skeleton rows to show while lazyLoad is in-flight. @default 2 */
-    skeletonRows?: number
-  }
-) {
-  const cache = new Map<string | number, TDetail | null>()
-
-  function ExpandableRowRenderer({ row }: { row: Row<TData> }) {
-    const [detail, setDetail] = useState<TDetail | null>(null)
-    const [loading, setLoading] = useState(false)
-    const id = (row.original as Record<string, unknown>).id as string | number
-
-    const handleExpand = useCallback(async () => {
-      if (!config.lazyLoad) return
-      if (cache.has(id)) {
-        const cached = cache.get(id)
-        if (cached !== undefined) setDetail(cached)
-        return
-      }
-      setLoading(true)
-      try {
-        const result = await config.lazyLoad(row.original)
-        cache.set(id, result)
-        setDetail(result)
-      } finally {
-        setLoading(false)
-      }
-    }, [id, row.original])
-
-    React.useEffect(() => {
-      handleExpand()
-    }, [handleExpand])
-
-    if (loading) {
-      const skeletonCount = config.skeletonRows ?? 2
-      return React.createElement("div", { className: "p-4 space-y-3" },
-        Array.from({ length: skeletonCount }).map((_, i) =>
-          React.createElement("div", {
-            key: i,
-            className: "h-8 bg-muted/30 rounded animate-pulse"
-          })
-        )
-      )
-    }
-
-    return config.renderDetail(row.original, detail)
-  }
-  ExpandableRowRenderer.displayName = "ExpandableRowRenderer"
-
-  const ExpandableRowView = (row: Row<TData>) => React.createElement(ExpandableRowRenderer, { row })
-  ExpandableRowView.displayName = "ExpandableRowView"
-  return ExpandableRowView
 }
 
 /**

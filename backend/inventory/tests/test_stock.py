@@ -54,3 +54,90 @@ def test_stock_recalculation_and_update():
     from django.core.exceptions import ValidationError
     with pytest.raises(ValidationError):
         move.delete()
+
+
+@pytest.mark.django_db
+def test_stock_move_direction_classification():
+    """direction property classifies moves as IN/OUT/TRANSFER/ADJUSTMENT/OTHER."""
+    category = ProductCategory.objects.create(name='Dir Category')
+    product = Product.objects.create(name='Dir Product', category=category)
+    warehouse_a = Warehouse.objects.create(name='Dir WH A', code='DWA1')
+    warehouse_b = Warehouse.objects.create(name='Dir WH B', code='DWB1')
+
+    internal_a, _ = Location.objects.get_or_create(
+        location_type='INTERNAL', warehouse=warehouse_a, defaults={'name': 'Interno A'}
+    )
+    internal_b, _ = Location.objects.get_or_create(
+        location_type='INTERNAL', warehouse=warehouse_b, defaults={'name': 'Interno B'}
+    )
+    vendor, _ = Location.objects.get_or_create(location_type='VENDOR', defaults={'name': 'Proveedor'})
+    customer, _ = Location.objects.get_or_create(location_type='CUSTOMER', defaults={'name': 'Cliente'})
+    adjustment, _ = Location.objects.get_or_create(
+        location_type='VIRTUAL', name='Ajuste por Merma/Pérdida', defaults={'location_type': 'VIRTUAL'}
+    )
+
+    def move(src, dst):
+        return StockMove.objects.create(
+            product=product,
+            source_location=src,
+            destination_location=dst,
+            quantity=Decimal('5'),
+        )
+
+    assert move(vendor, internal_a).direction == 'IN'
+    assert move(internal_a, customer).direction == 'OUT'
+    assert move(internal_a, internal_b).direction == 'TRANSFER'
+    assert move(adjustment, internal_a).direction == 'ADJUSTMENT'
+    assert move(vendor, customer).direction == 'OTHER'
+
+
+@pytest.mark.django_db
+def test_stock_move_direction_filter():
+    """GET /api/inventory/moves/?direction=IN filters by derived direction."""
+    from django.contrib.auth import get_user_model
+    from rest_framework.test import APIClient
+
+    category = ProductCategory.objects.create(name='Filter Category')
+    product = Product.objects.create(name='Filter Product', category=category)
+    warehouse_a = Warehouse.objects.create(name='Filter WH A', code='FWA1')
+    warehouse_b = Warehouse.objects.create(name='Filter WH B', code='FWB1')
+
+    internal_a, _ = Location.objects.get_or_create(
+        location_type='INTERNAL', warehouse=warehouse_a, defaults={'name': 'Filter Interno A'}
+    )
+    internal_b, _ = Location.objects.get_or_create(
+        location_type='INTERNAL', warehouse=warehouse_b, defaults={'name': 'Filter Interno B'}
+    )
+    vendor, _ = Location.objects.get_or_create(location_type='VENDOR', defaults={'name': 'Proveedor'})
+    customer, _ = Location.objects.get_or_create(location_type='CUSTOMER', defaults={'name': 'Cliente'})
+
+    def move(src, dst):
+        return StockMove.objects.create(
+            product=product,
+            source_location=src,
+            destination_location=dst,
+            quantity=Decimal('5'),
+        )
+
+    move_in = move(vendor, internal_a)
+    move_out = move(internal_a, customer)
+    move_transfer = move(internal_a, internal_b)
+
+    client = APIClient()
+    user, _ = get_user_model().objects.get_or_create(
+        username='direction_filter_admin',
+        defaults={'is_superuser': True},
+    )
+    client.force_authenticate(user=user)
+
+    response = client.get('/api/inventory/moves/?direction=IN')
+    assert response.status_code == 200
+    ids = [row['id'] for row in response.json()['results']]
+    assert move_in.id in ids
+    assert move_out.id not in ids
+    assert move_transfer.id not in ids
+
+    response = client.get('/api/inventory/moves/?direction=TRANSFER')
+    ids = [row['id'] for row in response.json()['results']]
+    assert move_transfer.id in ids
+    assert move_in.id not in ids

@@ -20,7 +20,8 @@ import { OrderHubView, type OrderHubData } from "./OrderHubView"
 import type { Order, Payment } from "../types"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
-    PanelHeader
+    PanelHeader,
+    SkeletonShell,
 } from "@/components/shared"
 
 export interface OrderHubPanelProps {
@@ -97,43 +98,6 @@ export function OrderHubPanel({
         return { label: 'Pendiente', status: 'neutral', icon: MinusCircle }
     }, [hubData, isNoteMode, activeInvoice, activeDoc, type])
 
-    if (!activeDoc) {
-        return (
-            <div className="flex flex-col h-full overflow-hidden">
-                {/* Header skeleton */}
-                {showHeader && (
-                    <div className="border-b shrink-0 px-6 pt-6 pb-4">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4">
-                                <div className="h-8 w-8 rounded bg-muted animate-pulse" />
-                                <div className="h-5 w-32 rounded bg-muted animate-pulse" />
-                            </div>
-                            <div className="h-6 w-6 rounded bg-muted animate-pulse" />
-                        </div>
-                    </div>
-                )}
-                {/* Phase cards skeleton */}
-                <div className="flex-1 overflow-y-auto px-4 pt-5 pb-4 space-y-2.5">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="p-4 rounded-md border border-border bg-card/50 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <div className="h-5 w-40 rounded bg-muted animate-pulse" />
-                                <div className="h-5 w-5 rounded-full bg-muted animate-pulse" />
-                            </div>
-                            <div className="space-y-2">
-                                <div className="h-3 w-full rounded bg-muted/60 animate-pulse" />
-                                <div className="h-3 w-2/3 rounded bg-muted/40 animate-pulse" />
-                            </div>
-                            <div className="pt-2 border-t border-border/20 flex justify-end">
-                                <div className="h-8 w-24 rounded bg-muted animate-pulse" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )
-    }
-
     const TopLeftIcon = (() => {
         if (activeDoc?.dte_type === 'NOTA_CREDITO' || activeDoc?.dte_type === 'NOTA_DEBITO') return Receipt
         if (activeInvoice || type === 'purchase' || type === 'obligation') return FileText
@@ -143,19 +107,20 @@ export function OrderHubPanel({
 
     return (
         <TooltipProvider delayDuration={150}>
-            <div className="flex flex-col h-full overflow-hidden">
-                {/* ── Panel Header (only in panel context) ──────────────────── */}
-                {showHeader && (
-                    <div className="border-b shrink-0 px-6 pt-6 pb-4">
-                        <PanelHeader
-                            title={activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
-                            icon={TopLeftIcon}
-                            onClose={onClose}
-                            closeTooltip="Cerrar Hub"
-                            titleClassName="text-mdc font-black tracking-tight"
-                        />
-                    </div>
-                )}
+            <SkeletonShell isLoading={!activeDoc} ariaLabel="Cargando panel de control">
+                <div className="flex flex-col h-full overflow-hidden">
+                    {/* ── Panel Header (only in panel context) ──────────────────── */}
+                    {showHeader && (
+                        <div className="border-b shrink-0 px-6 pt-6 pb-4">
+                            <PanelHeader
+                                title={activeDoc ? (activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`) : ''}
+                                icon={TopLeftIcon}
+                                onClose={onClose}
+                                closeTooltip="Cerrar Hub"
+                                titleClassName="text-mdc font-black tracking-tight"
+                            />
+                        </div>
+                    )}
                 {/* ── Scrollable Phase Content ──────────────────────── */}
                 <ScrollArea className="flex-1 w-full ">
                     <div className="px-4 pt-5 pb-4">
@@ -196,8 +161,8 @@ export function OrderHubPanel({
                         saleOrderId={detailsModal.type === 'sale_delivery' ? activeDoc?.id : undefined}
                     />
                 )}
-            </div>
+                </div>
+            </SkeletonShell>
         </TooltipProvider>
     )
 }
-

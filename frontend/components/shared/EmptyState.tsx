@@ -16,6 +16,8 @@ interface EmptyStateProps {
     description?: string
     /** Semantic context for the empty state */
     context?: EmptyStateContext
+    /** Entity label for icon resolution from entity registry */
+    entityLabel?: string
     /** Visual density variant */
     variant?: EmptyStateVariant
     /** Dynamic entity name for personalized messages (e.g., "Orden #123") */
@@ -26,16 +28,6 @@ interface EmptyStateProps {
     secondaryAction?: React.ReactNode
     /** Custom container classes */
     className?: string
-}
-
-const CONTEXT_TO_ENTITY_LABEL: Partial<Record<EmptyStateContext, string>> = {
-    inventory: 'inventory.product',
-    finance: 'finance.bankjournal',
-    production: 'production.workorder',
-    bom: 'production.bom',
-    treasury: 'treasury.treasurymovement',
-    sale: 'sales.saleorder',
-    purchase: 'purchasing.purchaseorder',
 }
 
 const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: string }> = {
@@ -66,6 +58,7 @@ export function EmptyState({
     title,
     description,
     context = 'generic',
+    entityLabel,
     variant = 'full',
     entityName,
     action,
@@ -73,7 +66,6 @@ export function EmptyState({
     className,
 }: EmptyStateProps) {
     const config = CONTEXT_CONFIG[context] || CONTEXT_CONFIG.generic
-    const entityLabel = CONTEXT_TO_ENTITY_LABEL[context]
     const resolvedIcon = entityLabel ? getEntityIcon(entityLabel) : null
     const iconCmp = icon || resolvedIcon || config.icon
     const displayTitle = title || (entityName ? `No hay ${config.title.toLowerCase()} para ${entityName}` : config.title)

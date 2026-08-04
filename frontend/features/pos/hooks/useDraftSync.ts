@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
+import { getClientToken } from '@/lib/client-token'
 import { useRealtime } from '@/features/realtime'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -206,7 +207,7 @@ export function useDraftSync({
         const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
         const wsProtocol = baseUrl.startsWith('https') ? 'wss' : 'ws'
         const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '')
-        const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/`
+        const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/?token=${encodeURIComponent(getClientToken() ?? '')}`
 
         console.log('[DraftSync] Connecting to WebSocket:', wsUrl)
         

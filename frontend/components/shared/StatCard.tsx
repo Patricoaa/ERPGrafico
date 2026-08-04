@@ -21,7 +21,7 @@ export interface StatCardChart {
 }
 
 interface StatCardProps {
-  label: string
+  label?: React.ReactNode
   value?: React.ReactNode
   icon?: LucideIcon
   subtext?: string
@@ -34,6 +34,7 @@ interface StatCardProps {
   active?: boolean
   loading?: boolean
   chart?: React.ReactNode
+  chartLegend?: React.ReactNode
   children?: React.ReactNode
   className?: string
 }
@@ -97,6 +98,7 @@ export function StatCard({
   href,
   onClick,
   chart,
+  chartLegend,
   active = false,
   loading = false,
   children,
@@ -116,7 +118,7 @@ export function StatCard({
   }
 
   const baseCardClasses =
-    "rounded-md border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0"
+    "rounded-sm border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0 h-full"
 
   const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 
@@ -124,28 +126,28 @@ export function StatCard({
 
   const interactiveClasses = isInteractive
     ? variant === "minimal" || variant === "fill"
-        ? "card-base cursor-pointer hover:brightness-95 dark:hover:brightness-125"
-        : "card-base cursor-pointer"
+      ? "card-base cursor-pointer hover:brightness-95 dark:hover:brightness-125"
+      : "card-base cursor-pointer"
     : ""
 
   const containerProps =
     variant === "minimal"
       ? {
-          className: cn(
-            baseCardClasses,
-            "p-3 rounded-md",
-            accentBg[accent],
-            interactiveClasses,
-            active && activeRing[accent],
-            className,
-          ),
-          onClick,
-          role: onClick ? "button" as const : undefined,
-          tabIndex: onClick ? 0 : undefined,
-          onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
-        }
+        className: cn(
+          baseCardClasses,
+          "p-3",
+          accentBg[accent],
+          interactiveClasses,
+          active && activeRing[accent],
+          className,
+        ),
+        onClick,
+        role: onClick ? "button" as const : undefined,
+        tabIndex: onClick ? 0 : undefined,
+        onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
+      }
       : variant === "fill"
-      ? {
+        ? {
           className: cn(
             baseCardClasses,
             accentBg[accent],
@@ -158,10 +160,11 @@ export function StatCard({
           tabIndex: onClick ? 0 : undefined,
           onKeyDown: onClick ? (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick() } } : undefined,
         }
-      : {
+        : {
           className: cn(
             baseCardClasses,
             variant === "default" && "gap-0 py-3",
+            (variant === "chart" || variant === "metric-chart") && "py-0 gap-0",
             variant === "compact" && accentBg[accent],
             interactiveClasses,
             active && activeRing[accent],
@@ -268,7 +271,7 @@ export function StatCard({
           {label}
         </p>
         {renderSubtext()}
-        {chart && <div className="flex-1 min-h-0 w-full mt-2">{chart}</div>}
+        {chart && <div className="flex-1 min-h-0 h-full w-full mt-2">{chart}</div>}
         {children}
       </CardContent>
     )
@@ -276,18 +279,33 @@ export function StatCard({
     const TrendIcon = trendIcon
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0">
-          <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            {label}
-          </CardTitle>
-          {trend && (
-            <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
-              <TrendIcon className="h-3 w-3" />
-              <span>{trend.value}</span>
+        <CardHeader className="flex flex-row items-start justify-between p-5 pb-0 gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            {Icon && (
+              <div className={cn("p-1.5 rounded-md border shrink-0", accentIconBg[accent])}>
+                <Icon className="h-4 w-4" />
+              </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <CardTitle className="text-base font-bold text-foreground">
+                {label}
+              </CardTitle>
+              {subtext && (
+                <p className="text-sm text-muted-foreground mt-0.5">{subtext}</p>
+              )}
             </div>
-          )}
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            {chartLegend}
+            {trend && (
+              <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
+                <TrendIcon className="h-3 w-3" />
+                <span>{trend.value}</span>
+              </div>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+        <CardContent className="flex flex-col flex-1 min-h-0 h-full p-5 pt-4">
           {chart}
         </CardContent>
       </>
@@ -296,24 +314,39 @@ export function StatCard({
     const TrendIcon = trendIcon
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between px-4 py-2.5 border-b shrink-0 gap-4">
+        <CardHeader className="flex flex-row items-start justify-between p-5 pb-0 gap-4">
           <div className="flex items-center gap-2 min-w-0">
-            <span className={cn("font-black  tracking-tighter shrink-0", valueSizeMap[valueSize])}>
-              {value}
-            </span>
-            <span className="text-xs font-bold text-muted-foreground truncate">
-              {label}
-            </span>
-          </div>
-          {trend && (
-            <div className={cn("flex items-center gap-1 text-xs font-bold shrink-0", trendColor)}>
-              <TrendIcon className="h-3 w-3" />
-              <span>{trend.value}</span>
-              {trend.label && <span className="text-muted-foreground font-normal">{trend.label}</span>}
+            {Icon && (
+              <div className={cn("p-1.5 rounded-md border shrink-0", accentIconBg[accent])}>
+                <Icon className="h-4 w-4" />
+              </div>
+            )}
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className={cn("font-black tracking-tighter shrink-0", valueSizeMap[valueSize])}>
+                  {value}
+                </span>
+                <span className="text-sm font-bold text-muted-foreground truncate">
+                  {label}
+                </span>
+              </div>
+              {subtext && (
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{subtext}</p>
+              )}
             </div>
-          )}
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            {chartLegend}
+            {trend && (
+              <div className={cn("flex items-center gap-1 text-xs font-bold", trendColor)}>
+                <TrendIcon className="h-3 w-3" />
+                <span>{trend.value}</span>
+                {trend.label && <span className="text-muted-foreground font-normal">{trend.label}</span>}
+              </div>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1 min-h-0 p-3">
+        <CardContent className="flex flex-col flex-1 min-h-0 h-full p-5 pt-4">
           {chart}
         </CardContent>
       </>
@@ -321,10 +354,12 @@ export function StatCard({
   } else {
     inner = (
       <>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
-          <CardTitle className="text-sm font-medium">{label}</CardTitle>
-          {renderArrowIcon()}
-        </CardHeader>
+        {label && (
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
+            <CardTitle className="text-sm font-medium">{label}</CardTitle>
+            {renderArrowIcon()}
+          </CardHeader>
+        )}
         <CardContent className="py-0">
           {renderValue()}
           {renderSubtext()}

@@ -15,13 +15,9 @@ import {
 } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { Form, FormField } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import { Printer } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { type AppGroup } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -94,12 +90,13 @@ export function GroupDrawer({
         : mode === 'view'
             ? (initialData?.name || 'Grupo')
             : `Editar: ${initialData?.name || ''}`
+    const { printRef, handlePrint } = usePrintableDrawer()
     const identity = useDrawerIdentity('settings.group', mode, initialData, {
         overrideTitle,
         overrideSubtitle: "Configuración de grupo funcional y permisos de acceso",
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
     })
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const width = formDrawerWidth("micro", !!initialData?.id)
 
@@ -158,6 +155,7 @@ export function GroupDrawer({
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={isOpen}
                 onOpenChange={setOpen}
                 side="left"
@@ -165,7 +163,7 @@ export function GroupDrawer({
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

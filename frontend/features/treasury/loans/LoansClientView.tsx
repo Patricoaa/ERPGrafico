@@ -3,12 +3,12 @@
 import React, { useMemo, useCallback } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
-import { FileText, AlertTriangle } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
+    DataTableView,
+    SkeletonShell, AutoEntityCard,
     ToolbarCreateButton,
-    UnifiedSearchBar, useUnifiedSearch,
+    UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useLoans } from '../hooks/useLoans'
@@ -18,7 +18,8 @@ import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
 import { loanActions, type LoanActionsCtx } from './loanActions'
 import type { BankLoan } from './types'
-import { parseDateOnly } from '@/lib/utils'
+import { loanFields } from './loanFields'
+import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 
 export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}) {
     const searchParams = useSearchParams()
@@ -39,6 +40,9 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 { label: 'Finalizados', value: 'completed' },
             ]},
         ],
+        groupBy: [
+            { key: 'status', label: 'Estado', field: 'status' },
+        ],
     }), [])
     const search = useUnifiedSearch(config)
     const isFiltered = search.isFiltered
@@ -56,6 +60,7 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
     const action = searchParams.get("action")
     const isCreateOpen = searchParams.get("modal") === "new"
+    const { openAction, clearActions } = useEntityRouteActions()
 
     const isDetailOpen = !!selectedId && (action === "detail" || !action)
     const isDisburseOpen = !!selectedId && action === "disburse"
@@ -67,42 +72,22 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     )
 
     const clearAll = useCallback(() => {
+        clearActions()
         const params = new URLSearchParams(searchParams.toString())
-        const changed = params.has("selected") || params.has("action") || params.has("modal")
-        params.delete("selected")
-        params.delete("action")
-        params.delete("modal")
-        if (changed) {
+        if (params.has("modal")) {
+            params.delete("modal")
             const query = params.toString()
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
-    }, [router, pathname, searchParams])
+    }, [clearActions, router, pathname, searchParams])
 
     const handleReset = useCallback(() => {
         search.clearAll()
     }, [search.clearAll])
 
     const openLoan = useCallback((id: number, actionType: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("selected", String(id))
-        params.set("action", actionType)
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [router, pathname, searchParams])
-
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
-
-    if (isError) {
-        return (
-            <EmptyState
-                title="Error al cargar créditos"
-                description="Intente nuevamente más tarde."
-                icon={AlertTriangle}
-            />
-        )
-    }
+        openAction(id, actionType)
+    }, [openAction])
 
     const registerAction = (
         <ToolbarCreateButton
@@ -122,77 +107,13 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
     }
 
     const columns: ColumnDef<BankLoan>[] = [
-        {
-            accessorKey: 'display_id',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="ID Interno" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.display_id}</DataCell.Code>,
-        },
-        {
-            accessorKey: 'currency',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Moneda" />,
-            cell: ({ row }) => (
-                <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold">
-                    {row.original.currency}
-                </span>
-            ),
-        },
-        {
-            accessorKey: 'principal',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Capital" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={parseFloat(row.original.principal)} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'interest_rate',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tasa" className="justify-end" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {parseFloat(row.original.interest_rate).toFixed(2)}% {row.original.rate_basis_display.toLowerCase()}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'term_months',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Plazo" className="justify-end" />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.term_months} meses</DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'outstanding_balance',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo Insoluto" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay
-                        amount={parseFloat(row.original.outstanding_balance)}
-                        className={row.original.status === 'ACTIVE' ? 'font-bold' : 'text-muted-foreground'}
-                    />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'next_due_date',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Próx. Vencimiento" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.original.next_due_date
-                        ? parseDateOnly(row.original.next_due_date).toLocaleDateString('es-CL')
-                        : '—'}
-                </DataCell.Text>
-            ),
-        },
-        {
-            accessorKey: 'status',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
-        },
-        loanActions.column(actionsCtx),
+        ...loanFields.toColumns(),
+        loanActions.auto(actionsCtx),
     ]
 
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando créditos">
+        {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -225,40 +146,17 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                         description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
                     }}
                     renderCard={(loan: BankLoan) => (
-                        <EntityCard onClick={() => openLoan(loan.id, "detail")}>
-                            <EntityCard.Header
-                                title={loan.display_id}
-                                subtitle={loan.loan_number || undefined}
-                                trailing={<StatusBadge status={loan.status} />}
-                            />
-                            <EntityCard.Body actions={loanActions.render(loan, actionsCtx)}>
-                                <EntityCard.Field label="Banco" value={loan.lender_name} />
-                                <EntityCard.Field
-                                    label="Capital"
-                                    value={<MoneyDisplay amount={parseFloat(loan.principal)} />}
-                                />
-                                <EntityCard.Field
-                                    label="Saldo Insoluto"
-                                    value={
-                                        <MoneyDisplay
-                                            amount={parseFloat(loan.outstanding_balance)}
-                                            className={loan.status === 'ACTIVE' ? 'font-bold' : 'text-muted-foreground'}
-                                        />
-                                    }
-                                />
-                                <EntityCard.Field
-                                    label="Tasa"
-                                    value={`${parseFloat(loan.interest_rate).toFixed(2)}% ${loan.rate_basis_display.toLowerCase()}`}
-                                />
-                                <EntityCard.Field label="Plazo" value={`${loan.term_months} meses`} />
-                                <EntityCard.Field
-                                    label="Próx. Vencimiento"
-                                    value={loan.next_due_date
-                                        ? parseDateOnly(loan.next_due_date).toLocaleDateString('es-CL')
-                                        : '—'}
-                                />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard 
+                            key={loan.id}
+                            data={loan}
+                            fields={loanFields}
+                            entityLabel="treasury.bankloan"
+                            onClick={() => openLoan(loan.id, "detail")} 
+                            defaultAction={loanActions.defaultAction(actionsCtx)?.(loan) ?? null}
+
+                            actions={loanActions.render(loan, actionsCtx)}
+
+                        />
                     )}
                 />
             </div>
@@ -284,5 +182,6 @@ export function LoansClientView({ bankId: bankIdProp }: { bankId?: number } = {}
                 onOpenChange={(open) => { if (!open) clearAll() }}
             />
         </div>
+        </SkeletonShell>
     )
 }

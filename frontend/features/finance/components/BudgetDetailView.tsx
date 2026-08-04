@@ -4,7 +4,7 @@ import React, { useMemo } from "react"
 import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DataTable, PageHeader, EmptyState, MoneyDisplay, SkeletonShell, DataCell } from "@/components/shared"
+import { DataTable, PageHeader, MoneyDisplay, SkeletonShell, DataCell, StaleDataBanner } from "@/components/shared"
 import type { KpiCardDef } from "@/components/shared"
 import { useBudgetDetailData } from "../hooks/useBudgets"
 import { toast } from "sonner"
@@ -48,7 +48,7 @@ const SKELETON_BUDGET: Budget = {
 
 const SKELETON_EXECUTION: BudgetExecutionData = {
     summary: { total_budgeted: 0, total_actual: 0, total_variance: 0 },
-    items: Array.from({ length: 6 }, (_, i) => ({
+    items: Array.from({ length: 6 }, () => ({
         account_name: '——————————————————',
         account_code: '————',
         budgeted: 0,
@@ -137,18 +137,9 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
         },
     ], [resolvedExecution])
 
-    if (isError) {
-        return (
-            <EmptyState
-                context="finance"
-                title="Error al cargar presupuesto"
-                description="No se pudo cargar la información del presupuesto."
-            />
-        )
-    }
-
     return (
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando detalles del presupuesto">
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
             <div className="space-y-6">
                 <div className="flex items-center gap-4 mb-4">
                     <Button variant="ghost" size="sm" asChild>

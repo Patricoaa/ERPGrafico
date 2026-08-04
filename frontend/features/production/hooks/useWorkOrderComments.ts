@@ -12,7 +12,7 @@ export interface WorkOrderComment {
     user_name: string
     text: string
     created_at: string
-    source_label: 'OT' | 'NV' | string
+    source_label: 'OT' | 'OV' | string
 }
 
 const COMMENTS_KEY = 'work-order-comments'

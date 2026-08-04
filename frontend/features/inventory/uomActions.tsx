@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { UoM } from './hooks/useUoMs'
 
 export interface UoMActionsCtx {
@@ -9,9 +9,7 @@ export interface UoMActionsCtx {
 export const uomActions = createEntityActions<
     UoM,
     UoMActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action action="edit" onClick={() => ctx.onEdit(item.id)} />
-        <DataCell.Action action="delete" onClick={() => ctx.onDelete(item.id)} />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item.id) },
+    { action: "delete", onClick: () => ctx.onDelete(item.id) },
+])

@@ -4,7 +4,15 @@ import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { treasuryApi } from "../api/treasuryApi"
 import { parseDateOnly } from "@/lib/utils"
-import type { TcHubAnalyticsResponse, PurchaseGroupAnalysisRow } from "../card-statements/analyticsTypes"
+import { assignChartColors } from "@/lib/chart-colors"
+import type {
+    TcHubAnalyticsResponse,
+    PaymentPerformanceRow,
+    FinancialCostsByMonth,
+    CreditUtilizationRow,
+    PurchaseGroupAnalysisRow,
+    TcSummaryKpis,
+} from "../card-statements/analyticsTypes"
 
 export interface CostDonutItem {
     id: string
@@ -15,8 +23,12 @@ export interface CostDonutItem {
 export interface StatementsAnalyticsData {
     analytics: TcHubAnalyticsResponse | undefined
     analyticsLoading: boolean
-    paymentEvolutionChart: Array<{ id: string; data: Array<{ x: string; y: number }> }>
+    paymentPerformance: PaymentPerformanceRow[]
+    financialCosts: FinancialCostsByMonth[]
+    creditUtilization: CreditUtilizationRow[]
     purchaseGroupData: PurchaseGroupAnalysisRow[]
+    summary: TcSummaryKpis | undefined
+    paymentEvolutionChart: Array<{ id: string; data: Array<{ x: string; y: number }> }>
     costBreakdownDonut: CostDonutItem[]
 }
 
@@ -49,6 +61,10 @@ export function useStatementsAnalyticsData(
 
         const paymentEvolutionChart = [
             {
+                id: 'Monto a Pagar',
+                data: sortedPayments.map(p => ({ x: p.due_date, y: parseFloat(p.total_to_pay) })),
+            },
+            {
                 id: 'Monto Pagado',
                 data: sortedPayments.map(p => ({ x: p.due_date, y: parseFloat(p.amount_paid) })),
             },
@@ -59,22 +75,22 @@ export function useStatementsAnalyticsData(
 
         const totalPrincipal = groups.reduce((sum, g) => sum + parseFloat(g.total_amount), 0)
         const totalCharges = costs.reduce((sum, c) => sum + parseFloat(c.fees) + parseFloat(c.interest), 0)
-        const totalBilled = analytics?.summary?.total_billed ? parseFloat(analytics.summary.total_billed) : 0
 
-        const otherCharges = Math.max(0, totalBilled - totalPrincipal)
-
-        const costBreakdownDonut = [
-            { id: 'Cuotas', value: totalPrincipal, color: 'var(--chart-1)' },
-            ...(otherCharges > 0 ? [{ id: 'Otros Cargos', value: otherCharges, color: 'var(--chart-4)' as string }] : []),
-            ...(totalCharges > 0 ? [{ id: 'Intereses/Comisiones', value: totalCharges, color: 'var(--chart-3)' as string }] : []),
-        ]
+        const costBreakdownDonut = assignChartColors([
+            { id: 'Capital', value: totalPrincipal },
+            ...(totalCharges > 0 ? [{ id: 'Intereses y Comisiones', value: totalCharges }] : []),
+        ])
 
         return {
             analytics,
             analyticsLoading,
-            paymentEvolutionChart,
+            paymentPerformance: payments,
+            financialCosts: costs,
+            creditUtilization: analytics?.credit_utilization ?? [],
             purchaseGroupData,
+            summary: analytics?.summary,
+            paymentEvolutionChart,
             costBreakdownDonut,
         }
-    }, [analytics, analyticsLoading])
+    }, [analytics, analyticsLoading, granularity])
 }

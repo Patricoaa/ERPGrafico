@@ -88,16 +88,16 @@ def idempotent_endpoint(scope: str):
 
             # First execution path — el record acaba de crearse o quedó en pending sin lock activo.
             try:
-                response = view_func(self, request, *args, **kwargs)
+                with transaction.atomic():
+                    response = view_func(self, request, *args, **kwargs)
+                    record.response_status = response.status_code
+                    record.response_payload = _coerce_payload(response.data)
+                    record.status = IdempotencyRecord.Status.DONE
+                    record.save(update_fields=["response_status", "response_payload", "status"])
             except Exception:
                 record.status = IdempotencyRecord.Status.ERROR
                 record.save(update_fields=["status"])
                 raise
-
-            record.response_status = response.status_code
-            record.response_payload = _coerce_payload(response.data)
-            record.status = IdempotencyRecord.Status.DONE
-            record.save(update_fields=["response_status", "response_payload", "status"])
             return response
 
         return wrapper

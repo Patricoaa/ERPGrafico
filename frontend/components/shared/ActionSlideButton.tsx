@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Loader2, type LucideIcon } from "lucide-react";
 
 export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'destructive' | 'success' | 'cmyk';
+    variant?: 'primary' | 'destructive' | 'success' | 'cmyk' | 'muted';
     size?: 'default' | 'sm' | 'lg' | 'icon' | 'icon-sm' | 'icon-lg';
     /** Show loading spinner and disable interaction */
     loading?: boolean;
@@ -33,7 +33,9 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
         const isDestructive = variant === 'destructive';
         const isSuccess = variant === 'success';
         const isCmyk = variant === 'cmyk';
+        const isMuted = variant === 'muted';
         const isDisabled = disabled || loading;
+        const isLg = size === 'lg';
 
         return (
             <Button
@@ -42,12 +44,14 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 size={size}
                 className={cn(
                     "relative flex items-center justify-center overflow-hidden transition-all duration-300 ease-out cursor-pointer",
-                    "h-9 px-4 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-card",
+                    isLg ? "h-12 px-6 text-xs" : "h-9 px-4 text-[10px]",
+                    "font-black tracking-widest uppercase rounded-sm shadow-card",
                     "border",
                     isPrimary && "text-primary hover:text-primary-foreground bg-primary/5 border-primary",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",
                     isSuccess && "border-success text-success hover:text-success-foreground bg-success/5",
                     isCmyk && "border-border/50 text-foreground hover:text-white bg-transparent",
+                    isMuted && "border-border/50 text-muted-foreground hover:text-foreground bg-transparent",
                     isDisabled && "opacity-50 cursor-not-allowed pointer-events-none",
                     "group",
                     className
@@ -64,7 +68,8 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                         "group-hover:translate-x-0 group-focus-visible:translate-x-0 group-active:translate-x-0",
                         isPrimary && "bg-primary",
                         isDestructive && "bg-destructive",
-                        isSuccess && "bg-success"
+                        isSuccess && "bg-success",
+                        isMuted && "bg-muted"
                     )}
                     {...(isCmyk ? { style: { background: 'var(--gradient-cmyk)' } as React.CSSProperties } : {})}
                 />
@@ -73,13 +78,13 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 <span className="relative z-10 flex items-center justify-center gap-2">
                     {loading ? (
                         // eslint-disable-next-line no-restricted-syntax -- This IS the canonical loading implementation for ActionSlideButton
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className={cn("animate-spin", isLg ? "h-5 w-5" : "h-3.5 w-3.5")} />
                     ) : (
                         (() => {
                             if (!icon) return null;
                             if (typeof icon === 'function' || (typeof icon === 'object' && 'render' in icon)) {
                                 const Icon = icon as React.ComponentType<{ className?: string }>;
-                                return <Icon className="h-3.5 w-3.5" />;
+                                return <Icon className={isLg ? "h-5 w-5" : "h-3.5 w-3.5"} />;
                             }
                             return icon;
                         })()

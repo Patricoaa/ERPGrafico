@@ -1,6 +1,6 @@
 "use client"
 
-import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
+import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge, StaleDataBanner } from "@/components/shared"
 import { useDrawerIdentity } from "@/features/_shared"
 import { useCheck } from '../hooks/useChecks'
 import { formDrawerWidth } from '@/lib/form-widths'
@@ -29,16 +29,8 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
             subtitle={identity.subtitle}
             icon={identity.icon}
         >
-            {isError ? (
-                <div className="p-4">
-                    <EmptyState
-                        context="treasury"
-                        title="Error al cargar cheque"
-                        description="No se pudo cargar la información del cheque."
-                    />
-                </div>
-            ) : (
-                <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cheque">
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cheque">
                     {check ? (
                         <div className="p-4 space-y-4">
                             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -48,7 +40,7 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Estado</span>
-                                    <p><StatusBadge status={check.status} /></p>
+                                    <p><StatusBadge status={check.status} variant="badge" /></p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Banco</span>
@@ -56,7 +48,7 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Monto</span>
-                                    <p className="font-medium"><MoneyDisplay amount={parseFloat(check.amount)} inline /></p>
+                                    <p className="font-medium"><MoneyDisplay amount={parseFloat(check.amount)} inline weight="medium" /></p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground">Emisión</span>
@@ -72,8 +64,8 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                                 </div>
                                 {check.sale_order_display && (
                                     <div>
-                                        <span className="text-muted-foreground">NV Asociada</span>
-                                        <p className="font-medium">NV-{check.sale_order_display.number}</p>
+                                        <span className="text-muted-foreground">OV Asociada</span>
+                                        <p className="font-medium">OV-{check.sale_order_display.number}</p>
                                     </div>
                                 )}
                             </div>
@@ -86,7 +78,6 @@ export function CheckDrawer({ id, open, onOpenChange }: CheckDrawerProps) {
                         </div>
                     ) : null}
                 </SkeletonShell>
-            )}
         </Drawer>
     )
 }

@@ -1,11 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { StepHeader, LabeledInput, PeriodValidationDateInput, LabeledContainer, RadioCard } from "@/components/shared"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+import {LabeledInput, PeriodValidationDateInput, QuantityDisplay, RadioCard} from "@/components/shared"
+import {RadioGroup} from "@/components/ui/radio-group"
 import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useAllowedUoMs } from "@/features/inventory"
 import {
     Select,
@@ -63,7 +61,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     const isServiceMode = isOnlyService
     const isMixedMode = !isOnlyService && hasPhysical && orderLines.some(line => line.product_type === 'SERVICE')
 
-
     // Physical-only items for the table (exclude services in mixed mode)
     const physicalLines = isMixedMode
         ? orderLines.filter(line => line.product_type !== 'SERVICE')
@@ -77,7 +74,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isServiceMode) {
         return (
             <div className="space-y-6">
-                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-md shadow-card shadow-black/5">
+                <div className="flex items-start gap-3 p-4 bg-card border border-primary/20 rounded-md shadow-card shadow-black/5">
                     <Calendar className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
                     <div className="space-y-1">
                         <p className="text-xs font-bold uppercase tracking-wider">Cumplimiento de Servicios</p>
@@ -129,43 +126,39 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     return (
         <div className="space-y-6">
-            <LabeledContainer
-                label="Opciones de Despacho"
+            <RadioGroup
+                value={deliveryData.type}
+                onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
+                className="grid grid-cols-1 gap-3 w-full"
             >
-                <RadioGroup
-                    value={deliveryData.type}
-                    onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL' }))}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full"
-                >
-                <RadioCard
-                    id="del-immediate"
-                    value="IMMEDIATE"
-                    label={isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}
-                    description="Rebajar stock y entregar ahora mismo."
-                    icon={<Package className="h-4 w-4" />}
-                    disabled={hasRestrictedItems}
-                    iconColor="text-primary"
-                />
+            <RadioCard
+                id="del-immediate"
+                value="IMMEDIATE"
+                label={isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}
+                description="Rebajar stock y entregar ahora mismo."
+                icon={<Package className="h-4 w-4" />}
+                disabled={hasRestrictedItems}
+                iconColor="text-primary"
+            />
 
-                <RadioCard
-                    id="del-scheduled"
-                    value="SCHEDULED"
-                    label={isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
-                    description="Reservar para fecha futura."
-                    icon={<Calendar className="h-4 w-4" />}
-                    iconColor="text-primary"
-                />
+            <RadioCard
+                id="del-scheduled"
+                value="SCHEDULED"
+                label={isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
+                description="Reservar para fecha futura."
+                icon={<Calendar className="h-4 w-4" />}
+                iconColor="text-primary"
+            />
 
-                <RadioCard
-                    id="del-partial"
-                    value="PARTIAL"
-                    label="Despacho Parcial"
-                    description="Entregar disponibles hoy."
-                    icon={<Truck className="h-4 w-4" />}
-                    iconColor="text-primary"
-                />
-                </RadioGroup>
-            </LabeledContainer>
+            <RadioCard
+                id="del-partial"
+                value="PARTIAL"
+                label="Despacho Parcial"
+                description="Entregar disponibles hoy."
+                icon={<Truck className="h-4 w-4" />}
+                iconColor="text-primary"
+            />
+            </RadioGroup>
 
             {deliveryData.type === 'PARTIAL' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -210,7 +203,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                     </div>
                                             </TableCell>
                                             <TableCell className="text-right font-semibold">
-                                                {pendingQty.toLocaleString('es-CL')}
+                                                <QuantityDisplay value={pendingQty} decimals={2} inline />
                                             </TableCell>
                                             <TableCell>
                                                 <LabeledInput
@@ -271,7 +264,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 </div>
             )}
 
-
             {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
                 <PeriodValidationDateInput
                     date={deliveryData.date ? new Date(deliveryData.date + 'T12:00:00') : undefined}
@@ -306,6 +298,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                     open={numpadOpen}
                     onOpenChange={setNumpadOpen}
                     title="Cantidad a Despachar"
+                    icon={Package}
                     value={numpadValue}
                     onChange={setNumpadValue}
                     onConfirm={() => {

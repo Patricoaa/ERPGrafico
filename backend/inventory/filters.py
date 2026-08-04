@@ -1,5 +1,6 @@
 from django_filters import rest_framework as filters
 
+from .analytics import StockMoveAnalyticsService
 from .models import Product, StockMove, UoM
 
 
@@ -32,7 +33,15 @@ class StockMoveFilter(filters.FilterSet):
     product_name = filters.CharFilter(field_name="product__name", lookup_expr="icontains")
     date_from = filters.DateFilter(field_name="date", lookup_expr="gte")
     date_to = filters.DateFilter(field_name="date", lookup_expr="lte")
+    direction = filters.ChoiceFilter(method="filter_direction", choices=StockMoveAnalyticsService.DIRECTIONS)
 
     class Meta:
         model = StockMove
-        fields = ["product_id", "source_location_id", "destination_location_id", "product_name", "date_from", "date_to"]
+        fields = ["product_id", "source_location_id", "destination_location_id", "product_name", "date_from", "date_to", "direction"]
+
+    def filter_direction(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.annotate(
+            _direction=StockMoveAnalyticsService._direction_annotation()
+        ).filter(_direction=value)

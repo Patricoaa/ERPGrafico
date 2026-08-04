@@ -8,10 +8,9 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
 import type { MyProfile } from "@/types/profile"
-import type {Payroll} from "@/types/hr"
+import type { Payroll } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { ActionSlideButton, Chip, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
+import { ActionSlideButton, FadeIn, MoneyDisplay } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -24,9 +23,9 @@ import {
     User, ShieldCheck, KeyRound, Mail,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
     Download, Clock, FileText,
-    ChevronDown, ChevronRight, Sun, Moon, Monitor
+    Sun, Moon, Monitor
 } from "lucide-react"
-import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
+import { EmptyState, LabeledInput, UnifiedSearchBar, useUnifiedSearch, createExpanderColumn, StatusBadge } from "@/components/shared"
 import type { UnifiedSearchConfig } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
@@ -72,13 +71,13 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
     }
 
     return (
-        <Tabs value={activeTab} className="w-full h-full flex flex-col">
-            <div className="pt-0 flex-1 min-h-0">
-                <TabsContent value="account" className="mt-0 outline-none space-y-6">
+        <Tabs value={activeTab} className="w-full flex-1 min-h-0 flex flex-col">
+            <div className="pt-0 flex-1 min-h-0 flex flex-col">
+                <TabsContent value="account" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
                     <AccountTab activeSubTab={activeSubTab} />
                 </TabsContent>
 
-                <TabsContent value="personal" className="mt-0 outline-none space-y-6">
+                <TabsContent value="personal" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
                     <PersonalTab
                         profile={profile}
                         selectedPayrolls={selectedPayrolls}
@@ -90,7 +89,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
                 </TabsContent>
 
                 {isPartner && contactDetail && (
-                    <TabsContent value="partner" className="mt-0 outline-none space-y-6">
+                    <TabsContent value="partner" className="mt-0 outline-none flex-1 min-h-0 flex flex-col">
                         <PartnerProfileTab contactId={contactDetail.id} />
                     </TabsContent>
                 )}
@@ -105,7 +104,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
 function AccountTab({ activeSubTab }: { activeSubTab?: string }) {
 
     return (
-        <div className="w-full h-full space-y-8">
+        <div className="w-full flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-8 pb-6">
             {activeSubTab === "preferences" && (
                 <FadeIn delay={0.1} yOffset={10}>
                     <ThemeSelectionCard />
@@ -133,6 +132,13 @@ function ThemeSelectionCard() {
     const { theme } = useTheme()
     const { changeTheme, isSyncing } = useThemeSync()
 
+    const handleThemeKeyDown = (e: React.KeyboardEvent, next: "light" | "dark" | "system") => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            changeTheme(next)
+        }
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -150,11 +156,14 @@ function ThemeSelectionCard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Opción Claro */}
                     <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => changeTheme('light')}
+                        onKeyDown={(e) => handleThemeKeyDown(e, 'light')}
                         className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'light'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
@@ -167,11 +176,14 @@ function ThemeSelectionCard() {
 
                     {/* Opción Oscuro */}
                     <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => changeTheme('dark')}
+                        onKeyDown={(e) => handleThemeKeyDown(e, 'dark')}
                         className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'dark'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
@@ -184,11 +196,14 @@ function ThemeSelectionCard() {
 
                     {/* Opción Sistema */}
                     <div
+                        role="button"
+                        tabIndex={0}
                         onClick={() => changeTheme('system')}
+                        onKeyDown={(e) => handleThemeKeyDown(e, 'system')}
                         className={cn(
-                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'system'
-                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card"
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
@@ -206,13 +221,15 @@ function ThemeSelectionCard() {
 
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
-        <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-medium text-foreground">
-                <span className="text-muted-foreground">{icon}</span>
+        <fieldset className="notched-field pointer-events-none" aria-disabled="true">
+            <legend className="px-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                {label}
+            </legend>
+            <div className="flex items-center gap-2 h-5 px-2 text-sm font-medium text-foreground">
+                <span className="text-muted-foreground/60">{icon}</span>
                 {value}
             </div>
-        </div>
+        </fieldset>
     )
 }
 
@@ -337,7 +354,7 @@ function PersonalTab({
         typeLabel: string;
         amount: string;
         payroll_display_id: string | null;
-        statusLabel?: string;
+        statusKey: string;
     }
 
     const unifiedPayments: UnifiedPayment[] = [
@@ -348,7 +365,7 @@ function PersonalTab({
             typeLabel: 'Anticipo',
             amount: a.amount,
             payroll_display_id: a.payroll_display_id || null,
-            statusLabel: a.is_discounted ? 'Descontado' : 'Pendiente'
+            statusKey: a.is_discounted ? 'DESCONTADO' : 'PENDING'
         })),
         ...payments.map(p => ({
             id: `pay-${p.id}`,
@@ -357,21 +374,9 @@ function PersonalTab({
             typeLabel: p.payment_type_display || p.payment_type,
             amount: p.amount,
             payroll_display_id: p.payroll_display_id || null,
-            statusLabel: 'Pagado'
+            statusKey: 'PAID'
         }))
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-
-    if (!employee) {
-        return (
-            <div className="max-w-3xl">
-                <EmptyState
-                    icon={User}
-                    title="Sin Ficha de Empleado"
-                    description="Su cuenta de usuario no tiene un perfil de empleado asociado. Contacte al administrador si necesita vincular su ficha."
-                />
-            </div>
-        )
-    }
 
     const payrollSearchConfig: UnifiedSearchConfig = useMemo(() => ({
         filters: [
@@ -381,30 +386,23 @@ function PersonalTab({
     }), [])
     const payrollSearch = useUnifiedSearch(payrollSearchConfig)
 
+    if (!employee) {
+        return (
+            <div className="flex-1 flex items-center justify-center w-full">
+                <EmptyState
+                    icon={User}
+                    title="Sin Ficha de Empleado"
+                    description="Su cuenta de usuario no tiene un perfil de empleado asociado. Contacte al administrador si necesita vincular su ficha."
+                />
+            </div>
+        )
+    }
+
     // Payroll columns
     const payrollColumns: ColumnDef<Payroll>[] = [
-        {
-            id: "expander",
-            header: () => null,
-            cell: ({ row }) => {
-                const pId = row.original.display_id
-                const hasPayments = unifiedPayments.some(p => p.payroll_display_id === pId)
-                if (!hasPayments) return null
-                return (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 opacity-50 hover:opacity-100"
-                        onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation()
-                            row.toggleExpanded()
-                        }}
-                    >
-                        {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </Button>
-                )
-            },
-        },
+        createExpanderColumn<Payroll>({
+            canExpand: (row) => unifiedPayments.some(p => p.payroll_display_id === row.display_id)
+        }),
         {
             id: "select",
             header: ({ table }) => (
@@ -444,27 +442,29 @@ function PersonalTab({
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Folio" />,
-            cell: ({ row }) => <DataCell.Code className="text-center font-bold">{row.getValue("display_id")}</DataCell.Code>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
+            meta: { title: "Folio" },
         },
         {
             accessorKey: "period_label",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Período" />,
-            cell: ({ row }) => <DataCell.Text className="text-center text-sm">{row.getValue("period_label")}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("period_label")}</DataCell.Text>,
         },
         {
             accessorKey: "total_haberes",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Haberes" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_haberes")} className="text-success font-bold" />,
+            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_haberes")} direction="inflow" showIcon={false} />,
         },
         {
             accessorKey: "total_descuentos",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Descuentos" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_descuentos") || "0"} className="text-destructive font-bold" />,
+            cell: ({ row }) => <DataCell.CurrencyFlow value={row.getValue("total_descuentos") || "0"} direction="outflow" showIcon={false} />,
         },
         {
             accessorKey: "net_salary",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Líquido" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("net_salary")} className="font-bold text-foreground" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("net_salary")} />,
+            meta: { title: "Líquido" },
         },
         {
             accessorKey: "remuneration_paid_status",
@@ -472,54 +472,47 @@ function PersonalTab({
             cell: ({ row }) => {
                 const s = row.original.remuneration_paid_status
                 return (
-                    <div className="flex justify-center">
-                        <StatusBadge status={s || "PENDING"} />
-                    </div>
+                    <DataCell.Status status={s || "PENDING"} />
                 )
-            }
+            },
+            meta: { title: "Pago" },
         },
-        profilePayrollActions.column(profilePayrollActionsCtx) as ColumnDef<Payroll>,
+        profilePayrollActions.auto(profilePayrollActionsCtx) as ColumnDef<Payroll>,
     ]
 
     // Unified Payment columns
     const unifiedPaymentColumns: ColumnDef<UnifiedPayment>[] = [
         {
             accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Fecha" />,
-            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} className="text-center" />,
+            header: "Fecha",
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
         },
         {
             accessorKey: "typeLabel",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Tipo" />,
-            cell: ({ row }) => {
-                const type = row.original.type
-                const label = row.getValue("typeLabel") as string
-                return (
-                    <div className="flex justify-center">
-                        <Chip size="xs" intent={type === 'SALARIO' ? 'success' : type === 'ANTICIPO' ? 'info' : 'warning'}>
-                            {label}
-                        </Chip>
-                    </div>
-                )
-            },
+            header: "Tipo",
+            cell: ({ row }) => <DataCell.Text>{row.getValue("typeLabel")}</DataCell.Text>,
         },
         {
             accessorKey: "amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Monto" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} className="font-bold" />,
+            header: "Monto",
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("amount")} />,
         },
-
         {
-            accessorKey: "statusLabel",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Estado" />,
-            cell: ({ row }) => <DataCell.Secondary className="text-center font-bold uppercase tracking-wider">{row.original.statusLabel}</DataCell.Secondary>
+            accessorKey: "statusKey",
+            header: "Estado",
+            cell: ({ row }) => {
+                const s = row.original.statusKey
+                return (
+                    <DataCell.Status status={s} size="xs" />
+                )
+            }
         }
     ]
 
     const contact = employee.contact_detail
 
     return (
-        <div className="flex flex-col w-full h-full space-y-6">
+        <div className="flex flex-col w-full flex-1 min-h-0 space-y-6">
             {/* Sub-tab 1: Ficha de Empleado */}
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
@@ -527,7 +520,7 @@ function PersonalTab({
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Ficha de Empleado</CardTitle>
                             <CardDescription>
-                                {employee.display_id} <span className="opacity-30">|</span> {employee.status_display}
+                                {employee.display_id} <span className="opacity-30">|</span> <StatusBadge status={employee.status} label={employee.status_display} />
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">
@@ -566,13 +559,15 @@ function PersonalTab({
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
                                 <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
                                 <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
-                                <div className="space-y-1.5">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sueldo Base</span>
-                                    <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-bold text-foreground">
-                                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                                <fieldset className="notched-field pointer-events-none" aria-disabled="true">
+                                    <legend className="px-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                        Sueldo Base
+                                    </legend>
+                                    <div className="flex items-center gap-2 h-5 px-2 text-sm font-bold text-foreground">
+                                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground/60" />
                                         <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
                                     </div>
-                                </div>
+                                </fieldset>
                                 <InfoField icon={<Clock className="h-3.5 w-3.5" />} label="Jornada" value={employee.jornada_type_display || "—"} />
                             </div>
                         </CardContent>
@@ -583,82 +578,64 @@ function PersonalTab({
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
                 <FadeIn delay={0.1} yOffset={10}>
-                    <Card >
-                        <CardHeader>
-                            <CardTitle className="text-lg text-primary">Historial de Liquidaciones</CardTitle>
-                            <CardDescription>
-                                {payrolls.length} liquidación(es) registrada(s)
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            {selectedPayrolls.length > 0 && (
-                                <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
-                                    <ActionSlideButton
-                                        size="sm"
-                                        className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
-                                        onClick={onBulkDownload}
-                                        disabled={downloadingAll}
-                                        loading={downloadingAll}
-                                    >
-                                        {!downloadingAll && <Download className="h-3.5 w-3.5" />}
-                                        Descargar {selectedPayrolls.length} seleccionada(s)
-                                    </ActionSlideButton>
-                                </div>
-                            )}
-                            <div className="flex-1 min-h-0">
-                                {payrolls.length > 0 ? (
-                                    <DataTable
-                                        columns={payrollColumns}
-                                        data={payrolls}
-                                        defaultPageSize={10}
-                                        variant="standalone"
-                                        noBorder={true}
-                                        toolbarClassName="px-6 pt-6 pb-2 pl-14"
-                                        unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
-                                        renderSubComponent={(row) => {
-                                            const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
-                                            return (
-                                                <div className="bg-muted/30 pb-4">
-                                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar border-t border-b">
-                                                        <DataTable
-                                                            columns={unifiedPaymentColumns}
-                                                            data={relatedPayments}
-                                                            variant="minimal"
-                                                            noBorder={true}
-                                                            hidePagination={true}
-                                                            defaultPageSize={100}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )
-                                        }}
-                                    />
-                                ) : (
-                                    <EmptyState
-                                        context="generic"
-                                        icon={FileText}
-                                        title="No tiene liquidaciones"
-                                        description="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
-                                    />
-                                )}
+                    <div className="flex-1 min-h-0 flex flex-col">
+                        {selectedPayrolls.length > 0 && (
+                            <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
+                                <ActionSlideButton
+                                    size="sm"
+                                    className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
+                                    onClick={onBulkDownload}
+                                    disabled={downloadingAll}
+                                    loading={downloadingAll}
+                                >
+                                    {!downloadingAll && <Download className="h-3.5 w-3.5" />}
+                                    Descargar {selectedPayrolls.length} seleccionada(s)
+                                </ActionSlideButton>
                             </div>
-                        </CardContent>
-                    </Card>
+                        )}
+                        <div className="flex-1 min-h-0 flex flex-col">
+                            <DataTable
+                                columns={payrollColumns}
+                                data={payrolls}
+                                defaultPageSize={10}
+                                variant="embedded"
+                                emptyState={{
+                                    context: "generic",
+                                    icon: FileText,
+                                    title: "No tiene liquidaciones",
+                                    description: "Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas.",
+                                }}
+                                unifiedSearch={<UnifiedSearchBar config={payrollSearchConfig} chips={payrollSearch.chips} isFiltered={payrollSearch.isFiltered} inputValue={payrollSearch.inputValue} onInputChange={payrollSearch.setInputValue} onApply={payrollSearch.applyFilter} onRemove={payrollSearch.removeFilter} onClearAll={payrollSearch.clearAll} groupBy={payrollSearch.groupBy} onGroupBySelect={payrollSearch.setGroupBy} paramValues={payrollSearch.paramValues} />}
+                                renderSubComponent={(row) => {
+                                    const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
+                                    return (
+                                        <DataTable
+                                            columns={unifiedPaymentColumns}
+                                            data={relatedPayments}
+                                            variant="minimal"
+                                            noBorder={true}
+                                            hidePagination={true}
+                                        />
+                                    )
+                                }}
+                            />
+                        </div>
+                    </div>
                 </FadeIn>
             )}
 
             {/* Sub-tab 3: Pagos */}
             {activeSubTab === "payments" && (
                 <FadeIn delay={0.2} yOffset={10}>
-                    <Card >
+                    <Card className="flex-1 flex flex-col">
                         <CardHeader>
                             <CardTitle className="text-lg text-primary">Historial de Pagos y Anticipos</CardTitle>
                             <CardDescription>
                                 {unifiedPayments.length} transacción(es) registrada(s)
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-0">
-                            <div className="px-0">
+                        <CardContent className="p-0 flex-1 flex flex-col">
+                            <div className="px-0 flex-1 flex flex-col">
                                 {unifiedPayments.length > 0 ? (
                                     <DataTable
                                         columns={unifiedPaymentColumns}
@@ -669,12 +646,14 @@ function PersonalTab({
                                         toolbarClassName="px-6 pt-6 pb-2"
                                     />
                                 ) : (
-                                    <EmptyState
-                                        context="generic"
-                                        icon={CreditCard}
-                                        title="No tiene transacciones"
-                                        description="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
-                                    />
+                                    <div className="flex-1 flex items-center justify-center h-full">
+                                        <EmptyState
+                                            context="generic"
+                                            icon={CreditCard}
+                                            title="No tiene transacciones"
+                                            description="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
+                                        />
+                                    </div>
                                 )}
                             </div>
                         </CardContent>

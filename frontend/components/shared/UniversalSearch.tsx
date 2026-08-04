@@ -11,12 +11,11 @@ import {
     Search,
     X,
 } from "lucide-react"
-import { DynamicIcon } from "@/components/shared"
+import { DynamicIcon, Badge } from "@/components/shared"
 import { Dialog, DialogContent, DialogTitle, DialogPortal, DialogOverlay } from "@/components/ui/dialog"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -217,7 +216,7 @@ export function UniversalSearch() {
                             <ul
                                 id="search-results"
                                 role="listbox"
-                                className="divide-y divide-white/5"
+                                className="divide-y divide-border/40"
                             >
                                 {isLoading && (
                                     <>
@@ -298,7 +297,7 @@ export function UniversalSearch() {
                                                     {result.display}
                                                 </span>
                                                 {result.extra_info && (
-                                                    <Badge variant="outline" className="hidden h-5 bg-primary/5 text-[10px] text-primary sm:flex">
+                                                    <Badge intent="primary" size="xs" className="hidden sm:flex">
                                                         {result.extra_info}
                                                     </Badge>
                                                 )}

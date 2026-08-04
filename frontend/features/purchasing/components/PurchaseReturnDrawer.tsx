@@ -1,14 +1,10 @@
 "use client"
 
-import React, { useRef } from "react"
+import React from "react"
 import { Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
-import { useDrawerIdentity } from "@/features/_shared"
-import { Button } from "@/components/ui/button"
-import { Printer } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout } from "@/features/_shared"
 import { usePurchaseReturn } from "../hooks/usePurchasing"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -23,11 +19,12 @@ interface PurchaseReturnDrawerProps {
 export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: PurchaseReturnDrawerProps) {
     const entityId = returnId ?? id ?? null
     const { returnData, isLoading } = usePurchaseReturn(entityId, open)
+    const { printRef, handlePrint } = usePrintableDrawer()
     const identity = useDrawerIdentity('purchasing.purchasereturn', 'view', returnData as Record<string, unknown> | undefined, {
         overrideTitle: returnData ? `Devolución ${String((returnData as Record<string, unknown>).number)}` : "Devolución de Compra",
+        onPrint: handlePrint,
+        printable: true,
     })
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => [
         {
@@ -89,7 +86,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                 boundary="embedded"
                 defaultSize={formDrawerWidth("master", false)}
                 title={identity.title}
-                headerActions={<Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 icon={identity.icon}
 
@@ -109,7 +106,7 @@ export function PurchaseReturnDrawer({ returnId, id, open, onOpenChange }: Purch
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Estado</span>
-                                        <p><StatusBadge status={String(r.status)} /></p>
+                                        <p><StatusBadge status={String(r.status)} variant="badge" /></p>
                                     </div>
                                     <div>
                                         <span className="text-muted-foreground">Proveedor</span>

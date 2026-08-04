@@ -66,7 +66,7 @@ export function OriginPhase({
             actions: []
         },
         ...(order ? [{
-            type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
+            type: isSale ? 'Orden de Venta' : 'Orden de compras y servicios',
             number: order?.display_id || formatEntityDisplay(isSale ? 'sales.saleorder' : 'purchasing.purchaseorder', { number: order?.number || order?.id, id: order?.id }),
             icon: FileText,
             id: order?.id,
@@ -75,7 +75,7 @@ export function OriginPhase({
         }] : [])
     ] : (order ? [
         {
-            type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
+            type: isSale ? 'Orden de Venta' : 'Orden de compras y servicios',
             number: order?.display_id || formatEntityDisplay(isSale ? 'sales.saleorder' : 'purchasing.purchaseorder', { number: order?.number || order?.id, id: order?.id }),
             icon: FileText,
             id: order?.id,

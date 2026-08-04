@@ -1,6 +1,7 @@
-/* eslint-disable no-restricted-syntax */
+ 
 "use client"
 
+import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -10,17 +11,11 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { Printer } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
 import { ActivitySidebar } from "@/features/audit"
-import { showApiError } from "@/lib/errors"
 import { useUoMMutations } from "../hooks/useUoMMutations"
 import { FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 export interface UoMCategory {
     id: number
@@ -48,8 +43,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const { saveUoMCategory } = useUoMMutations()
     const [isSaving, setIsSaving] = useState(false)
@@ -139,6 +133,8 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
     const identity = useDrawerIdentity('inventory.uomcategory', mode, initialData, {
         feminine: true,
         overrideSubtitle: initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo.",
+        onPrint: handlePrint,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
     })
 
     return (
@@ -158,6 +154,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
@@ -165,7 +162,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

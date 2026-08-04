@@ -126,45 +126,6 @@ export function PageLayoutSkeleton({
 }
 
 /**
- * Specialized skeleton for the Command Center (Hub).
- * Mimics the vertical phase cards (Origen, Logística, Facturación, Tesorería).
- */
-export function HubSkeleton({ phases = 4 }: { phases?: number } = {}) {
-    return (
-        <div
-            role="status"
-            aria-label="Cargando panel de control"
-            className="flex flex-col h-full bg-background/50 backdrop-blur-sm p-4 gap-4 animate-in fade-in duration-500"
-        >
-            <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-border">
-                <Skeleton className="h-20 w-20 rounded-full border-2 border-primary/10" />
-                <div className="flex flex-col items-center gap-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-2 w-24 opacity-40" />
-                </div>
-            </div>
-            <div className="space-y-4">
-                {Array.from({ length: phases }).map((_, i) => (
-                    <div key={i} className="p-4 rounded-md border border-border/50 bg-card/50 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <Skeleton className="h-5 w-40" />
-                            <Skeleton className="h-5 w-5 rounded-full" />
-                        </div>
-                        <div className="space-y-2">
-                            <Skeleton className="h-3 w-full opacity-60" />
-                            <Skeleton className="h-3 w-2/3 opacity-40" />
-                        </div>
-                        <div className="pt-2 border-t border-border/20 flex justify-end">
-                            <Skeleton className="h-8 w-24 rounded" />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
-}
-
-/**
  * Full app-shell skeleton shown during the root route transition.
  * Mimics the sidebar + topbar + content area layout.
  * Use exclusively in app/loading.tsx.
@@ -186,9 +147,9 @@ export function AppShellSkeleton() {
             </div>
 
             <div className="flex-1 flex flex-col">
-                <div className="h-14 border-b px-6 flex items-center justify-between shrink-0">
+                <div className="h-16 border-b px-6 flex items-center justify-between shrink-0">
                     <Skeleton className="h-6 w-40" />
-                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-10 w-10 rounded-md" />
                 </div>
                 <div className="flex-1 p-8 space-y-4">
                     <div className="flex items-center justify-between">

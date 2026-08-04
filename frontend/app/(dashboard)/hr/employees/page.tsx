@@ -16,10 +16,10 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
     let initialEmployees: Employee[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialEmployees = await serverFetch<Employee[]>('hr/employees/', {
+            initialEmployees = (await serverFetch<{ results: Employee[] }>('hr/employees/', {
                 params: { page_size: '200' },
                 revalidate: 10,
-            })
+            })).results
         } catch {
             // Client-side fetch handles fallback
         }

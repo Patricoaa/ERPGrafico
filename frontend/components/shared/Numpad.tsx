@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Delete } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -25,7 +25,8 @@ interface NumpadProps {
     exactAmountLabel?: string
     quickAmounts?: QuickAmount[]
     onQuickAmountAction?: (qa: QuickAmount) => void
-    label?: string
+    title?: string
+    icon?: ReactNode
     displayValue?: string
 }
 
@@ -43,7 +44,8 @@ export function Numpad({
     exactAmountLabel,
     quickAmounts,
     onQuickAmountAction,
-    label,
+    title,
+    icon,
     displayValue
 }: NumpadProps) {
     const handleNumber = (n: string) => {
@@ -111,20 +113,25 @@ export function Numpad({
     }, [value, allowDecimal, onConfirm, onClose])
 
     return (
-        <div className={cn("flex flex-col gap-2 p-1.5 bg-background border rounded-md shadow-[var(--shadow-overlay)] w-full", className)}>
-            {displayValue ? (
-                <div className="text-center mb-2">
-                    {label && <div className="text-xs font-bold uppercase text-muted-foreground">{label}</div>}
-                    <div className="text-3xl font-black font-mono tracking-tight text-primary">
-                        {displayValue}
-                    </div>
-                </div>
-            ) : !hideDisplay && (
-                <div className="flex justify-between items-center mb-1">
-                    <div className="lg:text-xl text-base font-black tracking-tight text-primary truncate px-2 w-full text-center">
-                        {value}
-                    </div>
-                </div>
+        <div className={cn("flex flex-col gap-2 p-3 bg-background rounded-md shadow-[var(--shadow-overlay)] w-full", className)}>
+            {!hideDisplay && (
+                <>
+                    {title && (
+                        <div className="flex items-center justify-center gap-2">
+                            {icon && <span className="shrink-0">{icon}</span>}
+                            <span className="text-lg font-bold">{title}</span>
+                        </div>
+                    )}
+                    {displayValue ? (
+                        <div className="text-3xl font-black font-mono tracking-tight text-primary text-center">
+                            {displayValue}
+                        </div>
+                    ) : !title && (
+                        <div className="lg:text-xl text-base font-black tracking-tight text-primary truncate text-center">
+                            {value}
+                        </div>
+                    )}
+                </>
             )}
 
             {quickAmounts && quickAmounts.length > 0 && (
@@ -133,7 +140,7 @@ export function Numpad({
                         <Button
                             key={qa.label}
                             variant="outline"
-                            className="h-10 lg:h-12 text-xs lg:text-sm font-bold active:scale-95 transition-transform"
+                            className="h-12 lg:h-14 text-sm lg:text-base font-bold active:scale-95 transition-transform"
                             onClick={() => {
                                 if (onQuickAmountAction) {
                                     onQuickAmountAction(qa)
@@ -208,7 +215,7 @@ export function Numpad({
 
             {onConfirm && !hideConfirm && (
                 <Button
-                    className="w-full h-12 lg:h-14 font-black uppercase tracking-widest text-sm lg:text-base bg-primary hover:bg-primary"
+                    className="w-full h-12 lg:h-14 font-black uppercase tracking-widest text-sm lg:text-base bg-primary hover:bg-primary active:scale-95 transition-transform"
                     onClick={onConfirm}
                 >
                     {confirmLabel}

@@ -1,20 +1,17 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Building2, Settings, Printer } from "lucide-react"
+import { Building2, Settings } from "lucide-react"
 import { useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalProviderCreatePayload, type PaymentTerminalProviderUpdatePayload } from "@/features/treasury"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Form, FormField } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -44,8 +41,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
     const { createProvider, updateProvider } = useTerminalProviders()
     const mode: DrawerMode = modeProp ?? (provider ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
     const [loading, setLoading] = useState(false)
 
     const form = useForm<ProviderFormValues>({
@@ -134,6 +130,8 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
     const identity = useDrawerIdentity('treasury.terminalprovider', mode, provider, {
         overrideTitle,
         overrideSubtitle: "Configure las cuentas contables para recaudación y comisiones.",
+        printable: (mode === 'view' || mode === 'edit') && !!provider?.id,
+        onPrint: handlePrint,
     })
 
     return (
@@ -153,6 +151,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -160,7 +159,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && provider?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

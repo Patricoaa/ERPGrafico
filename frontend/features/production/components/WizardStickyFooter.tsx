@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Loader2, Check, ArrowRight, Eye, X } from "lucide-react"
+import { AlertTriangle, Check, ArrowRight, Eye, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ActionConfirmModal, FormFooter } from "@/components/shared"
+import { ActionConfirmModal, FormFooter, SubmitButton, ActionSlideButton } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
 
@@ -167,18 +167,14 @@ export function WizardStickyFooter({
         // Edit-in-place: Guardar cambios
         if (stepMode === 'edit-in-place') {
             return (
-                <Button
+                <SubmitButton
                     type="submit"
                     form="wizard-edit-form"
-                    disabled={transitioning}
-                    className="gap-1.5"
+                    loading={transitioning}
+                    icon={Check}
                 >
-                    {transitioning ? (
-                        <><Loader2 className="h-4 w-4 animate-spin" />Guardando...</>
-                    ) : (
-                        <><Check className="h-4 w-4" />Guardar cambios</>
-                    )}
-                </Button>
+                    {transitioning ? 'Guardando...' : 'Guardar cambios'}
+                </SubmitButton>
             )
         }
 
@@ -213,46 +209,30 @@ export function WizardStickyFooter({
                         >
                             Anterior
                         </Button>
-                        <Button
+                        <SubmitButton
                             type="submit"
                             form="wizard-basic-form"
-                            disabled={!chosenOtType || transitioning}
+                            loading={transitioning}
+                            disabled={!chosenOtType}
                             aria-label="Seleccionar producto"
+                            icon={ArrowRight}
                         >
-                            {transitioning ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Procesando...
-                                </>
-                            ) : (
-                                <>
-                                    Seleccionar Producto
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </>
-                            )}
-                        </Button>
+                            {transitioning ? 'Procesando...' : 'Seleccionar Producto'}
+                        </SubmitButton>
                     </div>
                 )
             }
             if (isBasicInfoEditable) {
                 return (
-                    <Button
+                    <SubmitButton
                         type="submit"
                         form="wizard-basic-form"
-                        disabled={transitioning}
+                        loading={transitioning}
                         aria-label="Guardar cambios de información básica"
+                        icon={Check}
                     >
-                        {transitioning ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Guardando...
-                            </>
-                        ) : (
-                            <>
-                                Guardar cambios<Check className="ml-2 h-4 w-4" />
-                            </>
-                        )}
-                    </Button>
+                        {transitioning ? 'Guardando...' : 'Guardar cambios'}
+                    </SubmitButton>
                 )
             }
             return null
@@ -262,7 +242,7 @@ export function WizardStickyFooter({
         if (order?.status !== 'FINISHED' && stages[viewingStepIndex]?.id !== 'FINISHED') {
             if (isRectificationStep && onRectifyAndFinish) {
                 return (
-                    <Button
+                    <ActionSlideButton
                         disabled={isNextDisabled}
                         onClick={() => {
                             setAlertConfig({
@@ -275,21 +255,14 @@ export function WizardStickyFooter({
                             })
                             setShowAlert(true)
                         }}
+                        loading={transitioning}
+                        variant="success"
                         className="gap-2 bg-success hover:bg-success/90 text-success-foreground shadow-elevated shadow-success/20"
                         aria-label="Rectificar y Finalizar Producción"
+                        icon={Check}
                     >
-                        {transitioning ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Procesando...
-                            </>
-                        ) : (
-                            <>
-                                Rectificar y Finalizar
-                                <Check className="ml-2 h-4 w-4" aria-hidden="true" />
-                            </>
-                        )}
-                    </Button>
+                        {transitioning ? 'Procesando...' : 'Rectificar y Finalizar'}
+                    </ActionSlideButton>
                 )
             }
 
@@ -301,18 +274,14 @@ export function WizardStickyFooter({
                             Tareas pendientes de otros
                         </span>
                     )}
-                    <Button
+                    <ActionSlideButton
                         disabled={isNextDisabled}
                         onClick={handleNextClick}
+                        loading={transitioning}
                         className={cn("gap-2", isImplicitlyApproving && "bg-primary hover:bg-primary")}
                         aria-label={viewingStepIndex === stages.length - 2 ? "Finalizar Producción" : "Siguiente Etapa"}
                     >
-                        {transitioning ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Procesando...
-                            </>
-                        ) : viewingStepIndex === stages.length - 2 ? (
+                        {viewingStepIndex === stages.length - 2 ? (
                             <>
                                 Finalizar Producción
                                 <Check className="ml-2 h-4 w-4" aria-hidden="true" />
@@ -328,7 +297,7 @@ export function WizardStickyFooter({
                                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                             </>
                         )}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             )
         }

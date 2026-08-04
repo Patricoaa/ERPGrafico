@@ -2,7 +2,7 @@
 
 import { type LucideIcon } from 'lucide-react'
 import * as LucideIcons from 'lucide-react'
-import type { BadgeIntent } from '@/lib/badge-resolvers'
+import type { BadgeIntent, CategoryDomain } from '@/lib/badge-resolvers'
 import { Badge } from '@/components/shared'
 import { resolveCategory } from '@/lib/badge-resolvers'
 
@@ -12,11 +12,18 @@ export interface ChipProps {
     size?: 'xs' | 'sm' | 'md'
     icon?: LucideIcon
     className?: string
+    appearance?: 'solid' | 'ghost'
 }
 
-export function Chip({ children, intent = 'neutral', size = 'sm', icon, className }: ChipProps) {
+export function Chip({ children, intent = 'neutral', size = 'sm', icon, className, appearance }: ChipProps) {
     return (
-        <Badge intent={intent} size={size} tracking="wide" icon={icon} className={className}>
+        <Badge
+            intent={intent}
+            size={size}
+            icon={icon}
+            appearance={appearance}
+            className={className}
+        >
             {children}
         </Badge>
     )
@@ -37,7 +44,7 @@ Chip.Category = function ChipCategory({
     size = 'sm',
     className
 }: {
-    domain: 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type'
+    domain: CategoryDomain
     value: string
     size?: 'xs' | 'sm' | 'md'
     className?: string

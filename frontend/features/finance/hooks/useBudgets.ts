@@ -19,6 +19,7 @@ export function useBudgetDetailData(id: number | null) {
         },
         enabled: id != null,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }
 

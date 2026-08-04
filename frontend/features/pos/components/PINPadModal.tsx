@@ -33,14 +33,12 @@ export function PINPadModal({
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title={
-                <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span className=" font-black uppercase tracking-tighter text-lg">{title}</span>
-                </div>
-            }
+            title={title}
             description={description}
+            icon={ShieldCheck}
             size="sm"
+            headerClassName="border-b-0"
+            centered
         >
             <div className="flex flex-col items-center gap-6 py-6 font-primary">
                 {/* Visual PIN Feedback */}

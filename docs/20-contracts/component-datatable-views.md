@@ -30,6 +30,8 @@ El `DataTable` opera en cuatro modos excluyentes:
 
 **Regla:** Siempre declarar `variant` explícitamente. La prop `cardMode` está deprecada y no debe usarse en código nuevo.
 
+**Densidad:** el `DataTable` acepta `density?: 'compact' | 'comfortable'` (default `'compact'` — ver [density-system.md](./density-system.md)). No confundir con `variant="compact"` (layout CSS Grid); `density` controla el padding/altura de filas, no el modo de renderizado.
+
 ```tsx
 // ✅ Correcto
 <DataTable variant="embedded" ... />
@@ -117,7 +119,7 @@ const { data, isLoading } = useMyData()
 <DataTable isLoading={isLoading} data={data} ... />
 ```
 
-Cuando `isLoading` es `true`, el DataTable sustituye el body de la tabla por `SharedTableSkeleton` (filas shimmer). El toolbar, encabezados y paginación permanecen visibles para evitar CLS.
+Cuando `isLoading` es `true`, el DataTable sustituye el body de la tabla por filas shimmer integradas (`SkeletonShell` + `Skeleton`, shapes `bar | pill | icon | code` por columna). El toolbar, encabezados y paginación permanecen visibles para evitar CLS. `skeletonRows` permite ajustar el nº de filas simuladas (default: `defaultPageSize`).
 
 > **Excepción:** Si la tabla usa `renderCustomView`, el skeleton automático **no aplica** dentro de la vista custom. Ver sección 4 (`renderLoadingView`).
 
@@ -147,7 +149,7 @@ Las vistas disponibles en el sistema son:
 | Valor | Descripción | Componente de renderizado |
 |---|---|---|
 | `"list"` | Tabla estándar (default en la mayoría de módulos) | Motor interno de DataTable |
-| `"card"` | Vista de tarjetas en lista vertical | `renderCustomView` + `EntityCard` / `OrderCard` / `InvoiceCard` |
+| `"card"` | Vista de tarjetas en lista vertical | `renderCustomView` + `EntityCard` (o `DataTableView` con `renderCard`) |
 | `"grid"` | Grilla densa en múltiples columnas (ejm: Productos) | `renderCustomView` + `EntityCard variant="compact"` |
 | `"kanban"` | Tablero Kanban (Producción) | `renderCustomView` + componente específico de dominio |
 
@@ -228,7 +230,12 @@ const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode
   currentView={currentView}
   onViewChange={handleViewChange}
   viewOptions={viewOptions}
-  renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', { ... }) : undefined}
+  renderCustomView={isCustomView ? createEntityCardView('sales.saleorder', {
+    gridLayout: 'single-column',
+    renderCard: (order) => (
+      <OrderCard ... />
+    ),
+  }) : undefined}
   renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
   ...
 />
@@ -261,29 +268,26 @@ import { EntityCard } from "@/components/shared/EntityCard"
 </EntityCard>
 ```
 
-### `DomainCard` — Card inteligente para documentos transaccionales
-Usa `EntityCard` como shell interno. Renderiza automáticamente:
-- Icono, nombre de partner, y display ID desde `ENTITY_REGISTRY`
-- `DomainHubStatus` (workflow badges)
-- Montos totales y pendientes
-- Líneas de producto
-
-Usar exclusivamente para entidades con `viewPolicy.cardComponent: 'domain'`:
-- Órdenes de Venta (`sales.saleorder`)
-- Órdenes de Compra (`purchasing.purchaseorder`)
-- Facturas/DTEs (`billing.invoice`)
+### Tarjetas de documentos transaccionales (`cardVariant`)
+Para entidades con `viewPolicy.cardComponent: 'entity'` y `cardVariant` definido (`'workflow' | 'full'`), la tarjeta se compone sobre `EntityCard` con la variante correspondiente:
+- `cardVariant: 'workflow'` — tarjetas de órdenes/facturas con badges de estado de dominio (WorkflowStatus)
+- `cardVariant: 'full'` — tarjeta completa con header/body/footer
 
 ```tsx
-import { DomainCard } from "@/components/shared"
+import { EntityCard } from "@/components/shared"
 
-<DomainCard label="sales.saleorder" data={order} isSelected={...} isHubOpen={...} />
+<EntityCard variant={policy.cardVariant === 'workflow' ? 'workflow' : 'full'} ...>
+  ...
+</EntityCard>
 ```
 
-### ❌ `OrderCard`, `InvoiceCard` — Eliminados
-Estos componentes legados fueron reemplazados por `DomainCard` y eliminados del codebase. No deben recrearse.
+La variante se resuelve desde `ENTITY_REGISTRY.viewPolicy.cardVariant` (`DataTableView` la lee automáticamente) y `createCardLoadingView` la propaga a `EntityCard.Skeleton` para mantener geometría estable.
+
+### ❌ `DomainCard`, `OrderCard`, `InvoiceCard` — Eliminados
+`DomainCard`, `OrderCard` e `InvoiceCard` **no existen**. Las tarjetas de documentos transaccionales (órdenes, facturas) se construyen como composiciones de `EntityCard` (con `cardVariant: 'workflow' | 'full'` según `ENTITY_REGISTRY.viewPolicy.cardVariant`) en el callback `renderCard` del consumidor. No deben recrearse.
 
 ### ❌ Inline JSX en `renderCustomView` — Prohibido
-No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard`, `DomainCard`, o un componente de dominio derivado de ellos.
+No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard`, o un componente de dominio derivado de él.
 
 ---
 
@@ -291,22 +295,8 @@ No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card deb
 
 Para reducir boilerplate, existen factories en `lib/view-helpers.ts`:
 
-### `createDomainCardView(label, options)`
-Para entidades con `cardComponent: 'domain'`. Genera un `renderCustomView` completo con empty state y DomainCard:
-
-```tsx
-import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
-
-renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', {
-  onRowClick: (data) => toggleSelection(data),
-  isSelected: (data) => hubConfig?.orderId === data.id,
-  isHubOpen,
-}) : undefined}
-renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
-```
-
 ### `createEntityCardView(label, options)`
-Para entidades con `cardComponent: 'entity'` o `'entity-compact'`. El consumidor proporciona un `renderCard` callback:
+Para entidades con `cardComponent: 'entity'`. El consumidor proporciona un `renderCard` callback:
 
 ```tsx
 renderCustomView={isCustomView ? createEntityCardView('inventory.product', {
@@ -318,6 +308,8 @@ renderCustomView={isCustomView ? createEntityCardView('inventory.product', {
   ),
 }) : undefined}
 ```
+
+> **Card views con agrupación:** si la vista card está agrupada (`cardGroupBy`), `DataTableView` resuelve automáticamente `createCardGroupView` + `createCardGroupLoadingView` en lugar de los helpers single-view — no llamarlos a mano.
 
 ### `createCardLoadingView(layout, count)`
 Genera un `renderLoadingView` con EntityCard.Skeleton en la geometría correcta:
@@ -334,11 +326,11 @@ Cada entidad define su política de vistas en `ENTITY_REGISTRY.viewPolicy`. El h
 
 | Entidad | Vistas | Default | Card Component |
 |---|---|---|---|
-| `sales.saleorder` | list, card | card | `domain` |
-| `purchasing.purchaseorder` | list, card | card | `domain` |
-| `billing.invoice` | list, card | card | `domain` |
-| `production.workorder` | list, kanban | list | `custom` |
-| `inventory.product` | list, grid | list | `entity-compact` |
+| `sales.saleorder` | list, card, analytics | card | `entity` (`cardVariant: 'workflow'`) |
+| `purchasing.purchaseorder` | list, card | card | `entity` (`cardVariant: 'workflow'`) |
+| `billing.invoice` | list, card | card | `entity` (`cardVariant: 'full'`) |
+| `production.workorder` | list, kanban, timeline | list | `custom` |
+| `inventory.product` | list, card, analytics | list | `entity` |
 | `contacts.contact` | list, card | list | `entity` |
 | `hr.employee` | list, card | list | `entity` |
 | Demás entidades | list (solo) | list | — |
@@ -363,31 +355,45 @@ Reemplazar mecánicamente:
 
 ---
 
-## 9. Filas expandibles — `renderSubComponent` vs `ExpandableTableRow` (deprecado)
+## 9. Filas expandibles — `renderSubComponent` + `createExpanderColumn`
 
-DataTable soporta filas expandibles de dos formas:
+DataTable soporta filas expandibles mediante el slot `renderSubComponent` que renderiza un panel debajo de la fila cuando se expande (vía chevron en la columna `createExpanderColumn`).
 
-### 9.1 `renderSubComponent` — Camino preferido (nuevos desarrollos)
-
-DataTable nativo ya incluye un slot `renderSubComponent` que renderiza un panel debajo de la fila cuando se expande (vía chevron en la columna o `onRowClick`). Desde la Fase 1 de centralización, incluye animación framer-motion (`AnimatePresence` + `motion.tr`).
+### 9.1 Patrón estándar
 
 ```tsx
+import { DataTable, createExpanderColumn } from '@/components/shared'
+
+const expanderCol = createExpanderColumn<MyRow>({
+  canExpand: (row) => row.hasDetails,  // optional
+})
+
 <DataTable
-    columns={columns}
+    columns={[expanderCol, ...otherColumns]}
     data={data}
-    renderSubComponent={createExpandableRowView({
-        lazyLoad: (row) => fetchDetail(row.id),
-        renderDetail: (row, detail) => <DetailPanel data={detail} />,
-    })}
+    renderSubComponent={(row) => <DetailPanel data={row.original} />}
 />
 ```
-
-Ver helper `createExpandableRowView` en `@/lib/view-helpers`.
 
 **Cuándo usar:**
 - Nuevos desarrollos que requieran detalle inline
 - El detalle se carga bajo demanda (lazy fetch)
 - Se quiere mantener la tabla como DataTable estándar sin custom views
+
+### 9.2 Árbol jerárquico — `getSubRows`
+
+Para datos jerárquicos (tree), usar `getSubRows` en lugar de `renderSubComponent`. El expander se implementa inline en una columna custom (no `createExpanderColumn`).
+
+```tsx
+<DataTable
+    columns={columns}  // una columna custom con row.toggleExpanded()
+    data={treeData}
+    getSubRows={(row) => row.children}
+    autoExpand
+/>
+```
+
+**Consumers:** `AccountsClientView` (plan de cuentas).
 
 ---
 
@@ -489,7 +495,7 @@ Usar `createCardGroupView` directamente para vistas custom:
 import { createCardGroupView, createCardLoadingView } from "@/lib/view-helpers"
 
 renderCustomView={isCustomView ? createCardGroupView({
-  renderCard: (data) => <DomainCard label="sales.saleorder" data={data} />,
+  renderCard: (data) => <EntityCard ... />,
   cardGroupBy: { dateField: 'date', amountField: 'total' },
   gridLayout: 'single-column',
   emptyState: { context: 'filter' },
@@ -554,7 +560,7 @@ function createCardGroupView<TData>(options: {
 
 ## 12. Analytics Panel — `analyticsPanel` prop
 
-El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column Toggle) que abre un `Drawer` con gráficos y métricas.
+El `DataTable` soporta una vista de análisis que reemplaza la tabla al activar `view=analytics`, con gráficos y métricas organizados en tabs con sidebar de navegación.
 
 ### 12.1 API
 
@@ -565,8 +571,6 @@ El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column 
       entityName: "Órdenes de Compra",
       granularity,
       onGranularityChange: setGranularity,
-      dateRange,
-      onDateRangeChange: setDateRange,
       tabs: [
         {
           value: "financiero",
@@ -603,21 +607,28 @@ El `DataTable` soporta un botón de análisis en la Fila 2 (entre Sort y Column 
 ```
 
 - `onClick?`: callback cuando se presiona el botón (útil para tracking)
-- `screen`: cuando está presente, renderiza un `AnalyticsPanel` dentro de un `Drawer` con `side="bottom"` y `defaultSize="70vh"`
+- `screen`: cuando está presente, habilita `view=analytics` como opción en el toolbar y renderiza `AnalyticsPanelContent` inline (reemplazando la tabla) cuando se selecciona
+- `granularity` / `onGranularityChange`: control de agrupación temporal (día/mes/año), renderizado como `GranularityControl` en la parte inferior del sidebar de tabs
 - Cada tab tiene `columns` con `sections` que pueden ser `StatCard`, `Custom`, o chart directo (bar/line/pie)
+- El tipo `Granularity` se exporta desde `@/components/shared`
 
 ### 12.2 Data flow
 
 ```
-Consumer → AnalyticsPanelConfig (useMemo) → DataTable → DataTableToolbar
-  → botón LayoutDashboard → Drawer → TabBar → AnalyticsLayout → StatCard/Chart
-  → AnalyticsSegmentation (granularity, date range, card account)
+Consumer → AnalyticsPanelConfig (useMemo) → DataTableView
+  → view=analytics → AnalyticsPanelContent inline (full-screen, reemplaza tabla)
+  → Sidebar tabs (left, w-56) + Content area (right, flex-1)
+  → GranularityControl (bottom of sidebar, separador border-t)
+  → Tab → AnalyticsLayout → Column → SectionRenderer → StatCard/Chart
 ```
 
 ### 12.3 Reglas
 
 - Los datos de analytics deben venir de un hook dedicado (ej. `usePurchasingAnalyticsData`)
 - `AnalyticsPanelConfig` se importa desde `@/components/shared`
+- El hook debe usar helpers de `@/lib/analytics-helpers` (no duplicar `groupBy`, `formatMonth`, `granularityKey`, etc.)
+- Los colores de charts deben usar `assignChartColors` desde `@/lib/chart-colors` (no mapas hardcodeados)
+- `Granularity` debe ser tipo compartido, no string literal inline
 - No abusar: reservar para entidades con volumen de datos que justifique análisis visual
 
 ---
@@ -780,22 +791,25 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] Si hay `renderCustomView` y `isLoading`: `renderLoadingView` presente
 - [ ] Multi-vista usa `useViewMode(entityLabel)` — no `useState` manual para la vista
 - [ ] `viewOptions` generados desde registry (`getViewOptions`) — no arrays hardcodeados
-- [ ] `renderCustomView` usa `createDomainCardView` / `createEntityCardView` cuando aplique — no inline JSX
+- [ ] `renderCustomView` usa `createEntityCardView` (o `createCardGroupView` si hay agrupación) cuando aplique — no inline JSX
 - [ ] Default de vista definido en `ENTITY_REGISTRY.viewPolicy.defaultView`
-- [ ] Card views usan `EntityCard` o `DomainCard` — **no inline JSX**
+- [ ] Card views usan `EntityCard` — **no inline JSX**
 - [ ] `variant="minimal"` usado en tablas display dentro de tabs de producto/config (no en listados CRUD)
 - [ ] `variant="minimal"` no recibe props de toolbar, paginación ni bulk actions
 - [ ] `variant="compact"` siempre declara `gridTemplate`
 - [ ] `variant="compact"` con `renderRowActions`: `gridTemplate` tiene `columns.length + 1` tracks
-- [ ] Expandable rows nuevos usan `renderSubComponent` o `createExpandableRowView` — **no** `ExpandableTableRow`
+- [ ] Expandable rows nuevos usan `renderSubComponent` + `createExpanderColumn` — **no** `ExpandableTableRow`
 - [ ] Si se usa `cardGroupBy`: `dateField` requerido; `amountField` opcional
-- [ ] `cardGroupBy` compatible con `cardComponent: 'domain'` y `cardComponent: 'entity'`
+- [ ] `cardGroupBy` compatible con `cardComponent: 'entity'`
 - [ ] `createCardGroupView` usa `renderCard` con firma `(data: TData) => ReactNode` (no recibe `row`)
 - [ ] Los grupos se ordenan descendente por fecha (más reciente primero)
 - [ ] Items sin fecha se agrupan al final bajo "Sin fecha"
 - [ ] La agrupación visual (`cardGroupBy`) es ortogonal al filtrado del toolbar (`SegmentationBar`) — uno filtra, el otro organiza
 - [ ] Usar `groupByDate` desde `@/lib/group-by-date` si se necesita agrupación fuera del factory
 - [ ] `analyticsPanel` usado solo si hay hook de datos dedicado (no construir inline en el componente)
+- [ ] Hook de analytics usa helpers de `@/lib/analytics-helpers` (no duplicados)
+- [ ] Hook de analytics usa `assignChartColors` desde `@/lib/chart-colors` (no mapas hardcodeados)
+- [ ] `Granularity` es tipo compartido, no string literal inline
 - [ ] `renderFooter` usado solo para tablas financieras que requieren fila de totales
 - [ ] `bulkActions` preferido sobre `bulkDock` para acciones declarativas
 - [ ] `toolbarActions` preferido sobre `toolbarAction` legacy

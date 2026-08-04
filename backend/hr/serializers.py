@@ -127,7 +127,46 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         from .services import EmployeeService
+        return EmployeeService.update_employee(instance, validated_data)
 
+
+class EmployeeWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views."""
+    concept_amounts = EmployeeConceptAmountSerializer(many=True, required=False)
+
+    class Meta:
+        model = Employee
+        fields = [
+            "id",
+            "code",
+            "contact",
+            "position",
+            "department",
+            "start_date",
+            "status",
+            "contract_type",
+            "base_salary",
+            "afp",
+            "salud_type",
+            "isapre_amount_uf",
+            "jornada_type",
+            "jornada_hours",
+            "trabajo_pesado",
+            "trabajo_agricola",
+            "gratificacion",
+            "dias_pactados",
+            "asignacion_familiar",
+            "cargas_familiares",
+            "concept_amounts",
+        ]
+        read_only_fields = ["id", "code"]
+
+    def create(self, validated_data):
+        from .services import EmployeeService
+        return EmployeeService.create_employee(validated_data)
+
+    def update(self, instance, validated_data):
+        from .services import EmployeeService
         return EmployeeService.update_employee(instance, validated_data)
 
 
@@ -396,6 +435,30 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             "journal_entry",
             "previred_journal_entry",
         ]
+        validators = []
+
+    def validate(self, data):
+        from .validators import PayrollValidator
+        return PayrollValidator.validate_payroll(self.instance, data)
+
+class PayrollWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views."""
+    class Meta:
+        model = Payroll
+        fields = [
+            "id",
+            "number",
+            "employee",
+            "period_year",
+            "period_month",
+            "status",
+            "base_salary",
+            "agreed_days",
+            "absent_days",
+            "worked_days",
+            "notes",
+        ]
+        read_only_fields = ["id", "number", "status"]
         validators = []
 
     def validate(self, data):

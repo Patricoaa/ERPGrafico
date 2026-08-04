@@ -47,13 +47,16 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 
 | key | icon (lucide) | label (es-CL) | intent | typical handler |
 |------|----------------|----------------|--------|-----------------|
-| `detail` | `FileText` | "Ver detalle" | read | `openEntity(label, id)` — entity drawer en modo `view` (ADR-0028) |
+| `detail` | `Eye` | "Ver detalle" | read | `openEntity(label, id)` — entity drawer en modo `view` (ADR-0028) |
+| `view` | `Eye` | "Ver" | read | inline read-only view (modal/drawer no-edit) |
 | `hub` | `LayoutDashboard` | "Abrir HUB" | read | open `CollapsibleSheet` (HUB) |
+| `history` | `History` | "Ver historial" | read | open activity/history drawer |
 | `edit` | `Pencil` | "Editar" | write | navigate to `?selected={id}` (ADR-0020) |
 | `duplicate` | `Copy` | "Duplicar" | write | POST `{ ...item, id: undefined }` |
 | `pay` | `Banknote` | "Pagar" | write | open payment modal (treasury) — added in ADR-0023 |
 | `deliver` | `Truck` | "Entregar" | write | open delivery modal (sales / logistics) — added in ADR-0023 |
 | `receive` | `PackageCheck` | "Recibir" | write | open receipt modal (purchasing) — added in ADR-0023 |
+| `report` | `FileText` | "Generar reporte" | read | open report/analytics panel |
 | `download` | `Download` | "Descargar" | read | trigger file download |
 | `print` | `Printer` | "Imprimir" | read | `react-to-print` |
 | `share` | `Share2` | "Compartir" | read | copy link / open share sheet |
@@ -61,13 +64,22 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 | `restore` | `ArchiveRestore` | "Restaurar" | write | reverse archive |
 | `lock` | `Lock` | "Bloquear" | write | toggle lock |
 | `unlock` | `Unlock` | "Desbloquear" | write | toggle lock |
-| `cancel` | `Trash2` | "Cancelar" | destructive | open `ActionConfirmModal variant="destructive"` — **DRAFT transactional docs**; no reversals, marks status=CANCELLED, deletes JE if DRAFT |
+| `toggle_active` | `Power` | "Activar/Desactivar" | write | toggle `is_active` flag |
+| `post` | `CheckCircle` | "Confirmar" | write | confirm/approve a draft document |
+| `reopen` | `LockOpen` | "Reabrir" | write | reopen a closed/cancelled state |
+| `disburse` | `Send` | "Desembolsar" | write | loan / credit-line disbursement |
+| `split` | `SplitSquareHorizontal` | "Distribuir" | write | split/distribute amounts across allocations |
 | `annul` | `Ban` | "Anular" | destructive | open `ActionConfirmModal variant="destructive"` — **POSTED/PAID transactional docs** (invoice, order, payment); preserves the record for audit, creates reversal entries — added in ADR-0023 |
 | `delete` | `Trash2` | "Eliminar" | destructive | open `ActionConfirmModal variant="destructive"` — **masters / config** (category, warehouse); removes the record |
+| `reverse` | `RotateCcw` | "Reversar" | destructive | open `ActionConfirmModal variant="destructive"` — creates a reversal transaction |
 
 Any addition to the registry **requires an ADR** (governance: changing a contract).
 Module-specific actions (e.g. `"recalculate-stock"`, `"reissue-dte"`) are not added to the
 registry — they are passed inline via `icon` + `title` props.
+
+> **Nota:** `cancel` fue eliminado del registro. La anulación de DRAFT transactional docs se
+> modela hoy con `annul` (que preserva el registro para auditoría). No existe `cancel` en
+> `RowActionKey`.
 
 ### 2.1 Color rules
 
@@ -94,72 +106,120 @@ When multiple actions are present, they MUST be rendered in this order (left →
 left → right or top → bottom in cards):
 
 ```
-detail → hub → edit → duplicate → pay → deliver → receive →
-  download → print → share → archive → restore → lock / unlock → cancel → annul → delete
+detail → view → hub → history → edit → duplicate → pay → deliver → receive →
+  report → download → print → share → archive → restore → lock / unlock → toggle_active →
+  post → reopen → disburse → split → annul → delete → reverse
 ```
 
-`cancel`, `annul` and `delete` are **always last**, in that order. `edit` is the visual anchor — if
-present, it should be the first *write* action. Read actions (`detail`, `hub`) come
-before any write action. Transactional workflow verbs (`pay`, `deliver`, `receive`) sit between
-`duplicate` and the read-only export block (`download`/`print`/`share`).
+Destructive verbs (`annul`, `delete`, `reverse`) are **always last**, in that order. `edit` is
+the visual anchor — if present, it should be the first *write* action. Read actions (`detail`,
+`view`, `hub`, `history`) come before any write action. Transactional workflow verbs (`pay`,
+`deliver`, `receive`) sit between `duplicate` and the read-only export block
+(`report`/`download`/`print`/`share`).
 
-**`cancel` vs `annul` vs `delete` — when to use which:**
+**`annul` vs `delete` vs `reverse` — when to use which:**
 
-| Use `cancel` for | Use `annul` for | Use `delete` for |
+| Use `annul` for | Use `delete` for | Use `reverse` for |
 |------------------|-----------------|------------------|
-| DRAFT transactional docs where the entire document tree is DRAFT — no reversals needed | Posted/confirmed transactional docs that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) |
-| Backend marks `status=CANCELLED`, deletes DRAFT Journal Entries (no reversal) | Backend creates reversal entries (JE REVERSAL, StockMove reversal) | Backend hard-deletes (or soft-deletes via `deleted_at`) |
+| Transactional docs that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) | Posted transactions that need a counterpart reversal entry (e.g. reversing a mis-posted JE or movement) |
+| Backend creates reversal entries (JE REVERSAL, StockMove reversal) | Backend hard-deletes (or soft-deletes via `deleted_at`) | Backend creates a full reversal transaction, preserving the original |
 
-Both are destructive — both MUST open `ActionConfirmModal` with `variant="destructive"`.
+All destructive — all MUST open `ActionConfirmModal` with `variant="destructive"`.
 
 The `<CardActions>` and `<DataCell.ActionGroup>` containers do not reorder children — the caller
 is responsible for ordering. Lint rule (future ADR) will enforce ordering automatically.
 
 ---
 
-## 4. Overflow rule — when to use `ActionMenu`
+## 4. Overflow rule — auto-detection via structured data
 
-| # of actions in the row/card | Layout |
-|------------------------------|--------|
-| 1 – 3                        | All inline, no kebab. |
-| 4                            | 3 inline + 1 in kebab, **or** all 4 inline if the table is wide enough. Caller decides. |
-| 5 +                          | Mandatory: keep the top **2 read actions** + `edit` inline (canonical primaries), move the rest into the kebab via `DataCell.ActionMenu`. |
+The `auto()` and `render()` methods on `createEntityActions` **automatically** choose the correct layout
+based on the number of visible actions at runtime. The behavior is **unified across all surfaces**:
 
-The kebab itself uses the icon `MoreVertical` (lucide) and is always the **last** element of the
-`ActionGroup` / `CardActions` row.
+| # visible actions | Component | Visual |
+|-------------------|-----------|--------|
+| 0 | Empty cell / `null` | Nothing |
+| 1 | `DataCell.ActionSingle` | ArrowRight icon, subtle at rest (`opacity-20`), fully visible on hover (`group-hover:opacity-100`) |
+| 2+ | `DataCell.ActionMenu` | `MoreVertical` kebab, always visible, opens dropdown |
 
-Anti-pattern: dropping `delete` into a hidden kebab when the row has only 3 actions — destructive
-actions must be visible (or one tap away inside a kebab that is itself visible).
+**How it works:**
+- Action files define a `StructuredAction[]` with optional `visible` flags.
+- `auto()` (DataTable) and `render()` (Cards/Kanban) filter `visible: false`, count remaining, and pick the right component.
+- No manual decision needed — the system adapts per-row/card at runtime.
+
+**DataTable (via `auto()`):**
+- The actions column has no header label and a fixed width of 40px.
+- Row containers have the `group` class for `group-hover` to work.
+- `DataCell.ActionSingle` renders an `ArrowRight` icon with `opacity-20 group-hover:opacity-100`.
+- `DataCell.ActionMenu` renders the `MoreVertical` kebab, always visible.
+
+**Cards / Kanban (via `render()`):**
+- Uses the same `ActionSingle` and `ActionMenu` components as DataTable.
+- `EntityCard.Root` has the `group` class, so hover-reveal works automatically.
+- Parent containers should have `group` class for `ActionSingle` hover-reveal.
 
 ---
 
 ## 5. Implementation contracts
 
-### 5.1 Table — `createActionsColumn` + `DataCell.Action` / `DataCell.ActionMenu`
+### 5.1 Table — `auto()` with structured data (preferred)
+
+```tsx
+import { createEntityActions, type StructuredActions } from "@/components/shared"
+import type { Product } from "@/features/inventory/types"
+
+interface ProductActionsCtx {
+  onEdit: (id: number) => void
+  onArchive: (product: Product) => void
+  onDelete: (product: Product) => void
+}
+
+// Define actions as structured data — visibility is explicit
+export const productActions = createEntityActions<Product, ProductActionsCtx>(
+  (item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item.id) },
+    { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
+    // Only visible for non-active products with no stock:
+    { action: "delete", onClick: () => ctx.onDelete(item), visible: !item.is_active && item.stock === 0 },
+  ]
+)
+
+// Caller — auto() detects visible count per row:
+// - 1 visible → ActionSingle (ArrowRight on hover)
+// - 2+ visible → ActionMenu (kebab)
+const columns = [ productActions.auto(actionsCtx) ]
+```
+
+**Auto-detection at runtime:**
+- If a row has `is_active=true, stock=10` → 2 visible actions → kebab menu.
+- If a row has `is_active=false, stock=0` → 3 visible actions → kebab menu.
+- If a row has `is_active=true, stock=0` → only `edit` visible → ArrowRight.
+
+**Conditional visibility patterns:**
+
+```tsx
+// Pattern 1: simple flag
+{ action: "delete", onClick: () => ctx.onDelete(item), visible: !item.is_system }
+
+// Pattern 2: status-based
+{ action: "pay", onClick: () => ctx.onPay(item), visible: item.status === "PENDING" }
+
+// Pattern 3: permission-based
+{ action: "annul", onClick: () => ctx.onAnnul(item), visible: ctx.canDo('annul', item) }
+
+// Pattern 4: disabled but always visible (dimmed in UI)
+{ action: "lock", onClick: () => {}, disabled: true }
+```
+
+**Low-level alternative (JSX — still supported):**
 
 ```tsx
 import { createActionsColumn, DataCell } from "@/components/shared"
-import { ROW_ACTIONS } from "@/lib/row-actions"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
-
-const { openSelected, openDetail, openHub } = useEntityRouteActions()
 
 const columns = [
-  // ...data columns,
   createActionsColumn<Product>({
     renderActions: (item) => (
-      <>
-        <DataCell.Action action="detail" onClick={() => openDetail(item.id)} />
-        <DataCell.Action action="edit"   onClick={() => openSelected(item.id)} />
-        <DataCell.ActionMenu
-          items={[
-            { action: "duplicate", onClick: () => duplicate(item) },
-            { action: "archive",   onClick: () => archive(item) },
-            { separator: true },
-            { action: "delete",    onClick: () => confirmDelete(item) },
-          ]}
-        />
-      </>
+      <DataCell.ActionSingle onClick={() => openSelected(item.id)} />
     ),
   }),
 ]
@@ -170,51 +230,26 @@ const columns = [
 - The legacy form `DataCell.Action icon={Pencil} title="Editar"` remains supported for
   module-specific actions only.
 
-### 5.2 Card / Kanban — `actions` prop + `CardActions`
+### 5.2 Card / Kanban — `render()` + structured data
 
 Actions are passed via the **`actions` prop** on `<EntityCard>`, which renders them in the
 top-right corner (absolute positioned) with `stopPropagation` so they never trigger the card's
-`onClick`. Use `createEntityActions().render(item, ctx)` (recommended) or hand-rolled `CardActions`.
+`onClick`. Use `createEntityActions().render(item, ctx)` which auto-converts structured data → JSX.
 
 ```tsx
-import { EntityCard, CardActions } from "@/components/shared"
+import { EntityCard } from "@/components/shared"
 import { myActions } from "./myActions"
-import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
-const { openSelected } = useEntityRouteActions()
-
-const ctx: MyActionsCtx = {
-  onEdit: (id) => openSelected(id),
-  onDelete: (id) => confirmDelete(id),
-}
-
+// render() converts structured actions → ActionSingle (1) or ActionMenu (2+)
 <EntityCard onClick={() => openSelected(item.id)} actions={myActions.render(item, ctx)}>
   <EntityCard.Header title={item.name} />
   <EntityCard.Body>…</EntityCard.Body>
 </EntityCard>
 ```
 
-For custom action layouts that differ from the shared entity-actions file (e.g. module-specific
-actions), use hand-rolled `CardActions` children:
-
-```tsx
-<EntityCard onClick={() => openSelected(item.id)} actions={
-  <CardActions orientation="horizontal">
-    <CardActions.Item action="hub" onClick={() => openHub(item.id)} />
-    <CardActions.Item action="edit" onClick={() => openSelected(item.id)} />
-    <CardActions.Menu
-      items={[
-        { action: "duplicate", onClick: () => duplicate(item) },
-        { separator: true },
-        { action: "delete", onClick: () => confirmDelete(item) },
-      ]}
-    />
-  </CardActions>
-}>
-  <EntityCard.Header title={item.name} />
-  <EntityCard.Body>…</EntityCard.Body>
-</EntityCard>
-```
+The `render()` method works with both patterns:
+- **Structured data** (array of `StructuredAction`) → converts to `DataCell.Action` icons.
+- **JSX** (legacy ReactNode) → passes through unchanged.
 
 `CardActions` is a thin wrapper around `DataCell.ActionGroup` + `DataCell.Action` /
 `DataCell.ActionMenu` — same primitives, same a11y, same tooltips. The wrapper exists so a future
@@ -264,9 +299,13 @@ setting local modal state). These are evaluated case-by-case.
 |--------------|---------|
 | Hand-rolled `<Button variant="ghost"><Pencil /></Button>` in a table row | `DataCell.Action action="edit"` |
 | `DataCell.Action icon={Edit2} title="Editar"` | `DataCell.Action action="edit"` — registry icon is `Pencil` |
+| Using `.column(ctx)` when actions are defined as structured data | `.auto(ctx)` — auto-detects ActionSingle vs ActionMenu |
+| Manual `DataCell.ActionSingle` / `DataCell.ActionMenu` in `renderActions` | Let `auto()` handle the decision based on visible count |
+| `DataCell.Action action="edit"` as the sole action in a DataTable row | `auto()` renders `DataCell.ActionSingle` automatically |
+| 2+ inline `DataCell.Action` icons in a DataTable row | `auto()` renders `DataCell.ActionMenu` automatically |
 | Popover + custom button list for >2 row actions | `DataCell.ActionMenu items={[…]}` |
 | Card with actions in `EntityCard.Footer` instead of the `actions` prop | Prop `actions` on `<EntityCard>` (top-right corner) — Footer is for metadata, not CRUD actions |
-| Card with a single hidden `Pencil` reachable only on hover | Explicit `CardActions` row with at minimum `edit` + `delete` visible |
+| Card with no `actions` prop despite having `createEntityActions` | Pass `actions={xxxActions.render(item, ctx)}` to `EntityCard.Header` |
 | `delete` placed before `edit` | Canonical order: `delete` always last |
 | `?id=42` / `?edit=42` / `?modal=42` to open the edit modal | `?selected=42` (ADR-0020) |
 | `?view=42` as a detail/detail param | `openEntity(label, 42)` (ADR-0028) — `?view=` is the viewMode switch |
@@ -277,10 +316,13 @@ setting local modal state). These are evaluated case-by-case.
 
 ## 7. Migration plan
 
-Existing call-sites using the **legacy** form (`DataCell.Action icon={Pencil} title="Editar"`)
-continue to work — they are not a contract violation, but the preferred form going forward is
-`DataCell.Action action="edit"`. The next refactor pass will rewrite them. New code must use the
-`action="<key>"` shorthand whenever the action exists in the registry.
+**New code must use structured data + `auto()`.** The JSX pattern with `.column()` is
+legacy and should only be used when maintaining existing code.
+
+Migration path:
+1. Add `StructuredAction[]` return to the render callback in each action file.
+2. Callers change `.column(ctx)` → `.auto(ctx)`.
+3. `.render(item, ctx)` auto-converts structured data → JSX for cards.
 
 ---
 

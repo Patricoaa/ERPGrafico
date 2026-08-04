@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useGroups } from "../hooks"
-import { ActionConfirmModal, DataTableView, EntityCard } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Users } from "lucide-react"
 import { GroupDrawer } from "@/features/users"
 import { groupActions, type GroupActionsCtx } from './groupActions'
+import { groupFields } from '../groupFields'
 import type { Group } from "../api/types"
 
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
@@ -46,19 +46,8 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
     }
 
     const columns: ColumnDef<Group>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre del Grupo" />
-            ),
-        },
-        {
-            accessorKey: "user_count",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Miembros" />
-            ),
-        },
-        groupActions.column(groupActionsCtx)
+        ...groupFields.toColumns(),
+        groupActions.auto(groupActionsCtx)
     ]
 
     return (
@@ -90,13 +79,16 @@ export function GroupsClientView({ externalOpen, onExternalOpenChange, createAct
                     onReset={search.clearAll}
                     createAction={createAction}
                     renderCard={(group: Group) => (
-                        <EntityCard key={group.id}>
-                            <EntityCard.Header
-                                icon={Users}
-                                title={group.name}
-                                subtitle={`${group.user_count ?? 0} miembros`}
-                            />
-                        </EntityCard>
+                        <AutoEntityCard 
+                            key={group.id} 
+                            data={group}
+                            fields={groupFields}
+                            entityLabel="settings.group"
+                            onClick={() => groupActionsCtx.onEdit(group)}
+                            icon={Users}
+                            actions={groupActions.render(group, groupActionsCtx)}
+
+                        />
                     )}
                     cardSkeleton={{ showBody: false }}
                 />

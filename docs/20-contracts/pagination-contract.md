@@ -59,7 +59,7 @@ Todo endpoint `GET /api/<app>/<resource>/` que devuelva una colección MUST resp
 | Param | Tipo | Default | Notas |
 |---|---|---|---|
 | `page` | int ≥ 1 | `1` | Page-number pagination (no cursor). |
-| `page_size` | int ≥ 1 | depende del viewset | Cap obligatorio: ver §1.4. |
+| `page_size` | int ≥ 1 | `50` | Cap obligatorio: ver §1.4. |
 
 ### 1.3 Configuración Django
 
@@ -113,7 +113,7 @@ Pueden devolver `T[]` plano sin envoltorio:
 
 ### 2.1 Tipo canónico
 
-Definido una sola vez en `frontend/lib/pagination.ts` (a crear):
+Definido una sola vez en [frontend/lib/pagination.ts](../../frontend/lib/pagination.ts) (ya existe — la propuesta original "a crear" fue completada en 2026-05-28):
 
 ```ts
 // frontend/lib/pagination.ts
@@ -133,8 +133,11 @@ export interface Page<T> {
 
 export interface PageParams {
   page?: number       // default 1
-  page_size?: number  // default depende del hook; recomendado 50
+  page_size?: number  // default 50
 }
+
+/** Empty page placeholder para estados skeleton de `useQuery`. */
+export function emptyPage<T>(pageSize = 50): Page<T> { … }
 ```
 
 ### 2.2 Forma de retorno del hook (MUST)
@@ -182,22 +185,26 @@ export const treasuryApi = {
 Helper único en `frontend/lib/pagination.ts`:
 
 ```ts
+// frontend/lib/pagination.ts (implementación real)
 export function toPage<T>(envelope: unknown, pageIndex: number, pageSize: number): Page<T> {
-  // Runtime guard — el backend puede romper el contrato (auditoría §1.5)
-  if (!envelope || typeof envelope !== 'object' || !('results' in envelope)) {
-    throw new Error('Backend devolvió T[] en endpoint paginado. Ver pagination-contract.md §1.1')
+  // Runtime guard — el backend puede romper el contrato (§1.1)
+  if (!isDrfEnvelope<T>(envelope)) {
+    throw new Error('Backend did not return the {count, next, previous, results} envelope. …')
   }
-  const env = envelope as { count: number; next: string | null; previous: string | null; results: T[] }
   return {
-    results: env.results,
-    count: env.count,
+    results: envelope.results,
+    count: envelope.count,
     pageSize,
     pageIndex,
-    hasNextPage: !!env.next,
-    hasPrevPage: !!env.previous,
+    hasNextPage: !!envelope.next,
+    hasPrevPage: !!envelope.previous,
   }
 }
 ```
+
+`isDrfEnvelope` valida `count: number`, `results: array`, y `next`/`previous` como `string | null`.
+Si el backend devuelve `T[]` en un endpoint declarado paginado, `toPage` **lanza** (debe
+aflorar, no ocultarse) — el mensaje apunta a este contrato §1.1.
 
 ### 2.3 Anti-patrones (MUST NOT)
 
@@ -326,37 +333,43 @@ Snapshot inicial. Se actualiza con cada migración en el mismo PR.
 
 | Hook | Endpoint | Hoy devuelve | Compliant | Acción |
 |---|---|---|---|---|
-| [useTreasuryMovements](../../frontend/features/treasury/hooks/useTreasuryMovements.ts#L78) | `/treasury/movements/` | `{ data, movements, totalCount, hasNextPage, hasPrevPage }` | 🟡 Parcial | Renombrar a `Page<T>` canónico, exponer `page` único |
-| [useStockMoves](../../frontend/features/inventory/hooks/useStockMoves.ts#L61) | `/inventory/moves/` | `useQuery<PaginatedStockMoves>` cruda | 🟡 Parcial | Migrar a `Page<T>`, eliminar `useStockMovesList` deprecado |
-| [useStockMovesList](../../frontend/features/inventory/hooks/useStockMoves.ts#L82) (deprecated) | idem | `{ moves, totalCount, isLoading }` sin pageIndex | 🔴 No | Eliminar; consumidor único es [MovementList.tsx:48](../../frontend/features/inventory/components/MovementList.tsx#L48), que además renderiza con DataTable cliente → bug B |
-| [useReconciledLinesQuery](../../frontend/features/finance/bank-reconciliation/components/ReconciliationPanel.tsx) | varios | `manualPagination` cableado a mano en el componente | 🟡 Parcial | Consumidor: el componente arma el `Page<T>` localmente; lift al hook |
-| [salesApi.getOrders](../../frontend/features/sales/api/salesApi.ts#L12) | `/sales/orders/` | `Promise<SaleOrder[]>` (descarta envoltorio) | 🔴 No | Backend hoy no pagina → al activar paginación global §1.3, todas las listas de venta se truncan a 50. Migrar **antes** del cambio en settings. |
-| [ordersApi](../../frontend/features/orders/api/ordersApi.ts), [productionApi](../../frontend/features/production/api/productionApi.ts), [useUsers](../../frontend/features/users/hooks/useUsers.ts), [useDrafts](../../frontend/features/pos/hooks/useDrafts.ts), [useProducts (pos)](../../frontend/features/pos/hooks/useProducts.ts), [accounting/useJournalEntries](../../frontend/features/accounting/hooks/useJournalEntries.ts), [inventoryApi](../../frontend/features/inventory/api/inventoryApi.ts) | varios | `data.results \|\| data` (descarta envoltorio) | 🔴 No | Mismo bloqueo que sales: migrar antes de activar `DEFAULT_PAGINATION_CLASS` global |
+| [useTreasuryMovements](../../frontend/features/treasury/hooks/useTreasuryMovements.ts#L44) | `/treasury/movements/` | `{ page, movements, totalCount, isLoading, isFetching, refetch }` | ✅ Sí | `page` expuesto; `movements`/`totalCount` como alias de conveniencia |
+| [useStockMoves](../../frontend/features/inventory/hooks/useStockMoves.ts#L62) | `/inventory/moves/` | `{ page, moves, totalCount, isLoading, isFetching, refetch }` | ✅ Sí | Usa `toPage<StockMove>` en el `queryFn` |
+| [useReconciledLinesQuery](../../frontend/features/finance/bank-reconciliation/hooks/useReconciliationQueries.ts#L148) | `/finance/…/statements/{id}/reconciled-lines/` | `Page<T>` propio (params `page`/`pageSize`) | 🟡 Parcial | El `Page<T>` se arma en el hook pero el consumidor ([ReconciliationPanel.tsx:831,897](../../frontend/features/finance/bank-reconciliation/components/ReconciliationPanel.tsx#L831)) cablea `manualPagination` a mano; unificar con el patrón canónico |
+| [salesApi.getOrders](../../frontend/features/sales/api/salesApi.ts#L15) | `/sales/orders/` | `Promise<Page<SaleOrder>>` | ✅ Sí | `toPage<SaleOrder>(data, page, page_size)` |
+| [inventoryApi.getProducts](../../frontend/features/inventory/api/inventoryApi.ts#L34), `getInventoryDocuments`, `getInventoryCounts` | `/inventory/products/`, `/inventory/documents/`, `/inventory/counts/` | `Promise<Page<…>>` | ✅ Sí | Todos pasan por `toPage` |
+| [useUsers](../../frontend/features/users/hooks/useUsers.ts#L12) | `/users/` | `{ page, users, isLoading, refetch }` | ✅ Sí | Expone `page` |
+| [useJournalEntries](../../frontend/features/accounting/hooks/useJournalEntries.ts#L79) | `/accounting/journal-entries/` | `entries: pageData?.results ?? []` | 🟡 Parcial | Consume `Page<T>` interno pero no expone `page` — verificar si el DataTable consumidor necesita el footer |
+| [useDrafts (pos)](../../frontend/features/pos/hooks/useDrafts.ts#L67) | `/pos/drafts/` | `raw?.results ?? []` (descarta envoltorio) | 🔴 No | Migrar a `Page<T>` |
+| [useProducts (pos)](../../frontend/features/pos/hooks/useProducts.ts#L52) | `/pos/products/` | `page.results ?? []` con `as` casts | 🔴 No | Migrar a `Page<T>`; eliminar `as unknown as` |
+| [productionApi.getBOMs](../../frontend/features/production/api/productionApi.ts#L55) | `/production/boms/` | `r.data.results` (descarta envoltorio) | 🔴 No | Migrar a `Page<BOM>` |
 | Todos los hooks de detalle (`use<Entity>(id)`) | `/<resource>/{id}/` | `T` | ✅ N/A | Detalle no se pagina |
 
-### Orden de migración — estado 2026-05-28
+### Orden de migración — estado 2026-08-04 (reconciliado con código real)
 
 | # | Paso | Estado |
 |---|------|--------|
-| 1 | `frontend/lib/pagination.ts` (`Page<T>`, `toPage`) | ✅ hecho |
+| 1 | `frontend/lib/pagination.ts` (`Page<T>`, `toPage`, `emptyPage`) | ✅ hecho |
 | 2 | prop `rowCount` en `DataTable` + `DataTablePagination` lee `getRowCount()` (§3.2) | ✅ hecho |
 | 3 | `StandardResultsSetPagination` consolidada en `backend/core/api/pagination.py` (sin duplicados) | ✅ hecho |
 | 4 | `max_page_size` 1000 → 200 (§1.4) | ✅ hecho |
 | 5 | ESLint rules `pagination/*` (§6) | ✅ hechas |
 | 6 | `api-contracts.md` reconciliado (page-number, max 200, default 50) | ✅ hecho |
-| 7 | Migrar hooks `data.results \|\| data` → `Page<T>` (sales, orders, production, users, pos drafts, accounting, inventory) | 🔴 pendiente |
-| 8 | Activar `DEFAULT_PAGINATION_CLASS` global en `settings.py` — **después** del paso 7 (antes truncaría a 50) | 🔴 pendiente (bloqueado por 7) |
+| 7 | Migrar hooks `data.results \|\| data` → `Page<T>` (sales, inventory, treasury, users) | ✅ hecho |
+| 8 | **Activar `DEFAULT_PAGINATION_CLASS` global en `settings.py`** | ✅ hecho — ya activo (`settings.py:284`) |
+| 9 | Migrar residuales: `productionApi.getBOMs`, `pos/useDrafts`, `pos/useProducts`, `useJournalEntries`, `useReconciledLinesQuery` | 🔴 pendiente (bloqueado por nada; riesgo: truncado silencioso en esos listados) |
 
 ---
 
 ## 6. Enforcement mecánico
 
-Las dos reglas de paginación **ya existen** en [frontend/eslint-rules/](../../frontend/eslint-rules/) y están activas como `error`:
+Tres reglas de paginación **ya existen** en [frontend/eslint-rules/](../../frontend/eslint-rules/) y están activas como `error` (registradas bajo el namespace `pagination/` en [frontend/eslint.config.mjs:248-277](../../frontend/eslint.config.mjs#L248)):
 
 | Rule | Detecta | Severidad |
 |---|---|---|
-| [`pagination/no-envelope-discard`](../../frontend/eslint-rules/pagination-no-envelope-discard.mjs) | `data.results \|\| data`, `?.results ?? data`, `(data as any).results ?? data`, optional-chained variantes | **`error`** (promovido desde `warn` el 2026-05-23 tras llegar a 0 violaciones) |
-| [`pagination/datatable-needs-rowcount`](../../frontend/eslint-rules/pagination-datatable-needs-rowcount.mjs) | `<DataTable manualPagination />` sin `rowCount` (JSX AST) | `error` desde día uno (es bug visible) |
+| [`pagination/no-envelope-discard`](../../frontend/eslint-rules/pagination-no-envelope-discard.mjs) | `data.results \|\| data`, `?.results ?? data`, optional-chained variantes | **`error`** |
+| [`pagination/no-raw-response-data`](../../frontend/eslint-rules/pagination-no-raw-response-data.mjs) | usar `response.data` crudo en el componente/hook (evita saltarse `toPage`) | **`error`** |
+| [`pagination/datatable-needs-rowcount`](../../frontend/eslint-rules/pagination-datatable-needs-rowcount.mjs) | `<DataTable manualPagination />` sin `rowCount` (JSX AST) | **`error`** (es bug visible) |
 
 **Auditoría manual** (correr antes de cada release):
 
@@ -377,11 +390,11 @@ Cualquier resultado distinto del baseline anterior = desviación, clasificar con
 
 ## 7. Deuda conocida (pendiente real)
 
-- **Hooks `data.results || data`** (sales, orders, production, users, pos drafts, accounting, inventory) aún descartan el envoltorio → migrar a `Page<T>` **antes** de activar `DEFAULT_PAGINATION_CLASS` global, o se truncan silenciosamente a 50 (§5 paso 7).
-- **`DEFAULT_PAGINATION_CLASS` global** sigue inactivo en `settings.py` — intencional hasta cerrar el punto anterior (§5 paso 8).
-- **Hooks `@deprecated`** ([useStockMovesList](../../frontend/features/inventory/hooks/useStockMoves.ts#L82), [useTreasuryMovementsList](../../frontend/features/treasury/hooks/useTreasuryMovements.ts#L66)) aún consumidos por componentes; eliminar requiere migrar el consumidor primero.
+- **`DEFAULT_PAGINATION_CLASS` global está ACTIVO** (`settings.py:284`) — la paginación ya es el default para todos los viewsets. Los endpoints de master data (§8) deben declarar `pagination_class = None`; verificar que ninguno se haya truncado silenciosamente a 50 tras la activación.
+- **Residuales sin migrar a `Page<T>`** (riesgo de truncado silencioso en esos listados, ya que el backend pagina por default): `productionApi.getBOMs`, `pos/useDrafts`, `pos/useProducts`, `useJournalEntries` (parcial), `useReconciledLinesQuery` (parcial).
+- **`useStockMovesList` deprecado** fue eliminado — el consumidor único ([MovementList.tsx](../../frontend/features/inventory/components/MovementList.tsx)) migró a `useStockMoves`.
 
-> **Cerrado desde la auditoría 2026-05-23:** `lib/pagination.ts`, prop `rowCount` + `getRowCount()`, consolidación de `StandardResultsSetPagination` en `core/api/pagination.py`, `max_page_size=200`, reconciliación de `api-contracts.md` y las ESLint rules `pagination/*` (§6).
+> **Cerrado desde la auditoría 2026-05-23:** `lib/pagination.ts`, prop `rowCount` + `getRowCount()`, consolidación de `StandardResultsSetPagination` en `core/api/pagination.py`, `max_page_size=200`, reconciliación de `api-contracts.md` y las ESLint rules `pagination/*` (§6). **Cerrado el 2026-08-04:** activación de `DEFAULT_PAGINATION_CLASS` global y migración de sales/inventory/treasury/users.
 
 ---
 

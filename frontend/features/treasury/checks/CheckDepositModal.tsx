@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect } from '@/components/shared'
+import {BaseModal, FormFooter, CancelButton, ActionSlideButton} from '@/components/shared'
 import { formatMoney } from '@/lib/money'
 import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountSelector'
 import { useCheckMutations } from '../hooks/useChecks'

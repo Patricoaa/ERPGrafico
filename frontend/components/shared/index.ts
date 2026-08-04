@@ -6,6 +6,11 @@
 // not from individual component files.
 // ─────────────────────────────────────────────────────────
 
+// Entity actions & fields — must be exported FIRST so feature modules
+// that import the barrel at eval time (e.g. *Actions) find these defined.
+export * from './entity-actions';
+export * from './entity-fields';
+
 // Charts
 export * from './charts';
 
@@ -34,6 +39,8 @@ export * from './ActionDock';
 
 // Cards & Containers
 export * from './StatCard';
+export * from './ChartLegend';
+export * from './KPIComponents';
 export * from './AnalyticsPanel';
 export * from './CardSkeleton';
 export * from './SkeletonShell';
@@ -51,14 +58,16 @@ export * from './EntityBadge';
 export * from './SourceDocumentLink';
 export * from './ChartTooltip';
 export * from './AutoSaveStatusBadge';
+
 export * from './ReportTable';
+
 export * from './DataManagement';
 export * from './CommentSystem';
 export * from './AttachmentList';
 export * from './DocumentAttachmentDropzone';
 export * from './DocumentCompletionModal';
 export * from './Badge';
-export * from './HeaderNavDropdowns';
+export * from './ModuleNavigationMenu';
 
 // Navigation & Layout
 export * from './EntityHeader';
@@ -77,6 +86,7 @@ export * from './FormSection';
 
 // Loading States
 export * from './LoadingFallback';
+export * from './StaleDataBanner';
 
 // Animations
 export * from './FadeIn';
@@ -132,7 +142,7 @@ export * from './AccountingLinesTable';
 export * from './FormLineItemsTable';
 
 export * from './EntityCard'
-export * from './DomainCard'
+export * from './AutoEntityCard'
 export * from './CardActions'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
@@ -151,7 +161,6 @@ export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './CmykRing'
 export * from './PrepressPanel'
-export * from './entity-actions'
 export * from './Numpad'
 
 export * from './PrintableReceipt'

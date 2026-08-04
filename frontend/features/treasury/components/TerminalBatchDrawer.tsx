@@ -61,7 +61,7 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando lote de terminal">
           {batch && (
             <div className="p-4 space-y-4">
-              <StatusBadge status={batch.status} />
+              <StatusBadge status={batch.status} variant="badge" />
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>

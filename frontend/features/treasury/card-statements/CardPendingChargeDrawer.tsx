@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { DollarSign, Tag, Pencil, Trash2 } from "lucide-react"
+import {DollarSign, Tag, Trash2} from "lucide-react"
 import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 import { useServerDate } from "@/hooks/useServerDate"
 import { toDateOnlyISO } from "@/lib/utils"
@@ -57,7 +57,7 @@ export function CardPendingChargeDrawer({
     onOpenChange,
     cardAccountId,
     cardAccountName,
-    currency = 'CLP',
+    currency = 'CLP', // eslint-disable-line @typescript-eslint/no-unused-vars
     charge,
     onSuccess,
     mode: modeProp,
@@ -149,6 +149,7 @@ export function CardPendingChargeDrawer({
 
     return (
         <Drawer
+                fillContent
             open={open}
             onOpenChange={onOpenChange}
             side="left"

@@ -23,8 +23,9 @@ Controla los **estados de carga** de la aplicación. Existen tres estrategias bi
 │       ├─ Página completa (app/loading.tsx)         → AppShellSkeleton
 │       ├─ Página con tabs + toolbar + tabla          → PageLayoutSkeleton
 │       ├─ Página con formulario                      → PageLayoutSkeleton contentType="form"
-│       ├─ Tabla de datos                             → TableSkeleton
+│       ├─ Tabla de datos                             → `DataTable isLoading={true}` (skeleton de filas integrado)
 │       ├─ Tarjetas en grilla                         → CardSkeleton variant="grid"|"product"
+│       ├─ Selector de contacto en modo card          → CardSkeleton variant="contact-card"
 │       └─ Formulario                                 → PageLayoutSkeleton contentType="form"
 │
 ├─ Datos ya visibles, el usuario filtra / pagina / mutates (refetch)
@@ -98,7 +99,7 @@ Si `SaleOrder` agrega un campo obligatorio, TypeScript fuerza actualizar `ORDERS
 
 ```tsx
 // MAL — desmonta el componente real y lo reemplaza por una silueta diferente → CLS
-if (isFetching) return <TableSkeleton rows={8} columns={5} />
+if (isFetching) return <div className="space-y-4"><Skeleton className="h-8 w-full" />…</div>
 return <DataTable ... />
 ```
 
@@ -109,20 +110,20 @@ return <DataTable ... />
 Cuando un componente necesita su propio fallback para un `<Suspense>` (ej. modal lazy, panel pesado), define la propiedad estática `.Skeleton` en el mismo archivo.
 
 ```tsx
-// BudgetVarianceTable.tsx
-function BudgetVarianceTableBase({ data, loading }: Props) { ... }
+// MyHeavyComponent.tsx
+function MyHeavyComponentBase({ data, loading }: Props) { ... }
 
-BudgetVarianceTableBase.Skeleton = function BudgetVarianceTableSkeleton() {
-    return <TableSkeleton rows={8} columns={7} ariaLabel="Cargando variación presupuestal" />
+MyHeavyComponentBase.Skeleton = function MyHeavyComponentSkeleton() {
+    return <SkeletonShell isLoading ariaLabel="Cargando datos"><Placeholder /></SkeletonShell>
 }
 
-export const BudgetVarianceTable = BudgetVarianceTableBase
+export const MyHeavyComponent = MyHeavyComponentBase
 ```
 
 ```tsx
 // En el consumidor
-<Suspense fallback={<BudgetVarianceTable.Skeleton />}>
-    <BudgetVarianceTable data={data} />
+<Suspense fallback={<MyHeavyComponent.Skeleton />}>
+    <MyHeavyComponent data={data} />
 </Suspense>
 ```
 
@@ -231,20 +232,9 @@ Cuando `isLoading=true`, `SkeletonShell` aplica `aria-busy="true"` + `aria-live=
 
 Todos los componentes del catálogo se importan **exclusivamente** desde el barrel:
 ```tsx
-import { TableSkeleton, SkeletonShell, CardSkeleton } from "@/components/shared"
+import { SkeletonShell, CardSkeleton, PageLayoutSkeleton, LoadingFallback } from "@/components/shared"
 ```
 Nunca importar directamente desde `@/components/ui/skeleton`.
-
----
-
-### `TableSkeleton`
-
-| prop | type | default | notas |
-|------|------|---------|-------|
-| `rows` | `number` | `5` | Filas simuladas |
-| `columns` | `number` | `5` | Columnas por fila |
-| `className` | `string` | — | Clase del contenedor |
-| `ariaLabel` | `string` | `'Cargando tabla'` | Label para lectores de pantalla |
 
 ---
 
@@ -253,14 +243,19 @@ Nunca importar directamente desde `@/components/ui/skeleton`.
 | prop | type | default | notas |
 |------|------|---------|-------|
 | `count` | `number` | `3` | Tarjetas a renderizar |
-| `variant` | `'grid' \| 'list' \| 'product' \| 'compact'` | `'grid'` | Forma de las tarjetas |
+| `variant` | `'grid' \| 'list' \| 'product' \| 'compact' \| 'contact-card'` | `'grid'` | Forma de las tarjetas |
 | `gridClassName` | `string` | — | Configuración de columnas del grid |
 | `className` | `string` | — | Clase del contenedor |
 | `ariaLabel` | `string` | `'Cargando contenido'` | Label para lectores de pantalla |
 
 ---
 
+> **Skeleton de tablas:** `TableSkeleton` y `SharedTableSkeleton` **no existen** (fueron eliminados).
+> El loading de tablas es **integrado** en `DataTable` via las props `isLoading` + `skeletonRows`:
+> `DataTable` sustituye el body por filas shimmer (`SkeletonShell` + `Skeleton` con shapes
+> `bar | pill | icon | code` por columna) manteniendo toolbar, headers y paginación visibles (sin CLS).
 
+---
 
 ### `SkeletonShell`
 
@@ -288,12 +283,6 @@ Wrappers de alto nivel para rutas completas. Usar en `loading.tsx`.
 | `hasToolbar` | `boolean` | `false` | Incluye `ToolbarSkeleton` |
 | `contentType` | `'table' \| 'card' \| 'form' \| 'custom'` | `'table'` | Contenido del cuerpo |
 | `children` | `ReactNode` | — | Reemplaza el body cuando `contentType='custom'` |
-
-#### `HubSkeleton`
-
-| prop | type | default | notas |
-|------|------|---------|-------|
-| `phases` | `number` | `4` | Cantidad de tarjetas de fase verticales |
 
 #### Sub-componentes (no usar directamente en `loading.tsx`)
 
@@ -330,7 +319,7 @@ Esta regla está aplicada por ESLint (`no-restricted-imports` en `eslint.config.
 
 ## Accesibilidad
 
-- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `PageLayoutSkeleton`, `HubSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
+- Todos los wrappers compuestos (`DataTable` skeleton rows, `CardSkeleton`, `PageLayoutSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
 - Los sub-componentes (`PageTabsSkeleton`, `ToolbarSkeleton`, `PageHeaderSkeleton`) **no** llevan `role="status"` para evitar regiones live anidadas.
 - `SkeletonShell` usa `aria-busy="true"` + `aria-live="polite"` cuando activo.
 - `prefers-reduced-motion: reduce` desactiva todas las animaciones shimmer (`animation: none; opacity: 0.5`). Definido en `globals.css`.

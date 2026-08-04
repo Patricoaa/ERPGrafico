@@ -20,6 +20,7 @@ export function ToolbarCreateButton({
     iconName,
     href,
     className,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- size is intentionally omitted from Button props
     size: _,
     ...props
 }: ToolbarCreateButtonProps) {

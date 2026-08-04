@@ -1,15 +1,16 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { Landmark, Wallet } from "lucide-react"
-import { MoneyDisplay, SectionHeader } from "@/components/shared"
+import { Landmark } from "lucide-react"
+import { AutoEntityCard, DataCell, SectionHeader, createEntityFields } from "@/components/shared"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
     data: BankOverviewData
     bankId: number
 }
+
+const checkingFields = createEntityFields<BankOverviewData["accounts"][number]>()({})
 
 export function BankCheckingSection({ data, bankId }: Props) {
     const router = useRouter()
@@ -24,7 +25,7 @@ export function BankCheckingSection({ data, bankId }: Props) {
                 title="Cuentas Corrientes"
                 count={checking.length}
                 href={`/treasury/bank-center/${bankId}/movements`}
-                variant="card"
+                variant="list"
             />
 
             <div className="space-y-2">
@@ -35,35 +36,21 @@ export function BankCheckingSection({ data, bankId }: Props) {
                         : acc.current_balance
 
                     return (
-                        <Button
+                        <AutoEntityCard
                             key={acc.id}
+                            data={acc}
+                            fields={checkingFields}
+                            variant="overview"
+                            icon={Landmark}
+                            title={acc.name}
+                            subtitle={acc.account_number ?? acc.code ?? "—"}
+                            overviewMetrics={[
+                                { label: "Saldo", value: <DataCell.Currency value={acc.current_balance} /> },
+                                { label: "Línea", value: <DataCell.Currency value={creditLine} showColor={false} /> },
+                                { label: "Disponible", value: <DataCell.Currency value={available} showColor={available >= 0} /> },
+                            ]}
                             onClick={() => router.push(`/treasury/bank-center/${bankId}/movements?account=${acc.id}`)}
-                            className="card-base w-full text-left bg-card p-4 cursor-pointer"
-                        >
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-sm font-semibold truncate">{acc.name}</span>
-                                <Wallet className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-                            </div>
-
-                            <div className="text-[11px] font-mono text-muted-foreground mb-3">
-                                {acc.account_number ?? acc.code ?? "—"}
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40 text-xs">
-                                <div>
-                                    <span className="text-[10px] text-muted-foreground block">Saldo</span>
-                                    <MoneyDisplay amount={acc.current_balance} className="text-sm font-semibold" />
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-[10px] text-muted-foreground block">Línea</span>
-                                    <MoneyDisplay amount={creditLine} className="text-sm font-semibold" showColor={false} />
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-[10px] text-muted-foreground block">Disponible</span>
-                                    <MoneyDisplay amount={available} className="text-sm font-semibold" showColor={available >= 0} />
-                                </div>
-                            </div>
-                        </Button>
+                        />
                     )
                 })}
             </div>

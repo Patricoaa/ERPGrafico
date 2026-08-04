@@ -15,6 +15,7 @@ interface NumpadModalProps {
     onConfirm: () => void
     title: string
     description?: string
+    icon?: React.ComponentType<{ className?: string }> | React.ReactNode
     allowDecimal?: boolean
     maxValue?: number
     netValue?: string | number
@@ -28,6 +29,7 @@ export function NumpadModal({
     onConfirm,
     title,
     description,
+    icon,
     allowDecimal = true,
     maxValue,
     netValue
@@ -38,10 +40,14 @@ export function NumpadModal({
             onOpenChange={onOpenChange}
             title={title}
             description={description}
+            icon={icon}
             size="sm"
+            headerClassName="border-b-0"
+            footerClassName="border-t-0"
+            centered
             footer={
                 <Button
-                    className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
+                    className="w-full h-12 lg:h-14 bg-primary hover:bg-primary font-black uppercase tracking-widest text-sm lg:text-base active:scale-95 transition-transform"
                     onClick={onConfirm}
                 >
                     CONFIRMAR
@@ -66,6 +72,7 @@ export function NumpadModal({
                     onClose={() => onOpenChange(false)}
                     allowDecimal={allowDecimal}
                     hideConfirm
+                    displayValue={formatCurrency(parseFloat(value) || 0)}
                     className="border-none shadow-none p-0 w-full max-w-none"
                 />
             </div>

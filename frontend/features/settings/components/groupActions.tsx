@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { Group } from "../api/types"
 
 export interface GroupActionsCtx {
@@ -7,10 +7,8 @@ export interface GroupActionsCtx {
 }
 
 export const groupActions = createEntityActions<Group, GroupActionsCtx>(
-    (item, ctx) => (
-        <>
-            <DataCell.Action action="edit" onClick={() => ctx.onEdit(item)} />
-            <DataCell.Action action="delete" onClick={() => ctx.onDelete(item.id)} />
-        </>
-    )
+    (item, ctx) => [
+        { action: "edit", onClick: () => ctx.onEdit(item) },
+        { action: "delete", onClick: () => ctx.onDelete(item.id) },
+    ]
 )

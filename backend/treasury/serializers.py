@@ -37,9 +37,9 @@ class BankSerializer(serializers.ModelSerializer):
         ]
 
     def get_account_executives_details(self, obj):
-        from contacts.serializers import ContactSerializer
+        from contacts.serializers import ContactTinySerializer
 
-        return ContactSerializer(obj.account_executives.all(), many=True).data
+        return ContactTinySerializer(obj.account_executives.all(), many=True).data
 
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
@@ -276,6 +276,61 @@ class PaymentAllocationSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "created_by"]
 
 
+class TreasuryMovementListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for Treasury Movement list views."""
+    account_name = serializers.CharField(source="account.name", read_only=True)
+    payment_method_display = serializers.CharField(
+        source="get_payment_method_display", read_only=True
+    )
+    movement_type_display = serializers.CharField(
+        source="get_movement_type_display", read_only=True
+    )
+    display_id = serializers.CharField(read_only=True)
+    status = serializers.SerializerMethodField()
+
+    def get_status(self, obj):
+        if obj.is_reconciled:
+            return "RECONCILED"
+        if obj.is_pending_registration:
+            return "PENDING"
+        return "POSTED"
+
+    class Meta:
+        model = TreasuryMovement
+        fields = [
+            "id", "display_id", "account", "account_name", "amount", "date", 
+            "movement_type", "movement_type_display", "payment_method", "payment_method_display",
+            "status", "is_reconciled", "is_pending_registration", "created_at"
+        ]
+
+class TreasuryMovementWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views."""
+    class Meta:
+        model = TreasuryMovement
+        fields = [
+            "id",
+            "account",
+            "from_account",
+            "to_account",
+            "amount",
+            "date",
+            "movement_type",
+            "payment_method",
+            "payment_method_new",
+            "contact",
+            "invoice",
+            "sale_order",
+            "purchase_order",
+            "justify_reason",
+            "notes",
+            "terminal_batch",
+            "card_purchase_group",
+            "bank_statement_line",
+            "is_reconciled",
+            "is_pending_registration",
+        ]
+        read_only_fields = ["is_reconciled", "is_pending_registration"]
+
 class TreasuryMovementSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
     partner_id = serializers.SerializerMethodField()
@@ -438,9 +493,13 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
 
     def get_journal_entry(self, obj):
         if obj.journal_entry:
-            from accounting.serializers import JournalEntrySerializer
-
-            return JournalEntrySerializer(obj.journal_entry).data
+            je = obj.journal_entry
+            return {
+                "id": je.id,
+                "display_id": je.display_id,
+                "date": str(je.date) if je.date else None,
+                "status": je.status,
+            }
         return None
 
     def get_code(self, obj):
@@ -515,9 +574,8 @@ class POSSessionSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
     terminal_name = serializers.CharField(source="terminal.name", read_only=True, allow_null=True)
     terminal_details = POSTerminalSerializer(source="terminal", read_only=True)
-    treasury_account_name = serializers.CharField(
-        source="treasury_account.name", read_only=True, allow_null=True
-    )
+    treasury_account_name = serializers.SerializerMethodField()
+    treasury_account = serializers.PrimaryKeyRelatedField(read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
     closed_by_name = serializers.CharField(
@@ -533,6 +591,12 @@ class POSSessionSerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj):
         return obj.user.get_full_name() or obj.user.username
+
+    def get_treasury_account_name(self, obj):
+        from treasury.pos_service import _get_session_treasury
+
+        treasury = _get_session_treasury(obj)
+        return treasury.name if treasury else None
 
 
 class POSSessionAuditSerializer(serializers.ModelSerializer):
@@ -677,7 +741,7 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
     provider_name = serializers.CharField(source="provider.name", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     display_id = serializers.CharField(read_only=True)
-    payment_count = serializers.IntegerField(read_only=True)
+    payment_count = serializers.IntegerField(source="payment_count_agg", read_only=True)
 
     # Nested objects for detailed view
     settlement_journal_entry_data = serializers.SerializerMethodField()
@@ -921,48 +985,48 @@ class BankLoanSerializer(serializers.ModelSerializer):
 
     installments = LoanInstallmentSerializer(many=True, read_only=True)
 
+    def _get_aggregates(self, obj):
+        if not hasattr(obj, "_loan_aggregates_cache"):
+            from decimal import Decimal
+            from .models import LoanInstallment
+
+            installments = list(obj.installments.all())
+            paid_principal = Decimal("0")
+            paid_count = 0
+            pending_sorted = []
+
+            for inst in installments:
+                if inst.status == LoanInstallment.Status.PAID:
+                    paid_principal += inst.principal_amount or Decimal("0")
+                    paid_count += 1
+                elif inst.status == LoanInstallment.Status.PENDING:
+                    pending_sorted.append(inst)
+
+            pending_sorted.sort(key=lambda x: x.due_date)
+
+            obj._loan_aggregates_cache = {
+                "installments_count": len(installments),
+                "paid_installments_count": paid_count,
+                "outstanding_balance": str((obj.principal - paid_principal).quantize(Decimal("0.01"))),
+                "next_due_date": str(pending_sorted[0].due_date) if pending_sorted else None,
+                "next_installment_amount": pending_sorted[0].total_amount if pending_sorted else None,
+            }
+        return obj._loan_aggregates_cache
+
     def get_outstanding_balance(self, obj):
-        from decimal import Decimal
-        from .models import LoanInstallment
-
-        # Reads from prefetched installments in RAM
-        installments = obj.installments.all()
-        paid_principal = sum(
-            (inst.principal_amount or Decimal("0"))
-            for inst in installments
-            if inst.status == LoanInstallment.Status.PAID
-        )
-
-        bal = obj.principal - paid_principal
-        return str(bal.quantize(Decimal("0.01")))
+        return self._get_aggregates(obj)["outstanding_balance"]
 
     def get_next_due_date(self, obj):
-        from .models import LoanInstallment
-        
-        installments = [inst for inst in obj.installments.all() if inst.status == LoanInstallment.Status.PENDING]
-        if not installments:
-            return None
-        
-        # Sort by due_date to find the earliest
-        installments.sort(key=lambda x: x.due_date)
-        return str(installments[0].due_date)
+        return self._get_aggregates(obj)["next_due_date"]
 
     def get_next_installment_amount(self, obj):
-        from .models import LoanInstallment
-
-        installments = [inst for inst in obj.installments.all() if inst.status == LoanInstallment.Status.PENDING]
-        if not installments:
-            return None
-            
-        installments.sort(key=lambda x: x.due_date)
-        return installments[0].total_amount
+        return self._get_aggregates(obj)["next_installment_amount"]
 
     def get_installments_count(self, obj):
-        return len(obj.installments.all())
+        return self._get_aggregates(obj)["installments_count"]
 
     def get_paid_installments_count(self, obj):
-        from .models import LoanInstallment
-        return sum(1 for inst in obj.installments.all() if inst.status == LoanInstallment.Status.PAID)
+        return self._get_aggregates(obj)["paid_installments_count"]
 
     total_disbursed = serializers.SerializerMethodField()
 

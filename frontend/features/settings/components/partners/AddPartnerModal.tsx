@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils"
 
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
-import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
+import { BaseModal, CancelButton, SubmitButton, Chip } from '@/components/shared'
 
 import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
-import { partnersApi } from "@/features/contacts"
+import { partnersApi, subscribedPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { toast } from "sonner"
 import {UserPlus, TrendingDown} from "lucide-react"
@@ -141,9 +141,9 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                             <TrendingDown className="h-4 w-4" />
                             Proyección de Participación (Dilución)
                         </h4>
-                        <div className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                        <Chip size="md" intent="primary">
                             Total Proyectado: {formatCurrency(projectedTotal)}
-                        </div>
+                        </Chip>
                     </div>
 
                     <RowTable
@@ -186,7 +186,7 @@ const projColumns: ColumnDef<ProjectionRow>[] = [
         header: "Capital Actual",
         accessorKey: "capital",
         cell: ({ row }) => (
-            <DataCell.Currency value={row.original.capital} className={cn(row.original.type === "new" && "text-primary font-bold")} />
+            <DataCell.Currency value={row.original.capital} weight={row.original.type === "new" ? "bold" : undefined} className={cn(row.original.type === "new" && "text-primary")} />
         ),
         meta: { align: "right" as const },
     },
@@ -211,6 +211,7 @@ const projColumns: ColumnDef<ProjectionRow>[] = [
 ]
 
 function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]; projectedTotal: number; newAmount: number }) {
+    const subscribedPctById = useMemo(() => subscribedPercentages(partners), [partners])
     const rows: ProjectionRow[] = useMemo(() => {
         const existing: ProjectionRow[] = partners.map(p => {
             const contributions = typeof p.partner_total_contributions === "string"
@@ -222,7 +223,7 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
                 name: p.name,
                 type: "existing" as const,
                 capital: contributions,
-                currentPerc: `${p.partner_equity_percentage}%`,
+                currentPerc: `${subscribedPctById[p.id] ?? "0.00"}%`,
                 projectedPerc: `${projectedPerc}%`,
             }
         })
@@ -240,7 +241,7 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
                 projectedPerc: `${(newAmount / projectedTotal * 100).toFixed(2)}%`,
             },
         ]
-    }, [partners, projectedTotal, newAmount])
+    }, [partners, projectedTotal, newAmount, subscribedPctById])
 
     return (
         <DataTable
@@ -256,8 +257,4 @@ function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]
             }}
         />
     )
-}
-
-function formatCurrencyExcludingSymbol(amount: number) {
-    return formatCurrency(amount)
 }

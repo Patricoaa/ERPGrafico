@@ -41,7 +41,9 @@ class PurchaseReturnService:
             status=InventoryDocument.Status.DRAFT,
             date=timezone.now().date(),
             reference=f"Anulación {doc.display_id}",
-            partner=doc.purchase_order.supplier
+            partner=doc.purchase_order.supplier,
+            source_document_type="purchasing.purchasereturn",
+            source_document_id=doc.id,
         )
         details = []
 
@@ -186,7 +188,9 @@ class PurchaseReturnService:
             status=InventoryDocument.Status.DRAFT,
             date=return_doc.date,
             reference=f"Devolución {return_doc.purchase_order.display_id}",
-            partner=return_doc.purchase_order.supplier
+            partner=return_doc.purchase_order.supplier,
+            source_document_type="purchasing.purchasereturn",
+            source_document_id=return_doc.id,
         )
         details_to_create = []
 

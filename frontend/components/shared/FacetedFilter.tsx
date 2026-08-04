@@ -5,7 +5,7 @@ import { Check, PlusCircle } from "lucide-react"
 
 import { SEG_TEXT, SEG_DROPDOWN_ITEM, SEG_MENU_ITEM, SEG_CHECKBOX } from './search-styles'
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import {
     Popover,
@@ -42,31 +42,30 @@ export function FacetedFilter({
                     {selectedSet.size > 0 && (
                         <>
                             <Separator orientation="vertical" className="mx-2 h-4" />
-                            <Badge
-                                variant="secondary"
-                                                className={`rounded-sm px-1 ${SEG_TEXT} lg:hidden bg-primary text-primary-foreground`}
-                            >
-                                {selectedSet.size}
-                            </Badge>
+                            <Chip.Count
+                                value={selectedSet.size}
+                                size="xs"
+                                intent="primary"
+                                className="lg:hidden"
+                            />
                             <div className="hidden space-x-1 lg:flex">
                                 {selectedSet.size > 2 ? (
-                                    <Badge
-                                        variant="secondary"
-                                        className={`rounded-sm px-1 ${SEG_TEXT} bg-primary text-primary-foreground tracking-tighter`}
-                                    >
-                                        {selectedSet.size}
-                                    </Badge>
+                                    <Chip.Count
+                                        value={selectedSet.size}
+                                        size="xs"
+                                        intent="primary"
+                                    />
                                 ) : (
                                     options
                                         .filter((option) => selectedSet.has(option.value))
                                         .map((option) => (
-                                            <Badge
-                                                variant="secondary"
+                                            <Chip
                                                 key={option.value}
-                                                className={`rounded-sm px-1 ${SEG_TEXT} bg-primary/10 text-primary tracking-tighter`}
+                                                size="xs"
+                                                intent="primary"
                                             >
                                                 {option.label}
-                                            </Badge>
+                                            </Chip>
                                         ))
                                 )}
                             </div>

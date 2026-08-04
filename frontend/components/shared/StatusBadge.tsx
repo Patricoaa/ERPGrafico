@@ -3,21 +3,24 @@
 /**
  * StatusBadge — Semantic wrapper for business workflow states.
  *
- * Thin wrapper over <Badge>. Resolves status string → intent via STATUS_MAP.
- * All visual decisions live in Badge. All business logic lives in resolveStatus().
+ * Two presentation modes:
+ *   - "default" / "dot" → compact dot + text (DataTable, card lists)
+ *   - "badge"            → square tinted badge with dot indicator (Modal, Drawer, detail views)
+ *   - "hub"              → circular icon badge (workflow dashboards, preserved)
  *
  * Rule (GOVERNANCE §18): StatusBadge is the ONLY authorized status renderer.
  * Do NOT use <Badge> or <Chip> directly for workflow states.
  *
  * @example
- * <StatusBadge status="PAID" />
- * <StatusBadge status={order.status} label="custom label" variant="dot" />
+ * <StatusBadge status="PAID" />                                   // dot + text
+ * <StatusBadge status="PAID" variant="badge" />                   // square badge + dot
  * <StatusBadge status="IN_PROGRESS" variant="hub" icon={Activity} tooltip="En Proceso" />
  */
 
 import React from 'react'
 import { resolveStatus } from '@/lib/badge-resolvers'
 import { Badge } from '@/components/shared'
+import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 
 export interface StatusBadgeProps {
@@ -25,18 +28,45 @@ export interface StatusBadgeProps {
     status: string
     /** Override the resolved label */
     label?: string
-    /** Visual variant. Default: 'default' (pill). */
-    variant?: 'default' | 'dot' | 'hub'
+    /** Visual variant. 'dot'=compact, 'badge'=pill+dot, 'hub'=circular icon. */
+    variant?: 'default' | 'dot' | 'badge' | 'hub'
     /** Icon — required for variant="hub", optional for default */
     icon?: LucideIcon
     /** Tooltip — used with variant="hub" */
     tooltip?: string
-    /** Size — controls height and font size. Default: 'md' (h-6, tables). */
+    /** Size — controls dot size and font size. Default: 'md'. */
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
     /** Progress percentage (0-100) for hub variant — renders SVG progress ring */
     progress?: number
     /** Layout/position only. Never typography or colors. */
     className?: string
+    /** Badge appearance — solid (default) or ghost (transparent background). Only applies to variant="badge". */
+    appearance?: 'solid' | 'ghost'
+}
+
+const DOT_COLORS: Record<string, string> = {
+    neutral:     'bg-muted-foreground',
+    info:        'bg-info',
+    success:     'bg-success',
+    warning:     'bg-warning',
+    destructive: 'bg-destructive',
+    primary:     'bg-primary',
+}
+
+const DOT_SIZES: Record<string, string> = {
+    xs: 'h-1.5 w-1.5',
+    sm: 'h-2 w-2',
+    md: 'h-2.5 w-2.5',
+    lg: 'h-3 w-3',
+    xl: 'h-3.5 w-3.5',
+}
+
+const TEXT_SIZES: Record<string, string> = {
+    xs: 'text-xs',
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+    xl: 'text-lg',
 }
 
 export function StatusBadge({
@@ -45,9 +75,10 @@ export function StatusBadge({
     variant = 'default',
     icon: Icon,
     tooltip,
-    size = 'sm',
+    size = 'md',
     progress,
     className,
+    appearance,
 }: StatusBadgeProps) {
     const { intent, label: resolvedLabel } = resolveStatus(status)
     const displayLabel = label ?? resolvedLabel
@@ -65,25 +96,24 @@ export function StatusBadge({
         )
     }
 
-    if (variant === 'dot') {
+    if (variant === 'badge') {
         return (
-            <Badge.Dot intent={intent} size={size} className={className}>
-                {displayLabel}
-            </Badge.Dot>
+            <Badge intent={intent} size={size} appearance={appearance} className={className}>
+                <span className="inline-flex items-center gap-1.5">
+                    <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', DOT_COLORS[intent])} />
+                    {displayLabel}
+                </span>
+            </Badge>
         )
     }
 
-    // Default: pill badge (tracking="tight" — longer labels need tight spacing)
     return (
-        <Badge
-            intent={intent}
-            size={size}
-            tracking="tight"
-            icon={Icon}
-            className={className}
-        >
-            {displayLabel}
-        </Badge>
+        <div className={cn('inline-flex items-center gap-1.5', className)}>
+            <span className={cn('rounded-full shrink-0', DOT_SIZES[size], DOT_COLORS[intent])} />
+            <span className={cn('font-sans font-medium text-foreground leading-none', TEXT_SIZES[size])}>
+                {displayLabel}
+            </span>
+        </div>
     )
 }
 

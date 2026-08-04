@@ -51,7 +51,7 @@ test.describe('Universal Search — Entidades adicionales (T-79)', () => {
                     id: 800,
                     number: 800,
                     status: 'CONFIRMED',
-                    sale_order_number: 'NV-100',
+                    sale_order_number: 'OV-100',
                     customer_name: 'Cliente Test',
                     total: 50000,
                     lines: [],

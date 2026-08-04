@@ -1,6 +1,6 @@
 "use client"
 
-import { DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, StepHeader } from '@/components/shared'
+import {DocumentAttachmentDropzone, LabeledInput, LabeledSwitch, PeriodValidationDateInput, StepHeader} from '@/components/shared'
 import { FileText, Hash, ShieldAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -112,4 +112,3 @@ export function Step3_Registration({
         </div>
     )
 }
-

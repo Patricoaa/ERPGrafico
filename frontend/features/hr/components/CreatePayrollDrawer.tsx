@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createPayroll, getEmployees } from '@/features/hr/api/hrApi'
-import type { Employee } from "@/types/hr"
+import { getEmployees } from '@/features/hr/api/hrApi'
+import { usePayrollMutations } from '../hooks/usePayrollMutations'
+import type { Employee, Payroll } from "@/types/hr"
 
 import { Form, FormField } from "@/components/ui/form"
 import { FileText } from "lucide-react"
@@ -41,8 +41,8 @@ export interface CreatePayrollDrawerProps {
     trigger?: React.ReactNode
 }
 
-export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: CreatePayrollDrawerProps) {
-    const [saving, setSaving] = useState(false)
+export function CreatePayrollDrawer({ open, onOpenChange, onSaved }: CreatePayrollDrawerProps) {
+    const { savePayroll, isSaving: saving } = usePayrollMutations()
     const [employees, setEmployees] = useState<Employee[]>([])
     const [isFetchingEmployees, setIsFetchingEmployees] = useState(false)
 
@@ -75,20 +75,18 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
     })
 
     const onSubmit = async (data: CreatePayrollValues) => {
-        setSaving(true)
         try {
-            const created = await createPayroll({
-                employee: parseInt(data.employee),
-                period_year: parseInt(data.period_year),
-                period_month: parseInt(data.period_month),
-                notes: data.notes || "",
+            const created = await savePayroll({
+                payload: {
+                    employee: parseInt(data.employee),
+                    period_year: parseInt(data.period_year),
+                    period_month: parseInt(data.period_month),
+                    notes: data.notes || "",
+                } as unknown as Partial<Payroll>
             })
-            toast.success("Liquidación creada")
             onSaved(created.id)
         } catch (e: unknown) {
             showApiError(e, "Error al crear liquidación")
-        } finally {
-            setSaving(false)
         }
     }
 

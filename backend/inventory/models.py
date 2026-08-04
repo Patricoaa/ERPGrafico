@@ -173,6 +173,9 @@ class UoM(TimeStampedModel):
         SMALLER = "SMALLER", _("Más pequeño que la referencia")
 
     name = models.CharField(_("Nombre"), max_length=100)
+    name_singular = models.CharField(_("Nombre singular"), max_length=20, blank=True, default="")
+    name_plural = models.CharField(_("Nombre plural"), max_length=20, blank=True, default="")
+    abbreviation = models.CharField(_("Abreviación"), max_length=10, blank=True, default="")
     category = models.ForeignKey(UoMCategory, on_delete=models.CASCADE, related_name="uoms")
     uom_type = models.CharField(
         _("Tipo"), max_length=20, choices=Type.choices, default=Type.REFERENCE
@@ -188,7 +191,7 @@ class UoM(TimeStampedModel):
                 {
                     "id": "main",
                     "label": "General",
-                    "fields": ["name", "category", "uom_type", "ratio", "rounding", "is_active"],
+                    "fields": ["name", "name_singular", "name_plural", "abbreviation", "category", "uom_type", "ratio", "rounding", "is_active"],
                 }
             ]
         }
@@ -200,6 +203,21 @@ class UoM(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    @property
+    def display_name(self):
+        """Nombre singular para display individual (fallback a name)."""
+        return self.name_singular or self.name
+
+    @property
+    def display_name_plural(self):
+        """Nombre plural para display (fallback a name)."""
+        return self.name_plural or self.name
+
+    @property
+    def display_abbr(self):
+        """Abreviación para sufijo compacto (fallback a name)."""
+        return self.abbreviation or self.name
 
 
 class ProductAttribute(TimeStampedModel):
@@ -324,7 +342,7 @@ class Product(models.Model):
         _("Requiere Fabricación Avanzada"),
         default=False,
         help_text=_(
-            "Habilita campos personalizados al vender este producto desde POS o notas de venta"
+            "Habilita campos personalizados al vender este producto desde POS o ordenes de venta"
         ),
     )
     mfg_auto_finalize = models.BooleanField(
@@ -1031,7 +1049,10 @@ class Product(models.Model):
             active_bom = BillOfMaterials.objects.filter(product=self, active=True).first()
 
         # If no active BOM, treat as "Available" (no constraints)
-        if not active_bom or not active_bom.lines.exists():
+        if not active_bom:
+            return None
+        bom_lines = active_bom.lines.all()
+        if not bom_lines:
             return None
 
         # Calculate available quantity for each component
@@ -1039,7 +1060,7 @@ class Product(models.Model):
 
         min_manufacturable = float("inf")
 
-        for line in active_bom.lines.all():
+        for line in bom_lines:
             component = line.component
             required_qty = float(line.quantity)
 
@@ -1244,6 +1265,14 @@ class Stock(models.Model):
         return self.quantity - self.reserved_quantity
 
 
+# Virtual locations that represent inventory adjustments (merma, sobrante, revalorización).
+ADJUSTMENT_VIRTUAL_NAMES = (
+    "Ajuste por Merma/Pérdida",
+    "Ajuste por Sobrante/Ganancia",
+    "Revalorización",
+)
+
+
 class StockMove(models.Model):
     class Type(models.TextChoices):
         IN = "IN", _("Entrada")
@@ -1322,6 +1351,29 @@ class StockMove(models.Model):
         from core.prefix_registry import EntityPrefix
         return f"{EntityPrefix.STOCK_MOVE}-{self.id}"
 
+    @property
+    def direction(self) -> str:
+        """Classifies the move into IN/OUT/TRANSFER/ADJUSTMENT/OTHER.
+
+        Priority:
+          - TRANSFER:   source and destination are both INTERNAL.
+          - ADJUSTMENT: either side is a VIRTUAL adjustment location.
+          - IN:         destination is INTERNAL (not covered above).
+          - OUT:        source is INTERNAL (not covered above).
+          - OTHER:      fallback (virtual↔virtual, vendor↔customer, ...).
+        """
+        src = self.source_location
+        dst = self.destination_location
+        if src.location_type == "INTERNAL" and dst.location_type == "INTERNAL":
+            return "TRANSFER"
+        if src.name in ADJUSTMENT_VIRTUAL_NAMES or dst.name in ADJUSTMENT_VIRTUAL_NAMES:
+            return "ADJUSTMENT"
+        if dst.location_type == "INTERNAL":
+            return "IN"
+        if src.location_type == "INTERNAL":
+            return "OUT"
+        return "OTHER"
+
     def save(self, *args, **kwargs):
         # Validate Accounting Period is not closed
         is_new = self.pk is None
@@ -1397,6 +1449,8 @@ class InventoryDocument(TimeStampedModel):
         related_name="inventory_documents"
     )
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
+    source_document_type = models.CharField(_("Tipo documento fuente"), max_length=50, blank=True, default="")
+    source_document_id = models.PositiveIntegerField(_("ID documento fuente"), null=True, blank=True)
     notes = models.TextField(_("Notas"), blank=True)
     
     # Audit fields
@@ -1412,9 +1466,101 @@ class InventoryDocument(TimeStampedModel):
 
     def __str__(self):
         return f"{self.get_document_type_display()} {self.id}"
+class InventoryDocumentDetailManager(models.Manager):
+    def bulk_create(self, objs, **kwargs):
+        if not objs:
+            return super().bulk_create(objs, **kwargs)
+            
+        vendor_loc = None
+        customer_loc = None
+        internal_locs = {}
+        
+        def get_internal(warehouse):
+            if not warehouse: return None
+            if warehouse.id not in internal_locs:
+                from inventory.models import Location
+                loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
+                internal_locs[warehouse.id] = loc
+            return internal_locs[warehouse.id]
+            
+        def get_vendor():
+            nonlocal vendor_loc
+            if not vendor_loc:
+                from inventory.models import Location
+                vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
+            return vendor_loc
+            
+        def get_customer():
+            nonlocal customer_loc
+            if not customer_loc:
+                from inventory.models import Location
+                customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
+            return customer_loc
+
+        def get_virtual(name=None):
+            from inventory.models import Location
+            if name:
+                loc, _ = Location.objects.get_or_create(location_type="VIRTUAL", name=name)
+                return loc
+            loc, _ = Location.objects.get_or_create(location_type="VIRTUAL", defaults={"name": "Virtual Default"})
+            return loc
+
+        for obj in objs:
+            if getattr(obj, "source_location_id", None) and getattr(obj, "destination_location_id", None):
+                continue
+                
+            warehouse = getattr(obj, "_legacy_warehouse", None)
+            if not warehouse:
+                continue
+                
+            doc = getattr(obj, "document", None)
+            doc_type = doc.document_type if doc else None
+            
+            is_return_or_annul = False
+            if doc and doc.reference:
+                ref = doc.reference.lower()
+                if "devoluci" in ref or "anulaci" in ref:
+                    is_return_or_annul = True
+            
+            from inventory.models import InventoryDocument
+            
+            if doc_type == InventoryDocument.Type.RECEIPT:
+                obj.source_location = get_customer() if is_return_or_annul else get_vendor()
+                obj.destination_location = get_internal(warehouse)
+            elif doc_type == InventoryDocument.Type.DELIVERY:
+                obj.source_location = get_internal(warehouse)
+                obj.destination_location = get_vendor() if is_return_or_annul else get_customer()
+            elif doc_type == InventoryDocument.Type.TRANSFER:
+                src_warehouse = getattr(obj, "_legacy_source_warehouse", None)
+                if src_warehouse:
+                    obj.source_location = get_internal(src_warehouse)
+                obj.destination_location = get_internal(warehouse)
+            elif doc_type == InventoryDocument.Type.PARTNER_CONTRIBUTION:
+                obj.source_location = get_virtual("Capital de Socios")
+                obj.destination_location = get_internal(warehouse)
+            elif doc_type == InventoryDocument.Type.PARTNER_WITHDRAWAL:
+                obj.source_location = get_internal(warehouse)
+                obj.destination_location = get_virtual("Capital de Socios")
+            elif doc_type == InventoryDocument.Type.PRODUCTION:
+                if getattr(obj, "quantity", 0) > 0: # Finished product
+                    obj.source_location = get_virtual("Producción")
+                    obj.destination_location = get_internal(warehouse)
+                else: # Consumption
+                    obj.source_location = get_internal(warehouse)
+                    obj.destination_location = get_virtual("Producción")
+            elif doc_type == InventoryDocument.Type.ADJUSTMENT:
+                if getattr(obj, "quantity", 0) > 0: # Gain
+                    obj.source_location = get_virtual("Ajuste por Sobrante/Ganancia")
+                    obj.destination_location = get_internal(warehouse)
+                else: # Loss
+                    obj.source_location = get_internal(warehouse)
+                    obj.destination_location = get_virtual("Ajuste por Merma/Pérdida")
+                
+        return super().bulk_create(objs, **kwargs)
 
 
 class InventoryDocumentDetail(models.Model):
+    objects = InventoryDocumentDetailManager()
     document = models.ForeignKey(InventoryDocument, on_delete=models.CASCADE, related_name="details")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="document_details")
     quantity = models.DecimalField(_("Cantidad"), max_digits=12, decimal_places=4)
@@ -1439,6 +1585,62 @@ class InventoryDocumentDetail(models.Model):
         # Store them in private attributes in case they need to be resolved before save
         self._legacy_warehouse = _warehouse
         self._legacy_source_warehouse = _source_warehouse
+
+    def save(self, *args, **kwargs):
+        if not getattr(self, "source_location_id", None) or not getattr(self, "destination_location_id", None):
+            warehouse = getattr(self, "_legacy_warehouse", None)
+            if warehouse:
+                doc = getattr(self, "document", None)
+                doc_type = doc.document_type if doc else None
+                
+                is_return_or_annul = False
+                if doc and doc.reference:
+                    ref = doc.reference.lower()
+                    if "devoluci" in ref or "anulaci" in ref:
+                        is_return_or_annul = True
+                
+                from inventory.models import Location, InventoryDocument
+                internal_loc = Location.objects.filter(location_type="INTERNAL", warehouse_id=warehouse.id).first()
+                vendor_loc, _ = Location.objects.get_or_create(location_type="VENDOR", defaults={"name": "Proveedor (Virtual)"})
+                customer_loc, _ = Location.objects.get_or_create(location_type="CUSTOMER", defaults={"name": "Cliente (Virtual)"})
+                
+                def get_virtual(name):
+                    loc, _ = Location.objects.get_or_create(location_type="VIRTUAL", name=name)
+                    return loc
+
+                if doc_type == InventoryDocument.Type.RECEIPT:
+                    self.source_location = customer_loc if is_return_or_annul else vendor_loc
+                    self.destination_location = internal_loc
+                elif doc_type == InventoryDocument.Type.DELIVERY:
+                    self.source_location = internal_loc
+                    self.destination_location = vendor_loc if is_return_or_annul else customer_loc
+                elif doc_type == InventoryDocument.Type.TRANSFER:
+                    src_warehouse = getattr(self, "_legacy_source_warehouse", None)
+                    if src_warehouse:
+                        self.source_location = Location.objects.filter(location_type="INTERNAL", warehouse_id=src_warehouse.id).first()
+                    self.destination_location = internal_loc
+                elif doc_type == InventoryDocument.Type.PARTNER_CONTRIBUTION:
+                    self.source_location = get_virtual("Capital de Socios")
+                    self.destination_location = internal_loc
+                elif doc_type == InventoryDocument.Type.PARTNER_WITHDRAWAL:
+                    self.source_location = internal_loc
+                    self.destination_location = get_virtual("Capital de Socios")
+                elif doc_type == InventoryDocument.Type.PRODUCTION:
+                    if getattr(self, "quantity", 0) > 0:
+                        self.source_location = get_virtual("Producción")
+                        self.destination_location = internal_loc
+                    else:
+                        self.source_location = internal_loc
+                        self.destination_location = get_virtual("Producción")
+                elif doc_type == InventoryDocument.Type.ADJUSTMENT:
+                    if getattr(self, "quantity", 0) > 0:
+                        self.source_location = get_virtual("Ajuste por Sobrante/Ganancia")
+                        self.destination_location = internal_loc
+                    else:
+                        self.source_location = internal_loc
+                        self.destination_location = get_virtual("Ajuste por Merma/Pérdida")
+                    
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
@@ -1676,3 +1878,86 @@ class ProductFavorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name}"
+
+
+class InventoryCount(models.Model):
+    """Sesion de conteo de inventario. Snapshot del stock teorico
+    con capacidad de registrar cantidades reales y generar ajustes."""
+
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", _("Borrador")
+        IN_PROGRESS = "IN_PROGRESS", _("En Progreso")
+        APPLIED = "APPLIED", _("Aplicado")
+        CANCELLED = "CANCELLED", _("Cancelado")
+
+    warehouse = models.ForeignKey(
+        Warehouse, on_delete=models.PROTECT, related_name="inventory_counts"
+    )
+    status = models.CharField(
+        _("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT
+    )
+    notes = models.TextField(_("Notas"), blank=True, default="")
+    created_by = models.ForeignKey(
+        "core.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_counts",
+    )
+    applied_at = models.DateTimeField(null=True, blank=True)
+    document = models.ForeignKey(
+        InventoryDocument,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="inventory_counts",
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Conteo de Inventario")
+        verbose_name_plural = _("Conteos de Inventario")
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"Conteo #{self.id} - {self.warehouse.name}"
+
+
+class InventoryCountLine(models.Model):
+    """Linea individual de conteo: producto + stock teorico + cantidad real."""
+
+    count = models.ForeignKey(
+        InventoryCount, on_delete=models.CASCADE, related_name="lines"
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, related_name="count_lines"
+    )
+    theoretical_qty = models.DecimalField(
+        _("Cantidad Teorica"), max_digits=12, decimal_places=4
+    )
+    counted_qty = models.DecimalField(
+        _("Cantidad Contada"), max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    unit_cost = models.DecimalField(
+        _("Costo Unitario"), max_digits=12, decimal_places=2, default=0
+    )
+    uom_name = models.CharField(_("Unidad"), max_length=50, blank=True, default="")
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Linea de Conteo")
+        verbose_name_plural = _("Lineas de Conteo")
+        ordering = ["id"]
+
+    @property
+    def difference(self):
+        if self.counted_qty is None:
+            return None
+        return self.counted_qty - self.theoretical_qty
+
+    @property
+    def has_difference(self):
+        return self.counted_qty is not None and self.difference != 0
+
+    def __str__(self):
+        return f"{self.product.name}: {self.theoretical_qty} -> {self.counted_qty}"

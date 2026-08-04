@@ -140,6 +140,7 @@ import { ActionSlideButton } from "@/components/shared"
 | `icon` | `LucideIcon` | ❌ | — | Icono opcional a la izquierda |
 | `variant` | `'primary' \| 'destructive' \| 'success'` | ❌ | `'primary'` | Define la combinación cromática del borde y hover |
 | `loading` | `boolean` | ❌ | `false` | Muestra spinner y deshabilita el botón |
+| `size` | `'default' \| 'lg'` | ❌ | `'default'` | `lg` = `h-12 px-6 text-xs`, iconos/spinner `h-5 w-5` — targets táctiles POS (`touchMode`) |
 
 ---
 

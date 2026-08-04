@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 blank=True,
                 db_constraint=False,
-                help_text="Nota de Venta asociada",
+                help_text="Orden de Venta asociada",
                 null=True,
                 on_delete=django.db.models.deletion.DO_NOTHING,
                 related_name="+",
@@ -141,7 +141,7 @@ class Migration(migrations.Migration):
             name="sale_order",
             field=models.ForeignKey(
                 blank=True,
-                help_text="Nota de Venta asociada",
+                help_text="Orden de Venta asociada",
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="work_orders",

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { useBanks } from "@/features/treasury"
 import type { PageHeaderStatus } from "@/components/shared"
+import { OPERACIONES_SUB_TABS, TERMINAL_COBRO_SUB_TABS, buildBankSubTabs } from "@/features/treasury/navigation"
 
 interface BankPageHeaderProps {
     bankId: number
@@ -20,26 +21,15 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
     const segments = pathname.split('/').filter(Boolean)
     const subSubActiveValue = segments[3] || 'overview'
 
-    const bankSubTabs = [
-        { value: "all", label: "Todos", iconName: "layout-grid", href: "/treasury/bank-center" },
-        ...banks
-            .filter(b => b.is_active)
-            .map(bank => ({
-                value: `bank-${bank.id}`,
-                label: bank.name,
-                iconName: "landmark" as string,
-                href: `/treasury/bank-center/${bank.id}/${subSubActiveValue}`,
-            })),
-    ]
+    const bankSubTabs = buildBankSubTabs(banks)
 
     const navigation = {
         moduleName: "Tesorería",
         moduleHref: "/treasury",
         tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements", subTabs: OPERACIONES_SUB_TABS },
             { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center", subTabs: bankSubTabs },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
-
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers", subTabs: TERMINAL_COBRO_SUB_TABS },
         ],
         activeValue: "bank-center",
         subActiveValue: `bank-${bankId}`,

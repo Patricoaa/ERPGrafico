@@ -9,6 +9,8 @@ from core.serializers import AttachmentSerializer
 
 
 from .models import (
+    InventoryCount,
+    InventoryCountLine,
     PricingRule,
     Product,
     ProductAttribute,
@@ -281,110 +283,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return BillOfMaterialsSerializer(obj.boms.all(), many=True).data
 
-    class Meta:
-        model = Product
-        fields = [
-            "id",
-            "internal_code",
-            "code",
-            "name",
-            "category",
-            "product_type",
-            "image",
-            "image_thumbnail",
-            "image_catalog",
-            "has_bom",
-            "requires_advanced_manufacturing",
-            "mfg_auto_finalize",
-            "mfg_enable_prepress",
-            "mfg_enable_press",
-            "mfg_enable_postpress",
-            "mfg_prepress_design",
-            "mfg_prepress_specs",
-            "mfg_prepress_folio",
-            "mfg_press_offset",
-            "mfg_press_digital",
-            "mfg_press_special",
-            "mfg_postpress_finishing",
-            "mfg_postpress_binding",
-            "recurrence_period",
-            "renewal_notice_days",
-            "is_variable_amount",
-            "is_dynamic_pricing",
-            "track_inventory",
-            "can_be_sold",
-            "can_be_purchased",
-            "uom",
-            "sale_uom",
-            "purchase_uom",
-            "allowed_sale_uoms",
-            "receiving_warehouse",
-            "sale_price",
-            "sale_price_gross",
-            "cost_price",
-            "is_favorite",
-            "is_active",
-            "price_inheritance_mode",
-            "price_surcharge",
-            "effective_price_net",
-            "uom_prices",
-            "preferred_supplier",
-            "preferred_supplier_name",
-            "category_name",
-            "uom_name",
-            "uom_category",
-            "sale_uom_name",
-            "purchase_uom_name",
-            "receiving_warehouse_name",
-            "current_stock",
-            "effective_price",
-            "last_purchase_price",
-            "manufacturable_quantity",
-            "bom_cost",
-            "qty_reserved",
-            "qty_available",
-            "boms",
-            # Subscription Fields
-            "subscription_supplier",
-            "subscription_supplier_name",
-            "subscription_amount",
-            "subscription_start_date",
-            "auto_activate_subscription",
-            "default_invoice_type",
-            "is_indefinite",
-            "contract_end_date",
-            "payment_day_type",
-            "payment_day",
-            "payment_interval_days",
-            "attachments",
-            "available_uoms",
-            # Variant Fields
-            "has_variants",
-            "variants_count",
-            "parent_template",
-            "attribute_values",
-            "attribute_values_data",
-            "variant_display_name",
-            "variants",
-            "variant_generation_selection",
-            # BOM validation fields
-            "has_active_bom",
-            "active_bom_id",
-            "requires_bom_validation",
-        ]
-
-    def get_variants(self, obj):
-        # Use prefetched variants if available to avoid N+1 queries
-        if (
-            hasattr(obj, "_prefetched_objects_cache")
-            and "variants" in obj._prefetched_objects_cache
-        ):
-            variants = [v for v in obj.variants.all() if v.is_active]
-        else:
-            variants = obj.variants.filter(is_active=True)
-
-        return ProductSimpleSerializer(variants, many=True).data
-
     def to_internal_value(self, data):
         from .validators import ProductValidator
         ret = ProductValidator.parse_request_data(data)
@@ -413,6 +311,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_qty_reserved(self, obj):
         if hasattr(obj, "annotated_qty_reserved"):
             return float(obj.annotated_qty_reserved)
+        logger.warning(f"[N+1 ZERO-POLICY] get_qty_reserved fallback query triggered for Product ID {obj.id}")
         request = self.context.get("request")
         exclude_id = request.query_params.get("exclude_draft_id") if request else None
         return float(obj.get_qty_reserved(exclude_id))
@@ -420,33 +319,29 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_qty_available(self, obj):
         if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
             return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved)
-            
+
+        logger.warning(f"[N+1 ZERO-POLICY] get_qty_available fallback query triggered for Product ID {obj.id}")
         request = self.context.get("request")
         exclude_id = request.query_params.get("exclude_draft_id") if request else None
         return float(obj.get_qty_available(exclude_id))
 
     def get_last_purchase_price(self, obj):
-        # Si el selector anotó last_purchase_price, usarlo directamente (sin query)
         if hasattr(obj, "annotated_last_purchase_price"):
             v = obj.annotated_last_purchase_price
             return float(v) if v is not None else 0.0
         return 0.0
 
-
     def get_manufacturable_quantity(self, obj):
-        """Return the calculated manufacturable quantity for MANUFACTURABLE products."""
         qty = obj.get_manufacturable_quantity()
         return float(qty) if qty is not None else None
 
     def get_bom_cost(self, obj):
-        """Returns the total cost from the active BoM."""
         return float(obj.get_bom_cost())
 
     def get_has_active_bom(self, obj):
         return obj.has_active_bom()
 
     def get_active_bom_id(self, obj):
-        # Use prefetched cache to avoid extra query per product
         if hasattr(obj, "_prefetched_objects_cache") and "boms" in obj._prefetched_objects_cache:
             active_bom = next((bom for bom in obj.boms.all() if bom.active), None)
         else:
@@ -469,10 +364,145 @@ class ProductSerializer(serializers.ModelSerializer):
         return ProductValidator.validate(data)
 
     def run_validation(self, data=empty):
+        from .validators import ProductValidator
+        if data is not empty:
+            data = ProductValidator.parse_request_data(data)
+        return super().run_validation(data)
+
+    class Meta:
+        model = Product
+        fields = [
+            "id", "internal_code", "code", "name", "category", "product_type",
+            "image", "image_thumbnail", "image_catalog",
+            "has_bom", "requires_advanced_manufacturing",
+            "mfg_auto_finalize", "mfg_enable_prepress", "mfg_enable_press",
+            "mfg_enable_postpress", "mfg_prepress_design", "mfg_prepress_specs",
+            "mfg_prepress_folio", "mfg_press_offset", "mfg_press_digital",
+            "mfg_press_special", "mfg_postpress_finishing", "mfg_postpress_binding",
+            "recurrence_period", "renewal_notice_days",
+            "is_variable_amount", "is_dynamic_pricing",
+            "track_inventory", "can_be_sold", "can_be_purchased",
+            "uom", "sale_uom", "purchase_uom", "allowed_sale_uoms",
+            "receiving_warehouse",
+            "sale_price", "sale_price_gross", "cost_price",
+            "is_favorite", "is_active",
+            "price_inheritance_mode", "price_surcharge", "effective_price_net",
+            "uom_prices", "preferred_supplier", "preferred_supplier_name",
+            "category_name", "uom_name", "uom_category",
+            "sale_uom_name", "purchase_uom_name", "receiving_warehouse_name",
+            "current_stock", "effective_price", "last_purchase_price",
+            "manufacturable_quantity", "bom_cost", "qty_reserved", "qty_available",
+            "boms",
+            "subscription_supplier", "subscription_supplier_name",
+            "subscription_amount", "subscription_start_date",
+            "auto_activate_subscription", "default_invoice_type", "is_indefinite",
+            "contract_end_date", "payment_day_type", "payment_day",
+            "payment_interval_days",
+            "attachments", "available_uoms",
+            "has_variants", "variants_count", "parent_template",
+            "attribute_values", "attribute_values_data", "variant_display_name",
+            "variants", "variant_generation_selection",
+            "has_active_bom", "active_bom_id", "requires_bom_validation",
+        ]
+
+    def get_variants(self, obj):
+        if hasattr(obj, '_prefetched_variants'):
+            return ProductSerializer(obj._prefetched_variants, many=True, context=self.context).data
+        return ProductSerializer(obj.variants.all(), many=True, context=self.context).data
+
+class ProductListSerializer(serializers.ModelSerializer):
+    """Optimized serializer for list views."""
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    uom_name = serializers.CharField(source="uom.name", read_only=True)
+    sale_uom_name = serializers.CharField(source="sale_uom.name", read_only=True)
+    
+    is_favorite = serializers.SerializerMethodField()
+    def get_is_favorite(self, obj):
+        return getattr(obj, "is_favorite", False)
+
+    current_stock = serializers.SerializerMethodField()
+    def get_current_stock(self, obj):
+        return float(getattr(obj, "annotated_current_stock", None) or 0.0)
+
+    effective_price = serializers.SerializerMethodField()
+    def get_effective_price(self, obj):
+        if hasattr(obj, "annotated_effective_price"):
+            return float(obj.annotated_effective_price)
+        return obj.sale_price
+
+    qty_reserved = serializers.SerializerMethodField()
+    def get_qty_reserved(self, obj):
+        return float(getattr(obj, "annotated_qty_reserved", None) or 0.0)
+
+    qty_available = serializers.SerializerMethodField()
+    def get_qty_available(self, obj):
+        if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
+            return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved or 0.0)
+        return 0.0
+        
+    image_thumbnail = serializers.SerializerMethodField()
+    def get_image_thumbnail(self, obj):
+        if obj.image and hasattr(obj, "image_thumbnail"):
+            try:
+                return (
+                    self.context["request"].build_absolute_uri(obj.image_thumbnail.url)
+                    if self.context.get("request")
+                    else obj.image_thumbnail.url
+                )
+            except Exception:
+                return None
+        return None
+
+    class Meta:
+        model = Product
+        fields = [
+            "id", "internal_code", "code", "name", "category", "category_name", 
+            "product_type", "image_thumbnail", "is_active", "is_favorite",
+            "uom", "uom_name", "sale_uom", "sale_uom_name", 
+            "sale_price", "cost_price", "effective_price", 
+            "current_stock", "qty_reserved", "qty_available",
+            "track_inventory", "can_be_sold", "can_be_purchased",
+            "has_variants", "is_variable_amount", "is_dynamic_pricing"
+        ]
+
+class ProductWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views."""
+    variant_generation_selection = serializers.JSONField(write_only=True, required=False)
+    uom_prices = ProductUoMPriceSerializer(many=True, required=False)
+    
+    class Meta:
+        model = Product
+        fields = [
+            "id", "internal_code", "code", "name", "category", "product_type", "image",
+            "mfg_auto_finalize", "mfg_enable_prepress", "mfg_enable_press", "mfg_enable_postpress",
+            "mfg_prepress_design", "mfg_prepress_specs", "mfg_prepress_folio",
+            "mfg_press_offset", "mfg_press_digital", "mfg_press_special",
+            "mfg_postpress_finishing", "mfg_postpress_binding",
+            "recurrence_period", "renewal_notice_days", "is_variable_amount", "is_dynamic_pricing",
+            "track_inventory", "can_be_sold", "can_be_purchased",
+            "uom", "sale_uom", "purchase_uom", "allowed_sale_uoms", "receiving_warehouse",
+            "sale_price", "sale_price_gross", "cost_price", "is_active",
+            "price_inheritance_mode", "price_surcharge", "preferred_supplier",
+            "subscription_supplier", "subscription_amount", "subscription_start_date",
+            "auto_activate_subscription", "default_invoice_type", "is_indefinite",
+            "contract_end_date", "payment_day_type", "payment_day", "payment_interval_days",
+            "variant_generation_selection", "uom_prices", "parent_template"
+        ]
+        
+    def validate(self, data):
+        from .validators import ProductValidator
+        return ProductValidator.validate(data)
+
+    def to_internal_value(self, data):
+        from .validators import ProductValidator
+        ret = ProductValidator.parse_request_data(data)
+        return super().to_internal_value(ret)
+
+    def run_validation(self, data=empty):
         try:
             return super().run_validation(data)
         except serializers.ValidationError as e:
-            logger.error(f"Validation error in ProductSerializer: {e.detail}. Data: {data}")
+            logger.error(f"Validation error in ProductWriteSerializer: {e.detail}. Data: {data}")
             raise e
 
     def create(self, validated_data):
@@ -480,9 +510,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         return ProductService.update_product(instance, validated_data)
-
-
-
 
 class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -494,7 +521,8 @@ class WarehouseSerializer(serializers.ModelSerializer):
 class StockMoveSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)
     product_code = serializers.CharField(source="product.code", read_only=True)
-    uom_name = serializers.CharField(source="uom.name", read_only=True)
+    uom_name = serializers.SerializerMethodField()
+    uom_abbreviation = serializers.SerializerMethodField()
     source_location_name = serializers.CharField(source="source_location.name", read_only=True)
     destination_location_name = serializers.CharField(source="destination_location.name", read_only=True)
     product_internal_code = serializers.CharField(source="product.internal_code", read_only=True)
@@ -506,10 +534,25 @@ class StockMoveSerializer(serializers.ModelSerializer):
     related_documents = serializers.SerializerMethodField()
     reference = serializers.SerializerMethodField()
     notes = serializers.SerializerMethodField()
+    direction = serializers.CharField(read_only=True)
 
     class Meta:
         model = StockMove
         fields = "__all__"
+
+    def get_uom_name(self, obj):
+        if obj.uom:
+            return obj.uom.name
+        if obj.product and obj.product.uom:
+            return obj.product.uom.name
+        return ""
+
+    def get_uom_abbreviation(self, obj):
+        if obj.uom:
+            return obj.uom.abbreviation
+        if obj.product and obj.product.uom:
+            return obj.product.uom.abbreviation
+        return ""
 
     def validate(self, data):
         product = data.get("product")
@@ -612,6 +655,8 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             "partner",
             "partner_name",
             "reference",
+            "source_document_type",
+            "source_document_id",
             "notes",
             "created_by",
             "created_by_name",
@@ -682,3 +727,59 @@ class InventoryDocumentSerializer(serializers.ModelSerializer):
             
             InventoryDocumentDetail.objects.create(document=document, **detail_data)
         return document
+
+
+class InventoryCountLineSerializer(serializers.ModelSerializer):
+    difference = serializers.DecimalField(max_digits=12, decimal_places=4, read_only=True)
+    has_difference = serializers.BooleanField(read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_code = serializers.CharField(source="product.code", read_only=True)
+    product_internal_code = serializers.CharField(source="product.internal_code", read_only=True)
+
+    class Meta:
+        model = InventoryCountLine
+        fields = [
+            "id", "product", "product_name", "product_code", "product_internal_code",
+            "theoretical_qty", "counted_qty", "unit_cost", "uom_name",
+            "difference", "has_difference",
+        ]
+
+
+class InventoryCountSerializer(serializers.ModelSerializer):
+    lines = InventoryCountLineSerializer(many=True, read_only=True)
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+    document_id = serializers.IntegerField(source="document.id", read_only=True, default=None)
+    total_products = serializers.SerializerMethodField()
+    counted_products = serializers.SerializerMethodField()
+    products_with_difference = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = InventoryCount
+        fields = [
+            "id", "warehouse", "warehouse_name", "status", "status_display",
+            "notes", "created_by", "created_by_name", "applied_at",
+            "document_id", "lines", "total_products", "counted_products",
+            "products_with_difference",
+        ]
+        read_only_fields = ["status", "created_by", "applied_at", "document"]
+
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return obj.created_by.get_full_name() or obj.created_by.username
+        return None
+
+    def get_total_products(self, obj):
+        return getattr(obj, "total_products_count", 0)
+
+    def get_counted_products(self, obj):
+        return getattr(obj, "counted_products_count", 0)
+
+    def get_products_with_difference(self, obj):
+        return sum(1 for line in obj.lines.all() if line.has_difference)
+
+
+class InventoryCountCreateSerializer(serializers.Serializer):
+    warehouse = serializers.IntegerField()
+    notes = serializers.CharField(required=False, allow_blank=True, default="")

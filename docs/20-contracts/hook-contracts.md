@@ -54,17 +54,18 @@ useQuery({
 
 The global default is **5 min** (configured in `lib/react-query.ts`). Every `useQuery` MUST declare `staleTime` when the value differs from the global default, or when the data category needs explicit documentation.
 
-| Data category | staleTime | Examples |
-|---|---|---|
-| Static master data | 60 min | UoMs, banks, payment methods |
-| Quasi-static catalogs | 15 min | Accounts, warehouses, attributes |
-| Catalogs (user-editable) | 5–10 min | Products, BOMs, contacts, pricing rules |
-| Configuration | 10 min | Settings panels, fiscal years, periods |
-| Transactional | 2 min | Orders, invoices, journal entries, movements |
-| Reports / aggregates | 5 min | Trial balance, budgets, statements |
-| Real-time (POS) | 1 min | POS sessions |
-| Realtime-sensitive | 0 | Panel-bound detail queries (drawer/modal close → force refetch) |
-| Server date | 30 s | `useServerDate` — used for folios, fiscal periods, time-sensitive ops |
+Central configuration: **`frontend/lib/query-config.ts`** exports a `staleTime` object with tier-named keys. Feature hooks MUST reference these constants instead of hardcoding millisecond values.
+
+| Tier key | Value | Data category | Examples |
+|---|---|---|---|
+| `volatile` | 30 s | Real-time-sensitive | `useServerDate`, POS session state |
+| `standard` | 2 min | Standard lists | Orders, invoices, products, movements |
+| `stable` | 5 min | Moderately stable | Users, permissions, workflow config, reports/aggregates |
+| `slow` | 10 min | Slow-changing | Accounts, company settings, fiscal years, periods |
+| `reference` | 15 min | Reference data | VAT rates, payment methods, banks, UoMs |
+| `static` | `Infinity` | Effectively static — refresh only on explicit invalidation | UoMs, payment methods, bank master data |
+
+> **Nota:** los valores cambian con el default global (5 min). `static` = `Infinity` (no 60 min). No documentar valores hardcodeados en hooks de features — usar `staleTime.slow`, `staleTime.reference`, etc.
 
 - **Polling sync**: when a query uses `refetchInterval`, set `staleTime` to match the interval (or less) to avoid extra refetches between polls.
 - **WebSocket + staleTime**: entity-bus `invalidateQueries` bypasses staleTime. staleTime only applies between invalidations or on component remount.
@@ -303,9 +304,9 @@ const { isValidFolio, suggestedNext, isChecking } = useFolioValidation({ documen
 
 Rejects gaps + duplicates per fiscal period.
 
-### `useApiMutation<TInput, TOutput>(opts)` 🟢
+### `useApiMutation<TInput, TOutput>(opts)` 🟡 (roadmap — NO implementado)
 
-Generic wrapper over TanStack `useMutation`. Applies JWT, error toast, success toast. Feature hooks build on top.
+**Propuesto** como wrapper genérico sobre TanStack `useMutation` (JWT, error toast, success toast, `markLocalMutation`). **No existe en el código actual** — feature hooks implementan `useMutation` directamente siguiendo el [Mutation Contract](#mutation-contract-usemutation). No usar hasta que se implemente en `frontend/hooks/`.
 
 ### `useRealtime()` 🟢
 
@@ -399,6 +400,35 @@ const { methods, loading, error, refetch } = useAllowedPaymentMethods({
 
 Declarative `useQuery` — `staleTime: 5 min`. Returns filtered `PaymentMethod[]` per terminal or operation context.
 
+### Hooks globales adicionales (existencia verificada — firmas resumidas)
+
+Promoted en `frontend/hooks/` y sin entrada extensa aquí. Detalle del shape de retorno en el propio archivo.
+
+| Hook | Firma | Notas |
+|------|-------|-------|
+| `useDebounce<T>(value, delay?)` | `(value: T, delay = 500) => T` | Valor debounced |
+| `useIsMobile()` | `() => boolean` | Detecta viewport móvil (breakpoint tailwind `md`) |
+| `useWindowWidth(throttleMs?, enabled?)` | `(throttle = 150, enabled = true) => number` | Ancho ventana con throttle |
+| `useDeviceContext()` | `() => DeviceContext` | Touch vs pointer + constantes `MIN_TOUCH_TARGET=44`, `TOUCH_TARGET_SPACING=8`, `MIN_MOBILE_FONT_SIZE=16` |
+| `useTouchMode()` | `() => { isTouchMode, toggleTouchMode }` | Modo táctil persistido |
+| `useViewMode(entityLabel, overrideDefault?)` | `() => { viewMode, setViewMode }` | Table/card/kanban switch por entity, sync `?view=` (reservado) |
+| `useViewModePreference()` | `() => ...` | Preferencia de viewMode persistida (localStorage) |
+| `usePermission(permission)` | `() => boolean` | Has-permission del usuario actual |
+| `useConfirmAction<T>(...)` | `() => { confirm, isConfirming }` | Confirmation gate reutilizable para acciones destructivas |
+| `useFormWithToast<T>({ schema, ... })` | `() => UseFormReturn<T> & toast helpers` | Envuelve `react-hook-form` + `zodResolver` + toast de submit (invariante #9) |
+| `useQueryLoading(...)` | `() => { showSkeleton, isRefetching }` | Decide skeleton vs contenido (refetch CLS) |
+| `usePaginatedFilters<TFilters>(...)` | `() => { filters, setFilters, ... }` | Filtros paginados con reset de page |
+| `useGroupByPagination(...)` | `() => ...` | Paginación agrupada por clave (card groups) |
+| `useOrderHubData({ orderId, invoiceId, type, enabled? })` | `() => { ... }` | Datos del HUB de órdenes (CollapsibleSheet) |
+| `useSuggestions(url?, query)` | `() => ...` | Autocomplete server-side |
+| `useTreasuryAccounts(options)` | `() => { accounts, ... }` + `TREASURY_ACCOUNT_KEYS` | Cuentas de tesorería con query keys |
+| `useVatRate()` | `() => ...` + `VAT_RATE_QUERY_KEY` | Tasa IVA configurada |
+| `usePeriodValidation()` | `() => ...` | Valida período contable abierto/cerrado |
+| `useEntityRouteActions()` | `() => { openSelected, openDetail, openHub, clearActions }` | Convención de query params — ver [component-row-actions.md §5.3](./component-row-actions.md#53-routing--useentityrouteactions) |
+| `useCombinedAutoSaveStatus(statuses)` | `(statuses: AutoSaveStatus[]) => AutoSaveStatus` | Badge consolidado multi-form — ver [autosave-contract.md](./autosave-contract.md) |
+
+> **Promoción:** cualquier hook nuevo promovido a `/hooks/` debe añadir una entrada a esta tabla (misma regla que el §Global hooks).
+
 ---
 
 ## Feature-scoped hook examples (reference shape)
@@ -441,7 +471,7 @@ Este contrato se respalda con barreras automáticas en ESLint y `tsc`. No es opt
 | Regla | Configurada en | Cubre | Severidad |
 |---|---|---|---|
 | `fsd/no-api-in-component` (custom) | [frontend/eslint-rules/fsd-no-api-in-component.mjs](../../frontend/eslint-rules/fsd-no-api-in-component.mjs) | `import … from '@/lib/api'` en `features/*/components/**` (invariante #5) | `warn` (sube a `error` al llegar a 0 violaciones) |
-| `require-staletime` (custom) | [frontend/eslint-rules/](../../frontend/eslint-rules/) | `useQuery({…})` sin `staleTime` (invariante #9 del contrato) | `error` (crear e implementar) |
+| `require-staletime` (custom) | [frontend/eslint-rules/](../../frontend/eslint-rules/) | `useQuery({…})` sin `staleTime` (invariante #9 del contrato) | `error` — **pendiente de implementar** (no existe en `eslint-rules/`) |
 | `no-restricted-imports` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `useQuery`/`useMutation`/`useSuspenseQuery` directos en `features/*/components/**` (invariante #4) | `error` |
 | `no-restricted-imports` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `@/features/*/{components,hooks,api,types}/*` — cross-feature sin barrel | `error` |
 | `boundaries/dependencies` | [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs) | `@/lib/api` en `components/shared/**` y `components/ui/**` | `error` |

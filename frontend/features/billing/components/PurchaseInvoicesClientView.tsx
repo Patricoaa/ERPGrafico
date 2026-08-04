@@ -2,34 +2,37 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState, useRef } from "react"
-import { type ColumnDef } from "@tanstack/react-table"
-import {ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
+import { ActionConfirmModal, DocumentCompletionModal, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { purchaseInvoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
-import { FileBadge } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { formatCurrency } from "@/lib/money"
 import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
 import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal } from "@/features/purchasing"
 import { UnifiedNoteWizard } from '@/features/notes'
+import { LazyDrawer } from "@/features/_shared"
 
-import { DataTableView, createCodeColumn, createDateColumn, createCurrencyColumn, createContactColumn, DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { DataTableView, AutoEntityCard } from '@/components/shared'
+import { purchaseInvoiceFields } from "@/features/billing/purchaseInvoiceFields"
+import { purchaseInvoiceActions, type PurchaseInvoiceActionsCtx } from "@/features/billing/purchaseInvoiceActions"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
-import { getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
+import { getDtePrefix, formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
-export function PurchaseInvoicesClientView() {
+interface Props {
+    createAction?: React.ReactNode
+}
+
+export function PurchaseInvoicesClientView({ createAction }: Props) {
     const search = useUnifiedSearch(purchaseInvoiceUnifiedSearchDef)
     const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters: { ...search.filters } as InvoiceFilters })
     const [payingDoc, setPayingDoc] = useState<Invoice | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<Invoice | null>(null)
     const [notingDoc, setNotingDoc] = useState<Invoice | null>(null)
     const [completingDoc, setCompletingDoc] = useState<Invoice | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string; id: string } | null>(null)
 
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
@@ -44,7 +47,6 @@ export function PurchaseInvoicesClientView() {
         }
     })
 
-    // El motivo se captura en el modal de anulación y se reutiliza en el force-retry
     const annulReasonRef = useRef('')
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
@@ -65,12 +67,10 @@ export function PurchaseInvoicesClientView() {
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             const errorMessage = getErrorMessage(error) || ""
-
             if (errorMessage.includes("pagos")) {
                 forceAnnulConfirm.requestConfirm(id)
                 return
             }
-
             toast.error(errorMessage || "Error al anular el documento.")
         }
     })
@@ -81,18 +81,15 @@ export function PurchaseInvoicesClientView() {
         try {
             const formData = new FormData()
             formData.append('amount', d.amount.toString())
-
             let paymentType = 'OUTBOUND'
             const isCreditNote = payingDoc.dte_type === 'NOTA_CREDITO'
             if (isCreditNote) paymentType = 'INBOUND'
-
             formData.append('payment_type', paymentType)
-            const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingDoc.dte_type) ? getDtePrefix(payingDoc.dte_type) : 'PAGO';
+            const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingDoc.dte_type) ? getDtePrefix(payingDoc.dte_type) : 'PAGO'
             formData.append('reference', `${prefix}-${payingDoc.number ?? ''}`)
             formData.append('purchase_order', payingDoc.purchase_order ? payingDoc.purchase_order.toString() : '')
             formData.append('invoice', payingDoc.id.toString())
             formData.append('payment_method', d.paymentMethod)
-
             if (d.transaction_number) formData.append('transaction_number', d.transaction_number)
             if (d.is_pending_registration !== undefined) formData.append('is_pending_registration', d.is_pending_registration.toString())
             if (d.treasury_account_id) formData.append('treasury_account_id', String(d.treasury_account_id))
@@ -100,7 +97,6 @@ export function PurchaseInvoicesClientView() {
             if (d.document_reference) formData.append('document_reference', d.document_reference)
             if (d.document_date) formData.append('document_date', d.document_date)
             if (d.document_attachment) formData.append('document_attachment', d.document_attachment)
-
             await billingApi.createPayment(formData)
             toast.success("Operación registrada correctamente")
             setPayingDoc(null)
@@ -111,81 +107,35 @@ export function PurchaseInvoicesClientView() {
         }
     }
 
-    const columns: ColumnDef<Invoice>[] = [
-        createCodeColumn<Invoice>("number", "Folio", {
-            render: (row) => <>{row.display_id ?? row.number}</>,
-        }),
-        createDateColumn<Invoice>("date", "Fecha"),
-        {
-            accessorKey: "dte_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => {
-                const doc = row.original
-                const label = getDtePrefix(doc.dte_type)
-                return (
-                    <div className="flex items-center gap-2 justify-center w-full">
-                        <FileBadge className="h-3.5 w-3.5 text-muted-foreground/50" />
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <DataCell.Secondary>
-                                    {label}
-                                </DataCell.Secondary>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">{doc.dte_type_display || doc.dte_type}</TooltipContent>
-                        </Tooltip>
-                    </div>
-                )
-            },
-        },
-        createContactColumn<Invoice>("partner_name", "Proveedor", "partner"),
-        createCurrencyColumn<Invoice>("total", "Total"),
-        {
-            id: "payment_status",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Pagado/Devuelto" className="justify-center" />,
-            cell: ({ row }) => {
-                const doc = row.original
-                const total = parseFloat(doc.total)
-                const pending = doc.pending_amount ?? total
-                const paid = total - pending
-                const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Progress
-                            value={percentage}
-                            label={`${percentage}%`}
-                            subLabel={formatCurrency(paid)}
-                        />
-                    </div>
-                )
-            },
-        },
-        {
-            id: "hub_trigger",
-            header: () => null,
-            cell: ({ row }) => {
-                const item = row.original
-                const isSelected = hubConfig?.invoiceId === item.id
-                return (
-                    <div className="flex justify-end pr-2">
-                        <DataCell.Action
-                            action="hub"
-                            onClick={() => {
-                                if (isSelected && isHubOpen) {
-                                    closeHub()
-                                } else {
-                                    openHub({
-                                        orderId: item.purchase_order || null,
-                                        invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(item.dte_type) ? item.id : null,
-                                        type: 'purchase',
-                                        onActionSuccess: fetchDocuments
-                                    })
-                                }
-                            }}
-                        />
-                    </div>
-                )
-            },
-        },
+    const toggleHub = (doc: Invoice) => {
+        const isSelected = hubConfig?.invoiceId === doc.id
+        if (isSelected && isHubOpen) {
+            closeHub()
+        } else {
+            openHub({
+                orderId: doc.purchase_order || null,
+                invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
+                type: 'purchase',
+                onActionSuccess: fetchDocuments,
+            })
+        }
+    }
+
+    const actionsCtx: PurchaseInvoiceActionsCtx = {
+        onDetail: (doc) => setViewingTransaction({ type: 'invoice', id: String(doc.id) }),
+        onPay: (doc) => setPayingDoc(doc),
+        onHub: (doc) => toggleHub(doc),
+        onReceive: (doc) => setReceivingDoc(doc),
+        onCompleteFolio: (doc) => setCompletingDoc(doc),
+        onCreateNote: (doc) => setNotingDoc(doc),
+        onPaymentHistory: (doc) => setViewingTransaction({ type: 'invoice', id: String(doc.id) }),
+        onDelete: (id) => deleteConfirm.requestConfirm(id),
+        onAnnul: (id) => annulConfirm.requestConfirm(id),
+    }
+
+    const columns = [
+        ...purchaseInvoiceFields.toColumns(),
+        purchaseInvoiceActions.auto(actionsCtx),
     ]
 
     return (
@@ -193,22 +143,11 @@ export function PurchaseInvoicesClientView() {
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="billing.invoice"
+                    defaultView="card"
                     columns={columns}
                     data={documents}
                     isLoading={isLoading}
-                    onRowClick={(row: Invoice) => {
-                        const isSelected = hubConfig?.invoiceId === row.id
-                        if (isSelected && isHubOpen) {
-                            closeHub()
-                        } else {
-                            openHub({
-                                orderId: row.purchase_order || null,
-                                invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(row.dte_type) ? row.id : null,
-                                type: 'purchase',
-                                onActionSuccess: fetchDocuments
-                            })
-                        }
-                    }}
+                    onRowClick={(row: Invoice) => toggleHub(row)}
                     variant="embedded"
                     unifiedSearch={<UnifiedSearchBar
                         config={purchaseInvoiceUnifiedSearchDef}
@@ -229,6 +168,7 @@ export function PurchaseInvoicesClientView() {
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
                     defaultPageSize={20}
+                    createAction={createAction}
                     isSelected={(inv: Invoice) => hubConfig?.invoiceId === inv.id}
                     isHubOpen={isHubOpen}
                     isFiltered={search.isFiltered}
@@ -237,11 +177,58 @@ export function PurchaseInvoicesClientView() {
                         title: "Aún no hay documentos de compra",
                         description: "Los documentos de compra registrados aparecerán aquí.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc' }}
+                    renderCard={(data: Invoice) => (
+                        <AutoEntityCard
+                            key={data.id}
+                            data={data}
+                            fields={purchaseInvoiceFields}
+                            entityLabel="billing.invoice"
+                            icon={getEntityIcon('billing.invoice')}
+                            iconClassName="text-info bg-info/10"
+                            isSelected={hubConfig?.invoiceId === data.id}
+                            onClick={() => toggleHub(data)}
+                            hubTrigger={{
+                                isSelected: hubConfig?.invoiceId === data.id,
+                                onToggle: () => toggleHub(data),
+                            }}
+                        />
+                    )}
                 />
             </div>
-            {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number ?? '', document_attachment: null }} />}
-            {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}
+
+            {viewingTransaction && (
+                <LazyDrawer
+                    type={viewingTransaction.type}
+                    id={Number(viewingTransaction.id)}
+                    open={!!viewingTransaction}
+                    onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
+                />
+            )}
+
+            {payingDoc && (
+                <PaymentModal
+                    open={!!payingDoc}
+                    onOpenChange={(open) => !open && setPayingDoc(null)}
+                    onConfirm={handlePayment}
+                    isPurchase={true}
+                    total={parseFloat(payingDoc.total)}
+                    pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)}
+                    hideDteFields={true}
+                    isRefund={payingDoc.dte_type === 'NOTA_CREDITO'}
+                    existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number ?? '', document_attachment: null }}
+                />
+            )}
+
+            {receivingDoc && receivingDoc.purchase_order && (
+                <ReceiptModal
+                    open={!!receivingDoc}
+                    onOpenChange={(open) => !open && setReceivingDoc(null)}
+                    orderId={receivingDoc.purchase_order}
+                    onSuccess={fetchDocuments}
+                    isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'}
+                />
+            )}
+
             {notingDoc && (
                 <UnifiedNoteWizard
                     open={!!notingDoc}
@@ -304,7 +291,22 @@ export function PurchaseInvoicesClientView() {
                     onSuccess={fetchDocuments}
                 />
             )}
-            {completingDoc && <DocumentCompletionModal open={!!completingDoc} onOpenChange={(open) => !open && setCompletingDoc(null)} invoiceId={completingDoc.id} invoiceType={completingDoc.dte_type} contactId={completingDoc.partner || completingDoc.supplier} isPurchase={true} onComplete={async (invoiceId, formData) => { await billingApi.confirmInvoice(invoiceId, formData) }} onSuccess={fetchDocuments} />}
+
+            {completingDoc && (
+                <DocumentCompletionModal
+                    open={!!completingDoc}
+                    onOpenChange={(open) => !open && setCompletingDoc(null)}
+                    invoiceId={completingDoc.id}
+                    invoiceType={completingDoc.dte_type}
+                    contactId={completingDoc.partner || completingDoc.supplier}
+                    isPurchase={true}
+                    onComplete={async (invoiceId, formData) => {
+                        await billingApi.confirmInvoice(invoiceId, formData)
+                    }}
+                    onSuccess={fetchDocuments}
+                />
+            )}
+
             <ActionConfirmModal open={deleteConfirm.isOpen} onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }} onConfirm={deleteConfirm.confirm} title="Cancelar Documento" description="¿Está seguro de cancelar este documento?" variant="destructive" />
             <ActionConfirmModal open={annulConfirm.isOpen} onOpenChange={(open) => { if (!open) annulConfirm.cancel() }} onConfirm={(reason) => { annulReasonRef.current = reason ?? ''; return annulConfirm.confirm() }} title="Anular Documento" description="¿Está seguro de que desea ANULAR este documento?" variant="destructive" requireReason reasonLabel="Motivo de la anulación" />
             <ActionConfirmModal open={forceAnnulConfirm.isOpen} onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }} onConfirm={forceAnnulConfirm.confirm} title="Desvincular y Anular Pagos" description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?" variant="destructive" />

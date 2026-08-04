@@ -34,25 +34,38 @@ Una operación crítica usa **las tres** — no es alternativa, es defensa en pr
 ## Lista cerrada de endpoints HTTP
 
 Estos endpoints **DEBEN** validar `Idempotency-Key`. Agregar uno requiere ADR.
+La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el código (reconciliado 2026-08-04).
 
-| Método | Endpoint | Por qué |
+| Scope (`@idempotent_endpoint(scope=...)`) | Endpoint real | Por qué |
 |--------|----------|---------|
-| `POST` | `/api/billing/invoices/` | Emitir factura asigna folio fiscal — no reversible |
-| `POST` | `/api/billing/invoices/pos_checkout/` | Checkout POS — crea orden + factura + pago en una transacción |
-| `POST` | `/api/billing/invoices/{id}/issue/` | Envío a SII — el provider no acepta retries naive |
-| `POST` | `/api/billing/credit-notes/` | Idem invoice |
-| `POST` | `/api/accounting/entries/` | Asiento manual — descuadra libros si duplica |
-| `POST` | `/api/treasury/payment-requests/` | Cobro al provider (idempotency_key reenviado al provider) |
-| `POST` | `/api/treasury/movements/` | Movimiento bancario manual |
-| `POST` | `/api/treasury/payments/register_movement/` | Registro rápido de pago/cobro desde formularios de órdenes y tesorería |
-| `POST` | `/api/treasury/reconciliations/{id}/run/` | Ejecución de matching automático — costosa, evita reruns |
-| `POST` | `/api/purchasing/orders/purchase_checkout/` | Checkout de compra — crea/confirma orden + factura + pago + recepción en una transacción |
-| `POST` | `/api/tax/declarations/{id}/register/` | Registrar declaración F29 — crea registro oficial ante SII, no reversible |
-| `POST` | `/api/{module}/import/commit/` | Importación bulk — ver [import-csv-xlsx.md](import-csv-xlsx.md) |
+| `billing.invoice.create` | `POST /api/billing/invoices/` | Emitir factura asigna folio fiscal — no reversible |
+| `billing.pos.checkout` | `POST /api/billing/invoices/pos_checkout/` | Checkout POS — crea orden + factura + pago en una transacción |
+| `sales.order.create` | `POST /api/sales/orders/` | Creación de orden de venta (desde POS o manual) |
+| `sales.order.confirm` | `POST /api/sales/orders/{id}/confirm/` | Confirmación — dispara flujos aguas abajo |
+| `sales.order.dispatch` | `POST /api/sales/orders/{id}/dispatch/` | Despacho — genera guía/movimientos |
+| `purchasing.order.confirm` | `POST /api/purchasing/orders/{id}/confirm/` | Confirmación de orden de compra |
+| `purchasing.order.receive` | `POST /api/purchasing/orders/{id}/partial_receive/` | Recepción parcial — actualiza inventario |
+| `purchasing.order.checkout` | `POST /api/purchasing/orders/purchase_checkout/` | Checkout de compra — orden + factura + pago + recepción en una transacción |
+| `production.order.create` | `POST /api/production/orders/` | Creación de orden de producción |
+| `production.order.bulk_transition` | `POST /api/production/orders/bulk_transition/` | Transición masiva de estados — multi-orden |
+| `accounting.entry.create` | `POST /api/accounting/entries/` | Asiento manual — descuadra libros si duplica |
+| `hr.payroll.draft` | `POST /api/hr/payrolls/create_draft_payrolls/` | Generación de borradores de nómina masivos |
+| `tax.period.close` | `POST /api/tax/periods/{id}/close/` + `POST /api/tax/accounting-periods/{id}/close/` | Cierre de período (ambos viewsets usan el mismo scope) |
+| `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` | Registrar declaración F29 — crea registro oficial ante SII, no reversible |
+| `treasury.movement.create` | `POST /api/treasury/movements/` (también `/payments/`) | Movimiento bancario manual |
+| `treasury.movement.register` | `POST /api/treasury/movements/register_movement/` (también `/payments/register_movement/`) | Registro rápido de pago/cobro desde formularios |
+| `treasury.card.purchase` | `POST /api/treasury/movements/card-purchase/` (también `/payments/card-purchase/`) | Compra con tarjeta en cuotas — crea grupo + cuotas |
+| `treasury.allocation.create` | `POST /api/treasury/movements/{id}/allocate/` | Asignación de movimiento a cuenta/conciliación |
+| `treasury.reconciliation.match` | `POST /api/treasury/statement-lines/match_group/` | Matching automático de un grupo de líneas |
+| `treasury.transfer.register` | `POST /api/treasury/dashboard/register_transfer/` | Transferencia entre cuentas — dos asientos |
+
+> Nota: `TreasuryMovementViewSet` está registrado bajo dos rutas (`movements` y `payments`, [treasury/urls.py:26-27](../../backend/treasury/urls.py#L26)) — los decorators de ese viewset aplican a ambas.
+>
+> **`billing.invoice.issue`, `billing.creditnote.create`, `treasury.paymentrequest.create`, `{module}.import.commit` y `treasury.reconciliation.run` NO existen en el código** (scopes que versiones previas de este contrato listaban). El flujo de importación bulk NO usa `@idempotent_endpoint` — ver [import-csv-xlsx.md](import-csv-xlsx.md).
 
 **Convención del header:** el cliente genera **UUIDv4** al crear la intención de acción (click del botón). Reenvío del header con el mismo valor en retries. Una nueva acción del usuario genera nuevo UUID.
 
-**TTL del registro:** 24 horas. Después se purga (un mismo key reused después de 24h se trata como nuevo).
+**TTL del registro:** 24 horas. La tarea `core.tasks.purge_idempotency_records(retention_hours=24)` borra registros viejos y está programada a diario en `CELERY_BEAT_SCHEDULE` (`purge_idempotency_records_daily`, 02:30 AM, [settings.py:505-511](../../backend/config/settings.py#L505)).
 
 ---
 
@@ -60,73 +73,94 @@ Estos endpoints **DEBEN** validar `Idempotency-Key`. Agregar uno requiere ADR.
 
 ### Frontend (genera el key)
 
-```ts
-// features/billing/hooks/useCreateInvoice.ts
-import { v4 as uuid } from "uuid";
+Patrón real del codebase: la API method acepta `idempotencyKey?` y el header se setea condicionalmente.
 
-export function useCreateInvoice() {
-  return useMutation({
-    mutationFn: async (payload: CreateInvoicePayload) => {
-      const idempotencyKey = uuid();
-      return apiPost("/api/billing/invoices/", payload, {
-        headers: { "Idempotency-Key": idempotencyKey },
-      });
-    },
-    // axios retry plugin debe reenviar el mismo key
-  });
-}
+```ts
+// features/orders/api/ordersApi.ts
+registerPaymentMovement: (data: Record<string, unknown>, idempotencyKey?: string) =>
+    api.post('/treasury/payments/register_movement/', data, {
+        headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
+    }).then(r => r.data),
+```
+
+```ts
+// features/orders/hooks/useOrdersMutations.ts — el key viaja en las variables de la mutation
+mutationFn: ({ data, idempotencyKey }: { data: Record<string, unknown>; idempotencyKey?: string }) =>
+    ordersApi.registerPaymentMovement(data, idempotencyKey),
+```
+
+```ts
+// El componente genera el key UNA vez por intención (ref) y lo reusa en retries
+const idempotencyKeyRef = useRef<string | null>(null)
+// al montar o al crear la intención:
+if (!idempotencyKeyRef.current) idempotencyKeyRef.current = crypto.randomUUID()
 ```
 
 **Reglas frontend:**
-- El UUID se genera en el handler que origina la acción (click), **no** dentro del mutation function de TanStack (que puede ser invocado N veces).
-- Si la mutation se retry con el mismo `variables`, el `Idempotency-Key` debe ser el mismo. Esto se logra anteponiendo el UUID a `variables`.
-- Para formularios largos: el UUID se persiste en el form state hasta éxito; al re-submit del mismo form genera nuevo UUID solo si el usuario navegó y volvió.
+- El UUID se genera en el handler que origina la acción (normalmente `crypto.randomUUID()` guardado en un `ref`), **no** dentro del mutation function de TanStack (que puede ser invocado N veces).
+- Si la mutation se retry con el mismo `variables`, el `Idempotency-Key` debe ser el mismo. Esto se logra anteponiendo el UUID a `variables` (`{ data, idempotencyKey }`).
+- Si el backend no soporta el endpoint (sin `@idempotent_endpoint`), el key simplemente se omite (`idempotencyKey ? { … } : undefined`).
 
 ### Backend (decorador + tabla)
 
 ```python
-# backend/core/idempotency.py
-from functools import wraps
+# backend/core/idempotency.py (implementación real — resumida)
+from hashlib import sha256
+from django.db import IntegrityError, transaction
+from rest_framework import status as http_status
 from rest_framework.response import Response
-from django.db import transaction
-from .models import IdempotencyRecord
+from core.models import IdempotencyRecord
 
 def idempotent_endpoint(scope: str):
+    """Múltiples llamadas con el mismo Idempotency-Key + scope devuelven
+    el resultado de la primera ejecución, sin re-ejecutar el view.
+    - Sin header → 400 · Anónimo → 401 · Mismo key + body distinto → 409
+    - Mismo key con ejecución en curso (<60s) → 425 Too Early
     """
-    Wraps a DRF view method. Requires Idempotency-Key header.
-    Same key + same scope returns the cached response within 24h.
-    Different body for same key returns 409 Conflict.
-    """
-    def deco(view_func):
+    def decorator(view_func):
         @wraps(view_func)
         def wrapper(self, request, *args, **kwargs):
             key = request.headers.get("Idempotency-Key")
             if not key:
-                return Response({"detail": "Idempotency-Key header required"}, status=400)
-            body_hash = sha256(request.body).hexdigest()
-
-            with transaction.atomic():
-                record, created = IdempotencyRecord.objects.select_for_update().get_or_create(
-                    key=key, scope=scope,
-                    defaults={"body_hash": body_hash, "user": request.user, "status": "pending"},
-                )
-                if not created:
-                    if record.body_hash != body_hash:
-                        return Response({"detail": "Idempotency-Key reused with different body"}, status=409)
-                    if record.status == "done":
-                        return Response(record.response_payload, status=record.response_status)
-                    if record.status == "pending":
-                        return Response({"detail": "In progress, retry shortly"}, status=425)  # Too Early
-
-                response = view_func(self, request, *args, **kwargs)
-                record.response_status = response.status_code
-                record.response_payload = response.data
-                record.status = "done"
-                record.save(update_fields=["response_status", "response_payload", "status"])
-                return response
+                return Response({"detail": "Idempotency-Key header required"},
+                                status=http_status.HTTP_400_BAD_REQUEST)
+            if not getattr(request.user, "is_authenticated", False):
+                return Response({"detail": "Authentication required"},
+                                status=http_status.HTTP_401_UNAUTHORIZED)
+            body_hash = _compute_body_hash(request)          # sha256(body); multipart hashiza POST+FILES
+            record, created = _get_or_create_record(key=key, scope=scope,
+                                                    body_hash=body_hash, user=request.user)
+            if record.body_hash != body_hash:
+                return Response({"detail": "Idempotency-Key reused with different body"},
+                                status=http_status.HTTP_409_CONFLICT)
+            if record.status == IdempotencyRecord.Status.DONE:
+                return Response(record.response_payload,
+                                status=record.response_status or http_status.HTTP_200_OK)
+            if not created and record.status == IdempotencyRecord.Status.PENDING and _is_concurrent(record):
+                return Response({"detail": "In progress, retry shortly"},
+                                status=http_status.HTTP_425_TOO_EARLY)
+            try:
+                with transaction.atomic():
+                    response = view_func(self, request, *args, **kwargs)
+                    record.response_status = response.status_code
+                    record.response_payload = _coerce_payload(response.data)
+                    record.status = IdempotencyRecord.Status.DONE
+                    record.save(update_fields=["response_status", "response_payload", "status"])
+            except Exception:
+                record.status = IdempotencyRecord.Status.ERROR
+                record.save(update_fields=["status"])
+                raise
+            return response
         return wrapper
-    return deco
+    return decorator
 ```
+
+Detalles de la implementación real:
+
+- `_get_or_create_record`: `INSERT` bajo `unique_together(key, scope)` — race-safe. Si dos requests entran simultáneamente, una crea y la otra encuentra el registro en el segundo intento (catch `IntegrityError`). NO usa `select_for_update`.
+- `_is_concurrent`: heuristic — PENDING creado hace <60s se trata como ejecución en curso (425). Pasado ese margen se asume que la ejecución original murió y se permite reintento (deliberadamente laxo).
+- `_compute_body_hash`: para `multipart/form-data` hashiza el POST parseado + metadatos de archivos (el boundary crudo rompería los retries); para el resto, `sha256(request.body)`.
+- `_coerce_payload`: aplana `response.data` (Decimal, datetime, UUID…) a JSON-serializable.
 
 ```python
 # backend/sales/views.py (uso)
@@ -138,21 +172,33 @@ class InvoiceViewSet(ModelViewSet):
 
 ### Modelo IdempotencyRecord
 
+Archivo real: [backend/core/models/idempotency.py](../../backend/core/models/idempotency.py) (no está en `models.py`).
+
 ```python
 class IdempotencyRecord(models.Model):
-    key          = models.CharField(max_length=64)
-    scope        = models.CharField(max_length=128)
-    user         = models.ForeignKey("core.User", on_delete=models.PROTECT)
-    body_hash    = models.CharField(max_length=64)
-    response_status   = models.IntegerField(null=True)
-    response_payload  = models.JSONField(null=True)
-    status       = models.CharField(max_length=16, choices=[("pending","pending"),("done","done"),("error","error")])
-    created_at   = models.DateTimeField(auto_now_add=True, db_index=True)
+    class Status(models.TextChoices):
+        PENDING = "pending"   # En proceso
+        DONE    = "done"      # Completado
+        ERROR   = "error"     # Error
+
+    key               = models.CharField(max_length=64)     # UUID del cliente
+    scope             = models.CharField(max_length=128)    # e.g. 'billing.invoice.create'
+    user              = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                                          related_name="idempotency_records")
+    body_hash         = models.CharField(max_length=64)     # SHA-256 hex del body
+    response_status   = models.IntegerField(null=True, blank=True)
+    response_payload  = models.JSONField(null=True, blank=True)
+    status            = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    created_at        = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
-        unique_together = [("key", "scope")]
-        indexes = [models.Index(fields=["created_at"])]  # para purge diario
+        constraints = [
+            models.UniqueConstraint(fields=["key", "scope"], name="uniq_idempotency_key_scope"),
+        ]
+        indexes = [models.Index(fields=["created_at"], name="idx_idempotency_created")]
 ```
+
+No se registra en `simple_history` (TTL 24h, los registros se purgan a diario).
 
 Cleanup vía Celery beat diario: borra registros >24h.
 
@@ -163,7 +209,7 @@ Cleanup vía Celery beat diario: borra registros >24h.
 Modelos que persisten resultados de operaciones externas deben tener `idempotency_key`:
 
 ```python
-class PaymentRequest(models.Model):
+class PaymentRequest(models.Model):   # ejemplo de contrato (modelo eliminado — ver Nota de estado)
     idempotency_key = models.CharField(
         max_length=36, unique=True, db_index=True,
         help_text="UUID enviado al proveedor; previene cobros duplicados",
@@ -248,28 +294,38 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 - [ ] Tests de las 4 condiciones HTTP + (si aplica) re-encolado Celery.
 - [ ] Documentar el `scope` único en este doc.
 
-## Scopes registrados
+## Scopes registrados (reconciliado 2026-08-04 — source: `grep -rn "idempotent_endpoint(scope=" backend`)
 
 | Scope | Endpoint |
 |-------|----------|
 | `billing.invoice.create` | `POST /api/billing/invoices/` |
-| `billing.invoice.pos_checkout` | `POST /api/billing/invoices/pos_checkout/` |
-| `billing.invoice.issue` | `POST /api/billing/invoices/{id}/issue/` |
-| `billing.creditnote.create` | `POST /api/billing/credit-notes/` |
-| `accounting.entry.create` | `POST /api/accounting/entries/` |
-| `treasury.paymentrequest.create` | `POST /api/treasury/payment-requests/` |
-| `treasury.movement.create` | `POST /api/treasury/movements/` |
-| `treasury.payment.register_movement` | `POST /api/treasury/payments/register_movement/` |
-| `treasury.reconciliation.run` | `POST /api/treasury/reconciliations/{id}/run/` |
+| `billing.pos.checkout` | `POST /api/billing/invoices/pos_checkout/` |
+| `sales.order.create` | `POST /api/sales/orders/` |
+| `sales.order.confirm` | `POST /api/sales/orders/{id}/confirm/` |
+| `sales.order.dispatch` | `POST /api/sales/orders/{id}/dispatch/` |
+| `purchasing.order.confirm` | `POST /api/purchasing/orders/{id}/confirm/` |
+| `purchasing.order.receive` | `POST /api/purchasing/orders/{id}/partial_receive/` |
 | `purchasing.order.checkout` | `POST /api/purchasing/orders/purchase_checkout/` |
+| `production.order.create` | `POST /api/production/orders/` |
+| `production.order.bulk_transition` | `POST /api/production/orders/bulk_transition/` |
+| `accounting.entry.create` | `POST /api/accounting/entries/` |
+| `hr.payroll.draft` | `POST /api/hr/payrolls/create_draft_payrolls/` |
+| `tax.period.close` (x2) | `POST /api/tax/periods/{id}/close/` + `POST /api/tax/accounting-periods/{id}/close/` |
 | `tax.f29.register` | `POST /api/tax/declarations/{id}/register/` |
-| `tax.period.close` | `POST /api/tax/periods/{id}/close/` |
-| `tax.period.close` | `POST /api/tax/accounting-periods/{id}/close/` |
-| `{module}.import.commit` | `POST /api/{module}/import/commit/` |
+| `treasury.movement.create` | `POST /api/treasury/movements/` (y `/payments/`) |
+| `treasury.movement.register` | `POST /api/treasury/movements/register_movement/` (y `/payments/`) |
+| `treasury.card.purchase` | `POST /api/treasury/movements/card-purchase/` (y `/payments/`) |
+| `treasury.allocation.create` | `POST /api/treasury/movements/{id}/allocate/` |
+| `treasury.reconciliation.match` | `POST /api/treasury/statement-lines/match_group/` |
+| `treasury.transfer.register` | `POST /api/treasury/dashboard/register_transfer/` |
 
 ## Referencias
 
 - Patrón usado en imports: [import-csv-xlsx.md](import-csv-xlsx.md)
 - Background tasks: [../30-playbooks/add-background-task.md](../30-playbooks/add-background-task.md)
 
-> **Nota de estado:** al 2026-05-21 ningún modelo del codebase tiene aún el campo `idempotency_key`. La migración inicial estuvo en `treasury/PaymentRequest` (migration `0010`), pero el modelo fue eliminado en `0017_remove_paymentrequest.py`. Cuando se agregue el primer modelo bajo este contrato (candidatos: `Invoice`, `TreasuryMovement`, `JournalEntry`), crear primero `backend/core/models.py::IdempotencyRecord` + `backend/core/idempotency.py` (decorador) y luego conectar.
+> **Nota de estado (reconciliada 2026-08-04):** el mecanismo HTTP completo EXISTE y está en producción — decorador en `backend/core/idempotency.py` + `IdempotencyRecord` en `backend/core/models/idempotency.py` + 20 scopes activos (tabla de arriba) + tests en `backend/core/tests/test_idempotency.py`. Huecos reales:
+>
+> 1. **Ningún modelo de negocio tiene el campo `idempotency_key`** todavía (capa DB inaplicada). El modelo `PaymentRequest` que la migración `0010` iba a introducir fue eliminado en `0017_remove_paymentrequest.py`. Candidatos cuando se implemente: `Invoice`, `TreasuryMovement`, `JournalEntry`.
+> 2. **El patrón Celery del §"Patrón canónico — Celery" es aspiracional**: ninguna tarea Celery usa `IdempotencyRecord` todavía; solo los endpoints HTTP están decorados.
+> 3. **El purge task (`core.tasks.purge_idempotency_records`, TTL 24h) está agendado** a diario (02:30 AM) en `CELERY_BEAT_SCHEDULE` desde 2026-08-04 (`purge_idempotency_records_daily`) — hueco operativo cerrado.

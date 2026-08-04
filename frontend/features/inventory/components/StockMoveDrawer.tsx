@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
+import {Drawer, SkeletonShell, FormSplitLayout} from '@/components/shared'
 import { useDrawerIdentity, usePrintableDrawer } from "@/features/_shared"
 import { PrintableLayout } from '@/features/_shared'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
@@ -51,6 +51,7 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
             </PrintableLayout>
 
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
