@@ -54,7 +54,10 @@ API del factory:
 | `toKanbanFields(entity, opts?)` | `KanbanField[]` | Campos compactos de Kanban |
 | `render(key, entity)` | `ReactNode` | Render de un campo individual (casos ad-hoc) |
 | `defs` | `Record<string, FieldDef<T>>` | Acceso raw al schema (solo para componentes de control) |
-| `meta` | `EntityFieldsMeta<T>` | Config centralizada de title/subtitle del card |
+| `meta` | `EntityFieldsMeta<T> \| undefined` | Config centralizada de title/subtitle del card (param `meta` del factory) |
+| `resolveTitle(entity)` | `ReactNode` | Título del card. Prioridad: `meta.title` → campo con `placement: 'title'` → primer campo |
+| `resolveSubtitle(entity, cardFields?)` | `SubtitleItem[]` | Subtítulo del card desde `meta.subtitle`. `cardFields` evita duplicar campos ya asignados al título |
+| `getSubtitleExcludeKeys(entity, cardFields?)` | `Set<string>` | Keys consumidas por el subtitle — `AutoEntityCard` las excluye de las zonas del card (evita render duplicado, p.ej. fecha en subtitle Y detail center) |
 
 **Excepción documentada**: los renderers `computed` y columnas fuera de entidad (BOMManager,
 statementFields, checkFields) pueden usar `DataCell.*` directamente. En columnas regulares de

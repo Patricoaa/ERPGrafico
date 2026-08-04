@@ -47,13 +47,16 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 
 | key | icon (lucide) | label (es-CL) | intent | typical handler |
 |------|----------------|----------------|--------|-----------------|
-| `detail` | `FileText` | "Ver detalle" | read | `openEntity(label, id)` — entity drawer en modo `view` (ADR-0028) |
+| `detail` | `Eye` | "Ver detalle" | read | `openEntity(label, id)` — entity drawer en modo `view` (ADR-0028) |
+| `view` | `Eye` | "Ver" | read | inline read-only view (modal/drawer no-edit) |
 | `hub` | `LayoutDashboard` | "Abrir HUB" | read | open `CollapsibleSheet` (HUB) |
+| `history` | `History` | "Ver historial" | read | open activity/history drawer |
 | `edit` | `Pencil` | "Editar" | write | navigate to `?selected={id}` (ADR-0020) |
 | `duplicate` | `Copy` | "Duplicar" | write | POST `{ ...item, id: undefined }` |
 | `pay` | `Banknote` | "Pagar" | write | open payment modal (treasury) — added in ADR-0023 |
 | `deliver` | `Truck` | "Entregar" | write | open delivery modal (sales / logistics) — added in ADR-0023 |
 | `receive` | `PackageCheck` | "Recibir" | write | open receipt modal (purchasing) — added in ADR-0023 |
+| `report` | `FileText` | "Generar reporte" | read | open report/analytics panel |
 | `download` | `Download` | "Descargar" | read | trigger file download |
 | `print` | `Printer` | "Imprimir" | read | `react-to-print` |
 | `share` | `Share2` | "Compartir" | read | copy link / open share sheet |
@@ -61,13 +64,22 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 | `restore` | `ArchiveRestore` | "Restaurar" | write | reverse archive |
 | `lock` | `Lock` | "Bloquear" | write | toggle lock |
 | `unlock` | `Unlock` | "Desbloquear" | write | toggle lock |
-| `cancel` | `Trash2` | "Cancelar" | destructive | open `ActionConfirmModal variant="destructive"` — **DRAFT transactional docs**; no reversals, marks status=CANCELLED, deletes JE if DRAFT |
+| `toggle_active` | `Power` | "Activar/Desactivar" | write | toggle `is_active` flag |
+| `post` | `CheckCircle` | "Confirmar" | write | confirm/approve a draft document |
+| `reopen` | `LockOpen` | "Reabrir" | write | reopen a closed/cancelled state |
+| `disburse` | `Send` | "Desembolsar" | write | loan / credit-line disbursement |
+| `split` | `SplitSquareHorizontal` | "Distribuir" | write | split/distribute amounts across allocations |
 | `annul` | `Ban` | "Anular" | destructive | open `ActionConfirmModal variant="destructive"` — **POSTED/PAID transactional docs** (invoice, order, payment); preserves the record for audit, creates reversal entries — added in ADR-0023 |
 | `delete` | `Trash2` | "Eliminar" | destructive | open `ActionConfirmModal variant="destructive"` — **masters / config** (category, warehouse); removes the record |
+| `reverse` | `RotateCcw` | "Reversar" | destructive | open `ActionConfirmModal variant="destructive"` — creates a reversal transaction |
 
 Any addition to the registry **requires an ADR** (governance: changing a contract).
 Module-specific actions (e.g. `"recalculate-stock"`, `"reissue-dte"`) are not added to the
 registry — they are passed inline via `icon` + `title` props.
+
+> **Nota:** `cancel` fue eliminado del registro. La anulación de DRAFT transactional docs se
+> modela hoy con `annul` (que preserva el registro para auditoría). No existe `cancel` en
+> `RowActionKey`.
 
 ### 2.1 Color rules
 
@@ -94,23 +106,25 @@ When multiple actions are present, they MUST be rendered in this order (left →
 left → right or top → bottom in cards):
 
 ```
-detail → hub → edit → duplicate → pay → deliver → receive →
-  download → print → share → archive → restore → lock / unlock → cancel → annul → delete
+detail → view → hub → history → edit → duplicate → pay → deliver → receive →
+  report → download → print → share → archive → restore → lock / unlock → toggle_active →
+  post → reopen → disburse → split → annul → delete → reverse
 ```
 
-`cancel`, `annul` and `delete` are **always last**, in that order. `edit` is the visual anchor — if
-present, it should be the first *write* action. Read actions (`detail`, `hub`) come
-before any write action. Transactional workflow verbs (`pay`, `deliver`, `receive`) sit between
-`duplicate` and the read-only export block (`download`/`print`/`share`).
+Destructive verbs (`annul`, `delete`, `reverse`) are **always last**, in that order. `edit` is
+the visual anchor — if present, it should be the first *write* action. Read actions (`detail`,
+`view`, `hub`, `history`) come before any write action. Transactional workflow verbs (`pay`,
+`deliver`, `receive`) sit between `duplicate` and the read-only export block
+(`report`/`download`/`print`/`share`).
 
-**`cancel` vs `annul` vs `delete` — when to use which:**
+**`annul` vs `delete` vs `reverse` — when to use which:**
 
-| Use `cancel` for | Use `annul` for | Use `delete` for |
+| Use `annul` for | Use `delete` for | Use `reverse` for |
 |------------------|-----------------|------------------|
-| DRAFT transactional docs where the entire document tree is DRAFT — no reversals needed | Posted/confirmed transactional docs that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) |
-| Backend marks `status=CANCELLED`, deletes DRAFT Journal Entries (no reversal) | Backend creates reversal entries (JE REVERSAL, StockMove reversal) | Backend hard-deletes (or soft-deletes via `deleted_at`) |
+| Transactional docs that must remain in the audit trail (invoices, sale orders, payments, work orders, journal entries) | Masters / configuration entities with no legal trace requirement (categories, warehouses, tags, payment methods) | Posted transactions that need a counterpart reversal entry (e.g. reversing a mis-posted JE or movement) |
+| Backend creates reversal entries (JE REVERSAL, StockMove reversal) | Backend hard-deletes (or soft-deletes via `deleted_at`) | Backend creates a full reversal transaction, preserving the original |
 
-Both are destructive — both MUST open `ActionConfirmModal` with `variant="destructive"`.
+All destructive — all MUST open `ActionConfirmModal` with `variant="destructive"`.
 
 The `<CardActions>` and `<DataCell.ActionGroup>` containers do not reorder children — the caller
 is responsible for ordering. Lint rule (future ADR) will enforce ordering automatically.

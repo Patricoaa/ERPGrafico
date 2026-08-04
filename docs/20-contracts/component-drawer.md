@@ -53,7 +53,6 @@ supersedes:
 | `title` | `ReactNode \| string` | ✅ | — | Título principal en la cabecera |
 | `icon` | `React.ElementType \| ReactNode` | ❌ | — | LucideIcon o ReactNode junto al título |
 | `subtitle` | `ReactNode \| string` | ❌ | — | Subtítulo bajo el título |
-| `description` | `ReactNode \| string` | ❌ | — | Descripción opcional; se alinea horizontalmente con el título |
 | `headerActions` | `ReactNode` | ❌ | — | Slot derecho del header (ej. botones de filtro o acciones contextuales) |
 | `footer` | `ReactNode` | ❌ | — | Renderizado en contenedor con borde superior. **Usar `FormFooter` en formularios CRUD** |
 | `children` | `ReactNode` | ✅ | — | Contenido (formulario, tabla, etc.) |
@@ -63,13 +62,19 @@ supersedes:
 | `minSize` | `number \| string` | ❌ | — | Dimensión mínima |
 | `maxSize` | `number \| string` | ❌ | `'100vw'` / `'100vh'` | Dimensión máxima |
 | `resizable` | `boolean` | ❌ | `false` | Muestra handle de arrastre en el borde exterior |
-| `showOverlay` | `boolean` | ❌ | auto | Fondo oscuro. Auto: `true` si `embedded`, `false` si `screen` |
+| `showOverlay` | `boolean` | ❌ | auto | Fondo oscuro. Auto: `true` si `embedded` y no full-size, `false` si `screen` |
+| `mode` | `'create' \| 'edit' \| 'view'` | ❌ | — | En `'view'` aplica fondo distintivo y badge "Vista" |
+| `modal` | `boolean` | ❌ | — | Pasa a `SheetContent` (Radix `modal`); `false` permite interacción con el resto de la página |
+| `viewportClassName` | `string` | ❌ | — | Clases del viewport interno del `ScrollArea` (contenedor scrolleable) |
+| `fillContent` | `boolean` | ❌ | `false` | Si `true`, los children se renderizan en un div flex (sin `ScrollArea`). Útil cuando el contenido (`FormSplitLayout`) maneja su propio scroll y debe llenar todo el alto del body |
 | `className` | `string` | ❌ | — | Clases para `SheetContent` |
 | `contentClassName` | `string` | ❌ | — | Clases para el área de contenido scrollable (default: `px-8 pb-8`). Usar `p-0` con `FormSplitLayout` |
 | `headerClassName` | `string` | ❌ | — | |
 | `footerClassName` | `string` | ❌ | — | |
 | `titleClassName` | `string` | ❌ | — | |
-| `descriptionClassName` | `string` | ❌ | — | |
+| `centered` | `boolean` | ❌ | — | Centra el contenido del header (compartido con `BaseModal` via `PanelHeader`) |
+
+> **Nota:** `description` NO es prop de `Drawer` — solo existe en `BaseModal` (`components/shared/BaseModal.tsx`, `description?: ReactNode`). Para texto bajo el título en un Drawer usar `subtitle`. `descriptionClassName` no existe en ningún componente; eliminar cualquier uso.
 
 ## Tamaños dinámicos
 

@@ -67,7 +67,6 @@ Cómo se "elimina" una entidad en ERPGrafico depende de qué tipo de entidad sea
 | `treasury` | `TreasuryAccount` | Archivo | |
 | `treasury` | `PaymentMethod` / `PaymentProvider` | Archivo | |
 | `treasury` | `TreasuryMovement` | Cancelación / Anulación | Cancel si DRAFT (sin JE o JE DRAFT). Annul si JE POSTED (reverso). |
-| `treasury` | `PaymentRequest` | Anulación | status; idempotency_key preserva trazabilidad |
 | `treasury` | `BankStatementLine` | Anulación | No se borra; se marca `unmatched` o `discarded` |
 | `treasury` | `BankLoan` | Cancelación / Anulación | Cancel si DRAFT (sin desembolso). Annul si ACTIVE (reversas contables del pasivo + cuotas CANCELED). Ver ADR-0033. |
 | `treasury` | `LoanInstallment` | append-only (sistema) | Solo `LoanService` modifica el estado; nunca se borra manualmente. `CANCELED` es el estado terminal por `prepay` / `refinance`. |

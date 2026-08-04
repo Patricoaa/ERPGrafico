@@ -91,7 +91,7 @@ export const ENTITY_DRAWERS = {
   "contacts.contact": ({ id, data, open, onOpenChange, onSuccess }) => (
     <ContactDrawer contact={data ?? { id }} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
   ),
-  // … 34 entidades registradas
+  // … 37 entidades registradas
 }
 ```
 
@@ -121,8 +121,7 @@ closeEntity()
 | `useGlobalModals()` | hook | Acciones + estado de stacking de sheets (offsets de `CollapsibleSheet`) |
 | `useGlobalModalActions()` | hook | Solo acciones (sin re-render por estado de sheets) |
 
-**Openers deprecados** (delegan en `openEntity`, no usar en código nuevo):
-`openWorkOrder(id)`, `openContact(id, data?)`, `openTreasuryAccount(id)`.
+> **Histórico:** los openers `openWorkOrder(id)`, `openContact(id, data?)` y `openTreasuryAccount(id)` fueron **eliminados** — todo pasa por `openEntity(label, id, data?)`. No reintroducirlos.
 
 ### 2.3 `segmenter` — segmentador de datos opcional
 

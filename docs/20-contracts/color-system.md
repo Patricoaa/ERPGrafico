@@ -226,10 +226,12 @@ The palette maps to the fixed CMYK/spot inks — maximally distinct hues and on-
 |-------|-----------|-----|
 | `--chart-1` | `cyan` | First / primary series |
 | `--chart-2` | `magenta` | Second series |
-| `--chart-3` | `green` | Third series |
-| `--chart-4` | `pantone-orange` | Fourth series |
-| `--chart-5` | `blue` | Fifth series |
-| `--chart-6` | `yellow` | Sixth series |
+| `--chart-3` | `yellow` | Third series |
+| `--chart-4` | `black` | Fourth series |
+| `--chart-5` | `pantone-orange` | Fifth series |
+| `--chart-6` | `pantone-violet` | Sixth series |
+| `--chart-7` | `green` | Seventh series (palette extension) |
+| `--chart-8` | `blue` | Eighth series (palette extension) |
 
 Consume via `fill="var(--chart-N)"` / `stroke="var(--chart-N)"`; cycle with `COLORS[i % COLORS.length]`. A series that is *inherently* the brand may use `var(--primary)`; a series that is *inherently* a state (e.g. a single "loss" bar) may use `var(--destructive)` — but a categorical set must use `--chart-*`. Defined in `frontend/app/globals.css` (`:root`).
 
