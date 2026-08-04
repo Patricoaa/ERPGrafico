@@ -46,9 +46,20 @@ export interface EntityMetadata {
   title: string;           // Nombre singular (e.g. 'Orden de Venta')
   titlePlural: string;     // Nombre plural (e.g. 'Ordenes de Venta')
   icon: LucideIcon;        // Ícono Lucide importado directamente (tree-shakeable)
-  shortTemplate: string;   // Patrón de identificador corto (e.g. 'OV-{number}')
+  iconName: string;        // Nombre PascalCase del ícono (consumido por DynamicIcon)
+  shortTemplate?: string;  // Opcional — fallback si el API config no está poblado aún
   listUrl: string;         // URL de la vista de lista
   detailUrlPattern: string; // Patrón de URL de detalle (e.g. '/sales/orders/{id}')
+  // Campos extendidos (todos opcionales salvo label/title/titlePlural/icon/iconName):
+  feminine?: boolean;                    // "Nueva"/"Nuevo" en títulos accionados
+  description?: string;                  // Subtítulo/descripción por defecto del drawer
+  printable?: boolean;                   // Muestra botón imprimir en el header del drawer
+  partnerField?: string | ((data) => string); // Campo/selector del nombre de partner
+  workflowType?: 'order' | 'invoice' | 'note'; // Estrategia de cálculo de estado workflow
+  viewPolicy?: ViewPolicy;               // Modos de vista declarativos (DataTable)
+  cardConfig?: CardConfig;               // Config de renderizado de tarjetas workflow
+  subtitleTemplate?: string;             // @deprecated — usar createEntityFields meta.subtitle
+  subtitleSuffixTemplate?: string;       // @deprecated — idem
 }
 ```
 
@@ -98,13 +109,18 @@ const meta = getEntityMetadata('sales.saleorder');
 // { title: 'Orden de Venta', icon: ReceiptText, shortTemplate: 'OV-{number}', ... }
 ```
 
-### `formatEntityDisplay(label: string, data: any): string`
+### `formatEntityDisplay(label: string, data: Record<string, unknown>): string`
 
-Aplica el template del registro a un objeto `data`. Soporta dot notation y zero-padding.
+Aplica el template del registro a un objeto `data`. Soporta dot notation, zero-padding
+(`{id:06d}`) y formato de fecha (`{date:date}` → `dd/mm/yyyy`).
 
 **Orden de resolución del template:**
 1. API config (`getEntityConfig(label).shortTemplate` desde `UniversalRegistry`)
 2. `ENTITY_REGISTRY[label].shortTemplate` (fallback para entidades frontend-only)
+3. `data.id` como último recurso
+
+Para `billing.invoice` el template se computa en runtime: `{prefijo DTE}-{number}`
+via `getDtePrefix(dte_type)` (con limpieza de prefijos legacy embebidos en `number`).
 
 ```typescript
 formatEntityDisplay('sales.saleorder', { number: 42 });
@@ -121,6 +137,18 @@ Retorna el ícono Lucide de la entidad. Fallback: `Package`.
 ```typescript
 const Icon = getEntityIcon('production.workorder'); // → Wrench
 ```
+
+### `getEntityIconName(label: string): string`
+
+Retorna el nombre PascalCase del ícono (campo `iconName` del registry). Fallback: `'Package'`.
+
+### Otros helpers exportados
+
+`renderEntitySubtitle(label, data?)` y `renderEntitySubtitleSuffix(label, data?)` renderizan
+los templates de subtítulo (orden de resolución: API config → `subtitleTemplate` del registry →
+`description`). `getPartnerName(label, data)` resuelve el nombre del partner vía `partnerField`
+(string o función). `getViewOptions(label)` genera el array de `viewOptions` del toolbar del
+`DataTable` desde `viewPolicy`.
 
 ### `getDtePrefix(dteType?: string | null): string`
 
@@ -226,10 +254,12 @@ Síncrona. Retorna undefined si el label no existe en el caché o el caché no s
 
 ## 4. DynamicIcon
 
-**Archivo**: `frontend/components/ui/dynamic-icon.tsx`  
-**Import**: `import { DynamicIcon } from '@/components/ui/dynamic-icon'`
+**Archivo**: `frontend/components/shared/DynamicIcon.tsx`  
+**Import**: `import { DynamicIcon } from '@/components/shared'`
 
-Carga íconos Lucide por **nombre como string** usando `next/dynamic`. Ideal para configuraciones serializadas (sidebar, tabs, menú de navegación) donde no se puede importar el ícono directamente.
+Carga íconos Lucide por **nombre como string** usando `next/dynamic` sobre
+`lucide-react/dynamicIconImports`. Ideal para configuraciones serializadas (sidebar, tabs,
+menú de navegación, registry de entidades) donde no se puede importar el ícono directamente.
 
 > **No usar** `DynamicIcon` cuando el ícono puede importarse estáticamente. En esos casos preferir el ícono directo desde `ENTITY_REGISTRY` via `getEntityIcon()`.
 
@@ -240,10 +270,14 @@ Carga íconos Lucide por **nombre como string** usando `next/dynamic`. Ideal par
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
-| `name` | `string` | ✅ | — | PascalCase o kebab-case del ícono Lucide |
+| `name` | `string` | ✅ | — | PascalCase, camelCase o kebab-case del ícono Lucide (se normaliza a kebab-case interno) |
 | `...LucideProps` | — | ❌ | — | `className`, `size`, `strokeWidth`, etc. |
 
-**Comportamiento**: Si el nombre no existe en el catálogo Lucide, renderiza `<Package />` como fallback. Internamente cachea componentes dinámicos para evitar re-registros.
+**Comportamiento**: el `name` se convierte a kebab-case y se resuelve contra el índice
+`dynamicIconImports`. Si el nombre no existe en el catálogo Lucide, renderiza `<Package />`
+como fallback. Cada ícono se carga con `next/dynamic` una sola vez y se cachea en un `Map`
+módulo-level (`iconCache`) para evitar re-registros; mientras el chunk carga se muestra un
+`LoadingFallback` (pulse de `bg-muted`, 24×24).
 
 **Uso en PageHeader**: el prop `iconName` de `PageHeader` acepta el nombre del ícono como string y lo renderiza via `DynamicIcon` en el `DashboardShell`.
 
@@ -384,12 +418,14 @@ Los módulos de lista (no detalle) usan `PageHeader` con `iconName` que correspo
   description="Gestión de órdenes de compra"
 />
 
-// Vista de detalle — usa EntityDetailPage (que usa EntityHeader con ícono del registry)
-<EntityDetailPage
+// Vista de detalle — no existe EntityDetailPage (eliminado, ADR-0020).
+// La identidad de entidad en drawers/modales se renderiza con EntityHeader
+// (ícono + título del ENTITY_REGISTRY) sobre el patrón list-modal-edit.
+<EntityHeader
   entityLabel="purchasing.purchaseorder"  // ← ícono viene del ENTITY_REGISTRY
-  instanceId={id}
-  breadcrumb={[...]}
->
+  data={{ id, number }}
+  action="view"
+/>
 ```
 
 | prop relevante | type | notes |
@@ -412,6 +448,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `sales.salereturn` | `DEV` | `SALE_RETURN` | Devolución | `Undo2` |
 | `purchasing.purchaseorder` | `OCS` | `PURCHASE_ORDER` | Orden de Compra | `ShoppingCart` |
 | `purchasing.purchasereceipt` | `REC` | `PURCHASE_RECEIPT` | Recepción de Compra | `PackageCheck` |
+| `purchasing.purchasereturn` | `DEV` | `PURCHASE_RETURN` | Devolución de Compra | `Undo2` |
 | `billing.invoice` | dinámico (`FACV`/`FACC`/`BOL`/`NC`/etc.) | — | Factura/DTE | `FileText` |
 | `production.workorder` | `OT` | `WORK_ORDER` | Orden de Trabajo | `Wrench` |
 | `production.bom` | `BOM` | `BOM` | Lista de Materiales | `ClipboardList` |
@@ -430,6 +467,8 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `treasury.loaninstallment` | `CUO` | `LOAN_INSTALLMENT` | Cuota de Crédito | `Calendar` |
 | `treasury.creditcardstatement` | `EST` | `CREDIT_CARD_STMT` | Estado de Cuenta Tarjeta | `CreditCard` |
 | `treasury.cardpendingcharge` | `CHG` | `CARD_PENDING_CHARGE` | Cargo No Facturado | `CreditCard` |
+| `treasury.cardpurchasegroup` | `CPG` | `CARD_PURCHASE_GROUP` | Compra en Cuotas | `ShoppingCart` |
+| `treasury.cardpurchaseinstallment` | `CPI` | `CARD_PURCHASE_INSTALLMENT` | Cuota de Compra | `Calendar` |
 | `treasury.terminalbatch` | `LOT` | `TERMINAL_BATCH` | Lote de Terminal | `ClipboardCheck` |
 | `treasury.transfer` | `TRF` | `TRANSFER` | Traspaso | `ArrowLeftRight` |
 | `treasury.bank` | — | — | Banco | `Landmark` |
@@ -440,6 +479,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `accounting.account` | `{code}` | — | Cuenta Contable | `Book` |
 | `contacts.contact` | `CON` | `CONTACT` | Contacto | `Users` |
 | `contacts.partnertransaction` | `PT` | `PARTNER_TRANSACTION` | Transacción de Socio | `ArrowRightLeft` |
+| `contacts.profitdistributionresolution` | `DIST` | `PROFIT_DISTRIBUTION` | Resolución de Distribución | `PieChart` |
 | `hr.employee` | `EMP` | `EMPLOYEE` | Empleado | `UserCheck` |
 | `hr.payroll` | `LIQ` | `PAYROLL` | Liquidación de Sueldo | `Receipt` |
 | `hr.absence` | `AUS` | `ABSENCE` | Inasistencia | `CalendarX2` |
@@ -454,7 +494,6 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `tax.f29declaration` | `F29` | `F29_DECLARATION` | Declaración F29 | `FileText` |
 | `tax.accountingperiod` | `PER` | `ACCOUNTING_PERIOD` | Período Contable | `Calendar` |
 | `tax.taxperiod` | `IMP` | `TAX_PERIOD` | Período Tributario | `Calendar` |
-| `sales.saledelivery` | `DES` | `SALE_DELIVERY` | Guía de Despacho | `Truck` |
 
 > Para `billing.invoice` el prefijo es dinámico según `dte_type`. Ver `getDtePrefix()` en §3. El backend `EntityPrefix` define `INVOICE_FACTURA=FACV`, `INVOICE_BOLETA=BOL`, `NOTA_CREDITO=NC`, etc.
 
@@ -502,6 +541,6 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 
 ---
 
-*Fuentes: `backend/core/prefix_registry.py` · `frontend/lib/entity-registry.ts` · `frontend/lib/api/entity-prefixes.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/ui/dynamic-icon.tsx`*
+*Fuentes: `backend/core/prefix_registry.py` · `frontend/lib/entity-registry.ts` · `frontend/lib/api/entity-prefixes.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/shared/DynamicIcon.tsx`*
 
 > **Nota histórica:** `EntityDetailPage.tsx` fue eliminado en T-95. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md) para el patrón canónico actual.

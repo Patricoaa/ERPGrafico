@@ -9,7 +9,15 @@ stability: beta
 
 # Bulk Import — CSV / XLSX
 
-> **Estado de implementación al 2026-05-21:** contrato definido, sin implementación end-to-end en el codebase. Componente shared `DataManagement.tsx` existe parcialmente. Este doc fija la convención canónica para que el primer playbook (`add-bulk-import.md`, Tier 2 — Sesión 4) tenga rieles.
+> **Estado de implementación al 2026-08-04 (reconciliado con código):**
+> - **Import de cartola bancaria → IMPLEMENTADO (sync, 3 pasos, sin Celery ni Idempotency-Key):**
+>   - `POST /api/treasury/statements/dry_run/` — valida + parsea sin persistir (`ReconciliationService.dry_run_from_request`)
+>   - `POST /api/treasury/statements/preview/` — genera preview para column mapping (`generate_preview`)
+>   - `POST /api/treasury/statements/import_statement/` — persiste y devuelve `201` (`ReconciliationService.import_statement_from_request`)
+>   - Todo en [treasury/views.py:556-618](../../backend/treasury/views.py#L556) + [reconciliation_service.py](../../backend/treasury/reconciliation_service.py). Parsers reales: `treasury/parsers/` (chile, santander, excel) con `pandas`.
+> - **Componente shared `DataManagement.tsx` EXISTE** en `frontend/components/shared/DataManagement.tsx` (aún sin consumidor de feature).
+> - **NO implementado:** el flujo genérico preview/commit con `ImportJob`, `GET /api/jobs/{id}/`, commit async con `Idempotency-Key`, subida a MinIO `imports-staging/` ni Celery. El import de tesorería es sync.
+> - Este doc sigue siendo la convención canónica para imports futuros.
 
 ## Stack elegido
 
@@ -125,6 +133,8 @@ Idempotency-Key: <uuid>
 - `on_error="stop"`: primer error aborta el job; rows ya escritos se hacen rollback vía `transaction.atomic()` por batch (ver §Batching).
 - `dedupe_by`: campo que ya en DB → upsert (UPDATE existente, no crear). Si el campo no es unique en el modelo → 400.
 
+> **Nota 2026-08-04:** la implementación actual de tesorería NO usa `Idempotency-Key` ni Celery (es sync). Este flujo async+idempotente es la especificación canónica pendiente.
+
 ### Polling
 
 ```
@@ -192,7 +202,7 @@ Reporte descargable (xlsx) contiene fila a fila: `row_number | status | created_
 
 ## Modelo ImportJob
 
-Comparte el padre genérico con `ExportJob`:
+> **Estado 2026-08-04:** el modelo `ImportJob` NO existe en el codebase. Definición canónica de contrato (comparte el patrón con `ExportJob`, ver [export-formats.md](export-formats.md)):
 
 ```python
 class ImportJob(models.Model):
@@ -230,7 +240,7 @@ class ImportJob(models.Model):
 
 ## Frontend — patrón canónico
 
-Componente shared: `DataManagement.tsx` (ya presente en `components/shared/`, expandir conforme).
+Componente shared: `DataManagement.tsx` (EXISTE en `frontend/components/shared/DataManagement.tsx` — aún sin consumidor de feature; expandir conforme).
 
 Flujo UI:
 

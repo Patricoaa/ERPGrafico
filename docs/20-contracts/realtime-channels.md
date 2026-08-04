@@ -40,14 +40,14 @@ ERPGrafico usa **tres canales realtime complementarios**, no uno solo. La elecci
 - SSE para casos donde el cliente debe responder (locks, heartbeats activos). EventSource no permite escribir.
 - Polling REST cada 2s para eventos que pueden empujarse — gasta CPU del cliente y carga inútil al backend.
 
-## Implementaciones existentes (estado al 2026-05)
+## Implementaciones existentes (estado al 2026-08-04 — reconciliado con código)
 
 | Caso | Canal | Backend | Frontend | Propósito |
 |------|-------|---------|----------|-----------|
-| POS draft sync multi-terminal | WebSocket por-feature | `sales.consumers.POSDraftConsumer` + `sales.signals` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente edita carrito, lock por sesión, broadcast a otros terminales |
-| Notificaciones globales | WebSocket por-feature | `workflow.consumers.NotificationConsumer` + `workflow.signals.push_notification_to_channels` | `features/notifications/hooks/useNotifications.ts` | Solo recepción de notificaciones por usuario — bidireccionalidad reservada para read-receipts |
-| **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.consumers.EntityBusConsumer` + `core.signals.entity_bus` (allowlist) | `RealtimeProvider` + `useEntitySubscription` | **Piloto activo en `sales` (SaleOrder + SaleLine). Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md). Estado: Activo (piloto). Extender a otras apps requiere validar carga de WS sobre el piloto primero.** |
-| Workflow transitions | (routing existente, no consumer activo) | `workflow.routing` registrado en ASGI | — | Reservado para presencia/colaboración en aprobaciones |
+| POS draft sync multi-terminal | WebSocket por-feature | `sales.consumers.POSDraftConsumer` + `sales.signals` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente renueva lock (`HEARTBEAT`), server broadcast de cambios a otros terminales |
+| Notificaciones globales | WebSocket por-feature | `workflow.consumers.NotificationConsumer` + `workflow.signals.push_notification_to_channels` | `features/notifications/hooks/useNotifications.ts` | Solo recepción de notificaciones por usuario — ruta `ws/notifications/` |
+| **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.entity_bus` (`ALLOWLIST` + `PARENT_BROADCASTS`) + `core.consumers.EntityBusConsumer` | `RealtimeProvider` + `useEntitySubscription` | **Activo** en `sales.SaleOrder` e `inventory.Product/ProductCategory/UoM`. Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md) |
+| **SSE** | — | **NO implementado** (ninguna ruta `text/event-stream` en el codebase) | — | Especificación canónica §SSE disponible para el futuro; hoy todo broadcast va por WS |
 
 ---
 
@@ -63,27 +63,44 @@ El bus de entidades es el canal canónico para **mantener listados y modales en 
 
 ### Patrón canónico
 
-**Backend** — signal genérica con allowlist en `core.signals.entity_bus`:
+**Backend** — signal genérica con allowlist en `core.entity_bus.py` (los receivers se conectan en `core.apps.ready()`, no hay `signals.py` de entity bus):
 
 ```python
-# Llamada por post_save / post_delete sólo para modelos de la ALLOWLIST.
-def _broadcast_entity_change(*, app, model, instance_id, op, actor_id):
+# core/entity_bus.py — ALLOWLIST real al 2026-08-04
+ALLOWLIST: set[tuple[str, str]] = {
+    ("sales", "saleorder"),
+    ("inventory", "product"),
+    ("inventory", "productcategory"),
+    ("inventory", "uom"),
+}
+
+# Child models que invalidan a su padre en vez de tener tópico propio.
+# (child_app, child_model) → (parent_app, parent_model, fk_id_attr_on_child)
+PARENT_BROADCASTS: dict[tuple[str, str], tuple[str, str, str]] = {
+    ("sales", "saleline"): ("sales", "saleorder", "order_id"),
+}
+
+def _broadcast(*, app: str, model: str, instance_id: int, op: str) -> None:
     channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return  # CHANNEL_LAYERS no configurado — no-op (tests minimales)
+    actor_id = get_current_user_id()   # thread-local (core.middleware); None en Celery/commands
     payload = {
         "event": "entity.changed",
         "app": app, "model": model, "id": instance_id, "op": op,
         "actor_id": actor_id, "ts": timezone.now().isoformat(),
     }
-    for group in (
-        f"entity.{app}.{model}",
-        f"entity.{app}.{model}.{instance_id}",
-        f"entity.user.{actor_id}" if actor_id else None,
-    ):
-        if group:
-            async_to_sync(channel_layer.group_send)(group, {"type": "entity.changed", "payload": payload})
+    message = {"type": "entity.changed", "payload": payload}
+    groups = [f"entity.{app}.{model}", f"entity.{app}.{model}.{instance_id}"]
+    if actor_id is not None:
+        groups.append(f"entity.user.{actor_id}")
+    for group in groups:
+        async_to_sync(channel_layer.group_send)(group, message)
 ```
 
 `actor_id` lo resuelve un middleware thread-local; si la mutación viene de Celery o management command queda `null` (todos invalidan, sin filtro).
+
+> **Caveat de cascade-delete:** cuando se borra el padre, el `post_delete` del child dispara primero y hace broadcast de un `op="updated"` (ya obsoleto) para el padre antes del `op="deleted"` propio. Los listeners refetchean dos veces; tolerado por simplicidad.
 
 **Frontend** — un único `RealtimeProvider` en el layout autenticado y hooks declarativos por feature:
 
@@ -103,16 +120,16 @@ useEntitySubscription(`sales.saleorder.${id}`, [['sales', id]])
 1. **`invalidateQueries` local en `onSuccess` NO se quita.** El bus es complemento, no reemplazo. El autor de la mutación ve la UI actualizada al instante; el bus cubre a los demás.
 2. **Filtro `ignoreOwnActor: true` por defecto** en `useEntitySubscription`. Si el evento llega con `actor_id === currentUser.id` dentro de los 2s posteriores a una mutación local, se descarta para evitar doble refetch.
 3. **Una sola conexión WS por sesión** — `RealtimeProvider` la gestiona. **Nunca** abrir `new WebSocket('/ws/entity-bus/')` desde un componente o un hook de feature.
-4. **Allowlist explícita por modelo** en `core/signals/entity_bus.py`. Agregar una entidad nueva al bus es un cambio que pasa por PR — no se hace por defecto.
+4. **Allowlist explícita por modelo** en `core/entity_bus.py` (`ALLOWLIST`). Agregar una entidad nueva al bus es un cambio que pasa por PR — no se hace por defecto.
 5. **Payload sin entidad serializada.** El bus dice "X cambió"; el cliente refetch via su query existente. Esto preserva permisos (cada GET valida) y evita serializadores caros en signals.
 6. **Topic naming:**
    - Listado: `<app>.<model>` (todo en minúscula, `model_name` no `ModelName`)
    - Detalle: `<app>.<model>.<id>`
    - Usuario: `user.<id>` (gestionado por el provider, no por features)
 
-### Alcance vigente
+### Alcance vigente (2026-08-04)
 
-**Piloto activo:** `sales.SaleOrder` (broadcast propio) + `sales.SaleLine` vía `PARENT_BROADCASTS` (dispara `op="updated"` sobre el `SaleOrder` padre, sin tópico propio). Antes de extender a `billing`, `inventory`, `contacts`, `purchasing`: validar carga de WS y latencia percibida sobre el piloto.
+**Allowlist activa:** `sales.SaleOrder` (broadcast propio) + `inventory.Product`, `inventory.ProductCategory`, `inventory.UoM`. `sales.SaleLine` vía `PARENT_BROADCASTS` (dispara `op="updated"` sobre el `SaleOrder` padre, sin tópico propio). Agregar modelos al bus = editar `ALLOWLIST` en `core/entity_bus.py` (cambio que pasa por PR). Antes de extender a `billing`, `purchasing`, `contacts`: validar carga de WS y latencia percibida.
 
 ---
 
@@ -120,37 +137,30 @@ useEntitySubscription(`sales.saleorder.${id}`, [['sales', id]])
 
 ### Backend
 
-Cada feature que necesita WS declara un consumer y lo registra en su `routing.py`:
+Cada feature que necesita WS declara un consumer y lo registra en su `routing.py`. Consumer real de POS (extracto fiel de `sales/consumers.py`):
 
 ```python
 # backend/sales/consumers.py
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 
-class POSDraftConsumer(AsyncJsonWebsocketConsumer):
+class POSDraftConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # self.scope["user"] viene de JWTAuthMiddleware (ya en ASGI)
-        if self.scope["user"].is_anonymous:
-            await self.close(code=4001); return
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
-        self.group = f"pos-draft.{self.session_id}"
-        await self.channel_layer.group_add(self.group, self.channel_name)
-        await self.accept()
+        self.group_name = f"pos_session_{self.session_id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()  # sin check de auth en connect
 
-    async def disconnect(self, code):
-        await self.channel_layer.group_discard(self.group, self.channel_name)
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    async def receive_json(self, content):
-        # validar payload con un dataclass o Pydantic; nunca tocar ORM síncrono aquí
-        await self.channel_layer.group_send(self.group, {
-            "type": "draft.update",
-            "payload": content,
-            "from_channel": self.channel_name,
-        })
+    async def receive(self, text_data):
+        # Protocolo: {"event": "HEARTBEAT", "draft_id", "session_key"}
+        # → renueva el lock vía DraftCartService.refresh_lock; si falla responde LOCK_LOST.
+        ...
 
-    async def draft_update(self, event):
-        if event["from_channel"] == self.channel_name:
-            return  # no eco al emisor
-        await self.send_json({"event": "draft.update", "payload": event["payload"]})
+    async def pos_draft_update(self, event):
+        # Broadcast del grupo → cliente
+        await self.send(text_data=json.dumps(event["data"]))
 ```
 
 ```python
@@ -159,40 +169,36 @@ from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r"^ws/pos/(?P<session_id>[\w-]+)/$", consumers.POSDraftConsumer.as_asgi()),
+    re_path(r"ws/sales/pos/(?P<session_id>\d+)/$", consumers.POSDraftConsumer.as_asgi()),
 ]
 ```
 
-Registrado en `backend/config/asgi.py` vía `URLRouter` envuelto en `JWTAuthMiddleware` — patrón ya operativo, no se reinventa.
+Los tres `routing.py` (`core`, `sales`, `workflow`) se concatenan en `backend/config/asgi.py` vía `URLRouter` envuelto en `JWTAuthMiddleware` (`core/ws_auth.py`) — patrón ya operativo, no se reinventa.
 
 ### Frontend
 
 ```ts
-// patrón canónico (extracto simplificado de useDraftSync)
-export function useDraftSync(sessionId: string, onRemoteUpdate: (p: DraftPayload) => void) {
-  const tokenRef = useAccessTokenRef();
-  useEffect(() => {
-    const url = `${WS_BASE}/ws/pos/${sessionId}/?token=${tokenRef.current}`;
-    const ws = new WebSocket(url);
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      if (msg.event === "draft.update") onRemoteUpdate(msg.payload);
-    };
-    ws.onclose = (e) => { /* reconnect con backoff exponencial si code !== 4001 */ };
-    return () => ws.close();
-  }, [sessionId]);
-}
+// patrón real de useDraftSync (extracto)
+const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
+const wsProtocol = baseUrl.startsWith('https') ? 'wss' : 'ws'
+const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '')
+const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/`
+
+const socket = new WebSocket(wsUrl)   // ⚠️ POS se conecta SIN ?token=
+socket.onmessage = (event) => { /* parsea msg.event / msg.data */ }
 ```
 
 **Reglas:**
 - Hook por feature en `features/[feature]/hooks/use*Sync.ts`. **Nunca** un hook genérico `useWebSocket` global — el manejo de mensajes es siempre específico del dominio.
 - Reconexión con backoff exponencial (1s, 2s, 4s, …; cap 30s). Detener si el código de cierre es 4001 (no autorizado) o 4003 (forbidden).
-- Heartbeat: el cliente envía `{ "type": "ping" }` cada 30s si lleva sin recibir nada; el servidor responde `{ "type": "pong" }`. Esto detecta TCP-half-open y permite reconexión.
-- **Auth:** JWT como query param `?token=<jwt>`. WebSocket no permite custom headers desde el browser. Aceptado pese a que el token queda en logs de Nginx — mitigación: tokens de vida corta (15 min, ver [security.md](../40-quality/security.md)).
+- Heartbeat: el cliente envía `{ "event": "HEARTBEAT", "draft_id, session_key }` (protocolo real de POS — renueva el lock de sesión). Detectar TCP-half-open y reconectar.
+- **Auth:** JWT como query param `?token=<jwt>` — mecanismo implementado por `core/ws_auth.JWTAuthMiddleware` y usado por `ws/notifications/` y `ws/entity-bus/`. **Excepción real:** el consumer de POS no valida auth en `connect` (acepta anónimos; la autorización ocurre dentro de `receive` al renovar el lock). Aceptado pese a que el token queda en logs de Nginx — mitigación: tokens de vida corta (15 min, ver [security.md](../40-quality/security.md)).
 
 ---
 
 ## SSE — patrón canónico
+
+> **Estado 2026-08-04: NO implementado en el codebase.** Ninguna ruta sirve `text/event-stream`; no existe `features/*/hooks/use*Stream.ts` ni `buildAuthedSseUrl`. Esta sección es **especificación canónica** para cuando se necesite (progreso de jobs largos, exports). Mientras tanto, todo broadcast va por WebSocket. Si se implementa, actualizar este banner y la tabla de §"Implementaciones existentes".
 
 ### Backend
 
