@@ -576,6 +576,11 @@
     border-radius: inherit;
     padding: 2px;
     background: conic-gradient(
+      var(--color-cyan) 0 33%,
+      var(--color-magenta) 33% 66%,
+      var(--color-yellow) 66% 100%
+    );
+    background: conic-gradient(
       from var(--border-angle),
       var(--color-cyan) 0%,
       var(--color-magenta) 33%,
@@ -622,6 +627,11 @@
     inset: 0;
     border-radius: inherit;
     padding: 2px;
+    background: conic-gradient(
+      var(--color-cyan) 0 33%,
+      var(--color-magenta) 33% 66%,
+      var(--color-yellow) 66% 100%
+    );
     background: conic-gradient(
       from var(--border-angle),
       var(--color-cyan) 0%,
