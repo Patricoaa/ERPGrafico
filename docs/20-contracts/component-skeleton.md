@@ -23,7 +23,7 @@ Controla los **estados de carga** de la aplicación. Existen tres estrategias bi
 │       ├─ Página completa (app/loading.tsx)         → AppShellSkeleton
 │       ├─ Página con tabs + toolbar + tabla          → PageLayoutSkeleton
 │       ├─ Página con formulario                      → PageLayoutSkeleton contentType="form"
-│       ├─ Tabla de datos                             → TableSkeleton
+│       ├─ Tabla de datos                             → `DataTable isLoading={true}` (skeleton de filas integrado)
 │       ├─ Tarjetas en grilla                         → CardSkeleton variant="grid"|"product"
 │       ├─ Selector de contacto en modo card          → CardSkeleton variant="contact-card"
 │       └─ Formulario                                 → PageLayoutSkeleton contentType="form"
@@ -99,7 +99,7 @@ Si `SaleOrder` agrega un campo obligatorio, TypeScript fuerza actualizar `ORDERS
 
 ```tsx
 // MAL — desmonta el componente real y lo reemplaza por una silueta diferente → CLS
-if (isFetching) return <TableSkeleton rows={8} columns={5} />
+if (isFetching) return <div className="space-y-4"><Skeleton className="h-8 w-full" />…</div>
 return <DataTable ... />
 ```
 
@@ -114,7 +114,7 @@ Cuando un componente necesita su propio fallback para un `<Suspense>` (ej. modal
 function MyHeavyComponentBase({ data, loading }: Props) { ... }
 
 MyHeavyComponentBase.Skeleton = function MyHeavyComponentSkeleton() {
-    return <TableSkeleton rows={8} columns={7} ariaLabel="Cargando datos" />
+    return <SkeletonShell isLoading ariaLabel="Cargando datos"><Placeholder /></SkeletonShell>
 }
 
 export const MyHeavyComponent = MyHeavyComponentBase
@@ -232,20 +232,9 @@ Cuando `isLoading=true`, `SkeletonShell` aplica `aria-busy="true"` + `aria-live=
 
 Todos los componentes del catálogo se importan **exclusivamente** desde el barrel:
 ```tsx
-import { TableSkeleton, SkeletonShell, CardSkeleton } from "@/components/shared"
+import { SkeletonShell, CardSkeleton, PageLayoutSkeleton, LoadingFallback } from "@/components/shared"
 ```
 Nunca importar directamente desde `@/components/ui/skeleton`.
-
----
-
-### `TableSkeleton`
-
-| prop | type | default | notas |
-|------|------|---------|-------|
-| `rows` | `number` | `5` | Filas simuladas |
-| `columns` | `number` | `5` | Columnas por fila |
-| `className` | `string` | — | Clase del contenedor |
-| `ariaLabel` | `string` | `'Cargando tabla'` | Label para lectores de pantalla |
 
 ---
 
@@ -261,7 +250,12 @@ Nunca importar directamente desde `@/components/ui/skeleton`.
 
 ---
 
+> **Skeleton de tablas:** `TableSkeleton` y `SharedTableSkeleton` **no existen** (fueron eliminados).
+> El loading de tablas es **integrado** en `DataTable` via las props `isLoading` + `skeletonRows`:
+> `DataTable` sustituye el body por filas shimmer (`SkeletonShell` + `Skeleton` con shapes
+> `bar | pill | icon | code` por columna) manteniendo toolbar, headers y paginación visibles (sin CLS).
 
+---
 
 ### `SkeletonShell`
 
@@ -325,7 +319,7 @@ Esta regla está aplicada por ESLint (`no-restricted-imports` en `eslint.config.
 
 ## Accesibilidad
 
-- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `PageLayoutSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
+- Todos los wrappers compuestos (`DataTable` skeleton rows, `CardSkeleton`, `PageLayoutSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
 - Los sub-componentes (`PageTabsSkeleton`, `ToolbarSkeleton`, `PageHeaderSkeleton`) **no** llevan `role="status"` para evitar regiones live anidadas.
 - `SkeletonShell` usa `aria-busy="true"` + `aria-live="polite"` cuando activo.
 - `prefers-reduced-motion: reduce` desactiva todas las animaciones shimmer (`animation: none; opacity: 0.5`). Definido en `globals.css`.

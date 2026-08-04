@@ -114,7 +114,7 @@ States handled: — (pure presentational, no async).
 
 > 📄 Documentación completa en **[component-skeleton.md](./component-skeleton.md)**.
 
-Catálogo: `CardSkeleton` · `TableSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
+Catálogo: `CardSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`. El skeleton de tablas es integrado (`DataTable isLoading` + `skeletonRows`).
 Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refetching.
 
 ---

@@ -117,7 +117,7 @@ const { data, isLoading } = useMyData()
 <DataTable isLoading={isLoading} data={data} ... />
 ```
 
-Cuando `isLoading` es `true`, el DataTable sustituye el body de la tabla por `SharedTableSkeleton` (filas shimmer). El toolbar, encabezados y paginación permanecen visibles para evitar CLS.
+Cuando `isLoading` es `true`, el DataTable sustituye el body de la tabla por filas shimmer integradas (`SkeletonShell` + `Skeleton`, shapes `bar | pill | icon | code` por columna). El toolbar, encabezados y paginación permanecen visibles para evitar CLS. `skeletonRows` permite ajustar el nº de filas simuladas (default: `defaultPageSize`).
 
 > **Excepción:** Si la tabla usa `renderCustomView`, el skeleton automático **no aplica** dentro de la vista custom. Ver sección 4 (`renderLoadingView`).
 
@@ -147,7 +147,7 @@ Las vistas disponibles en el sistema son:
 | Valor | Descripción | Componente de renderizado |
 |---|---|---|
 | `"list"` | Tabla estándar (default en la mayoría de módulos) | Motor interno de DataTable |
-| `"card"` | Vista de tarjetas en lista vertical | `renderCustomView` + `EntityCard` / `OrderCard` / `InvoiceCard` |
+| `"card"` | Vista de tarjetas en lista vertical | `renderCustomView` + `EntityCard` (o `DataTableView` con `renderCard`) |
 | `"grid"` | Grilla densa en múltiples columnas (ejm: Productos) | `renderCustomView` + `EntityCard variant="compact"` |
 | `"kanban"` | Tablero Kanban (Producción) | `renderCustomView` + componente específico de dominio |
 
@@ -228,7 +228,12 @@ const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode
   currentView={currentView}
   onViewChange={handleViewChange}
   viewOptions={viewOptions}
-  renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', { ... }) : undefined}
+  renderCustomView={isCustomView ? createEntityCardView('sales.saleorder', {
+    gridLayout: 'single-column',
+    renderCard: (order) => (
+      <OrderCard ... />
+    ),
+  }) : undefined}
   renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
   ...
 />
@@ -261,29 +266,26 @@ import { EntityCard } from "@/components/shared/EntityCard"
 </EntityCard>
 ```
 
-### `DomainCard` — Card inteligente para documentos transaccionales
-Usa `EntityCard` como shell interno. Renderiza automáticamente:
-- Icono, nombre de partner, y display ID desde `ENTITY_REGISTRY`
-- `DomainHubStatus` (workflow badges)
-- Montos totales y pendientes
-- Líneas de producto
-
-Usar exclusivamente para entidades con `viewPolicy.cardComponent: 'domain'`:
-- Órdenes de Venta (`sales.saleorder`)
-- Órdenes de Compra (`purchasing.purchaseorder`)
-- Facturas/DTEs (`billing.invoice`)
+### Tarjetas de documentos transaccionales (`cardVariant`)
+Para entidades con `viewPolicy.cardComponent: 'entity'` y `cardVariant` definido (`'workflow' | 'full'`), la tarjeta se compone sobre `EntityCard` con la variante correspondiente:
+- `cardVariant: 'workflow'` — tarjetas de órdenes/facturas con badges de estado de dominio (WorkflowStatus)
+- `cardVariant: 'full'` — tarjeta completa con header/body/footer
 
 ```tsx
-import { DomainCard } from "@/components/shared"
+import { EntityCard } from "@/components/shared"
 
-<DomainCard label="sales.saleorder" data={order} isSelected={...} isHubOpen={...} />
+<EntityCard variant={policy.cardVariant === 'workflow' ? 'workflow' : 'full'} ...>
+  ...
+</EntityCard>
 ```
 
-### ❌ `OrderCard`, `InvoiceCard` — Eliminados
-Estos componentes legados fueron reemplazados por `DomainCard` y eliminados del codebase. No deben recrearse.
+La variante se resuelve desde `ENTITY_REGISTRY.viewPolicy.cardVariant` (`DataTableView` la lee automáticamente) y `createCardLoadingView` la propaga a `EntityCard.Skeleton` para mantener geometría estable.
+
+### ❌ `DomainCard`, `OrderCard`, `InvoiceCard` — Eliminados
+`DomainCard`, `OrderCard` e `InvoiceCard` **no existen**. Las tarjetas de documentos transaccionales (órdenes, facturas) se construyen como composiciones de `EntityCard` (con `cardVariant: 'workflow' | 'full'` según `ENTITY_REGISTRY.viewPolicy.cardVariant`) en el callback `renderCard` del consumidor. No deben recrearse.
 
 ### ❌ Inline JSX en `renderCustomView` — Prohibido
-No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard`, `DomainCard`, o un componente de dominio derivado de ellos.
+No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard`, o un componente de dominio derivado de él.
 
 ---
 
@@ -291,22 +293,8 @@ No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card deb
 
 Para reducir boilerplate, existen factories en `lib/view-helpers.ts`:
 
-### `createDomainCardView(label, options)`
-Para entidades con `cardComponent: 'domain'`. Genera un `renderCustomView` completo con empty state y DomainCard:
-
-```tsx
-import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
-
-renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', {
-  onRowClick: (data) => toggleSelection(data),
-  isSelected: (data) => hubConfig?.orderId === data.id,
-  isHubOpen,
-}) : undefined}
-renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
-```
-
 ### `createEntityCardView(label, options)`
-Para entidades con `cardComponent: 'entity'` o `'entity-compact'`. El consumidor proporciona un `renderCard` callback:
+Para entidades con `cardComponent: 'entity'`. El consumidor proporciona un `renderCard` callback:
 
 ```tsx
 renderCustomView={isCustomView ? createEntityCardView('inventory.product', {
@@ -318,6 +306,8 @@ renderCustomView={isCustomView ? createEntityCardView('inventory.product', {
   ),
 }) : undefined}
 ```
+
+> **Card views con agrupación:** si la vista card está agrupada (`cardGroupBy`), `DataTableView` resuelve automáticamente `createCardGroupView` + `createCardGroupLoadingView` en lugar de los helpers single-view — no llamarlos a mano.
 
 ### `createCardLoadingView(layout, count)`
 Genera un `renderLoadingView` con EntityCard.Skeleton en la geometría correcta:
@@ -334,11 +324,11 @@ Cada entidad define su política de vistas en `ENTITY_REGISTRY.viewPolicy`. El h
 
 | Entidad | Vistas | Default | Card Component |
 |---|---|---|---|
-| `sales.saleorder` | list, card | card | `domain` |
-| `purchasing.purchaseorder` | list, card | card | `domain` |
-| `billing.invoice` | list, card | card | `domain` |
-| `production.workorder` | list, kanban | list | `custom` |
-| `inventory.product` | list, grid | list | `entity-compact` |
+| `sales.saleorder` | list, card, analytics | card | `entity` (`cardVariant: 'workflow'`) |
+| `purchasing.purchaseorder` | list, card | card | `entity` (`cardVariant: 'workflow'`) |
+| `billing.invoice` | list, card | card | `entity` (`cardVariant: 'full'`) |
+| `production.workorder` | list, kanban, timeline | list | `custom` |
+| `inventory.product` | list, card, analytics | list | `entity` |
 | `contacts.contact` | list, card | list | `entity` |
 | `hr.employee` | list, card | list | `entity` |
 | Demás entidades | list (solo) | list | — |
@@ -503,7 +493,7 @@ Usar `createCardGroupView` directamente para vistas custom:
 import { createCardGroupView, createCardLoadingView } from "@/lib/view-helpers"
 
 renderCustomView={isCustomView ? createCardGroupView({
-  renderCard: (data) => <DomainCard label="sales.saleorder" data={data} />,
+  renderCard: (data) => <EntityCard ... />,
   cardGroupBy: { dateField: 'date', amountField: 'total' },
   gridLayout: 'single-column',
   emptyState: { context: 'filter' },
@@ -799,16 +789,16 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] Si hay `renderCustomView` y `isLoading`: `renderLoadingView` presente
 - [ ] Multi-vista usa `useViewMode(entityLabel)` — no `useState` manual para la vista
 - [ ] `viewOptions` generados desde registry (`getViewOptions`) — no arrays hardcodeados
-- [ ] `renderCustomView` usa `createDomainCardView` / `createEntityCardView` cuando aplique — no inline JSX
+- [ ] `renderCustomView` usa `createEntityCardView` (o `createCardGroupView` si hay agrupación) cuando aplique — no inline JSX
 - [ ] Default de vista definido en `ENTITY_REGISTRY.viewPolicy.defaultView`
-- [ ] Card views usan `EntityCard` o `DomainCard` — **no inline JSX**
+- [ ] Card views usan `EntityCard` — **no inline JSX**
 - [ ] `variant="minimal"` usado en tablas display dentro de tabs de producto/config (no en listados CRUD)
 - [ ] `variant="minimal"` no recibe props de toolbar, paginación ni bulk actions
 - [ ] `variant="compact"` siempre declara `gridTemplate`
 - [ ] `variant="compact"` con `renderRowActions`: `gridTemplate` tiene `columns.length + 1` tracks
 - [ ] Expandable rows nuevos usan `renderSubComponent` + `createExpanderColumn` — **no** `ExpandableTableRow`
 - [ ] Si se usa `cardGroupBy`: `dateField` requerido; `amountField` opcional
-- [ ] `cardGroupBy` compatible con `cardComponent: 'domain'` y `cardComponent: 'entity'`
+- [ ] `cardGroupBy` compatible con `cardComponent: 'entity'`
 - [ ] `createCardGroupView` usa `renderCard` con firma `(data: TData) => ReactNode` (no recibe `row`)
 - [ ] Los grupos se ordenan descendente por fecha (más reciente primero)
 - [ ] Items sin fecha se agrupan al final bajo "Sin fecha"

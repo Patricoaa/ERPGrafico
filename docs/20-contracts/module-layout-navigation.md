@@ -128,34 +128,36 @@ La página `[id]/page.tsx` es un **Server Component** que:
 
 ### 7.3 Tabla de patrones canónicos (26 entidades)
 
+> **Estado 2026-08-04:** los redirectors `[id]/page.tsx` (T-72…T-77) están **implementados**. El patrón canónico es: `[id]/page.tsx` hace server-render y redirige a `<list_url>?selected={id}` (ver §7.4). Las celdas ✅ ya no requieren tarea pendiente.
+
 | app.model | `list_url` | `detail_url_pattern` | `[id]` existe | read-only |
 |-----------|------------|----------------------|---------------|-----------|
-| `sales.saleorder` | `/sales/orders` | `/sales/orders/{id}` | ❌ (T-72) | No |
-| `sales.saledelivery` | `/sales/deliveries` | `/sales/deliveries/{id}` | ❌ (T-72) | No |
-| `sales.salereturn` | `/sales/returns` | `/sales/returns/{id}` | ❌ (T-72) | No |
-| `purchasing.purchaseorder` | `/purchasing/orders` | `/purchasing/orders/{id}` | ❌ (T-73) | No |
-| `billing.invoice` | `/billing/sales` | `/billing/sales/{id}` o `/billing/purchases/{id}` | ❌ (T-73) | No |
-| `contacts.contact` | `/contacts` | `/contacts/{id}` | ❌ (T-77) | No |
-| `accounting.account` | `/accounting/accounts` | `/accounting/accounts/{id}` | ❌ (T-75) | Parcial |
-| `accounting.journalentry` | `/accounting/entries` | `/accounting/entries/{id}` | ❌ (T-75) | No |
-| `accounting.fiscalyear` | `/accounting/closures` | `/accounting/closures/{id}` | ❌ (T-75) | No |
+| `sales.saleorder` | `/sales/orders` | `/sales/orders/{id}` | ✅ | No |
+| `sales.saledelivery` | `/sales/orders/deliveries` | `/sales/orders/deliveries/{id}` | ❌ (vía `?selected` sobre la lista) | No |
+| `sales.salereturn` | `/sales/returns` | `/sales/returns/{id}` | ✅ | No |
+| `purchasing.purchaseorder` | `/purchasing/orders` | `/purchasing/orders/{id}` | ✅ | No |
+| `billing.invoice` | `/billing/sales` | `/billing/sales/{id}` o `/billing/purchases/{id}` | ✅ | No |
+| `contacts.contact` | `/contacts` | `/contacts/{id}` | ✅ | No |
+| `accounting.account` | `/accounting/accounts` | `/accounting/accounts/{id}` | ✅ | Parcial |
+| `accounting.journalentry` | `/accounting/entries` | `/accounting/entries/{id}` | ✅ | No |
+| `accounting.fiscalyear` | `/accounting/closures` | `/accounting/closures/{id}` | ✅ | No |
 | `accounting.budget` | `/finances/budgets` | `/finances/budgets/{id}` | ✅ | No |
-| `inventory.product` | `/inventory/products` | `/inventory/products/{id}` | ❌ (T-74) | No |
-| `inventory.productcategory` | `/inventory/categories` | `/inventory/categories/{id}` | ❌ (T-74) | No |
-| `inventory.warehouse` | `/inventory/warehouses` | `/inventory/warehouses/{id}` | ❌ (T-74) | No |
-| `inventory.stockmove` | `/inventory/stock-moves` | `/inventory/stock-moves/{id}` | ❌ (T-74) | **Sí** |
-| `treasury.treasurymovement` | `/treasury/movements` | `/treasury/movements/{id}` | ❌ (T-76) | No |
-| `treasury.treasuryaccount` | `/treasury/accounts` | `/treasury/accounts/{id}` | ❌ (T-76) | No |
-| `treasury.possession` | `/treasury/sessions` | `/treasury/sessions/{id}` | ❌ (T-76) | **Sí** (cerrada) |
-| `treasury.bankstatement` | `/treasury/statements` | `/treasury/statements/{id}` | ❌ (T-76) | **Sí** |
-| `hr.employee` | `/hr/employees` | `/hr/employees/{id}` | ❌ (T-77) | No |
+| `inventory.product` | `/inventory/products` | `/inventory/products/{id}` | ✅ | No |
+| `inventory.productcategory` | `/inventory/products/categories` | `/inventory/products/categories/{id}` | ❌ (vía `?selected`) | No |
+| `inventory.warehouse` | `/inventory/warehouses` | `/inventory/warehouses/{id}` | ✅ | No |
+| `inventory.stockmove` | `/inventory/stock-moves` | `/inventory/stock-moves/{id}` | ✅ | **Sí** |
+| `treasury.treasurymovement` | `/treasury/operaciones/movements` | `/treasury/operaciones/movements/{id}` | ❌ (vía `?selected`) | No |
+| `treasury.treasuryaccount` | `/treasury/operaciones/accounts` | `/treasury/operaciones/accounts/{id}` | ❌ (vía `?selected`) | No |
+| `treasury.possession` | `/treasury/sessions` | `/treasury/sessions/{id}` | ✅ | **Sí** (cerrada) |
+| `treasury.bankstatement` | `/treasury/statements` | `/treasury/statements/{id}` | ✅ | **Sí** |
+| `hr.employee` | `/hr/employees` | `/hr/employees/{id}` | ✅ | No |
 | `hr.payroll` | `/hr/payrolls` | `/hr/payrolls/{id}` | ✅ | No |
-| `production.workorder` | `/production/orders` | `/production/orders/{id}` | ❌ (T-77) | No |
-| `tax.f29declaration` | `/tax/f29` | `/tax/f29/{id}` | ❌ (T-77) | No |
-| `tax.accountingperiod` | `/tax/periods` | `/tax/periods/{id}` | ❌ (T-77) | No |
-| `workflow.task` | `/workflow/tasks` | `/workflow/tasks/{id}` | ❌ (T-77) | No |
-| `core.user` | `/settings/users` | `/settings/users/{id}` | ❌ (T-77) | No |
-| `core.attachment` | `/files` | `/files/{id}` | ❌ (T-77) | **Sí** |
+| `production.workorder` | `/production/orders` | `/production/orders/{id}` | ✅ | No |
+| `tax.f29declaration` | `/tax/f29` | `/tax/f29/{id}` | ✅ | No |
+| `tax.accountingperiod` | `/tax/periods` | `/tax/periods/{id}` | ✅ | No |
+| `workflow.task` | `/workflow/tasks` | `/workflow/tasks/{id}` | ✅ | No |
+| `core.user` | `/settings/users` | `/settings/users/{id}` | ✅ | No |
+| `core.attachment` | `/files` | `/files/{id}` | ✅ | **Sí** |
 
 ### 7.4 Shell `EntityDetailPage` — eliminado (T-95)
 
