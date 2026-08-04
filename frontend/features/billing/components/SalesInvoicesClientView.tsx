@@ -5,6 +5,7 @@ import React, { useState, useRef } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch} from '@/components/shared'
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
+import { salesInvoiceActions } from "@/features/billing/salesInvoiceActions"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
 import { GitBranch } from "lucide-react"
 import { treasuryApi } from "@/features/treasury"
@@ -97,7 +98,10 @@ export function SalesInvoicesClientView() {
         }
     }
 
-    const columns = salesInvoiceFields.toColumns()
+    const columns = [
+        ...salesInvoiceFields.toColumns(),
+        salesInvoiceActions.auto({ onHub: (doc) => toggleSelection(doc) }),
+    ]
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -129,10 +133,6 @@ export function SalesInvoicesClientView() {
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={isNC ? "text-warning bg-warning/10" : undefined}
-                                hubTrigger={{
-                                    isSelected: hubConfig?.invoiceId === data.id,
-                                    onToggle: () => toggleSelection(data),
-                                }}
                                 hubStatusRenderer={(hubData) => {
                                     const hubD = hubData as unknown as Record<string, unknown>
                                     return (
@@ -180,8 +180,6 @@ export function SalesInvoicesClientView() {
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
                     defaultPageSize={20}
-                    isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
-                    isHubOpen={isHubOpen}
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "finance",
