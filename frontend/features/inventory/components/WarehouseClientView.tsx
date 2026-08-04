@@ -1,15 +1,18 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useEffect, useState, useMemo } from "react"
+import {useState, useMemo} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import {ActionConfirmModal, DataCell, DataTableColumnHeader, DataTableView} from '@/components/shared'
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import {ActionConfirmModal, DataTableView, AutoEntityCard} from '@/components/shared'
 import { warehouseActions, type WarehouseActionsCtx } from "@/features/inventory/warehouseActions"
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseDrawer } from "./WarehouseDrawer"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { warehouseFields } from "../warehouseFields"
 
 import type { BulkAction } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -18,7 +21,6 @@ import React from "react"
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { warehouseUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface WarehouseClientViewProps {
     externalOpen?: boolean
@@ -30,10 +32,12 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     const { warehouses, isLoading, refetch, deleteWarehouse } = useWarehouses()
     const search = useUnifiedSearch(warehouseUnifiedSearchDef)
 
-    const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
+
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
 
     const bulkDeleteConfirm = useConfirmAction<Warehouse[]>(async (items) => {
         try {
@@ -45,43 +49,26 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         }
     })
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
     // T-106: clearSelection viene directamente del hook — no re-declarar localmente (ADR-0020)
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Warehouse>({
         endpoint: '/inventory/warehouses'
     })
+    const { openSelected } = useEntityRouteActions()
 
-    // Open edit form if ?selected= is present (ADR-0020).
-    // Depends ONLY on selectedFromUrl — see CategoryList for explanation
-    // of why isFormOpen/editingWarehouse must NOT be in the dependency array.
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setEditingWarehouse(selectedFromUrl)
-                setIsFormOpen(true)
-            })
-        } else {
-            requestAnimationFrame(() => {
-                setIsFormOpen(false)
-                setEditingWarehouse(null)
-            })
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isEditOpen = !!selectedFromUrl
+    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
+
+    const handleCloseModal = (open: boolean = false) => {
+        if (!open) {
+            onExternalOpenChange?.(false)
+            if (isEditOpen) clearSelection()
+            if (isCreateOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            }
         }
-    }, [selectedFromUrl])
-
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setEditingWarehouse(null)
-        onExternalOpenChange?.(false)
-        clearSelection()
-    }
-
-    const openSelected = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleDelete = async (warehouse: Warehouse | null, isConfirmed = false) => {
@@ -108,60 +95,37 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
         onDelete: (warehouse) => handleDelete(warehouse),
     }
 
-    const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre del Almacén" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center py-1">
-                    <DataCell.Text>{row.original.name}</DataCell.Text>
-                    <DataCell.Secondary>Ubicación Física</DataCell.Secondary>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "code",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Code>
-                    {row.original.code}
-                </DataCell.Code>
-            ),
-            size: 120,
-        },
-        {
-            accessorKey: "address",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Secondary>
-                    {row.original.address || "-"}
-                </DataCell.Secondary>
-            ),
-        },
-        warehouseActions.column(actionsCtx),
-    ], [actionsCtx])
+    const columns = useMemo<ColumnDef<Warehouse>[]>(() => {
+        const [nameCol, codeCol, addressCol] = warehouseFields.toColumns()
+        return [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                        variant="circle"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        variant="circle"
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+                size: 40,
+            },
+            nameCol,
+            codeCol,
+            addressCol,
+            warehouseActions.auto(actionsCtx),
+        ]
+    }, [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [
         {
@@ -208,20 +172,25 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                         title: "Aún no hay almacenes",
                         description: "Crea un almacén para gestionar ubicaciones y existencias de inventario.",
                     }}
+                    renderCard={(warehouse: Warehouse) => (
+                        <AutoEntityCard
+                            key={warehouse.id}
+                            data={warehouse}
+                            fields={warehouseFields}
+                            entityLabel="inventory.warehouse"
+                            actions={warehouseActions.render(warehouse, actionsCtx)}
+                            defaultAction={warehouseActions.defaultAction(actionsCtx)?.(warehouse) ?? (() => openSelected(warehouse.id))}
+
+                        />
+                    )}
                 />
             </div>
 
             <WarehouseDrawer
                 onSuccess={refetch}
-                open={isFormOpen || !!externalOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
-                    }
-                }}
-                initialData={editingWarehouse || undefined}
+                open={drawerOpen}
+                onOpenChange={handleCloseModal}
+                initialData={selectedFromUrl || undefined}
             />
 
             <ActionConfirmModal

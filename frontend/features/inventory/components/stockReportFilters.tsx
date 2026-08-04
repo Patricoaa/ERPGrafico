@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useCategories, useWarehouses } from '@/features/inventory'
 
-export function StockReportCategoryFilter() {
+export function StockReportCategorySelector() {
     const [categoryParam, setCategoryParam] = useQueryState('category', parseAsString)
     const { categories, isLoading } = useCategories()
 
@@ -72,7 +72,7 @@ export function StockReportCategoryFilter() {
     )
 }
 
-export function StockReportWarehouseFilter() {
+export function StockReportWarehouseSelector() {
     const [warehouseParam, setWarehouseParam] = useQueryState('warehouse_id', parseAsString)
     const { warehouses, isLoading } = useWarehouses()
 

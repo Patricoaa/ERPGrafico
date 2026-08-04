@@ -33,5 +33,9 @@ export const reconciliationUnifiedSearchDef: UnifiedSearchConfig = {
       { label: 'Este año', serverParamFrom: 'date_from', serverParamTo: 'date_to', getValue: thisYear },
     ],
   }],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'type', label: 'Tipo', field: 'type' },
+  ],
   basePeriod: { serverParamFrom: 'date_from', serverParamTo: 'date_to' },
 }

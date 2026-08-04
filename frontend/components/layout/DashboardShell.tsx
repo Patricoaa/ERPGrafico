@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -12,9 +12,10 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { HeaderNavDropdowns, PageHeaderSkeleton, ModuleLauncher, PrepressPanel } from '@/components/shared'
+import { ModuleNavigationMenu, PageHeaderSkeleton, ModuleLauncher, PrepressPanel, TabBar, DynamicIcon } from '@/components/shared'
 import { Loader2, Menu } from "lucide-react"
-import { DynamicIcon } from '@/components/shared'
+import { AnimatePresence, motion } from "framer-motion"
+import { getModuleIconName } from "@/lib/module-registry"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -24,13 +25,31 @@ const TaskInboxSidebar = dynamic(
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
+    const router = useRouter()
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
     const [isModuleLauncherOpen, setIsModuleLauncherOpen] = useState(false)
+    const [isLauncherHovered, setIsLauncherHovered] = useState(false)
+
+    const currentModuleId = pathname.split('/').filter(Boolean)[0] || 'dashboard'
+    const currentModuleIcon = getModuleIconName(currentModuleId)
 
     const { config } = useHeader()
     const { isHubEffectivelyOpen } = useHubPanel()
     const { totalSheetsWidth } = useGlobalModals()
+
+    const nav = config?.navigation
+    let l4Tabs: { value: string; label: string; href: string }[] = []
+    let activeL4Tab = ""
+
+    if (nav && nav.subSubActiveValue) {
+        const activeTab = nav.tabs.find(t => t.value === nav.activeValue)
+        const activeSubTab = activeTab?.subTabs?.find(st => st.value === nav.subActiveValue)
+        if (activeSubTab?.subTabs) {
+            l4Tabs = activeSubTab.subTabs.map(t => ({ value: t.value, label: t.label, href: t.href }))
+            activeL4Tab = nav.subSubActiveValue
+        }
+    }
 
     // Sync global data attributes for repelling fixed UI elements (like Sheets)
     useEffect(() => {
@@ -55,15 +74,39 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
             <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
-                {/* Hamburger: always-visible module selector trigger */}
+                {/* Module launcher: shows current module icon, hover → hamburger */}
                 <Button
                     variant="ghost"
-                    size="icon-sm"
+                    size="icon"
                     onClick={() => setIsModuleLauncherOpen(true)}
-                    className="flex-none rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+                    onMouseEnter={() => setIsLauncherHovered(true)}
+                    onMouseLeave={() => setIsLauncherHovered(false)}
+                    className="flex-none rounded-md border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
                     aria-label="Seleccionar módulo"
                 >
-                    <Menu className="h-5 w-5" />
+                    <AnimatePresence mode="wait" initial={false}>
+                        {isLauncherHovered ? (
+                            <motion.div
+                                key="hamburger"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                <Menu className="h-5 w-5" />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key={`module-${currentModuleId}`}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                <DynamicIcon name={currentModuleIcon} className="h-5 w-5" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </Button>
                 <ModuleLauncher
                     open={isModuleLauncherOpen}
@@ -87,12 +130,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                             <div className="flex items-center gap-5">
                                 {/* Left: Title — dropdown nav or static */}
                                 {config.navigation ? (
-                                    <HeaderNavDropdowns
+                                    <ModuleNavigationMenu
                                         navigation={config.navigation}
                                     />
                                 ) : (
                                     <div className="flex flex-col w-min">
-                                        <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
+                                        <h1 className="text-base font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
                                             {config.icon ? (
                                                 <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
                                             ) : config.iconName ? (
@@ -107,12 +150,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 <div className="flex items-center gap-2 shrink-0">
                                     {config.status && (
                                         config.status.type === 'saving' ? (
-                                            <Skeleton className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                                            <Skeleton className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
                                                 {config.status.label}
                                             </Skeleton>
                                         ) : (
                                             <div className={cn(
-                                                "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",
+                                                "px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0",
                                                 config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
                                                 config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
                                                 !config.status.type && "bg-muted text-muted-foreground border-border"
@@ -153,6 +196,22 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     marginRight: `${totalSheetsWidth}px`,
                 }}
             >
+                {l4Tabs.length > 0 && (
+                    <div className="flex-none px-8 pb-2">
+                        <TabBar
+                            items={l4Tabs}
+                            value={activeL4Tab}
+                            onValueChange={(val) => {
+                                const tab = l4Tabs.find(t => t.value === val)
+                                if (tab) router.push(tab.href)
+                            }}
+                            variant="underline"
+                            dense
+                        >
+                            <div className="hidden" />
+                        </TabBar>
+                    </div>
+                )}
                 <PrepressPanel
                     id="main-content"
                     className="flex-1 flex flex-col overflow-hidden relative panel-surface"

@@ -20,6 +20,7 @@ export function useCardStatements(params?: Record<string, string>) {
         queryKey: STMT_KEYS.list(params),
         queryFn: () => cardStatementsApi.list(params),
         staleTime: 2 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }
 

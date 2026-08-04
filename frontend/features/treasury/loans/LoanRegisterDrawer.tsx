@@ -10,7 +10,7 @@ import { Form, FormField } from '@/components/ui/form'
 import {
     Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter,
     CancelButton, ActionSlideButton,
-    DataCell, DataTableColumnHeader, DataTable,
+    DataTable,
 } from '@/components/shared'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -22,6 +22,7 @@ import { useLoanMutations } from '../hooks/useLoans'
 import { showApiError } from '@/lib/errors'
 import { AccountSelector } from '@/components/selectors/AccountSelector'
 import { formDrawerWidth } from '@/lib/form-widths'
+import { loanRegisterFields } from './loanRegisterFields'
 
 const schema = z.object({
     lender: z.string().min(1, 'Banco es requerido'),
@@ -175,15 +176,7 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
         return rows
     }, [formValues])
 
-    const scheduleColumns: ColumnDef<typeof scheduleData[number]>[] = [
-        { accessorKey: 'number', header: '#', cell: ({ row }) => <DataCell.Text>{row.original.number}</DataCell.Text> },
-        { accessorKey: 'due_date', header: 'Vencimiento', cell: ({ row }) => <DataCell.Date value={row.original.due_date} /> },
-        { accessorKey: 'principal_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Capital" />, cell: ({ row }) => <DataCell.Currency value={row.original.principal_amount} digits={0} /> },
-        { accessorKey: 'interest_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Interés" />, cell: ({ row }) => <DataCell.Currency value={row.original.interest_amount} digits={0} /> },
-        { accessorKey: 'insurance_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Seguro" />, cell: ({ row }) => <DataCell.Currency value={row.original.insurance_amount} digits={0} /> },
-        { accessorKey: 'total_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />, cell: ({ row }) => <DataCell.Currency value={row.original.total_amount} digits={0} /> },
-        { accessorKey: 'outstanding_balance', header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />, cell: ({ row }) => <DataCell.Currency value={row.original.outstanding_balance} digits={0} /> },
-    ]
+    const scheduleColumns: ColumnDef<typeof scheduleData[number]>[] = loanRegisterFields.toColumns() as ColumnDef<typeof scheduleData[number]>[]
 
     const onSubmit = async (values: FormValues) => {
         try {

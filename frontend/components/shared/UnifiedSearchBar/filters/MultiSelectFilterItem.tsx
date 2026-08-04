@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSegmentationTable } from '@/components/shared'
 import type { MultiSelectFilterDef } from '@/types/unified-search'
@@ -59,11 +60,12 @@ export function MultiSelectFilterItem({
 
   return (
     <div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "flex items-center gap-2 w-full px-2 py-1.5 text-xs font-medium rounded-sm hover:bg-accent/50",
+          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm",
           isActive && "text-primary",
         )}
       >
@@ -77,14 +79,14 @@ export function MultiSelectFilterItem({
         {isActive && selectedValues.length === 0 && (
           <span className="ml-auto text-[10px] text-muted-foreground">✓</span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 py-1 space-y-0.5 max-h-[200px] overflow-y-auto">
+        <div className="ml-4 border-l border-border/40 pl-2 py-1 grid grid-cols-3 gap-1 max-h-[200px] overflow-y-auto">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className="flex items-center gap-2 px-1 py-1 cursor-pointer hover:bg-accent/50 rounded-sm text-xs"
+              className="flex items-center gap-1.5 px-1 py-1 cursor-pointer hover:bg-accent/50 rounded-sm text-xs min-w-0"
             >
               <Checkbox
                 variant="circle"

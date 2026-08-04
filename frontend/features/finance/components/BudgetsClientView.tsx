@@ -1,19 +1,20 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 
-import { Calendar, Wallet } from "lucide-react"
+import { Wallet } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
 import { toast } from "sonner"
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
-
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
-import { DataCell } from '@/components/shared'
+
+import { AutoEntityCard } from '@/components/shared'
 import { budgetActions, type BudgetActionsCtx } from "@/features/finance/budgetActions"
+import { budgetFields } from "@/features/finance/budgetFields"
 
 import { useSearchParams, usePathname } from "next/navigation"
 
@@ -109,45 +110,10 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
         onViewExecution: (id) => router.push(`/finances/budgets/${id}`),
     }
 
-    const columns: ColumnDef<Budget>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center justify-center w-full">
-                    <Link
-                        href={`/finances/budgets/${row.original.id}`}
-                        className="font-medium hover:underline text-primary flex items-center gap-2"
-                    >
-                        <Wallet className="h-4 w-4" />
-                        {row.getValue("name")}
-                    </Link>
-                    {row.original.description && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[300px]">
-                            {row.original.description}
-                        </span>
-                    )}
-                </div>
-            ),
-        },
-        {
-            accessorKey: "start_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Periodo" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-2 text-muted-foreground w-full">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-sm">
-                        {row.original.start_date} - {row.original.end_date}
-                    </span>
-                </div>
-            ),
-        },
-        budgetActions.column(actionsCtx),
-    ]
+    const columns: ColumnDef<Budget>[] = useMemo(() => [
+        ...budgetFields.toColumns(),
+        budgetActions.auto(actionsCtx),
+    ], [])
 
     return (
 
@@ -160,6 +126,16 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                     isLoading={isLoading}
                     entityLabel="accounting.budget"
                     createAction={createAction}
+                    renderCard={(budget) => (
+                        <AutoEntityCard 
+                            key={budget.id}
+                            data={budget}
+                            fields={budgetFields}
+                            entityLabel="accounting.budget"
+                            actions={budgetActions.render(budget, actionsCtx)}
+
+                        />
+                    )}
                 />
             </div>
 

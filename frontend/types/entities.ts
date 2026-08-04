@@ -249,6 +249,9 @@ export interface WorkOrder {
 export interface UoM {
     id: number
     name: string
+    name_singular?: string
+    name_plural?: string
+    abbreviation?: string
     category: number
     ratio: number
     uom_type?: string

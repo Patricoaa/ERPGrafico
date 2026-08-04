@@ -3,7 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 
-import { BaseModal, CancelButton, DataCell, DataTable, EmptyState, IconButton, LabeledContainer, SubmitButton } from '@/components/shared'
+import {BaseModal, CancelButton, DataCell, DataTable, IconButton, LabeledContainer, SubmitButton} from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -184,7 +184,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                     <LabeledContainer label="Agregar Socio">
                         <AdvancedContactSelector
                             value={null}
-                            onChange={(val) => { }}
+                            onChange={() => { }}
                             onSelectContact={(contact) => handleAddPartner(contact.id.toString(), contact)}
                             placeholder="Buscar contacto por nombre o RUT..."
                             className="border-0 focus-visible:ring-0 h-9"
@@ -208,7 +208,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                             <div className="bg-muted/30 font-bold border-t flex items-center px-4 py-3 text-sm">
                                 <div className="flex-1 text-right pr-4 uppercase tracking-wider">Total Capital Suscrito</div>
                                 <div className="w-[220px] pr-2">
-                                    <DataCell.Currency value={totalCapital} className="justify-end text-lg font-black text-primary" />
+                                    <DataCell.Currency value={totalCapital} weight="black" className="justify-end text-lg text-primary" />
                                 </div>
                                 <div className="w-[100px] text-center">100%</div>
                                 <div className="w-12"></div>

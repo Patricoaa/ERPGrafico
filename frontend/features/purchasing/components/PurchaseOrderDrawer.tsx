@@ -56,6 +56,7 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
       </PrintableLayout>
 
       <Drawer
+                fillContent
         open={open}
         onOpenChange={onOpenChange}
         side="left"
@@ -69,7 +70,7 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
           <SkeletonShell isLoading={isLoading} ariaLabel="Cargando orden de compra">
           {order && (
             <div className="p-4 space-y-4">
-              <StatusBadge status={String(order.status)} />
+              <StatusBadge status={String(order.status)} variant="badge" />
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>

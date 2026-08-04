@@ -1,16 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Smartphone, Printer } from "lucide-react"
+import { Smartphone } from "lucide-react"
 import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider, type PaymentTerminalDevice } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -40,8 +37,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
     const providers = providersProp ?? fetchedProviders
     const mode: DrawerMode = modeProp ?? (device ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
     const [loading, setLoading] = useState(false)
 
     const form = useForm<DeviceFormValues>({
@@ -113,6 +109,8 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
     const identity = useDrawerIdentity('treasury.terminaldevice', mode, device, {
         overrideTitle: mode === 'create' ? "Registrar Nuevo Hardware" : undefined,
         overrideSubtitle: "Vincule una terminal física con un proveedor de servicios.",
+        printable: (mode === 'view' || mode === 'edit') && !!device?.id,
+        onPrint: handlePrint,
     })
 
     return (
@@ -128,6 +126,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
@@ -135,7 +134,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && device?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter

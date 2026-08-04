@@ -83,7 +83,24 @@ export const stockMoveUnifiedSearchDef: UnifiedSearchConfig = {
       serverParam: 'product_name',
     },
   ],
-  filters: [],
+  filters: [
+    {
+      type: 'single',
+      key: 'direction',
+      label: 'Tipo de movimiento',
+      serverParam: 'direction',
+      options: [
+        { label: 'Entrada', value: 'IN' },
+        { label: 'Salida', value: 'OUT' },
+        { label: 'Transferencia', value: 'TRANSFER' },
+        { label: 'Ajuste', value: 'ADJUSTMENT' },
+        { label: 'Otros', value: 'OTHER' },
+      ],
+    },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+  ],
   dateFilters: [{
     type: 'date',
     key: 'date',
@@ -119,6 +136,10 @@ export const subscriptionUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Cancelado', value: 'CANCELLED' },
       ],
     },
+  ],
+  groupBy: [
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'recurrence_period', label: 'Período', field: 'recurrence_period' },
   ],
   dateFilters: [{
     type: 'date',
@@ -189,6 +210,68 @@ export const productUnifiedSearchDef: UnifiedSearchConfig = {
       ],
     },
   ],
+  groupBy: [
+    { key: 'product_type', label: 'Tipo producto', field: 'product_type' },
+    { key: 'category_name', label: 'Categoría', field: 'category_name' },
+  ],
+}
+
+export const stockReportUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Producto / SKU',
+      serverParam: 'search',
+      clientKey: ['name', 'code', 'internal_code'],
+    },
+  ],
+  filters: [
+    { key: 'category', label: 'Categoría', type: 'single', serverParam: 'category', dynamic: true },
+    { key: 'warehouse', label: 'Bodega', type: 'single', serverParam: 'warehouse_id', dynamic: true },
+    { key: 'stock_qty', label: 'Stock (Físico)', type: 'range', serverParamFrom: 'stock_qty_from', serverParamTo: 'stock_qty_to' },
+    { key: 'qty_available', label: 'Disponible', type: 'range', serverParamFrom: 'qty_available_from', serverParamTo: 'qty_available_to' },
+    { key: 'qty_reserved', label: 'Reservado', type: 'range', serverParamFrom: 'qty_reserved_from', serverParamTo: 'qty_reserved_to' },
+    { key: 'total_value', label: 'Valorización', type: 'range', serverParamFrom: 'total_value_from', serverParamTo: 'total_value_to' },
+  ],
+  groupBy: [
+    { key: 'category_name', label: 'Categoría', field: 'category_name' },
+    { key: 'warehouse_name', label: 'Bodega', field: 'warehouse_name' },
+  ],
+}
+
+export const inventoryCountLineSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Producto / Código / SKU',
+      serverParam: 'search',
+      clientKey: ['product_name', 'product_code', 'product_internal_code'],
+    },
+  ],
+}
+
+export const inventoryCountUnifiedSearchDef: UnifiedSearchConfig = {
+  searchFields: [
+    {
+      key: 'search',
+      label: 'Buscar por almacén, notas...',
+      serverParam: 'search',
+    },
+  ],
+  filters: [
+    {
+      type: 'single',
+      key: 'status',
+      label: 'Estado',
+      serverParam: 'status',
+      options: [
+        { label: 'Borrador', value: 'DRAFT' },
+        { label: 'En Progreso', value: 'IN_PROGRESS' },
+        { label: 'Aplicado', value: 'APPLIED' },
+        { label: 'Cancelado', value: 'CANCELLED' },
+      ],
+    },
+  ],
 }
 
 export const documentUnifiedSearchDef: UnifiedSearchConfig = {
@@ -227,6 +310,11 @@ export const documentUnifiedSearchDef: UnifiedSearchConfig = {
         { label: 'Producción', value: 'PRODUCTION' },
       ],
     },
+  ],
+  groupBy: [
+    { key: 'date', label: 'Fecha', field: 'date' },
+    { key: 'document_type', label: 'Tipo documento', field: 'document_type' },
+    { key: 'status', label: 'Estado', field: 'status' },
   ],
   dateFilters: [{
     type: 'date',

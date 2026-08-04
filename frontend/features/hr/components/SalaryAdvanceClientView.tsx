@@ -1,21 +1,22 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AdvanceDrawer } from "@/features/hr"
-import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
+import { createAdvance, deleteAdvance } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
-import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { DataCell, EntityCard } from '@/components/shared'
+import type { SalaryAdvance } from "@/types/hr"
+import { DataTableView } from '@/components/shared'
+import { AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
-import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx } from "@/features/hr"
+import { useSalaryAdvances, salaryAdvanceActions, type SalaryAdvanceActionsCtx, useEmployees, usePayrolls } from "@/features/hr"
 import { salaryAdvanceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { salaryAdvanceFields } from '../salaryAdvanceFields'
 
 interface SalaryAdvanceClientViewProps {
     initialAdvances?: SalaryAdvance[]
@@ -29,8 +30,8 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     const search = useUnifiedSearch(salaryAdvanceUnifiedSearchDef)
     const { advances, isLoading: loading, isRefetching, refetch: refetchAdvances } = useSalaryAdvances(search.filters, initialAdvances)
     const filteredAdvances = search.filterFn(advances)
-    const [employees, setEmployees] = useState<Employee[]>([])
-    const [payrolls, setPayrolls] = useState<Payroll[]>([])
+    const { employees } = useEmployees()
+    const { payrolls } = usePayrolls()
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<SalaryAdvance>({ endpoint: '/hr/advances' })
@@ -49,22 +50,6 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
         }
     }
 
-    useEffect(() => {
-        let cancelled = false
-        ;(async () => {
-            try {
-                const [emps, pays] = await Promise.all([getEmployees(), getPayrolls()])
-                if (!cancelled) {
-                    setEmployees(emps)
-                    setPayrolls(pays)
-                }
-            } catch {
-                if (!cancelled) toast.error("Error al cargar datos")
-            }
-        })()
-        return () => { cancelled = true }
-    }, [])
-
     const salaryAdvanceActionsCtx: SalaryAdvanceActionsCtx = {
         onEdit: (advance) => openSelected(advance.id),
         onDelete: async (id) => {
@@ -79,56 +64,8 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
     }
 
     const columns: ColumnDef<SalaryAdvance>[] = [
-        {
-            accessorKey: "employee_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center justify-center w-full">
-                    <DataCell.Text className="font-bold">{row.original.employee_name}</DataCell.Text>
-                    <DataCell.Secondary>{row.original.employee_display_id}</DataCell.Secondary>
-                </div>
-            )
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.date} />
-                </div>
-            )
-        },
-        {
-            accessorKey: "amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat(row.original.amount)} className="text-warning font-bold" />
-                </div>
-            )
-        },
-        {
-            accessorKey: "is_discounted",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status
-                    status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"}
-                    label={row.original.is_discounted ? "Descontado" : "Pendiente"}
-                />,
-        },
-        {
-            accessorKey: "payroll_display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Liquidación" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    {row.original.payroll_display_id
-                        ? <DataCell.Code>{row.original.payroll_display_id}</DataCell.Code>
-                        : <span className="text-xs text-muted-foreground italic">—</span>
-                    }
-                </div>
-            )
-        },
-        salaryAdvanceActions.column(salaryAdvanceActionsCtx)
+        ...salaryAdvanceFields.toColumns(),
+        salaryAdvanceActions.auto(salaryAdvanceActionsCtx)
     ]
 
     return (
@@ -169,22 +106,15 @@ export function SalaryAdvanceClientView({ initialAdvances }: SalaryAdvanceClient
                     }}
                     cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(advance) => (
-                        <EntityCard key={advance.id} onClick={() => openSelected(advance.id)}>
-                            <EntityCard.Header
-                                title={advance.employee_name || '---'}
-                                subtitle={`Anticipo ${advance.employee_display_id || ''}`}
-                                trailing={
-                                    <DataCell.Status
-                                        status={advance.is_discounted ? "DISCOUNTED" : "PENDING"}
-                                        label={advance.is_discounted ? "Descontado" : "Pendiente"}
-                                    />
-                                }
-                            />
-                            <EntityCard.Body actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}>
-                                <EntityCard.Field label="Fecha" value={<DataCell.Date value={advance.date} />} />
-                                <EntityCard.Field label="Monto" value={<DataCell.Currency value={parseFloat(advance.amount)} className="text-warning font-bold" />} />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={advance.id}
+                            data={advance}
+                            fields={salaryAdvanceFields}
+                            entityLabel="hr.salaryadvance"
+                            actions={salaryAdvanceActions.render(advance, salaryAdvanceActionsCtx)}
+                            defaultAction={salaryAdvanceActions.defaultAction(salaryAdvanceActionsCtx)?.(advance) ?? (() => openSelected(advance.id))}
+
+                        />
                     )}
                 />
             </div>

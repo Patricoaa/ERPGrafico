@@ -5,10 +5,10 @@ import { showApiError } from "@/lib/errors"
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 // deleteUoMCategory consumido vía useUoMs.
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { uomCategoryFields } from "@/features/inventory/uomCategoryFields"
 import { Trash2 } from "lucide-react"
 import type { BulkAction } from "@/components/shared"
 import { UoMCategoryDrawer } from "./UoMCategoryDrawer"
@@ -115,22 +115,8 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
             enableHiding: false,
             size: 40,
         },
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("id")}</DataCell.Code>,
-            size: 80,
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Text>
-                    {row.getValue("name")}
-                </DataCell.Text>
-            ),
-        },
-        uomCategoryActions.column(actionsCtx),
+        ...uomCategoryFields.toColumns(),
+        uomCategoryActions.auto(actionsCtx),
     ], [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<UoMCategory>[]>(() => [
@@ -180,10 +166,15 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                         description: "Agrupa unidades de medida relacionadas (peso, longitud, volumen…).",
                     }}
                     renderCard={(cat: UoMCategory) => (
-                        <EntityCard onClick={() => openSelected(cat.id)}>
-                            <EntityCard.Header title={cat.name} />
-                            <EntityCard.Body actions={uomCategoryActions.render(cat, actionsCtx)} />
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={cat.id}
+                            data={cat}
+                            fields={uomCategoryFields}
+                            entityLabel="inventory.uomcategory"
+                            actions={uomCategoryActions.render(cat, actionsCtx)}
+                            defaultAction={uomCategoryActions.defaultAction(actionsCtx)?.(cat) ?? (() => openSelected(cat.id))}
+
+                        />
                     )}
                 />
             </div>

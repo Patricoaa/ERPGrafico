@@ -11,6 +11,8 @@ export function useSalaryAdvances(filters?: FilterState, initialData?: SalaryAdv
         queryFn: (): Promise<SalaryAdvance[]> => {
             const params: Record<string, string> = {}
             if (filters?.is_discounted !== undefined) params.is_discounted = filters.is_discounted
+            if (filters?.date_from) params.date_from = filters.date_from
+            if (filters?.date_to) params.date_to = filters.date_to
             return getAdvances(Object.keys(params).length ? params : undefined)
         },
         staleTime: 2 * 60 * 1000,

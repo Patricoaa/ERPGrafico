@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSaleOrderSearch } from "@/features/orders";
 import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
-import { FileText, Trash2 } from "lucide-react";
+import { FileText } from "lucide-react";
+import { DataCell } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, parseDateOnly } from "@/lib/utils";
@@ -124,7 +125,7 @@ export function SaleOrderProductStep({
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground mb-1">
-            Buscar Nota de Venta
+            Buscar Orden de Venta
           </label>
           <Input
             placeholder="Buscar por número, cliente o descripción..."
@@ -136,14 +137,14 @@ export function SaleOrderProductStep({
 
         {loading ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">Cargando notas de venta...</p>
+            <p className="text-muted-foreground">Cargando ordenes de venta...</p>
           </div>
         ) : (
           <div className="space-y-4">
             {orders.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">
-                  No se encontraron notas de venta. Intente con otro término de búsqueda.
+                  No se encontraron ordenes de venta. Intente con otro término de búsqueda.
                 </p>
               </div>
             ) : (
@@ -179,7 +180,7 @@ export function SaleOrderProductStep({
                         <div className="flex-1 space-y-3">
                           <div className="flex justify-between items-start">
                             <h3 className="font-semibold text-lg text-foreground">
-                              NV #{order.number}
+                              OV #{order.number}
                             </h3>
                             <span className="text-xs text-muted-foreground">
                               {order.date ? parseDateOnly(order.date).toLocaleDateString('es-CL') : "—"}
@@ -206,17 +207,10 @@ export function SaleOrderProductStep({
                         </div>
                         {selectedOrderId === String(order.id) && (
                           <div className="flex-shrink-0 space-y-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOrderSelect(null);
-                              }}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <DataCell.Action
+                              action="delete"
+                              onClick={() => handleOrderSelect(null)}
+                            />
                           </div>
                         )}
                       </div>
@@ -243,7 +237,7 @@ export function SaleOrderProductStep({
                 availableProducts.length === 0 ? (
                   <div className="text-center py-6">
                     <p className="text-muted-foreground">
-                      No hay productos fabricables avanzados pendientes en esta nota de venta.
+                      No hay productos fabricables avanzados pendientes en esta orden de venta.
                     </p>
                   </div>
                 ) : (

@@ -2,9 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from "react"
 import {
-    Landmark, CreditCard, Banknote, Plus, Trash2, Info,
+    Landmark, CreditCard, Banknote, Plus, Info,
 } from "lucide-react"
+import { DataCell } from "@/components/shared"
 import { GenericWizard, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
+import { formatMoney } from "@/lib/money"
 import type { WizardStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -90,15 +92,7 @@ function ItemCard({
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                     Ítem {index + 1}
                 </span>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
-                    onClick={onRemove}
-                >
-                    <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                <DataCell.Action action="delete" onClick={onRemove} />
             </div>
             <div className="p-3 space-y-3">{children}</div>
         </div>
@@ -567,7 +561,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                 )
                             })}
                             {creditCards.filter((c) => c.name).map((c, i) => (
-                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} badge={c.creditLimit ? `Cupo: $${Number(c.creditLimit).toLocaleString('es-CL')}` : undefined} />
+                                <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} badge={c.creditLimit ? `Cupo: ${formatMoney(c.creditLimit)}` : undefined} />
                             ))}
                             {loans.filter((l) => l.principal).map((l, i) => (
                                 <SummaryRow

@@ -17,24 +17,23 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { ActionConfirmModal, Chip, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, AutoEntityCard } from '@/components/shared'
 import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
 import type { ProductInitialData } from "@/types/forms"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
-import { DataTableView } from '@/components/shared'
+import { DataTableView, DataCell } from '@/components/shared'
 import type { Product } from "@/types/entities"
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
 import type { KpiCardDef } from '@/components/shared'
 import { subscriptionActions, type SubscriptionActionsCtx } from "@/features/inventory/subscriptionActions"
 import { PageHeader, PageHeaderButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { type Restriction } from "@/features/inventory/types"
-import { PageContainer } from "@/components/shared"
-import { cn } from "@/lib/utils"
+
+
 import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { subscriptionUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
+import { subscriptionFields } from "../subscriptionFields"
 
 // Subscription type imported from useSubscriptions hook
 
@@ -201,15 +200,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         }
     }, [resumeSubscription])
 
-    const getPaymentScheduleText = (sub: Subscription) => {
-        if (sub.payment_day_type === "FIXED_DAY" && sub.payment_day) {
-            return `Día ${sub.payment_day} de cada ${sub.recurrence_display.toLowerCase()}`
-        } else if (sub.payment_day_type === "INTERVAL" && sub.payment_interval_days) {
-            return `Cada ${sub.payment_interval_days} días`
-        }
-        return sub.recurrence_display
-    }
-
     const actionsCtx: SubscriptionActionsCtx = useMemo(() => ({
         onEdit: (productId) => {
             const sub = subscriptions.find(s => s.product === productId)
@@ -224,123 +214,34 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
         },
     }), [subscriptions, handlePause, handleResume, openSubscription])
 
-    const columns = useMemo<ColumnDef<Subscription>[]>(() => [
-        {
-            id: "select",
-            header: ({ table }) => (
-                <Checkbox
-                    checked={table.getIsAllPageRowsSelected()}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    variant="circle"
-                />
-            ),
-            cell: ({ row }) => (
-                <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
-                    variant="circle"
-                />
-            ),
-            enableSorting: false,
-            enableHiding: false,
-            size: 40,
-        },
-        {
-            id: "product",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
-            ),
-            accessorFn: (row) => row.product_name,
-            cell: ({ row }) => {
-                const sub = row.original;
-                return (
-                    <div className="flex flex-col items-center gap-1 py-1 w-full">
-                        <DataCell.Text className="font-medium text-xs leading-tight text-center">{sub.product_name}</DataCell.Text>
-                        <div className="flex flex-wrap justify-center gap-1 mt-1">
-                            {sub.product_internal_code && (
-                                <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
-                            )}
-                            {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                <Chip size="xs" intent="primary" className="opacity-80">{sub.product_code}</Chip>
-                            )}
-                        </div>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: "category_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const value = row.getValue("category_name") as string;
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Text className="font-normal">
-                            {value || "Sin Categoría"}
-                        </DataCell.Text>
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: "supplier_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.ContactLink
-                        contactId={row.original.supplier_id}
-                    >
-                        {row.getValue("supplier_name")}
-                    </DataCell.ContactLink>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "amount",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Monto" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Currency value={row.getValue("amount")} /></div>,
-        },
-        {
-            id: "frequency",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Frecuencia" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="text-center">
-                    <DataCell.Text className="font-normal">{getPaymentScheduleText(row.original)}</DataCell.Text>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "next_payment_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Próximo Pago" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("next_payment_date")} /></div>,
-        },
-        {
-            accessorKey: "status",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge
-                        status={row.getValue("status")}
+    const columns = useMemo<ColumnDef<Subscription>[]>(() => {
+        return [
+            {
+                id: "select",
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                        variant="circle"
                     />
-                </div>
-            ),
-        },
-        subscriptionActions.column(actionsCtx),
-    ], [actionsCtx])
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        variant="circle"
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+                size: 40,
+            },
+            ...subscriptionFields.toColumns(),
+            subscriptionActions.auto(actionsCtx),
+        ]
+    }, [actionsCtx])
 
     const bulkActions = useMemo<BulkAction<Subscription>[]>(() => [
         {
@@ -391,7 +292,7 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
     ], [pauseSubscription, resumeSubscription, updateProduct])
 
     return (
-        <PageContainer className={cn("h-full flex flex-col", hideHeader && "pt-0")}>
+        <div className="flex-1 min-h-0 flex flex-col">
             {!hideHeader && (
                 <PageHeader
                     title="Suscripciones y Recurrentes"
@@ -415,64 +316,54 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 </PageHeader>
             )}
 
-            <div className="flex-1 h-full flex flex-col">
+            <DataTableView
+                kpiCards={kpiCards}
+                entityLabel="inventory.subscription"
+                columns={columns}
+                data={subscriptions}
+                isLoading={loading}
+                variant="embedded"
+                unifiedSearch={<UnifiedSearchBar
+                    config={subscriptionUnifiedSearchDef}
+                    chips={search.chips}
+                    isFiltered={search.isFiltered}
+                    inputValue={search.inputValue}
+                    onInputChange={search.setInputValue}
+                    onApply={search.applyFilter}
+                    onRemove={search.removeFilter}
+                    onClearAll={search.clearAll}
+                    groupBy={search.groupBy}
+                    onGroupBySelect={search.setGroupBy}
+                    paramValues={search.paramValues}
+                    placeholder="Buscar suscripciones..."
+                />}
+                unifiedSearchConfig={subscriptionUnifiedSearchDef}
+                currentGroupBy={search.groupBy}
+                showReset={search.isFiltered}
+                onReset={search.clearAll}
+                defaultPageSize={20}
+                bulkActions={bulkActions}
+                createAction={createAction}
+                isFiltered={search.isFiltered}
+                emptyState={{
+                    context: "inventory",
+                    title: "Aún no hay suscripciones",
+                    description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
+                }}
+                renderCard={(sub: Subscription) => (
+                    <AutoEntityCard 
+                        key={sub.id} 
+                        data={sub}
+                        fields={subscriptionFields}
 
-                <div className="flex-1 min-h-0 flex flex-col space-y-6">
-                    <div className="flex-1 min-h-0">
-                        <DataTableView
-                            kpiCards={kpiCards}
-                            entityLabel="inventory.subscription"
-                            columns={columns}
-                            data={subscriptions}
-                            isLoading={loading}
-                            variant="embedded"
-                            unifiedSearch={<UnifiedSearchBar
-                                config={subscriptionUnifiedSearchDef}
-                                chips={search.chips}
-                                isFiltered={search.isFiltered}
-                                inputValue={search.inputValue}
-                                onInputChange={search.setInputValue}
-                                onApply={search.applyFilter}
-                                onRemove={search.removeFilter}
-                                onClearAll={search.clearAll}
-                                groupBy={search.groupBy}
-                                onGroupBySelect={search.setGroupBy}
-                                paramValues={search.paramValues}
-                                placeholder="Buscar suscripciones..."
-                            />}
-                            unifiedSearchConfig={subscriptionUnifiedSearchDef}
-                            currentGroupBy={search.groupBy}
-                            showReset={search.isFiltered}
-                            onReset={search.clearAll}
-                            defaultPageSize={20}
-                            bulkActions={bulkActions}
-                            createAction={createAction}
-                            isFiltered={search.isFiltered}
-                            emptyState={{
-                                context: "generic",
-                                title: "Aún no hay suscripciones",
-                                description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
-                            }}
-                            renderCard={(sub: Subscription) => (
-                                <EntityCard key={sub.id} onClick={() => openSubscription(sub.id, "edit")}>
-                                    <EntityCard.Header
-                                        title={sub.product_name}
-                                        subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
-                                        trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
-                                    />
-                                    <EntityCard.Body actions={subscriptionActions.render(sub, actionsCtx)}>
-                                        <EntityCard.Field label="Categoría" value={sub.category_name || '-'} />
-                                        <EntityCard.Field label="Proveedor" value={sub.supplier_name || '-'} />
-                                        {sub.next_payment_date && (
-                                            <EntityCard.Field label="Próximo Pago" value={sub.next_payment_date} />
-                                        )}
-                                    </EntityCard.Body>
-                                </EntityCard>
-                            )}
-                        />
-                    </div>
-                </div>
-            </div>
+                        entityLabel="inventory.subscription"
+                        onClick={() => openSubscription(sub.id, "edit")} 
+                        defaultAction={subscriptionActions.defaultAction(actionsCtx)?.(sub) ?? null}
+
+                        actions={subscriptionActions.render(sub, actionsCtx)}
+                    />
+                )}
+            />
 
             <ProductDrawer
                 open={isEditOpen}
@@ -524,6 +415,6 @@ export function SubscriptionsClientView({ hideHeader = false, externalOpen = fal
                 onRetry={handleArchive}
                 isRetrying={isRetrying}
             />
-        </PageContainer>
+        </div>
     )
 }

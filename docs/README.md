@@ -20,6 +20,7 @@ last_review: 2026-06-19
 | Layer | Folder | Purpose | When to read |
 |-------|--------|---------|--------------|
 | 00 | `00-context/` | What project is, domain vocabulary, stack | First contact with repo |
+| 00 (design) | `../DESIGN.md` | Consolidated design source of truth (concept, principles, contract map) | Any UI/design decision |
 | 10 | `10-architecture/` | How pieces fit together, ADRs | Before structural change |
 | 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state, **entity identity**) | Before consuming or exposing API |
 | 30 | `30-playbooks/` | Step-by-step recipes for common tasks | Every implementation task |
@@ -49,6 +50,7 @@ last_review: 2026-06-19
 | “which component”, “component decision”, “what to use” | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
 | “Schema-driven form”, “EntityForm”, “backend form” | ~~[schema-driven-forms.md](20-contracts/schema-driven-forms.md)~~ — **superseded** por [ADR-0020](10-architecture/adr/0020-modal-on-list-edit-ux.md). No usar `EntityForm` en código nuevo. | 20 |
 | “component API”, “prop signature”, “StatusBadge usage” | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
+| “field type”, “DataCell assignment”, “text vs secondary”, “cómo asignar tipo de campo”, “createEntityFields”, “\*Fields.ts”, “FieldType” | [component-fields.md](20-contracts/component-fields.md) | 20 |
 | “Drawer API”, “drawer contract”, “BaseDrawer”, “cómo usar Drawer”, “tamaño de drawer”, “formDrawerWidth” | [component-drawer.md](20-contracts/component-drawer.md) | 20 |
 | “selector component”, “entity search”, “combobox”, “AccountSelector” | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
 | “module layout”, “navigation pattern”, “dynamic header”, “module tabs” | [module-layout-navigation.md](20-contracts/module-layout-navigation.md) | 20 |
@@ -72,6 +74,7 @@ last_review: 2026-06-19
 | “searchable entity”, “global search”, “index”, “rebuild search” | [add-searchable-entity.md](30-playbooks/add-searchable-entity.md) | 30 |
 | “generic form”, “universal registry”, “metadata schema”, “data-driven UI”, “Django architecture refactor” | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
 | “DataTable”, “view mode”, “card view”, “kanban view”, “view switching”, “cardMode”, “isLoading skeleton”, “EntityCard”, “variant embedded” | [component-datatable-views.md](20-contracts/component-datatable-views.md) | 20 |
+| “analytics”, “chart”, “analytics panel”, “DataTable analytics” | [add-analytics-panel.md](30-playbooks/add-analytics-panel.md) | 30 |
 | “search bar”, “filter”, “búsqueda”, “filtro”, “useUnifiedSearch”, “UnifiedSearchBar”, “unifiedSearchDef”, “searchDef”, “segmentation”, “SegmentationBar”, “SmartSearchBar”, “date filter in toolbar” | [unified-searchbar.md](20-contracts/unified-searchbar.md) | 20 |
 | “ProductSelector”, “selector de productos shared”, “migrar POS selector”, “CategoryFilter shared”, “ProductGrid shared”, “VariantSelectorModal shared” | [50-audit/POSSelector/README.md](50-audit/POSSelector/README.md) | 50 |
 | “stale cache”, “queryKey mismatch”, “FSD compliance”, “invariante #4”, “invariante #5”, “raw api en componente”, “useMutation en componente”, “refactor data layer” | [50-audit/fsddata/fsd-data-layer-audit.md](50-audit/fsddata/fsd-data-layer-audit.md) + [refactor-plan](50-audit/fsddata/fsd-data-layer-refactor-plan.md) | 50 |
@@ -91,7 +94,7 @@ last_review: 2026-06-19
 
 ## Global invariants (violate = PR rejected)
 
-> Headline list. The **authoritative** rules live in [GOVERNANCE.md](90-governance/GOVERNANCE.md); the same 12 appear in the root [CLAUDE.md](../CLAUDE.md). Keep all three in sync.
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](90-governance/GOVERNANCE.md); the same 13 appear in the root [CLAUDE.md](../CLAUDE.md). Keep all three in sync.
 
 1. **Zero `any`** — Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`) — semantic tokens only (`bg-primary`).

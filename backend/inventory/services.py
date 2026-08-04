@@ -14,6 +14,10 @@ from accounting.models import Account, AccountType, JournalEntry, JournalItem
 from accounting.services import JournalEntryService
 
 from .models import (
+    InventoryCount,
+    InventoryCountLine,
+    InventoryDocument,
+    InventoryDocumentDetail,
     PricingRule,
     Product,
     ProductAttributeValue,
@@ -145,15 +149,19 @@ class InventoryService:
                     src_loc = internal_loc
                     dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Capital de Socios").first()
                 elif document.document_type == InventoryDocument.Type.PRODUCTION:
-                    src_loc = Location.objects.filter(location_type="VIRTUAL").first() # Simplification
-                    dst_loc = internal_loc
-                else: # ADJUSTMENT
                     if detail.quantity > 0:
-                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first()
+                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Producción").first() or Location.objects.filter(location_type="VIRTUAL").first()
                         dst_loc = internal_loc
                     else:
                         src_loc = internal_loc
-                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first()
+                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Producción").first() or Location.objects.filter(location_type="VIRTUAL").first()
+                else: # ADJUSTMENT
+                    if detail.quantity > 0:
+                        src_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Sobrante/Ganancia").first() or Location.objects.filter(location_type="VIRTUAL").first()
+                        dst_loc = internal_loc
+                    else:
+                        src_loc = internal_loc
+                        dst_loc = Location.objects.filter(location_type="VIRTUAL", name="Ajuste por Merma/Pérdida").first() or Location.objects.filter(location_type="VIRTUAL").first()
 
             if document.document_type == InventoryDocument.Type.TRANSFER:
                 if not src_loc:
@@ -175,6 +183,21 @@ class InventoryService:
             
         # Accounting Generation
         if generate_accounting and not journal_entry:
+            from accounting.models import AccountingSettings
+            from inventory.models import Location
+
+            acc_settings = AccountingSettings.get_solo()
+            if acc_settings:
+                for loc_name, acc_field in [
+                    ("Ajuste por Sobrante/Ganancia", acc_settings.adjustment_income_account),
+                    ("Ajuste por Merma/Pérdida", acc_settings.adjustment_expense_account),
+                    ("Capital de Socios", acc_settings.partner_capital_contribution_account),
+                ]:
+                    if acc_field:
+                        Location.objects.filter(
+                            location_type="VIRTUAL", name=loc_name, account__isnull=True
+                        ).update(account=acc_field)
+
             items = []
             total_value = 0
             
@@ -193,7 +216,20 @@ class InventoryService:
                 debit_account = move.product.get_asset_account if dst.location_type == 'INTERNAL' else dst.account
                 
                 if not credit_account or not debit_account:
-                    raise ValidationError(f"No se pudieron resolver las cuentas contables para el movimiento del producto {move.product.name}")
+                    missing = []
+                    if not credit_account:
+                        if src.location_type == 'INTERNAL':
+                            missing.append(f"cuenta de inventario para el producto '{move.product.name}'")
+                        else:
+                            missing.append(f"cuenta contable asociada a la ubicación origen '{src.name}'")
+                    if not debit_account:
+                        if dst.location_type == 'INTERNAL':
+                            missing.append(f"cuenta de inventario para el producto '{move.product.name}'")
+                        else:
+                            missing.append(f"cuenta contable asociada a la ubicación destino '{dst.name}'")
+                            
+                    error_msg = f"No se pudieron resolver las cuentas contables: Falta {', y '.join(missing)}."
+                    raise ValidationError(error_msg)
                     
                 if credit_account != debit_account:
                     items.append(JournalItem(
@@ -258,77 +294,6 @@ class InventoryService:
 
 
 class StockService:
-    @staticmethod
-    @transaction.atomic
-    def adjust_stock_from_payload(payload: dict) -> "StockMove":
-        """
-        Parses payload, validates references (product, warehouse, partner),
-        and delegates to adjust_stock.
-        """
-        from decimal import Decimal
-        from django.core.exceptions import ValidationError
-        from contacts.models import Contact
-        from .models import Product, Warehouse, UoM, StockMove
-
-        product_id = payload.get("product_id")
-        warehouse_id = payload.get("warehouse_id")
-        quantity = Decimal(str(payload.get("quantity", "0")))
-        unit_cost = Decimal(str(payload.get("unit_cost", "0")))
-        description = payload.get("description", "Manual Adjustment")
-        adjustment_reason = payload.get("adjustment_reason")
-        uom_id = payload.get("uom_id")
-        partner_contact_id = payload.get("partner_contact_id")
-
-        if not product_id or not warehouse_id:
-            raise ValidationError("Producto y bodega son requeridos.")
-
-        try:
-            product = Product.objects.get(pk=product_id)
-            warehouse = Warehouse.objects.get(pk=warehouse_id)
-        except (Product.DoesNotExist, Warehouse.DoesNotExist) as e:
-            raise ValidationError(str(e))
-
-        uom = None
-        if uom_id:
-            try:
-                uom = UoM.objects.get(pk=uom_id)
-            except UoM.DoesNotExist:
-                pass
-
-        partner_contact = None
-        if partner_contact_id:
-            try:
-                partner_contact = Contact.objects.get(pk=partner_contact_id)
-            except Contact.DoesNotExist:
-                raise ValidationError("Socio no encontrado.")
-            if not partner_contact.is_partner:
-                raise ValidationError("El contacto seleccionado no es un socio.")
-
-        if adjustment_reason in ["PARTNER_CONTRIBUTION", "PARTNER_WITHDRAWAL"]:
-            if not partner_contact:
-                raise ValidationError("Debe seleccionar un socio para aportes o retiros de capital en inventario.")
-            
-            return StockService.process_partner_capital(
-                product=product,
-                warehouse=warehouse,
-                partner_contact=partner_contact,
-                quantity=abs(quantity),
-                is_contribution=(adjustment_reason == "PARTNER_CONTRIBUTION"),
-                description=description
-            )
-
-        return StockService.adjust_stock(
-            product=product,
-            warehouse=warehouse,
-            quantity=quantity,
-            unit_cost=unit_cost,
-            description=description,
-            adjustment_reason=adjustment_reason,
-            uom=uom,
-            partner_contact=partner_contact,
-        )
-
-
     @staticmethod
     @transaction.atomic
     def adjust_stock(
@@ -511,14 +476,13 @@ class StockService:
             unit_cost=unit_cost
         )
 
-        # 2. Confirm Document and Generate Accounting
-        doc, generated_moves = InventoryService.confirmar_documento(doc, user=user, generate_accounting=True)
-        move = generated_moves[0] if generated_moves else None
+        # 2. Build Accounting Context manually (Decoupled from Virtual Location)
+        asset_account = product.get_asset_account
+        if not asset_account:
+            raise ValidationError(f"Falta cuenta de inventario para el producto '{product.name}'.")
 
-        if not move:
-            raise ValidationError("No se pudo generar el movimiento de inventario.")
-
-        entry = move.journal_entry
+        credit_account = None
+        debit_account = None
 
         target_tx_type = PartnerTransaction.Type.OTHER
 
@@ -528,16 +492,72 @@ class StockService:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
             else:
                 target_tx_type = PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY
+                
+            debit_account = asset_account
+            # The partner gives capital
+            credit_account = settings.partner_capital_contribution_account
+            if not credit_account:
+                raise ValidationError("Falta configurar la cuenta 'Aportes de Capital' en los ajustes de contabilidad.")
         else:
             # Smart Withdrawal: Priority Dividends Payable > Provisional Withdrawal
             if partner_contact.partner_dividends_payable_balance > 0:
                 target_tx_type = PartnerTransaction.Type.DIVIDEND_PAYMENT
             else:
                 target_tx_type = PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL
+                
+            credit_account = asset_account
+            # The partner withdraws capital
+            if target_tx_type == PartnerTransaction.Type.DIVIDEND_PAYMENT:
+                debit_account = getattr(partner_contact, 'partner_dividends_payable_account', None) or settings.partner_dividends_payable_account
+                if not debit_account:
+                    raise ValidationError("Falta configurar la cuenta 'Dividendos por Pagar' en ajustes de contabilidad.")
+            else:
+                debit_account = settings.partner_provisional_withdrawal_account or settings.partner_capital_contribution_account
+                if not debit_account:
+                    raise ValidationError("Falta configurar la cuenta 'Retiros Provisionales' o 'Aportes de Capital' en ajustes contables.")
 
         total_value = abs(quantity * unit_cost)
-        
-        # 4. Create PartnerTransaction
+
+        # 3. Create Journal Entry
+        entry = None
+        if total_value > 0:
+            from django.contrib.contenttypes.models import ContentType
+            entry_data = {
+                "date": timezone.now().date(),
+                "description": GlosaBuilder.build(
+                    GlosaBuilder.AJUSTE_STOCK, str(doc.id), doc.notes, total_value
+                ),
+                "status": JournalEntry.State.POSTED,
+                "is_manual": False,
+                "source_content_type": ContentType.objects.get_for_model(InventoryDocument),
+                "source_object_id": doc.id,
+            }
+            items_data = [
+                {
+                    "account": debit_account,
+                    "debit": total_value,
+                    "credit": Decimal("0.00"),
+                    "label": f"{doc.get_document_type_display()} {product.name}",
+                },
+                {
+                    "account": credit_account,
+                    "debit": Decimal("0.00"),
+                    "credit": total_value,
+                    "label": f"{doc.get_document_type_display()} {product.name}",
+                }
+            ]
+            entry = JournalEntryService.create_entry(entry_data, items_data)
+
+        # 4. Confirm Document
+        doc, generated_moves = InventoryService.confirmar_documento(
+            doc, user=user, journal_entry=entry, generate_accounting=False
+        )
+        move = generated_moves[0] if generated_moves else None
+
+        if not move:
+            raise ValidationError("No se pudo generar el movimiento de inventario.")
+
+        # 5. Create PartnerTransaction
         PartnerTransaction.objects.create(
             partner=partner_contact,
             transaction_type=target_tx_type,
@@ -828,6 +848,25 @@ class UoMService:
         return _get_uom_name(uid)
 
     @staticmethod
+    def get_cached_uom_abbr(uid: int) -> str | None:
+        """
+        Retorna la abreviación de la UoM usando caché en memoria.
+        Fallback a name si abbreviation está vacío.
+        """
+        from functools import lru_cache
+        from inventory.models import UoM
+
+        @lru_cache(maxsize=32)
+        def _get_uom_abbr(uom_id):
+            try:
+                uom = UoM.objects.get(pk=int(uom_id))
+                return uom.abbreviation or uom.name
+            except (UoM.DoesNotExist, TypeError, ValueError):
+                return None
+
+        return _get_uom_abbr(uid)
+
+    @staticmethod
     def convert_quantity(qty: Decimal, from_uom: UoM, to_uom: UoM) -> Decimal:
         """
         Convierte cantidad entre UoMs de la misma categoría.
@@ -980,6 +1019,9 @@ class UoMService:
         """
         Formatea cantidad con unidad para display.
 
+        Usa abbreviation para sufijo compacto, name_plural cuando qty != 1,
+        name_singular como fallback.
+
         Args:
             qty: Cantidad en unidad base
             base_uom: UoM base del producto
@@ -1002,9 +1044,24 @@ class UoMService:
             display_qty, display_uom = qty, base_uom
 
         # Formatear cantidad (eliminar ceros innecesarios)
-        qty_str = str(display_qty.normalize())
+        # NOTA: Decimal.normalize() usa notación científica para enteros
+        # (ej: Decimal('100').normalize() → '1E+2'). Para evitarlo,
+        # usamos quantize(1) en cantidades enteras.
+        qty_str = str(
+            display_qty.quantize(Decimal('1.'))
+            if display_qty == display_qty.to_integral()
+            else display_qty.normalize()
+        )
 
-        return f"{qty_str} {display_uom.name}"
+        # Seleccionar nombre según cantidad: abbreviation > plural/singular > name
+        if display_uom.abbreviation:
+            unit_str = display_uom.abbreviation
+        elif Decimal(qty_str) == 1:
+            unit_str = display_uom.name_singular or display_uom.name
+        else:
+            unit_str = display_uom.name_plural or display_uom.name
+
+        return f"{qty_str} {unit_str}"
 
     @staticmethod
     def get_conversion_hint(qty: Decimal, from_uom: UoM, to_uom: UoM) -> str:
@@ -1028,8 +1085,13 @@ class UoMService:
 
         try:
             converted_qty = UoMService.convert_quantity(qty, from_uom, to_uom)
-            from_str = f"{qty.normalize()} {from_uom.name}"
-            to_str = f"{converted_qty.normalize()} {to_uom.name}"
+            from_label = from_uom.display_abbr
+            to_label = to_uom.display_abbr
+            def _fmt_no_sci(val: Decimal) -> str:
+                return str(val.quantize(Decimal('1.')) if val == val.to_integral() else val.normalize())
+
+            from_str = f"{_fmt_no_sci(qty)} {from_label}"
+            to_str = f"{_fmt_no_sci(converted_qty)} {to_label}"
             return f"{from_str} = {to_str} (stock)"
         except ValidationError:
             return ""
@@ -1580,9 +1642,9 @@ class ProductService:
             restrictions.append(
                 {
                     "type": "sale_order",
-                    "label": "Notas de Venta Pendientes",
+                    "label": "Ordenes de Venta Pendientes",
                     "description": f"Hay {pending_sales.count()} Nota(s) de Venta con despachos pendientes.",
-                    "action_hint": "Complete los despachos o anule las Notas de Venta para proceder.",
+                    "action_hint": "Complete los despachos o anule las Ordenes de Venta para proceder.",
                     "count": pending_sales.count(),
                     "link": "/billing/sales",
                 }
@@ -1879,3 +1941,102 @@ class ProductService:
             price_surcharge=None,
         )
         return {"updated": updated}
+
+
+class InventoryCountService:
+    """Logica de negocio para conteos de inventario."""
+
+    @staticmethod
+    @transaction.atomic
+    def create_count(*, warehouse_id: int, user, notes: str = "") -> InventoryCount:
+        from .models import Stock
+
+        warehouse = Warehouse.objects.get(id=warehouse_id)
+        count = InventoryCount.objects.create(
+            warehouse=warehouse, created_by=user, notes=notes
+        )
+
+        stocks = (
+            Stock.objects.filter(warehouse=warehouse, quantity__gt=0)
+            .select_related("product", "product__uom")
+        )
+
+        lines = []
+        for stock in stocks:
+            lines.append(
+                InventoryCountLine(
+                    count=count,
+                    product=stock.product,
+                    theoretical_qty=stock.quantity,
+                    unit_cost=stock.product.cost_price or 0,
+                    uom_name=stock.product.uom.name if stock.product.uom else "",
+                )
+            )
+        InventoryCountLine.objects.bulk_create(lines)
+
+        count.status = InventoryCount.Status.IN_PROGRESS
+        count.save()
+        return count
+
+    @staticmethod
+    @transaction.atomic
+    def save_lines(*, count_id: int, updates: list) -> InventoryCount:
+        count = InventoryCount.objects.get(id=count_id)
+        if count.status != InventoryCount.Status.IN_PROGRESS:
+            raise ValidationError("Solo se pueden editar conteos en progreso.")
+
+        for update in updates:
+            InventoryCountLine.objects.filter(id=update["line_id"], count=count).update(
+                counted_qty=update["counted_qty"]
+            )
+
+        return InventoryCount.objects.get(id=count_id)
+
+    @staticmethod
+    @transaction.atomic
+    def apply_count(*, count_id: int, user) -> InventoryDocument:
+        from django.db.models import F
+
+        count = InventoryCount.objects.get(id=count_id)
+        if count.status != InventoryCount.Status.IN_PROGRESS:
+            raise ValidationError("Solo se pueden aplicar conteos en progreso.")
+
+        lines_with_diff = count.lines.filter(counted_qty__isnull=False).exclude(
+            counted_qty=F("theoretical_qty")
+        )
+
+        if not lines_with_diff.exists():
+            count.status = InventoryCount.Status.APPLIED
+            count.applied_at = timezone.now()
+            count.save()
+            return None
+
+        doc = InventoryDocument.objects.create(
+            document_type=InventoryDocument.Type.ADJUSTMENT,
+            status=InventoryDocument.Status.DRAFT,
+            notes=f"Ajuste por conteo #{count.id}. {count.notes}".strip(),
+            created_by=user,
+        )
+
+        details = []
+        for line in lines_with_diff:
+            diff = line.counted_qty - line.theoretical_qty
+            details.append(
+                InventoryDocumentDetail(
+                    document=doc,
+                    product=line.product,
+                    quantity=diff,
+                    unit_cost=line.unit_cost,
+                    warehouse=count.warehouse,
+                )
+            )
+        InventoryDocumentDetail.objects.bulk_create(details)
+
+        InventoryService.confirmar_documento(doc, user=user, generate_accounting=True)
+
+        count.document = doc
+        count.status = InventoryCount.Status.APPLIED
+        count.applied_at = timezone.now()
+        count.save()
+
+        return doc

@@ -1,85 +1,110 @@
 "use client"
-import { formatPlainDate } from "@/lib/utils";
+import { formatPlainDate, parseDateOnly } from "@/lib/utils"
+import { formatCurrency } from "@/lib/money"
+import { getChartPalette } from "@/lib/chart-colors"
 
-import React, {useState} from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Chip, FadeIn, MoneyDisplay, StatCard } from '@/components/shared'
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell } from '@/components/shared'
+import React, { useState, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Chip, ChartLegend, DataCell, DataTable, DataTableColumnHeader, SectionCard, SkeletonShell, StatCard, PieChart, StaleDataBanner } from '@/components/shared'
 import { partnerTransactionActions, type PartnerTransactionActionsCtx } from './partnerTransactionActions'
-import {
-    CalendarDays,
-    User,
-    FileText,
-    Building2
-} from "lucide-react"
 import { type ColumnDef } from "@tanstack/react-table"
-import { type PartnerTransaction } from "@/features/contacts"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-
-import { cn } from "@/lib/utils"
-import {SkeletonShell} from "@/components/shared"
-
-import { PaymentDrawer } from "@/features/treasury"
+import { type PartnerTransaction, usePartners, netEquityPercentages } from "@/features/contacts"
+import { LazyDrawer } from "@/features/_shared/transaction-drawer/drawerRegistry"
 import { usePartnerStatement } from "../hooks/usePartnerStatement"
 
 interface Props {
-    contactId: number;
+    contactId: number
 }
+
+const isInflow = (type: string) =>
+    ['CAPITAL_CASH', 'CAPITAL_INVENTORY', 'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'].includes(type)
+
+const isOutflow = (type: string) =>
+    ['WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION', 'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'].includes(type)
 
 export function PartnerProfileTab({ contactId }: Props) {
     const { data: statement, isLoading, isError } = usePartnerStatement(contactId)
 
-    // Movement Details state
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
+    const [viewConfig, setViewConfig] = useState<{ type: string; id: number } | null>(null)
 
-    const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
-
-    const handleViewDetails = (movementId: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(movementId))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    const handleViewDocument = (type: string, id: number) => {
+        setViewConfig({ type, id })
     }
 
-    const closeDetails = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        setDetailsOpen(false)
-        setSelectedMovementId(null)
+    const closeDrawer = () => {
+        setViewConfig(null)
     }
 
-    const actionsCtx: PartnerTransactionActionsCtx = { onViewMovement: handleViewDetails }
+    const actionsCtx: PartnerTransactionActionsCtx = { onViewDocument: handleViewDocument }
 
-    const columns: ColumnDef<PartnerTransaction>[] = [
+    const { data: partners } = usePartners()
+
+    const txsWithBalance = useMemo(() => {
+        if (!statement?.transactions) return []
+        const sorted = [...statement.transactions].sort((a, b) => {
+            const dateDiff = parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
+            if (dateDiff !== 0) return dateDiff
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        })
+        let balance = 0
+        return sorted
+            .map((tx) => {
+                const amount = parseFloat(tx.amount) || 0
+                if (isInflow(tx.transaction_type)) balance += amount
+                else if (isOutflow(tx.transaction_type)) balance -= amount
+                return { ...tx, balance_after: balance }
+            })
+            .reverse()
+    }, [statement])
+
+    const equityPctById = useMemo(() => netEquityPercentages(partners ?? []), [partners])
+
+    const pieData = useMemo(() => {
+        const palette = getChartPalette()
+        const activeName = statement?.contact?.name
+        return (Array.isArray(partners) ? partners : [])
+            .filter(p => (Number(p.partner_net_equity) || 0) > 0)
+            .map((p, i) => ({
+                id: p.name,
+                value: parseFloat(equityPctById[p.id] ?? "0") || 0,
+                color: p.name === activeName ? "var(--primary)" : palette[i % palette.length],
+            }))
+    }, [partners, equityPctById, statement?.contact?.name])
+
+    const columns: ColumnDef<PartnerTransaction & { balance_after: number }>[] = [
         {
             accessorKey: "date",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Fecha" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("date")} className="text-center" />
-                </div>
-            ),
+            cell: ({ row }) => {
+                const created = row.original.created_at
+                return (
+                    <div className="flex justify-center w-full">
+                        <div className="flex justify-center items-center w-full text-center text-sm font-sans font-medium text-foreground whitespace-nowrap">
+                            {formatPlainDate(row.original.date)}
+                            {created && (
+                                <span className="text-xs text-muted-foreground/60 ml-1.5">
+                                    {new Date(created).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "transaction_type",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Operación" />,
             cell: ({ row }) => {
-                const tx = row.original;
-                const type = tx.transaction_type;
-                let intent: 'success' | 'warning' | 'info' | 'neutral' = 'neutral';
+                const tx = row.original
+                const type = tx.transaction_type
+                let intent: 'success' | 'warning' | 'info' | 'neutral' = 'neutral'
 
-                if (type === 'SUBSCRIPTION' || type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
-                    intent = 'success';
+                if (type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
+                    intent = 'success'
                 } else if (type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT') {
-                    intent = 'warning';
-                } else if (type === 'LOAN_IN') {
-                    intent = 'info';
+                    intent = 'warning'
+                } else if (type === 'SUBSCRIPTION') {
+                    intent = 'info'
                 }
 
                 return (
@@ -88,153 +113,135 @@ export function PartnerProfileTab({ contactId }: Props) {
                             {tx.transaction_type_display || type}
                         </Chip>
                     </div>
-                );
+                )
             },
         },
         {
             accessorKey: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Monto" />,
-            cell: ({ row }) => {
-                const type = row.original.transaction_type
-                const amount = row.getValue("amount") as string
-                const isNegative = type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT' || type === 'LOAN_OUT'
-
-                return (
-                    <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-destructive' : 'text-success')}>
-                        <span>{isNegative ? '-' : '+'}</span>
-                        <DataCell.Currency value={amount} className="" />
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Currency value={row.getValue("amount")} />
+                </div>
+            ),
         },
-        partnerTransactionActions.column(actionsCtx)
+        {
+            accessorKey: "balance_after",
+            header: () => <div className="text-right">Saldo</div>,
+            cell: ({ row }) => (
+                <div className="text-right font-mono text-[11px] font-black text-foreground px-2 py-1">
+                    {formatCurrency(row.getValue("balance_after"))}
+                </div>
+            ),
+        },
+        partnerTransactionActions.auto(actionsCtx) as ColumnDef<PartnerTransaction & { balance_after: number }>,
     ]
 
-    if (isLoading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
-
-    if (isError || !statement) return null
+    if (!statement) return null
 
     const { contact, summary } = statement
+    const equityPct = pieData.find((d) => d.id === contact.name)?.value ?? 0
+    const partnerSince = contact.partner_since || contact.created_at
 
     return (
-
-        <div className="flex flex-col w-full h-full space-y-6">
-            <Accordion type="multiple" defaultValue={["summary", "history"]} className="w-full space-y-6">
-
-                {/* Section 1: Metrics & Summary */}
-                <AccordionItem value="summary" className="border-none">
-                    <FadeIn yOffset={10}>
-                        <Card >
-                            <AccordionTrigger className="hover:no-underline py-0">
-                                <CardHeader className="w-full">
-                                    <CardTitle className="text-lg text-primary">Resumen Patrimonial</CardTitle>
-                                    <CardDescription>Estado de capitalización neta</CardDescription>
-                                </CardHeader>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                <CardContent className="p-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <StatCard
-                                            label="Participación"
-                                            value={`${summary.equity_percentage}%`}
-                                            subtext="Participación sobre el total patrimonial"
-                                            variant="minimal"
-                                            accent="muted"
-                                            className="p-4 justify-center text-center"
-                                            valueSize="xl"
-                                        />
-                                        <StatCard
-                                            label="Saldo Particular Neto"
-                                            value={<MoneyDisplay amount={parseFloat(summary.balance)} />}
-                                            subtext="Neto acumulado de aportes y retiros"
-                                            variant="minimal"
-                                            accent="primary"
-                                            className="md:col-span-2 p-4 justify-center items-center text-center"
-                                        />
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando perfil de socio">
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
+            <div className="h-full overflow-y-auto custom-scrollbar space-y-6">
+                {/* Top: Distribution chart (left, wider) + stacked KPIs (right) */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <SectionCard
+                        title="Distribución de capital"
+                        description="Participación porcentual de los socios"
+                        headerRight={<ChartLegend items={pieData.map((d) => ({ label: String(d.id), color: d.color }))} />}
+                        chartHeight="320px"
+                        className="rounded-sm lg:col-span-2"
+                    >
+                        <div className="h-full">
+                            <PieChart
+                                data={pieData}
+                                activeId={contact.name}
+                                activeOuterRadiusOffset={14}
+                                activeInnerRadiusOffset={8}
+                                innerRadius={0.55}
+                                padAngle={1.5}
+                                cornerRadius={4}
+                                borderWidth={1.5}
+                                borderColor={{ theme: "background" }}
+                                enableArcLabels={false}
+                                enableArcLinkLabels={false}
+                                legends={[]}
+                                margin={{ top: 16, right: 16, bottom: 20, left: 16 }}
+                                centerLabel={{ value: `${equityPct}%`, label: "Participación" }}
+                                renderTooltip={(datum) => (
+                                    <div className="flex items-center gap-2">
+                                        <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: datum.color }} />
+                                        <span className="font-medium">{String(datum.label ?? datum.id)}</span>
+                                        <span className="font-bold">{datum.value.toFixed(1)}%</span>
                                     </div>
-                                </CardContent>
-                            </AccordionContent>
-                        </Card>
-                    </FadeIn>
-                </AccordionItem>
+                                )}
+                            />
+                        </div>
+                    </SectionCard>
 
-                {/* Section 2: Societal Info */}
-                <AccordionItem value="info" className="border-none">
-                    <FadeIn delay={0.1} yOffset={10}>
-                        <Card >
-                            <AccordionTrigger className="hover:no-underline py-0">
-                                <CardHeader className="w-full">
-                                    <CardTitle className="text-lg text-primary">Información Societaria</CardTitle>
-                                    <CardDescription>Identificación y cuentas vinculadas</CardDescription>
-                                </CardHeader>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                <CardContent className="p-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                        <InfoField icon={<User className="h-3.5 w-3.5" />} label="Socio" value={contact.name} />
-                                        <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="RUT" value={contact.tax_id} />
-                                        <InfoField
-                                            icon={<Building2 className="h-3.5 w-3.5" />}
-                                            label="Cuenta Particular"
-                                            value={contact.partner_account_detail ? `${contact.partner_account_detail.name} (${contact.partner_account_detail.code})` : "No asignada"}
-                                        />
-                                        <InfoField
-                                            icon={<CalendarDays className="h-3.5 w-3.5" />}
-                                            label="Socio desde"
-                                            value={(contact.partner_since || contact.created_at) ? formatPlainDate(contact.partner_since || contact.created_at) : "—"}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </AccordionContent>
-                        </Card>
-                    </FadeIn>
-                </AccordionItem>
+                    <div className="flex flex-col gap-3">
+                        <StatCard
+                            value={contact.name}
+                            subtext={partnerSince ? `Socio desde ${formatPlainDate(partnerSince)}` : "Socio desde —"}
+                            variant="default"
+                            accent="primary"
+                        />
+                        <StatCard
+                            label="Capital suscrito"
+                            value={formatCurrency(summary.total_contributions)}
+                            variant="default"
+                            accent="primary"
+                        />
+                        <StatCard
+                            label="Capital pagado"
+                            value={formatCurrency(summary.total_paid_in)}
+                            variant="default"
+                            accent="success"
+                        />
+                        <StatCard
+                            label="Retiro provisorio"
+                            value={formatCurrency(summary.provisional_withdrawals)}
+                            variant="default"
+                            accent="warning"
+                        />
+                        <StatCard
+                            label="Utilidades retenidas"
+                            value={formatCurrency(summary.earnings_balance)}
+                            variant="default"
+                            accent="info"
+                        />
+                    </div>
+                </div>
 
-                {/* Section 3: History */}
-                <AccordionItem value="history" className="border-none">
-                    <FadeIn delay={0.2} yOffset={10}>
-                        <Card >
-                            <AccordionTrigger className="hover:no-underline py-0">
-                                <CardHeader className="w-full">
-                                    <CardTitle className="text-lg text-primary">Historial de Capital</CardTitle>
-                                    <CardDescription>Resumen de movimientos históricos</CardDescription>
-                                </CardHeader>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                <DataTable
-                                    columns={columns}
-                                    data={statement.transactions}
-                                    variant="minimal"
-                                    noBorder={true}
-                                    defaultPageSize={10}
-                                />
-                            </AccordionContent>
-                        </Card>
-                    </FadeIn>
-                </AccordionItem>
+                {/* Bottom: Capital History — flows naturally, page scrolls */}
+                <Card className="w-full">
+                    <CardHeader className="py-3">
+                        <CardTitle className="text-sm text-primary">Historial de Capital</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                        <DataTable
+                            columns={columns}
+                            data={txsWithBalance}
+                            variant="embedded"
+                            noBorder={true}
+                            defaultPageSize={10}
+                        />
+                    </CardContent>
+                </Card>
 
-            </Accordion>
-
-            {selectedMovementId && (
-                <PaymentDrawer
-                    paymentId={selectedMovementId}
-                    mode="view"
-                    open={detailsOpen}
-                    onOpenChange={(open) => !open && closeDetails()}
+            {viewConfig && (
+                <LazyDrawer
+                    type={viewConfig.type}
+                    id={viewConfig.id}
+                    open={true}
+                    onOpenChange={(open) => !open && closeDrawer()}
                 />
             )}
-        </div>
-    )
-}
-
-function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-    return (
-        <div className="space-y-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted/20 text-sm font-medium text-foreground">
-                <span className="text-muted-foreground">{icon}</span>
-                {value}
             </div>
-        </div>
+        </SkeletonShell>
     )
 }

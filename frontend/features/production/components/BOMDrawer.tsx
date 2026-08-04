@@ -11,9 +11,7 @@ import {
 
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -97,8 +95,7 @@ export function BOMDrawer({
 
     const mode: DrawerMode = modeProp ?? (bomToEdit ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
@@ -538,11 +535,11 @@ export function BOMDrawer({
                                                 <div className="flex flex-col items-end text-[10px] font-black uppercase text-foreground/80 pr-12 gap-1">
                                                     <div className="flex items-center gap-4">
                                                         <span className="text-muted-foreground">Total Unitarios:</span>
-                                                        <DataCell.Currency value={totalUnitCost} className="text-primary w-auto justify-end font-bold text-[10px]" />
+                                                        <DataCell.Currency value={totalUnitCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
                                                     </div>
                                                     <div className="flex items-center gap-4 pt-1">
                                                         <span className="text-muted-foreground">Total Receta:</span>
-                                                        <DataCell.Currency value={totalLineCost} className="text-primary w-auto justify-end font-bold text-[10px]" />
+                                                        <DataCell.Currency value={totalLineCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
                                                     </div>
                                                 </div>
                                             )
@@ -586,7 +583,11 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
+                                                                                const uomIdForCategory = typeof p.uom === 'object' ? p.uom.id : p.uom
+                                                                                if (uomIdForCategory) {
+                                                                                    const foundUom = uoms.find((u: UoM) => String(u.id) === String(uomIdForCategory))
+                                                                                    if (foundUom) form.setValue(`lines.${index}.component_uom_category`, foundUom.category)
+                                                                                }
                                                                                 if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
@@ -629,7 +630,11 @@ export function BOMDrawer({
                                                                                     form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                                 }
 
-                                                                                if (typeof p.uom === 'object' && p.uom?.category) form.setValue(`lines.${index}.component_uom_category`, p.uom.category)
+                                                                                const uomIdForCategory = typeof p.uom === 'object' ? p.uom.id : p.uom
+                                                                                if (uomIdForCategory) {
+                                                                                    const foundUom = uoms.find((u: UoM) => String(u.id) === String(uomIdForCategory))
+                                                                                    if (foundUom) form.setValue(`lines.${index}.component_uom_category`, foundUom.category)
+                                                                                }
                                                                                 if (p.has_variants) fetchLineVariants(p.id)
                                                                             }}
                                                                             onChange={(val) => propField.onChange(val)}
@@ -732,7 +737,8 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={form.watch(`lines.${index}.component_cost`) || 0}
-                                                            className="justify-end font-medium text-muted-foreground pr-1 text-[10px]"
+                                                            className="justify-end text-muted-foreground pr-1 text-[10px]"
+                                                            weight="medium"
                                                         />
                                                     </TableCell>
 
@@ -740,7 +746,8 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={(Number(form.watch(`lines.${index}.quantity`)) || 0) * (Number(form.watch(`lines.${index}.component_cost`)) || 0)}
-                                                            className="justify-end font-bold text-primary pr-1 text-[10px]"
+                                                            className="justify-end text-primary pr-1 text-[10px]"
+                                                            weight="bold"
                                                         />
                                                     </TableCell>
 
@@ -801,7 +808,8 @@ export function BOMDrawer({
                                                     <span className="text-muted-foreground">Total Bruto Unit.:</span>
                                                     <DataCell.Currency
                                                         value={totalGrossPrice}
-                                                        className="w-auto font-black text-primary text-[10px]"
+                                                        className="w-auto text-primary text-[10px]"
+                                                        weight="black"
                                                     />
                                                 </div>
                                             )

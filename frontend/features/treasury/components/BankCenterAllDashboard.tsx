@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/shared'
 import { useAllBanksOverview } from '../hooks/useAllBanksOverview'
 
 export function BankCenterAllDashboard() {
-    const { overviews, isLoading } = useAllBanksOverview()
+    const { isLoading } = useAllBanksOverview()
 
     if (isLoading) {
         return (

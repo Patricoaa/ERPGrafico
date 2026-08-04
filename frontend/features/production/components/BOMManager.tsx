@@ -188,11 +188,11 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Actualizado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.updated_at} className="text-[10px] font-medium opacity-50" />
+                    <DataCell.Date value={row.original.updated_at} showTime className="text-[10px] font-medium opacity-50" />
                 </div>
             )
         },
-        bomManagerActions.column(bomManagerActionsCtx) as ColumnDef<BOM>
+        bomManagerActions.auto(bomManagerActionsCtx) as ColumnDef<BOM>
     ]
 
     return (

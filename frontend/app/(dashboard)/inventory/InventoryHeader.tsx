@@ -1,12 +1,13 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { getEntityIconName } from "@/lib/entity-registry"
 import { useViewModePreference } from "@/hooks/useViewModePreference"
 
 export function InventoryHeader() {
     const pathname = usePathname()
+    const searchParams = useSearchParams()
     const { getViewModeUrl } = useViewModePreference()
 
     const segments = pathname.split('/').filter(Boolean)
@@ -14,12 +15,18 @@ export function InventoryHeader() {
 
     const activeValue = currentSegment === 'settings' ? 'config' : currentSegment
 
-    // Determine subActiveValue from path segments
     const subActiveValue = (() => {
+        if (activeValue === 'products') {
+            return segments[2] || 'products'
+        }
+        if (activeValue === 'reports') return segments[2] || 'stock'
+        if (activeValue === 'operations') return segments[2] || 'warehouses'
         if (activeValue === 'config') return segments[2] || 'valuation'
-        if (activeValue === 'products') return segments[2] || 'products'
-        if (activeValue === 'stock') return segments[2] || 'report'
-        if (activeValue === 'uoms') return segments[2] || 'units'
+        return undefined
+    })()
+
+    const subSubActiveValue = (() => {
+        if (activeValue === 'products' && segments[2] === 'uoms') return segments[3] || 'units'
         return undefined
     })()
 
@@ -31,34 +38,43 @@ export function InventoryHeader() {
             href: getViewModeUrl('inventory.product', "/inventory/products"),
             subTabs: [
                 { value: "products", label: "Catálogo", iconName: getEntityIconName('inventory.product'), href: getViewModeUrl('inventory.product', "/inventory/products") },
-                { value: "categories", label: "Categorías", iconName: getEntityIconName('inventory.productcategory'), href: getViewModeUrl('inventory.productcategory', "/inventory/products/categories") },
+                {
+                    value: "uoms",
+                    label: "Unidades de medida",
+                    iconName: getEntityIconName('inventory.uom'),
+                    href: "/inventory/products/uoms",
+                    subTabs: [
+                        { value: "units", label: "Unidades", href: "/inventory/products/uoms/units", iconName: getEntityIconName('inventory.uom') },
+                        { value: "uom-categories", label: "Categorías de Medida", href: "/inventory/products/uoms/categories", iconName: getEntityIconName('inventory.uomcategory') },
+                    ]
+                },
                 { value: "pricing-rules", label: "Precios", iconName: getEntityIconName('inventory.pricingrule'), href: getViewModeUrl('inventory.pricingrule', "/inventory/products/pricing-rules") },
                 { value: "subscriptions", label: "Suscripciones", iconName: "calendar-clock", href: getViewModeUrl('inventory.subscription', "/inventory/products/subscriptions") },
+                { value: "categories", label: "Categorías", iconName: getEntityIconName('inventory.productcategory'), href: "/inventory/products/categories" },
+                { value: "attributes", label: "Atributos", iconName: getEntityIconName('inventory.attribute'), href: "/inventory/products/attributes" },
             ]
         },
         {
-            value: "stock",
-            label: "Existencias",
-            iconName: getEntityIconName('inventory.stockmove'),
-            href: "/inventory/stock",
+            value: "reports",
+            label: "Reportes",
+            iconName: "file-text",
+            href: "/inventory/reports",
             subTabs: [
-                { value: "report", label: "Reporte", iconName: "file-text", href: "/inventory/stock/report" },
-                { value: "documents", label: "Documentos", iconName: "file-text", href: "/inventory/stock/documents" },
-                { value: "movements", label: "Movimientos", iconName: getEntityIconName('inventory.stockmove'), href: getViewModeUrl('inventory.stockmove', "/inventory/stock/movements") },
-                { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: getViewModeUrl('inventory.warehouse', "/inventory/stock/warehouses") },
+                { value: "stock", label: "Existencias", iconName: "package", href: getViewModeUrl('inventory.stockreport', "/inventory/reports/stock") },
+                { value: "movements", label: "Movimientos de stock", iconName: getEntityIconName('inventory.stockmove'), href: getViewModeUrl('inventory.stockmove', "/inventory/reports/movements") },
             ]
         },
         {
-            value: "uoms",
-            label: "Unidades",
-            iconName: getEntityIconName('inventory.uom'),
-            href: "/inventory/uoms",
+            value: "operations",
+            label: "Operaciones",
+            iconName: "activity",
+            href: "/inventory/operations",
             subTabs: [
-                { value: "units", label: "Unidades de Medida", iconName: getEntityIconName('inventory.uom'), href: getViewModeUrl('inventory.uom', "/inventory/uoms/units") },
-                { value: "categories", label: "Categorías de Medida", iconName: getEntityIconName('inventory.uomcategory'), href: getViewModeUrl('inventory.uomcategory', "/inventory/uoms/categories") },
+                { value: "warehouses", label: "Almacenes", iconName: getEntityIconName('inventory.warehouse'), href: getViewModeUrl('inventory.warehouse', "/inventory/operations/warehouses") },
+                { value: "documents", label: "Recepciones, entregas y ajustes", iconName: "file-text", href: "/inventory/operations/documents" },
+                { value: "counts", label: "Conteo de Inventario", iconName: "clipboard-check", href: "/inventory/operations/counts" },
             ]
         },
-        { value: "attributes", label: "Atributos", iconName: "tags", href: "/inventory/attributes" },
         {
             value: "config",
             label: "Configuración",
@@ -76,27 +92,33 @@ export function InventoryHeader() {
         tabs,
         activeValue,
         subActiveValue,
+        subSubActiveValue,
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'config') return { title: "Configuración de Inventario", description: "Gestione el método de valorización de inventario.", iconName: "settings" as const }
-        if (activeValue === 'attributes') return { title: "Atributos de Variantes", description: "Gestión de atributos para variaciones.", iconName: "tags" as const }
-        if (activeValue === 'uoms') {
-            if (subActiveValue === 'categories') return { title: "Categorías de Medida", description: "Clasificación de magnitudes compatibles (peso, volumen, longitud).", iconName: getEntityIconName('inventory.uomcategory') }
-            return { title: "Unidades de Medida", description: "Configuración de métricas y factores de conversión estándar.", iconName: getEntityIconName('inventory.uom') }
-        }
-        if (activeValue === 'stock') {
-            if (subActiveValue === 'documents') return { title: "Documentos de Inventario", description: "Historial de recepciones, entregas, transferencias y ajustes físicos.", iconName: "file-text" as const }
-            if (subActiveValue === 'movements') return { title: "Movimientos de Stock", description: "Histórico de entradas, salidas y transferencias entre ubicaciones.", iconName: getEntityIconName('inventory.stockmove') }
-            if (subActiveValue === 'warehouses') return { title: "Almacenes y Ubicaciones", description: "Estructura física y lógica para el almacenamiento de mercadería.", iconName: getEntityIconName('inventory.warehouse') }
-            return { title: "Reporte de Existencias", description: "Estado actual del inventario por almacén, valorizado en tiempo real.", iconName: "file-text" as const }
-        }
         if (activeValue === 'products') {
-            if (subActiveValue === 'subscriptions') return { title: "Suscripciones y Recurrentes", description: "Gestión de servicios mensuales, contratos y facturación automática.", iconName: "calendar-clock" as const }
+            if (subActiveValue === 'uoms') {
+                if (subSubActiveValue === 'uom-categories') return { title: "Categorías de Medida", description: "Clasificación de magnitudes compatibles (peso, volumen, longitud).", iconName: getEntityIconName('inventory.uomcategory') }
+                return { title: "Unidades de Medida", description: "Configuración de métricas y factores de conversión estándar.", iconName: getEntityIconName('inventory.uom') }
+            }
             if (subActiveValue === 'categories') return { title: "Categorías de Productos", description: "Organización y clasificación jerárquica del catálogo general.", iconName: getEntityIconName('inventory.productcategory') }
+            if (subActiveValue === 'attributes') return { title: "Atributos de Variantes", description: "Propiedades variables: tallas, colores, materiales y más.", iconName: getEntityIconName('inventory.attribute') }
+            if (subActiveValue === 'subscriptions') return { title: "Suscripciones y Recurrentes", description: "Gestión de servicios mensuales, contratos y facturación automática.", iconName: "calendar-clock" as const }
             if (subActiveValue === 'pricing-rules') return { title: "Reglas de Precios", description: "Políticas de tarifas, descuentos y márgenes por cliente o volumen.", iconName: getEntityIconName('inventory.pricingrule') }
             return { title: "Catálogo de Productos", description: "Gestión de bienes físicos, servicios y consumibles.", iconName: getEntityIconName('inventory.product') }
         }
+        if (activeValue === 'reports') {
+            const productName = searchParams.get('product_name')
+            if (subActiveValue === 'stock' && productName) return { title: productName, description: "Insights y movimientos históricos del producto.", iconName: "bar-chart-3" as const }
+            if (subActiveValue === 'movements') return { title: "Movimientos de Stock", description: "Histórico de entradas, salidas y transferencias entre ubicaciones.", iconName: getEntityIconName('inventory.stockmove') }
+            return { title: "Existencias", description: "Estado actual del inventario por almacén, valorizado en tiempo real.", iconName: "package" as const }
+        }
+        if (activeValue === 'operations') {
+            if (subActiveValue === 'documents') return { title: "Recepciones, Entregas y Ajustes", description: "Historial y gestión de movimientos físicos, transferencias y mermas.", iconName: "file-text" as const }
+            if (subActiveValue === 'counts') return { title: "Conteo de Inventario", description: "Conteo rápido de stock teórico vs real y generación de ajustes.", iconName: "clipboard-check" as const }
+            return { title: "Almacenes y Ubicaciones", description: "Estructura física y lógica para el almacenamiento de mercadería.", iconName: getEntityIconName('inventory.warehouse') }
+        }
+        if (activeValue === 'config') return { title: "Configuración de Inventario", description: "Parámetros generales del módulo de inventario.", iconName: "settings" as const }
         return { title: "Inventario", description: "", iconName: getEntityIconName('inventory.product') ?? "package" }
     }
 

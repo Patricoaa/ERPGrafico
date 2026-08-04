@@ -23,6 +23,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 
 import { DataCell } from '@/components/shared'
 import { statementLineUnmatchActions, type StatementLineUnmatchActionsCtx, useBankStatement, treasuryApi } from '@/features/treasury'
+import { OPERACIONES_SUB_TABS, TERMINAL_COBRO_SUB_TABS } from '@/features/treasury/navigation'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -133,6 +134,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <DataTableColumnHeader column={column} title="#" />
             ),
             cell: ({ row }) => <span className="text-muted-foreground font-mono text-xs">{row.getValue("line_number")}</span>,
+            meta: { title: "#" },
         },
         {
             accessorKey: "transaction_date",
@@ -140,6 +142,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <DataTableColumnHeader column={column} title="Fecha" />
             ),
             cell: ({ row }) => <DataCell.Date value={row.getValue("transaction_date")} />,
+            meta: { title: "Fecha" },
         },
         {
             accessorKey: "description",
@@ -173,6 +176,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
             },
+            meta: { title: "Cargo" },
         },
         {
             accessorKey: "credit",
@@ -187,6 +191,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
             },
+            meta: { title: "Abono" },
         },
         {
             accessorKey: "balance",
@@ -210,6 +215,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     />
                 )
             },
+            meta: { title: "Estado" },
         },
         {
             id: "matched_payment",
@@ -229,7 +235,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 )
             },
         },
-        statementLineUnmatchActions.column(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
+        statementLineUnmatchActions.auto(statementLineUnmatchActionsCtx) as ColumnDef<BankStatementLine>,
     ]
 
     if (isLoading) return (
@@ -268,9 +274,9 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         moduleName: "Tesorería",
         moduleHref: "/treasury",
         tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements" },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones/movements", subTabs: OPERACIONES_SUB_TABS },
             { value: "bank-center", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/bank-center" },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers" },
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro/providers", subTabs: TERMINAL_COBRO_SUB_TABS },
         ],
         activeValue: "bank-center",
         breadcrumbs: [

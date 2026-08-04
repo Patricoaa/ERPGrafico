@@ -21,6 +21,10 @@ export type BadgeIntent =
     | 'warning'
     | 'destructive'
     | 'primary'
+    | 'cyan'
+    | 'magenta'
+    | 'yellow'
+    | 'black'
 
 // ─── Status resolver ──────────────────────────────────────────────────────────
 
@@ -38,6 +42,7 @@ interface StatusStyle {
 export const STATUS_MAP: Record<string, StatusStyle> = {
     // ── Lifecycle & Documents ────────────────────────────────────────────
     DRAFT:          { label: 'Borrador',     intent: 'info' },
+    APPROVED:       { label: 'Aprobado',     intent: 'warning' },
     CONFIRMED:      { label: 'Confirmado',   intent: 'warning' },
     PAID:           { label: 'Pagado',       intent: 'success' },
     CANCELLED:      { label: 'Cancelado',    intent: 'destructive' },
@@ -92,6 +97,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     // ── Subscription / Employee ──────────────────────────────────────────
     ACTIVE:         { label: 'Activo',       intent: 'success' },
     INACTIVE:       { label: 'Inactivo',     intent: 'neutral' },
+    DESCONTADO:     { label: 'Descontado',   intent: 'success' },
     PAUSED:         { label: 'Pausado',      intent: 'warning' },
     EXPIRED:        { label: 'Vencido/a', intent: 'warning' },
 
@@ -209,7 +215,7 @@ export function resolveEntity(label: string, data: Record<string, unknown>): Res
 // CATEGORY & ENUM MAPPINGS (for Chip.Category)
 // ----------------------------------------------------------------------
 
-export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type'
+export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method'
 
 interface CategoryEntry {
     intent: BadgeIntent
@@ -247,6 +253,16 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
     },
     dte_type: {
         // Fallback for strings from backend
+    },
+    payment_method: {
+        'CASH':          { intent: 'cyan', label: 'Efectivo', icon: 'Banknote' },
+        'CARD':          { intent: 'magenta', label: 'Tarjeta', icon: 'CreditCard' },
+        'CARD_TERMINAL': { intent: 'magenta', label: 'Terminal', icon: 'Smartphone' },
+        'DEBIT_CARD':    { intent: 'magenta', label: 'Débito', icon: 'CreditCard' },
+        'CREDIT_CARD':   { intent: 'magenta', label: 'Crédito', icon: 'CreditCard' },
+        'TRANSFER':      { intent: 'yellow', label: 'Transferencia', icon: 'Landmark' },
+        'CHECK':         { intent: 'black', label: 'Cheque', icon: 'FileCheck' },
+        'OTHER':         { intent: 'neutral', label: 'Otro', icon: 'MoreHorizontal' },
     }
 }
 

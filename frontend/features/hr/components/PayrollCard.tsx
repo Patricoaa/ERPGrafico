@@ -8,7 +8,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import {
-    Loader2, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
+    Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
 
 import { cn, formatPlainDate, parseDateOnly } from "@/lib/utils"
@@ -54,10 +54,10 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 </div>
             </TableCell>
             <TableCell className="text-right py-3 tabular-nums">
-                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-success" />}
+                {type === 'HABER' && <DataCell.Currency value={item.amount} weight="black" className="text-[11px] text-success" />}
             </TableCell>
             <TableCell className="text-right py-3 pr-8 tabular-nums">
-                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-expense" />}
+                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} weight="black" className="text-[11px] text-expense" />}
             </TableCell>
             {!isReadOnly && (
                 <TableCell className="w-[80px] p-0 text-right">
@@ -79,7 +79,6 @@ export function PayrollCard({
     isReadOnly = false,
     showEmployerContributions = true,
     isSalaryPaid: isSalaryPaidProp,
-    isPreviredPaid: isPreviredPaidProp,
     onEditItem,
     onDeleteItem,
     onAddItem,
@@ -115,8 +114,6 @@ export function PayrollCard({
     const netSalary = parseFloat(payroll.net_salary || "0")
 
     const isSalaryPaid = isSalaryPaidProp ?? (payroll as unknown as Record<string, unknown>).is_salary_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'SALARIO') ?? false
-    const isPreviredPaid = isPreviredPaidProp ?? (payroll as unknown as Record<string, unknown>).is_previred_paid as boolean ?? payroll.payments?.some((p) => p.payment_type === 'PREVIRED') ?? false
-
     const unifiedPayments = [
         ...(payroll.advances || []).map(a => ({
             id: `adv-${a.id}`,

@@ -1,22 +1,25 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useMemo } from "react"
 import {
     History,
-    ArrowUpRight,
-    ArrowDownLeft,
-    Calendar,
     Wallet,
     LogOut
 } from "lucide-react"
-import { Drawer, DataTable, SkeletonShell, DataCell } from "@/components/shared"
+import { Drawer, DataTable, SkeletonShell, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
-import { type PartnerStatement, type PartnerTransaction } from "@/features/contacts"
+import { type PartnerStatement } from "@/features/contacts"
 import { toast } from "sonner"
-import {formatPlainDate as formatDate, parseDateOnly} from "@/lib/utils"
+import { parseDateOnly } from "@/lib/utils"
+import type { UnifiedSearchConfig } from '@/types/unified-search'
 
-import { type ColumnDef } from "@tanstack/react-table"
+import {
+    partnerLedgerFields,
+    isInflowType,
+    isOutflowType,
+    PARTNER_TRANSACTION_TYPE_OPTIONS,
+    type PartnerLedgerRow,
+} from "@/features/settings/partnerLedgerFields"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 
@@ -37,6 +40,21 @@ export function PartnerLedgerDrawer({
     const [data, setData] = useState<PartnerStatement | null>(null)
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
+
+    const partnerSearchConfig = useMemo<UnifiedSearchConfig>(() => ({
+        searchFields: [],
+        filters: [
+            {
+                type: 'single',
+                key: 'transaction_type',
+                label: 'Tipo',
+                serverParam: 'transaction_type',
+                options: PARTNER_TRANSACTION_TYPE_OPTIONS,
+            },
+        ],
+    }), [])
+
+    const search = useUnifiedSearch(partnerSearchConfig)
 
     const fetchData = async () => {
         if (!partnerId) return
@@ -62,107 +80,30 @@ export function PartnerLedgerDrawer({
         }
     }, [open, partnerId])
 
-    const isInflow = (type: string) => [
-        'SUBSCRIPTION', 'CAPITAL_CASH', 'CAPITAL_INVENTORY',
-        'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'
-    ].includes(type)
-
-    const isOutflow = (type: string) => [
-        'WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION',
-        'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
-    ].includes(type)
-
-    const getTransactionIcon = (type: string) => {
-        if (isInflow(type)) return <ArrowUpRight className="h-3.5 w-3.5 text-success" />
-        if (isOutflow(type)) return <ArrowDownLeft className="h-3.5 w-3.5 text-destructive" />
-        return <History className="h-3.5 w-3.5 text-muted-foreground" />
-    }
-
-    const getTransactionIntent = (type: string): "info" | "warning" | "success" | "destructive" | "neutral" => {
-        if (type === 'SUBSCRIPTION') return 'info'
-        if (type.includes('TRANSFER')) return 'warning'
-        if (isInflow(type)) return 'success'
-        if (isOutflow(type)) return 'destructive'
-        return 'neutral'
-    }
-
-    type TransactionWithBalance = PartnerTransaction & { balance_after: number }
-
-    const columns: ColumnDef<TransactionWithBalance>[] = [
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2 text-[10px] font-mono whitespace-nowrap opacity-80">
-                    <Calendar className="h-3 w-3 opacity-40 shrink-0" />
-                    {formatDate(row.getValue("date"))}
-                </div>
-            )
-        },
-        {
-            accessorKey: "description",
-            header: "Concepto",
-            cell: ({ row }) => (
-                <div className="flex flex-col gap-0.5">
-                    <DataCell.Chip intent={getTransactionIntent(row.original.transaction_type)}>
-                        {row.original.transaction_type_display}
-                    </DataCell.Chip>
-                    <span className="text-[10px] text-muted-foreground italic truncate max-w-[250px] leading-tight">
-                        {row.getValue("description")}
-                    </span>
-                </div>
-            )
-        },
-        {
-            accessorKey: "journal_entry_display",
-            header: "Asiento",
-            cell: ({ row }) => {
-                const val = row.getValue("journal_entry_display")
-                return val ? (
-                    <DataCell.Code>{val as string}</DataCell.Code>
-                ) : <span className="text-muted-foreground/30 px-2">-</span>
-            }
-        },
-        {
-            accessorKey: "amount",
-            header: () => <div className="text-right">Monto</div>,
-            cell: ({ row }) => {
-                const type = row.original.transaction_type
-                const amount = parseFloat(row.getValue("amount"))
-                return (
-                    <div className="flex items-center justify-end gap-1 font-mono text-[11px] font-black">
-                        {getTransactionIcon(type)}
-                        <span className={isOutflow(type) ? 'text-destructive' : 'text-success'}>
-                            {isOutflow(type) ? '-' : '+'}{formatCurrency(amount)}
-                        </span>
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "balance_after",
-            header: () => <div className="text-right">Saldo</div>,
-            cell: ({ row }) => (
-                <div className="text-right font-mono text-[11px] font-black text-primary bg-primary/5 px-2 py-1 relative ring-1 ring-primary/10">
-                    {formatCurrency(row.getValue("balance_after"))}
-                </div>
-            )
-        }
-    ]
+    const columns = partnerLedgerFields.toColumns()
 
     // We need to calculate balance_after specifically for this partner's chronological list
-    const transactionsWithBalance = React.useMemo(() => {
+    const transactionsWithBalance = React.useMemo<PartnerLedgerRow[]>(() => {
         if (!data?.transactions) return []
-        const sorted = [...data.transactions].sort((a, b) => parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime())
+        const sorted = [...data.transactions].sort((a, b) => {
+            const dateDiff = parseDateOnly(a.date).getTime() - parseDateOnly(b.date).getTime()
+            if (dateDiff !== 0) return dateDiff
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        })
         let balance = 0
         const withBal = sorted.map(tx => {
             const amount = parseFloat(tx.amount) || 0
-            if (isInflow(tx.transaction_type)) balance += amount
-            else if (isOutflow(tx.transaction_type)) balance -= amount
+            if (isInflowType(tx.transaction_type)) balance += amount
+            else if (isOutflowType(tx.transaction_type)) balance -= amount
             return { ...tx, balance_after: balance }
         })
         return withBal.reverse()
     }, [data])
+
+    const filteredTransactions = useMemo(() => {
+        if (!search.filters.transaction_type) return transactionsWithBalance
+        return transactionsWithBalance.filter(tx => tx.transaction_type === search.filters.transaction_type)
+    }, [transactionsWithBalance, search.filters])
 
     return (
         <Drawer
@@ -175,19 +116,37 @@ export function PartnerLedgerDrawer({
             boundary="embedded"
             resizable={false}
             showOverlay={true}
-            defaultSize="100%"
+            defaultSize="80%"
+            viewportClassName="!overflow-hidden [&>div]:!block [&>div]:h-full [&>div]:min-h-0 [&>div]:overflow-hidden"
         >
             {loading ? (
-                <div className="mt-4">
+                <div className="p-4">
                     <SkeletonShell isLoading ariaLabel="Cargando..." />
                 </div>
             ) : (
-                <div className="mt-4 animate-in fade-in duration-500">
+                <div className="p-4 animate-in fade-in duration-500 h-full min-h-0 flex flex-col">
                     <DataTable
                         columns={columns}
-                        data={transactionsWithBalance}
+                        data={filteredTransactions}
                         isLoading={loading}
                         variant="embedded"
+                        hiddenColumns={[]}
+                        unifiedSearch={<UnifiedSearchBar
+                            config={partnerSearchConfig}
+                            chips={search.chips}
+                            isFiltered={search.isFiltered}
+                            inputValue={search.inputValue}
+                            onInputChange={search.setInputValue}
+                            onApply={search.applyFilter}
+                            onRemove={search.removeFilter}
+                            onClearAll={search.clearAll}
+                            groupBy={search.groupBy}
+                            onGroupBySelect={search.setGroupBy}
+                            paramValues={search.paramValues}
+                        />}
+                        showReset={search.isFiltered}
+                        onReset={search.clearAll}
+                        columnToggle
                         toolbarActions={[
                             { key: 'contribution', label: 'Registrar Aporte', icon: Wallet, onClick: () => setIsContributionOpen(true), intent: 'success' },
                             { key: 'withdrawal', label: 'Registrar Retiro', icon: LogOut, onClick: () => setIsWithdrawalOpen(true), intent: 'destructive' },

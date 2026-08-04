@@ -139,17 +139,10 @@ export const salesOrderUnifiedSearchDef: UnifiedSearchConfig = {
   ],
   dateFilters: [createdDateFilter],
   groupBy: [
-    {
-      key: 'date',
-      label: 'Fecha de creación',
-      field: 'date',
-      default: true,
-    },
-    {
-      key: 'customer',
-      label: 'Cliente',
-      field: 'customer_name',
-    },
+    { key: 'date', label: 'Fecha de creación', field: 'date' },
+    { key: 'customer', label: 'Cliente', field: 'customer_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
+    { key: 'channel', label: 'Canal', field: 'channel' },
   ],
   basePeriod: {
     serverParamFrom: 'date_after',
@@ -196,16 +189,8 @@ export const salesNoteUnifiedSearchDef: UnifiedSearchConfig = {
   ],
   dateFilters: [createdDateFilter],
   groupBy: [
-    {
-      key: 'date',
-      label: 'Fecha de creación',
-      field: 'date',
-      default: true,
-    },
-    {
-      key: 'customer',
-      label: 'Cliente',
-      field: 'customer_name',
-    },
+    { key: 'date', label: 'Fecha de creación', field: 'date' },
+    { key: 'customer', label: 'Cliente', field: 'customer_name' },
+    { key: 'status', label: 'Estado', field: 'status' },
   ],
 }

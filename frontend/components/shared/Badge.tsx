@@ -12,7 +12,7 @@
  * Contract: docs/20-contracts/component-badge.md
  *
  * Typography invariants (never override in consumers):
- *   font-mono + font-black + uppercase + border
+ *   font-sans + font-medium + text-xs + borderless (CurrencyFlow aesthetic, ADR-0068)
  *   tracking controlled by `tracking` prop (see contract rationale)
  *
  * DO NOT import Badge directly in features or pages.
@@ -34,7 +34,7 @@ import {
 
 const badgeVariants = cva(
     // Base — invariant across all uses
-    'inline-flex items-center justify-center font-mono font-black uppercase border transition-all duration-200 leading-none shrink-0',
+    'inline-flex items-center justify-center font-sans font-medium leading-none shrink-0 transition-all duration-200',
     {
         variants: {
             /**
@@ -48,6 +48,12 @@ const badgeVariants = cva(
                 warning:     'bg-warning/10 text-warning border-warning/20',
                 destructive: 'bg-destructive/10 text-destructive border-destructive/20',
                 primary:     'bg-primary/10 text-primary border-primary/20',
+                /* Layer 1 categorical intents (ADR-0064) — fixed process inks,
+                   only for categorical chips (e.g. payment_method), never for state. */
+                cyan:        'bg-cyan/10 text-cyan border-cyan/20',
+                magenta:     'bg-magenta/10 text-magenta border-magenta/20',
+                yellow:      'bg-yellow/10 text-yellow border-yellow/20',
+                black:       'bg-black/10 text-black border-black/20',
             },
 
             /**
@@ -57,36 +63,48 @@ const badgeVariants = cva(
             size: {
                 xs: 'h-[18px] px-2 text-[9px] gap-1',
                 sm: 'h-[22px] px-2.5 text-[10px] gap-1',
-                md: 'h-6 px-3 text-[12px] gap-1.5',
+                md: 'px-2 py-0.5 text-xs gap-1',
                 lg: 'h-8 px-4 text-[14px] gap-2',
                 xl: 'h-10 px-6 text-base gap-2.5',
             },
 
             /**
              * tracking — letter spacing variant.
+             * "normal" (no tracking) is the CurrencyFlow default.
              * "wide"  (tracking-widest) → Chip: short tags at 9-11px need max spacing.
              * "tight" (tracking-tight)  → Status/Entity: longer labels, prevents overflow.
              * This distinction is load-bearing — see component-badge.md §typography.
              */
             tracking: {
+                normal: '',
                 wide:  'tracking-widest',
                 tight: 'tracking-tight',
             },
 
             /**
-             * shape — pill (default) or square.
+             * shape — square (default, rounded-sm CurrencyFlow) or pill.
              * hub and dot are separate render paths (see below).
              */
             shape: {
                 pill:   'rounded-full',
                 square: 'rounded-sm',
             },
+
+            /**
+             * appearance — solid (default) or ghost (transparent background).
+             * ghost removes the background tint only; badges are borderless (ADR-0068).
+             */
+            appearance: {
+                solid: '',
+                ghost: 'bg-transparent',
+            },
         },
         defaultVariants: {
             intent:   'neutral',
             size:     'md',
-            tracking: 'tight',
-            shape:    'pill',
+            tracking: 'normal',
+            shape:    'square',
+            appearance: 'solid',
         },
     }
 )
@@ -151,10 +169,10 @@ export function Badge({
         <span className={cn(badgeVariants({ intent, size, tracking, shape }), className)}>
             {Icon && (
                 <Icon
-                    className={cn(iconSize, 'shrink-0 opacity-80 translate-y-[-0.5px]')}
+                    className={cn(iconSize, 'shrink-0')}
                 />
             )}
-            <span className="translate-y-[0.5px]">{children}</span>
+            {children}
         </span>
     )
 }
@@ -173,13 +191,17 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
         warning:     'bg-warning',
         destructive: 'bg-destructive',
         primary:     'bg-primary',
+        cyan:        'bg-cyan',
+        magenta:     'bg-magenta',
+        yellow:      'bg-yellow',
+        black:       'bg-black',
     }
 
     return (
         <div className={cn('inline-flex items-center gap-1.5', className)}>
             <div className={cn('h-2 w-2 rounded-full animate-pulse', dotColor[intent ?? 'neutral'])} />
             <span className={cn(
-                'font-mono font-black uppercase tracking-tight leading-none translate-y-[0.5px]',
+                'font-sans font-medium tracking-tight leading-none',
                 size === 'xs' || size === 'sm' ? 'text-[10px]' : 'text-[11px] text-muted-foreground',
             )}>
                 {children}
@@ -203,6 +225,10 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
         warning:     'text-warning bg-warning/10 border-warning/20',
         destructive: 'text-destructive bg-destructive/10 border-destructive/20',
         primary:     'text-primary bg-primary/10 border-primary/20',
+        cyan:        'text-cyan bg-cyan/10 border-cyan/20',
+        magenta:     'text-magenta bg-magenta/10 border-magenta/20',
+        yellow:      'text-yellow bg-yellow/10 border-yellow/20',
+        black:       'text-black bg-black/10 border-black/20',
     }
 
     const ringColor: Record<string, string> = {
@@ -212,6 +238,10 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
         warning:     'text-warning',
         destructive: 'text-destructive',
         primary:     'text-primary',
+        cyan:        'text-cyan',
+        magenta:     'text-magenta',
+        yellow:      'text-yellow',
+        black:       'text-black',
     }
 
     const hasProgress = progress !== undefined

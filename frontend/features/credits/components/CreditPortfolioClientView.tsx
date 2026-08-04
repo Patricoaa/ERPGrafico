@@ -1,19 +1,24 @@
 "use client"
 
-import { useCallback, useMemo } from "react"
-import { CreditCard, Target, ShieldAlert, Activity } from "lucide-react"
-import { type CreditContact, type CreditHistoryEntry } from '@/features/credits/api/creditsApi'
+import { useCallback, useMemo, useState } from "react"
+
+import { type CreditContact, type CreditHistoryEntry, writeOffDebt } from '@/features/credits/api/creditsApi'
 import CreditAssignmentModal from "./CreditAssignmentModal"
-import { DataTable } from '@/components/shared'
+import { DataTable, ActionConfirmModal, MoneyDisplay } from '@/components/shared'
 import { PortfolioTable } from "./PortfolioTable"
-import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"
-import { UnifiedSearchBar, useUnifiedSearch, MoneyDisplay, type KpiCardDef } from "@/components/shared"
+import { creditContactFields } from "../creditContactFields"
+import { creditHistoryEntryFields } from "../creditHistoryEntryFields"
+import { portfolioActions, type PortfolioActionsCtx } from "../portfolioActions"
+import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { ShieldAlert } from "lucide-react"
+import { toast } from "sonner"
+import { formatMoney } from "@/lib/money"
+import { type ColumnDef } from "@tanstack/react-table"
 
-const EMPTY_CONTACTS: CreditContact[] = []
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
 export function CreditPortfolioClientView({
@@ -25,7 +30,7 @@ export function CreditPortfolioClientView({
     externalOpen?: boolean,
     createAction?: React.ReactNode
 }) {
-    const { data, contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
+    const { contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
     const { data: rawHistory, isLoading: loadingHistory } = useCreditHistory()
 
     // ADR-0020: edit modal opens via ?selected={contactId}
@@ -33,11 +38,35 @@ export function CreditPortfolioClientView({
         useSelectedEntity<CreditContact>({ endpoint: '/contacts' })
     const { openSelected } = useEntityRouteActions()
 
-    const handleEditLimit = useCallback((contact: CreditContact) => {
-        openSelected(contact.id)
-    }, [openSelected])
+    const [writeOffContact, setWriteOffContact] = useState<CreditContact | null>(null)
 
-    const portfolioCols = useMemo(() => getPortfolioColumns(handleEditLimit), [handleEditLimit])
+    const portfolioCtx = useMemo<PortfolioActionsCtx>(() => ({
+        onEdit: (id) => openSelected(id),
+        onWriteOff: (contact) => setWriteOffContact(contact),
+        canWriteOff: (contact) => !contact.is_default_customer && Number(contact.credit_balance_used) > 0,
+    }), [openSelected])
+
+    const handleWriteOff = useCallback(async () => {
+        if (!writeOffContact) return
+        try {
+            const res = await writeOffDebt(writeOffContact.id)
+            toast.success(`Deuda castigada: ${res.journal_entry} por ${formatMoney(res.amount)}`)
+            await refetch()
+        } catch (error) {
+            const e = error as { response?: { data?: { error?: string } }; message?: string }
+            toast.error(e.response?.data?.error || e.message || "Error al castigar deuda")
+        } finally {
+            setWriteOffContact(null)
+        }
+    }, [writeOffContact, refetch])
+
+    const portfolioCols = useMemo<ColumnDef<CreditContact>[]>(
+        () => [
+            ...creditContactFields.toColumns({ exclude: ['creditLastEvaluated'] }),
+            portfolioActions.auto(portfolioCtx),
+        ],
+        [portfolioCtx],
+    )
 
     const contactConfig: UnifiedSearchConfig = useMemo(() => ({
         searchFields: [
@@ -50,6 +79,9 @@ export function CreditPortfolioClientView({
                 { label: 'Alto', value: 'HIGH' },
                 { label: 'Crítico', value: 'CRITICAL' },
             ]},
+        ],
+        groupBy: [
+            { key: 'credit_risk_level', label: 'Riesgo', field: 'credit_risk_level' },
         ],
     }), [])
     const contactSearch = useUnifiedSearch(contactConfig)
@@ -65,6 +97,9 @@ export function CreditPortfolioClientView({
                 { label: 'Ajuste', value: 'ADJUSTMENT' },
                 { label: 'Reversión', value: 'REVERSAL' },
             ]},
+        ],
+        groupBy: [
+            { key: 'origin', label: 'Origen', field: 'origin' },
         ],
     }), [])
     const historySearch = useUnifiedSearch(historyConfig)
@@ -86,26 +121,6 @@ export function CreditPortfolioClientView({
         [rawHistory, historySearch.filterFn, historySearch.filters.origin],
     )
 
-    const kpiCards = useMemo<KpiCardDef[]>(() => {
-        const s = data?.summary
-        const totalDebt = Number(s?.total_debt || 0)
-        const potentialLoss = Number(s?.potential_loss || 0)
-        const totalOverdue = Number(s?.overdue_30 || 0) + Number(s?.overdue_60 || 0) + Number(s?.overdue_90 || 0) + Number(s?.overdue_90plus || 0)
-        const contacts = data?.contacts || []
-        const computedTotalLimit = contacts.reduce((acc, c) => {
-            const limit = Number(c.credit_limit || 0)
-            const balance = Number(c.credit_balance_used || 0)
-            return acc + (limit > 0 ? limit : balance)
-        }, 0)
-        const computedUtilizationRate = computedTotalLimit > 0 ? (totalDebt / computedTotalLimit) * 100 : 0
-        return [
-            { label: "Deuda Total", value: <MoneyDisplay amount={totalDebt} />, subtext: `${s?.count_debtors || 0} clientes con deuda activa`, icon: CreditCard, accent: "primary" as const },
-            { label: "Exposición Total", value: <MoneyDisplay amount={computedTotalLimit} />, subtext: `Uso: ${computedUtilizationRate.toFixed(1)}% del límite`, icon: Target, accent: "info" as const },
-            { label: "Pérdida Potencial", value: <MoneyDisplay amount={potentialLoss} />, subtext: `${s?.risk_distribution?.CRITICAL || 0} riesgos críticos`, icon: ShieldAlert, accent: potentialLoss > 0 ? "destructive" as const : "muted" as const },
-            { label: "Tasa de Mora", value: `${((totalOverdue / (totalDebt || 1)) * 100).toFixed(1)}%`, subtext: `${s?.count_overdue || 0} vencimientos`, icon: Activity, accent: totalOverdue > 0 ? "warning" as const : "success" as const },
-        ]
-    }, [data])
-
     const handleModalSuccess = useCallback(async () => {
         await refetch()
         clearSelection()
@@ -118,6 +133,27 @@ export function CreditPortfolioClientView({
                 onOpenChange={(open) => { if (!open) clearSelection() }}
                 contact={selectedContact}
                 onSuccess={handleModalSuccess}
+            />
+
+            <ActionConfirmModal
+                open={!!writeOffContact}
+                onOpenChange={(o) => !o && setWriteOffContact(null)}
+                onConfirm={handleWriteOff}
+                title="¿Confirmar Castigo de Deuda?"
+                description={
+                    <div className="space-y-3 pt-1 text-sm leading-relaxed">
+                        <p>Esta acción es <strong>irreversible</strong> y tiene las siguientes consecuencias:</p>
+                        <ul className="list-disc list-inside space-y-1 font-medium text-muted-foreground">
+                            <li>Se generará un asiento contable de pérdida por <span className="text-foreground"><MoneyDisplay amount={writeOffContact?.credit_balance_used} inline weight="bold" /></span>.</li>
+                            <li>El cliente quedará bloqueado permanentemente.</li>
+                            <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
+                            <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
+                        </ul>
+                    </div>
+                }
+                variant="destructive"
+                icon={ShieldAlert}
+                confirmText="Confirmar Castigo"
             />
 
             {activeTab === 'portfolio' ? (
@@ -142,13 +178,12 @@ export function CreditPortfolioClientView({
                             paramValues={contactSearch.paramValues}
                             placeholder="Cliente o RUT..."
                         />}
-                        kpiCards={kpiCards}
                     />
                 </div>
             ) : (
                 <div className="mt-2 flex-1 min-h-0">
                     <DataTable
-                        columns={historyColumns}
+                        columns={creditHistoryEntryFields.toColumns()}
                         data={history ?? EMPTY_HISTORY}
                         variant="embedded"
                         isLoading={loadingHistory}

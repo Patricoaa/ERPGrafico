@@ -31,12 +31,15 @@ from .serializers import (
     AbsenceSerializer,
     AFPSerializer,
     EmployeeConceptAmountSerializer,
+    EmployeePayrollPreviewSerializer,
     EmployeeSerializer,
+    EmployeeWriteSerializer,
     GlobalHRSettingsSerializer,
     PayrollConceptSerializer,
     PayrollDetailSerializer,
     PayrollItemSerializer,
     PayrollListSerializer,
+    PayrollWriteSerializer,
     PayrollPaymentSerializer,
     SalaryAdvanceSerializer,
 )
@@ -119,10 +122,17 @@ class EmployeeFilter(django_filters.FilterSet):
 
 
 class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
-    queryset = Employee.objects.select_related("contact", "afp").all()
+    queryset = Employee.objects.select_related("contact", "afp").prefetch_related(
+        "concept_amounts__concept"
+    ).all()
     serializer_class = EmployeeSerializer
     pagination_class = None  # Master data
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return EmployeeWriteSerializer
+        return EmployeeSerializer
     filterset_class = EmployeeFilter
     search_fields = ["contact__name", "contact__tax_id", "position"]
 
@@ -156,10 +166,12 @@ class PayrollFilter(django_filters.FilterSet):
     period_year = django_filters.NumberFilter()
     period_month = django_filters.NumberFilter()
     status = django_filters.CharFilter()
+    date_from = django_filters.DateFilter(field_name="created_at", lookup_expr="date__gte")
+    date_to = django_filters.DateFilter(field_name="created_at", lookup_expr="date__lte")
 
     class Meta:
         model = Payroll
-        fields = ["employee", "period_year", "period_month", "status"]
+        fields = ["employee", "period_year", "period_month", "status", "date_from", "date_to"]
 
 
 class PayrollViewSet(viewsets.ModelViewSet):
@@ -177,7 +189,9 @@ class PayrollViewSet(viewsets.ModelViewSet):
     search_fields = ["employee__contact__name"]
 
     def get_serializer_class(self):
-        if self.action in ("retrieve", "create", "update", "partial_update"):
+        if self.action in ("create", "update", "partial_update"):
+            return PayrollWriteSerializer
+        if self.action == "retrieve":
             return PayrollDetailSerializer
         return PayrollListSerializer
 
@@ -313,16 +327,19 @@ class SalaryAdvanceFilter(django_filters.FilterSet):
     employee = django_filters.NumberFilter(field_name="employee__id")
     payroll = django_filters.NumberFilter(field_name="payroll__id")
     is_discounted = django_filters.BooleanFilter()
+    date_from = django_filters.DateFilter(field_name="date", lookup_expr="gte")
+    date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
 
     class Meta:
         model = SalaryAdvance
-        fields = ["employee", "payroll", "is_discounted"]
+        fields = ["employee", "payroll", "is_discounted", "date_from", "date_to"]
 
 
 class SalaryAdvanceViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     queryset = SalaryAdvance.objects.select_related(
-        "employee", "employee__contact", "payroll"
+        "employee", "employee__contact", "payroll",
+        "journal_entry__treasury_movement__payment_method_new",
     ).all()
     serializer_class = SalaryAdvanceSerializer
     filter_backends = [DjangoFilterBackend]

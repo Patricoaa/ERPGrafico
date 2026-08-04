@@ -5,6 +5,10 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class POSDraftConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        if not self.scope["user"].is_authenticated:
+            await self.close(code=4001)
+            return
+
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
         self.group_name = f"pos_session_{self.session_id}"
 

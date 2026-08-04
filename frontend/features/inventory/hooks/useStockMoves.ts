@@ -19,6 +19,7 @@ export interface StockMove {
     quantity: string
     uom_name: string
     description: string
+    direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
     related_documents: Array<{
         type: string
         id: number | string
@@ -29,11 +30,12 @@ export interface StockMove {
 export interface StockMoveFilters {
     page?: number
     page_size?: number
-    product?: string | number
+    product_id?: string | number
     source_location_id?: string | number
     destination_location_id?: string | number
     date_from?: string
     date_to?: string
+    direction?: 'IN' | 'OUT' | 'TRANSFER' | 'ADJUSTMENT' | 'OTHER'
 }
 
 export const STOCK_MOVES_QUERY_KEY = ['inventory', 'stockMoves'] as const

@@ -37,7 +37,7 @@ class CoreSelector:
 
         models = [
             (Product, "product", "Producto"),
-            (SaleOrder, "sale_order", "Nota de Venta"),
+            (SaleOrder, "sale_order", "Orden de Venta"),
             (PurchaseOrder, "purchase_order", "Orden de Compra"),
             (Contact, "contact", "Contacto"),
             (Invoice, "invoice", "Factura"),

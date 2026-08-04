@@ -16,10 +16,11 @@ export default async function PayrollsPage({ searchParams }: PageProps) {
     let initialPayrolls: Payroll[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialPayrolls = await serverFetch<Payroll[]>('hr/payrolls/', {
+            const res = await serverFetch<{ results: Payroll[] }>('hr/payrolls/', {
                 params: { page_size: '200' },
                 revalidate: 10,
             })
+            initialPayrolls = res.results
         } catch {
             // Client-side fetch handles fallback
         }

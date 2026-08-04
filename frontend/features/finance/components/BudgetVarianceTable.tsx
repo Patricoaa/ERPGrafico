@@ -13,15 +13,16 @@ import {
 import { ChevronRight, ChevronDown, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-;
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {DataCell, EmptyState, SkeletonShell} from '@/components/shared';
+import {DataCell, SkeletonShell} from '@/components/shared';
+
+export type BudgetVarianceAccountType = 'INCOME' | 'EXPENSE';
 
 export interface BudgetVarianceNode {
     id: number;
     code: string;
     name: string;
-    type: string;
+    type: BudgetVarianceAccountType;
     month_actual: number;
     month_budget: number;
     month_variance: number;
@@ -56,7 +57,7 @@ const BUDGET_VARIANCE_SKELETON_ROWS: BudgetVarianceNode[] = Array.from({ length:
     children: [],
 }))
 
-const VarianceCell = ({ value, percentage, type }: { value: number, percentage: number, type: string }) => {
+const VarianceCell = ({ value, percentage, type }: { value: number, percentage: number, type: BudgetVarianceAccountType }) => {
     // Logic for "good" vs "bad" variance depends on account type
     // Income: Actual > Budget is GOOD (+ variance)
     // Expense: Actual > Budget is BAD (+ variance)
@@ -68,8 +69,9 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
             <div className="flex flex-col items-end">
                 <DataCell.Currency
                     value={value}
+                    weight="bold"
                     className={cn(
-                        "justify-end font-mono text-xs font-bold w-auto p-0 inline-flex",
+                        "justify-end font-mono text-xs w-auto p-0 inline-flex",
                         value === 0 ? "text-muted-foreground" : (isGood ? "text-success" : "text-destructive")
                     )}
                 />
@@ -142,7 +144,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
 
                 {/* YTD Columns */}
                 <TableCell className="text-right p-2 bg-muted/10">
-                    <DataCell.Currency value={node.ytd_actual} className="justify-end font-mono text-xs font-semibold" />
+                    <DataCell.Currency value={node.ytd_actual} weight="semibold" className="justify-end font-mono text-xs" />
                 </TableCell>
                 <TableCell className="text-right p-2 bg-muted/10">
                     <DataCell.Currency value={node.ytd_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />
@@ -157,10 +159,6 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
 };
 
 function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
-    if (!loading && !data.length) {
-        return <EmptyState context="finance" variant="full" title="Sin datos presupuestarios" description="No se encontraron datos para el periodo seleccionado." />
-    }
-
     const rows = loading ? BUDGET_VARIANCE_SKELETON_ROWS : data
 
     return (
@@ -191,10 +189,6 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
             </div>
         </SkeletonShell>
     );
-}
-
-BudgetVarianceTableBase.Skeleton = function BudgetVarianceTableSkeleton() {
-    return <SkeletonShell isLoading ariaLabel="Cargando variación presupuestal" />
 }
 
 export const BudgetVarianceTable = BudgetVarianceTableBase

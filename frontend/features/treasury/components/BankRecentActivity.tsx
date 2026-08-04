@@ -1,34 +1,39 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { TrendingDown, TrendingUp, ArrowLeftRight, Receipt, ArrowRight } from "lucide-react"
-import { MoneyDisplay, EmptyState, SectionHeader } from "@/components/shared"
-import { cn, parseDateOnly } from "@/lib/utils"
+import { TrendingDown, TrendingUp, ArrowLeftRight, Receipt } from "lucide-react"
+import { EntityCard, MoneyDisplay, SectionHeader } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { parseDateOnly } from "@/lib/utils"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface BankRecentActivityProps {
     data: BankOverviewData
     bankId: number
+    maxItems?: number
 }
 
-export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
+export function BankRecentActivity({ data, bankId, maxItems = 8 }: BankRecentActivityProps) {
     const router = useRouter()
     const { recent_movements } = data
 
     if (!recent_movements || recent_movements.length === 0) return null
+
+    const displayItems = recent_movements.slice(0, maxItems)
+    const remaining = recent_movements.length - maxItems
 
     return (
         <section>
             <SectionHeader
                 icon={Receipt}
                 title="Movimientos Recientes"
+                count={recent_movements.length}
                 href={`/treasury/bank-center/${bankId}/movements`}
                 variant="list"
             />
 
-            <div className="divide-y divide-border/40">
-                {recent_movements.map(mov => {
+            <div className="space-y-2">
+                {displayItems.map(mov => {
                     const isInbound = mov.movement_type === "INBOUND"
                     const isOutbound = mov.movement_type === "OUTBOUND"
                     const DotIcon = isInbound ? TrendingDown : isOutbound ? TrendingUp : ArrowLeftRight
@@ -46,37 +51,32 @@ export function BankRecentActivity({ data, bankId }: BankRecentActivityProps) {
                         ? `${mov.from_account_name} → ${mov.to_account_name}`
                         : null
 
+                    const dateStr = parseDateOnly(mov.date).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" })
+
                     return (
-                        <Button
+                        <EntityCard.ListItem
                             key={mov.id}
+                            icon={DotIcon}
+                            iconClassName={dotColor}
+                            label={counterparty || mov.movement_type_display}
+                            sublabel={`${mov.payment_method_display} · ${dateStr}`}
+                            value={<MoneyDisplay amount={mov.movement_type === "OUTBOUND" ? -Math.abs(mov.amount) : mov.amount} className="text-xs font-bold" />}
                             onClick={() => router.push(`/treasury/operaciones/movements?selected=${mov.id}`)}
-                            className="w-full flex items-center gap-3 py-2 px-1 -mx-1 text-left hover:bg-muted/30 transition-colors rounded-sm group"
-                        >
-                            <DotIcon className={cn("h-3.5 w-3.5 shrink-0", dotColor)} />
-                            <span className="text-[11px] text-muted-foreground font-mono tabular-nums shrink-0 w-12">
-                                {parseDateOnly(mov.date).toLocaleDateString("es-CL", { day: "2-digit", month: "2-digit" })}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                                <span className="text-xs font-medium truncate block">
-                                    {counterparty || mov.movement_type_display}
-                                </span>
-                                {counterparty && (
-                                    <span className="text-[10px] text-muted-foreground truncate block">
-                                        {mov.movement_type_display}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-baseline gap-2 shrink-0">
-                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                    {mov.payment_method_display}
-                                </span>
-                                <MoneyDisplay amount={mov.movement_type === "OUTBOUND" ? -Math.abs(mov.amount) : mov.amount} className="text-xs font-bold tabular-nums" />
-                            </div>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
-                        </Button>
+                        />
                     )
                 })}
             </div>
+
+            {remaining > 0 && (
+                <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => router.push(`/treasury/bank-center/${bankId}/movements`)}
+                    className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors mt-1.5 ml-[28px]"
+                >
+                    y {remaining} más →
+                </Button>
+            )}
         </section>
     )
 }

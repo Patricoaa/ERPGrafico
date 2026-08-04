@@ -418,6 +418,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                     'pending'
                         }
                         size="md"
+                        variant="badge"
                     />
                 </div>
 
@@ -480,6 +481,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                                                     <StatusBadge
                                                                         status={line.work_order_summary.status.toLowerCase()}
                                                                         size="sm"
+                                                                        variant="badge"
                                                                     />
                                                                     <span className="text-[9px] text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
                                                                 </div>

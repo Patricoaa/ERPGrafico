@@ -1,21 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { toast } from "sonner"
+import {useEffect} from "react"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createAbsence, updateAbsence } from '@/features/hr/api/hrApi'
+import { useAbsenceMutations } from '../hooks/useAbsenceMutations'
 import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import type { Absence, Employee } from "@/types/hr"
-import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
-import { Printer } from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -41,14 +36,13 @@ export interface AbsenceDrawerProps {
     mode?: DrawerMode
 }
 
-export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, trigger, mode: modeProp }: AbsenceDrawerProps) {
+export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, mode: modeProp }: AbsenceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
     const mode: DrawerMode = modeProp ?? (absence ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
-    const [saving, setSaving] = useState(false)
+    const { printRef, handlePrint } = usePrintableDrawer()
+    const { saveAbsence, isSaving: saving } = useAbsenceMutations()
 
     const width = formDrawerWidth("medium", !!absence)
 
@@ -87,30 +81,26 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
     }, [absence, form, open])
 
     const onSubmit = async (data: AbsenceFormValues) => {
-        setSaving(true)
         try {
             const payload = {
                 ...data,
                 employee: parseInt(data.employee),
             }
-            if (absence) {
-                await updateAbsence(absence.id, payload as Parameters<typeof updateAbsence>[1])
-                toast.success("Inasistencia actualizada")
-            } else {
-                await createAbsence(payload as Parameters<typeof createAbsence>[0])
-                toast.success("Inasistencia registrada")
-            }
+            await saveAbsence({
+                id: absence?.id ?? null,
+                payload: payload as Partial<Absence>
+            })
             onSaved()
         } catch (e: unknown) {
             showApiError(e, "Error al guardar ausencia")
-        } finally {
-            setSaving(false)
         }
     }
 
     const identity = useDrawerIdentity('hr.absence', mode, absence, {
         overrideTitle: mode === 'create' ? 'Registrar Inasistencia' : undefined,
         overrideSubtitle: "Ingrese los detalles de la ausencia del empleado.",
+        printable: (mode === 'view' || mode === 'edit') && !!absence?.id,
+        onPrint: handlePrint,
     })
 
     const footer = isView ? undefined : (
@@ -139,13 +129,14 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={width}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && absence?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 mode={mode}
                 footer={footer}

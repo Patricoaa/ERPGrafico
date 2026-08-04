@@ -48,7 +48,7 @@ def test_create_note_validate_quantity_delivered(basic_setup):
         track_inventory=True,
     )
 
-    order = SaleOrder.objects.create(customer=basic_setup["customer"], number="NV-001")
+    order = SaleOrder.objects.create(customer=basic_setup["customer"], number="OV-001")
 
     SaleLine.objects.create(
         order=order,

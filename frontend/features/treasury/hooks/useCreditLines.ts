@@ -10,6 +10,7 @@ export function useCreditLines(params?: { treasury_account_id?: number; bank_id?
         queryKey: [...CREDIT_LINES_KEYS.lists(), params],
         queryFn: () => creditLinesApi.list(params),
         staleTime: 2 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }
 

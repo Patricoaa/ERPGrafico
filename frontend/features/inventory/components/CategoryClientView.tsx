@@ -1,13 +1,14 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useMemo, useCallback, useEffect } from "react"
+import {useState, useMemo, useCallback} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
-import { DataCell, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
+import { UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
 import { categoryActions, type CategoryActionsCtx } from "@/features/inventory/categoryActions"
+import { categoryFields } from "../categoryFields"
 
 import { toast } from "sonner"
 
@@ -15,8 +16,8 @@ import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import { categoryUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import * as LucideIcons from "lucide-react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 interface CategoryClientViewProps {
     externalOpen?: boolean
@@ -27,59 +28,32 @@ interface CategoryClientViewProps {
 export function CategoryClientView({ externalOpen, onExternalOpenChange, createAction }: CategoryClientViewProps) {
     const { categories, isLoading, refetch, deleteCategory } = useCategories()
     const search = useUnifiedSearch(categoryUnifiedSearchDef)
-    const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-    const [isCreateOpen, setIsCreateOpen] = useState(false)  // create modal
-    const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
 
+    const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const searchParams = useSearchParams()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Category>({
         endpoint: '/inventory/categories'
     })
+    const { openSelected } = useEntityRouteActions()
 
-    // Open edit form if ?selected= is present (ADR-0020).
-    // Depends ONLY on selectedFromUrl — NOT on isFormOpen/editingCategory.
-    // Reason: clearSelection() calls router.replace() which is async; the URL
-    // update arrives one tick later, so selectedFromUrl is still non-null when
-    // isFormOpen first flips to false. If we depend on isFormOpen, the effect
-    // re-fires and sees (selectedFromUrl=entity, isFormOpen=false) → re-opens
-    // the form. Depending only on selectedFromUrl avoids this race.
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setEditingCategory(selectedFromUrl)
-                setIsFormOpen(true)
-            })
-        } else {
-            requestAnimationFrame(() => {
-                setIsFormOpen(false)
-                setEditingCategory(null)
-            })
+    const isCreateOpen = searchParams.get("modal") === "new" || externalOpen
+    const isEditOpen = !!selectedFromUrl
+    const drawerOpen = Boolean(isCreateOpen || isEditOpen)
+
+    const handleCloseModal = (open: boolean = false) => {
+        if (!open) {
+            onExternalOpenChange?.(false)
+            if (isEditOpen) clearSelection()
+            if (isCreateOpen) {
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            }
         }
-    }, [selectedFromUrl])
-
-    const handleCloseModal = () => {
-        setIsFormOpen(false)
-        setIsCreateOpen(false)
-        setEditingCategory(null)
-        onExternalOpenChange?.(false)
-        clearSelection()
-
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
-
-    const openSelected = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleDelete = useCallback(async (category: Category | null, isConfirmed = false) => {
@@ -106,48 +80,12 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         onDelete: (category) => handleDelete(category),
     }
 
-    const columns = useMemo<ColumnDef<Category>[]>(() => [
-        {
-            accessorKey: "id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("id")}</DataCell.Code>,
-            size: 80,
-        },
-        {
-            id: "icon",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Icono" className="justify-center" />,
-            cell: ({ row }) => {
-                const iconName = row.original.icon
-                if (!iconName) return <div className="flex justify-center w-full">-</div>
-                return (
-                    <div className="flex items-center justify-center w-full">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
-                            {(() => {
-                                const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
-                                return <Icon className="h-4 w-4 text-muted-foreground/70" />
-                            })()}
-                        </div>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
-        },
-        {
-            accessorKey: "parent_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
-        },
-        categoryActions.column(actionsCtx),
-    ], [actionsCtx])
-
-    // Sync external trigger (toolbar button) → create modal
-    React.useEffect(() => {
-        if (externalOpen) requestAnimationFrame(() => setIsCreateOpen(true))
-    }, [externalOpen])
+    const columns = useMemo<ColumnDef<Category>[]>(() => {
+        return [
+            ...categoryFields.toColumns(),
+            categoryActions.auto(actionsCtx),
+        ]
+    }, [actionsCtx])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -184,13 +122,15 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                         description: "Crea categorías para organizar y clasificar tu catálogo de productos.",
                     }}
                     renderCard={(category: Category) => (
-                        <EntityCard onClick={() => openSelected(category.id)}>
-                            <EntityCard.Header
-                                title={category.name}
-                                subtitle={category.parent_name ?? 'Categoría raíz'}
-                            />
-                            <EntityCard.Body actions={categoryActions.render(category, actionsCtx)} />
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={category.id}
+                            data={category}
+                            fields={categoryFields}
+                            entityLabel="inventory.category"
+                            actions={categoryActions.render(category, actionsCtx)}
+                            defaultAction={categoryActions.defaultAction(actionsCtx)?.(category) ?? (() => openSelected(category.id))}
+
+                        />
                     )}
                 />
             </div>
@@ -198,16 +138,10 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
             {/* Unified Modal — CategoryDrawer keeps rich selectors + audit for both create and edit */}
             <CategoryDrawer
                 onSuccess={() => { void refetch() }}
-                open={isFormOpen || isCreateOpen}
-                onOpenChange={(open) => {
-                    if (!open) { handleCloseModal() }
-                    else {
-                        if (isCreateOpen) setIsCreateOpen(true)
-                        if (isFormOpen) setIsFormOpen(true)
-                    }
-                }}
-                initialData={editingCategory || undefined}
-                mode={editingCategory ? "edit" : "create"}
+                open={drawerOpen}
+                onOpenChange={handleCloseModal}
+                initialData={selectedFromUrl || undefined}
+                // mode is handled internally by CategoryDrawer via useDrawerMode
             />
 
             <ActionConfirmModal

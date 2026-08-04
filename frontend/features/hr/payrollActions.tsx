@@ -1,5 +1,5 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { Eye, Wallet, Coins, CreditCard, Trash2 } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
+import { Wallet, Coins, CreditCard } from 'lucide-react'
 import type { Payroll } from '@/types/hr'
 
 export interface PayrollActionsCtx {
@@ -13,20 +13,37 @@ export interface PayrollActionsCtx {
 export const payrollActions = createEntityActions<
     Payroll,
     PayrollActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => ctx.onViewDetail(item.id)} />
-        {item.status === 'DRAFT' && (
-            <DataCell.Action icon={Wallet} title="Registrar Anticipo" className="text-primary hover:text-primary" onClick={() => ctx.onRegisterAdvance(item)} />
-        )}
-        {item.status === 'POSTED' && (item as Payroll & Record<string, string>).remuneration_paid_status !== 'PAID' && (
-            <DataCell.Action icon={Coins} title="Registrar Pago Sueldo" className="text-success hover:text-success" onClick={() => ctx.onPaySalary(item)} />
-        )}
-        {item.status === 'POSTED' && (item as Payroll & Record<string, string>).previred_paid_status !== 'PAID' && (
-            <DataCell.Action icon={CreditCard} title="Pagar Previred" className="text-warning hover:text-warning" onClick={() => ctx.onPayPrevired(item)} />
-        )}
-        {item.status === 'DRAFT' && (
-            <DataCell.Action icon={Trash2} title="Eliminar borrador" className="text-destructive hover:text-destructive" onClick={() => ctx.onDeleteDraft(item.id)} />
-        )}
-    </>
-))
+>((item, ctx) => [
+    { action: "detail", label: "Ver Detalle", onClick: () => ctx.onViewDetail(item.id) },
+    {
+        action: "detail",
+        icon: Wallet,
+        label: "Registrar Anticipo",
+        className: "text-primary hover:text-primary",
+        onClick: () => ctx.onRegisterAdvance(item),
+        visible: item.status === 'DRAFT',
+    },
+    {
+        action: "pay",
+        icon: Coins,
+        label: "Registrar Pago Sueldo",
+        className: "text-success hover:text-success",
+        onClick: () => ctx.onPaySalary(item),
+        visible: item.status === 'POSTED' && (item as Payroll & Record<string, string>).remuneration_paid_status !== 'PAID',
+    },
+    {
+        action: "pay",
+        icon: CreditCard,
+        label: "Pagar Previred",
+        className: "text-warning hover:text-warning",
+        onClick: () => ctx.onPayPrevired(item),
+        visible: item.status === 'POSTED' && (item as Payroll & Record<string, string>).previred_paid_status !== 'PAID',
+    },
+    {
+        action: "delete",
+        label: "Eliminar borrador",
+        className: "text-destructive hover:text-destructive",
+        onClick: () => ctx.onDeleteDraft(item.id),
+        visible: item.status === 'DRAFT',
+    },
+])

@@ -66,12 +66,12 @@ class PermissionRegistry:
                 content_type = ContentType.objects.get_for_model(ct_model)
 
                 for codename, name in perms:
-                    if not Permission.objects.filter(
-                        content_type=content_type, codename=codename
-                    ).exists():
-                        Permission.objects.create(
-                            content_type=content_type, codename=codename, name=name
-                        )
+                    _, created = Permission.objects.get_or_create(
+                        content_type=content_type,
+                        codename=codename,
+                        defaults={"name": name},
+                    )
+                    if created:
                         created_count += 1
                         print(f"Created permission: {app_name}.{codename}")
 

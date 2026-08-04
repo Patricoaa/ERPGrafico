@@ -105,7 +105,7 @@ export function LoanInstallmentReadonlyModal({ installment, loanDisplayId, loanC
                             )}
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Estado</span>
-                                <StatusBadge status={installment.status} />
+                                <StatusBadge status={installment.status} variant="badge" />
                             </div>
                         </div>
                     </div>

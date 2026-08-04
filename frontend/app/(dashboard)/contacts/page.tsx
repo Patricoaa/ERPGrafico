@@ -16,12 +16,12 @@ export default async function ContactsPage({ searchParams }: PageProps) {
     let initialContacts: Contact[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialContacts = await serverFetch<Contact[]>('contacts/', {
+            initialContacts = (await serverFetch<{ results: Contact[] }>('contacts/', {
                 params: {
                     page_size: '200',
                 },
                 revalidate: 10,
-            })
+            })).results
         } catch {
             // Client-side fetch handles fallback
         }

@@ -173,6 +173,8 @@ export interface InventoryDocument {
     partner?: number | null
     partner_name?: string | null
     reference: string
+    source_document_type?: string | null
+    source_document_id?: number | null
     notes: string
     created_by?: number | null
     created_by_name?: string | null
@@ -191,5 +193,45 @@ export interface InventoryDocumentFilters {
     search?: string
     date_from?: string
     date_to?: string
+}
+
+// ─── Inventory Count types ──────────────────────────────────────────────────
+
+export interface InventoryCountLine {
+    id: number
+    product: number
+    product_name: string
+    product_code: string
+    product_internal_code?: string
+    theoretical_qty: number
+    counted_qty: number | null
+    unit_cost: number
+    uom_name: string
+    difference: number | null
+    has_difference: boolean
+}
+
+export interface InventoryCount {
+    id: number
+    warehouse: number
+    warehouse_name: string
+    status: 'DRAFT' | 'IN_PROGRESS' | 'APPLIED' | 'CANCELLED'
+    status_display: string
+    notes: string
+    created_by: number
+    created_by_name: string | null
+    applied_at: string | null
+    document_id: number | null
+    lines: InventoryCountLine[]
+    total_products: number
+    counted_products: number
+    products_with_difference: number
+}
+
+export interface InventoryCountFilters {
+    page?: number
+    page_size?: number
+    status?: string
+    warehouse?: number
 }
 

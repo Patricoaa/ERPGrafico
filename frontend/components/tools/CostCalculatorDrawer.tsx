@@ -30,7 +30,7 @@ interface Product {
     track_inventory: boolean
     uom_name?: string
     uom?: number
-    available_uoms?: Array<{ id: number; name: string; ratio: number }>
+    available_uoms?: Array<{ id: number; name: string; ratio: number; abbreviation?: string }>
     has_bom?: boolean
     requires_advanced_manufacturing?: boolean
     category?: number | { id: number; name: string; icon?: string | null }
@@ -169,6 +169,7 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
             resizable={false}
             showOverlay={true}
             defaultSize="100%"
+            fillContent
             contentClassName="p-0 flex flex-col overflow-hidden"
         >
             <div className="flex-1 overflow-hidden flex">
@@ -192,16 +193,21 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
                             selectedCategoryId={selectedCategoryId}
                             onSelectCategory={setSelectedCategoryId}
                             onProductClick={(p) => addItem(p as unknown as Product)}
-                            priceRenderer={(product) => (
-                                <>
-                                    <span className="text-base font-black text-primary">
-                                        {formatCurrency((product as unknown as Product).cost_price || 0)}
-                                    </span>
-                                    <span className="text-[10px] text-muted-foreground ml-1 uppercase">
-                                        /{(product as unknown as Product).uom_name || "UN"}
-                                    </span>
-                                </>
-                            )}
+                            priceRenderer={(product) => {
+                                const p = product as unknown as Product
+                                const primaryUom = p.available_uoms?.find(u => u.id === Number(p.uom))
+                                const uomLabel = primaryUom?.abbreviation || p.uom_name || "UN"
+                                return (
+                                    <>
+                                        <span className="text-base font-black text-primary">
+                                            {formatCurrency(p.cost_price || 0)}
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground ml-1 uppercase">
+                                            /{uomLabel}
+                                        </span>
+                                    </>
+                                )
+                            }}
                         />
                     )}
                 </div>

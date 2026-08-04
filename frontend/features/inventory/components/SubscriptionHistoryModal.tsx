@@ -139,7 +139,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <StatCard
                                                         label="Último Precio"
-                                                        value={<DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-left" />}
+                                                        value={<DataCell.Currency value={data.price_history[0]?.unit_cost || 0} weight="black" className="text-2xl text-left" />}
                                                         variant="compact"
                                                         accent="primary"
                                                     />
@@ -151,7 +151,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     />
                                                     <StatCard
                                                         label="Estado Actual"
-                                                        value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" />}
+                                                        value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" variant="badge" />}
                                                         variant="compact"
                                                         accent="success"
                                                     />
@@ -167,6 +167,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     data={filteredPriceHistory as unknown as { date: string; unit_cost: number }[]}
                                                     keys={["unit_cost"]}
                                                     indexBy="date"
+                                                    tooltipFormat="currency"
                                                     axisBottom={{
                                                         tickSize: 0,
                                                         tickPadding: 10,
@@ -246,6 +247,7 @@ function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpen
                     <StatusBadge
                         status={row.original.status === 'PAID' || row.original.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
+                        variant="badge"
                     />
                 </div>
             ),
@@ -253,7 +255,7 @@ function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpen
         {
             header: "Monto Total",
             cell: ({ row }) => (
-                <DataCell.Currency value={row.original.total} className="text-right font-black" />
+                <DataCell.Currency value={row.original.total} weight="black" className="text-right" />
             ),
         },
         {
@@ -317,6 +319,7 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
                     <StatusBadge
                         status={row.original.status === 'PAID' || row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
                         label={translateStatus(row.original.status)}
+                        variant="badge"
                     />
                 </div>
             ),
@@ -324,7 +327,7 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
         {
             header: "Monto Total",
             cell: ({ row }) => (
-                <DataCell.Currency value={row.original.total} className="text-right font-black" />
+                <DataCell.Currency value={row.original.total} weight="black" className="text-right" />
             ),
         },
         {

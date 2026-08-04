@@ -35,7 +35,7 @@ export interface EntityBadgeProps {
     link?: boolean
     /** Size. Default: 'md'. */
     size?: 'sm' | 'md' | 'lg' | 'xl'
-    /** Shape. Pill (rounded-full) or square (rounded-sm). Default: pill */
+    /** Shape. Pill (rounded-full) or square (rounded-sm). Default: square */
     rounded?: boolean
     /** Layout/position classes only */
     className?: string
@@ -53,7 +53,7 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     showIcon = true,
     link = true,
     size = 'md',
-    rounded = true,
+    rounded = false,
     className,
     segmenter,
 }) => {
@@ -64,13 +64,12 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     const { displayCode, icon: ResolvedIcon, href } = resolveEntity(label, data as Record<string, unknown>)
     const Icon = showIcon ? (ResolvedIcon ?? Package) : undefined
 
-    const customStyle = "bg-secondary/30 text-secondary-foreground border-secondary/50 hover:bg-secondary/50 hover:border-secondary"
+    const customStyle = "bg-secondary/30 text-secondary-foreground hover:bg-secondary/50"
 
     const badgeEl = (
         <Badge
             intent="neutral"
             size={size}
-            tracking="tight"
             shape={rounded ? 'pill' : 'square'}
             icon={Icon}
             className={`${customStyle} max-w-[200px] truncate ${className ?? ''}`}

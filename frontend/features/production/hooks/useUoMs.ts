@@ -9,6 +9,7 @@ export function useUoMs(options: { enabled?: boolean } = {}) {
     queryKey: UOMS_QUERY_KEY,
     queryFn: async () => {
       const res = await api.get<UoM[]>('/inventory/uoms/')
+      // eslint-disable-next-line pagination/no-raw-response-data -- master data, no pagination
       return res.data
     },
     enabled: options.enabled ?? true,

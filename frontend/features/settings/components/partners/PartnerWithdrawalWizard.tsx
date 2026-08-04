@@ -1,5 +1,5 @@
 "use client"
-import { Button } from "@/components/ui/button"
+import { RadioGroup } from "@/components/ui/radio-group"
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
@@ -7,12 +7,11 @@ import {
     Wallet,
     Package,
     Users,
-    Warehouse as WarehouseIcon,
     ArrowUpCircle,
     Banknote,
     AlertTriangle
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, type WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, DataCell, RadioCard, GenericWizard, type WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
@@ -21,7 +20,6 @@ import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "../.
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 import {Alert} from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -73,7 +71,7 @@ export function PartnerWithdrawalWizard({
 
     // Product details for assets
     const [productDetails, setProductDetails] = useState<Product | null>(null)
-    const [productUoMs, setProductUoMs] = useState<UoM[]>([])
+    const [, setProductUoMs] = useState<UoM[]>([])
 
     // Load initial data
     useEffect(() => {
@@ -149,8 +147,6 @@ export function PartnerWithdrawalWizard({
 
     // Helpers
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
-    const assetTotalValue = (Number(assetData.quantity) || 0) * (Number(assetData.unitCost) || 0)
-
     const handleComplete = async () => {
         setIsCompleting(true)
         try {
@@ -218,11 +214,11 @@ export function PartnerWithdrawalWizard({
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">
                                     <p className="text-[9px] text-muted-foreground font-medium uppercase">Retiros Acumulados</p>
-                                    <p className="text-sm font-black text-destructive font-mono">{formatCurrency(selectedPartner.partner_provisional_withdrawals_balance)}</p>
+                                    <p className="text-sm font-black font-mono"><DataCell.CurrencyFlow value={selectedPartner.partner_provisional_withdrawals_balance} direction="outflow" showIcon={false} /></p>
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[9px] text-muted-foreground font-medium uppercase">Utilidades x Distribuir</p>
-                                    <p className="text-sm font-black text-success font-mono">{formatCurrency(selectedPartner.partner_earnings_balance)}</p>
+                                    <p className="text-sm font-black font-mono"><DataCell.CurrencyFlow value={selectedPartner.partner_earnings_balance} direction="inflow" showIcon={false} /></p>
                                 </div>
                             </div>
                         </div>
@@ -236,49 +232,26 @@ export function PartnerWithdrawalWizard({
             description: "¿Qué se está retirando?",
             isValid: !!method,
             component: (
-                <div className="grid grid-cols-2 gap-4 py-8">
-                    <Button
-                        onClick={() => setMethod("CASH")}
-                        className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
-                            method === "CASH"
-                                ? "border-destructive bg-destructive/5 shadow-floating shadow-destructive/10"
-                                : "border-muted hover:border-destructive/30 hover:bg-muted/50"
-                        )}
-                    >
-                        <div className={cn(
-                            "p-4 rounded-full transition-transform group-hover:scale-110",
-                            method === "CASH" ? "bg-destructive text-destructive-foreground" : "bg-muted text-muted-foreground"
-                        )}>
-                            <Wallet className="h-8 w-8" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="font-black text-sm uppercase tracking-tight">Efectivo</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Egreso de caja o transferencia bancaria.</p>
-                        </div>
-                    </Button>
-
-                    <Button
-                        onClick={() => setMethod("ASSETS")}
-                        className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
-                            method === "ASSETS"
-                                ? "border-warning bg-warning/5 shadow-floating shadow-warning/10"
-                                : "border-muted hover:border-warning/30 hover:bg-muted/50"
-                        )}
-                    >
-                        <div className={cn(
-                            "p-4 rounded-full transition-transform group-hover:scale-110",
-                            method === "ASSETS" ? "bg-warning text-warning-foreground" : "bg-muted text-muted-foreground"
-                        )}>
-                            <Package className="h-8 w-8" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="font-black text-sm uppercase tracking-tight">Bienes / Stock</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Retiro de mercaderías o productos del inventario.</p>
-                        </div>
-                    </Button>
-                </div>
+                <RadioGroup
+                    value={method}
+                    onValueChange={(v) => setMethod(v as WithdrawalMethod)}
+                    className="grid grid-cols-2 gap-4 py-8"
+                >
+                    <RadioCard
+                        id="method-cash"
+                        value="CASH"
+                        label="Efectivo"
+                        description="Egreso de caja o transferencia bancaria."
+                        icon={<Wallet className="h-6 w-6" />}
+                    />
+                    <RadioCard
+                        id="method-assets"
+                        value="ASSETS"
+                        label="Bienes / Stock"
+                        description="Retiro de mercaderías o productos del inventario."
+                        icon={<Package className="h-6 w-6" />}
+                    />
+                </RadioGroup>
             )
         },
         {

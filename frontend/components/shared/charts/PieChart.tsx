@@ -5,6 +5,7 @@ import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { MayHaveLabel } from "@nivo/pie"
 import type { LegendProps } from "@nivo/legends"
+import { formatMoney, formatQuantity } from "@/lib/money"
 import {
     nivoTheme,
     pieDefaults,
@@ -30,6 +31,7 @@ export interface PieChartProps {
         value: number
         color: string
     }) => React.ReactNode
+    tooltipFormat?: "currency" | "number" | ((value: number) => string)
     centerLabel?: CenterLabel
     colors?: unknown
     innerRadius?: number
@@ -38,38 +40,51 @@ export interface PieChartProps {
     activeOuterRadiusOffset?: number
     activeInnerRadiusOffset?: number
     borderWidth?: number
+    borderColor?: unknown
     enableArcLinkLabels?: boolean
+    arcLinkLabel?: unknown
     enableArcLabels?: boolean
     arcLabelsRadiusOffset?: number
     arcLabelsSkipAngle?: number
     arcLabelsTextColor?: unknown
+    arcLabelsFont?: unknown
     arcLabel?: unknown
     legends?: unknown[]
     margin?: { top: number; right: number; bottom: number; left: number }
+    activeId?: string | number
 }
 
 function getArcTextColor(d: { color: string }): string {
     const m = d.color.match(/oklch\(\s*([\d.]+)/)
-    if (m) return parseFloat(m[1]) > 0.75 ? "hsl(var(--foreground))" : "#ffffff"
+    if (m) return parseFloat(m[1]) > 0.75 ? "hsl(var(--foreground))" : "var(--color-background)"
     if (d.color.startsWith("#")) {
         const r = parseInt(d.color.slice(1, 3), 16)
         const g = parseInt(d.color.slice(3, 5), 16)
         const b = parseInt(d.color.slice(5, 7), 16)
         const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-        return luminance > 0.6 ? "hsl(var(--foreground))" : "#ffffff"
+        return luminance > 0.6 ? "hsl(var(--foreground))" : "var(--color-background)"
     }
-    return "#ffffff"
+    return "var(--color-background)"
+}
+
+function formatTooltipValue(value: number, format?: "currency" | "number" | ((value: number) => string)): string {
+    if (format === "currency") return formatMoney(value)
+    if (format === "number") return formatQuantity(value)
+    if (typeof format === "function") return format(value)
+    return formatQuantity(value)
 }
 
 export function PieChart({
     data: rawData,
     renderTooltip,
+    tooltipFormat,
     centerLabel,
     colors,
     enableArcLabels,
     legends,
     margin,
     arcLabelsTextColor: arcLabelsTextColorProp,
+    activeId,
     ...rest
 }: PieChartProps) {
     const chartColors = useMemo(() => getCssChartColors("pie"), [])
@@ -108,6 +123,7 @@ export function PieChart({
                 theme={nivoTheme}
                 legends={legends as unknown as readonly LegendProps[] | undefined}
                 margin={margin}
+                activeId={activeId}
                 motionConfig="gentle"
                 tooltip={({ datum }: { datum: { id: string | number; label?: string | number; value: number; color: string } }) => (
                     <div className={premiumTooltipClass}>
@@ -116,10 +132,7 @@ export function PieChart({
                         ) : (
                             <>
                                 <span className="font-medium">{String(datum.label ?? datum.id)}</span>
-                                <span className="ml-2 font-bold">
-                                    {/* eslint-disable-next-line no-restricted-syntax -- Nivo chart tooltip; MoneyDisplay not applicable in SVG context */}
-                                    {Number(datum.value).toLocaleString()}
-                                </span>
+                                <span className="ml-2 font-bold">{formatTooltipValue(datum.value, tooltipFormat)}</span>
                             </>
                         )}
                     </div>
@@ -127,9 +140,17 @@ export function PieChart({
                 {...rest as Record<string, unknown>}
             />
             {centerLabel && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ transform: "translateY(-6%)" }}>
+                <div 
+                    className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                    style={margin ? { 
+                        paddingTop: margin.top, 
+                        paddingRight: margin.right, 
+                        paddingBottom: margin.bottom, 
+                        paddingLeft: margin.left 
+                    } : undefined}
+                >
                     <div className="text-center">
-                        <div className="text-xl font-black  tracking-tighter text-foreground">
+                        <div className="text-xl font-black tracking-tighter text-foreground">
                             {centerLabel.value}
                         </div>
                         {centerLabel.label && (

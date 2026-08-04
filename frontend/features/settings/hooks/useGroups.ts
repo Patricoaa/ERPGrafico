@@ -5,8 +5,6 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import { settingsApi } from "../api/settingsApi"
 import { toast } from "sonner"
 import { useRealtime } from '@/features/realtime'
-import type { Group } from "../api/types"
-
 export const GROUPS_QUERY_KEY = ['groups']
 
 export function useGroups() {

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import {
     Receipt, CreditCard,
     Gauge,
+    TrendingUp, Building2,
 } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 import {
@@ -14,13 +15,12 @@ import {
     DataTableColumnHeader,
     DataCell,
     MoneyDisplay,
-    EntityCard,
+    AutoEntityCard,
     StatusBadge,
     UnifiedSearchBar,
     useUnifiedSearch,
     StatCard,
-    SummaryTable,
-    Skeleton,
+    SkeletonShell,
     EmptyState,
     ToolbarCreateButton,
     type ToolbarActionItem,
@@ -32,34 +32,18 @@ import type { PendingChargeRow, UpcomingInstallment, UnbilledItemRow } from '../
 import { mapToUnbilledItemRows } from './utils'
 import { CardPendingChargeDrawer } from './CardPendingChargeDrawer'
 import { BillChargesModal } from './BillChargesModal'
-import { PieChart } from "@/components/shared"
 import { useHubPanel } from '@/components/providers'
 import { useSearchParams, usePathname, useRouter } from 'next/navigation'
 import { useEntityRouteActions } from '@/hooks/useEntityRouteActions'
 import { useUnbilledCharges } from '../hooks/useUnbilledCharges'
 import { invalidateCrossFeature } from '@/lib/invalidation'
 import { today, thisWeek, thisMonth, thisQuarter, thisYear } from '@/lib/date-presets'
+import { useUnbilledAnalyticsData } from "@/features/treasury/hooks/useUnbilledAnalyticsData"
+import type { Granularity } from "@/lib/analytics-helpers"
+import { unbilledChargeFields } from './unbilledChargeFields'
 
 interface UnbilledChargesClientViewProps {
     bankId: number
-}
-
-const chargeTypeColorMap: Record<string, string> = {
-    COMMISSION: 'bg-warning text-warning-foreground',
-    TAX: 'bg-destructive text-destructive-foreground',
-    FEE: 'bg-info text-info-foreground',
-    INSURANCE: 'bg-accent text-accent-foreground',
-    INTEREST: 'bg-success text-success-foreground',
-    OTHER: 'bg-muted text-muted-foreground',
-}
-
-const CHARGE_TYPE_COLORS: Record<string, string> = {
-    COMMISSION: "#f59e0b",
-    TAX: "#ef4444",
-    FEE: "#3b82f6",
-    INSURANCE: "#8b5cf6",
-    INTEREST: "#10b981",
-    OTHER: "#6b7280",
 }
 
 interface UnbilledSummary {
@@ -72,8 +56,10 @@ interface UnbilledSummary {
 export function UnbilledChargesClientView({
     bankId,
 }: UnbilledChargesClientViewProps) {
-    const [chargeDrawerOpen, setChargeDrawerOpen] = useState(false)
+
     const [showBillCharges, setShowBillCharges] = useState(false)
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("cupo")
+    const [granularity, setGranularity] = useState<Granularity>("month")
     const queryClient = useQueryClient()
     const { openHub } = useHubPanel()
     const searchParams = useSearchParams()
@@ -156,6 +142,8 @@ export function UnbilledChargesClientView({
     const summary: UnbilledSummary | undefined = result?.summary
     const forecast = result?.forecast
 
+    const analyticsData = useUnbilledAnalyticsData(charges, upcomingInstallments, forecast, summary, null, granularity)
+
     const mergedRows = useMemo(
         () => mapToUnbilledItemRows(charges, upcomingInstallments),
         [charges, upcomingInstallments],
@@ -173,13 +161,7 @@ export function UnbilledChargesClientView({
         return result
     }, [mergedRows, search.filterFn, search.filters])
 
-    // ── Sync URL params with drawer state (adjust during render) ──
-    if (selectedId && chargeToEdit && !chargeDrawerOpen) {
-        setChargeDrawerOpen(true)
-    }
-    if (isNewModal && !chargeDrawerOpen) {
-        setChargeDrawerOpen(true)
-    }
+    const chargeDrawerOpen = isNewModal || !!(selectedId && chargeToEdit)
 
     // Side effect only: clear URL when selectedId points to a missing charge
     useEffect(() => {
@@ -189,7 +171,6 @@ export function UnbilledChargesClientView({
     }, [selectedId, chargeToEdit, clearActions])
 
     const handleChargeDrawerOpenChange = (open: boolean) => {
-        setChargeDrawerOpen(open)
         if (!open) {
             clearActions()
             if (isNewModal) {
@@ -218,44 +199,11 @@ export function UnbilledChargesClientView({
         toast.success('Cargos facturados exitosamente')
     }
 
+    const [dateCol, amountCol, cuotaCol] = unbilledChargeFields.toColumns()
+
     const columns: ColumnDef<UnbilledItemRow, unknown>[] = [
-        {
-            accessorKey: 'date',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.original.date} />
-                </div>
-            ),
-            sortingFn: 'datetime',
-        },
-        {
-            id: 'cuota',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cuota" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const item = row.original
-                if (item.source === 'pending') {
-                    return (
-                        <div className="flex justify-center w-full">
-                            <span className="text-xs text-muted-foreground">N/A</span>
-                        </div>
-                    )
-                }
-                if (!item.installmentNumber || !item.totalInstallments) return null
-                return (
-                    <div className="flex justify-center w-full">
-                        <span className="text-xs font-medium tabular-nums">
-                            {item.installmentNumber}/{item.totalInstallments}
-                        </span>
-                    </div>
-                )
-            },
-            enableSorting: false,
-        },
+        dateCol,
+        cuotaCol,
         {
             id: 'compra',
             header: ({ column }) => (
@@ -294,20 +242,16 @@ export function UnbilledChargesClientView({
             enableSorting: false,
         },
         {
-            accessorKey: 'amount',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Monto" className="justify-center" />
-            ),
+            ...amountCol,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
                         value={row.original.amount}
                         currency={currency}
-                        className="font-bold"
+                        weight="bold"
                     />
                 </div>
             ),
-            sortingFn: 'basic',
         },
         {
             id: 'tipo',
@@ -316,9 +260,6 @@ export function UnbilledChargesClientView({
             ),
             cell: ({ row }) => {
                 const item = row.original
-                const colorClass = item.source === 'pending'
-                    ? (chargeTypeColorMap[item.chargeType ?? ''] || 'bg-muted text-muted-foreground')
-                    : 'bg-info text-info-foreground'
                 const label = item.chargeTypeDisplay || item.chargeType || (item.source === 'installment' ? 'Cuota' : '')
                 return (
                     <div className="flex justify-center w-full">
@@ -341,40 +282,37 @@ export function UnbilledChargesClientView({
         }] : []),
     ]
 
-    const fmt = (n: number) => new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(n)
-
-    // ── Charge type helpers for hub ──
-    const chargeTypeDistribution = useMemo(() => {
-        const groups: Record<string, { count: number; amount: number; display: string }> = {}
+    // ── Charge type helpers for hub (from hook) ──
+    const chargeTypeDisplayMap = useMemo(() => {
+        const map = new Map<string, string>()
         for (const c of charges) {
-            const t = c.charge_type || 'OTHER'
-            if (!groups[t]) groups[t] = { count: 0, amount: 0, display: c.charge_type_display || t }
-            groups[t].count++
-            groups[t].amount += Number(c.amount)
+            const key = c.charge_type || 'OTHER'
+            if (!map.has(key)) map.set(key, c.charge_type_display || key)
         }
-        return Object.entries(groups)
-            .map(([id, v]) => ({ id, display: v.display, count: v.count, amount: v.amount, color: CHARGE_TYPE_COLORS[id] ?? CHARGE_TYPE_COLORS.OTHER }))
-            .sort((a, b) => b.amount - a.amount)
+        return map
     }, [charges])
 
+    const chargeTypeSummary = useMemo(() => {
+        const colorMap = new Map(analyticsData.chargeTypeDistribution.map(d => [d.id, d.color]))
+        const countMap = new Map(analyticsData.chargeTypeDistribution.map(d => [d.id, d.value]))
+        return analyticsData.chargeTypeTotal
+            .map(d => ({
+                id: d.id,
+                display: chargeTypeDisplayMap.get(d.id) || d.id,
+                count: countMap.get(d.id) ?? 0,
+                amount: d.value,
+                color: colorMap.get(d.id) ?? 'var(--color-muted-foreground)',
+            }))
+            .sort((a, b) => b.amount - a.amount)
+    }, [analyticsData, chargeTypeDisplayMap])
+
     const totalInstAmount = useMemo(
-        () => upcomingInstallments.reduce((s, i) => s + Number(i.principal_amount), 0),
-        [upcomingInstallments],
+        () => analyticsData.upcomingInstallments.reduce((s, i) => s + Number(i.principal_amount), 0),
+        [analyticsData.upcomingInstallments],
     )
-    const totalInstCount = upcomingInstallments.length
+    const totalInstCount = analyticsData.upcomingInstallments.length
 
     const usedPercent = forecast?.credit_limit ? (parseFloat(forecast.total_used) / parseFloat(forecast.credit_limit)) * 100 : 0
-
-    if (overviewLoading) {
-        return (
-            <div className="h-full flex items-center justify-center">
-                <div className="space-y-3 w-full max-w-md">
-                    <Skeleton className="h-8 w-48 mx-auto" />
-                    <Skeleton className="h-64 w-full" />
-                </div>
-            </div>
-        )
-    }
 
     if (creditCardAccounts.length === 0) {
         return (
@@ -389,7 +327,8 @@ export function UnbilledChargesClientView({
     }
 
     return (
-        <div className="h-full flex flex-col">
+        <SkeletonShell isLoading={overviewLoading} ariaLabel="Cargando resumen de tarjeta">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.unbilled-charge"
@@ -423,6 +362,10 @@ export function UnbilledChargesClientView({
                     analyticsPanel={{
                         screen: {
                             entityName: "Gestión TC",
+                            activeTab: analyticsActiveTab,
+                            onTabChange: setAnalyticsActiveTab,
+                            granularity,
+                            onGranularityChange: setGranularity,
                             tabs: [
                                 {
                                     value: 'cupo',
@@ -431,112 +374,193 @@ export function UnbilledChargesClientView({
                                     columns: [
                                         {
                                             id: 'cupo-col',
-                                            weight: 2,
+                                            weight: 3,
                                             sections: [
                                                 {
-                                                    id: 'cupo-unified',
-                                                    content: {
-                                                        type: 'custom',
-                                                         render: forecast?.credit_limit ? (
-                                                            <StatCard
-                                                                label="Cupo"
-                                                                variant="chart"
-                                                                className="flex-1"
-                                                                chart={
-                                                                    <div className="flex flex-col gap-4">
-                                                                        <div className="flex flex-col gap-1.5">
-                                                                            <div className="flex justify-between items-center text-xs">
-                                                                                <span className="font-bold text-foreground">
-                                                                                    <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> usado
-                                                                                </span>
-                                                                                <span className="font-bold text-muted-foreground">
-                                                                                    <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> disp.
-                                                                                </span>
-                                                                            </div>
-                                                                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                                                                <div
-                                                                                    className="h-full rounded-full bg-warning transition-all"
-                                                                                    style={{ width: `${Math.min(usedPercent, 100)}%` }}
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                        <SummaryTable
-                                                                            rows={[
-                                                                                { label: 'Límite de Crédito', value: <MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline /> },
-                                                                                { label: 'Total Usado', value: <MoneyDisplay amount={parseFloat(forecast.total_used)} inline /> },
-                                                                                { label: 'Disponible', value: <MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline /> },
-                                                                                { label: '% Usado', value: `${usedPercent.toFixed(1)}%` },
-                                                                            ]}
-                                                                        />
-                                                                    </div>
-                                                                }
-                                                            />
-                                                        ) : (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>
-                                                        ),
-                                                    },
-                                                },
-                                            ],
-                                        },
-                                        {
-                                            id: 'cargos-col',
-                                            weight: 1,
-                                            sections: [
-                                                {
-                                                    id: 'charge-types-pie',
-                                                    content: chargeTypeDistribution.length > 0 || totalInstCount > 0 ? {
+                                                    id: 'cupo-kpis',
+                                                    fillRemaining: false,
+                                                    content: forecast?.credit_limit ? {
                                                         type: 'custom',
                                                         render: (
-                                                            <StatCard label="Distribución de Cargos" variant="chart" className="flex-1" chart={
-                                                                <div className="flex flex-col gap-3">
-                                                                    <div className="flex-1 min-h-0" style={{ minHeight: 160 }}>
-                                                                        <PieChart
-                                                                            data={[...chargeTypeDistribution.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])]}
-                                                                            legends={[{
-                                                                                anchor: "bottom",
-                                                                                direction: "row",
-                                                                                translateY: 28,
-                                                                                itemWidth: 100,
-                                                                                itemHeight: 14,
-                                                                                itemsSpacing: 8,
-                                                                                symbolSize: 8,
-                                                                            }]}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="shrink-0">
-                                                                        <SummaryTable
-                                                                            rows={[
-                                                                                ...chargeTypeDistribution.map(ct => ({
-                                                                                    label: ct.display,
-                                                                                    value: <span className="text-xs font-bold">${fmt(ct.amount)} ({ct.count} cargos)</span>,
-                                                                                })),
-                                                                                ...(totalInstCount > 0 ? [{
-                                                                                    label: 'Cuotas',
-                                                                                    value: <span className="text-xs font-bold">${fmt(totalInstAmount)} ({totalInstCount} cuotas)</span>,
-                                                                                }] : []),
-                                                                            ]}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            } />
+                                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                                                <StatCard
+                                                                    label="Límite de Crédito"
+                                                                    value={<MoneyDisplay amount={parseFloat(forecast.credit_limit)} inline />}
+                                                                    variant="default"
+                                                                    accent="primary"
+                                                                />
+                                                                <StatCard
+                                                                    label="Total Usado"
+                                                                    value={<MoneyDisplay amount={parseFloat(forecast.total_used)} inline />}
+                                                                    variant="default"
+                                                                    accent="warning"
+                                                                />
+                                                                <StatCard
+                                                                    label="Disponible"
+                                                                    value={<MoneyDisplay amount={parseFloat(forecast.available_credit ?? '0')} inline />}
+                                                                    variant="default"
+                                                                    accent="success"
+                                                                />
+                                                                <StatCard
+                                                                    label="% Usado"
+                                                                    value={`${usedPercent.toFixed(1)}%`}
+                                                                    variant="default"
+                                                                    accent="destructive"
+                                                                />
+                                                            </div>
                                                         ),
                                                     } : {
                                                         type: 'custom',
-                                                        render: (
-                                                            <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos ni cuotas</p>
-                                                        ),
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cupo</p>,
+                                                    },
+                                                },
+                                                {
+                                                    id: 'cupo-chart',
+                                                    content: chargeTypeSummary.length > 0 || totalInstCount > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Distribución de Cargos',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'pie-chart',
+                                                                preset: 'card',
+                                                                data: [...chargeTypeSummary.map((d) => ({ id: d.display, value: d.amount })), ...(totalInstCount > 0 ? [{ id: 'Cuotas', value: totalInstAmount }] : [])],
+                                                                valueFormat: 'currency',
+                                                                showLegend: true,
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin cargos ni cuotas</p>,
                                                     },
                                                 },
                                             ],
                                         },
                                     ],
                                 },
+                                {
+                                    value: 'proyeccion',
+                                    label: 'Proyección',
+                                    icon: TrendingUp,
+                                    columns: [
+                                        {
+                                            id: 'proy-main',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'monthly-new',
+                                                    content: analyticsData.monthlyNewCharges.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Cargos vs Cuotas',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: analyticsData.monthlyNewCharges,
+                                                                keys: ['charges', 'installments'],
+                                                                indexBy: 'month',
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos mensuales</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'proy-side',
+                                            weight: 1,
+                                            sections: [
+                                                {
+                                                    id: 'monthly-proj',
+                                                    content: analyticsData.monthlyProjection.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Proyección Mensual',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'line-chart',
+                                                                preset: 'card',
+                                                                data: [{
+                                                                    id: 'Proyectado',
+                                                                    data: analyticsData.monthlyProjection.map(m => ({ x: m.month, y: m.total })),
+                                                                }],
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin proyección disponible</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                {
+                                    value: 'proveedores',
+                                    label: 'Proveedores',
+                                    icon: Building2,
+                                    columns: [
+                                        {
+                                            id: 'prov-main',
+                                            weight: 3,
+                                            sections: [
+                                                {
+                                                    id: 'partner-bar',
+                                                    content: analyticsData.topPartners.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Top Proveedores por Monto',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'bar-chart',
+                                                                preset: 'card',
+                                                                data: analyticsData.topPartners.map(p => ({ partner: p.partner, total: p.total })),
+                                                                keys: ['total'],
+                                                                indexBy: 'partner',
+                                                                valueFormat: '$,.0f',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de proveedores</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                        {
+                                            id: 'prov-side',
+                                            weight: 2,
+                                            sections: [
+                                                {
+                                                    id: 'partner-dist',
+                                                    content: analyticsData.partnerDistribution.length > 0 ? {
+                                                        type: 'stat-card',
+                                                        config: {
+                                                            label: 'Distribución por Proveedor',
+                                                            variant: 'chart',
+                                                            chart: {
+                                                                type: 'pie-chart',
+                                                                preset: 'card',
+                                                                data: analyticsData.partnerDistribution,
+                                                                valueFormat: 'currency',
+                                                            },
+                                                        },
+                                                    } : {
+                                                        type: 'custom',
+                                                        render: <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de proveedores</p>,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+
                             ],
-                            cardAccounts: creditCardAccounts,
-                            cardAccountId: selectedCardAccount,
-                            onCardAccountChange: (id) => search.applyFilter('card', String(id)),
-                            scope: (search.filters.scope ?? 'month') as 'month' | 'all',
-                            onScopeChange: (v) => search.applyFilter('scope', v),
                         },
                     }}
                     createAction={<ToolbarCreateButton label="Agregar Cargo" onClick={handleAddChargeClick} />}
@@ -548,35 +572,14 @@ export function UnbilledChargesClientView({
                         description: 'Los cargos de esta tarjeta de crédito aparecerán aquí antes de ser facturados.',
                     }}
                     renderCard={(item: UnbilledItemRow) => (
-                        <EntityCard>
-                            <EntityCard.Header
-                                title={item.reference || (item.source === 'pending' ? (item.chargeTypeDisplay || 'Cargo') : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
-                                subtitle={item.date}
-                                trailing={
-                                    <StatusBadge
-                                        status={item.chargeType || item.source}
-                                        label={item.chargeTypeDisplay || item.source}
-                                    />
-                                }
-                            />
-                            <EntityCard.Body>
-                                {item.source === 'pending' && item.notes && (
-                                    <EntityCard.Field label="Descripción" value={item.notes} full />
-                                )}
-                            </EntityCard.Body>
-                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                                    Monto
-                                </span>
-                                <DataCell.Currency
-                                    value={item.amount}
-                                    currency={currency}
-                                    className="font-bold text-base"
-                                />
-                            </EntityCard.Footer>
-                        </EntityCard>
+                        <AutoEntityCard 
+                            key={item.id || item.date + item.amount}
+                            data={item}
+                            fields={unbilledChargeFields}
+
+                            entityLabel="treasury.unbilledcharge"
+                        />
                     )}
-                    cardSkeleton={{ showFooter: true }}
                 />
             </div>
 
@@ -604,5 +607,6 @@ export function UnbilledChargesClientView({
             )}
 
         </div>
+        </SkeletonShell>
     )
 }

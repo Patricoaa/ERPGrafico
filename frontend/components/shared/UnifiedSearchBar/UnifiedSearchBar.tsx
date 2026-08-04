@@ -2,8 +2,8 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { Search, ChevronDown, X } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 import { SearchBarMenu } from './SearchBarMenu'
@@ -30,6 +30,10 @@ interface UnifiedSearchBarProps {
   placeholder?: string
   className?: string
   prefix?: React.ReactNode
+  viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
+  currentView?: string
+  onViewChange?: (view: string) => void
+  toolbarActions?: React.ReactNode
 }
 
 function formatChipLabel(chip: UnifiedChip): string {
@@ -52,6 +56,10 @@ export function UnifiedSearchBar({
   placeholder = 'Buscar...',
   className,
   prefix,
+  viewOptions,
+  currentView,
+  onViewChange,
+  toolbarActions,
 }: UnifiedSearchBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [forceFilters, setForceFilters] = useState(false)
@@ -114,8 +122,7 @@ export function UnifiedSearchBar({
               ref={containerRef}
               onClick={handleBarClick}
               className={cn(
-                "flex items-center flex-1 h-9 bg-background border border-border/60 rounded-l-sm px-2 gap-1",
-                "focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all",
+                "flex items-center flex-1 h-9 bg-background rounded-sm px-2 gap-1",
                 "cursor-pointer",
               )}
             >
@@ -139,13 +146,14 @@ export function UnifiedSearchBar({
                         )}
                       >
                         <span className="truncate">{formatChipLabel(chip)}</span>
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => { e.stopPropagation(); chip.onRemove() }}
-                          className="hover:bg-background/50 rounded-sm p-[1px] shrink-0"
+                          className="h-4 w-4 hover:bg-background/50 rounded-sm p-[1px] shrink-0"
                         >
                           <X className="h-2.5 w-2.5" />
-                        </button>
+                        </Button>
                       </span>
                     ))}
                   </div>
@@ -161,18 +169,16 @@ export function UnifiedSearchBar({
                   className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground/60 h-full"
                 />
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
-              className={cn(
-                "h-9 w-7 flex items-center justify-center bg-background border border-l-0 border-border/60 rounded-r-sm shrink-0",
-                "hover:bg-accent/50 transition-colors",
-              )}
-            >
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => { e.stopPropagation(); setForceFilters(true); setMenuOpen(prev => !prev) }}
+                className="h-9 w-7 shrink-0 border-l border-border rounded-none"
+              >
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </div>
           </div>
         </PopoverTrigger>
 
@@ -202,10 +208,19 @@ export function UnifiedSearchBar({
               onApply={onApply}
               onRemove={onRemove}
               onGroupBySelect={onGroupBySelect}
+              viewOptions={viewOptions}
+              currentView={currentView}
+              onViewChange={onViewChange}
             />
           )}
         </PopoverContent>
       </Popover>
+
+      {toolbarActions && (
+        <div className="flex shrink-0 ml-2">
+          {toolbarActions}
+        </div>
+      )}
     </div>
   )
 }

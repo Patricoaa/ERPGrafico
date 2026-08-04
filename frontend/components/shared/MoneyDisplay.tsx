@@ -1,6 +1,17 @@
 import React from "react"
 import { cn } from "@/lib/utils"
 
+export type DataCellWeight = 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'black'
+
+export const WEIGHT_MAP: Record<DataCellWeight, string> = {
+    light: 'font-light',
+    normal: 'font-normal',
+    medium: 'font-medium',
+    semibold: 'font-semibold',
+    bold: 'font-bold',
+    black: 'font-black',
+}
+
 interface MoneyDisplayProps {
     amount: number | string | null | undefined
     currency?: string
@@ -9,6 +20,7 @@ interface MoneyDisplayProps {
     className?: string
     digits?: number
     inline?: boolean
+    weight?: DataCellWeight
 }
 
 export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
@@ -19,6 +31,7 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     className,
     digits = 0,
     inline = false,
+    weight = "medium",
 }) => {
     if (amount === null || amount === undefined || amount === "") {
         return <span className={cn("text-muted-foreground", className)}>-</span>
@@ -46,7 +59,8 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     return (
         <span
             className={cn(
-                "font-bold tabular-nums tracking-tight",
+                "tabular-nums",
+                weight && WEIGHT_MAP[weight],
                 inline ? "inline" : "inline-block",
                 showColor && isNegative && "text-expense",
                 showColor && isPositive && "text-income",

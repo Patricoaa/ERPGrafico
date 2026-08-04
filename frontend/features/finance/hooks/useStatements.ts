@@ -8,18 +8,21 @@ export function useStatements(params: StatementParams) {
         queryKey: FINANCE_KEYS.statements.balanceSheet(params),
         queryFn: () => financeApi.getBalanceSheet(params),
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 
     const { data: incomeStatement, isLoading: isLoadingPL, isError: isErrorPL, refetch: refetchPL } = useQuery({
         queryKey: FINANCE_KEYS.statements.incomeStatement(params),
         queryFn: () => financeApi.getIncomeStatement(params),
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 
     const { data: cashFlow, isLoading: isLoadingCF, isError: isErrorCF, refetch: refetchCF } = useQuery({
         queryKey: FINANCE_KEYS.statements.cashFlow(params),
         queryFn: () => financeApi.getCashFlow(params),
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 
     const refetch = async () => {

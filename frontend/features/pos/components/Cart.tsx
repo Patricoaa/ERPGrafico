@@ -6,7 +6,8 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-import {ShoppingCart, Zap, Clock, ChevronLeft, ChevronRight, Check, Repeat} from 'lucide-react'
+import {ShoppingCart, Zap, ChevronLeft, ChevronRight, Check, Repeat, MoreVertical, Percent} from 'lucide-react'
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
@@ -39,13 +40,11 @@ interface CartProps {
     onTotalDiscountChange?: (amount: number) => void
     loading: boolean
     currentDraftId?: number | null
-    lastSaved?: Date | null
     saving?: boolean
     canQuickSale: { allowed: boolean, reason: string }
     onItemQuantityChange: (cartItemId: string, qty: number | string) => void
     onItemUomChange: (cartItemId: string, uomId: number, uomName: string) => void
     onItemPriceChange: (cartItemId: string, priceGross: number) => void
-    onItemDiscountChange: (cartItemId: string, amount: number, percent: number) => void
     onItemRemove: (cartItemId: string) => void
     onOpenNumpad: (cartItemId: string | 'cart', field: 'qty' | 'price' | 'discount', currentValue: number) => void
     onQuickSale: () => void
@@ -72,13 +71,11 @@ export function Cart({
     limits,
     totals,
     loading,
-    lastSaved,
     saving,
     canQuickSale,
     onItemQuantityChange,
     onItemUomChange,
     onItemPriceChange,
-    onItemDiscountChange,
     onItemRemove,
     onOpenNumpad,
     onQuickSale,
@@ -108,21 +105,35 @@ export function Cart({
                 <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                     {/* Header */}
                     <div className={cn("px-2 border-b border-border/40 bg-transparent shrink-0 flex justify-between items-center gap-2", isTouchPOS ? "pb-2 mb-2" : "pb-1.5 mb-1.5")}>
-                        <div className="flex items-center gap-2 min-w-0">
-                                <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
-                                {lastSaved && (
-                                    <div className="flex items-center text-[9px] text-muted-foreground font-medium gap-1 opacity-80 whitespace-nowrap">
-                                        <Clock className="h-2.5 w-2.5" />
-                                        <span>
-                                            {saving ? "Guardando..." : `Sincronizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                                        </span>
-                                        {saving && <div className="h-0.5 w-10 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
-                                    </div>
-                                )}
-                            </div>
-                            <span className="text-[10px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0">
-                                {items.length} Items
-                            </span>
+                        <span className="font-bold text-lg tracking-tight whitespace-nowrap">Resumen de Venta</span>
+                        <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md border-none shadow-none shrink-0",
+                                            isTouchMode ? "h-10 w-10" : "h-7 w-7"
+                                        )}
+                                        type="button"
+                                    >
+                                        <MoreVertical className={cn(isTouchMode ? "h-5 w-5" : "h-4 w-4")} />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                    {showTotalDiscounts && (
+                                        <DropdownMenuItem
+                                            onClick={() => onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
+                                            className="cursor-pointer gap-2"
+                                        >
+                                            <Percent className="h-4 w-4" />
+                                            <span>Descuento Global</span>
+                                            {totalDiscountAmount > 0 && (
+                                                <span className="ml-auto text-destructive font-bold text-xs">-{formatCurrency(totalDiscountAmount)}</span>
+                                            )}
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                     </div>
 
                     {/* Items List */}
@@ -153,7 +164,6 @@ export function Cart({
                                             onQuantityChange={onItemQuantityChange}
                                             onUomChange={onItemUomChange}
                                             onPriceChange={onItemPriceChange}
-                                            onDiscountChange={onItemDiscountChange}
                                             onRemove={onItemRemove}
                                             onOpenNumpad={onOpenNumpad}
                                             showLineDiscount={showLineDiscounts}
@@ -184,22 +194,10 @@ export function Cart({
                                 </div>
                             )}
 
-                            {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
+                            {(totals.global_discount_total || 0) > 0 && (
                                 <div className="flex justify-between text-xs text-muted-foreground">
                                     <span>Descuento Global</span>
-                                    {showTotalDiscounts ? (
-                                        <span
-                                            className="cursor-pointer underline underline-offset-4 decoration-border hover:decoration-foreground hover:text-primary transition-colors"
-                                            onClick={() => onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
-                                            role="button"
-                                            tabIndex={0}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenNumpad('cart', 'discount', totalDiscountAmount || 0); } }}
-                                        >
-                                            {totalDiscountAmount ? formatCurrency(totalDiscountAmount) : "-%"}
-                                        </span>
-                                    ) : (
-                                        <span>-{formatCurrency(totals.global_discount_total || 0)}</span>
-                                    )}
+                                    <span>-{formatCurrency(totalDiscountAmount || totals.global_discount_total || 0)}</span>
                                 </div>
                             )}
 
@@ -219,7 +217,7 @@ export function Cart({
                         <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-muted text-primary hover:bg-muted/80 border border-border",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -233,7 +231,7 @@ export function Cart({
                             {onWithdrawClick && items.length > 0 && items.every(i => i.track_inventory) && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-warning text-warning-foreground hover:bg-warning/90 shadow-card",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -248,7 +246,7 @@ export function Cart({
                         <Button
                             id="confirm-sale-btn"
                             className={cn(
-                                "w-full rounded-sm font-black uppercase tracking-tight hover:brightness-110 transition-all",
+                                "w-full rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
                                 isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                             )}
                             size="lg"
@@ -269,7 +267,7 @@ export function Cart({
                         <div className="flex gap-2">
                             <Button
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-muted text-primary hover:bg-muted/80 border border-border",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-cyan hover:bg-cyan/90 text-white",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -282,7 +280,7 @@ export function Cart({
                             {isLastStep && (
                                 <Button
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-info text-info-foreground hover:bg-info/90",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-magenta hover:bg-magenta/90 text-white",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -297,11 +295,10 @@ export function Cart({
 
                         <div className="flex gap-2">
                             <Button
-                                variant="secondary"
                                 onClick={onCheckoutBack}
                                 disabled={checkoutLoading}
                                 className={cn(
-                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight",
+                                    "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-yellow hover:bg-yellow/90 text-black",
                                     isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                 )}
                                 size="lg"
@@ -314,7 +311,7 @@ export function Cart({
                                     onClick={onCheckoutNext}
                                     disabled={checkoutLoading}
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"
@@ -327,7 +324,7 @@ export function Cart({
                                     onClick={onCheckoutFinish}
                                     disabled={checkoutLoading}
                                     className={cn(
-                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight bg-success hover:bg-success/90 text-success-foreground",
+                                        "flex-1 shrink rounded-sm font-black uppercase tracking-tight shadow-card border-none bg-primary hover:bg-primary/90 text-primary-foreground",
                                         isTouchPOS ? "h-16 text-xl" : "h-11 text-base"
                                     )}
                                     size="lg"

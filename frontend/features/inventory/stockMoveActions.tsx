@@ -1,6 +1,5 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import type { StockMove } from './components/MovementClientView'
-import { Eye } from "lucide-react"
+import { createEntityActions } from '@/components/shared'
+import type { StockMove } from './stockMoveFields'
 
 export interface StockMoveActionsCtx {
     onViewDetails: (id: number) => void
@@ -9,11 +8,11 @@ export interface StockMoveActionsCtx {
 export const stockMoveActions = createEntityActions<
     StockMove,
     StockMoveActionsCtx
->((item, ctx) => (
-    <DataCell.Action
-        icon={Eye}
-        title="Ver Detalles"
-        color="text-primary"
-        onClick={() => ctx.onViewDetails(item.id)}
-    />
-))
+>((item, ctx) => [
+    {
+        action: "detail",
+        label: "Ver Detalles",
+        iconColor: "text-primary",
+        onClick: () => ctx.onViewDetails(item.id),
+    },
+])

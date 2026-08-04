@@ -90,7 +90,7 @@ Pantone tokens exist for cases where a spot color is needed outside the CMYK gam
 
 ### 2.4 Layer 1 Rules
 
-1. **Never use a Layer 1 token directly for UI state.** Use the corresponding Layer 2 semantic intent instead. Exception: `ColorBar.tsx` and other graphic-industry-specific components that need to reference the actual process color.
+1. **Never use a Layer 1 token directly for UI state.** Use the corresponding Layer 2 semantic intent instead. Exception: `ColorBar.tsx`, categorical chips (`Chip.Category` with a Layer 1 intent — see §4.5, ADR-0064), and other graphic-industry-specific components that need to reference the actual process color.
 2. **All Layer 1 values are fixed across light/dark mode** — inks and their overprint mixes do not change with the theme. Perceptual-contrast adaptation is a Layer 2 responsibility.
 3. **Modifying a Layer 1 value requires an ADR.**
 
@@ -103,8 +103,8 @@ Pantone tokens exist for cases where a spot color is needed outside the CMYK gam
 The **Light OKLCH** column is the value the intent inherits from its Layer 1 source; the **Dark OKLCH** column is the adapted value applied in `.dark` (lighter for perceptual contrast). Layer 1 itself never changes — only these Layer 2 intents do.
 
 | Intent | Light OKLCH | Dark OKLCH | Source Layer 1 | UI Role |
-|--------|-------------|-------------|----------------|---------|
-| `primary` | `0.65 0.18 235` | `0.72 0.16 235` | `cyan` | Brand identity, primary actions, **emphasis** |
+|--------|-------------|------------|----------------|---------|
+| `primary` | `0 0 0` | `0.99 0 0` | `black` (Process Black K100) | Primary actions, focus, **high-contrast action surface** (ADR-0070) |
 | `info` | `0.45 0.22 280` | `0.58 0.20 280` | `blue` | Informational, neutral states (draft, sent, in-review) |
 | `success` | `0.65 0.18 145` | `0.68 0.16 145` | `green` | Positive, active, approved, completed |
 | `warning` | `0.90 0.18 95` | `0.94 0.15 95` | `yellow` | Pending, attention required, caution |
@@ -144,16 +144,16 @@ shadow-[0_0_8px_var(--{intent})]
 
 | Context | Pattern | Example |
 |---------|---------|---------|
-| Badge / Chip / StatusBadge | `bg-{intent}/10 text-{intent} border-{intent}/20` | `bg-info/10 text-info border-info/20` |
+| Badge / Chip / StatusBadge | `bg-{intent}/10 text-{intent}` (borderless) | `bg-info/10 text-info` |
 | StatCard (compact) | `bg-{intent}/5 border-{intent}/10` | `bg-success/5 border-success/10` |
 | StatCard (default) | `border-l-{intent}` | `border-l-warning` |
 | StatCard icon | `bg-{intent}/10 text-{intent} border-{intent}/20` | `bg-destructive/10 text-destructive border-destructive/20` |
 | Active ring | `ring-2 ring-{intent} ring-offset-2` | `ring-2 ring-primary ring-offset-2` |
 | Trend up | `text-success` | |
 | Trend down | `text-destructive` | |
-| NumericFlow positive | `text-success` | |
-| NumericFlow negative | `text-destructive` | |
-| NumericFlow zero | `text-muted-foreground` | |
+| NumericFlow positive | badge `bg-success/10 text-success` | |
+| NumericFlow negative | badge `bg-destructive/10 text-destructive` | |
+| NumericFlow zero | badge `bg-muted/60 text-muted-foreground` | |
 | MoneyDisplay positive | `text-success` | |
 | MoneyDisplay negative | `text-destructive` | |
 | Progress complete | `bg-success` + glow | |
@@ -192,7 +192,7 @@ shadow-[0_0_8px_var(--{intent})]
 | `STORABLE` | `info` | `0.45 0.22 280` | Physical inventory (blue = informational) |
 | `CONSUMABLE` | `warning` | `0.90 0.18 95` | Consumable supplies (yellow = caution) |
 | `MANUFACTURABLE` | `success` | `0.65 0.18 145` | Manufactured goods (green = production) |
-| `SERVICE` | `primary` | `0.65 0.18 235` | Services (cyan = brand) |
+| `SERVICE` | `primary` | `0 0 0` | Services (K100 = brand action) |
 | `SUBSCRIPTION` | `destructive` | `0.55 0.24 25` | Recurring billing (red = financial flow) |
 
 These are identifiers, not status signals — they use semantic tokens for visual distinction, not for state meaning. Defined in: `typography-scale.md`.
@@ -212,7 +212,7 @@ These are identifiers, not status signals — they use semantic tokens for visua
 | `FINISHED` | `success` | Green | Complete (C+Y) |
 | `CANCELLED` | `destructive` | Red | Terminated (M+Y) |
 
-> **Note:** the *CMYK Plate* column is the conceptual print-process metaphor for each stage, not the literal rendered color. The **rendered** color is always the mapped Layer 2 intent: `info` now renders **blue**, `primary` cyan, `warning` yellow, `success` green, `destructive` red. Process Magenta is reserved for ColorBar / graphic-industry components (§8) and is no longer wired to any stage.
+> **Note:** the *CMYK Plate* column is the conceptual print-process metaphor for each stage, not the literal rendered color. The **rendered** color is always the mapped Layer 2 intent: `info` renders **blue**, `primary` renders **Process Black K100** (ADR-0070), `warning` yellow, `success` green, `destructive` red. Process Magenta is reserved for ColorBar / graphic-industry components (§8) and is no longer wired to any stage.
 
 Defined in `state-map.md`.
 
@@ -226,12 +226,37 @@ The palette maps to the fixed CMYK/spot inks — maximally distinct hues and on-
 |-------|-----------|-----|
 | `--chart-1` | `cyan` | First / primary series |
 | `--chart-2` | `magenta` | Second series |
-| `--chart-3` | `green` | Third series |
-| `--chart-4` | `pantone-orange` | Fourth series |
-| `--chart-5` | `blue` | Fifth series |
-| `--chart-6` | `yellow` | Sixth series |
+| `--chart-3` | `yellow` | Third series |
+| `--chart-4` | `black` | Fourth series |
+| `--chart-5` | `pantone-orange` | Fifth series |
+| `--chart-6` | `pantone-violet` | Sixth series |
+| `--chart-7` | `green` | Seventh series (palette extension) |
+| `--chart-8` | `blue` | Eighth series (palette extension) |
 
 Consume via `fill="var(--chart-N)"` / `stroke="var(--chart-N)"`; cycle with `COLORS[i % COLORS.length]`. A series that is *inherently* the brand may use `var(--primary)`; a series that is *inherently* a state (e.g. a single "loss" bar) may use `var(--destructive)` — but a categorical set must use `--chart-*`. Defined in `frontend/app/globals.css` (`:root`).
+
+### 4.5 Categorical Chip Palette (Layer 1 — ADR-0064)
+
+Categorical chips (`Chip.Category`, field type `chip-category`) are authorized to use the fixed process inks directly. Like chart series, a categorical chip is an *identifier*, not a state — reusing `success`/`warning`/`destructive` for category identity overloads meaning and breaks when an intent changes. Implemented as `BadgeIntent` values (`cyan` / `magenta` / `yellow` / `black`) rendered with the standard tint recipe `bg-{ink}/10 text-{ink} border-{ink}/20`.
+
+| Intent | Source ink | Pattern |
+|--------|-----------|---------|
+| `cyan` | Process Cyan | `bg-cyan/10 text-cyan border-cyan/20` |
+| `magenta` | Process Magenta | `bg-magenta/10 text-magenta border-magenta/20` |
+| `yellow` | Process Yellow | `bg-yellow/10 text-yellow border-yellow/20` |
+| `black` | Process Black | `bg-black/10 text-black border-black/20` |
+
+Current domain mapping — `payment_method` (`frontend/lib/badge-resolvers.ts`):
+
+| Category | Intent |
+|----------|--------|
+| `CASH` | `cyan` |
+| `CARD` / `CARD_TERMINAL` / `DEBIT_CARD` / `CREDIT_CARD` | `magenta` |
+| `TRANSFER` | `yellow` |
+| `CHECK` | `black` |
+| `OTHER` | `neutral` |
+
+Rules: Layer 1 chip intents are **fixed** across light/dark (they carry no `.dark` override — the inks do not adapt) and are **restricted to categorical chips** — never for workflow state (`StatusBadge` / `STATUS_MAP` stays semantic).
 
 ---
 
@@ -250,7 +275,7 @@ Consume via `fill="var(--chart-N)"` / `stroke="var(--chart-N)"`; cycle with `COL
 | Layer / token | Dark-mode behavior |
 |---------------|--------------------|
 | Layer 1 inks + mixes (`cyan`…`blue`, `black`, pantone) | **No change** — fixed identity |
-| Layer 2 intents (`primary`, `info`, `success`, `warning`, `destructive`) | Explicit lighter value in `.dark` (≈ +0.07–0.13 L) |
+| Layer 2 intents (`primary`, `info`, `success`, `warning`, `destructive`) | Explicit lighter value in `.dark` (≈ +0.07–0.13 L); **exception:** `primary` inverts 0 → 0.99 (K100 key plate flips to a light key plate, ADR-0070) |
 | `neutral` | No change |
 | `accent` | Follows `secondary` (auto) |
 | `muted` | Invert lightness: `0.95 → 0.22` |
@@ -271,12 +296,12 @@ Values below mirror `globals.css` exactly (`:root` / `.dark` raws fed through `@
 |-------|-------------|-------------|------------|
 | `sidebar` | neutral surface | `0.96 0.005 240` | `0.15 0.02 240` |
 | `sidebar-foreground` | neutral text | `0.30 0.03 240` | `0.95 0.01 240` |
-| `sidebar-primary` | `primary` (raw) | `0.65 0.18 235` | `0.72 0.16 235` |
-| `sidebar-primary-foreground` | `primary-foreground` (raw) | `0.20 0.04 235` | `0.10 0.02 235` |
+| `sidebar-primary` | `primary` (raw) | `0 0 0` | `0.99 0 0` |
+| `sidebar-primary-foreground` | `primary-foreground` (raw) | `0.99 0 0` | `0 0 0` |
 | `sidebar-accent` | sidebar surface @ 5% | `0.96 0.005 240 / 0.05` | `0.95 0.01 240 / 0.05` |
 | `sidebar-accent-foreground` | sidebar surface | `0.96 0.005 240` | `0.95 0.01 240` |
 | `sidebar-border` | neutral @ 10% | `0.88 0.02 240 / 0.1` | `0.95 0.01 240 / 0.1` |
-| `sidebar-ring` | `primary` (raw) | `0.65 0.18 235` | `0.72 0.16 235` |
+| `sidebar-ring` | `primary` (raw) | `0 0 0` | `0.99 0 0` |
 
 ---
 
@@ -309,7 +334,7 @@ Tailwind v4 opacity modifiers (`/10`, `/20`, `/5`, etc.) are the **standard mech
 <span className="text-gray-400">  // → use text-muted-foreground
 <div className="bg-gray-100">     // → use bg-muted
 
-// ❌ Layer 1 token used for UI state (exception: industry components)
+// ❌ Layer 1 token used for UI state (exception: industry components + categorical chips §4.5)
 <div className="text-magenta">     // → use text-info for informational content
 <div className="bg-yellow">        // → use bg-warning for cautionary states
 
@@ -348,6 +373,7 @@ The following are authorized to use process colors (Layer 1), the chart palette,
 |-----------|--------|-------------|
 | `ColorBar.tsx` | CMYK printing process control strip | `var(--color-cyan)`, `var(--color-magenta)`, etc. |
 | Charts (recharts) | Categorical data-viz series | `var(--chart-1…6)` (§4.4) |
+| Categorical chips (`Chip.Category`) | Category identity — fixed inks (ADR-0064) | Layer 1 `BadgeIntent` (`cyan` / `magenta` / `yellow` / `black`) via `bg-{ink}/10 text-{ink} border-{ink}/20` (§4.5) |
 | Company branding settings | User-configurable brand colors stored as **data** | `primary_color` / `secondary_color` hex defaults |
 | `components/ui/*` overlays | Shadcn base primitives (Dialog/Sheet/AlertDialog) | stock `bg-black/{N}` scrim — do not modify (rule 22) |
 
@@ -395,4 +421,5 @@ The 3-layer form system uses a fixed set of color tokens (defined in `component-
 - **Modifying a Layer 3 (domain nature) alias does NOT require an ADR** — these are business mappings that evolve with domain requirements.
 - **Adding a new Layer 1 token requires an ADR.**
 - **Adding a new Layer 2 or Layer 3 token** must be documented in this file and approved by the frontend team lead.
+- **Adding a Layer 1 `BadgeIntent` for categorical chips** (cyan / magenta / yellow / black) requires an ADR (see ADR-0064); it must be listed in §4.5 and the `color-system.contract.test.ts` known-intent set.
 - **Violations** of the forbidden patterns (§8) block PR merge (Governance rule 12).

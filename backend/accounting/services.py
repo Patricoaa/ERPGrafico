@@ -238,7 +238,7 @@ class AccountingService:
                 None,
                 None,
             ),
-            ("1.1.04", "Impuestos por Recuperar", AccountType.ASSET, "1.1", None, None, None),
+            ("1.1.04", "Impuestos por Recuperar", AccountType.ASSET, "1.1", None, CFCategory.OPERATING, None),
             ("1.1.04.01", "IVA Crédito Fiscal", AccountType.ASSET, "1.1.04", None, None, None),
             (
                 "1.1.04.02",
@@ -259,7 +259,7 @@ class AccountingService:
                 None,
             ),
             ("1.1.04.04", "PPM por Recuperar", AccountType.ASSET, "1.1.04", None, None, None),
-            ("1.1.05", "Cuentas por Cobrar Socios", AccountType.ASSET, "1.1", None, None, None),
+            ("1.1.05", "Cuentas por Cobrar Socios", AccountType.ASSET, "1.1", None, CFCategory.FINANCING, None),
             (
                 "1.1.05.01",
                 "Capital por Cobrar (Activo)",
@@ -269,7 +269,7 @@ class AccountingService:
                 None,
                 None,
             ),
-            ("1.1.06", "Cuentas Puente Activo", AccountType.ASSET, "1.1", None, None, None),
+            ("1.1.06", "Cuentas Puente Activo", AccountType.ASSET, "1.1", None, CFCategory.OPERATING, None),
             (
                 "1.1.06.01",
                 "Salida de Stock (Pendiente de Facturar)",
@@ -325,7 +325,7 @@ class AccountingService:
                 AccountType.ASSET,
                 "1.2",
                 None,
-                CFCategory.DEP_AMORT,
+                None,  # Contra-asset — NOT a cash flow adjustment. Use 5.2.27 Gasto por Depreciación instead.
                 None,
             ),
             (
@@ -372,7 +372,7 @@ class AccountingService:
                 AccountType.LIABILITY,
                 "2.1",
                 None,
-                None,
+                CFCategory.OPERATING,
                 None,
             ),
             ("2.1.02.01", "IVA Débito Fiscal", AccountType.LIABILITY, "2.1.02", None, None, None),
@@ -515,7 +515,7 @@ class AccountingService:
                 None,
                 None,
             ),
-            ("2.1.06", "Cuentas Puente Pasivo", AccountType.LIABILITY, "2.1", None, None, None),
+            ("2.1.06", "Cuentas Puente Pasivo", AccountType.LIABILITY, "2.1", None, CFCategory.OPERATING, None),
             (
                 "2.1.06.01",
                 "Entrada de Stock (Pendiente de Recibir Factura)",
@@ -855,6 +855,15 @@ class AccountingService:
             ("5.2.24", "Error de Vuelto POS", AccountType.EXPENSE, "5.2", None, None, None),
             ("5.2.25", "Error de Sistema POS", AccountType.EXPENSE, "5.2", None, None, None),
             ("5.2.26", "Gasto Incobrabilidad", AccountType.EXPENSE, "5.2", None, None, None),
+            (
+                "5.2.27",
+                "Gasto por Depreciación y Amortización",
+                AccountType.EXPENSE,
+                "5.2",
+                None,
+                CFCategory.DEP_AMORT,  # Non-cash expense — reversed back into Operating Cash Flow
+                None,
+            ),
             ("5.2.99", "Otros Gastos Varios", AccountType.EXPENSE, "5.2", None, None, None),
             # 5.3 Non-Operating Expenses
             (

@@ -293,9 +293,6 @@ export function PaymentModal({
                                 differencePositiveLabel: isRefund ? 'Diferencia a favor' : 'Vuelto',
                                 differenceNegativeLabel: 'Deuda Pendiente',
                                 amountModalTitle: isRefund ? 'Monto a Reembolsar' : (isPurchase ? 'Monto a Pagar' : 'Monto Recibido'),
-                                amountModalDescription: isRefund
-                                    ? 'Ingrese el monto a reembolsar.'
-                                    : (isPurchase ? 'Ingrese el monto a pagar.' : 'Ingrese el monto recibido.')
                             }}
                         />
                     )}

@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
 from accounting.glosa_builder import GlosaBuilder, Roles
@@ -1087,11 +1088,15 @@ class BillingService:
 
         elif delivery_type == "SCHEDULED":
             service_lines = order.lines.filter(
-                product__product_type="SERVICE", quantity_pending__gt=0
-            )
-            non_service_pending = order.lines.exclude(product__product_type="SERVICE").filter(
-                quantity_pending__gt=0
-            )
+                product__product_type="SERVICE"
+            ).annotate(
+                qty_pending=F('quantity') - F('quantity_delivered')
+            ).filter(qty_pending__gt=0)
+            non_service_pending = order.lines.exclude(
+                product__product_type="SERVICE"
+            ).annotate(
+                qty_pending=F('quantity') - F('quantity_delivered')
+            ).filter(qty_pending__gt=0)
 
             if service_lines.exists() and not non_service_pending.exists():
                 warehouse = Warehouse.objects.first()

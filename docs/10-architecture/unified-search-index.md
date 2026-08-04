@@ -49,8 +49,8 @@ class GlobalSearchIndex(models.Model):
 El índice usa la configuración `spanish` de Postgres. Buscar "Ventas" encontrará registros que contengan "Venta", "Vendedor", etc.
 
 ### 2. Inteligencia de Prefijos
-El motor detecta prefijos canónicos (ej. `NV-`, `OCS-`). Si se detecta un prefijo:
-- Se limpia el término de búsqueda (ej. `NV-100` -> `100`).
+El motor detecta prefijos canónicos (ej. `OV-`, `OCS-`). Si se detecta un prefijo:
+- Se limpia el término de búsqueda (ej. `OV-100` -> `100`).
 - Se filtra el índice por `entity_label` (ej. solo `sales.saleorder`).
 - Si el término queda vacío (solo el prefijo), se muestran los registros más recientes de esa entidad.
 

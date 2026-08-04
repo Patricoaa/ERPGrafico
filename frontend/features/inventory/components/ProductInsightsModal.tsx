@@ -158,13 +158,13 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                     />
                                     <StatCard
                                         label="Ingresos (Neto)"
-                                        value={<DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-left" />}
+                                        value={<DataCell.Currency value={data.sales_analysis.total_revenue} weight="black" className="text-2xl text-left" />}
                                         variant="compact"
                                         accent="primary"
                                     />
                                     <StatCard
                                         label="Margen Bruto"
-                                        value={<DataCell.Currency value={margin} className="text-2xl font-black text-left" />}
+                                        value={<DataCell.Currency value={margin} weight="black" className="text-2xl text-left" />}
                                         variant="compact"
                                         accent="warning"
                                     />
@@ -189,16 +189,16 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         <div className="rounded-md border p-4 space-y-3 bg-muted/50">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs text-muted-foreground">Precio Promedio de Venta:</span>
-                                                <DataCell.Currency value={data.sales_analysis.avg_price} className="font-bold" />
+                                                <DataCell.Currency value={data.sales_analysis.avg_price} weight="bold" />
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs text-muted-foreground">Costo Promedio Real:</span>
-                                                <DataCell.Currency value={data.sales_analysis.avg_cost} className="font-bold" />
+                                                <DataCell.Currency value={data.sales_analysis.avg_cost} weight="bold" />
                                             </div>
                                             <div className="h-px bg-border pt-2" />
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs font-bold">Ganancia por Unidad:</span>
-                                                <DataCell.Currency value={data.sales_analysis.avg_price - data.sales_analysis.avg_cost} className="font-black text-primary" />
+                                                <DataCell.Currency value={data.sales_analysis.avg_price - data.sales_analysis.avg_cost} weight="black" className="text-primary" />
                                             </div>
                                         </div>
                                     </div>
@@ -243,6 +243,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                 data: [...data.price_history].reverse().map((d) => ({ x: d.date, y: d.cost_price })),
                                             },
                                         ]}
+                                        tooltipFormat="currency"
                                         axisBottom={{
                                             tickSize: 0,
                                             tickPadding: 10,
@@ -336,7 +337,7 @@ function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
         {
             header: "Precio de Venta",
             cell: ({ row }) => (
-                <DataCell.Currency value={row.original.sale_price} className="text-left font-bold" />
+                <DataCell.Currency value={row.original.sale_price} weight="bold" className="text-left" />
             ),
         },
         {
@@ -388,6 +389,7 @@ function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
                     <StatusBadge
                         status={m.type === 'IN' ? 'SUCCESS' : m.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'}
                         label={m.type === 'IN' ? 'Entrada' : m.type === 'OUT' ? 'Salida' : 'Ajuste'}
+                        variant="badge"
                     />
                 )
             },

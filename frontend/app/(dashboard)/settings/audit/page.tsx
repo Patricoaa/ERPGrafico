@@ -16,9 +16,9 @@ interface GlobalAuditLog {
 export default async function AuditHubPage() {
     let initialLogs: GlobalAuditLog[] | undefined
     try {
-        initialLogs = await serverFetch<GlobalAuditLog[]>('core/audit/global/', {
+        initialLogs = (await serverFetch<{ results: GlobalAuditLog[] }>('core/audit/global/', {
             revalidate: 30,
-        })
+        })).results
     } catch {
         // Client-side fetch handles fallback
     }

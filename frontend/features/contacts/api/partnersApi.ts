@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import { type Partner, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution } from "../types/partner"
+import { type Partner, type PartnerSummary, type PartnerStatement, type PartnerTransactionPayload, type ProfitDistribution, type PartnerEvolutionPeriod } from "../types/partner"
 
 export const partnersApi = {
     /**
@@ -73,12 +73,6 @@ export const partnersApi = {
         return response.data
     },
 
-    getTransactions: async () => {
-        const response = await api.get('/contacts/all_partner_transactions/')
-        // eslint-disable-next-line pagination/no-raw-response-data
-        return response.data
-    },
-
     /**
      * Profit Distributions
      */
@@ -131,5 +125,11 @@ export const partnersApi = {
     massMobilizeRetainedEarnings: async (payload: { mobilizations: { partner_id: number, dividend_amount: number, reinvest_amount: number }[], date: string, description: string }) => {
         const response = await api.post(`/contacts/mass_mobilize_retained_earnings/`, payload)
         return response.data
-    }
+    },
+
+    getPartnerEvolution: async (months = 24, granularity = 'month'): Promise<{ periods: PartnerEvolutionPeriod[] }> => {
+        const response = await api.get(`/contacts/partner_evolution/?months=${months}&granularity=${granularity}`)
+        // eslint-disable-next-line pagination/no-raw-response-data
+        return response.data
+    },
 }

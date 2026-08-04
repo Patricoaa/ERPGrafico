@@ -1,6 +1,6 @@
 "use client"
 
-import { Drawer, EmptyState, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
+import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge, StaleDataBanner } from "@/components/shared"
 import { useDrawerIdentity } from "@/features/_shared"
 import { useBankStatement } from "../hooks/useBankStatement"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -40,15 +40,7 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
             subtitle={identity.subtitle}
             icon={identity.icon}
         >
-            {isError ? (
-                <div className="p-4">
-                    <EmptyState
-                        context="treasury"
-                        title="Error al cargar cartola"
-                        description="No se pudo cargar la información de la cartola bancaria."
-                    />
-                </div>
-            ) : (
+            {isError && <StaleDataBanner className="mx-4 mt-2" />}
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando cartola">
                 {statement ? (
                     <div className="p-4 space-y-4">
@@ -59,15 +51,15 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
                             </div>
                             <div>
                                 <span className="text-muted-foreground">Estado</span>
-                                <p><StatusBadge status={statement.status} /></p>
+                                <p><StatusBadge status={statement.status} variant="badge" /></p>
                             </div>
                             <div>
                                 <span className="text-muted-foreground">Saldo Inicial</span>
-                                <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline /></p>
+                                <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline weight="medium" /></p>
                             </div>
                             <div>
                                 <span className="text-muted-foreground">Saldo Final</span>
-                                <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline /></p>
+                                <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline weight="medium" /></p>
                             </div>
                         </div>
                         {statement.reconciliation_progress != null && (
@@ -85,7 +77,6 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
                     </div>
                 ) : null}
             </SkeletonShell>
-            )}
         </Drawer>
     )
 }

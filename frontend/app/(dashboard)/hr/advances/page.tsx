@@ -16,10 +16,11 @@ export default async function AdvancesPage({ searchParams }: PageProps) {
     let initialAdvances: SalaryAdvance[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialAdvances = await serverFetch<SalaryAdvance[]>('hr/advances/', {
+            const res = await serverFetch<{ results: SalaryAdvance[] }>('hr/advances/', {
                 params: { page_size: '200' },
                 revalidate: 10,
             })
+            initialAdvances = res.results
         } catch {
             // Client-side fetch handles fallback
         }

@@ -11,7 +11,7 @@ export {
   AccountDrawer,
   AccountingEquationCard,
   BalanceSheetKPIs,
-  DistributionBar,
+
   TransactionNumberDrawer,
 } from './components'
 

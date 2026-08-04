@@ -91,7 +91,7 @@ import { StatCard } from "@/components/shared"
 | `subtext` | `string` | ❌ | — | Description or secondary label |
 | `trend` | `{ direction: 'up' \| 'down'; value: string; label?: string }` | ❌ | — | Renders TrendingUp/Down icon + text |
 | `accent` | `'primary' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'accent' \| 'muted'` | ❌ | `'primary'` | Maps to border tint, bg tint, icon color (see accent map) |
-| `variant` | `'default' \| 'compact' \| 'minimal'` | ❌ | `'default'` | See variant specs below |
+| `variant` | `'default' \| 'compact' \| 'minimal' \| 'fill' \| 'chart' \| 'metric-chart'` | ❌ | `'default'` | See variant specs below |
 | `valueSize` | `'sm' \| 'md' \| 'lg' \| 'xl'` | ❌ | `'lg'` | sm = `text-lg`, md = `text-xl`, lg = `text-2xl`, xl = `text-3xl` |
 | `href` | `string` | ❌ | — | Wraps card in `<Link>` |
 | `onClick` | `() => void` | ❌ | — | Makes card clickable (role="button") |
@@ -142,6 +142,73 @@ import { StatCard } from "@/components/shared"
 - No Card components — smallest footprint
 - Value uses `accentText[accent]` color
 - `className` can override padding/border-radius for special cases
+
+### `chart` (chart card in analytics panel)
+```
+┌─────────────────────────────────────┐
+│ [icon] LABEL            trend ↑/↓   │  ← CardHeader px-3 py-2
+│        subtext (description)        │
+├─────────────────────────────────────┤
+│ CardContent (p-3, flex-1 min-h-0)  │
+│  {chart}                            │
+└─────────────────────────────────────┘
+```
+- Wrapper: `<Card>` with `py-0 gap-0 overflow-hidden` (overrides base `py-6 gap-6`)
+- CardHeader: `px-3 py-2` (overrides base `px-6`), no border-b
+- Icon: `h-3.5 w-3.5` in `accentIconBg` container (same as compact)
+- Subtext: `text-[10px] text-muted-foreground`, truncated
+- Trend: `text-xs font-bold`, colored by direction
+- CardContent: `p-3` (overrides base `px-6`), fills remaining space
+- **Charts must use `preset: "card"`** — enforces clean margins, auto-hides legends for single-key/single-series data, reduces point markers, tightens pie borders
+- `value`, `children` are ignored in this variant
+
+### `metric-chart` (metric + chart card)
+```
+┌─────────────────────────────────────┐
+│ [icon] VALUE  LABEL     trend ↑/↓   │  ← CardHeader px-3 py-2
+│              subtext                 │
+├─────────────────────────────────────┤
+│ CardContent (p-3, flex-1 min-h-0)  │
+│  {chart}                            │
+└─────────────────────────────────────┘
+```
+- Wrapper: `<Card>` with `py-0 gap-0` (overrides base `py-6 gap-6`)
+- CardHeader: `px-3 py-2` (overrides base `px-6`), no border-b
+- Value displayed inline with label (`items-baseline`)
+- Icon, subtext, trend same as `chart` variant
+- CardContent: `p-3` (overrides base `px-6`), fills remaining space
+- **Charts must use `preset: "card"`**
+- `children` is ignored in this variant
+
+---
+
+## Card chart preset (`preset: "card"`)
+
+When rendering charts inside StatCard `chart` or `metric-chart` variants, always use `preset: "card"` on the chart config. This enforces:
+
+| Aspect | Card preset | Default (no preset) |
+|--------|------------|---------------------|
+| Margins | `{ top: 8, right: 8, bottom: 24, left: 40 }` (bar/line), `{ top: 8, right: 8, bottom: 8, left: 8 }` (pie) | `{ top: 40, right: 16, bottom: 28-48, left: 64-160 }` |
+| Axis legends | Never shown (ticks only) | Controlled by `axisBottomLegend`/`axisLeftLegend` |
+| Legend | Auto-hidden when `keys.length === 1` (bar), `data.length === 1` (line), `data.length <= 2` (pie) | Always shown (`showLegend` defaults `true`) |
+| Legend position | Bottom (`cardLegend`) | Top (`defaultLegend`) |
+| Line points | Hidden (`pointSize: 0`) | Visible (`pointSize: 6`) |
+| Line width | `2` | `3` |
+| Pie borderWidth | `1.5` | `3` |
+| Pie padAngle | `1.5` | `4` |
+| Pie innerRadius | `0.55` | `0.4` |
+
+**Usage:**
+```tsx
+chart: {
+    type: "bar-chart",
+    preset: "card",     // ← always set for StatCard charts
+    data: myData,
+    keys: ["total"],
+    indexBy: "name",
+    // axisBottomLegend, axisLeftLegend, showLegend → REMOVED (preset handles)
+}
+```
 
 ---
 
@@ -214,6 +281,19 @@ For unique visual treatments (glass, inverted colors) that go beyond accent-base
 - Plain `<div>` wrapper (no Card component)
 - Value inherits `accentText[accent]` color
 - Smallest footprint — use `className` for custom padding/alignment
+
+### `chart`
+**Analytics panels, dashboard sections with a single chart.** Examples: EquityCompositionTab stat cards, StatementsClientView, PurchasingOrdersClientView.
+
+- Uses `<Card>` with CardHeader + CardContent
+- Header: icon (optional) + label + subtext (optional) left, trend right
+- Content: chart fills remaining space via `flex-1 min-h-0`
+
+### `metric-chart`
+**Analytics panels where the metric value is shown above the chart.** Examples: PurchasingOrdersClientView "Entregas a Tiempo".
+
+- Same as `chart` but value is displayed inline with label in the header
+- Use when the card's primary metric should be visible without reading the chart
 
 ---
 

@@ -10,5 +10,6 @@ export function useProfile() {
         queryKey: PROFILE_KEYS.me(),
         queryFn: getMyProfile,
         staleTime: 5 * 60 * 1000,
+        placeholderData: (prev) => prev,
     })
 }

@@ -5,6 +5,7 @@ from decimal import Decimal
 import django_filters
 from celery.result import AsyncResult
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -72,12 +73,14 @@ from .serializers import (
     TerminalBatchSerializer,
     TreasuryAccountSerializer,
     TreasuryMovementSerializer,
+    TreasuryMovementListSerializer,
+    TreasuryMovementWriteSerializer,
 )
 from .services import TerminalBatchService, TreasuryService
 
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = Bank.objects.all().order_by("name")
+    queryset = Bank.objects.prefetch_related("account_executives").order_by("name")
     serializer_class = BankSerializer
     pagination_class = None  # Master data
 
@@ -345,10 +348,42 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return TreasuryMovementListSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return TreasuryMovementWriteSerializer
+        return TreasuryMovementSerializer
+
     def get_queryset(self):
         from .selectors import TreasuryMovementSelector
 
         return TreasuryMovementSelector.list_treasury_movements(self.queryset, self.request.query_params)
+
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        from .analytics import TreasuryMovementAnalyticsService
+
+        params = request.query_params
+        granularity = params.get("granularity", "month")
+        months = int(params.get("months", "12"))
+        treasury_account = int(params["treasury_account"]) if params.get("treasury_account") else None
+        bank = int(params["bank"]) if params.get("bank") else None
+        return Response(
+            TreasuryMovementAnalyticsService.get_consolidated(
+                granularity=granularity,
+                months=months,
+                treasury_account=treasury_account,
+                bank=bank,
+                movement_type=params.get("movement_type"),
+                payment_method=params.get("payment_method"),
+                amount_min=params.get("amount_min"),
+                amount_max=params.get("amount_max"),
+                date_from=params.get("date_from"),
+                date_to=params.get("date_to"),
+            )
+        )
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if not request.user.is_staff:
@@ -774,6 +809,16 @@ class POSSessionViewSet(viewsets.ModelViewSet):
     serializer_class = POSSessionSerializer
     filterset_fields = ["status", "treasury_account", "user"]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        date_from = self.request.query_params.get("date_from")
+        date_to = self.request.query_params.get("date_to")
+        if date_from:
+            qs = qs.filter(opened_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(opened_at__date__lte=date_to)
+        return qs
+
     @action(detail=False, methods=["get"])
     def current(self, request):
         from .selectors import POSSelector
@@ -1016,7 +1061,16 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
     ViewSet for managing Terminal Batches (Settlements).
     """
 
-    queryset = TerminalBatch.objects.all().order_by("-sales_date", "-created_at")
+    queryset = (
+        TerminalBatch.objects.select_related(
+            "provider",
+            "settlement_journal_entry",
+            "bank_statement_line__statement",
+            "supplier_invoice",
+        )
+        .annotate(payment_count_agg=Count("payments"))
+        .order_by("-sales_date", "-created_at")
+    )
     serializer_class = TerminalBatchSerializer
     filterset_fields = ["status", "provider", "sales_date"]
 

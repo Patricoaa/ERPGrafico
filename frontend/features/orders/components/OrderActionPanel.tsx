@@ -1,23 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { CollapsibleSheet, PanelHeader } from '@/components/shared'
 import { Zap } from 'lucide-react'
 import { formatEntityDisplay } from '@/lib/entity-registry'
 import { Chip } from '@/components/shared'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton, CardSkeleton, StatusBadge, EmptyState, } from '@/components/shared'
+import {SkeletonShell, StatusBadge, EmptyState, } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
-import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
 import { filterAvailableActions } from '@/lib/action-utils'
 import { formatPlainDate } from '@/lib/utils'
 import { formatCurrency } from '@/lib/money'
 import { purchaseOrderActions } from '@/features/purchasing'
 import { saleOrderActions } from '@/features/sales'
-import { ordersApi } from '../hooks/useOrdersMutations'
-import type { UserPermissions, ActionCategory as CategoryType } from '@/types/actions'
+import { useOrderDetail } from '../hooks/useOrderDetail'
+import type {ActionCategory as CategoryType} from '@/types/actions'
 import { type Order } from '../types'
 
 interface OrderActionPanelProps {
@@ -35,57 +33,18 @@ export function OrderActionPanel({
     orderType,
     onActionComplete
 }: OrderActionPanelProps) {
-    const [order, setOrder] = useState<Order | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [userPermissions, setUserPermissions] = useState<UserPermissions | null>(null)
+    const { order, userPermissions, isLoading, refetch } = useOrderDetail(orderId, orderType, open && !!orderId)
 
     const actionRegistry = orderType === 'purchase'
         ? purchaseOrderActions
         : saleOrderActions
 
-    const fetchOrderDetails = async () => {
-        setLoading(true)
-        try {
-            const data = orderType === 'purchase'
-                ? await ordersApi.getPurchaseOrder(orderId)
-                : await ordersApi.getSaleOrder(orderId)
-            setOrder(data as Order)
-        } catch (error) {
-            console.error('Error fetching order:', error)
-            toast.error('Error al cargar los detalles de la orden')
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const fetchUserPermissions = async () => {
-        try {
-            const data = await ordersApi.getCurrentUser()
-            setUserPermissions({
-                permissions: (data as { permissions?: string[] }).permissions || [],
-                isSuperuser: (data as { is_superuser?: boolean }).is_superuser || false
-            })
-        } catch (error) {
-            console.error('Error fetching user permissions:', error)
-            setUserPermissions({ permissions: [], isSuperuser: false })
-        }
-    }
-
-    useEffect(() => {
-        if (open && orderId) {
-            requestAnimationFrame(() => {
-                fetchOrderDetails()
-                fetchUserPermissions()
-            })
-        }
-    }, [open, orderId])
-
     const filteredActions = order && userPermissions
-        ? filterAvailableActions(actionRegistry, order, userPermissions)
+        ? filterAvailableActions(actionRegistry, order as Order, userPermissions)
         : {}
 
     const handleActionComplete = () => {
-        fetchOrderDetails()
+        refetch()
         onActionComplete?.()
     }
 
@@ -112,28 +71,19 @@ export function OrderActionPanel({
             tabIcon={Zap}
             size="md"
         >
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando panel de acciones">
             <div className="flex flex-col h-full">
                 <div className="shrink-0 px-6 pt-6 pb-4 border-b">
                     <PanelHeader
-                        title={loading ? (
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-7 w-32 font-mono" />
-                                <Skeleton className="h-6 w-20 rounded-full" />
-                            </div>
-                        ) : (
+                        title={
                             <div className="flex items-center gap-2">
                                 <span className="font-mono">
                                     {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', (order ?? {}) as Record<string, unknown>)}
                                 </span>
-                                <StatusBadge status={order?.status || ""} />
+                                <StatusBadge status={order?.status || ""} variant="badge" />
                             </div>
-                        )}
-                        subtitle={loading ? (
-                            <div className="flex flex-col gap-2">
-                                <Skeleton className="h-5 w-48" />
-                                <Skeleton className="h-3 w-32" />
-                            </div>
-                        ) : (
+                        }
+                        subtitle={
                             <div className="flex flex-col gap-1">
                                 <span className="text-base font-medium text-foreground">
                                     {orderType === 'purchase' ? order?.supplier?.name : order?.customer?.name}
@@ -142,18 +92,13 @@ export function OrderActionPanel({
                                     {formatPlainDate(order?.date)}
                                 </span>
                             </div>
-                        )}
+                        }
                         onClose={() => onOpenChange(false)}
                         closeTooltip="Cerrar panel de acciones"
                     />
                 </div>
 
                 <ScrollArea className="flex-1 px-6 ">
-                    {loading ? (
-                        <div className="py-6">
-                            <CardSkeleton count={3} variant="list" />
-                        </div>
-                    ) : (
                         <div className="space-y-6 py-6">
                             {/* Order Summary Card */}
                             <div className="bg-muted/50 rounded-md p-4 space-y-3">
@@ -181,6 +126,7 @@ export function OrderActionPanel({
                                                     ? (order?.receiving_status || "")
                                                     : (order?.delivery_status || "")
                                             }
+                                            variant="badge"
                                         />
                                     </div>
                                 </div>
@@ -244,9 +190,9 @@ export function OrderActionPanel({
                                  )}
                             </div>
                         </div>
-                    )}
                 </ScrollArea>
             </div>
+            </SkeletonShell>
         </CollapsibleSheet>
     )
 }

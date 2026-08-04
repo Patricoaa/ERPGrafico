@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { showApiError } from '@/lib/errors'
-import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect } from '@/components/shared'
+import { BaseModal, MoneyDisplay, LabeledInput, LabeledSelect, Chip } from '@/components/shared'
 import { toast } from 'sonner'
 import { useServerDate } from '@/hooks/useServerDate'
 import { treasuryApi } from '../api/treasuryApi'
@@ -245,9 +245,9 @@ export function BillChargesModal({
                                                                         {inst.number}/{inst.total_installments}
                                                                     </td>
                                                                     <td className="py-1 pr-2">
-                                                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-info text-info-foreground">
+                                                                        <Chip size="sm" intent="info">
                                                                             Cuota
-                                                                        </span>
+                                                                        </Chip>
                                                                     </td>
                                                                     <td className="py-1 pr-2 truncate max-w-[180px]">
                                                                         {inst.due_date || '-'}
@@ -261,9 +261,9 @@ export function BillChargesModal({
                                                                 <tr key={c.id} className="border-t border-border/40">
                                                                     <td className="py-1 pr-2 tabular-nums text-muted-foreground">—</td>
                                                                     <td className="py-1 pr-2">
-                                                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-warning text-warning-foreground">
+                                                                        <Chip size="sm" intent="warning">
                                                                             {c.charge_type_display}
-                                                                        </span>
+                                                                        </Chip>
                                                                     </td>
                                                                     <td className="py-1 pr-2 truncate max-w-[180px]">
                                                                         {c.description || c.reference || '-'}

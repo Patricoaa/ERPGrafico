@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { AlertCircle, Loader2, CheckCircle } from "lucide-react"
+import { AlertCircle, Loader2, CheckCircle, FileText } from "lucide-react"
 import { LabeledInput } from "./LabeledInput"
 import { useFolioValidation, type FolioValidationResult } from "@/hooks/useFolioValidation"
 import { cn } from "@/lib/utils"
@@ -111,6 +111,7 @@ export function FolioValidationInput({
                     open={numpadOpen}
                     onOpenChange={setNumpadOpen}
                     title={label}
+                    icon={FileText}
                     value={tempValue}
                     onChange={setTempValue}
                     onConfirm={() => {

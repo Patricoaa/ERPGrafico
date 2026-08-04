@@ -15,17 +15,14 @@ import type { Product } from "@/types/entities"
 import { usePricingRuleMutations } from "@/features/inventory"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import { Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
+import { Layers, Zap, DollarSign, Calendar } from "lucide-react"
 import { PricingUtils } from '@/lib/pricing-utils'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { useSingleProduct } from "@/features/inventory"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
-import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -77,8 +74,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -441,6 +437,8 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 <span>{form.watch("name") || "Configuración de regla activa"}</span>
             </div>
         ),
+        onPrint: handlePrint,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
     })
 
     return (
@@ -464,13 +462,14 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!initialData)}
                 mode={mode}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 icon={identity.icon}
                 footer={isView ? undefined : (

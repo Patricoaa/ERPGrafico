@@ -18,7 +18,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { settingsApi, type ProductMinimal } from "../../hooks"
+import { settingsApi } from "../../hooks"
 import { partnersApi } from "@/features/contacts"
 import { cn } from "@/lib/utils"
 import { type Partner } from "@/features/contacts"

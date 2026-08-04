@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { PricingRule } from './hooks/usePricingRules'
 
 export interface PricingRuleActionsCtx {
@@ -9,9 +9,7 @@ export interface PricingRuleActionsCtx {
 export const pricingRuleActions = createEntityActions<
     PricingRule,
     PricingRuleActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action action="edit" onClick={() => ctx.onEdit(item)} />
-        <DataCell.Action action="delete" onClick={() => ctx.onDelete(item.id)} />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item) },
+    { action: "delete", onClick: () => ctx.onDelete(item.id) },
+])

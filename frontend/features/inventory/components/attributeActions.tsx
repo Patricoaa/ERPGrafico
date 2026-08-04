@@ -1,27 +1,19 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { Eye, Trash2 } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
+import type { Attribute } from '@/features/inventory/hooks/useAttributes'
 
 export interface AttributeActionsCtx {
-    onViewEdit: (attr: unknown) => void
+    onEdit: (id: number) => void
     onDelete: (id: number) => void
 }
 
-export const attributeActions = createEntityActions<unknown, AttributeActionsCtx>((item, ctx) => (
-    <>
-        <DataCell.Action
-            icon={Eye}
-            title="Ver/Editar Atributo"
-            color="text-primary"
-            onClick={() => ctx.onViewEdit(item)}
-        />
-        <DataCell.Action
-            icon={Trash2}
-            title="Eliminar Atributo"
-            className="text-destructive"
-            onClick={() => {
-                const attr = item as { id: number }
-                ctx.onDelete(attr.id)
-            }}
-        />
-    </>
-))
+export const attributeActions = createEntityActions<Attribute, AttributeActionsCtx>((item, ctx) => [
+    {
+        action: "edit",
+        onClick: () => ctx.onEdit(item.id),
+    },
+    {
+        action: "delete",
+        className: "text-destructive",
+        onClick: () => ctx.onDelete(item.id),
+    },
+])

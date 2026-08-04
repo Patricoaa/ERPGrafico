@@ -9,10 +9,10 @@ import { invalidateCrossFeature } from '@/lib/invalidation'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { PrintableReceipt, BaseModal } from '@/components/shared'
+import { ActionConfirmModal, PrintableReceipt, BaseModal } from '@/components/shared'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, ShoppingCart, Wallet, Check, Printer } from 'lucide-react'
+import { Loader2, FileText, BarChart3, Save, Lock, Unlock, ArrowRightLeft, Wallet, Check, Printer, Package, Percent, Tag } from 'lucide-react'
 
 import {
     DropdownMenu,
@@ -153,7 +153,7 @@ export function POSClientView() {
         forceSync,
     })
 
-    const [isWithdrawing, setIsWithdrawing] = useState(false)
+    const [, setIsWithdrawing] = useState(false)
     const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
     const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null)
     const [, setSelectedPartnerName] = useState<string>("")
@@ -214,6 +214,7 @@ export function POSClientView() {
         tax_rate: (item as unknown as Record<string, unknown>).tax_rate as number ?? rate,
         discount_amount: item.discount_amount,
         discount_percentage: item.discount_percentage,
+        total_gross: item.total_gross,
         product_type: item.product_type,
         requires_advanced_manufacturing: item.requires_advanced_manufacturing,
         manufacturing_data: item.manufacturing_data,
@@ -482,6 +483,7 @@ export function POSClientView() {
                                             ) : (
                                                 (!isWaitingPayment || currentDraftId === d.id) && d.id
                                             )}
+                                            {/* eslint-disable-next-line no-restricted-syntax -- inline spinner in draft tab selector, not a submit/action button */}
                                             {isSaving && currentDraftId === d.id && <Loader2 className="ml-1 h-2 w-2 animate-spin" />}
                                         </Button>
                                     )
@@ -532,14 +534,14 @@ export function POSClientView() {
                                 <Switch checked={isTouchMode} onCheckedChange={toggleTouchMode} />
                             </div>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Caja</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Ordenes de Venta</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => sessionControlRef.current?.showMoveDialog()}><ArrowRightLeft className="mr-2 h-4 w-4" />Movimiento de Fondo</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte de la Sesión</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.requestCloseSession()} className="text-destructive focus:text-destructive">
                                 <Lock className="mr-2 h-4 w-4" />
-                                Cerrar Caja
+                                Cerrar Sesión
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -553,8 +555,8 @@ export function POSClientView() {
                     <div className="fixed inset-0 z-40 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
                         <Card className="w-full max-w-md shadow-card border-primary/20 p-8 text-center space-y-4 rounded-md">
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
-                            <h3 className="text-2xl font-bold">Caja Cerrada</h3>
-                            <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
+                            <h3 className="text-2xl font-bold">Sesión Cerrada</h3>
+                            <p className="text-muted-foreground">Debe iniciar una sesión para realizar ventas.</p>
                             <Button
                                 variant="default"
                                 size="lg"
@@ -562,7 +564,7 @@ export function POSClientView() {
                                 onClick={() => sessionControlRef.current?.openSessionDialog()}
                             >
                                 <Unlock className="h-4 w-4" />
-                                Abrir Caja
+                                Iniciar Sesión
                             </Button>
                         </Card>
                     </div>
@@ -640,13 +642,11 @@ export function POSClientView() {
                         totals={totals}
                         loading={loading}
                         currentDraftId={currentDraftId}
-                        lastSaved={lastSaved || undefined}
                         saving={isSaving}
                         canQuickSale={quickSaleEligibility}
                         onItemQuantityChange={updateQuantity}
                         onItemUomChange={handleItemUomChange}
                         onItemPriceChange={handleItemPriceChange}
-                        onItemDiscountChange={handleItemDiscountChange}
                         onItemRemove={removeFromCart}
                         onOpenNumpad={handleOpenNumpad}
                         onQuickSale={handleQuickSale}
@@ -660,7 +660,7 @@ export function POSClientView() {
                         onCheckoutFinish={handleCheckoutFinish}
                         onCancel={() => setPosMode('SHOPPING')}
                         onSuspend={() => {
-                            /* suspend for another terminal — wizard exposes last state via onStateChange */
+                            if (wizardState) handleSuspendDraft(wizardState as unknown as CheckoutWizardState)
                         }}
                         isLastStep={isCheckoutLastStep}
                         checkoutLoading={false}
@@ -673,7 +673,16 @@ export function POSClientView() {
 
             <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Product)} items={items} bomCache={bomCache as unknown as Record<number, Record<string, unknown>>} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
             <DraftCartsClientView open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} currentDraftId={currentDraftId} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
-            <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
+            <NumpadModal
+                open={numpadOpen}
+                onOpenChange={setNumpadOpen}
+                title={numpadConfig?.field === 'qty' ? "Cantidad" : numpadConfig?.field === 'discount' ? "Descuento" : "Precio"}
+                icon={numpadConfig?.field === 'qty' ? Package : numpadConfig?.field === 'discount' ? Percent : Tag}
+                value={numpadValue}
+                onChange={setNumpadValue}
+                onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))}
+                allowDecimal
+            />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
@@ -728,59 +737,39 @@ export function POSClientView() {
             </BaseModal>
 
             {/* Partner Withdrawal Confirmation */}
-            <BaseModal
+            <ActionConfirmModal
                 open={withdrawDialogOpen}
-                onOpenChange={setWithdrawDialogOpen}
-                size="sm"
-                title={
-                    <div className="flex flex-col items-center w-full">
-                        <div className="mx-auto bg-warning/10 text-warning p-4 rounded-full mb-4 border border-warning/20">
-                            <ShoppingCart className="h-8 w-8" />
-                        </div>
-                        <span className="text-xl font-black tracking-tight text-center text-warning">Confirmar Retiro de Socio</span>
-                    </div>
-                }
+                onOpenChange={(open) => {
+                    setWithdrawDialogOpen(open)
+                    if (!open) {
+                        setSelectedPartnerId(null)
+                        setSelectedPartnerName("")
+                    }
+                }}
+                onConfirm={handleWithdraw}
+                title="Confirmar Retiro de Socio"
+                variant="warning"
+                confirmText="Confirmar Retiro"
+                disabled={!selectedPartnerId}
                 description={
-                    <div className="text-center text-warning-foreground/60 font-medium pt-2 text-sm leading-relaxed">
-                        Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
-                        <br />
-                        Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
-                    </div>
+                    <>
+                        <p className="mb-4">
+                            Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
+                            Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
+                        </p>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-foreground">Seleccionar Socio <span className="text-destructive">*</span></Label>
+                            <AdvancedContactSelector
+                                value={selectedPartnerId}
+                                onChange={setSelectedPartnerId}
+                                onSelectContact={(c) => setSelectedPartnerName(c.name)}
+                                isPartnerOnly={true}
+                                placeholder="Buscar socio..."
+                            />
+                        </div>
+                    </>
                 }
-                footer={
-                    <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
-                        <Button
-                            className="flex-1 h-12 rounded-sm text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-card disabled:opacity-50"
-                            onClick={handleWithdraw}
-                            disabled={isWithdrawing || !selectedPartnerId}
-                        >
-                            {isWithdrawing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                            Confirmar Retiro
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-sm text-sm font-bold"
-                            onClick={() => setWithdrawDialogOpen(false)}
-                            disabled={isWithdrawing}
-                        >
-                            Cancelar
-                        </Button>
-                    </div>
-                }
-            >
-                <div className="space-y-4 my-2">
-                    <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
-                        <AdvancedContactSelector
-                            value={selectedPartnerId}
-                            onChange={setSelectedPartnerId}
-                            onSelectContact={(c) => setSelectedPartnerName(c.name)}
-                            isPartnerOnly={true}
-                            placeholder="Buscar socio..."
-                        />
-                    </div>
-                </div>
-            </BaseModal>
+            />
         </div>
     )
 }

@@ -2190,15 +2190,21 @@ class POSSession(models.Model):
         help_text=_("Terminal donde se realizó esta sesión"),
     )
 
-    # Legacy: Keep for retrocompatibility during migration
+    # Snapshot inmutable de la caja al abrir la sesión.
+    # Se copia de terminal.default_treasury_account al momento de abrir, de modo
+    # que una sesión cerrada conserva la caja original aunque el terminal cambie
+    # su cuenta por defecto después. No se edita manualmente.
     treasury_account = models.ForeignKey(
         "TreasuryAccount",
         on_delete=models.PROTECT,
-        null=True,  # Now nullable
+        null=True,  # Nullable para datos legacy; el servicio exige terminal
         blank=True,
         related_name="pos_sessions",
-        verbose_name=_("Caja (Legacy)"),
-        help_text=_("DEPRECATED: Use terminal.default_treasury_account"),
+        verbose_name=_("Caja (snapshot al abrir)"),
+        help_text=_(
+            "Snapshot de la cuenta de tesorería al abrir la sesión (copiado de "
+            "terminal.default_treasury_account). No editable."
+        ),
     )
 
     user = models.ForeignKey(

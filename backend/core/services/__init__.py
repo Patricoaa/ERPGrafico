@@ -8,7 +8,7 @@ from django.utils import timezone
 class SequenceService:
     """
     Centralized service to handle sequential numbering for different entities.
-    Example: NV-000001, OC-000001, etc.
+    Example: OV-000001, OC-000001, etc.
     """
 
     @staticmethod

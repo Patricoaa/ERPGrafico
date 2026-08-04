@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
 import type { GroupByOptionDef } from '@/types/unified-search'
 
 interface GroupBySectionProps {
@@ -13,27 +14,29 @@ export function GroupBySection({ options, currentGroupBy, onSelect }: GroupBySec
 
   return (
     <div className="space-y-0.5">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => onSelect(null)}
-        className={`w-full text-left px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 ${
+        className={`w-full justify-start px-2 py-1.5 text-xs rounded-sm ${
           currentGroupBy === null ? 'text-primary font-semibold' : 'text-muted-foreground'
         }`}
       >
         Ninguno
-      </button>
+      </Button>
 
       {options.map((option) => (
-        <button
+        <Button
           key={option.key}
-          type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => onSelect(option.key)}
-          className={`w-full text-left px-2 py-1.5 text-xs rounded-sm hover:bg-accent/50 ${
+          className={`w-full justify-start px-2 py-1.5 text-xs rounded-sm ${
             currentGroupBy === option.key ? 'text-primary font-semibold' : 'text-muted-foreground'
           }`}
         >
           {option.label}
-        </button>
+        </Button>
       ))}
     </div>
   )

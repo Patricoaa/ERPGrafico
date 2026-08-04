@@ -29,15 +29,21 @@ export interface PartnerStatement {
         tax_id: string;
         partner_since?: string;
         created_at?: string;
-        partner_account_detail?: {
-            id: number;
-            name: string;
-            code: string;
-        };
     };
     summary: {
         equity_percentage: string;
         balance: string;
+        total_contributions: string;
+        total_paid_in: string;
+        pending_capital: string;
+        provisional_withdrawals: string;
+        total_formal_withdrawals: string;
+        earnings_balance: string;
+    };
+    partner_account_detail?: {
+        id: number;
+        name: string;
+        code: string;
     };
     transactions: PartnerTransaction[];
 }
@@ -54,6 +60,8 @@ export interface PartnerTransaction {
     journal_entry_id: number;
     journal_entry_display: string;
     treasury_movement?: number;
+    stock_move?: number;
+    distribution_resolution?: number;
     created_by: number;
     created_by_name: string;
     created_at: string;
@@ -92,6 +100,21 @@ export interface ProfitDistribution {
     total_paid_dividend_amount?: string;
     total_unpaid_dividend_amount?: string;
     notes?: string;
+}
+
+export interface PartnerEvolutionPeriod {
+    period: string
+    net_equity: string
+    total_contributions: string
+    total_withdrawals: string
+    total_earnings: string
+    total_dividends: string
+    period_contributions: string
+    period_withdrawals: string
+    period_earnings: string
+    period_dividends: string
+    period_net_flow: string
+    partner_count: number
 }
 
 export interface PartnerTransactionPayload {

@@ -40,7 +40,25 @@ export const SETTINGS_TABS = [
         value: "accounts",
         label: "Cuentas Contables",
         iconName: "book-open",
-        href: "/settings/accounts",
+        href: "/settings/accounts/ventas",
+        subTabs: [
+            {
+                value: "cuentas",
+                label: "Cuentas",
+                href: "/settings/accounts/ventas",
+                subTabs: [
+                    { value: "estructura", label: "Estructura", href: "/settings/accounts/estructura" },
+                    { value: "ventas", label: "Ventas", href: "/settings/accounts/ventas" },
+                    { value: "facturacion", label: "Facturación", href: "/settings/accounts/facturacion" },
+                    { value: "compras", label: "Compras", href: "/settings/accounts/compras" },
+                    { value: "inventario", label: "Inventario", href: "/settings/accounts/inventario" },
+                    { value: "tesoreria", label: "Tesorería", href: "/settings/accounts/tesoreria" },
+                    { value: "rrhh", label: "RRHH", href: "/settings/accounts/rrhh" },
+                    { value: "socios", label: "Socios", href: "/settings/accounts/socios" },
+                    { value: "impuestos", label: "Impuestos", href: "/settings/accounts/impuestos" },
+                ]
+            }
+        ]
     },
     {
         value: "jobs",
@@ -68,7 +86,12 @@ export function SettingsHeader() {
     const currentSegment = segments[1] || 'overview'
 
     const activeValue = currentSegment
-    const subActiveValue = segments[2] ?? undefined
+    const subActiveValue = activeValue === 'accounts'
+        ? 'cuentas'
+        : segments[2] ?? undefined
+    const subSubActiveValue = activeValue === 'accounts'
+        ? segments[2] ?? undefined
+        : undefined
 
     const navigation = {
         moduleName: "Configuración Global",
@@ -76,6 +99,7 @@ export function SettingsHeader() {
         tabs: SETTINGS_TABS,
         activeValue,
         subActiveValue,
+        subSubActiveValue,
     }
 
     const getHeaderConfig = () => {

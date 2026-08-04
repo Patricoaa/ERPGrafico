@@ -47,7 +47,8 @@ import { Chip } from "@/components/shared"
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | See size matrix below |
-| `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary'` | ❌ | `'neutral'` | Maps to semantic color tokens |
+| `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary' \| 'cyan' \| 'magenta' \| 'yellow' \| 'black'` | ❌ | `'neutral'` | Maps to semantic tokens (Layer 2) or, for categorical chips, the fixed process inks `cyan`/`magenta`/`yellow`/`black` (Layer 1, ADR-0064) |
+| `appearance` | `'solid' \| 'ghost'` | ❌ | `'solid'` | `ghost` removes the background tint (borderless default). Never changes typography |
 | `icon` | `LucideIcon` | ❌ | — | Rendered at 10–11px, same color as text |
 | `className` | `string` | ❌ | — | **Layout/position only.** Never override typography or color here. |
 | `children` | `ReactNode` | ✅ | — | Label text |
@@ -60,9 +61,9 @@ import { Chip } from "@/components/shared"
 |--------|--------|---------|-----------|-----|-------------|
 | `xs` | `h-[18px]` | `px-2` | `text-[9px]` | `gap-1` | Table cells, dense lists, inline annotations |
 | `sm` (default) | `h-[22px]` | `px-2.5` | `text-[10px]` | `gap-1` | General UI chrome, form labels, sidebar |
-| `md` | `h-[26px]` | `px-3` | `text-[11px]` | `gap-1.5` | Detail views, modal sections, emphasis |
+| `md` | auto | `px-2 py-0.5` | `text-xs` | `gap-1` | Detail views, modal sections, emphasis |
 
-**Invariant typography** (never override): `font-mono font-black uppercase tracking-widest`
+**Invariant typography** (never override): `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068).
 
 ---
 
@@ -70,12 +71,33 @@ import { Chip } from "@/components/shared"
 
 | `intent` | Background | Text | Border |
 |----------|-----------|------|--------|
-| `neutral` (default) | `bg-muted/60` | `text-muted-foreground` | `border-border/50` |
-| `info` | `bg-info/10` | `text-info` | `border-info/20` |
-| `success` | `bg-success/10` | `text-success` | `border-success/20` |
-| `warning` | `bg-warning/10` | `text-warning` | `border-warning/20` |
-| `destructive` | `bg-destructive/10` | `text-destructive` | `border-destructive/20` |
-| `primary` | `bg-primary/10` | `text-primary` | `border-primary/20` |
+| `neutral` (default) | `bg-muted/60` | `text-muted-foreground` | none (borderless) |
+| `info` | `bg-info/10` | `text-info` | none (borderless) |
+| `success` | `bg-success/10` | `text-success` | none (borderless) |
+| `warning` | `bg-warning/10` | `text-warning` | none (borderless) |
+| `destructive` | `bg-destructive/10` | `text-destructive` | none (borderless) |
+| `primary` | `bg-primary/10` | `text-primary` | none (borderless) |
+
+### Layer 1 categorical intents (ADR-0064)
+
+For categorical chips only (`Chip.Category`, field type `chip-category`) — never for workflow state. Fixed process inks, no dark-mode override:
+
+| `intent` | Background | Text | Border |
+|----------|-----------|------|--------|
+| `cyan` | `bg-cyan/10` | `text-cyan` | none (borderless) |
+| `magenta` | `bg-magenta/10` | `text-magenta` | none (borderless) |
+| `yellow` | `bg-yellow/10` | `text-yellow` | none (borderless) |
+| `black` | `bg-black/10` | `text-black` | none (borderless) |
+
+Domain mapping: `payment_method` → CASH=`cyan`, CARD/CARD_TERMINAL/DEBIT_CARD/CREDIT_CARD=`magenta`, TRANSFER=`yellow`, CHECK=`black`, OTHER=`neutral` (`color-system.md §4.5`).
+
+---
+
+## Appearance (`ghost`)
+
+`appearance="ghost"` renders the chip without its background tint — it keeps the intent text color and removes **only** the background (borderless by default, ADR-0068). It never changes typography: `font-sans font-medium text-xs` applies to both `solid` and `ghost`.
+
+**Dense-table note:** `DataCell.Chip` and `DataCell.Status` render the standard solid tinted badge (same as CurrencyFlow columns). The legacy ghost-pill presentation (ADR-0065) was superseded by ADR-0068.
 
 ---
 
@@ -131,15 +153,15 @@ These are part of the invariant and are applied internally by `intent` and `size
 
 ## Typography alignment across badge components
 
-All three components share `font-mono uppercase` and `rounded-full border`. The differences below are **intentional** — do not "fix" them:
+All three components share the **CurrencyFlow aesthetic** (ADR-0068): `font-sans font-medium text-xs`, borderless, `rounded-sm`, normal tracking. The legacy `font-mono font-black uppercase border rounded-full` look is no longer a default — it is only reachable via explicit `className` overrides in legacy consumers.
 
 | Component | Font weight | Letter spacing | Rationale |
 |-----------|-------------|----------------|-----------|
-| `Chip` | `font-black` | `tracking-widest` | Short tags at small sizes (9–11px) need maximum weight and wide spacing to remain legible |
-| `StatusBadge` | `font-black` | `tracking-tight` | Longer state labels ("En Proceso", "Sin Conciliar") at medium sizes — tight tracking prevents overflow |
-| `EntityBadge` | `font-black` | `tracking-tight` | ID codes can be long ("OC-2025-001") — same rationale as StatusBadge |
+| `Chip` | `font-medium` | normal | Tags and annotations follow the standard data-cell typography |
+| `StatusBadge` | `font-medium` | normal | Same unified look as every other badge in the app |
+| `EntityBadge` | `font-medium` | normal | ID codes render at `text-xs` with the standard weight |
 
-All three now share `font-black` weight for visual consistency. The tracking difference is load-bearing.
+All three share `font-sans font-medium text-xs` for visual consistency with `DataCell.CurrencyFlow`.
 
 ---
 
@@ -177,5 +199,21 @@ Do **not** use `Chip` for workflow states (order status, payment status, work or
 <Chip intent="success">POSTED</Chip>  // This is a status → use StatusBadge
 
 // ✅ Correct
-<StatusBadge variant="invoice" status="POSTED" />
+<StatusBadge status="POSTED" variant="badge" />
 ```
+
+---
+
+## Documented exceptions (ADR-0069)
+
+The CurrencyFlow default applies to every badge/chip/tag. A small set of **justified** exceptions exists; they are the only places where the rules above may be relaxed. All are audited and must be referenced from ADR-0069.
+
+| Exception | Where | Rationale | Allowed deviation |
+|-----------|-------|-----------|-------------------|
+| **Notification bubbles** | `UserActions.tsx:193`, `DraftCartsClientView.tsx:383`, `QuickActionsMenu` | Unread-count convention on icons (`99+`, dot bubbles) | `rounded-full border-2 border-background`, `font-black`, `text-[9px]`. Do **not** use `Chip`/`Badge` for these. |
+| **Interactive tag-input pills** | `MultiTagInput.tsx`, `MultiSelectTagInput.tsx` | Removable tag pills with an X button — interactive, not static labels | Use shared `Badge intent="neutral" size="sm"` + `animate-in zoom-in-95` + `IconButton` close. No typography overrides. |
+| **Monospace for codes/SKU/version/%** | `ProductVariantsTab` SKU, `ReconciliationPanel` codes, `SettingsPageClient` versions, `ReconciliationIntelligencePanel` %, `ProductManufacturingTab` item count, `UnifiedNoteWizard` ref, `bomFields` hints | Technical identifiers and numeric readouts read better in `font-mono` | `className="font-mono"` is the **only** authorized typographic override. Never combine with `uppercase`/`font-bold`/custom sizes. |
+| **Inline notice/validation callouts** | `TaskActionCard` (validation boxes), `ManualTerminalNotice` (`/* intentional: badge density */`), `SessionCloseModal`, `Step1_Customer`, `Step2_PurchaseDTE`, `ProductClientView` | Alert/notice boxes with icon + sentence text — not badges | Rendered as plain `div`/`Alert`. Border is allowed for affordance. Do not apply the Chip stencil. |
+| **POS touch density** | `ProductSelector` (POS grid) | High-density touch UI uses the smallest standard size | Standard `size="xs"` (18px). No pixel-level `h-4`/`text-[9px]` overrides. |
+
+These exceptions exist so the invariant stays strict everywhere else. If a new consumer needs one of these patterns, reuse the named exception — never invent a new one without an ADR.

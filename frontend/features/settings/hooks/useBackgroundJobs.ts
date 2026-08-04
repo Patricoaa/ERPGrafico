@@ -22,6 +22,7 @@ export function useBackgroundJobs() {
             const data = await settingsApi.getBackgroundJobs()
             return data as unknown as BackgroundJob[]
         },
+        placeholderData: (prev) => prev,
         refetchInterval: (query) => {
             const hasActiveJobs = query.state.data?.some(j => j.status === "PENDING" || j.status === "PROCESSING")
             return hasActiveJobs ? 3000 : false

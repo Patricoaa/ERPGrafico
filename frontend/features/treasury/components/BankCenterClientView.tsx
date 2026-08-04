@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Landmark } from "lucide-react"
-import { DataCell, DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
+import { DataCell, DataTableView, AutoEntityCard, EntityCard } from '@/components/shared'
 import { bankActions, type BankActionsCtx } from './bankActions'
 import { ActivitySidebar } from "@/features/audit"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -21,7 +21,7 @@ import { useBanks } from "@/features/treasury/hooks/useMasterData"
 import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank } from "@/features/treasury/types"
 import { BankCreationWizard } from "./BankCreationWizard"
-import type { Column } from "@tanstack/react-table"
+import { bankCenterFields } from "@/features/treasury/bankCenterFields"
 
 // --- Schemas ---
 
@@ -78,27 +78,7 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
         onRestore: (id) => restoreConfirm.requestConfirm(id),
     }
 
-    const columns = [
-        {
-            accessorKey: "name",
-            header: ({ column }: { column: Column<Bank, unknown> }) => (
-                <DataTableColumnHeader column={column} title="Nombre" />
-            ),
-        },
-        {
-            accessorKey: "code",
-            header: ({ column }: { column: Column<Bank, unknown> }) => (
-                <DataTableColumnHeader column={column} title="Código" />
-            ),
-        },
-        {
-            id: "is_active",
-            header: ({ column }: { column: Column<Bank, unknown> }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
-            ),
-            accessorFn: (row: Bank) => (row.is_active ? "Activo" : "Archivado"),
-        },
-    ]
+    const columns = [...bankCenterFields.toColumns()]
 
     const filteredBanks = React.useMemo(() => {
         let result = banks
@@ -141,41 +121,27 @@ export function BankCenterClientView({ externalOpen, onOpenChange, createAction 
                 renderCard={(bank: Bank) => {
                     const overview = overviews.find(o => o.bank.id === bank.id)
                     return (
-                        <EntityCard
+                        <AutoEntityCard
                             key={bank.id}
+                            data={bank}
+                            fields={bankCenterFields}
+
+                            entityLabel="treasury.bank"
                             onClick={() => router.push(`/treasury/bank-center/${bank.id}/overview`)}
+                            icon={Landmark}
+                            actions={bankActions.render(bank, bankActionsCtx)}
                         >
-                            <EntityCard.Header
-                                icon={Landmark}
-                                title={bank.name}
-                                subtitle={
-                                    bank.code || bank.swift_code
-                                        ? [bank.code && `Código: ${bank.code}`, bank.swift_code && `SWIFT: ${bank.swift_code}`]
-                                            .filter(Boolean).join(' · ')
-                                        : undefined
-                                }
-                                trailing={
-                                    <EntityCard.Badge
-                                        label={bank.is_active ? 'Activo' : 'Archivado'}
-                                        variant={bank.is_active ? 'default' : 'secondary'}
-                                    />
-                                }
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Cuentas" value={overview?.summary.total_accounts ?? 0} />
-                                <EntityCard.Field label="Tarjetas" value={overview?.summary.card_count ?? 0} />
-                                <EntityCard.Field label="Cheques" value={overview?.summary.issued_checks ?? 0} />
-                                <EntityCard.Field label="Préstamos" value={overview?.summary.active_loan_count ?? 0} />
-                            </EntityCard.Body>
-                            <EntityCard.Footer>
-                                <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
-                                    {bankActions.render(bank, bankActionsCtx)}
-                                </div>
-                            </EntityCard.Footer>
-                        </EntityCard>
+                            {/* Escape hatch: metrics from external DTO (overview.summary), not Bank entity fields */}
+                            <EntityCard.Metrics metrics={[
+                                { label: 'Cuentas', value: <DataCell.Number value={overview?.summary.total_accounts ?? 0} /> },
+                                { label: 'Tarjetas', value: <DataCell.Number value={overview?.summary.card_count ?? 0} /> },
+                                { label: 'Cheques', value: <DataCell.Number value={overview?.summary.issued_checks ?? 0} /> },
+                                { label: 'Préstamos', value: <DataCell.Number value={overview?.summary.active_loan_count ?? 0} /> },
+                            ]} />
+                        </AutoEntityCard>
                     )
                     }}
-                    cardSkeleton={{ showFooter: true }}
+                    cardSkeleton={{ showBody: true }}
                 />
 
             <BankCreationWizard

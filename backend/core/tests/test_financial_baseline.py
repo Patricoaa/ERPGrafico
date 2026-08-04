@@ -76,7 +76,7 @@ def _normalise(payload):
     """
     if isinstance(payload, dict):
         return {
-            k: ("<id>" if k in {"id", "entry_id", "contact_id"} else _normalise(v))
+            k: ("<id>" if k in {"id", "entry_id", "contact_id", "created_at"} else _normalise(v))
             for k, v in payload.items()
         }
     if isinstance(payload, list):

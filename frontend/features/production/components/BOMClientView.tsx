@@ -1,14 +1,12 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
-import React, { useEffect, useState } from "react"
+import React, { useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge, Chip } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { Layers } from "lucide-react"
+import { ActionConfirmModal, DataTableView, AutoEntityCard } from '@/components/shared'
 import { BOMDrawer, useAllBOMs, useBOM, useDeleteBomMutation } from "@/features/production"
 import { bomActions, type BOMActionsCtx } from "./bomActions"
+import { bomFields } from "@/features/production/bomFields"
 
 import { ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -29,38 +27,36 @@ interface BOMClientViewProps {
 }
 
 export function BOMClientView({ initialBoms }: BOMClientViewProps) {
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingBomId, setEditingBomId] = useState<number | null>(null)
-    const { deleteBom } = useDeleteBomMutation()
-    const { data: editingBomData } = useBOM(editingBomId ?? undefined)
+
 
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
+    const selectedId = searchParams.get("selected") ? Number(searchParams.get("selected")) : null
+    const isFormOpen = isNewModalOpen || !!selectedId
+    const editingBomId = selectedId
+
+    const { deleteBom } = useDeleteBomMutation()
+    const { data: editingBomData } = useBOM(editingBomId ?? undefined)
 
     const search = useUnifiedSearch(bomUnifiedSearchDef)
     const allFilters = { ...search.filters }
     const { boms, isLoading: loading, isRefetching, refetch: refetchBoms } = useAllBOMs(allFilters, initialBoms)
 
-    useEffect(() => {
-        if (isNewModalOpen) {
-            requestAnimationFrame(() => {
-                setIsFormOpen(true)
-                setEditingBomId(null)
-            })
-        }
-    }, [isNewModalOpen])
 
     const handleFormClose = (open: boolean) => {
-        setIsFormOpen(open)
         if (!open) {
-            setEditingBomId(null)
-            if (isNewModalOpen) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                router.push(`?${params.toString()}`, { scroll: false })
-            }
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            params.delete("selected")
+            router.push(`?${params.toString()}`, { scroll: false })
         }
+    }
+
+    const handleEdit = (id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set("selected", String(id))
+        router.push(`?${params.toString()}`, { scroll: false })
     }
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
@@ -70,97 +66,15 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
-    const handleEdit = (id: number) => {
-        setEditingBomId(id)
-        setIsFormOpen(true)
-    }
-
     const actionsCtx: BOMActionsCtx = {
         onEdit: handleEdit,
         onDelete: handleDelete,
     }
 
-    const columns: ColumnDef<BOMListItem>[] = [
-        {
-            accessorKey: "product_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Producto" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const bom = row.original;
-                return (
-                    <div className="flex flex-col items-center gap-1 py-1">
-                        <span className="font-medium text-xs leading-tight text-center">{bom.product_name}</span>
-                        <div className="flex flex-wrap justify-center gap-1">
-                            {bom.product_internal_code && (
-                                <Chip size="xs" intent="neutral" className="font-normal opacity-80 text-center">
-                                    {bom.product_internal_code}
-                                </Chip>
-                            )}
-                            {bom.product_code && bom.product_code !== bom.product_internal_code && (
-                                <Chip size="xs" intent="neutral" className="font-normal opacity-80 text-center">
-                                    {bom.product_code}
-                                </Chip>
-                            )}
-                        </div>
-                    </div>
-                );
-            },
-            meta: { title: "Producto" },
-        },
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre / Versión" className="justify-center" />
-            ),
-            cell: ({ row }) => <div className="text-center">{row.getValue("name")}</div>,
-            meta: { title: "Nombre / Versión" },
-        },
-        {
-            accessorKey: "lines_count",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Componentes" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <Chip size="sm" intent="neutral" className="gap-1">
-                        <Layers className="h-3 w-3" />
-                        {row.getValue("lines_count") || 0}
-                    </Chip>
-                </div>
-            ),
-            meta: { title: "Componentes" },
-        },
-        {
-            accessorKey: "total_cost",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Costo Total" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const amount = parseFloat(row.getValue("total_cost")) || 0
-                return <div className="text-center font-mono">
-                    {formatCurrency(amount)}
-                </div>
-            },
-            meta: { title: "Costo Total" },
-        },
-        {
-            accessorKey: "active",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DataCell.Status
-                        status={row.getValue("active") ? "active" : "inactive"}
-                        label={row.getValue("active") ? "Activa" : "Inactiva"}
-                    />
-                </div>
-            ),
-            meta: { title: "Estado" },
-        },
-        bomActions.column(actionsCtx),
-    ]
+    const columns: ColumnDef<BOMListItem>[] = useMemo(() => [
+        ...bomFields.toColumns(),
+        bomActions.auto(actionsCtx),
+    ], [])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -200,19 +114,16 @@ export function BOMClientView({ initialBoms }: BOMClientViewProps) {
                         description: "Crea una lista de materiales (BOM) para definir cómo se fabrica un producto.",
                     }}
                     renderCard={(bom: BOMListItem) => (
-                        <EntityCard onClick={() => bom.id != null && handleEdit(bom.id)}>
-                            <EntityCard.Header
-                                title={bom.name}
-                                subtitle={bom.product_name}
-                                trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
-                            />
-                            <EntityCard.Body actions={bomActions.render(bom, actionsCtx)}>
-                                {bom.product_internal_code && (
-                                    <EntityCard.Field label="Código" value={<DataCell.Code>{bom.product_internal_code}</DataCell.Code>} />
-                                )}
-                                <EntityCard.Field label="Componentes" value={<DataCell.Number value={bom.lines_count} />} />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={bom.id}
+                            data={bom}
+                            fields={bomFields}
+
+                            entityLabel="production.bom"
+
+                            actions={bomActions.render(bom, actionsCtx)}
+                            defaultAction={bomActions.defaultAction(actionsCtx)?.(bom) ?? (() => bom.id != null && handleEdit(bom.id))}
+                        />
                     )}
                 />
             </div>

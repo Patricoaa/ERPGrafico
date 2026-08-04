@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useRef } from "react"
-import { Chip, Drawer, SkeletonShell, StatusBadge, DataTable } from "@/components/shared"
+import { Drawer, SkeletonShell, StatusBadge, DataTable, DataCell } from "@/components/shared"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { useDrawerIdentity } from "@/features/_shared"
 import { Button } from "@/components/ui/button"
-import { Printer, Check, XCircle } from "lucide-react"
+import { Check, XCircle } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 import { PrintableLayout } from "@/features/_shared"
@@ -149,13 +149,13 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
             <Drawer
                 open={open}
                 onOpenChange={onOpenChange}
-                side="right"
+                side="left"
                 boundary="embedded"
                 defaultSize={formDrawerWidth("master", false)}
                 title={identity.title}
                 headerActions={
                     <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>
+                        <DataCell.Action action="print" onClick={() => handlePrint()} />
                     </div>
                 }
                 subtitle={identity.subtitle}
@@ -173,7 +173,7 @@ export function InventoryDocumentDrawer({ documentId, id, open, onOpenChange, on
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground text-xs block">Estado</span>
-                                    <p><StatusBadge status={document.status} /></p>
+                                    <p><StatusBadge status={document.status} variant="badge" /></p>
                                 </div>
                                 <div>
                                     <span className="text-muted-foreground text-xs block">Fecha</span>

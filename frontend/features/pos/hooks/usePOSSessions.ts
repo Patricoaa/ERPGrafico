@@ -6,13 +6,12 @@ export interface POSSession {
     id: number
     id_display: string
     user_name: string
-    treasury_account: number
-    treasury_account_name: string
+    treasury_account: number | null
+    treasury_account_name: string | null
     opened_at: string
     closed_at: string | null
     status: 'OPEN' | 'CLOSED' | 'CLOSING'
     status_display: string
-    start_amount: number
     current_cash?: number
     expected_cash: number
     terminal_name?: string
@@ -35,6 +34,8 @@ export function usePOSSessions(filters?: FilterState) {
             const params: Record<string, unknown> = {}
             if (filters?.status) params.status = filters.status
             if (filters?.search) params.search = filters.search
+            if (filters?.date_from) params.date_from = filters.date_from
+            if (filters?.date_to) params.date_to = filters.date_to
             const data = await posApi.getSessions(params) as unknown as POSSession[]
             return data
         },

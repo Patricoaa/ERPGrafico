@@ -1,15 +1,16 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { HandCoins } from "lucide-react"
-import { MoneyDisplay, SectionHeader } from "@/components/shared"
+import { AutoEntityCard, DataCell, SectionHeader, createEntityFields } from "@/components/shared"
 import type { BankOverviewData } from "../hooks/useBankOverview"
 
 interface Props {
     data: BankOverviewData
     bankId: number
 }
+
+const loanFields = createEntityFields<BankOverviewData["active_loans"][number]>()({})
 
 export function BankLoanSection({ data, bankId }: Props) {
     const router = useRouter()
@@ -24,42 +25,26 @@ export function BankLoanSection({ data, bankId }: Props) {
                 title="Préstamos Bancarios"
                 count={active_loans.length}
                 href={`/treasury/bank-center/${bankId}/loans`}
-                variant="card"
+                variant="list"
             />
 
             <div className="space-y-2">
                 {active_loans.map(loan => (
-                    <Button
+                    <AutoEntityCard
                         key={loan.id}
+                        data={loan}
+                        fields={loanFields}
+                        variant="overview"
+                        icon={HandCoins}
+                        title={loan.display_id}
+                        subtitle="Vigente"
+                        overviewMetrics={[
+                            { label: "Capital", value: <DataCell.Currency value={loan.principal} showColor={false} /> },
+                            { label: "Saldo Insoluto", value: <DataCell.Currency value={loan.outstanding_balance} /> },
+                            { label: "Cuotas Rest.", value: `${loan.paid_installments_count}/${loan.installments_count}` },
+                        ]}
                         onClick={() => router.push(`/treasury/bank-center/${bankId}/loans?selected=${loan.id}`)}
-                        className="card-base w-full text-left bg-card p-4 cursor-pointer"
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-semibold truncate">{loan.display_id}</span>
-                            <HandCoins className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-                        </div>
-
-                        <div className="text-[11px] font-mono text-muted-foreground mb-3">
-                            Vigente
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40 text-xs">
-                            <div>
-                                <span className="text-[10px] text-muted-foreground block">Capital</span>
-                                <MoneyDisplay amount={loan.principal} className="text-sm font-semibold" showColor={false} />
-                            </div>
-                            <div className="text-right">
-                                <span className="text-[10px] text-muted-foreground block">Saldo Insoluto</span>
-                                <MoneyDisplay amount={loan.outstanding_balance} className="text-sm font-semibold" />
-                            </div>
-                            <div className="text-right">
-                                <span className="text-[10px] text-muted-foreground block">Cuotas Rest.</span>
-                                <span className="text-sm font-semibold tabular-nums">
-                                    {loan.paid_installments_count}/{loan.installments_count}
-                                </span>
-                            </div>
-                        </div>
-                    </Button>
+                    />
                 ))}
             </div>
         </section>

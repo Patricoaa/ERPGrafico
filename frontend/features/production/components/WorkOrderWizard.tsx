@@ -55,7 +55,7 @@ const STEP_ORIGIN: WorkOrderStage = {
 
 const STEP_SALE_ORDER_PRODUCT: WorkOrderStage = {
   id: 'SALE_ORDER_PRODUCT',
-  label: 'Selección de NV y Producto',
+  label: 'Selección de OV y Producto',
   icon: FileText,
   alwaysShow: true,
   isCreationStep: true,
@@ -464,6 +464,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               <>
                 <StatusBadge
                   status={order.status}
+                  variant="badge"
                 />
                 {order.status === 'IN_PROGRESS' && (
                   <Button
@@ -887,7 +888,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
         variant="default"
         onConfirm={handleDuplicate}
         confirmText="Duplicar"
-        description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Nota de Venta original."
+        description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Orden de Venta original."
       />
 
       <ActionConfirmModal

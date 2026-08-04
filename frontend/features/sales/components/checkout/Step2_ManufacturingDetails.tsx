@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { DataTable } from "@/components/shared"
+import { DataTable, Chip } from "@/components/shared"
 import { AlertCircle, Edit, CheckCircle2, Settings2, Zap, Package } from "lucide-react"
 import { AdvancedManufacturingDrawer } from "../forms/AdvancedManufacturingDrawer"
 
@@ -76,14 +76,14 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                         </span>
                                         <div className="flex flex-wrap gap-1">
                                             {item.internal_code && (
-                                                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
+                                                <Chip size="xs" intent="primary" className="font-mono">
                                                     {item.internal_code}
-                                                </span>
+                                                </Chip>
                                             )}
                                             {item.code && item.code !== item.internal_code && (
-                                                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                                                <Chip size="xs" intent="neutral" className="font-mono">
                                                     {item.code}
-                                                </span>
+                                                </Chip>
                                             )}
                                         </div>
                                     </div>
@@ -106,25 +106,22 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                 const subtype = getMfgSubType(row.original)
                                 if (subtype === 'ADVANCED') {
                                     return (
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-sm w-fit">
-                                            <Settings2 className="h-3 w-3" />
+                                        <Chip size="sm" intent="primary" icon={Settings2}>
                                             Avanzada
-                                        </div>
+                                        </Chip>
                                     )
                                 }
                                 if (subtype === 'EXPRESS') {
                                     return (
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-info bg-info/10 border border-info/20 px-2 py-1 rounded-sm w-fit">
-                                            <Zap className="h-3 w-3" />
+                                        <Chip size="sm" intent="info" icon={Zap}>
                                             Express
-                                        </div>
+                                        </Chip>
                                     )
                                 }
                                 return (
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-muted-foreground bg-muted/30 border border-muted-foreground/20 px-2 py-1 rounded-sm w-fit">
-                                        <Package className="h-3 w-3" />
+                                    <Chip size="sm" intent="neutral" icon={Package}>
                                         Simple
-                                    </div>
+                                    </Chip>
                                 )
                             },
                         },
@@ -136,30 +133,26 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                 if (subtype === 'ADVANCED') {
                                     const hasConfig = !!row.original.manufacturing_data
                                     return hasConfig ? (
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-success bg-success/10 border border-success/20 px-2 py-1 rounded-sm w-fit">
-                                            <CheckCircle2 className="h-3 w-3" />
+                                        <Chip size="sm" intent="success" icon={CheckCircle2}>
                                             Configurado
-                                        </div>
+                                        </Chip>
                                     ) : (
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-warning bg-warning/10 border border-warning/20 px-2 py-1 rounded-sm w-fit">
-                                            <AlertCircle className="h-3 w-3" />
+                                        <Chip size="sm" intent="warning" icon={AlertCircle}>
                                             Pendiente
-                                        </div>
+                                        </Chip>
                                     )
                                 }
                                 if (subtype === 'EXPRESS') {
                                     return (
-                                        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-info bg-info/10 border border-info/20 px-2 py-1 rounded-sm w-fit">
-                                            <Zap className="h-3 w-3" />
+                                        <Chip size="sm" intent="info" icon={Zap}>
                                             Auto-Finalizado
-                                        </div>
+                                        </Chip>
                                     )
                                 }
                                 return (
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-success bg-success/10 border border-success/20 px-2 py-1 rounded-sm w-fit">
-                                        <CheckCircle2 className="h-3 w-3" />
+                                    <Chip size="sm" intent="success" icon={CheckCircle2}>
                                         Disponible
-                                    </div>
+                                    </Chip>
                                 )
                             },
                         },

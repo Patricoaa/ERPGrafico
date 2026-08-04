@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye, FileQuestion } from 'lucide-react'
 import {
     BaseModal, FormFooter, ActionSlideButton, StatCard,
-    Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell,
+    Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell, StaleDataBanner, Chip,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useLoan } from '../hooks/useLoans'
@@ -38,7 +38,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
             </div>
         </BaseModal>
     )
-    if (isError || !loan) return (
+    if (!loan) return (
         <BaseModal open={open} onOpenChange={onOpenChange} title="Error">
             <EmptyState
                 title="No se pudo cargar el crédito"
@@ -51,7 +51,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
     const fmt = (val: string) => {
         const n = parseFloat(val)
         if (loan.currency === 'UF') {
-            return `${Math.round(n).toLocaleString('es-CL')} UF`
+            return `${new Intl.NumberFormat('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n))} UF`
         }
         return new Intl.NumberFormat('es-CL', {
             style: 'currency', currency: 'CLP',
@@ -72,15 +72,15 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                         <div className="flex flex-col">
                             <span>{loan.display_id} · {loan.lender_name}</span>
                             <div className="flex items-center gap-1.5 mt-1">
-                                <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                <Chip size="sm" intent="neutral">
                                     {loan.liability_account_name}
-                                </span>
-                                <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold">
+                                </Chip>
+                                <Chip size="sm" intent="neutral">
                                     {loan.currency}
-                                </span>
-                                <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                </Chip>
+                                <Chip size="sm" intent="neutral">
                                     {loan.interest_rate}% {loan.rate_basis_display.toLowerCase()}
-                                </span>
+                                </Chip>
                             </div>
                         </div>
                     </div>
@@ -101,6 +101,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     ) : undefined
                 }
             >
+                {isError && <StaleDataBanner className="mx-4 mt-2" />}
                 <div className="space-y-6">
                     {/* KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

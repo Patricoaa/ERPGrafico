@@ -16,10 +16,11 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
     let initialAbsences: Absence[] | undefined
     if (!hasActiveFilters) {
         try {
-            initialAbsences = await serverFetch<Absence[]>('hr/absences/', {
+            const res = await serverFetch<{ results: Absence[] }>('hr/absences/', {
                 params: { page_size: '200' },
                 revalidate: 10,
             })
+            initialAbsences = res.results
         } catch {
             // Client-side fetch handles fallback
         }

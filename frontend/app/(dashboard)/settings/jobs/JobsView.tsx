@@ -4,11 +4,9 @@ import { useMemo } from "react"
 import { type ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Download, AlertCircle, RefreshCw } from "lucide-react"
+import { Download, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { 
     DataTableView, 
@@ -16,7 +14,9 @@ import {
     DataCell, 
     UnifiedSearchBar,
     useUnifiedSearch,
-    StatusBadge 
+    StatusBadge,
+    StaleDataBanner,
+    Chip,
 } from "@/components/shared"
 import { useBackgroundJobs, type BackgroundJob, jobUnifiedSearchDef } from "@/features/settings"
 
@@ -106,6 +106,7 @@ export default function JobsView() {
                     </span>
                 )
             },
+            meta: { title: "Iniciado" },
         },
         {
             id: "actions",
@@ -146,17 +147,9 @@ export default function JobsView() {
         }
     ], [refetch])
 
-    if (isError) {
-        return (
-            <Alert variant="destructive">
-                <AlertCircle className="w-4 h-4" />
-                <AlertDescription>Error al cargar el historial de procesos asíncronos.</AlertDescription>
-            </Alert>
-        )
-    }
-
     return (
         <div className="flex-1 min-h-0 flex flex-col">
+            {isError && <StaleDataBanner onRetry={() => refetch()} className="mx-4 mt-2" />}
             <DataTableView
                 columns={columns}
                 data={filteredJobs}
@@ -203,9 +196,9 @@ export default function JobsView() {
                         )}
                         <CardHeader className="pb-3">
                             <div className="flex justify-between items-start mb-2">
-                                <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                                <Chip size="xs" intent="neutral">
                                     {job.job_type_display}
-                                </Badge>
+                                </Chip>
                                 <StatusBadge status={job.status} label={job.status_display} size="xs" />
                             </div>
                             <CardTitle className="text-base leading-tight">{job.title}</CardTitle>

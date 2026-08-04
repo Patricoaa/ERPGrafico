@@ -15,7 +15,7 @@ interface InvoiceDrawerProps extends TransactionDrawerProps {
     invoiceId?: number
 }
 
-export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId }: InvoiceDrawerProps) {
+export function InvoiceDrawer({ id, open, onOpenChange, invoiceId }: InvoiceDrawerProps) {
     const entityId = id ?? invoiceId ?? null
     const { data: invoice, isLoading } = useInvoice(entityId)
     const { printRef, handlePrint } = usePrintableDrawer()
@@ -63,6 +63,7 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
             </PrintableLayout>
 
             <Drawer
+                fillContent
                 mode="view"
                 open={open}
                 onOpenChange={onOpenChange}
@@ -77,7 +78,7 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando factura">
                     {invoice && (
                         <div className="p-4 space-y-4">
-                            <StatusBadge status={invoice.status} />
+                            <StatusBadge status={invoice.status} variant="badge" />
 
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>

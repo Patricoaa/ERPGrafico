@@ -121,7 +121,7 @@ export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps
 
                 {/* Footer */}
                 <div className="text-center border-t border-dashed pt-2 mt-3 text-[9px] text-muted-foreground/80">
-                    <p>Gracias por su preferencia</p>
+
                     <p>Generado por ERPGrafico</p>
                 </div>
 

@@ -35,17 +35,20 @@ Cualquier acción CRUD que aparezca en una fila de `DataTable`, en el footer de 
 ```mermaid
 graph TD
     A["¿Dónde renderizo la acción?"]
-    A -->|"Fila de DataTable"| B["createActionsColumn + DataCell.Action / DataCell.ActionMenu"]
-    A -->|"Footer de EntityCard / tarjeta Kanban"| C["CardActions + CardActions.Item / CardActions.Menu"]
-    B --> D{"¿Cuántas acciones?"}
-    C --> D
-    D -->|"1–3"| E["Todas inline (action='<key>')"]
-    D -->|"4"| F["3 inline + 1 en kebab — o 4 inline si hay espacio"]
-    D -->|"5+"| G["2 read + edit inline · resto en DataCell.ActionMenu / CardActions.Menu"]
+    A -->|"Fila de DataTable"| B["createEntityActions + .auto(ctx)"]
+    A -->|"Footer de EntityCard / tarjeta Kanban"| C["createEntityActions + .render(item, ctx)"]
+    B --> D{"auto() detecta # acciones visibles"}
+    D -->|"0"| E["Celda vacía"]
+    D -->|"1"| F["DataCell.ActionSingle — ArrowRight en hover"]
+    D -->|"2+"| G["DataCell.ActionMenu — kebab MoreVertical"]
+    C --> H["DataCell.Action icons individuales"]
 ```
 
-- **Forma preferida:** `<DataCell.Action action="edit" onClick={…} />` — icono, tooltip y color salen del registry.
-- **Acciones específicas del módulo (no CRUD):** mismo componente, pasando `icon` + `title` propios — se conservan tamaño (h-7 w-7), tooltip (delay 400ms, paleta sidebar).
+- **Patrón preferido:** Definir acciones como datos estructurados (`StructuredAction[]`) y usar `.auto(ctx)` — el sistema detecta automáticamente ActionSingle vs ActionMenu.
+- **`auto()`** lee `visible` flags en tiempo de render, filtra acciones ocultas, y elige el componente correcto por fila.
+- **Cards / Kanban:** `.render(item, ctx)` convierte datos estructurados → iconos `DataCell.Action` individuales.
+- **Forma legacy (JSX):** `.column(ctx)` sigue funcionando pero no soporta auto-detección.
+- **Acciones específicas del módulo (no CRUD):** usar `action` key del registry o pasar `icon` + `title` propios — se conservan tamaño, tooltip, paleta sidebar.
 - **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?hub` CollapsibleSheet). Para ver el detalle de una entidad, `openEntity(label, id)` con `mode='view'` ([component-entity-drawers.md](./component-entity-drawers.md), ADR-0028; `?detail` quedó deprecado). Nunca uses `?id`, `?edit` para edición de entidades — `?selected` es el canónico (ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)). `?modal` está reservado para apertura de wizards de creación/import (ver [list-modal-edit-pattern.md §9](./list-modal-edit-pattern.md#9-parámetro-modal-para-wizards-de-creaciónimport)). Reserva `?view` exclusivamente para el switch de viewMode.
 - **Orden canónico (siempre):** `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden.
 - **`annul` vs `delete`:** `annul` para documentos transaccionales (factura, OV, pago — preserva el registro para auditoría); `delete` para masters/config (categoría, almacén — borra el registro). Ambas son destructivas.
@@ -75,6 +78,12 @@ graph TD
     T -->|Líneas editables en formulario| TD(FormLineItemsTable / AccountingLinesTable)
     T -->|Reporte jerárquico contable| TE(ReportTable)
 ```
+
+**¿Cómo renderizo un campo de una entidad (text vs secondary, código, fecha, moneda, chip…)?** →
+Declarar el `type` del campo en `*Fields.ts` con `createEntityFields<T>()`. El motor resuelve el
+`DataCell` correcto en las tres superficies. Ver **[component-fields.md](./component-fields.md)**
+(tabla de decisión de `type` y referencia FieldType → renderer). No se instancia `DataCell.*`
+inline en columnas regulares de entidad.
 
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
 - **`SectionHeader`**: **Obligatorio** para títulos de sección dentro de cards y listados. 2 variantes (`card` y `list`). [Ver contrato completo](./component-section-header.md).
@@ -112,7 +121,7 @@ graph TD
 - **`CollapsibleSheet`**: Cuando necesites un panel lateral con contenido secundario (ej. Ver el detalle de una orden al lado de un listado).
 - **`Drawer`**: Superficie modal que se despliega desde los bordes de la página. Compatible con **formularios CRUD** (create/edit) y subvistas de datos (tablas, históricos, libros mayores). Preserva el contexto visual de la página subyacente. Para formularios, usar `side="left"` y dimensionar según la tabla en [component-drawer.md](./component-drawer.md).
 - **`EntityDetailPage`**: ~~Shell de página completa para rutas `[id]`.~~ **Eliminado (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
-- **Skeletons (`SkeletonShell`, `CardSkeleton`, `TableSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS).
+- **Skeletons (`SkeletonShell`, `CardSkeleton`, `PageLayoutSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS). El skeleton de tablas es integrado en `DataTable` (`isLoading` + `skeletonRows`).
 
 
 ## 5. Formularios y Surfaces

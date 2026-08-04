@@ -136,22 +136,21 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
-
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
-            <div className="flex justify-end">
-                <AutoSaveStatusBadge
-                    status={status}
-                    invalidReason={invalidReason}
-                    lastSavedAt={lastSavedAt}
-                    onRetry={retry}
-                />
-            </div>
-            <Form {...form}>
-                <form className="mt-6 space-y-6">
-                    <FadeIn key={activeTab}>
-                    {activeTab === "credit" && (
+        <SkeletonShell isLoading={isLoading && !settings} ariaLabel="Cargando configuración...">
+            <div className="max-w-6xl mx-auto space-y-6">
+                <div className="flex justify-end">
+                    <AutoSaveStatusBadge
+                        status={status}
+                        invalidReason={invalidReason}
+                        lastSavedAt={lastSavedAt}
+                        onRetry={retry}
+                    />
+                </div>
+                <Form {...form}>
+                    <form className="mt-6 space-y-6">
+                        <FadeIn key={activeTab}>
+                        {activeTab === "credit" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                             <Card variant="default">
                                 <CardHeader>
@@ -300,7 +299,8 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                     </FadeIn>
                 </form>
             </Form>
-        </div>
+            </div>
+        </SkeletonShell>
     )
 }
 

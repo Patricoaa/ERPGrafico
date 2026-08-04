@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function POSSessionsPage() {
     return (
         <div className="h-full flex flex-col">
-            <PageSectionHeader title="Sesiones POS" description="Registro de aperturas y cierres de cajas" />
+            <PageSectionHeader title="Sesiones POS" description="Registro de aperturas y cierres de sesión" />
             <POSSessionsClientView hideHeader />
         </div>
     )

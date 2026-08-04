@@ -7,6 +7,18 @@ import {Check, ChevronRight, ShoppingCart, User, Factory, Truck, Wallet as Walle
 import type { WizardState } from "@/types/pos"
 import * as Validation from "../utils/validation"
 
+const methodLabels: Record<string, string> = {
+    CASH: 'Efectivo',
+    CARD: 'Tarjeta',
+    CREDIT_CARD: 'T. Crédito',
+    DEBIT_CARD: 'T. Débito',
+    TRANSFER: 'Transferencia',
+    CREDIT: 'Crédito',
+    CREDIT_BALANCE: 'Saldo',
+    CHECK: 'Cheque',
+    MERCADO_PAGO: 'M. Pago',
+}
+
 function getDeliveryLabel(type: string): string {
     switch (type) {
         case 'IMMEDIATE': return 'Inmediata'
@@ -16,7 +28,7 @@ function getDeliveryLabel(type: string): string {
     }
 }
 
-function getStepMetadata(stepLabel: string, wizardState: WizardState | null): string | null {
+function getStepMetadata(stepLabel: string, wizardState: WizardState | null, itemsCount: number): string | null {
     if (!wizardState) return null
     switch (stepLabel) {
         case 'Cliente':
@@ -30,6 +42,10 @@ function getStepMetadata(stepLabel: string, wizardState: WizardState | null): st
             const date = dd.date ? formatPlainDate(dd.date) : null
             return date ? `${date} (${label})` : label
         }
+        case 'Carrito':
+            return `${itemsCount} items`
+        case 'Pago':
+            return wizardState.paymentData?.method ? methodLabels[wizardState.paymentData.method] || wizardState.paymentData.method : null
         default:
             return null
     }
@@ -60,7 +76,7 @@ export function POSCheckoutHeader() {
                 const Icon = step.icon
                 const isCompleted = currentStep > step.id
                 const isActive = currentStep === step.id
-                const stepMeta = isCompleted ? getStepMetadata(step.label, wizardState) : null
+                const stepMeta = isCompleted ? getStepMetadata(step.label, wizardState, items.length) : null
 
                 return (
                     <div key={step.id} className="flex items-center group">
@@ -69,6 +85,11 @@ export function POSCheckoutHeader() {
                                 "flex flex-col items-center gap-[clamp(0.15rem,0.5vw,0.35rem)] relative"
                             )}
                         >
+                            {stepMeta && (
+                                <span className="text-[clamp(0.3rem,0.65vw,0.5rem)] text-muted-foreground truncate max-w-[clamp(40px,10vw,80px)] leading-tight">
+                                    {stepMeta}
+                                </span>
+                            )}
                             <div className={cn(
                                 "h-[clamp(1.5rem,3.5vw,2.25rem)] w-[clamp(1.5rem,3.5vw,2.25rem)] rounded-sm flex items-center justify-center transition-all duration-300 border-2",
                                 isActive ? "bg-primary border-primary text-primary-foreground scale-110" :
@@ -88,11 +109,6 @@ export function POSCheckoutHeader() {
                             )}>
                                 {step.label}
                             </span>
-                            {stepMeta && (
-                                <span className="text-[clamp(0.3rem,0.65vw,0.5rem)] text-muted-foreground truncate max-w-[clamp(40px,10vw,80px)] leading-tight">
-                                    {stepMeta}
-                                </span>
-                            )}
                         </div>
 
                         {index < steps.length - 1 && (

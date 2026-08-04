@@ -10,4 +10,5 @@ export const reconciliationKeys = {
     lineSuggestions: (lineId: number) => [...reconciliationKeys.all, 'line-suggestions', lineId] as const,
     paymentSuggestions: (paymentId: number) => [...reconciliationKeys.all, 'payment-suggestions', paymentId] as const,
     reconciledLines: (statementId: number, params: Record<string, unknown> = {}) => [...reconciliationKeys.all, 'reconciled-lines', statementId, params] as const,
+    simulation: (rule: Record<string, unknown>) => [...reconciliationKeys.all, 'simulation', rule] as const,
 }

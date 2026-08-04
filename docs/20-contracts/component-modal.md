@@ -213,6 +213,8 @@ interface WizardStep {
 | `isLoading` | `boolean` | ❌ | `false` | Full wizard loading state |
 | `successContent` | `ReactNode` | ❌ | — | Shown after `onComplete` resolves |
 | `footerLeft` | `ReactNode` | ❌ | — | Left slot in footer |
+| `touchMode` | `boolean` | ❌ | `false` | Pantalla táctil: step counter, título y footer agrandados (targets ≥ 48px). Usar con `useTouchMode()` |
+| `onStepChange` | `(index: number) => void` | ❌ | — | Notifica el paso activo (0-indexed) al avanzar/retroceder/saltar |
 
 Inherits `BaseModal` props except `children`, `title`, `description`, `footer`.
 

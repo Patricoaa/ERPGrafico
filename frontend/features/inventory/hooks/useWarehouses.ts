@@ -9,9 +9,15 @@ export interface Warehouse {
     name: string
     code: string
     address: string
+    is_active: boolean
 }
 
-export type WarehousePayload = Omit<Warehouse, 'id'>
+export interface WarehousePayload {
+    name: string
+    code: string
+    address: string
+    is_active?: boolean
+}
 
 // ─── Hierarchical query keys ──────────────────────────────────────────────────
 

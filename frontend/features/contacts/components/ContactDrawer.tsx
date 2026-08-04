@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState, useMemo, useRef } from "react"
+import {useEffect, useState, useMemo} from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
-import { ActionConfirmModal, DomainHubStatus, Drawer, StatCard, StatusBadge } from '@/components/shared'
+import {ActionConfirmModal, DomainHubStatus, Drawer, StatCard} from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import {
     Form,
@@ -16,31 +16,30 @@ import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
-import { type Contact, type ContactPayload, type InsightsData } from "../types"
+import { type Contact, type ContactPayload } from "../types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
 
 import { ActivitySidebar } from "@/features/audit"
 
-import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Printer} from "lucide-react"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
-import { createDomainCardView } from "@/lib/view-helpers"
+import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin} from "lucide-react"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, useDrawerMode, type DrawerMode } from "@/features/_shared"
 import { DataCell, EmptyState, Chip } from '@/components/shared'
 import { contactDocumentActions, type ContactDocumentActionsCtx } from './contactDocumentActions'
+import { salesOrderFields } from "@/features/sales/salesOrderFields"
+import { purchaseOrderFields } from "@/features/purchasing/purchaseOrderFields"
+import { workOrderFields } from "@/features/production/workOrderFields"
 
 import { DataTable } from '@/components/shared'
 
-import { type ColumnDef } from "@tanstack/react-table"
+import { type ColumnDef, type CellContext } from "@tanstack/react-table"
 import { type LucideIcon } from "lucide-react"
+import { contactCreditDocumentFields, type ContactCreditDocument } from '../contactCreditDocumentFields'
 
 import { getHubStatuses } from '@/features/orders'
-import { LabeledInput, LabeledContainer, RadioCard, DynamicIcon, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
-import { cn } from "@/lib/utils"
+import { LabeledInput, LabeledContainer, RadioCard, TabBar, TabBarContent, type TabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
-import { resolveCategory } from "@/lib/badge-resolvers"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -68,17 +67,13 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
 
-    const mode: DrawerMode = modeProp ?? (contact ? 'edit' : 'create')
-    const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { mode, isView } = useDrawerMode({ mode: modeProp, initialData: contact })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const [activeTab, setActiveTab] = useState("profile")
     const c = contact
     const { createContact, updateContact } = useContactMutations()
-    const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
-    const ins = insightsData
-
+    const { data: insightsData, isLoading: loadingInsights } = useContactInsights(c?.id)
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
         defaultValues: c ? {
@@ -126,12 +121,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
         }
     }, [contactDetails, form])
 
-    const { data: ledgerData = [], isLoading: loadingLedger, refetch: fetchLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
-
-    const handleActionSuccess = () => {
-        refetchInsights()
-        fetchLedger()
-    }
+    const { data: ledgerData = [], isLoading: loadingLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
 
     useEffect(() => {
         if (!open) {
@@ -264,6 +254,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={onOpenChange}
                 icon={identity.icon}
@@ -338,7 +329,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                                                 description={
                                                                     defaultCustomer && defaultCustomer.id !== c?.id
                                                                         ? `Actual: ${defaultCustomer.name}`
-                                                                        : "Se selecciona automáticamente en nuevas NV"
+                                                                        : "Se selecciona automáticamente en nuevas OV"
                                                                 }
                                                                 icon={<ShoppingCart className="h-4 w-4" />}
                                                             />
@@ -359,21 +350,14 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                             })()}
 
                                             <LabeledContainer label="Roles del Contacto">
-                                                <div className="grid grid-cols-3 gap-2 w-full">
-                                                    {(["CUSTOMER", "SUPPLIER", "RELATED", "PARTNER", "EMPLOYEE", "USER"] as const).map(value => {
-                                                        const resolved = resolveCategory('contact_type', value)
-                                                        return (
-                                                            <RadioGroup key={value} value={c?.active_roles?.includes(value) ? "on" : "off"} disabled>
-                                                                <RadioCard
-                                                                    id={`role-${value}`}
-                                                                    value="on"
-                                                                    label={resolved.label}
-                                                                    icon={resolved.icon ? <DynamicIcon name={resolved.icon} className="h-4 w-4" /> : undefined}
-                                                                    disabled
-                                                                />
-                                                            </RadioGroup>
-                                                        )
-                                                    })}
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {c?.id && (c.active_roles ?? []).length > 0 ? (
+                                                        (c.active_roles ?? []).map(value => (
+                                                            <Chip.Category key={value} domain="contact_type" value={value} size="sm" />
+                                                        ))
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">Sin roles asignados</span>
+                                                    )}
                                                 </div>
                                             </LabeledContainer>
                                         </div>
@@ -505,9 +489,8 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
-                                        title="Historial de Ventas (NV)"
+                                        title="Historial de Ventas (OV)"
                                         icon={ShoppingCart}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -517,7 +500,6 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="purchase"
                                         title="Historial de Compras (OC)"
                                         icon={Package}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
 
@@ -527,11 +509,10 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                                         type="work_order"
                                         title="Historial de Órdenes de Trabajo"
                                         icon={Wand2}
-                                        onActionSuccess={handleActionSuccess}
                                     />
                                 </TabBarContent>
                                 <TabBarContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
+                                    <CreditLedgerTable data={ledgerData} loading={loadingLedger} />
                                 </TabBarContent>
                             </TabBar>
                         </FormSplitLayout>
@@ -559,7 +540,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                             Al guardar, <strong>{c?.name || 'este contacto'}</strong> lo reemplazará como {confirmReplacement.type === 'customer' ? 'cliente' : 'proveedor'} predeterminado.
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            Esta preferencia controla qué contacto se selecciona automáticamente al crear nuevas {confirmReplacement.type === 'customer' ? 'notas de venta' : 'órdenes de compra'}.
+                            Esta preferencia controla qué contacto se selecciona automáticamente al crear nuevas {confirmReplacement.type === 'customer' ? 'ordenes de venta' : 'órdenes de compra'}.
                         </p>
                     </div>
                 }
@@ -574,10 +555,9 @@ interface InsightsTableProps {
     type: 'sale' | 'purchase' | 'work_order'
     title: string
     icon: LucideIcon
-    onActionSuccess?: () => void
 }
 
-function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: InsightsTableProps) {
+function InsightsTable({ data, type, title, icon: Icon }: InsightsTableProps) {
     const { openEntity } = useGlobalModals()
     const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
@@ -639,19 +619,6 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         }
     }, [data, activeFilter])
 
-    const cardView = useMemo(() => {
-        const label = type === 'sale' ? 'sales.saleorder' : type === 'purchase' ? 'purchasing.purchaseorder' : 'production.workorder'
-        return createDomainCardView(label, {
-            onRowClick: (data: Record<string, unknown>) => {
-                if (type === 'work_order') {
-                    openEntity('production.workorder', data.id as number)
-                } else {
-                    openHub({ orderId: data.id as number, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
-                }
-            },
-        })
-    }, [type, openEntity, openHub, onActionSuccess])
-
     const contactDocumentActionsCtx: ContactDocumentActionsCtx = {
         onHub: (item) => {
             if (type === 'work_order') {
@@ -662,44 +629,22 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         },
     }
 
-    const columns: ColumnDef<Record<string, unknown>>[] = [
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
-        },
-        {
-            accessorKey: "display_id",
-            header: "Número",
-            cell: ({ row }) => {
-                let label = 'sales.saleorder';
-                if (type === 'purchase') label = 'purchasing.purchaseorder';
-                else if (type === 'work_order') label = 'production.workorder';
+    const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => {
+        let baseColumns: ColumnDef<Record<string, unknown>>[] = []
+        if (type === 'sale') {
+            baseColumns = salesOrderFields.toColumns({ exclude: ['contactDisplayName', 'channel'] }) as unknown as ColumnDef<Record<string, unknown>>[]
+        } else if (type === 'purchase') {
+            baseColumns = purchaseOrderFields.toColumns({ exclude: ['contactDisplayName'] }) as unknown as ColumnDef<Record<string, unknown>>[]
+        } else if (type === 'work_order') {
+            baseColumns = workOrderFields.toColumns({ exclude: ['contactDisplayName'] }) as unknown as ColumnDef<Record<string, unknown>>[]
+        }
 
-                return <DataCell.Entity label={label} data={row.original} />;
-            },
-        },
-        ...(type !== 'work_order' ? [
-            {
-                accessorKey: "total",
-                header: "Total",
-                cell: ({ row }: { row: { original: Record<string, unknown> } }) => <DataCell.Currency value={row.original.total as number} className="text-left font-bold" />,
-            }
-        ] : []),
-        {
-            id: "status",
-            header: "Estados",
-            cell: ({ row }) => {
-                if (type === 'work_order') {
-                    return (
-                        <StatusBadge status={row.original.status as string} size="sm" />
-                    )
-                }
-                return <DomainHubStatus data={row.original} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
-            }
-        },
-        contactDocumentActions.column(contactDocumentActionsCtx)
-    ]
+        return [
+            ...baseColumns,
+            contactDocumentActions.auto(contactDocumentActionsCtx)
+        ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [type])
 
     return (
         <div className="flex flex-col h-full">
@@ -762,19 +707,17 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                         data={filteredData}
                         variant="embedded"
                         defaultPageSize={10}
-                        currentView="card"
-                        renderCustomView={cardView}
+                        currentView="list"
                     />
             </div>
         </div>
     )
 }
 
-function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<string, unknown>[], loading: boolean, onActionSuccess?: () => void }) {
-    const { openHub } = useHubPanel()
+function CreditLedgerTable({ data, loading }: { data: ContactCreditDocument[], loading: boolean }) {
 
     // Placeholder tipado para el ledger - sigue el patrón del contrato
-    const LEDGER_SKELETON: Record<string, unknown>[] = Array.from({ length: 5 }, (_, i) => ({
+    const LEDGER_SKELETON: ContactCreditDocument[] = Array.from({ length: 5 }, (_, i) => ({
         id: i + 1,
         display_id: "————————————",
         number: "————————————",
@@ -802,6 +745,33 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<st
         }
     }));
 
+    const columns = useMemo<ColumnDef<ContactCreditDocument>[]>(() => [
+        ...contactCreditDocumentFields.toColumns().map(col => {
+            const key = col.id || (col as { accessorKey?: string | number }).accessorKey;
+
+            if (key === 'number') {
+                return {
+                    ...col,
+                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
+                }
+            }
+
+            if (key === 'balance') {
+                return {
+                    ...col,
+                    cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DataCell.Currency value={row.original.balance as number} weight="bold" className="text-left text-destructive" />,
+                }
+            }
+
+            return col;
+        }),
+        {
+            id: "status",
+            header: "Estados",
+            cell: ({ row }: CellContext<ContactCreditDocument, unknown>) => <DomainHubStatus data={row.original} label="sales.saleorder" />
+        } as ColumnDef<ContactCreditDocument>
+    ], [])
+
     if (!loading && !data.length) {
         return (
             <EmptyState
@@ -812,29 +782,6 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<st
         )
     }
 
-    const columns: ColumnDef<Record<string, unknown>>[] = [
-        {
-            accessorKey: "date",
-            header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date as string} />,
-        },
-        {
-            accessorKey: "number",
-            header: "Número",
-            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original as object} />,
-        },
-        {
-            accessorKey: "balance",
-            header: "Saldo",
-            cell: ({ row }) => <DataCell.Currency value={row.original.balance as number} className="text-left font-bold text-destructive" />,
-        },
-        {
-            id: "status",
-            header: "Estados",
-            cell: ({ row }) => <DomainHubStatus data={row.original} label="sales.saleorder" />
-        }
-    ]
-
     return (
         <SkeletonShell isLoading={loading} ariaLabel="Cargando libro de cuenta">
             <div className="space-y-4">
@@ -844,10 +791,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<st
                         data={loading ? LEDGER_SKELETON : data}
                         variant="embedded"
                         defaultPageSize={10}
-                        currentView="card"
-                        renderCustomView={createDomainCardView('sales.saleorder', {
-                            onRowClick: (data: Record<string, unknown>) => openHub({ orderId: data.id as number, type: 'sale', onActionSuccess }),
-                        })}
+                        currentView="list"
                     />
                 </div>
             </div>

@@ -1,155 +1,92 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Chip, DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, EntityCard } from '@/components/shared'
+import { useState, useMemo, useEffect, useCallback } from "react"
+import { DataTableView, AutoEntityCard } from '@/components/shared'
 import { type ColumnDef } from "@tanstack/react-table"
 import { UnifiedSearchBar, useUnifiedSearch } from "@/components/shared"
 import { documentUnifiedSearchDef } from "@/features/inventory/unifiedSearchDef"
-import { useInventoryDocuments } from "../hooks/useInventoryDocuments"
+import { useInventoryDocuments, useInventoryDocumentMutations } from "../hooks/useInventoryDocuments"
 import { InventoryDocumentDrawer } from "./InventoryDocumentDrawer"
+import { documentActions, type InventoryDocumentActionsCtx } from "../documentActions"
 import type { InventoryDocument } from "../types"
+import { inventoryDocumentFields } from "../inventoryDocumentFields"
+import { toast } from "sonner"
 import React from "react"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { showApiError } from "@/lib/errors"
+import { useRef } from "react"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared"
 
 interface DocumentsClientViewProps {
     documentTypeFilter?: 'RECEIPT' | 'DELIVERY' | 'TRANSFER' | 'ADJUSTMENT' | 'PRODUCTION'
+    createAction?: React.ReactNode
 }
 
-const DOCUMENT_TYPE_MAP: Record<string, { intent: "success" | "warning" | "neutral" | "info" | "primary", label: string }> = {
-    'RECEIPT': { intent: 'success', label: 'Recepción' },
-    'DELIVERY': { intent: 'primary', label: 'Entrega' },
-    'TRANSFER': { intent: 'info', label: 'Transferencia' },
-    'ADJUSTMENT': { intent: 'warning', label: 'Ajuste' },
-    'PRODUCTION': { intent: 'neutral', label: 'Producción' }
-}
-
-const STATUS_MAP: Record<string, { intent: "neutral" | "success" | "destructive" | "warning", label: string }> = {
-    'DRAFT': { intent: 'neutral', label: 'Borrador' },
-    'APPROVED': { intent: 'warning', label: 'Aprobado' },
-    'CONFIRMED': { intent: 'success', label: 'Confirmado' },
-    'CANCELLED': { intent: 'destructive', label: 'Anulado' }
-}
-
-export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewProps) {
-    const searchParams = useSearchParams()
-    const pathname = usePathname()
-    const router = useRouter()
-
+export function DocumentsClientView({ documentTypeFilter, createAction }: DocumentsClientViewProps) {
     const search = useUnifiedSearch(documentUnifiedSearchDef)
-    const allFilters = useMemo(() => ({ 
+    const allFilters = useMemo(() => ({
         ...search.filters,
         ...(documentTypeFilter ? { document_type: documentTypeFilter } : {})
     }), [search.filters, documentTypeFilter])
 
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, documents, totalCount, isLoading, refetch } = useInventoryDocuments({
         ...allFilters,
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     })
 
-    const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null)
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
 
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId) {
-            setSelectedDocumentId(Number(selectedId))
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
         }
-    }, [searchParams])
+    }, [isOverLimit, totalCount])
 
-    const handleSelect = (id: number) => {
-        setSelectedDocumentId(id)
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<InventoryDocument>({
+        endpoint: '/inventory/documents'
+    })
+
+    const selectedDocumentId = selectedFromUrl?.id ?? null
 
     const handleCloseDrawer = () => {
-        setSelectedDocumentId(null)
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        clearSelection()
     }
 
-    const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
-        const cols: ColumnDef<InventoryDocument>[] = [
-            {
-                id: "folio",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-                cell: ({ row }) => (
-                    <div className="flex flex-col items-center gap-0.5">
-                        <DataCell.Code>{`#${row.original.id}`}</DataCell.Code>
-                        <DataCell.Date value={row.original.date} />
-                    </div>
-                ),
-                size: 100,
-            },
-            {
-                accessorKey: "partner_name",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto/Socio" className="justify-center" />,
-                cell: ({ row }) => (
-                    <div className="flex flex-col items-center py-1 w-full">
-                        <DataCell.Text>{row.original.partner_name ?? '-'}</DataCell.Text>
-                        {row.original.reference && (
-                            <span className="text-[10px] text-muted-foreground font-mono">{row.original.reference}</span>
-                        )}
-                    </div>
-                ),
-            }
-        ]
+    const { openSelected } = useEntityRouteActions()
 
-        if (!documentTypeFilter) {
-            cols.push({
-                accessorKey: "document_type",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-                cell: ({ row }) => {
-                    const config = DOCUMENT_TYPE_MAP[row.original.document_type] || { intent: 'neutral' as const, label: row.original.document_type }
-                    return (
-                        <div className="flex justify-center w-full">
-                            <Chip intent={config.intent} size="sm">{config.label}</Chip>
-                        </div>
-                    )
-                },
-                size: 120,
-            })
+    const { annulDocument } = useInventoryDocumentMutations()
+
+    const handleAnnul = useCallback(async (doc: InventoryDocument) => {
+        try {
+            await annulDocument(doc.id)
+            toast.success("Documento anulado con éxito.")
+            refetch()
+        } catch (error) {
+            showApiError(error, "Error al anular documento")
         }
+    }, [annulDocument, refetch])
 
-        cols.push(
-            {
-                accessorKey: "status",
-                header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-                cell: ({ row }) => {
-                    const config = STATUS_MAP[row.original.status] || { intent: 'neutral' as const, label: row.original.status }
-                    return (
-                        <div className="flex justify-center w-full">
-                            <Chip intent={config.intent} size="sm">{config.label}</Chip>
-                        </div>
-                    )
-                },
-                size: 100,
-            },
-            {
-                id: "actions",
-                header: () => null,
-                cell: ({ row }) => (
-                    <div className="flex justify-center w-full">
-                        <button 
-                            className="text-xs text-primary font-medium hover:underline"
-                            onClick={() => handleSelect(row.original.id)}
-                        >
-                            Ver Detalles
-                        </button>
-                    </div>
-                ),
-                size: 100,
-            }
-        )
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
-        return cols
-    }, [documentTypeFilter])
+    const actionsCtx: InventoryDocumentActionsCtx = useMemo(() => ({
+        onViewDetail: openSelected,
+        onPrint: () => handlePrint(),
+        onAnnul: handleAnnul,
+    }), [openSelected, handlePrint, handleAnnul])
+
+    const columns = useMemo<ColumnDef<InventoryDocument>[]>(() => {
+        return [
+            ...inventoryDocumentFields.toColumns({ exclude: documentTypeFilter ? ['documentType'] : [] }),
+            documentActions.auto(actionsCtx),
+        ]
+    }, [documentTypeFilter, actionsCtx])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -160,11 +97,11 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                     data={documents}
                     isLoading={isLoading}
                     variant="embedded"
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={totalCount}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     unifiedSearch={<UnifiedSearchBar
                         config={documentUnifiedSearchDef}
                         chips={search.chips}
@@ -180,48 +117,44 @@ export function DocumentsClientView({ documentTypeFilter }: DocumentsClientViewP
                         placeholder="Buscar documentos..."
                     />}
                     unifiedSearchConfig={documentUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={search.isFiltered}
                     onReset={search.clearAll}
+                    createAction={createAction}
                     isFiltered={search.isFiltered}
                     emptyState={{
                         context: "inventory",
                         title: "No se encontraron documentos",
                         description: "Los documentos de inventario registran y respaldan todas las transacciones físicas.",
                     }}
-                    renderCard={(doc: InventoryDocument) => {
-                        const typeConfig = DOCUMENT_TYPE_MAP[doc.document_type] || { intent: 'neutral' as const, label: doc.document_type }
-                        const statusConfig = STATUS_MAP[doc.status] || { intent: 'neutral' as const, label: doc.status }
-                        return (
-                            <EntityCard
+                    cardSkeleton={{ showFooter: false }}
+                    renderCard={(doc: InventoryDocument) => (
+                            <AutoEntityCard
                                 key={doc.id}
-                                onClick={() => handleSelect(doc.id)}
-                            >
-                                <EntityCard.Header
-                                    title={doc.partner_name ?? doc.reference ?? `Documento #${doc.id}`}
-                                    subtitle={doc.date}
-                                />
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Tipo" value={<Chip intent={typeConfig.intent} size="sm">{typeConfig.label}</Chip>} />
-                                    <EntityCard.Field label="Estado" value={<Chip intent={statusConfig.intent} size="sm">{statusConfig.label}</Chip>} />
-                                    {doc.reference && <EntityCard.Field label="Referencia" value={doc.reference} />}
-                                </EntityCard.Body>
-                            </EntityCard>
-                        )
-                    }}
+                                data={doc}
+                                fields={inventoryDocumentFields}
+
+                                entityLabel="inventory.inventorydocument"
+
+                                actions={documentActions.render(doc, actionsCtx)}
+                                defaultAction={() => openSelected(doc.id)}
+                            />
+                    )}
                 />
             </div>
 
-            {selectedDocumentId && (
-                <InventoryDocumentDrawer
-                    documentId={selectedDocumentId}
-                    open={selectedDocumentId !== null}
-                    onOpenChange={(open) => {
-                        if (!open) handleCloseDrawer()
-                    }}
-                    onSuccess={refetch}
-                />
-            )}
+            <PrintableLayout ref={printRef} title="Documento de Inventario" displayId={selectedDocumentId ? `DOC-${selectedDocumentId}` : ''}>
+                <div className="text-[9px]">Impresión de documento de inventario</div>
+            </PrintableLayout>
+
+            <InventoryDocumentDrawer
+                documentId={selectedDocumentId}
+                open={selectedDocumentId !== null}
+                onOpenChange={(open) => {
+                    if (!open) handleCloseDrawer()
+                }}
+                onSuccess={refetch}
+            />
         </div>
     )
 }

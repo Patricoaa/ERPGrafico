@@ -7,6 +7,7 @@ import type { ProductCategory, AppGroup } from "@/types/entities"
 import type { Contact } from "@/features/contacts"
 import type { Terminal, PaymentTerminalProvider, PaymentTerminalDevice } from "@/features/treasury"
 import type { UoM } from "@/features/inventory/hooks/useUoMs"
+import type { Attribute } from "@/features/inventory/hooks/useAttributes"
 import type {
     ProductInitialData,
     WarehouseInitialData,
@@ -77,6 +78,11 @@ const UoMDrawer = dynamic(
     { ssr: false, loading: () => skeleton("unidad de medida") }
 )
 
+const AttributeDrawer = dynamic(
+    () => import("@/features/inventory").then((m) => m.AttributeDrawer),
+    { ssr: false, loading: () => skeleton("atributo") }
+)
+
 const EmployeeDrawer = dynamic(
     () => import("@/features/hr").then((m) => m.EmployeeDrawer),
     { ssr: false, loading: () => skeleton("empleado") }
@@ -144,7 +150,7 @@ const PaymentDrawer = dynamic(
 
 const SaleOrderDrawer = dynamic(
     () => import("@/features/sales/components/SaleOrderDrawer").then((m) => m.SaleOrderDrawer),
-    { ssr: false, loading: () => skeleton("nota de venta") }
+    { ssr: false, loading: () => skeleton("orden de venta") }
 )
 
 const PurchaseOrderDrawer = dynamic(
@@ -306,6 +312,16 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             open={open}
             onOpenChange={onOpenChange}
             initialData={data as Partial<UoM>}
+            onSuccess={() => onSuccess?.()}
+        />
+    ),
+    // * requires full attribute data — EntityBadge always provides it
+    "inventory.attribute": ({ open, onOpenChange, data, onSuccess }) => (
+        <AttributeDrawer
+            mode={data ? 'view' : 'create'}
+            open={open}
+            onOpenChange={onOpenChange}
+            initialData={data as Partial<Attribute>}
             onSuccess={() => onSuccess?.()}
         />
     ),

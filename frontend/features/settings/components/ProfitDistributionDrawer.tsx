@@ -68,7 +68,7 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando distribución">
           {distribution && (
             <div className="p-4 space-y-4">
-              <StatusBadge status={distribution.status} />
+              <StatusBadge status={distribution.status} variant="badge" />
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>

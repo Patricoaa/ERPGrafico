@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronRight, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { SingleSelectFilterDef, MultiSelectOption } from '@/types/unified-search'
 
@@ -41,11 +42,12 @@ export function SingleSelectFilterItem({
 
   return (
     <div>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setExpanded(!expanded)}
         className={cn(
-          "flex items-center gap-2 w-full px-2 py-1.5 text-xs font-medium rounded-sm hover:bg-accent/50",
+          "w-full justify-start gap-2 px-2 py-1.5 text-xs font-medium rounded-sm",
           isActive && "text-primary",
         )}
       >
@@ -56,30 +58,31 @@ export function SingleSelectFilterItem({
             {currentLabel}
           </span>
         )}
-      </button>
+      </Button>
 
       {expanded && (
-        <div className="ml-4 border-l border-border/40 pl-2 py-1 space-y-0.5">
+        <div className="ml-4 border-l border-border/40 pl-2 py-1 grid grid-cols-3 gap-1">
           {options.length === 0 && def.dynamic && (
-            <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground col-span-3">
               <Loader2 className="h-3 w-3 animate-spin" />
               Cargando...
             </div>
           )}
           {options.map((opt) => (
-            <button
+            <Button
               key={opt.value}
-              type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => handleSelect(opt.value)}
               className={cn(
-                "block w-full text-left px-2 py-1 text-xs rounded-sm hover:bg-accent/50",
+                "w-full justify-start px-2 py-1 text-xs rounded-sm truncate min-w-0",
                 selectedValue === opt.value
                   ? "text-primary font-semibold"
                   : "text-muted-foreground",
               )}
             >
               {opt.label}
-            </button>
+            </Button>
           ))}
         </div>
       )}

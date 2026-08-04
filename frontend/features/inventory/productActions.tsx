@@ -1,4 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
+import { createEntityActions } from '@/components/shared'
 import type { Product } from '@/features/inventory/types'
 
 export interface ProductActionsCtx {
@@ -9,12 +9,7 @@ export interface ProductActionsCtx {
 export const productActions = createEntityActions<
     Product,
     ProductActionsCtx
->((item, ctx) => (
-    <>
-        <DataCell.Action action="edit" onClick={() => ctx.onEdit(item.id)} />
-        <DataCell.Action
-            action={item.is_active ? "archive" : "restore"}
-            onClick={() => ctx.onArchive(item)}
-        />
-    </>
-))
+>((item, ctx) => [
+    { action: "edit", onClick: () => ctx.onEdit(item.id) },
+    { action: item.is_active ? "archive" : "restore", onClick: () => ctx.onArchive(item) },
+])

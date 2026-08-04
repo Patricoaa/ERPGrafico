@@ -44,7 +44,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                 />
                 {isCircle ? (
                     checked === true ? (
-                        <CmykRing size="sm" className="col-start-1 row-start-1 h-3 w-3 pointer-events-none" />
+                        <CmykRing size="xs" className="col-start-1 row-start-1 pointer-events-none" />
                     ) : isIndeterminate ? (
                         <Minus className="col-start-1 row-start-1 h-3 w-3 text-muted-foreground pointer-events-none" />
                     ) : null

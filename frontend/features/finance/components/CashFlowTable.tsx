@@ -13,7 +13,7 @@ import { cn, parseDateOnly } from "@/lib/utils";
 ;
 import {AlertCircle, CheckCircle2, Info, Calendar} from "lucide-react";
 ;
-import { BaseModal, Chip, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
+import { BaseModal, Chip, DataCell, MoneyDisplay, type ReportNode, ReportTable } from '@/components/shared';
 import { Button } from "@/components/ui/button";
 ;
 
@@ -49,6 +49,7 @@ export interface CashFlowData {
     net_increase: number;
     net_increase_comp?: number;
     calculated_net_increase: number;
+    calculated_net_increase_comp?: number;
     discrepancy: number;
     is_balanced: boolean;
     culprit_accounts: CulpritAccount[];
@@ -71,39 +72,6 @@ interface CashFlowTableProps {
     futureMaturities?: MaturityItem[];
 }
 
-const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, showComparison?: boolean, icon?: React.ElementType }) => (
-    <TableRow className="bg-muted/30 font-bold border-t-2 first:border-t-0">
-        <TableCell colSpan={showComparison ? 4 : 2} className="py-2.5 px-4">
-            <div className="flex items-center gap-2">
-                {Icon && <Icon className="h-3.5 w-3.5 text-primary" />}
-                <span className="uppercase tracking-widest text-[10px] text-muted-foreground">{title}</span>
-            </div>
-        </TableCell>
-    </TableRow>
-);
-
-const SectionTotal = ({ title, amount, amountComp, showComparison, variant = 'default' }: { title: string, amount: number, amountComp?: number, showComparison?: boolean, variant?: 'default' | 'highlight' }) => (
-    <TableRow className={cn(
-        "font-bold border-t border-muted/50 transition-colors",
-        variant === 'highlight' ? "bg-muted/10 text-base" : "bg-transparent text-sm"
-    )}>
-        <TableCell className="pl-8 italic text-muted-foreground">{title}</TableCell>
-        <TableCell className="text-right">
-            <MoneyDisplay amount={amount} showColor={false} className={cn("font-mono", variant === 'highlight' ? "text-lg" : "text-sm")} />
-        </TableCell>
-        {showComparison && (
-            <>
-                <TableCell className="text-right">
-                    <MoneyDisplay amount={amountComp} showColor={false} className="font-mono text-xs text-muted-foreground" />
-                </TableCell>
-                <TableCell className="text-right">
-                    <MoneyDisplay amount={amount - (amountComp || 0)} className="font-mono text-sm" />
-                </TableCell>
-            </>
-        )}
-    </TableRow>
-);
-
 export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, showComparison, periodLabel, compPeriodLabel, futureMaturities }) => {
     const [auditModalOpen, setAuditModalOpen] = useState(false);
 
@@ -117,74 +85,63 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             variance: (item.amount || 0) - (item.amount_comp || 0)
         }));
 
+    const unifiedData: ReportNode[] = [
+        { 
+            id: 'init', 
+            code: 'BASE', 
+            name: 'SALDO INICIAL DE EFECTIVO (TESORERÍA)', 
+            balance: data.beginning_cash, 
+            comp_balance: data.beginning_cash_comp,
+            isTotalRow: true
+        },
+        {
+            id: 'op',
+            code: '',
+            name: 'Actividades de Operación',
+            balance: data.total_operating,
+            children: mapToNodes(data.operating),
+        },
+        {
+            id: 'inv',
+            code: '',
+            name: 'Actividades de Inversión',
+            balance: data.total_investing,
+            children: mapToNodes(data.investing),
+        },
+        {
+            id: 'fin',
+            code: '',
+            name: 'Actividades de Financiamiento',
+            balance: data.total_financing,
+            children: mapToNodes(data.financing),
+        },
+        { 
+            id: 'net', 
+            code: 'NET', 
+            name: 'VARIACIÓN NETA DE EFECTIVO (Actividades)', 
+            balance: data.calculated_net_increase, 
+            comp_balance: data.calculated_net_increase_comp,
+            isTotalRow: true
+        },
+        { 
+            id: 'end', 
+            code: 'FIN', 
+            name: 'SALDO FINAL DE EFECTIVO (TESORERÍA)', 
+            balance: data.ending_cash, 
+            comp_balance: data.ending_cash_comp,
+            isTotalRow: true
+        }
+    ];
+
     const tableContent = (
         <div className="space-y-8">
-            {/* Saldo Inicial */}
             <ReportTable 
-                data={[{ id: 'init', code: 'BASE', name: 'SALDO INICIAL DE EFECTIVO (TESORERÍA)', balance: data.beginning_cash, comp_balance: data.beginning_cash_comp }]}
-                accentColor="primary"
-                embedded
+                data={unifiedData}
                 showComparison={showComparison}
                 periodLabel={periodLabel}
                 compPeriodLabel={compPeriodLabel}
+                disableDrillDown={true}
             />
-
-            {/* Operación */}
-            <ReportTable 
-                title="Actividades de Operación"
-                data={mapToNodes(data.operating)}
-                totalLabel="Flujo de Efectivo de Actividades de Operación"
-                totalValue={data.total_operating}
-                accentColor="income"
-                embedded
-                showComparison={showComparison}
-                periodLabel={periodLabel}
-                compPeriodLabel={compPeriodLabel}
-                mode="flat"
-            />
-
-            {/* Inversión */}
-            <ReportTable 
-                title="Actividades de Inversión"
-                data={mapToNodes(data.investing)}
-                totalLabel="Flujo de Efectivo de Actividades de Inversión"
-                totalValue={data.total_investing}
-                accentColor="info"
-                embedded
-                showComparison={showComparison}
-                periodLabel={periodLabel}
-                compPeriodLabel={compPeriodLabel}
-                mode="flat"
-            />
-
-            {/* Financiamiento */}
-            <ReportTable 
-                title="Actividades de Financiamiento"
-                data={mapToNodes(data.financing)}
-                totalLabel="Flujo de Efectivo de Actividades de Financiamiento"
-                totalValue={data.total_financing}
-                accentColor="expense"
-                embedded
-                showComparison={showComparison}
-                periodLabel={periodLabel}
-                compPeriodLabel={compPeriodLabel}
-                mode="flat"
-            />
-
-            {/* Resumen Final */}
-            <div className="pt-4 border-t-4 border-double border-muted/30">
-                <ReportTable 
-                    data={[
-                        { id: 'net', code: 'NET', name: 'VARIACIÓN NETA DE EFECTIVO (Actividades)', balance: data.calculated_net_increase, comp_balance: data.net_increase_comp },
-                        { id: 'end', code: 'FIN', name: 'SALDO FINAL DE EFECTIVO (TESORERÍA)', balance: data.ending_cash, comp_balance: data.ending_cash_comp }
-                    ]}
-                    accentColor="primary"
-                    embedded
-                    showComparison={showComparison}
-                    periodLabel={periodLabel}
-                    compPeriodLabel={compPeriodLabel}
-                />
-            </div>
 
             {/* Vencimientos Futuros (F5.3) */}
             {futureMaturities && futureMaturities.length > 0 && (
@@ -220,7 +177,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                                             {parseDateOnly(item.due_date).toLocaleDateString('es-CL')}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <MoneyDisplay amount={item.amount} className={item.direction === 'INBOUND' ? 'text-success' : 'text-destructive'} />
+                                            <DataCell.CurrencyFlow value={item.amount} direction={item.direction === 'INBOUND' ? 'inflow' : 'outflow'} showIcon={false} />
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -242,7 +199,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <div>
                             <h4 className="font-black text-destructive uppercase tracking-tighter text-sm">Discrepancia detectada</h4>
                             <p className="text-xs text-muted-foreground">
-                                El flujo calculado por actividades difiere en <b><MoneyDisplay amount={data.discrepancy} inline /></b> del saldo real bancario.
+                                El flujo calculado por actividades difiere en <b><MoneyDisplay amount={data.discrepancy} inline weight="bold" /></b> del saldo real bancario.
                             </p>
                         </div>
                     </div>

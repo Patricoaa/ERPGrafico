@@ -1,61 +1,28 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTableView, EntityCard, StatusBadge, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
+import { DataTableView, AutoEntityCard, UnifiedSearchBar, useUnifiedSearch, StatCard, KPIWrapper, KPIValue } from '@/components/shared'
+import type { AnalyticsPanelConfig, Granularity } from "@/components/shared"
 import { type ColumnDef } from "@tanstack/react-table"
-import { ArrowDown, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, ArrowRight } from "lucide-react"
+import { ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, Scale, Ban, TrendingUp, Landmark, CreditCard, ListFilter } from "lucide-react"
 
-import { DataCell } from '@/components/shared'
 import { treasuryMovementActions, type TreasuryMovementActionsCtx } from './treasuryMovementActions'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useTreasuryMovementAnalytics } from "@/features/treasury/hooks/useTreasuryMovementAnalytics"
 import { treasuryMovementsUnifiedSearchDef } from "@/features/treasury/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-
+import { toast } from "sonner"
+import type { TreasuryMovement } from "@/features/treasury/types"
+import { movementFields } from "@/features/treasury/movementFields"
+import { chartColor } from "@/lib/chart-colors"
 
 // Lazy load heavy components
 import { CashMovementDrawer } from "@/features/treasury/components/CashMovementDrawer"
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
-
-interface TreasuryMovement {
-    id: number
-    display_id: string
-    movement_type: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
-    movement_type_display: string
-    payment_method: string
-    payment_method_display: string
-    amount: number
-    created_at: string
-    date: string
-    created_by: number | null
-    created_by_name: string
-    notes: string
-    pos_session: number | null
-    from_account: number | null
-    from_account_name: string | null
-    from_account_account_id: number | null
-    from_account_code: string | null
-    to_account: number | null
-    to_account_name: string | null
-    to_account_account_id: number | null
-    to_account_code: string | null
-    justify_reason: string | null
-    justify_reason_display: string | null
-    partner_name: string | null
-    partner_id: number | null
-    reference: string | null
-    involved_accounts?: string[]
-    document_info?: {
-        type: string | null
-        id: number | null
-        number: string | null
-        label: string | null
-    } | null
-}
 
 interface TreasuryMovementsClientViewProps {
     externalOpen?: boolean
@@ -75,29 +42,31 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         ...search.filters,
         ...(treasuryAccountFromUrl ? { treasury_account: treasuryAccountFromUrl } : {}),
     }
+    const isGrouping = search.groupBy !== null
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
         ...(allFilters as TreasuryMovementFilters),
-        page: pageState.pageIndex + 1,
-        page_size: pageState.pageSize,
+        page: isGrouping ? 1 : pageState.pageIndex + 1,
+        page_size: isGrouping ? 5000 : pageState.pageSize,
     })
 
+    const isOverLimit = isGrouping && totalCount > 5000
+    const effectiveGrouping = isGrouping && !isOverLimit
+
+    useEffect(() => {
+        if (isOverLimit) {
+            toast.warning(`Demasiados datos para agrupar (${totalCount} registros). Use filtros para reducir el conjunto.`)
+        }
+    }, [isOverLimit, totalCount])
+
     const [openModal, setOpenModal] = useState(false)
-    const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
     })
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            requestAnimationFrame(() => {
-                setSelectedMovementId(selectedFromUrl.id)
-                setDetailsOpen(true)
-            })
-        }
-    }, [selectedFromUrl])
+    const detailsOpen = !!selectedFromUrl
+    const selectedMovementId = selectedFromUrl?.id ?? null
 
     // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
     useEffect(() => {
@@ -127,180 +96,258 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const actionsCtx: TreasuryMovementActionsCtx = { onDetail: handleViewDetails }
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
-        {
-            accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => (
-                <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>
-            ),
-        },
-        {
-            accessorKey: "movement_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => {
-                const m = row.original
-                const type = m.movement_type
-                const isWriteOff = m.payment_method === 'WRITE_OFF'
-
-                let status = "info"
-                let label = m.movement_type_display
-
-                if (isWriteOff) {
-                    status = "voided"
-                    label = "Castigo"
-                } else if (type === 'INBOUND') {
-                    status = "received"
-                    label = "Depósito"
-                } else if (type === 'OUTBOUND') {
-                    status = "sent"
-                    label = "Retiro"
-                } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                    status = "in_progress"
-                    label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
-                }
-
-                return (
-                    <div className="flex justify-center w-full">
-                        <StatusBadge
-                            status={status}
-                            label={label}
-                            size="sm"
-                            className="uppercase font-bold tracking-tight"
-                        />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("date")} />
-                </div>
-            ),
-        },
-        {
-            id: "flow",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Flujo" className="justify-center" />,
-            cell: ({ row }) => {
-                const m = row.original;
-                const type = m.movement_type;
-
-                // Define entities in the flow
-                let sourceData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
-                let destData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
-
-                if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                    sourceData = {
-                        label: m.from_account_name || 'Origen',
-                        type: 'account',
-                        id: m.from_account_account_id || undefined,
-                        accountCode: m.from_account_code || ''
-                    };
-                    destData = {
-                        label: m.to_account_name || 'Destino',
-                        type: 'account',
-                        id: m.to_account_account_id || undefined,
-                        accountCode: m.to_account_code || ''
-                    };
-                } else if (type === 'INBOUND') {
-                    sourceData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
-                    destData = {
-                        label: m.to_account_name || 'Caja',
-                        type: 'account',
-                        id: m.to_account_account_id || undefined,
-                        accountCode: m.to_account_code || ''
-                    };
-                } else if (type === 'OUTBOUND') {
-                    sourceData = {
-                        label: m.from_account_name || 'Caja',
-                        type: 'account',
-                        id: m.from_account_account_id || undefined,
-                        accountCode: m.from_account_code || ''
-                    };
-                    destData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
-                }
-
-                const EntityLink = ({ data }: { data: typeof sourceData }) => {
-                    if (data.type === 'contact' && data.id) {
-                        return (
-                            <DataCell.ContactLink
-                                contactId={data.id}
-                            >
-                                {data.label}
-                            </DataCell.ContactLink>
-                        );
-                    }
-                    if (data.type === 'account' && data.id) {
-                        const accountId = m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null));
-                        return (
-                            <DataCell.Link
-                                onClick={() => { if (accountId) openEntity('treasury.treasuryaccount', accountId) }}
-                            >
-                                {data.label}
-                            </DataCell.Link>
-                        );
-                    }
-                    return <DataCell.Text>{data.label}</DataCell.Text>;
-                };
-
-                return (
-                    <div className="flex flex-col items-center gap-0.5 py-1 w-full min-w-[120px]">
-                        <EntityLink data={sourceData} />
-                        <ArrowDown className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-                        <EntityLink data={destData} />
-                    </div>
-                );
-            },
-        },
-        {
-            accessorKey: "payment_method",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Método" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text>
-                        {row.original.payment_method_display}
-                    </DataCell.Text>
-                </div>
-            )
-        },
-        {
-            accessorKey: "amount",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
-            cell: ({ row }) => {
-                const amount = parseFloat(row.getValue("amount"))
-                const type = row.getValue("movement_type") as string
-                const signedAmount = type === 'OUTBOUND' ? -amount : amount
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Currency value={signedAmount} />
-                    </div>
-                )
-            },
-        },
-        {
-            id: "origin",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Origen / Sistema" className="justify-center" />,
-            cell: ({ row }) => {
-                const session = row.original.pos_session
-                return (
-                    <div className="flex justify-center w-full">
-                        {session ? (
-                            <DataCell.Text >
-                                POS #{session}
-                            </DataCell.Text>
-                        ) : (
-                            <DataCell.Text>
-                                SISTEMA
-                            </DataCell.Text>
-                        )}
-                    </div>
-                )
-            },
-        },
-        treasuryMovementActions.column(actionsCtx)
+        ...movementFields.toColumns(),
+        treasuryMovementActions.auto(actionsCtx)
     ], [openEntity, handleViewDetails])
+
+    const [analyticsActiveTab, setAnalyticsActiveTab] = useState("flujo")
+    const [granularity, setGranularity] = useState<Granularity>("month")
+
+    const analyticsData = useTreasuryMovementAnalytics({
+        months: 12,
+        granularity,
+        treasury_account: treasuryAccountFromUrl,
+        movement_type: search.filters.movement_type ?? null,
+        payment_method: search.filters.payment_method ?? null,
+        amount_min: search.filters.amount_min ?? null,
+        amount_max: search.filters.amount_max ?? null,
+        date_from: search.filters.date_from ?? null,
+        date_to: search.filters.date_to ?? null,
+    })
+
+    const analyticsPanel = useMemo<AnalyticsPanelConfig>(() => {
+        const hasFlowData = analyticsData.flowLineChart.some(series => series.data.some(d => d.y > 0))
+        const directions = analyticsData.analytics?.direction_distribution ?? []
+        const inRow = directions.find(d => d.id === "IN")
+        const outRow = directions.find(d => d.id === "OUT")
+        const inCount = inRow?.count ?? 0
+        const outCount = outRow?.count ?? 0
+        const inValue = inRow ? parseFloat(inRow.amount) : 0
+        const outValue = outRow ? parseFloat(outRow.amount) : 0
+        const ingresoColor = chartColor(0)
+        const egresoColor = chartColor(1)
+        const hasAccounts = analyticsData.accountBar.length > 0
+        const hasMethods = analyticsData.paymentMethodPie.length > 0
+        const hasTypes = analyticsData.typePie.length > 0
+
+        return {
+            screen: {
+                entityName: "Tesorería",
+                activeTab: analyticsActiveTab,
+                onTabChange: setAnalyticsActiveTab,
+                granularity,
+                onGranularityChange: setGranularity,
+                tabs: [
+                    {
+                        value: "flujo",
+                        label: "Flujo",
+                        icon: TrendingUp,
+                        columns: [
+                            {
+                                id: "col-evolution",
+                                weight: 3,
+                                sections: [
+                                    {
+                                        id: "kpi-row",
+                                        fillRemaining: false,
+                                        content: {
+                                            type: 'custom',
+                                            render: (
+                                                <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
+                                                    <KPIWrapper tooltip="Número de transacciones de ingreso en el período: cobros, ventas y abonos de línea de crédito.">
+                                                        <StatCard
+                                                            label="Cantidad de Ingresos"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: ingresoColor }}>
+                                                                <ArrowDownToLine className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={inCount} />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                    <KPIWrapper tooltip="Valor total de los fondos que ingresaron en el período.">
+                                                        <StatCard
+                                                            label="Valor Total de Ingresos"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: ingresoColor }}>
+                                                                <ArrowDownToLine className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={inValue} isCurrency />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                    <KPIWrapper tooltip="Número de transacciones de egreso en el período: pagos, gastos y disposiciones de línea de crédito.">
+                                                        <StatCard
+                                                            label="Cantidad de Egresos"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: egresoColor }}>
+                                                                <ArrowUpFromLine className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={outCount} />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                    <KPIWrapper tooltip="Valor total de los fondos que salieron en el período.">
+                                                        <StatCard
+                                                            label="Valor Total de Egresos"
+                                                            className="h-full rounded-sm"
+                                                        >
+                                                            <div className="flex items-center gap-2" style={{ color: egresoColor }}>
+                                                                <ArrowUpFromLine className="h-5 w-5" />
+                                                                <span className="text-3xl font-black tracking-tighter">
+                                                                    <KPIValue current={outValue} isCurrency />
+                                                                </span>
+                                                            </div>
+                                                        </StatCard>
+                                                    </KPIWrapper>
+                                                </div>
+                                            ),
+                                        },
+                                    },
+                                    {
+                                        id: "flow-evolution",
+                                        content: hasFlowData ? {
+                                            type: 'stat-card',
+                                            config: {
+                                                label: 'Evolución del Flujo',
+                                                variant: 'chart',
+                                                chart: {
+                                                    type: 'line-chart',
+                                                    preset: 'card',
+                                                    data: analyticsData.flowLineChart,
+                                                    showLegend: true,
+                                                    enableArea: true,
+                                                    valueFormat: ',.1f',
+                                                },
+                                            },
+                                        } : {
+                                            type: 'custom',
+                                            render: (
+                                                <p className="text-sm text-muted-foreground italic py-4 text-center">Sin movimientos en el período</p>
+                                            ),
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        value: "cuentas",
+                        label: "Cuentas",
+                        icon: Landmark,
+                        columns: [
+                            {
+                                id: "col-accounts",
+                                weight: 2,
+                                sections: [
+                                    {
+                                        id: 'accounts-bar',
+                                        content: hasAccounts ? {
+                                            type: 'stat-card',
+                                            config: {
+                                                label: 'Movimientos por Cuenta',
+                                                variant: 'chart',
+                                                chart: {
+                                                    type: 'bar-chart',
+                                                    preset: 'card',
+                                                    data: analyticsData.accountBar,
+                                                    keys: ['ingresos', 'egresos'],
+                                                    indexBy: 'cuenta',
+                                                    valueFormat: '$,.0f',
+                                                    showLegend: true,
+                                                },
+                                            },
+                                        } : {
+                                            type: 'custom',
+                                            render: (
+                                                <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de cuentas</p>
+                                            ),
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        value: "metodos",
+                        label: "Métodos de Pago",
+                        icon: CreditCard,
+                        columns: [
+                            {
+                                id: "col-methods",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: 'methods-pie',
+                                        content: hasMethods ? {
+                                            type: 'stat-card',
+                                            config: {
+                                                label: 'Transacciones por Método de Pago',
+                                                variant: 'chart',
+                                                chart: {
+                                                    type: 'pie-chart',
+                                                    preset: 'card',
+                                                    data: analyticsData.paymentMethodPie,
+                                                    valueFormat: 'number',
+                                                    enableLabels: true,
+                                                },
+                                            },
+                                        } : {
+                                            type: 'custom',
+                                            render: (
+                                                <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de métodos de pago</p>
+                                            ),
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        value: "tipos",
+                        label: "Tipos",
+                        icon: ListFilter,
+                        columns: [
+                            {
+                                id: "col-types",
+                                weight: 1,
+                                sections: [
+                                    {
+                                        id: 'types-pie',
+                                        content: hasTypes ? {
+                                            type: 'stat-card',
+                                            config: {
+                                                label: 'Transacciones por Tipo',
+                                                variant: 'chart',
+                                                chart: {
+                                                    type: 'pie-chart',
+                                                    preset: 'card',
+                                                    data: analyticsData.typePie,
+                                                    valueFormat: 'number',
+                                                    enableLabels: true,
+                                                },
+                                            },
+                                        } : {
+                                            type: 'custom',
+                                            render: (
+                                                <p className="text-sm text-muted-foreground italic py-4 text-center">Sin datos de tipos</p>
+                                            ),
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        }
+    }, [analyticsActiveTab, granularity, analyticsData])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
@@ -327,11 +374,11 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     data={movements}
                     isLoading={isLoading}
                     variant="embedded"
-                    manualPagination
-                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    manualPagination={!effectiveGrouping}
+                    pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={totalCount}
-                    pagination={pageState}
-                    onPaginationChange={setPageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     unifiedSearch={<UnifiedSearchBar
                         config={treasuryMovementsUnifiedSearchDef}
                         chips={search.chips}
@@ -359,21 +406,20 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         ) : undefined}
                     />}
                     unifiedSearchConfig={treasuryMovementsUnifiedSearchDef}
-                    currentGroupBy={search.groupBy}
+                    currentGroupBy={effectiveGrouping ? search.groupBy : null}
                     showReset={search.isFiltered || isAccountFiltered}
                     onReset={handleReset}
                     createAction={createAction}
                     isFiltered={search.isFiltered || isAccountFiltered}
+                    analyticsPanel={analyticsPanel}
                     emptyState={{
                         context: "treasury",
                         title: "Aún no hay movimientos de caja",
                         description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
                     }}
-                    cardGroupBy={{ field: 'date', sort: 'desc' }}
                     renderCard={(m) => {
                         const type = m.movement_type
                         const isWriteOff = m.payment_method === 'WRITE_OFF'
-                        const isTransferOrAdj = type === 'TRANSFER' || type === 'ADJUSTMENT'
 
                         const Icon = isWriteOff
                             ? Ban
@@ -393,40 +439,18 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                     ? "text-destructive bg-destructive/10"
                                     : "text-warning bg-warning/10"
 
-                        let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
-                        let destLabel = m.to_account_name || m.partner_name || 'Destino'
-
-                        if (type === 'INBOUND') {
-                            sourceLabel = m.partner_name || 'Particular'
-                            destLabel = m.to_account_name || 'Caja'
-                        } else if (type === 'OUTBOUND') {
-                            sourceLabel = m.from_account_name || 'Caja'
-                            destLabel = m.partner_name || 'Particular'
-                        } else if (isTransferOrAdj) {
-                            sourceLabel = m.from_account_name || 'Origen'
-                            destLabel = m.to_account_name || 'Destino'
-                        }
-
-                        const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
-                        const signedAmount = type === 'OUTBOUND' ? -amount : amount
-
                         return (
-                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
-                                <EntityCard.Header
-                                    icon={Icon}
-                                    iconClassName={iconStyle}
-                                    title={m.display_id}
-                                    subtitle={m.payment_method_display}
-                                    center={
-                                        <div className="flex items-center gap-1.5 text-xs font-medium text-foreground/80 whitespace-nowrap">
-                                            <span>{sourceLabel}</span>
-                                            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/40" />
-                                            <span>{destLabel}</span>
-                                        </div>
-                                    }
-                                    trailing={<DataCell.Currency value={signedAmount} />}
-                                />
-                            </EntityCard>
+                            <AutoEntityCard 
+                                key={m.id} 
+                                data={m}
+                                fields={movementFields}
+                                entityLabel="treasury.cashmovement"
+                                onClick={() => handleViewDetails(m.id)}
+                                icon={Icon}
+                                iconClassName={iconStyle}
+                                actions={treasuryMovementActions.render(m, { onDetail: (id) => handleViewDetails(id) })}
+
+                            />
                         )
                     }}
                     cardSkeleton={{ showBody: false }}
@@ -438,7 +462,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     id={selectedMovementId}
                     open={detailsOpen}
                     onOpenChange={(open) => {
-                        setDetailsOpen(open)
                         if (!open) clearSelection()
                     }}
                 />

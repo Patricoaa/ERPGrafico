@@ -41,37 +41,37 @@ export function BillingSettingsView() {
 
     useUnsavedChangesGuard(status)
 
-    if (isLoading && !settings) return <SkeletonShell isLoading ariaLabel="Cargando configuración..." />
-
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
-            <div className="flex justify-end">
-                <AutoSaveStatusBadge
-                    status={status}
-                    invalidReason={invalidReason}
-                    lastSavedAt={lastSavedAt}
-                    onRetry={retry}
-                />
+        <SkeletonShell isLoading={isLoading && !settings} ariaLabel="Cargando configuración...">
+            <div className="max-w-6xl mx-auto space-y-6">
+                <div className="flex justify-end">
+                    <AutoSaveStatusBadge
+                        status={status}
+                        invalidReason={invalidReason}
+                        lastSavedAt={lastSavedAt}
+                        onRetry={retry}
+                    />
+                </div>
+                <Form {...form}>
+                    <form className="mt-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <DTEConfigCard
+                                form={form}
+                                name="allowed_dte_types_emit"
+                                title="Documentos a Emitir (Ventas/POS)"
+                                description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
+                            />
+                            <DTEConfigCard
+                                form={form}
+                                name="allowed_dte_types_receive"
+                                title="Documentos a Recibir (Compras)"
+                                description="Seleccione qué tipos de documentos están habilitados para ser registrados."
+                            />
+                        </div>
+                    </form>
+                </Form>
             </div>
-            <Form {...form}>
-                <form className="mt-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <DTEConfigCard
-                            form={form}
-                            name="allowed_dte_types_emit"
-                            title="Documentos a Emitir (Ventas/POS)"
-                            description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
-                        />
-                        <DTEConfigCard
-                            form={form}
-                            name="allowed_dte_types_receive"
-                            title="Documentos a Recibir (Compras)"
-                            description="Seleccione qué tipos de documentos están habilitados para ser registrados."
-                        />
-                    </div>
-                </form>
-            </Form>
-        </div>
+        </SkeletonShell>
     )
 }
 

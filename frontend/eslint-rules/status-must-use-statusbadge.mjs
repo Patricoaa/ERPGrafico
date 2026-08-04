@@ -56,6 +56,20 @@ const rule = {
         const expr = node.expression;
         if (!expr || expr.type !== 'MemberExpression' && expr.type !== 'ConditionalExpression') return;
 
+        // Skip when the value is passed as the `label` prop of <DataCell.Status>,
+        // which is itself an authorized StatusBadge renderer (GOVERNANCE.md §4 rule 19).
+        const attr = node.parent;
+        if (
+          attr &&
+          attr.type === 'JSXAttribute' &&
+          attr.name?.type === 'JSXIdentifier' &&
+          attr.name.name === 'label' &&
+          attr.parent?.type === 'JSXOpeningElement' &&
+          attr.parent.name?.type === 'JSXMemberExpression' &&
+          attr.parent.name.object?.name === 'DataCell' &&
+          attr.parent.name.property?.name === 'Status'
+        ) return;
+
         // Direct: {entity.status}
         if (expr.type === 'MemberExpression') {
           if (

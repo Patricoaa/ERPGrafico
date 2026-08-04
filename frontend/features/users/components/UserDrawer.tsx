@@ -12,16 +12,14 @@ import { usersApi } from "../api/usersApi"
 import { useSingleUser } from "../hooks/useUserSearch"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
-import { Plus, User, ShieldCheck, Printer } from "lucide-react"
+import { Plus, User, ShieldCheck } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledCheckboxGroup, FormSection, TabBar, TabBarContent, type TabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, SkeletonShell } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { type AppGroup } from "@/types/entities"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -55,8 +53,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
     const [activeTab, setActiveTab] = useState("general")
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const userId = initialData?.id ?? null
     const { user: apiUser, loading: userLoading } = useSingleUser(userId)
@@ -211,6 +208,8 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
     const identity = useDrawerIdentity('core.user', mode, initialData, {
         overrideSubtitle: "Gestión de cuentas, roles y permisos de acceso.",
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
     })
 
     return (
@@ -246,10 +245,11 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
             )}
 
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 defaultSize={width}
                 mode={mode}

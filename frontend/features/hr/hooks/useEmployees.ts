@@ -29,6 +29,7 @@ export function useEmployees(filters?: FilterState, initialData?: Employee[]) {
         isLoading: showSkeleton,
         refetch,
         isRefetching,
+        error: query.error,
     }
 }
 

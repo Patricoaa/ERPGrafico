@@ -33,7 +33,7 @@ interface NoteStep_PaymentProps {
     setPaymentData: (data: PaymentData) => void
 }
 
-export function NoteStep_Payment({
+export function NotePaymentStep({
     mode,
     noteType,
     total,
@@ -64,7 +64,6 @@ export function NoteStep_Payment({
               differencePositiveLabel: 'Excedente / Vuelto',
               differenceNegativeLabel: 'Saldo Pendiente',
               amountModalTitle: mode === 'sales' ? 'Monto a Devolver' : 'Monto a Reembolsar',
-              amountModalDescription: 'Ingrese el monto asociado al movimiento de tesorería.',
           }
         : {
               title: mode === 'sales' ? 'Método de Cobro' : 'Método de Pago',
@@ -77,7 +76,6 @@ export function NoteStep_Payment({
               differencePositiveLabel: 'Excedente / Vuelto',
               differenceNegativeLabel: mode === 'sales' ? 'Por Cobrar' : 'Deuda Pendiente',
               amountModalTitle: mode === 'sales' ? 'Monto a Cobrar' : 'Monto a Pagar',
-              amountModalDescription: 'Ingrese el monto asociado al movimiento de tesorería.',
           }
 
     return (
@@ -102,7 +100,6 @@ export function NoteStep_Payment({
                     differencePositiveLabel: labels.differencePositiveLabel,
                     differenceNegativeLabel: labels.differenceNegativeLabel,
                     amountModalTitle: labels.amountModalTitle,
-                    amountModalDescription: labels.amountModalDescription,
                 }}
             />
         </div>

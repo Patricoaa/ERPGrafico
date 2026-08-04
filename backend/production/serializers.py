@@ -132,6 +132,34 @@ class WorkOrderInitialMaterialSerializer(serializers.Serializer):
         from .validators import ProductionValidator
         return ProductionValidator.validate_initial_material(data)
 
+class WorkOrderWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views.
+    Omits heavy nested components and read-only history/consumptions."""
+    
+    class Meta:
+        model = WorkOrder
+        fields = [
+            "id",
+            "number",
+            "description",
+            "sale_order",
+            "sale_line",
+            "related_contact",
+            "product",
+            "stage_data",
+            "estimated_completion_date",
+            "start_date",
+            "end_date",
+            "no_materials_required",
+            "is_manual",
+            "status",
+            "current_stage",
+            "actual_quantity_produced",
+            "is_rectified",
+            "rectified_from",
+            "notes",
+        ]
+        read_only_fields = ["id", "number", "status", "current_stage", "is_rectified"]
 
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
@@ -383,6 +411,120 @@ class WorkOrderSerializer(serializers.ModelSerializer):
         model = WorkOrder
         fields = "__all__"
         read_only_fields = ["id", "number", "status", "current_stage"]
+
+
+class WorkOrderListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for WorkOrder list views and nesting in SaleOrder.
+    Omits heavy nested fields (consumptions, stage_history, attachments) and
+    expensive method fields (side_effects, workflow_tasks) that trigger N+1 queries."""
+
+    sale_order_number = serializers.CharField(
+        source="sale_order.number", read_only=True, allow_null=True
+    )
+    product_name = serializers.SerializerMethodField()
+    quantity = serializers.SerializerMethodField()
+    uom_name = serializers.SerializerMethodField()
+    main_product_id = serializers.SerializerMethodField()
+    sale_customer_name = serializers.SerializerMethodField()
+    production_progress = serializers.SerializerMethodField()
+    outsourcing_status = serializers.SerializerMethodField()
+    display_id = serializers.SerializerMethodField()
+    is_cancellable = serializers.ReadOnlyField()
+    cancellation_limit_stage = serializers.ReadOnlyField()
+    due_date = serializers.DateField(
+        source="estimated_completion_date", read_only=True, allow_null=True
+    )
+
+    class Meta:
+        model = WorkOrder
+        fields = [
+            "id", "number", "display_id", "description", "status", "current_stage",
+            "is_manual", "sale_order", "sale_order_number", "related_contact",
+            "product", "product_name", "quantity", "uom_name", "main_product_id",
+            "sale_customer_name", "due_date", "estimated_completion_date", "start_date",
+            "production_progress", "outsourcing_status",
+            "is_cancellable", "cancellation_limit_stage",
+            "no_materials_required", "actual_quantity_produced", "is_rectified",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "number", "status", "current_stage"]
+
+    def get_display_id(self, obj):
+        return obj.display_id
+
+    def get_product_name(self, obj):
+        if obj.sale_line and obj.sale_line.product:
+            return obj.sale_line.product.name
+        if obj.product:
+            return obj.product.name
+        return ""
+
+    def get_quantity(self, obj):
+        if obj.sale_line and obj.sale_line.quantity is not None:
+            return float(obj.sale_line.quantity)
+        if obj.stage_data and obj.stage_data.get("quantity") is not None:
+            try:
+                return float(obj.stage_data["quantity"])
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    def get_uom_name(self, obj):
+        if obj.sale_line and obj.sale_line.uom:
+            return obj.sale_line.uom.name
+        if obj.stage_data and obj.stage_data.get("uom_name"):
+            return obj.stage_data["uom_name"]
+        uom_id = obj.stage_data.get("uom_id") if obj.stage_data else None
+        if uom_id:
+            from inventory.services import UoMService
+            return UoMService.get_cached_uom_name(uom_id)
+        return None
+
+    def get_main_product_id(self, obj):
+        if obj.sale_line and obj.sale_line.product_id:
+            return obj.sale_line.product_id
+        if obj.product_id:
+            return obj.product_id
+        return None
+
+    def get_sale_customer_name(self, obj):
+        if obj.stage_data and obj.stage_data.get("contact_name"):
+            return obj.stage_data.get("contact_name")
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.name
+        if obj.related_contact:
+            return obj.related_contact.name
+        return "Manual / Interno"
+
+    def get_production_progress(self, obj):
+        if obj.status == WorkOrder.Status.FINISHED:
+            return 100
+        if obj.status == WorkOrder.Status.CANCELLED:
+            return 0
+        weights = {
+            WorkOrder.Stage.MATERIAL_ASSIGNMENT.value: 0,
+            WorkOrder.Stage.MATERIAL_APPROVAL.value: 15,
+            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT.value: 30,
+            WorkOrder.Stage.PREPRESS.value: 45,
+            WorkOrder.Stage.PRESS.value: 60,
+            WorkOrder.Stage.POSTPRESS.value: 75,
+            WorkOrder.Stage.OUTSOURCING_VERIFICATION.value: 88,
+            WorkOrder.Stage.RECTIFICATION.value: 95,
+            WorkOrder.Stage.FINISHED.value: 100,
+            WorkOrder.Stage.CANCELLED.value: 0,
+        }
+        return weights.get(obj.current_stage, 0)
+
+    def get_outsourcing_status(self, obj):
+        mats = list(obj.materials.all())
+        if not mats:
+            return "none"
+        outsourced = [m for m in mats if m.is_outsourced]
+        if not outsourced:
+            return "none"
+        if len(outsourced) == len(mats):
+            return "full"
+        return "partial"
 
 
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):

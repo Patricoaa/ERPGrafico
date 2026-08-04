@@ -35,6 +35,10 @@ import type {
 } from '../types'
 import type { BillChargesResponse } from '@/features/treasury/card-statements/types'
 import type { TcHubAnalyticsResponse } from '@/features/treasury/card-statements/analyticsTypes'
+import type {
+    TreasuryMovementAnalyticsParams,
+    TreasuryMovementAnalyticsResponse,
+} from '@/features/treasury/analyticsTypes'
 
 export const treasuryApi = {
     // ========== Terminals ==========
@@ -383,6 +387,37 @@ export const treasuryApi = {
         params?: { card_account?: number; months?: number; granularity?: string },
     ): Promise<TcHubAnalyticsResponse> => {
         const { data } = await api.get('/treasury/card-statements/analytics/', { params })
+        return data
+    },
+
+    // ========== Movement Analytics (server-aggregated hub) ==========
+
+    getMovementAnalytics: async (
+        params?: TreasuryMovementAnalyticsParams,
+    ): Promise<TreasuryMovementAnalyticsResponse> => {
+        const cleanParams: Record<string, string> = {}
+        if (params?.months !== undefined && params?.months !== null) cleanParams.months = String(params.months)
+        if (params?.granularity) cleanParams.granularity = params.granularity
+        if (params?.treasury_account !== undefined && params?.treasury_account !== null && params?.treasury_account !== '') {
+            cleanParams.treasury_account = String(params.treasury_account)
+        }
+        if (params?.bank !== undefined && params?.bank !== null && params?.bank !== '') {
+            cleanParams.bank = String(params.bank)
+        }
+        if (params?.movement_type) cleanParams.movement_type = params.movement_type
+        if (params?.payment_method) cleanParams.payment_method = params.payment_method
+        if (params?.amount_min !== undefined && params?.amount_min !== null && params?.amount_min !== '') {
+            cleanParams.amount_min = String(params.amount_min)
+        }
+        if (params?.amount_max !== undefined && params?.amount_max !== null && params?.amount_max !== '') {
+            cleanParams.amount_max = String(params.amount_max)
+        }
+        if (params?.date_from) cleanParams.date_from = params.date_from
+        if (params?.date_to) cleanParams.date_to = params.date_to
+        const { data } = await api.get<TreasuryMovementAnalyticsResponse>(
+            '/treasury/movements/analytics/',
+            { params: cleanParams },
+        )
         return data
     },
 }

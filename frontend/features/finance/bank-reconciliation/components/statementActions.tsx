@@ -1,5 +1,4 @@
-import { DataCell, createEntityActions } from '@/components/shared'
-import { Eye } from 'lucide-react'
+import { createEntityActions } from '@/components/shared'
 import type { BankStatement } from '../types'
 
 export interface StatementActionsCtx {
@@ -9,6 +8,6 @@ export interface StatementActionsCtx {
 export const statementActions = createEntityActions<
     BankStatement,
     StatementActionsCtx
->((item, ctx) => (
-    <DataCell.Action icon={Eye} title="Ver" onClick={() => ctx.onView(item.id)} />
-))
+>((item, ctx) => [
+    { action: "detail", label: "Ver", onClick: () => ctx.onView(item.id) },
+])

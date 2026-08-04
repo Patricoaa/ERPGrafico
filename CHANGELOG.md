@@ -1196,7 +1196,7 @@ All notable changes to this project will be documented in this file. See [standa
 * **production:** add missing onSelectCategory and selectedCategoryId to ProductSelector usage ([47f3b3f](https://github.com/Patricoaa/ERPGrafico/commit/47f3b3f09d23c0aa9b49bc7ffb6e1d5bce1ea7d4))
 * **production:** apply CSS Translate transform for smooth Drag and Drop in Kanban (TASK-308) ([e3bcd05](https://github.com/Patricoaa/ERPGrafico/commit/e3bcd05475dcb8a3cfc243fd413856d033992a89))
 * **production:** correct import path for productionApi in ManufacturingConfigStep ([b996fd7](https://github.com/Patricoaa/ERPGrafico/commit/b996fd7573a19c49baf481277dcaeca6697c61d6))
-* **production:** correct OT folio prefix, add NV asociada column, standardize badge usage in table ([bbe275b](https://github.com/Patricoaa/ERPGrafico/commit/bbe275bbc6dba4eff82a0856aa6cf0cae7195f09))
+* **production:** correct OT folio prefix, add OV asociada column, standardize badge usage in table ([bbe275b](https://github.com/Patricoaa/ERPGrafico/commit/bbe275bbc6dba4eff82a0856aa6cf0cae7195f09))
 * **production:** enforce workflow rules in Kanban drag & drop, open Wizard for complex stages ([403af34](https://github.com/Patricoaa/ERPGrafico/commit/403af34e029b6cfce25a83df037898e059d4c960))
 * **production:** fix syntax error in Kanban map logic ([095b235](https://github.com/Patricoaa/ERPGrafico/commit/095b2358f8261534a98bb0b0615a3bc17ebbb1e6))
 * **production:** make wizard sidebars/footer transparent and fix footer border gaps ([37e7c41](https://github.com/Patricoaa/ERPGrafico/commit/37e7c41a057c00c71f9e4874838fd116474357b9))

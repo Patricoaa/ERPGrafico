@@ -1,7 +1,6 @@
 "use client"
 
-import { Printer } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { DataCell } from "@/components/shared"
 
 export interface DrawerPrintButtonProps {
   /** Controla si el botón se renderiza. Default: true */
@@ -13,8 +12,6 @@ export function DrawerPrintButton({ show = true, onPrint }: DrawerPrintButtonPro
   if (!show) return null
 
   return (
-    <Button variant="ghost" size="icon" onClick={onPrint}>
-      <Printer className="h-4 w-4" />
-    </Button>
+    <DataCell.Action action="print" onClick={onPrint} />
   )
 }

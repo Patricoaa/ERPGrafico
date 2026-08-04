@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
 import { useTouchMode } from '@/hooks/useTouchMode'
-import { Trash2, Minus, Plus } from 'lucide-react'
+import { Trash2, Minus, Plus, Percent } from 'lucide-react'
 import type { CartItem as CartItemType, Product, UoM } from '../types'
 import type { UoM as EntityUoM } from '@/types/entities'
 
@@ -20,7 +20,6 @@ interface CartItemProps {
     onQuantityChange: (cartItemId: string, qty: number | string) => void
     onUomChange: (cartItemId: string, uomId: number, uomName: string) => void
     onPriceChange: (cartItemId: string, priceGross: number) => void
-    onDiscountChange: (cartItemId: string, amount: number, percent: number) => void
     onRemove: (cartItemId: string) => void
     onOpenNumpad: (cartItemId: string, field: 'qty' | 'price' | 'discount', currentValue: number) => void
     showLineDiscount?: boolean
@@ -34,7 +33,6 @@ function CartItemComponent({
     maxQty,
     onQuantityChange,
     onUomChange,
-    onDiscountChange,
     onRemove,
     onOpenNumpad,
     showLineDiscount,
@@ -111,13 +109,6 @@ function CartItemComponent({
         }
     }
 
-    const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newAmount = parseFloat(e.target.value) || 0
-        const totalBeforeDiscount = item.qty * item.unit_price_gross
-        const newPercent = totalBeforeDiscount > 0 ? (newAmount / totalBeforeDiscount) * 100 : 0
-        onDiscountChange(item.cartItemId, newAmount, newPercent)
-    }
-
     const handleQtyStep = (delta: number) => {
         const newQty = Math.max(0.01, item.qty + delta)
         if (maxQty !== undefined && maxQty !== Infinity && newQty > maxQty) return
@@ -165,40 +156,45 @@ function CartItemComponent({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                    {/* Discount */}
+                    {/* Discount: icon when empty, amount when applied */}
                     {showLineDiscount && (
-                        isTouchMode ? (
-                            <Button 
-                                className={cn(
-                                    "font-semibold text-foreground cursor-pointer hover:bg-muted transition-colors rounded px-2 h-8 flex items-center justify-center underline underline-offset-4 decoration-border hover:decoration-foreground", 
-                                    isTouchMode ? "text-sm" : "text-xs",
-                                    (item.discount_amount || 0) > 0 ? "bg-destructive/10 text-destructive hover:bg-destructive/20 decoration-destructive/50 hover:decoration-destructive" : "bg-transparent text-muted-foreground"
-                                )} 
-                                onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)} 
-                                type="button"
-                                title="Descuento"
-                            >
-                                {item.discount_amount ? (
-                                    <span className="font-bold">-{formatCurrency(item.discount_amount)}</span>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                {(item.discount_amount || 0) > 0 ? (
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "font-bold transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
+                                            isTouchMode ? "h-10 px-2 text-sm" : "h-7 px-2 text-xs opacity-0 group-hover:opacity-100"
+                                        )}
+                                        onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
+                                        type="button"
+                                        title="Editar descuento"
+                                    >
+                                        -{formatCurrency(item.discount_amount)}
+                                    </Button>
                                 ) : (
-                                    <span className="opacity-60 hover:opacity-100">-%</span>
+                                    <Button
+                                        variant="ghost"
+                                        className={cn(
+                                            "flex items-center justify-center transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted",
+                                            isTouchMode ? "h-10 w-10" : "h-7 w-7 opacity-0 group-hover:opacity-100"
+                                        )}
+                                        onClick={() => onOpenNumpad(item.cartItemId, 'discount', 0)}
+                                        type="button"
+                                        title="Agregar descuento"
+                                    >
+                                        <Percent className={cn(isTouchMode ? "h-5 w-5" : "h-4 w-4")} />
+                                    </Button>
                                 )}
-                            </Button>
-                        ) : (
-                            <div className="flex items-center gap-1">
-                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Dscto:</span>
-                                <Input 
-                                    type="number" 
-                                    className={cn(
-                                        "h-7 w-16 text-right text-xs bg-muted/50 border-none rounded focus-visible:ring-1 focus-visible:ring-primary p-0 pr-1", 
-                                        (item.discount_amount || 0) > 0 && "text-destructive font-bold bg-destructive/10"
-                                    )} 
-                                    value={item.discount_amount || ""} 
-                                    placeholder="0" 
-                                    onChange={handleDiscountChange} 
-                                />
-                            </div>
-                        )
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                                {(item.discount_amount || 0) > 0
+                                    ? `Descuento: ${formatCurrency(item.discount_amount)} — clic para editar`
+                                    : "Agregar descuento"
+                                }
+                            </TooltipContent>
+                        </Tooltip>
                     )}
 
                     <Tooltip>
@@ -270,7 +266,7 @@ function CartItemComponent({
                     <Button
                         variant="ghost"
                         className={cn(
-                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10 border-none shadow-none rounded-none",
+                            "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
                         )}
                         {...(isTouchMode ? {
@@ -315,7 +311,7 @@ function CartItemComponent({
                     <Button
                         variant="ghost"
                         className={cn(
-                            "flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-black/10 border-none shadow-none rounded-none",
+                            "flex items-center justify-center hover:bg-accent transition-colors disabled:opacity-30 disabled:pointer-events-none active:bg-overlay/10 border-none shadow-none rounded-none",
                             isTouchMode ? "w-10 h-full" : "w-7 h-full"
                         )}
                         {...(isTouchMode ? {

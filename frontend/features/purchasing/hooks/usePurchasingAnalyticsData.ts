@@ -1,37 +1,9 @@
 import { useMemo } from "react"
 import type { PurchaseOrderAPI } from "../types"
 import { parseDateOnly } from "@/lib/utils"
-
-// ── Color palettes for charts ─────────────────────────────
-
-const STATUS_COLORS: Record<string, string> = {
-    DRAFT: "#6b7280",
-    CONFIRMED: "#3b82f6",
-    RECEIVED: "#06b6d4",
-    INVOICED: "#f59e0b",
-    PAID: "#22c55e",
-    CANCELLED: "#ef4444",
-}
-
-const RECEIVING_COLORS: Record<string, string> = {
-    PENDING: "#f59e0b",
-    PARTIAL: "#3b82f6",
-    RECEIVED: "#22c55e",
-}
-
-const PAYMENT_METHOD_COLORS: Record<string, string> = {
-    CASH: "#22c55e",
-    CARD: "#3b82f6",
-    DEBIT_CARD: "#3b82f6",
-    CREDIT_CARD: "#8b5cf6",
-    CARD_TERMINAL: "#06b6d4",
-    TRANSFER: "#a855f7",
-    CHECK: "#f59e0b",
-    CREDIT: "#ef4444",
-    WRITE_OFF: "#6b7280",
-    CREDIT_BALANCE: "#ec4899",
-    OTHER: "#9ca3af",
-}
+import { assignChartColors } from "@/lib/chart-colors"
+import { groupBy, granularityKey, granularitySortValue, today } from "@/lib/analytics-helpers"
+import type { Granularity } from "@/lib/analytics-helpers"
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
     CASH: "Efectivo",
@@ -45,62 +17,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
     WRITE_OFF: "Castigo",
     CREDIT_BALANCE: "Saldo a Favor",
     OTHER: "Otro",
-}
-
-
-
-// ── Helpers ───────────────────────────────────────────────
-
-function groupBy<T>(items: T[], keyFn: (item: T) => string): Record<string, T[]> {
-    const map: Record<string, T[]> = {}
-    if (!Array.isArray(items)) return map
-    for (const item of items) {
-        const key = keyFn(item)
-        if (!map[key]) map[key] = []
-        map[key].push(item)
-    }
-    return map
-}
-
-function formatMonth(dateStr: string): string {
-    const d = parseDateOnly(dateStr)
-    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
-        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-    return `${months[d.getMonth()]} ${d.getFullYear()}`
-}
-
-function formatYear(dateStr: string): string {
-    return parseDateOnly(dateStr).getFullYear().toString()
-}
-
-function formatDay(dateStr: string): string {
-    const d = parseDateOnly(dateStr)
-    const dd = String(d.getDate()).padStart(2, "0")
-    const mm = String(d.getMonth() + 1).padStart(2, "0")
-    return `${dd}/${mm}`
-}
-
-function granularityKey(dateStr: string, g: "day" | "month" | "year"): string {
-    if (g === "day") return formatDay(dateStr)
-    if (g === "year") return formatYear(dateStr)
-    return formatMonth(dateStr)
-}
-
-function granularitySortValue(key: string, g: "day" | "month" | "year"): number {
-    if (g === "day") {
-        const [dd, mm, yyyy] = key.split("/").map(Number)
-        return new Date(yyyy, mm - 1, dd).getTime()
-    }
-    if (g === "year") return Number(key)
-    // month: "Ene 2024" → parse month + year
-    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
-        "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
-    const [m, y] = key.split(" ")
-    return new Date(Number(y), months.indexOf(m), 1).getTime()
-}
-
-function today(): string {
-    return new Date().toISOString().split("T")[0]
 }
 
 // ── Public interface ──────────────────────────────────────
@@ -144,12 +60,31 @@ export interface PurchasingAnalyticsData {
         description?: string
         status: "success" | "warning" | "destructive" | "neutral"
     }>
+    topProductsByVolume: Array<{ product: string; total: number }>
+    categoryDistribution: Array<{ id: string; value: number; color: string }>
+    dteDistribution: Array<{ id: string; value: number; color: string }>
+    invoicedVolumeData: Array<{ id: string; value: number; color: string }>
+    invoicedStatusSummary: { invoicedCount: number; pendingCount: number; invoicedVolume: number; pendingVolume: number }
+    // Per product-type breakdowns
+    storableData: ProductTypeAnalytics
+    serviceData: ProductTypeAnalytics
+    subscriptionData: ProductTypeAnalytics
+    totalLineVolume: number
+}
+
+export interface ProductTypeAnalytics {
+    topProducts: Array<{ product: string; total: number; count: number }>
+    monthlyTrend: Array<{ month: string; total: number }>
+    subTypeBreakdown: Array<{ id: string; value: number; color: string }>
+    categoryDistribution: Array<{ id: string; value: number; color: string }>
+    totalVolume: number
+    orderCount: number
 }
 
 export function usePurchasingAnalyticsData(
     orders: PurchaseOrderAPI[],
     dateRange?: { from: string; to: string } | null,
-    granularity?: "day" | "month" | "year",
+    granularity?: Granularity,
 ): PurchasingAnalyticsData {
     return useMemo(() => {
         // ── Filter by date range ───────────────────────────
@@ -193,23 +128,19 @@ export function usePurchasingAnalyticsData(
 
         // ── Status distribution ────────────────────────────
         const statusGroups = groupBy(filtered, (o) => o.status || "UNKNOWN")
-        const statusDistribution = Object.entries(statusGroups)
-            .map(([id, items]) => ({
-                id,
-                value: items.length,
-                color: STATUS_COLORS[id] ?? "#6b7280",
-            }))
-            .sort((a, b) => b.value - a.value)
+        const statusDistribution = assignChartColors(
+            Object.entries(statusGroups)
+                .map(([id, items]) => ({ id, value: items.length }))
+                .sort((a, b) => b.value - a.value)
+        )
 
         // ── Receiving status distribution ──────────────────
         const receivingGroups = groupBy(safeOrders, (o) => o.receiving_status || "PENDING")
-        const receivingDistribution = Object.entries(receivingGroups)
-            .map(([id, items]) => ({
-                id,
-                value: items.length,
-                color: RECEIVING_COLORS[id] ?? "#6b7280",
-            }))
-            .sort((a, b) => b.value - a.value)
+        const receivingDistribution = assignChartColors(
+            Object.entries(receivingGroups)
+                .map(([id, items]) => ({ id, value: items.length }))
+                .sort((a, b) => b.value - a.value)
+        )
 
         // ── Payment method distribution ────────────────────
         function resolvePaymentMethod(o: PurchaseOrderAPI): string {
@@ -231,13 +162,14 @@ export function usePurchasingAnalyticsData(
             return "CREDIT"
         }
         const paymentMethodGroups = groupBy(filtered, resolvePaymentMethod)
-        const paymentMethodDistribution = Object.entries(paymentMethodGroups)
-            .map(([id, items]) => ({
-                id: PAYMENT_METHOD_LABELS[id] ?? id,
-                value: items.length,
-                color: PAYMENT_METHOD_COLORS[id] ?? "#6b7280",
-            }))
-            .sort((a, b) => b.value - a.value)
+        const paymentMethodDistribution = assignChartColors(
+            Object.entries(paymentMethodGroups)
+                .map(([id, items]) => ({
+                    id: PAYMENT_METHOD_LABELS[id] ?? id,
+                    value: items.length,
+                }))
+                .sort((a, b) => b.value - a.value)
+        )
 
         // ── Top suppliers ──────────────────────────────────
         const supplierGroups = groupBy(filtered, (o) => o.supplier_name || "Desconocido")
@@ -361,6 +293,156 @@ export function usePurchasingAnalyticsData(
         const prevAvg = prevCnt > 0 ? prevVol / prevCnt : 0
         const avgOrderValueTrend: TrendData = { direction: currAvg >= prevAvg ? "up" : "down", value: prevAvg > 0 ? `${Math.round(((currAvg - prevAvg) / prevAvg) * 100)}%` : "—" }
 
+        // ── Helpers: agrega líneas filtradas por tipo ─────
+        function buildProductTypeAnalytics(
+            types: string[],
+            subTypeLabels?: Record<string, string>
+        ): ProductTypeAnalytics {
+            const typeOrders = filtered.filter(o =>
+                Array.isArray(o.lines) && o.lines.some(l => types.includes(l.product_type || ""))
+            )
+
+            const productAgg: Record<string, { total: number; count: number }> = {}
+            const periodAgg: Record<string, number> = {}
+            const subTypeAgg: Record<string, number> = {}
+            const categoryAgg: Record<string, number> = {}
+            let totalVol = 0
+
+            filtered.forEach(order => {
+                const period = keyFn(order)
+                if (!Array.isArray(order.lines)) return
+                order.lines.forEach(line => {
+                    if (!types.includes(line.product_type || "")) return
+                    const lineTotal = Number(line.subtotal || (Number(line.quantity || 0) * Number(line.unit_cost || 0)))
+                    totalVol += lineTotal
+                    // product
+                    const name = line.product_name || "Sin nombre"
+                    if (!productAgg[name]) productAgg[name] = { total: 0, count: 0 }
+                    productAgg[name].total += lineTotal
+                    productAgg[name].count += Number(line.quantity || 0)
+                    // period
+                    periodAgg[period] = (periodAgg[period] || 0) + lineTotal
+                    // sub-type
+                    const sub = line.product_type || "Otro"
+                    subTypeAgg[sub] = (subTypeAgg[sub] || 0) + lineTotal
+                    // category
+                    const cat = line.category_name || "Sin Categoría"
+                    categoryAgg[cat] = (categoryAgg[cat] || 0) + lineTotal
+                })
+            })
+
+            const topProducts = Object.entries(productAgg)
+                .map(([product, s]) => ({ product, total: s.total, count: s.count }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 6)
+
+            const monthlyTrend = monthlyVolume
+                .map(m => ({ month: m.month, total: periodAgg[m.month] ?? 0 }))
+                .filter(m => m.total > 0)
+
+            const subTypeBreakdown = assignChartColors(
+                Object.entries(subTypeAgg)
+                    .map(([id, value]) => ({ id: subTypeLabels?.[id] ?? id, value }))
+                    .sort((a, b) => b.value - a.value)
+            )
+
+            const categoryDistribution = assignChartColors(
+                Object.entries(categoryAgg)
+                    .map(([id, value]) => ({ id, value }))
+                    .sort((a, b) => b.value - a.value)
+            )
+
+            return { topProducts, monthlyTrend, subTypeBreakdown, categoryDistribution, totalVolume: totalVol, orderCount: typeOrders.length }
+        }
+
+        // ── Datos por tipo de producto ─────────────────────
+        const STORABLE_TYPES = ["STORABLE", "CONSUMABLE", "MANUFACTURABLE"]
+        const SERVICE_TYPES = ["SERVICE"]
+        const SUBSCRIPTION_TYPES = ["SUBSCRIPTION"]
+        const STORABLE_LABELS: Record<string, string> = {
+            STORABLE: "Almacenable",
+            CONSUMABLE: "Consumible",
+            MANUFACTURABLE: "Fabricable",
+        }
+
+        const storableData = buildProductTypeAnalytics(STORABLE_TYPES, STORABLE_LABELS)
+        const serviceData = buildProductTypeAnalytics(SERVICE_TYPES)
+        const subscriptionData = buildProductTypeAnalytics(SUBSCRIPTION_TYPES)
+
+        // ── Top productos global (todas las líneas) ────────
+        const productStats: Record<string, { total: number }> = {}
+        filtered.forEach(order => {
+            if (!Array.isArray(order.lines)) return
+            order.lines.forEach(line => {
+                if (!line.product_name) return
+                const lineTotal = Number(line.subtotal || (Number(line.quantity || 0) * Number(line.unit_cost || 0)))
+                if (!productStats[line.product_name]) productStats[line.product_name] = { total: 0 }
+                productStats[line.product_name].total += lineTotal
+            })
+        })
+        const topProductsByVolume = Object.entries(productStats)
+            .map(([product, s]) => ({ product, total: s.total }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 6)
+
+        // ── Categoría de producto (type-key → etiqueta ES) ─
+        const TYPE_LABELS: Record<string, string> = {
+            STORABLE: "Almacenable",
+            CONSUMABLE: "Consumible",
+            MANUFACTURABLE: "Fabricable",
+            SERVICE: "Servicio",
+            SUBSCRIPTION: "Suscripción",
+        }
+        const categoryStats: Record<string, number> = {}
+        let totalLineVolume = 0
+        filtered.forEach(order => {
+            if (!Array.isArray(order.lines)) return
+            order.lines.forEach(line => {
+                const cat = TYPE_LABELS[line.product_type ?? ""] ?? "General"
+                const lineTotal = Number(line.subtotal || (Number(line.quantity || 0) * Number(line.unit_cost || 0)))
+                categoryStats[cat] = (categoryStats[cat] || 0) + lineTotal
+                totalLineVolume += lineTotal
+            })
+        })
+        const categoryDistribution = assignChartColors(
+            Object.entries(categoryStats)
+                .map(([id, value]) => ({ id, value }))
+                .sort((a, b) => b.value - a.value)
+        )
+
+        // ── DTE & Facturación ──────────────────────────────
+        const dteStats: Record<string, number> = {}
+        let invoicedVolume = 0
+        let pendingVolume = 0
+        let invoicedCount = 0
+        let pendingCount = 0
+
+        filtered.forEach(order => {
+            const vol = Number(order.total || 0)
+            if (order.is_invoiced) {
+                invoicedVolume += vol
+                invoicedCount += 1
+                const dteType = order.invoice_details?.dte_type || "Factura"
+                dteStats[dteType] = (dteStats[dteType] || 0) + 1
+            } else {
+                pendingVolume += vol
+                pendingCount += 1
+            }
+        })
+
+        const dteDistribution = assignChartColors(
+            Object.entries(dteStats)
+                .map(([id, value]) => ({ id, value }))
+                .sort((a, b) => b.value - a.value)
+        )
+
+        const invoicedVolumeData = assignChartColors([
+            { id: "Facturado", value: invoicedVolume },
+            { id: "Sin Facturar", value: pendingVolume }
+        ])
+
+        const invoicedStatusSummary = { invoicedCount, pendingCount, invoicedVolume, pendingVolume }
+
         return {
             totalVolume,
             totalPending,
@@ -390,6 +472,15 @@ export function usePurchasingAnalyticsData(
             statusSummary,
             paymentMethodDistribution,
             upcomingReceipts,
+            topProductsByVolume,
+            categoryDistribution,
+            dteDistribution,
+            invoicedVolumeData,
+            invoicedStatusSummary,
+            storableData,
+            serviceData,
+            subscriptionData,
+            totalLineVolume,
         }
     }, [orders, dateRange, granularity])
 }

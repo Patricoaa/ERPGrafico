@@ -64,7 +64,7 @@ def make_customer() -> MagicMock:
 def make_sale_order(lines: list, number: str = "1001", customer=None) -> MagicMock:
     order = MagicMock()
     order.number = number
-    order.display_id = f"NV-{number}"
+    order.display_id = f"OV-{number}"
     order.customer = customer or make_customer()
     order.lines.all.return_value = iter(lines)
     order.total_net = sum(line.subtotal for line in lines)

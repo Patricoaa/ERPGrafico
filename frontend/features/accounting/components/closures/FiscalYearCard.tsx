@@ -1,13 +1,8 @@
 import React from 'react';
-import { EntityCard, IconButton, StatusBadge, SubmitButton } from '@/components/shared';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { EntityCard, StatusBadge, SubmitButton } from '@/components/shared';
+import { fiscalYearActions } from './fiscalYearActions';
 import { type FiscalYear, type AccountingPeriod, type TaxPeriod } from '../../types';
-import { CalendarRange, Lock, MoreVertical, Settings2, ShieldAlert, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { CalendarRange, Lock, ShieldAlert, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { CombinedPeriodCard } from './CombinedPeriodCard';
 import { formatPlainDate } from '@/lib/utils';
 
@@ -111,33 +106,15 @@ export function FiscalYearCard({
                                 Cerrar Ejercicio
                             </SubmitButton>
                         )}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <IconButton className="h-8 w-8">
-                                    <Settings2 className="w-4 h-4 text-muted-foreground" />
-                                </IconButton>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                {isClosed ? (
-                                    <>
-                                        <DropdownMenuItem onClick={() => onReopenFiscalYear(year)} disabled={isFiscalYearLoading}>
-                                            <Lock className="w-4 h-4 mr-2 text-warning" />
-                                            Reabrir Ejercicio
-                                        </DropdownMenuItem>
-                                    </>
-                                ) : (
-                                    <DropdownMenuItem disabled>
-                                        <MoreVertical className="w-4 h-4 mr-2 text-muted-foreground" />
-                                        Acciones bloqueadas (Año abierto)
-                                    </DropdownMenuItem>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {fiscalYearActions.render(
+                            { year, periods, fiscalYear },
+                            { onExecuteClosing: () => onPreviewClosing(year), onReopen: () => onReopenFiscalYear(year) },
+                        )}
                     </div>
                 }
             />
 
-            <div className="p-4 bg-muted/5 border-t border-border/50">
+            <EntityCard.Dashboard>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
                         const acct = periods.find(p => p.month === m);
@@ -162,7 +139,7 @@ export function FiscalYearCard({
                         );
                     })}
                 </div>
-            </div>
+            </EntityCard.Dashboard>
         </EntityCard>
     );
 }

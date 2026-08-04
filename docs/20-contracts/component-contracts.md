@@ -82,25 +82,29 @@ Single authorized component for **non-status, non-entity-ID** informational labe
 | `icon` | `LucideIcon` | ❌ | — | Same color as text |
 | `className` | `string` | ❌ | — | Layout/position only — never override typography |
 
-Typography invariant: `font-mono font-black uppercase tracking-widest`. Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
+Typography invariant: `font-sans font-medium text-xs`, borderless, `rounded-sm` (CurrencyFlow aesthetic, ADR-0068). Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
+
+> 🟡 **Justified exceptions** (burbujas de notificación, tag-input pills, mono para códigos/versiones/%, callouts, POS density) — ver **[component-chip.md §Documented exceptions](./component-chip.md#documented-exceptions-adr-0069)** y **[ADR-0069](../10-architecture/adr/0069-badge-consumer-migration-and-exceptions.md)**.
 
 ---
 
 ## StatusBadge 🟢
 
-Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`.
+Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`. Only authorized status renderer (GOVERNANCE §18). **In DataTable cells render via `DataCell.Status` (tinted badge, ADR-0068).** Typography invariant: `font-sans font-medium text-xs`, borderless, `rounded-sm`.
 
 ```tsx
 <StatusBadge status="IN_PROGRESS" />
-<StatusBadge status="PAID" variant="dot" />
+<StatusBadge status="PAID" variant="badge" />
+<DataCell.Status status={row.status} />   // table cells — tinted badge
 ```
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
-| `variant` | `'sale-order' \| 'purchase-order' \| 'work-order' \| 'invoice' \| 'payment' \| 'generic'` | ✅ | — | Maps to state-map entity |
-| `status` | entity-specific union (see [state-map](state-map.md)) | ✅ | — | Must be valid for variant |
-| `size` | `'sm' \| 'md' \| 'lg'` | ❌ | `'sm'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
-| `className` | `string` | ❌ | — | Merged via `cn()` |
+| `status` | `string` | ✅ | — | Business token, case-insensitive; resolved via `resolveStatus()` / `STATUS_MAP` |
+| `label` | `string` | ❌ | — | Overrides the resolved label |
+| `variant` | `'default' \| 'dot' \| 'badge' \| 'hub'` | ❌ | `'default'` | `default`/`dot` = compact dot+text (cards, kanban); `badge` = square tinted badge + dot (drawers, detail); `hub` = circular icon |
+| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | ❌ | `'md'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
+| `className` | `string` | ❌ | — | Layout/position only — never typography or colors |
 
 States handled: — (pure presentational, no async).
 
@@ -110,7 +114,7 @@ States handled: — (pure presentational, no async).
 
 > 📄 Documentación completa en **[component-skeleton.md](./component-skeleton.md)**.
 
-Catálogo: `CardSkeleton` · `TableSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
+Catálogo: `CardSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`. El skeleton de tablas es integrado (`DataTable isLoading` + `skeletonRows`).
 Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refetching.
 
 ---
@@ -147,12 +151,49 @@ Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refe
 > **File**: `frontend/components/shared/DataTableCells.tsx`  
 > **Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
 
+> ⚠️ **Para campos de entidad**, la asignación canónica es declarar `FieldDef.type` en `*Fields.ts`
+> vía `createEntityFields<T>()` — el motor resuelve el `DataCell` correcto. La **fuente de verdad**
+> de la asignación `type` → celda (los 15 FieldTypes, opciones, null policy y zonas) es
+> **[component-fields.md](./component-fields.md)**. Los primitivos de esta sección se usan
+> directamente solo en renderers `computed` y columnas de excepción.
+
 Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica tipografía consistente.
 
 ### Clasificación de Textos Estándar
 
-* **`DataCell.Text` (Texto Primario)**: Todo texto que no encaje en las definiciones restantes (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto (fuente `13px`, peso mediano).
-* **`DataCell.Secondary` (Texto Secundario)**: Todo dato complementario que se muestre junto a o debajo de un texto primario, entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias; fuente `11px`, peso normal, mayúsculas, tracking espaciado).
+* **`DataCell.Text` (Texto Primario)**: Todo texto que no encaje en las definiciones restantes (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto (default `text-xs` + `font-medium`).
+* **`DataCell.Secondary` (Texto Secundario)**: Todo dato complementario que se muestre junto a o debajo de un texto primario, entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias; default `text-xs` + `font-medium`, `text-muted-foreground`).
+
+> **Regla tipográfica por defecto (ADR-0061):** todos los DataCell de texto usan `text-xs` por default (`SIZE_MAP.md` sigue en `text-sm` como escalamiento explícito). Los consumidores pueden escalar con `size="md"`/`"lg"` o override via `className` (tailwind-merge last-wins).
+
+### DataCell.Date — fecha y fecha-hora (ADR-0062)
+
+| Prop | Tipo | Requerido | Default | Descripción |
+|---|---|---|---|---|
+| `value` | `string \| Date` | ✅ | — | Fecha a mostrar |
+| `showTime` | `boolean` | ❌ | `false` | Muestra hora/minutos (`es-CL`) como sufijo |
+| `weight` | `DataCellWeight` | ❌ | `medium` | Peso base de la celda (override del segmento fecha) |
+| `dateWeight` | `DataCellWeight` | ❌ | `'medium'` | Peso del segmento fecha (gana sobre `weight`) |
+| `timeWeight` | `DataCellWeight` | ❌ | `'normal'` | Peso del segmento hora (independiente de la fecha) |
+
+Pesos disponibles (`DataCellWeight`): `light` (300) · `normal` (400) · `medium` (500) · `semibold` (600) · `bold` (700). El token `light` se añadió en ADR-0062.
+
+**Peso por zona (ADR-0067):** el motor `entity-fields` aplica `weight: 'semibold'` automático a
+las celdas resueltas en zona `header` (lista y card) vía threading en `renderCell`. La zona
+`title` no recibe peso automático (queda en `font-medium`). Un `weight` explícito en el
+`FieldDef` gana sobre el automático. `Status` / `Chip` / `Category`
+conservan su tipografía de badge (no aceptan `weight`). Zonas de lista: `title → subtitle →
+detail → header` (header al final, antes de acciones).
+
+```tsx
+// Fecha con hora: fecha font-medium, hora font-normal (default)
+<DataCell.Date value={row.opened_at} showTime />
+
+// Fecha con hora y hora más ligera
+<DataCell.Date value={row.closed_at} showTime dateWeight="medium" timeWeight="light" />
+```
+
+**FieldType `dateTime` (entity-fields):** variante declarativa de fecha-hora. Renderiza `DataCell.Date` con `showTime` y admite `dateWeight`/`timeWeight` tipados en el `FieldDef`. El rol `datetime` lo enruta siempre a la zona **center header** del card (nunca a subtítulo); el `date` (rol `temporal`) sigue siendo candidato a subtítulo vía auto-compose.
 
 ### Identidad y Enlaces: DataCell.Entity vs DataCell.Link vs DataCell.ContactLink
 
@@ -182,9 +223,16 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 
 Para cantidades con polaridad visual (+/−): movimientos de stock, horas de producción, variaciones de inventario. **No usar para monedas** — usar `DataCell.Currency showColor` que delega a `MoneyDisplay`.
 
+**FieldType `numericFlow` (entity-fields, ADR-0067):** variante declarativa reintroducida.
+Admite `direction?: FlowDirection | (e) => FlowDirection` (inferencia por signo si se omite),
+`unit?: string | (e) => string`, `showIcon?`, `showSign?`. Rol `flow` → zona header.
+`stockMoveFields.quantity` es la referencia de migración.
+
+Renderiza un **badge cuadrado (`rounded-sm`), sin borde, tintado del color del flujo** (fondo `/{10}` más tenue). Mismo lenguaje visual que `CurrencyFlow`. Defaults: `size sm` (`text-xs`) y `font-medium`.
+
 ```tsx
 <DataCell.NumericFlow value={movement.qty} unit="un" />
-// → "+10.00 un" verde  |  "−5.00 un" rojo  |  "0.00" gris
+// → badge `bg-success/10 text-success` con "+10 un" | `bg-destructive/10 text-destructive` con "−5 un" | `bg-muted/60 text-muted-foreground` con "0 un"
 ```
 
 | prop | type | required | default | notes |
@@ -194,7 +242,7 @@ Para cantidades con polaridad visual (+/−): movimientos de stock, horas de pro
 | `showSign` | `boolean` | ❌ | `true` | Prefija `+` en positivos |
 | `className` | `string` | ❌ | — | |
 
-Usa `.toFixed(2)` y tokens `text-success` / `text-destructive` / `text-muted-foreground` de `globals.css`.
+Usa `.toFixed(2)` y tokens `text-success` / `text-destructive` / `text-muted-foreground` de `globals.css` como tinta del badge.
 
 ### DataCell.Progress
 
@@ -214,6 +262,24 @@ Barra de progreso para métricas de completitud (% de entrega, avance de OT, sto
 | `className` | `string` | ❌ | — | |
 
 `value >= max` → barra completa en `bg-success` con glow. `value < max` → `bg-primary`. Valor clamped a `[0, 100]%`.
+
+### DataCell.Category (ADR-0066 D-05)
+
+Uno o varios chips resueltos por dominio (wraps `Chip.Category` → `resolveCategory`). Contenedor `flex-wrap` centrado. Valores vacíos / sin dominio → guion de datos faltantes (política null unificada).
+
+```tsx
+<DataCell.Category value={roles} domain="contact_type" />
+// → chips "Cliente" / "Proveedor" según resolveCategory
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `string \| string[] \| null \| undefined` | ✅ | — | Uno o varios valores del dominio |
+| `domain` | `CategoryDomain` | ❌ | — | `product_type` · `tax_type` · `transaction_type` · `dte_type` · `contact_type` · `payment_method` |
+| `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | |
+| `className` | `string` | ❌ | — | |
+
+**FieldType `chip-category` (entity-fields):** el motor delega a `DataCell.Category`; `domain` admite valor o `(entity) => CategoryDomain`.
 
 ---
 
@@ -589,8 +655,9 @@ Single source of truth for money rendering. Tabular, monospace, locale-aware.
 | `className` | `string` | ❌ | — | |
 | `digits` | `number` | ❌ | `0` | Decimal places override |
 | `inline` | `boolean` | ❌ | `false` | `display: inline` vs `inline-block` |
+| `weight` | `DataCellWeight` | ❌ | `'medium'` | Peso tipográfico (via `WEIGHT_MAP`) |
 
-Font: always `font-mono font-bold tabular-nums`. Do NOT render currency with raw JS `.toLocaleString()` outside this component.
+Font: default `font-medium tabular-nums`. Override con `weight` (prop) o `className` (tailwind-merge last-wins). Do NOT render currency with raw JS `.toLocaleString()` outside this component.
 
 ---
 
@@ -632,6 +699,7 @@ Hierarchical accounting report table. Supports tree expand/collapse and comparis
   totalLabel="Total Activos"
   totalValue={5000000}
   showComparison
+  varianceDirection="higher-is-better"
   periodLabel="Abr 2026"
   compPeriodLabel="Abr 2025"
   accentColor="primary"
@@ -659,15 +727,78 @@ interface ReportNode {
 | `totalValueComp` | `number` | ❌ | — | Footer comparison balance |
 | `showComparison` | `boolean` | ❌ | `false` | Adds comp column + variance |
 | `embedded` | `boolean` | ❌ | `false` | Removes card wrapper |
-| `isLoading` | `boolean` | ❌ | `false` | Shows `ReportTableSkeleton` |
+| `isLoading` | `boolean` | ❌ | `false` | Shows skeleton loading state |
 | `periodLabel` | `string` | ❌ | — | Column header |
 | `compPeriodLabel` | `string` | ❌ | — | Comparison column header |
 | `mode` | `'tree' \| 'flat'` | ❌ | `'tree'` | Flat disables expand |
-| `accentColor` | `'primary' \| 'success' \| 'info' \| 'destructive'` | ❌ | `'primary'` | Total row accent |
+| `accentColor` | `'primary' \| 'success' \| 'info' \| 'destructive' \| 'income' \| 'expense' \| 'asset' \| 'liability'` | ❌ | `'primary'` | Total row accent |
+| `varianceDirection` | `'higher-is-better' \| 'lower-is-better'` | ❌ | `'higher-is-better'` | Controls variance color polarity |
 
-Also exports `ReportTableSkeleton` for suspense boundaries.
+States handled: loading (isLoading → skeleton), empty (EmptyState), populated.
 
-States handled: loading (isLoading → ReportTableSkeleton), empty (EmptyState), populated.
+---
+
+## BudgetVarianceTable 🟢 (feature-local)
+
+Budget variance report table with hierarchical account expansion. Located in `features/finance/components/`. Not exported from shared — internal to the finance feature.
+
+```tsx
+<BudgetVarianceTable data={varianceData} loading={isLoading} />
+```
+
+```typescript
+type BudgetVarianceAccountType = 'INCOME' | 'EXPENSE'
+
+interface BudgetVarianceNode {
+  id: number
+  code: string
+  name: string
+  type: BudgetVarianceAccountType
+  month_actual: number
+  month_budget: number
+  month_variance: number
+  month_percentage: number
+  ytd_actual: number
+  ytd_budget: number
+  ytd_variance: number
+  ytd_percentage: number
+  is_unbudgeted: boolean
+  children: BudgetVarianceNode[]
+}
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `data` | `BudgetVarianceNode[]` | ✅ | — | Tree data from `useBudgetVariance` |
+| `loading` | `boolean` | ❌ | `false` | Shows skeleton rows |
+
+States handled: loading (SkeletonShell), empty (handled by parent view), populated.
+
+---
+
+## createExpanderColumn 🟢
+
+Factory function that creates an expander column for `DataTable` rows. Renders a chevron toggle button. Paired with `renderSubComponent` on DataTable for flat row expansion.
+
+```tsx
+import { createExpanderColumn } from '@/components/shared'
+
+const expanderCol = createExpanderColumn<CreditContact>({
+  canExpand: (row) => row.hasDetails,  // optional: hide button for non-expandable rows
+})
+
+<DataTable
+  columns={[expanderCol, ...otherColumns]}
+  data={data}
+  renderSubComponent={(row) => <DetailPanel data={row.original} />}
+/>
+```
+
+| param | type | required | notes |
+|-------|------|----------|-------|
+| `canExpand` | `(row: TData) => boolean` | ❌ | When returns false, cell renders null (hidden button) |
+
+Consumers: `ProfileView` (settlements), `PortfolioTable` (credits), `BlacklistClientView` (blacklist).
 
 ---
 
@@ -801,7 +932,7 @@ POS panels, product grids, and other industrial-themed surfaces use background t
 | `dot-grid-surface-sm` | Compact panels where 24px grid feels too sparse (12px grid) | `className="bg-card dot-grid-surface-sm"` |
 | `cross-grid-surface` | Technical/engineering surfaces (production grids, Gantt charts) | `className="bg-card cross-grid-surface"` |
 | `ribbon-cmyk` | CMY gradient top border on cards | `className="bg-card ribbon-cmyk"` |
-| `card-accent-cmyk` | CMY vertical accent on left edge of cards | `className="card-accent-cmyk"` |
+| `card-focus-spin-cmyk` | CMY gradient border on cards — rotating on hover, faster on focus/selected (`accent-visible`) | `className="card-focus-spin-cmyk"` (included in `card-base`) |
 
 **Rules:**
 - Apply only to surfaces with `bg-card` as base.
@@ -1071,6 +1202,7 @@ Componentes de uso estrictamente interno, no consumir directamente en features:
 
 - Creating a new badge component instead of using `StatusBadge` (for states) or `Chip` (for labels/tags).
 - Inline `<Badge className="text-[8px] ...">` for informational tags — use `<Chip size="xs">`.
+- Importing `@/components/ui/badge` directly in features or shared components — use `Badge`/`Chip`/`StatusBadge` from `@/components/shared` (single source of visual truth, ADR-0068/0069).
 - Passing raw Tailwind color classes to any shared component.
 - Modifying `/components/ui/` (Shadcn base).
 - Calling `.toLocaleString()` for money formatting — use `MoneyDisplay`.

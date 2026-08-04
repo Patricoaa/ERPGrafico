@@ -16,7 +16,7 @@ from functools import reduce
 from typing import Any, ClassVar
 
 from django.db import connection as _db_connection
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 
 logger = logging.getLogger(__name__)
@@ -30,12 +30,12 @@ def _is_postgres() -> bool:
 class SearchableEntity:
     model: type[models.Model]
     label: str  # dot-notation app label, e.g. 'sales.saleorder'
-    title_singular: str  # e.g. 'Nota de Venta'
-    title_plural: str  # e.g. 'Notas de Venta'
+    title_singular: str  # e.g. 'Orden de Venta'
+    title_plural: str  # e.g. 'Ordenes de Venta'
     icon: str  # lucide icon name, e.g. 'receipt-text'
     search_fields: tuple[str, ...]  # ORM field lookups, e.g. ('number', 'customer__name')
-    short_display_template: str  # e.g. 'NV-{number}'
-    display_template: str  # Python str.format_map template, e.g. 'NV-{number} · {customer.name}'
+    short_display_template: str  # e.g. 'OV-{number}'
+    display_template: str  # Python str.format_map template, e.g. 'OV-{number} · {customer.name}'
     list_url: str  # frontend route, e.g. '/ventas/ordenes'
     detail_url_pattern: str  # frontend route with {id}, e.g. '/ventas/ordenes/{id}'
     subtitle_template: str = ""  # e.g. '{customer.email}'
@@ -45,7 +45,11 @@ class SearchableEntity:
 
 
 class _DotAccessor:
-    """Wraps a model instance so that display_template can access related attrs."""
+    """Wraps a model instance so that display_template can access related attrs.
+
+    Supports nested model paths ({customer.name}) and flat serializer keys
+    ({customer_name}) by decomposing snake_case parts into model relations.
+    """
 
     def __init__(self, instance: models.Model) -> None:
         self._instance = instance
@@ -53,12 +57,33 @@ class _DotAccessor:
     def __getitem__(self, key: str) -> str:
         obj = self._instance
         for part in key.split("."):
-            obj = getattr(obj, part, "")
+            if obj is None:
+                return ""
+            obj = getattr(obj, part, None)
             if callable(obj):
                 obj = obj()
             if obj is None:
+                obj = self._resolve_flat(part)
+            if obj is None:
                 return ""
-        return obj
+        return str(obj) if obj is not None else ""
+
+    def _resolve_flat(self, key: str) -> object:
+        """Resolve a flat serializer key (customer_name) against model relations (customer.name)."""
+        segments = key.split("_")
+        for i in range(len(segments) - 1, 0, -1):
+            value = getattr(self._instance, "_".join(segments[:i]), None)
+            if value is None:
+                continue
+            for segment in segments[i:]:
+                value = getattr(value, segment, None)
+                if value is None:
+                    break
+            if value is not None:
+                if callable(value):
+                    value = value()
+                return value if value is not None else ""
+        return ""
 
 
 class UniversalRegistry:
@@ -128,27 +153,27 @@ class UniversalRegistry:
 
         logger.debug(f"Search started: query='{query}', user='{user}'")
 
-        # 1. Identify if the query has a canonical prefix (e.g., "NV-", "OCS-")
+        # 1. Identify if the query has a canonical prefix (e.g., "OV-", "OCS-")
         # We find the best matching prefix and strip it to search for the core identifier.
         targeted_entities = []
         clean_query = query
         best_prefix_len = 0
 
         for label, entity in cls._entities.items():
-            # Extract constant prefix (e.g., "NV-{number}" -> "NV-")
+            # Extract constant prefix (e.g., "OV-{number}" -> "OV-")
             m = re.match(r"^([^{]+)\{", entity.short_display_template)
             if not m:
                 continue
 
             raw_prefix = m.group(1)
-            # Clean version for flexible matching (e.g., "NV-" -> "NV")
+            # Clean version for flexible matching (e.g., "OV-" -> "OV")
             clean_prefix = re.sub(r"[^a-zA-Z0-9]+$", "", raw_prefix).upper()
             if not clean_prefix:
                 continue
 
             q_upper = query.upper()
 
-            # Match if query starts with the prefix letters (e.g., "NV100" or "NV-100" matches "NV-")
+            # Match if query starts with the prefix letters (e.g., "NV100" or "OV-100" matches "OV-")
             # We ensure it's a true prefix by checking if it's followed by a non-letter or if it's the whole query.
             if q_upper == clean_prefix or (
                 q_upper.startswith(clean_prefix) and not q_upper[len(clean_prefix)].isalpha()
@@ -394,39 +419,40 @@ class UniversalRegistry:
 
         from core.models import GlobalSearchIndex
 
-        # 1. Get or create index entry
-        ct = ContentType.objects.get_for_model(instance.__class__)
-        idx, _ = GlobalSearchIndex.objects.get_or_create(
-            content_type=ct, object_id=str(instance.pk), defaults={"entity_label": entity.label}
-        )
+        with transaction.atomic():
+            # 1. Get or create index entry
+            ct = ContentType.objects.get_for_model(instance.__class__)
+            idx, _ = GlobalSearchIndex.objects.get_or_create(
+                content_type=ct, object_id=str(instance.pk), defaults={"entity_label": entity.label}
+            )
 
-        # 2. Update display fields
-        idx.title = cls._render(entity.display_template, instance)
-        idx.subtitle = cls._render(entity.subtitle_template, instance)
-        idx.extra_info = cls._render(entity.extra_info_template, instance)
-        idx.icon = entity.icon
-        idx.entity_label = entity.label
-        idx.save()
+            # 2. Update display fields
+            idx.title = cls._render(entity.display_template, instance)
+            idx.subtitle = cls._render(entity.subtitle_template, instance)
+            idx.extra_info = cls._render(entity.extra_info_template, instance)
+            idx.icon = entity.icon
+            idx.entity_label = entity.label
+            idx.save()
 
-        # 3. Update search vector (calculated from original model fields)
-        # We now include ALL search fields, including related ones (__)
-        from django.db import connection as db_conn
+            # 3. Update search vector (calculated from original model fields)
+            # We now include ALL search fields, including related ones (__)
+            from django.db import connection as db_conn
 
-        fts_fields = entity.search_fields
-        if fts_fields and db_conn.vendor == "postgresql":
-            from django.contrib.postgres.search import SearchVector
+            fts_fields = entity.search_fields
+            if fts_fields and db_conn.vendor == "postgresql":
+                from django.contrib.postgres.search import SearchVector
 
-            try:
-                instance_with_vector = instance.__class__.objects.annotate(
-                    computed_vector=SearchVector(*fts_fields, config="spanish")
-                ).get(pk=instance.pk)
+                try:
+                    instance_with_vector = instance.__class__.objects.annotate(
+                        computed_vector=SearchVector(*fts_fields, config="spanish")
+                    ).get(pk=instance.pk)
 
-                idx.search_vector = instance_with_vector.computed_vector
-                idx.save()
-            except Exception:
-                # Log error but don't fail indexing if vector fails (e.g. non-string fields)
-                # We still have title/subtitle for icontains search
-                pass
+                    idx.search_vector = instance_with_vector.computed_vector
+                    idx.save()
+                except Exception:
+                    # Log error but don't fail indexing if vector fails (e.g. non-string fields)
+                    # We still have title/subtitle for icontains search
+                    pass
 
     @classmethod
     def remove_from_index(cls, instance: models.Model) -> None:

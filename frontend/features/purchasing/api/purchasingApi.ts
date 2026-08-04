@@ -24,6 +24,8 @@ interface OrderFilters extends PageParams {
     supplier_name?: string
     number?: string
     product_name?: string
+    created_at_after?: string
+    created_at_before?: string
 }
 
 interface PartialReceivePayload {
@@ -62,6 +64,8 @@ export const purchasingApi = {
         if (filters?.supplier_name) params.append('supplier_name', filters.supplier_name)
         if (filters?.number) params.append('number', filters.number)
         if (filters?.product_name) params.append('product_name', filters.product_name)
+        if (filters?.created_at_after) params.append('created_at_after', filters.created_at_after)
+        if (filters?.created_at_before) params.append('created_at_before', filters.created_at_before)
         const res = await api.get('/purchasing/orders/', { params })
         return toPage<PurchaseOrderAPI>(res.data, filters?.page ?? 1, filters?.page_size ?? 50)
     },

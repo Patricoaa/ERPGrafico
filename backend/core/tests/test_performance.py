@@ -25,9 +25,9 @@ class TestSearchPerformance:
     def test_search_latency_nv001(self, benchmark, django_user_model):
         user = django_user_model.objects.get_or_create(username="perf_user")[0]
 
-        # Query: 'NV-001' (matches SaleOrders)
+        # Query: 'OV-001' (matches SaleOrders)
         def run_search():
-            return UniversalRegistry.search("NV-001", user=user)
+            return UniversalRegistry.search("OV-001", user=user)
 
         result = benchmark(run_search)
         assert result is not None

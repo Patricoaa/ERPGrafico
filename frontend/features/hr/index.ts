@@ -13,5 +13,8 @@ export {
   type EmployeeBasic,
 } from './hooks/usePayrolls'
 export { useAbsences } from './hooks/useAbsences'
+export { useHrSettings } from './hooks/useHrSettings'
 export { useSalaryAdvances } from './hooks/useSalaryAdvances'
 export { useEmployees } from './hooks/useEmployees'
+export { usePayrollAnalyticsData } from './hooks/usePayrollAnalyticsData'
+export type { PayrollAnalyticsData } from './hooks/usePayrollAnalyticsData'

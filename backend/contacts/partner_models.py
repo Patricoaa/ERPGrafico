@@ -42,6 +42,10 @@ class PartnerTransaction(models.Model):
         EQUITY_TRANSFER_OUT = "TRANSFER_OUT", _("Transferencia Entregada")
         EQUITY_REDUCTION = "REDUCTION", _("Reducción de Capital")
 
+        # Paid-in transfer tracking (proportional transfer of paid capital)
+        CAPITAL_CONTRIBUTION_TRANSFER_IN = "CONTRIB_TRANSFER_IN", _("Aporte por Transferencia (Entrada)")
+        CAPITAL_CONTRIBUTION_TRANSFER_OUT = "CONTRIB_TRANSFER_OUT", _("Aporte por Transferencia (Salida)")
+
         OTHER = "OTHER", _("Otro")
 
     partner = models.ForeignKey(
@@ -168,7 +172,9 @@ class PartnerTransaction(models.Model):
 
     @property
     def signed_amount(self):
-        """Returns positive for contributions, negative for withdrawals."""
+        """Returns positive for contributions, negative for withdrawals, 0 for subscriptions."""
+        if self.transaction_type == self.Type.EQUITY_SUBSCRIPTION:
+            return Decimal("0")
         if self.is_withdrawal:
             return -self.amount
         return self.amount

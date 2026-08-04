@@ -1,7 +1,7 @@
 "use client"
 
-import {CheckCircle2, AlertTriangle, Loader2, Copy} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import {CheckCircle2, AlertTriangle, Copy} from 'lucide-react'
+import { ActionSlideButton } from '@/components/shared'
 import type { WorkOrder } from '../../types'
 
 interface FinishedStepProps {
@@ -37,7 +37,7 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStep
             <p className="text-sm font-bold text-warning">Discrepancia de cantidad</p>
             <p className="text-xs text-muted-foreground">
               Se produjeron <span className="font-bold text-foreground">{discrepancy.produced}</span> unidades
-              pero la nota de venta registra <span className="font-bold text-foreground">{discrepancy.sold}</span>.
+              pero la orden de venta registra <span className="font-bold text-foreground">{discrepancy.sold}</span>.
               {' '}Delta: <span className={`font-bold ${discrepancy.delta > 0 ? 'text-success' : 'text-destructive'}`}>
                 {discrepancy.delta > 0 ? '+' : ''}{discrepancy.delta}
               </span>.
@@ -52,10 +52,9 @@ export function FinishedStep({ order, onPrintCopy, isDuplicating }: FinishedStep
       <div className="flex gap-3 flex-wrap justify-center">
 
         {onPrintCopy && (
-          <Button variant="outline" className="gap-2" disabled={isDuplicating} onClick={onPrintCopy}>
-            {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+          <ActionSlideButton variant="primary" className="gap-2" loading={isDuplicating} onClick={onPrintCopy} icon={Copy}>
             Imprimir copia
-          </Button>
+          </ActionSlideButton>
         )}
 
       </div>

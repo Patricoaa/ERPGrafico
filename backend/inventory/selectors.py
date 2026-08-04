@@ -6,6 +6,7 @@ from django.db.models import (
     IntegerField,
     OuterRef,
     Prefetch,
+    Q,
     QuerySet,
     Subquery,
     Sum,
@@ -43,6 +44,7 @@ def list_products(*, user, params: dict) -> QuerySet:
             "attribute_values__attribute",
             "allowed_sale_uoms",
             "attachments",
+            "uom_prices",
             Prefetch(
                 "variants",
                 queryset=Product.objects.filter(is_active=True)
@@ -158,6 +160,7 @@ def get_product_base_queryset(*, user) -> QuerySet:
             "attribute_values__attribute",
             "allowed_sale_uoms",
             "attachments",
+            "uom_prices",
             Prefetch(
                 "variants",
                 queryset=Product.objects.filter(is_active=True)
@@ -206,6 +209,8 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
 
     from django.db.models import Q
 
+    from inventory.services import UoMService
+
     products = Product.objects.filter(
         Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE])
         | Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True)
@@ -214,13 +219,16 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
             requires_advanced_manufacturing=False,
             mfg_auto_finalize=False,
         )
-    ).select_related("category")
+    ).select_related("category", "uom")
 
     report = []
     for p in products:
         if warehouse_id:
             stocks_qs = p.stocks.filter(warehouse_id=warehouse_id)
-            moves_qs = p.stock_moves.filter(warehouse_id=warehouse_id)
+            moves_qs = p.stock_moves.filter(
+                Q(source_location__warehouse_id=warehouse_id) |
+                Q(destination_location__warehouse_id=warehouse_id)
+            )
             moves_in_qs = moves_qs.filter(quantity__gt=0)
             moves_out_qs = moves_qs.filter(quantity__lt=0)
         else:
@@ -238,6 +246,11 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
         total_value = float(stock_qty * Decimal(str(unit_cost)))
         qty_available = float(stock_qty) - qty_reserved
 
+        uom = p.uom
+        uom_display_stock = UoMService.format_quantity_display(Decimal(str(stock_qty)), uom) if uom else ""
+        uom_display_reserved = UoMService.format_quantity_display(Decimal(str(qty_reserved)), uom) if uom else ""
+        uom_display_available = UoMService.format_quantity_display(Decimal(str(qty_available)), uom) if uom else ""
+
         report.append(
             {
                 "id": p.id,
@@ -246,9 +259,13 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
                 "name": p.name,
                 "category_id": p.category_id,
                 "category_name": p.category.name,
-                "uom_id": p.uom.id if p.uom else None,
-                "uom_category_id": p.uom.category_id if p.uom else None,
-                "uom_name": p.uom.name if p.uom else "",
+                "uom_id": uom.id if uom else None,
+                "uom_category_id": uom.category_id if uom else None,
+                "uom_name": uom.name if uom else "",
+                "uom_abbreviation": (uom.abbreviation or uom.name) if uom else "",
+                "uom_display_stock": uom_display_stock,
+                "uom_display_reserved": uom_display_reserved,
+                "uom_display_available": uom_display_available,
                 "stock_qty": float(stock_qty),
                 "unit_cost": unit_cost,
                 "total_value": total_value,
@@ -259,6 +276,20 @@ def get_stock_report_data(warehouse_id: int | None = None) -> list[dict]:
             }
         )
     return report
+
+
+class ProductAttributeValueSelector:
+    @staticmethod
+    def filter_suggestions(q: str) -> list[str]:
+        from .models import ProductAttributeValue
+
+        names = (
+            ProductAttributeValue.objects.filter(value__icontains=q)
+            .values_list("value", flat=True)
+            .distinct()
+            .order_by("value")[:10]
+        )
+        return list(names)
 
 
 class ProductSelector:
@@ -302,7 +333,7 @@ class ProductSelector:
 
         moves = (
             StockMove.objects.filter(product_id__in=product_ids)
-            .select_related("warehouse", "uom", "product")
+            .select_related("source_location", "destination_location", "uom", "product")
             .prefetch_related(
                 "sale_delivery_line",
                 "purchase_receipt_line",
@@ -317,7 +348,12 @@ class ProductSelector:
         for m in moves:
             unit_price = float(m.unit_cost or 0)
 
-            if unit_price == 0 or m.move_type == "OUT":
+            # Determine direction: OUT if source is INTERNAL and destination is not
+            src_type = m.source_location.location_type if m.source_location else "VIRTUAL"
+            dst_type = m.destination_location.location_type if m.destination_location else "VIRTUAL"
+            is_out = src_type == "INTERNAL" and dst_type != "INTERNAL"
+
+            if unit_price == 0 or is_out:
                 if hasattr(m, "purchase_receipt_line") and m.purchase_receipt_line:
                     unit_price = float(m.purchase_receipt_line.unit_cost)
                 elif hasattr(m, "sale_delivery_line") and m.sale_delivery_line:
@@ -368,11 +404,12 @@ class ProductSelector:
                     "related_id": related_id,
                     "related_type": related_type,
                     "date": m.date,
-                    "type": m.move_type,
+                    "type": f"{m.source_location.name if m.source_location else '?'} → {m.destination_location.name if m.destination_location else '?'}",
+                    "direction": m.direction,
                     "quantity": float(m.quantity),
                     "unit_price": unit_price,
                     "total_price": abs(float(m.quantity) * unit_price),
-                    "warehouse": m.warehouse.name,
+                    "warehouse": m.source_location.warehouse.name if (m.source_location and m.source_location.location_type == 'INTERNAL' and m.source_location.warehouse) else (m.destination_location.warehouse.name if (m.destination_location and m.destination_location.location_type == 'INTERNAL' and m.destination_location.warehouse) else "-"),
                     "description": description,
                     "uom": m.uom.name if m.uom else "",
                 }
@@ -408,6 +445,29 @@ class ProductSelector:
 
         avg_price = float(delivery_stats["avg_price"] or 0)
         avg_cost = float(delivery_stats["avg_cost"] or 0)
+        
+        from django.db.models.functions import TruncMonth
+        
+        sales_history = list(SaleDeliveryLine.objects.filter(
+            product_id__in=product_ids, delivery__status="CONFIRMED"
+        ).annotate(
+            month=TruncMonth("delivery__delivery_date")
+        ).values("month").annotate(
+            revenue=Sum(F("quantity") * F("unit_price")),
+            cost=Sum(F("quantity") * F("unit_cost")),
+            qty=Sum("quantity")
+        ).order_by("month"))
+        
+        # Convert month to string and decimals to float
+        sales_history_formatted = []
+        for s in sales_history:
+            if s["month"]:
+                sales_history_formatted.append({
+                    "month": s["month"].strftime("%Y-%m"),
+                    "revenue": float(s["revenue"] or 0),
+                    "cost": float(s["cost"] or 0),
+                    "qty": float(s["qty"] or 0)
+                })
 
         from production.models import ProductionConsumption
 
@@ -436,23 +496,135 @@ class ProductSelector:
                 }
             )
 
+        production_history = list(ProductionConsumption.objects.filter(
+            product_id__in=product_ids
+        ).annotate(
+            month=TruncMonth("date")
+        ).values("month").annotate(
+            qty=Sum("quantity")
+        ).order_by("month"))
+
+        production_history_formatted = []
+        for p in production_history:
+            if p["month"]:
+                production_history_formatted.append({
+                    "month": p["month"].strftime("%Y-%m"),
+                    "qty": float(p["qty"] or 0)
+                })
+
+        from purchasing.models import PurchaseReceiptLine, PurchaseReturnLine
+
+        purchase_receipt_stats = PurchaseReceiptLine.objects.filter(
+            product_id__in=product_ids, receipt__status="CONFIRMED"
+        ).aggregate(
+            total_qty=Sum("quantity_received"),
+            total_cost=Sum(F("quantity_received") * F("unit_cost")),
+        )
+
+        purchase_history = list(PurchaseReceiptLine.objects.filter(
+            product_id__in=product_ids, receipt__status="CONFIRMED"
+        ).annotate(
+            month=TruncMonth("receipt__receipt_date")
+        ).values("month").annotate(
+            cost=Sum(F("quantity_received") * F("unit_cost")),
+            qty=Sum("quantity_received")
+        ).order_by("month"))
+
+        purchase_history_formatted = []
+        for p in purchase_history:
+            if p["month"]:
+                purchase_history_formatted.append({
+                    "month": p["month"].strftime("%Y-%m"),
+                    "cost": float(p["cost"] or 0),
+                    "qty": float(p["qty"] or 0),
+                })
+
+        # Top customers by revenue
+        from django.db.models import CharField
+        top_customers_qs = list(SaleDeliveryLine.objects.filter(
+            product_id__in=product_ids, delivery__status="CONFIRMED"
+        ).values(
+            customer_name=models.F("delivery__sale_order__customer__name")
+        ).annotate(
+            total_revenue=Sum(F("quantity") * F("unit_price")),
+            total_cost=Sum(F("quantity") * F("unit_cost")),
+            total_qty=Sum("quantity"),
+        ).order_by("-total_revenue")[:10])
+
+        top_customers = [
+            {
+                "name": r["customer_name"],
+                "total_revenue": float(r["total_revenue"] or 0),
+                "total_cost": float(r["total_cost"] or 0),
+                "total_qty": float(r["total_qty"] or 0),
+            }
+            for r in top_customers_qs
+        ]
+
+        # Top suppliers by cost
+        top_suppliers_qs = list(PurchaseReceiptLine.objects.filter(
+            product_id__in=product_ids, receipt__status="CONFIRMED"
+        ).values(
+            supplier_name=models.F("receipt__purchase_order__supplier__name")
+        ).annotate(
+            total_cost=Sum(F("quantity_received") * F("unit_cost")),
+            total_qty=Sum("quantity_received"),
+        ).order_by("-total_cost")[:10])
+
+        top_suppliers = [
+            {
+                "name": r["supplier_name"],
+                "total_cost": float(r["total_cost"] or 0),
+                "total_qty": float(r["total_qty"] or 0),
+            }
+            for r in top_suppliers_qs
+        ]
+
+        # Stock history: aggregate daily deltas from the kardex, then anchor
+        # backward from the current on-hand stock so the last point equals today.
+        stock_history = []
+        if kardex:
+            sorted_moves = sorted(kardex, key=lambda x: str(x["date"]))
+            balance_map: dict[str, float] = {}
+            for m in sorted_moves:
+                date_str = str(m["date"])[:10]
+                delta = m["quantity"] if m.get("direction") in ("IN", "ADJUSTMENT") else -m["quantity"]
+                balance_map[date_str] = balance_map.get(date_str, 0) + delta
+            # cumulative sum from oldest date
+            cumulative = 0.0
+            for date_str in sorted(balance_map.keys()):
+                cumulative += balance_map[date_str]
+                stock_history.append({"date": date_str, "stock": round(cumulative, 4)})
+
         return {
             "price_history": price_history,
             "kardex": kardex,
+            "stock_history": stock_history,
             "sales_analysis": {
                 "avg_price": avg_price,
                 "avg_cost": avg_cost,
                 "total_sold": float(net_qty),
                 "total_revenue": float(net_revenue),
                 "total_cost_basis": float(net_cost_basis),
+                "history": sales_history_formatted,
+            },
+            "purchase_analysis": {
+                "total_purchased": float(purchase_receipt_stats["total_qty"] or 0),
+                "total_cost": float(purchase_receipt_stats["total_cost"] or 0),
+                "history": purchase_history_formatted,
             },
             "production_usage": production_usage,
+            "production_history": production_history_formatted,
+            "top_customers": top_customers,
+            "top_suppliers": top_suppliers,
         }
 
 class SubscriptionSelector:
     @staticmethod
     def list_subscriptions(*, params: dict) -> QuerySet:
         from django.utils import timezone
+
+        from .models import Subscription
 
         queryset = Subscription.objects.all().select_related("product", "supplier").order_by("-created_at")
 
@@ -474,6 +646,14 @@ class SubscriptionSelector:
                 )
             except (ValueError, TypeError):
                 pass
+
+        date_from = params.get("date_from")
+        if date_from:
+            queryset = queryset.filter(start_date__gte=date_from)
+
+        date_to = params.get("date_to")
+        if date_to:
+            queryset = queryset.filter(start_date__lte=date_to)
 
         return queryset
 

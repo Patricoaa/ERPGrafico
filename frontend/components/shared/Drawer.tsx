@@ -10,6 +10,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
+import {ScrollArea} from "@/components/ui/scroll-area"
 
 type DrawerMode = 'create' | 'edit' | 'view'
 
@@ -49,6 +50,18 @@ export interface DrawerProps extends PanelBaseProps {
     maxSize?: number | string
 
     modal?: boolean
+
+    /**
+     * Clases CSS aplicadas al viewport interno del ScrollArea (el contenedor scrolleable).
+     */
+    viewportClassName?: string
+
+    /**
+     * Si es true, los children se renderizan en un div flex en vez de un ScrollArea.
+     * Útil cuando el contenido (e.g. FormSplitLayout) maneja su propio scroll
+     * y necesita llenar todo el alto disponible del drawer body.
+     */
+    fillContent?: boolean
 }
 
 export function Drawer({
@@ -73,7 +86,9 @@ export function Drawer({
     headerClassName,
     footerClassName,
     titleClassName,
-    modal
+    modal,
+    viewportClassName,
+    fillContent = false
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
     const [size, setSize] = useState<number | string>(
@@ -172,10 +187,10 @@ export function Drawer({
 
     // Render classes for side specific logic
     const sideStyles = {
-        bottom: "rounded-t-xl! border-t-0! bottom-0! top-auto! w-full! left-0! right-0!",
-        top: "rounded-b-xl! border-b-0! top-0! bottom-auto! w-full! left-0! right-0!",
-        right: "rounded-l-xl! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none!",
-        left: "rounded-r-xl! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none!",
+        bottom: "rounded-t-xl! rounded-b-none! border-t-0! bottom-0! top-auto! w-full! left-0! right-0! m-0!",
+        top: "rounded-b-xl! rounded-t-none! border-b-0! top-0! bottom-auto! w-full! left-0! right-0! m-0!",
+        right: "rounded-l-xl! rounded-r-none! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none! m-0!",
+        left: "rounded-r-xl! rounded-l-none! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none! m-0!",
     }
 
     const iconElement: React.ReactNode = icon
@@ -211,6 +226,9 @@ export function Drawer({
                     "p-0 flex flex-col overflow-hidden panel-surface",
                     boundary === "embedded" ? "absolute!" : "fixed!",
                     sideStyles[side],
+                    boundary === "embedded" && isHorizontal
+                        ? (side === "right" ? "border-l! border-border/15! border-t-0! border-r-0! border-b-0!" : "border-r! border-border/15! border-t-0! border-l-0! border-b-0!")
+                        : undefined,
                     className
                 )}
             >
@@ -267,13 +285,23 @@ export function Drawer({
                     </SheetHeader>
                 )}
 
-                <div className={cn(
-                    "flex-1 flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent",
-                    mode === "view" && "bg-muted/30",
-                    contentClassName
-                )}>
-                    {children}
-                </div>
+                {fillContent ? (
+                    <div className={cn(
+                        "flex-1 flex flex-col overflow-hidden",
+                        mode === "view" && "bg-muted/30",
+                        contentClassName
+                    )}>
+                        {children}
+                    </div>
+                ) : (
+                    <ScrollArea className={cn(
+                        "flex-1 flex flex-col pt-2",
+                        mode === "view" && "bg-muted/30",
+                        contentClassName
+                    )} viewportClassName={viewportClassName}>
+                        {children}
+                    </ScrollArea>
+                )}
 
                 {footer && (
                     <div className={cn("border-t px-6 py-3 flex-shrink-0", footerClassName)}>

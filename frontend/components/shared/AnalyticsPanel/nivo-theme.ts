@@ -34,7 +34,7 @@ export const barDefaults = {
     padding: 0.25,
     borderRadius: 6,
     enableGridX: false,
-    enableGridY: true,
+    enableGridY: false,
 }
 
 export const lineDefaults = {
@@ -53,34 +53,58 @@ export const lineDefaults = {
 export const premiumTooltipClass =
     "bg-popover text-popover-foreground border border-border rounded-md px-3 py-2 text-xs shadow-floating whitespace-nowrap"
 
-function desaturateHex(hex: string): string {
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
-    const gray = 0.299 * r + 0.587 * g + 0.114 * b
-    const factor = 0.55
-    const nr = Math.round(r + factor * (gray - r))
-    const ng = Math.round(g + factor * (gray - g))
-    const nb = Math.round(b + factor * (gray - b))
-    return `#${nr.toString(16).padStart(2, "0")}${ng.toString(16).padStart(2, "0")}${nb.toString(16).padStart(2, "0")}`
-}
+import { getChartPalette } from "@/lib/chart-colors"
 
 export function getCssChartColors(variant?: "pie"): string[] {
-    if (typeof window === "undefined") {
-        const fallback = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
-        return variant === "pie" ? fallback.map(desaturateHex) : fallback
-    }
-    const style = getComputedStyle(document.documentElement)
-    const vars = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5", "--chart-6"]
-    return vars.map((v) => {
-        const val = style.getPropertyValue(v).trim()
-        if (variant === "pie" && val.startsWith("oklch(")) {
-            return val.replace(
-                /oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/,
-                (_, l: string, c: string, h: string) =>
-                    `oklch(${l} ${(parseFloat(c) * 0.55).toFixed(3)} ${h})`,
-            )
-        }
-        return val || "#000"
-    })
+    return variant === "pie" ? getPieChartColors() : getChartPalette()
+}
+
+// ── Pie variant: desaturate palette for better readability on small slices ──
+
+function desaturateOklch(val: string): string {
+    return val.replace(
+        /oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)/,
+        (_, l: string, c: string, h: string) =>
+            `oklch(${l} ${(parseFloat(c) * 0.55).toFixed(3)} ${h})`,
+    )
+}
+
+/** Same as getCssChartColors but with chroma reduced for pie slices */
+export function getPieChartColors(): string[] {
+    return getChartPalette().map((v) => v.startsWith("oklch(") ? desaturateOklch(v) : v)
+}
+
+// ── Card presets (centralized aesthetics for StatCard context) ──
+
+export const cardBarDefaults = {
+    margin: { top: 8, right: 8, bottom: 24, left: 40 },
+    padding: 0.3,
+    borderRadius: 6,
+    enableGridX: false,
+    enableGridY: false,
+}
+
+export const cardLineDefaults = {
+    margin: { top: 8, right: 8, bottom: 24, left: 40 },
+    lineWidth: 2,
+    pointSize: 0,
+    enableArea: true,
+    areaOpacity: 0.06,
+    enablePointLabel: false,
+    useMesh: true,
+    crosshairType: "cross" as const,
+}
+
+export const cardPieDefaults = {
+    margin: { top: 8, right: 8, bottom: 8, left: 8 },
+    innerRadius: 0.55,
+    padAngle: 1.5,
+    cornerRadius: 4,
+    borderWidth: 1.5,
+    borderColor: { theme: "background" },
+    enableArcLinkLabels: false,
+    enableArcLabels: true,
+    arcLabelsRadiusOffset: 0.65,
+    arcLabelsSkipAngle: 12,
+    arcLabelsFont: { fontWeight: 700 as const },
 }

@@ -1,16 +1,17 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
-import type { Absence, Employee } from "@/types/hr"
+import type {Absence} from "@/types/hr"
 import { type ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, DataCell, EntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch, createDateColumn } from '@/components/shared'
-import { useAbsences, deleteAbsence, getEmployees, absenceActions, type AbsenceActionsCtx } from "@/features/hr"
+import { DataTableView, AutoEntityCard, ToolbarCreateButton, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { useAbsences, deleteAbsence, absenceActions, type AbsenceActionsCtx, useEmployees } from "@/features/hr"
 import { absenceUnifiedSearchDef } from "@/features/hr/unifiedSearchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { absenceFields } from '../absenceFields'
 
 interface AbsenceClientViewProps {
     initialAbsences?: Absence[]
@@ -24,7 +25,7 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     const search = useUnifiedSearch(absenceUnifiedSearchDef)
     const { absences, isLoading: loading, isRefetching, refetch: fetchAbsences } = useAbsences(search.filters, initialAbsences)
     const filteredAbsences = search.filterFn(absences)
-    const [employees, setEmployees] = useState<Employee[]>([])
+    const { employees } = useEmployees()
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Absence>({ endpoint: '/hr/absences' })
@@ -39,10 +40,6 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
-
-    useEffect(() => {
-        getEmployees().then(setEmployees).catch(() => { })
-    }, [])
 
     const absenceActionsCtx: AbsenceActionsCtx = {
         onEdit: (absence) => openSelected(absence.id),
@@ -59,29 +56,12 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
     }
 
     const columns: ColumnDef<Absence>[] = [
-        {
-            accessorKey: "employee_name",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Empleado" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-bold">{row.getValue("employee_name")}</DataCell.Text></div>,
-        },
-        {
-            accessorKey: "absence_type_display",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) =>
-                <DataCell.Status status={row.original.absence_type} label={row.original.absence_type_display} />,
-        },
-        createDateColumn<Absence>("start_date", "Inicio"),
-        createDateColumn<Absence>("end_date", "Fin"),
-        {
-            accessorKey: "days",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-mono">{row.getValue("days")}</DataCell.Text></div>,
-        },
-        absenceActions.column(absenceActionsCtx),
+        ...absenceFields.toColumns(),
+        absenceActions.auto(absenceActionsCtx),
     ]
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
 
             <AbsenceDrawer
                 open={dialogOpen}
@@ -127,17 +107,15 @@ export function AbsenceClientView({ initialAbsences }: AbsenceClientViewProps) {
                         description: "Las ausencias, permisos y licencias que registres aparecerán aquí.",
                     }}
                     renderCard={(absence: Absence) => (
-                        <EntityCard key={absence.id} onClick={() => openSelected(absence.id)}>
-                            <EntityCard.Header
-                                title={absence.employee_name}
-                                subtitle={absence.absence_type_display}
-                            />
-                            <EntityCard.Body actions={absenceActions.render(absence, absenceActionsCtx)}>
-                                <EntityCard.Field label="Inicio" value={absence.start_date} />
-                                <EntityCard.Field label="Fin" value={absence.end_date} />
-                                <EntityCard.Field label="Días" value={String(absence.days)} />
-                            </EntityCard.Body>
-                        </EntityCard>
+                        <AutoEntityCard
+                            key={absence.id}
+                            data={absence}
+                            fields={absenceFields}
+                            entityLabel="hr.absence"
+                            actions={absenceActions.render(absence, absenceActionsCtx)}
+                            defaultAction={absenceActions.defaultAction(absenceActionsCtx)?.(absence) ?? (() => openSelected(absence.id))}
+
+                        />
                     )}
                 />
             </div>

@@ -93,7 +93,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0027](0027-basedrawer-crud-forms.md) | BaseDrawer as Primary Surface for Embedded CRUD Forms | Accepted |
 | [0028](0028-entity-drawer-registry.md) | Global entity-drawer registry + dual-mode drawers (replaces TransactionViewModal) | Accepted |
 | [0029](0029-color-system-robustening.md) | Color system robustening — info→blue, neutral accent, fixed L1 / adaptive L2, data-viz palette | Accepted |
-| [0030](0030-datatable-compact-variant.md) | DataTable compact variant (CSS Grid for modals/drawers) | Proposed |
+| [0030](0030-datatable-compact-variant.md) | DataTable compact variant (CSS Grid for modals/drawers) | Accepted |
 | [0031](0031-treasury-account-vs-payment-method-taxonomy.md) | Treasury account vs payment method — two-layer taxonomy (wizard + auto-provision + convergence) | Accepted |
 | [0032](0032-check-portfolio-cuenta-puente.md) | Cheques recibidos — cartera con cuenta puente CHECK_PORTFOLIO | Accepted |
 | [0033](0033-bank-loans-liabilidad-y-uf.md) | Créditos bancarios — deuda como pasivo + amortización (CLP/UF) | Accepted |
@@ -116,5 +116,22 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0050](0050-credit-line-overdraft-treasury-account.md) | Refactor CreditLine — sobregiro como overdraft de TreasuryAccount | Accepted |
 | [0051](0051-adjust-state-during-render.md) | Adjust State During Render — canonical pattern for state synchronization | Accepted |
 | [0052](0052-purchase-checkout-idempotency.md) | Purchase checkout endpoint in idempotency closed list | Accepted |
+| [0054](0054-entity-fields-schema.md) | Entity Fields Schema — declarative field mapping for DataTable / EntityCard / Kanban | Superseded by 0066 |
+| [0055](0055-entity-fields-computed-and-icon.md) | Entity Fields — computed type, icon prefix, chipIcon, null-safe status | Superseded by 0066 |
+| [0056](0056-card-variant-single-source.md) | Card Variant — Entity Registry as Single Source of Truth | Accepted |
+| [0057](0057-placement-unified-column-order.md) | Placement como fuente de verdad unificada para orden de columnas | Accepted (§toColumns parcialmente superseded por 0059) |
+| [0058](0058-analytics-server-side-high-volume.md) | Panel analytics con agregación servidor para entidades de alto volumen | Accepted |
+| [0059](0059-tocolumns-mirrors-card-ordering.md) | toColumns() mirrors card ordering — list subtitle & header follow card zones | Proposed |
+| [0060](0060-flow-cells-tinted-badge.md) | Flow DataCells as square tinted badges | Proposed |
+| [0061](0061-datacell-text-default-text-xs.md) | DataCell text primitives default to text-xs | Proposed |
+| [0062](0062-datacell-date-time-weights.md) | DateTime DataCell with independent date/time weights | Proposed |
+| [0063](0063-pos-session-terminal-source-of-truth.md) | POS session terminal as source of truth (treasury_account snapshot) | Proposed |
+| [0064](0064-badge-layer1-categorical-intents.md) | Badge Layer-1 categorical intents (cyan / magenta / yellow / black) | Proposed |
+| [0065](0065-datacell-status-ghost-pill-unification.md) | DataCell.Status ghost pill unification (dead variant + ghost typography invariant) | Proposed |
+| [0066](0066-entity-fields-discriminated-union.md) | Entity Fields — discriminated-union FieldDef + total type→cell registry | Accepted |
+| [0067](0067-entity-fields-placement-surface-and-weight.md) | Entity Fields — placement surface, header-last list order, zone-driven font-weight, numericFlow reintroduced | Accepted |
+| [0068](0068-badge-currencyflow-default.md) | Badge default adopts the CurrencyFlow aesthetic (font-sans text-xs font-medium, borderless rounded-sm); supersedes ghost-pill table cells | Proposed |
+| [0069](0069-badge-consumer-migration-and-exceptions.md) | Badge consumer migration (zero direct ui/badge imports) + audited justified visual exceptions (bubbles, tag pills, mono codes, callouts, POS density) | Proposed |
+| [0070](0070-primary-process-black.md) | Primary = Process Black K100 (placa Key) — ratificación de la decisión de julio | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -2,11 +2,11 @@
 
 import type { LucideIcon } from "lucide-react"
 
-// ── Accent ──
-export type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
-
 // ── Granularity ──
 export type Granularity = "day" | "month" | "year"
+
+// ── Accent ──
+export type Accent = "primary" | "info" | "success" | "warning" | "destructive" | "accent" | "muted"
 
 // ── StatCardConfig ──
 export interface StatCardConfig {
@@ -24,12 +24,24 @@ export interface StatCardConfig {
     active?: boolean
     loading?: boolean
     chart?: ChartConfig
+    tooltip?: string
+    comparison?: {
+        current: number
+        previous?: number
+        showComparison?: boolean
+        isPercentage?: boolean
+        alreadyPercent?: boolean
+        isCurrency?: boolean
+        decimals?: number
+        inverse?: boolean
+    }
 }
 
 // ── Chart configs (discriminated by type, no `any`) ──
 
 export interface BarChartConfig {
     type: "bar-chart"
+    preset?: "card"
     data: Record<string, string | number>[]
     keys: string[]
     indexBy: string
@@ -46,6 +58,7 @@ export interface BarChartConfig {
 
 export interface LineChartConfig {
     type: "line-chart"
+    preset?: "card"
     data: Array<{ id: string; data: Array<{ x: string | number; y: number }> }>
     enableArea?: boolean
     showLegend?: boolean
@@ -57,6 +70,7 @@ export interface LineChartConfig {
 
 export interface PieChartConfig {
     type: "pie-chart"
+    preset?: "card"
     data: Array<{ id: string; value: number; color?: string }>
     innerRadius?: number
     showLegend?: boolean
@@ -68,13 +82,36 @@ export interface PieChartConfig {
     centerLabel?: { value: string | number; label?: string }
 }
 
-export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig
+export interface RadarChartConfig {
+    type: "radar-chart"
+    preset?: "card"
+    data: Record<string, string | number>[]
+    keys: string[]
+    indexBy: string
+    maxValue?: "auto" | number
+    showLegend?: boolean
+    compact?: boolean
+    valueFormat?: string
+}
+
+export interface FunnelChartConfig {
+    type: "funnel-chart"
+    preset?: "card"
+    data: { id: string | number; value: number; label?: string; color?: string }[]
+    valueFormat?: string
+    direction?: "horizontal" | "vertical"
+    enableLabel?: boolean
+}
+
+export type ChartConfig = BarChartConfig | LineChartConfig | PieChartConfig | RadarChartConfig | FunnelChartConfig
 
 // ── Layout types ──
 
 export interface AnalyticsSection {
     id: string
     colSpan?: number
+    /** If false, section takes natural height instead of filling remaining space. Defaults to true. */
+    fillRemaining?: boolean
     content:
         | { type: "stat-card"; config: StatCardConfig }
         | { type: "custom"; render: React.ReactNode }
@@ -94,6 +131,7 @@ export interface AnalyticsTab {
     badge?: string | number
     description?: string
     columns?: AnalyticsColumn[]
+    gridRows?: string
 }
 
 export interface AnalyticsPanelProps {
@@ -104,21 +142,28 @@ export interface AnalyticsPanelProps {
     activeTab?: string
     onTabChange?: (value: string) => void
     granularity?: Granularity
-    onGranularityChange?: (g: Granularity) => void
-    dateRange?: { from: string; to: string } | null
-    onDateRangeChange?: (range: { from: string; to: string } | null) => void
-    cardAccounts?: Array<{ id: number; name: string; currency: string }>
-    cardAccountId?: number | null
-    onCardAccountChange?: (id: number) => void
-    scope?: "month" | "all"
-    onScopeChange?: (scope: "month" | "all") => void
+    onGranularityChange?: (value: Granularity) => void
 }
 
-// ── Timeline ──
-
-export interface TimelineEvent {
-    date: string
-    label: string
-    description?: string
-    status?: "success" | "warning" | "destructive" | "neutral"
+export interface AnalyticsPanelContentProps {
+    entityName: string
+    tabs: AnalyticsTab[]
+    activeTab?: string
+    onTabChange?: (value: string) => void
+    granularity?: Granularity
+    onGranularityChange?: (value: Granularity) => void
 }
+
+export type AnalyticsPanelConfig = {
+    onClick?: () => void
+    screen?: {
+        entityName: string
+        tabs: AnalyticsTab[]
+        activeTab?: string
+        onTabChange?: (value: string) => void
+        granularity?: Granularity
+        onGranularityChange?: (value: Granularity) => void
+    }
+}
+
+

@@ -1,25 +1,21 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryAccountActions, type TreasuryAccountActionsCtx } from "@/features/treasury"
-import { EntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
+import { AutoEntityCard, UnifiedSearchBar, useUnifiedSearch } from '@/components/shared'
 import { treasuryAccountUnifiedSearchDef } from "../unifiedSearchDef"
-import {
-    type ColumnDef,
-    type Row,
-} from "@tanstack/react-table"
+import { type ColumnDef } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
 
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankCenterClientView, PaymentMethodClientView } from "@/features/treasury"
 import { TreasuryAccountWizard } from "./TreasuryAccountWizard"
 
-import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell, FadeIn, EntityBadge } from '@/components/shared'
+import { TreasuryAccountDrawer } from "./TreasuryAccountDrawer"
+import { FadeIn } from '@/components/shared'
+import { accountFields } from "../accountFields"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Wallet, Landmark, CreditCard, HandCoins, ArrowRightLeft, FileText, type LucideIcon } from "lucide-react"
 
@@ -31,12 +27,12 @@ interface TreasuryAccountsClientViewProps {
 }
 
 export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProps> = ({ activeTab, externalOpen, createAction }) => {
-    const { openEntity } = useGlobalModalActions()
     const search = useUnifiedSearch(treasuryAccountUnifiedSearchDef)
     const { accounts, isLoading, deleteAccount, refetch } = useTreasuryAccounts({ filters: search.filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
+
 
     const router = useRouter()
     const pathname = usePathname()
@@ -46,11 +42,8 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         endpoint: '/treasury/accounts'
     })
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            openEntity('treasury.treasuryaccount', selectedFromUrl.id, selectedFromUrl)
-        }
-    }, [selectedFromUrl, openEntity])
+    const detailsOpen = !!selectedFromUrl
+    const selectedAccountId = selectedFromUrl?.id ?? null
 
     const handleCloseModal = () => {
         setIsBankModalOpen(false)
@@ -101,16 +94,6 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         }
     }
 
-    const typeLabels: Record<string, string> = {
-        CASH: "Caja Física (Efectivo)",
-        CHECKING: "Cuenta Bancaria",
-        CREDIT_CARD: "T. Crédito Empresa",
-        LOAN: "Préstamo Bancario",
-        BRIDGE: "Puente",
-        CHECK_PORTFOLIO: "Cheques en Cartera",
-        ISSUED_CHECKS: "Cheques Girados por Pagar",
-    }
-
     const accountTypeIcons: Record<string, LucideIcon> = {
         CASH: Wallet,
         CHECKING: Landmark,
@@ -136,120 +119,15 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
         onDelete: (id) => handleDelete(id),
     }
 
-    const columns: ColumnDef<TreasuryAccount>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Nombre de Cuenta" className="justify-center" />
-            ),
-            cell: ({ row }: { row: Row<TreasuryAccount> }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text>
-                        {row.original.name}
-                    </DataCell.Text>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "account_type_display",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tipología" className="justify-center" />
-            ),
-            cell: ({ row }: { row: Row<TreasuryAccount> }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Text>
-                        {row.original.account_type_display || typeLabels[row.original.account_type] || row.original.account_type}
-                    </DataCell.Text>
-                </div>
-            ),
-        },
-        {
-            accessorKey: "account_name",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cuenta Contable" className="justify-center" />
-            ),
-            cell: ({ row }: { row: Row<TreasuryAccount> }) => {
-                const name = row.original.account_name
-                if (!name) return <DataCell.Secondary className="italic text-center">No vinculada</DataCell.Secondary>
-                return (
-                    <div className="flex flex-col items-center justify-center w-full">
-                        <DataCell.Code>{row.original.account_code}</DataCell.Code>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <DataCell.Secondary>{name}</DataCell.Secondary>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">{row.original.account_code || ''} - {name}</TooltipContent>
-                        </Tooltip>
-                    </div>
-                )
-            }
-        },
-        {
-            accessorKey: "bank",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Entidad Externa" className="justify-center" />
-            ),
-            cell: ({ row }: { row: Row<TreasuryAccount> }) => {
-                const bankId = row.original.bank
-                const bankName = row.original.bank_name
-                const providers = row.original.terminal_providers ?? []
-                const hasBank = !!bankId
-                const hasProviders = providers.length > 0
-                if (!hasBank && !hasProviders) {
-                    return (
-                        <div className="flex justify-center w-full">
-                            <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
-                        </div>
-                    )
-                }
-                return (
-                    <div className="flex flex-col items-center justify-center gap-1 w-full">
-                        {hasBank && (
-                            <EntityBadge
-                                label="treasury.bank"
-                                data={{ id: bankId, name: bankName }}
-                                size="sm"
-                                showIcon
-                            />
-                        )}
-                        {providers.map((p: NonNullable<TreasuryAccount['terminal_providers']>[number]) => (
-                            <EntityBadge
-                                key={p.id}
-                                label="treasury.terminalprovider"
-                                data={p}
-                                size="sm"
-                                showIcon
-                            />
-                        ))}
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "current_balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
-            ),
-            cell: ({ row }: { row: Row<TreasuryAccount> }) => {
-                const balance = row.getValue("current_balance")
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Currency
-                            value={balance as number}
-                            currency={row.original.currency}
-                            className="font-bold"
-                        />
-                    </div>
-                )
-            },
-        },
-        treasuryAccountActions.column(actionsCtx),
-    ]
+    const columns = useMemo<ColumnDef<TreasuryAccount>[]>(() => [
+        ...accountFields.toColumns(),
+        treasuryAccountActions.auto(actionsCtx),
+    ], [])
 
     return (
         <>
         <Tabs value={activeTab} className="flex-1 min-h-0 flex flex-col">
-            <TabsContent value="accounts" className="space-y-6 flex-1 min-h-0">
+            <TabsContent value="accounts" className="flex-1 min-h-0 flex flex-col">
                 <div className="flex-1 min-h-0 flex flex-col">
                     <div className="flex-1 min-h-0">
                         <DataTableView
@@ -258,6 +136,7 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                             data={accounts}
                             isLoading={isLoading}
                             variant="embedded"
+                            cardSkeleton={{ showBody: false }}
                             createAction={activeTab === "accounts" ? createAction : undefined}
                             unifiedSearch={<UnifiedSearchBar
                                 config={treasuryAccountUnifiedSearchDef}
@@ -284,66 +163,23 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
                                 description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
                             }}
                             renderCard={(acc: TreasuryAccount) => {
-                                const name = acc.account_name
-                                const providers = acc.terminal_providers ?? []
-                                const hasBank = !!acc.bank
                                 const typeKey = acc.account_type?.toUpperCase()
                                 const Icon = accountTypeIcons[typeKey]
                                 const iconStyle = accountTypeIconStyles[typeKey]
                                 return (
-                                    <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
-                                        <EntityCard.Header
-                                            icon={Icon}
-                                            iconClassName={iconStyle}
-                                            title={acc.name}
-                                            subtitle={
-                                                <span className="flex items-center gap-1.5 flex-wrap">
-                                                    <span>{acc.account_type_display || typeLabels[typeKey] || acc.account_type}</span>
-                                                    {acc.bank_name && (
-                                                        <>
-                                                            <span className="text-muted-foreground/20">·</span>
-                                                            <span>{acc.bank_name}</span>
-                                                        </>
-                                                    )}
-                                                </span>
-                                            }
-                                            center={
-                                                <div className="flex items-start gap-6 text-xs">
-                                                    <div className="flex flex-col gap-0.5 items-center">
-                                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Cta. Contable</span>
-                                                        {name ? (
-                                                            <span className="flex items-center gap-1.5 font-medium text-foreground/80 whitespace-nowrap">
-                                                                <DataCell.Code className="text-xs bg-transparent p-0">{acc.account_code}</DataCell.Code>
-                                                                <span className="text-muted-foreground/20">·</span>
-                                                                <span className="font-medium text-foreground/80">{name}</span>
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-muted-foreground/40 italic">No vinculada</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            }
-                                            trailing={
-                                                <div className="flex flex-col gap-0.5 items-end">
-                                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Saldo</span>
-                                                    <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold" />
-                                                </div>
-                                            }
-                                        />
-                                        <EntityCard.Body actions={treasuryAccountActions.render(acc, actionsCtx)}>
-                                            {hasBank && (
-                                                <EntityCard.Field
-                                                    label="Entidad Externa"
-                                                    icon={Landmark}
-                                                    value={
-                                                        <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                                                            {acc.bank_name}
-                                                        </span>
-                                                    }
-                                                />
-                                            )}
-                                        </EntityCard.Body>
-                                    </EntityCard>
+                                    <AutoEntityCard 
+                                        key={acc.id} 
+                                        data={acc}
+                                        fields={accountFields}
+                                        entityLabel="treasury.treasuryaccount"
+                                        title={acc.name}
+                                        onClick={() => handleEdit(acc)} 
+                                        defaultAction={treasuryAccountActions.defaultAction(actionsCtx)?.(acc) ?? null}
+                                        icon={Icon}
+                                        iconClassName={iconStyle}
+                                        actions={treasuryAccountActions.render(acc, actionsCtx)}
+
+                                    />
                                 )
                             }}
                         />
@@ -384,6 +220,18 @@ export const TreasuryAccountsClientView: React.FC<TreasuryAccountsClientViewProp
             </TabsContent>
 
         </Tabs>
+
+        <TreasuryAccountDrawer
+            accountId={selectedAccountId}
+            open={detailsOpen}
+            onOpenChange={(open) => {
+                if (!open) clearSelection()
+            }}
+            onSuccess={() => {
+                clearSelection()
+                refetch()
+            }}
+        />
 
         <TreasuryAccountWizard
             open={isLocalAccountModalOpen}

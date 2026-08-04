@@ -1,13 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, {useState, useEffect, useMemo} from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
-    StatusBadge, MoneyDisplay, Skeleton, EmptyState,
+    DataTableView, SkeletonShell,
     ToolbarCreateButton,
-    UnifiedSearchBar, useUnifiedSearch,
+    UnifiedSearchBar, useUnifiedSearch, StaleDataBanner,
+    AutoEntityCard
 } from '@/components/shared'
 import type { UnifiedSearchConfig } from '@/types/unified-search'
 import { Button } from '@/components/ui/button'
@@ -16,6 +15,7 @@ import { CreditLineDrawer } from './CreditLineDrawer'
 import type { CreditLine } from './types'
 import type { TreasuryAccount } from '../types'
 import { treasuryApi } from '@/features/treasury'
+import { creditLineFields } from './creditLineFields'
 
 interface Props {
     bankId?: number
@@ -32,6 +32,9 @@ export function CreditLinesClientView({ bankId }: Props) {
         searchFields: [
             { key: 'search', label: 'Código / Cuenta / Límite', serverParam: 'search', clientKey: ['code', 'account_name', 'credit_limit'] },
         ],
+        groupBy: [
+            { key: 'status', label: 'Estado', field: 'status' },
+        ],
     }), [])
     const search = useUnifiedSearch(config)
     const filteredData = useMemo(() => search.filterFn(creditLines ?? []), [search.filterFn, creditLines])
@@ -47,78 +50,8 @@ export function CreditLinesClientView({ bankId }: Props) {
         setDrawerOpen(true)
     }
 
-
-
-    if (isLoading) {
-        return <Skeleton className="h-full" />
-    }
-
-    if (isError) {
-        return (
-            <EmptyState
-                title="Error al cargar líneas de crédito"
-                description="Intente nuevamente más tarde."
-                icon={AlertTriangle}
-            />
-        )
-    }
-
     const columns: ColumnDef<CreditLine>[] = [
-        {
-            accessorKey: 'code',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" />,
-            cell: ({ row }) => <DataCell.Code>{row.original.code || '—'}</DataCell.Code>,
-        },
-        {
-            accessorKey: 'account_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.account_name}</DataCell.Text>,
-        },
-        {
-            accessorKey: 'credit_limit',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Límite" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.credit_limit)} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'used_amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Utilizado" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.used_amount)} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'available_amount',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Disponible" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={Number(row.original.available_amount)} />
-                </div>
-            ),
-        },
-        {
-            accessorKey: 'utilization_rate',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Uso %" className="justify-end" />,
-            cell: ({ row }) => {
-                const rate = row.original.utilization_rate
-                if (rate === null) return <DataCell.Text>—</DataCell.Text>
-                return (
-                    <div className="flex justify-end">
-                        <DataCell.Text>{Number(rate).toFixed(1)}%</DataCell.Text>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: 'status',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
-            cell: ({ row }) => <StatusBadge status={row.original.status} />,
-        },
+        ...creditLineFields.toColumns(),
         {
             id: 'actions',
             cell: ({ row }) => (
@@ -137,6 +70,8 @@ export function CreditLinesClientView({ bankId }: Props) {
     ]
 
     return (
+        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando líneas de crédito">
+        {isError && <StaleDataBanner className="mx-4 mt-2" />}
         <div className="space-y-4">
             <DataTableView
                 columns={columns}
@@ -165,6 +100,26 @@ export function CreditLinesClientView({ bankId }: Props) {
                     paramValues={search.paramValues}
                     placeholder="Buscar por código, cuenta o límite..."
                 />}
+                renderCard={(line) => (
+                    <AutoEntityCard 
+                        key={line.id}
+                        data={line}
+                        fields={creditLineFields}
+
+                        entityLabel="treasury.creditline"
+                    >
+                        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border/50">
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingLine(line); setDrawerOpen(true) }}>
+                                Editar
+                            </Button>
+                            {line.status === 'ACTIVE' && (
+                                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); remove.mutate(line.id) }}>
+                                    Archivar
+                                </Button>
+                            )}
+                        </div>
+                    </AutoEntityCard>
+                )}
             />
 
             <CreditLineDrawer
@@ -179,5 +134,6 @@ export function CreditLinesClientView({ bankId }: Props) {
             />
 
         </div>
+        </SkeletonShell>
     )
 }

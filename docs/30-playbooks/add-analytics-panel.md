@@ -102,10 +102,19 @@ const analyticsPanel: AnalyticsPanelConfig = useMemo(() => ({
 />
 ```
 
+## Best Practices: Flexible Layout & Hierarchy
+
+Utiliza las propiedades integradas en el contrato (`types.ts`) para construir jerarquías visuales asimétricas y ricas:
+
+- **Columnas (`weight`)**: Por defecto las columnas tienen `weight: 1`. Usa `weight: 2` (o más) para darle mayor ancho a una columna que contiene gráficos principales ("hero charts").
+- **Secciones (`colSpan`)**: Dentro de una configuración de fila/grid, usa `colSpan: 2` o `colSpan: 3` en una sección (como un `StatCard` principal) para que abarque múltiples celdas.
+- **Pestañas (`gridRows`)**: A nivel del Tab, puedes definir alturas (ej. `gridRows: "max-content 1fr"`). Esto es ideal para forzar que una fila superior de KPIs (tarjetas pequeñas) no se estire más allá de su altura natural, permitiendo que los gráficos inferiores ocupen el `1fr` restante de la pantalla.
+
 ## Checklist
 
 - [ ] Hook de analytics dedicado (no lógica inline en el componente)
 - [ ] `AnalyticsPanelConfig` construido en `useMemo` para evitar re-renders
 - [ ] `Granularity`, `dateRange` son estado local del componente
 - [ ] Charts usan `StatCard` con `variant="chart"` (no raw chart components)
+- [ ] Layout intencional usando `weight`, `colSpan` y `gridRows` para resaltar métricas principales
 - [ ] Toolbar button se oculta automáticamente cuando `analyticsPanel` es `undefined`

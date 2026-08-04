@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Printer } from "lucide-react"
-import { getEntityIcon } from "@/lib/entity-registry"
+import { Plus } from "lucide-react"
 import {
     Form,
     FormField,
@@ -18,9 +17,7 @@ import { type AccountPayload } from "@/features/accounting"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { PrintableLayout } from "@/features/_shared"
-import { useReactToPrint } from "react-to-print"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -61,8 +58,7 @@ export function AccountDrawer({
 }: AccountDrawerProps) {
     const mode = modeProp ?? (initialData?.id ? 'view' : 'create')
     const isViewMode = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
     const [internalOpen, setInternalOpen] = useState(false)
     const open = openProp !== undefined ? openProp : internalOpen
     const setOpen = onOpenChange || setInternalOpen
@@ -93,8 +89,6 @@ export function AccountDrawer({
     const hasParent = isEditMode && !!init?.parent
     const hasPostedItems = isEditMode && !!init?.has_posted_items
     const hasChildren = isEditMode && !init?.is_selectable
-
-    const accountType = form.watch("account_type");
 
     // Reset form when opening or initialData changes
     useEffect(() => {
@@ -251,6 +245,8 @@ export function AccountDrawer({
         overrideSubtitle: isViewMode
             ? `${(initialData?.code as string) || ""} • ${form.watch("name") || "Vista de detalle"}`
             : `${(initialData?.code as string) || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
+        onPrint: handlePrint,
     })
 
     if (inline) {
@@ -283,13 +279,14 @@ export function AccountDrawer({
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && !!initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 mode={mode}
                 footer={isViewMode ? undefined : (

@@ -1,18 +1,18 @@
 "use client"
-import { Button } from "@/components/ui/button"
+import { RadioGroup } from "@/components/ui/radio-group"
 import { formatCurrency } from "@/lib/money"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import {
     Wallet,
     Package,
     Users,
-    Warehouse as WarehouseIcon,
     ArrowDownCircle,
-    Banknote
+    Banknote,
+    Lock
 } from "lucide-react"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, type WizardStep } from "@/components/shared"
-import { partnersApi } from "@/features/contacts"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, RadioCard, GenericWizard, type WizardStep } from "@/components/shared"
+import { partnersApi, netEquityPercentages } from "@/features/contacts"
 import { type Partner } from "@/features/contacts"
 import { type TreasuryAccount } from "@/features/treasury"
 import { type Product } from "@/features/inventory"
@@ -20,7 +20,6 @@ import { settingsApi, type Warehouse, type UoM, type ProductMinimal } from "../.
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
 import {Alert} from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -29,6 +28,8 @@ interface PartnerContributionWizardProps {
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
     initialPartnerId?: string
+    initialAmount?: string
+    lockAmount?: boolean
 }
 
 type ContributionMethod = "CASH" | "ASSETS"
@@ -37,7 +38,9 @@ export function PartnerContributionWizard({
     open,
     onOpenChange,
     onSuccess,
-    initialPartnerId
+    initialPartnerId,
+    initialAmount,
+    lockAmount = false
 }: PartnerContributionWizardProps) {
     const [loading, setLoading] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
@@ -71,13 +74,22 @@ export function PartnerContributionWizard({
     })
 
     // Product details for assets
-    const [productDetails, setProductDetails] = useState<Product | null>(null)
+    const [, setProductDetails] = useState<Product | null>(null)
     const [productUoMs, setProductUoMs] = useState<UoM[]>([])
 
     // Load initial data
     useEffect(() => {
         if (open) {
             setTimeout(() => setLoading(true), 0)
+            if (initialAmount) {
+                setTimeout(() => {
+                    setCashData(prev => ({
+                        ...prev,
+                        amount: initialAmount,
+                        description: "Pago de capital pendiente"
+                    }))
+                }, 0)
+            }
             Promise.all([
                 partnersApi.getPartners(),
                 settingsApi.getWarehouses(),
@@ -98,10 +110,10 @@ export function PartnerContributionWizard({
                 setPartnerId(initialPartnerId || "")
                 setMethod("CASH")
                 setCashData({
-                    amount: "",
+                    amount: initialAmount || "",
                     treasuryAccountId: "",
                     date: new Date().toISOString().split('T')[0],
-                    description: ""
+                    description: initialAmount ? "Pago de capital pendiente" : ""
                 })
                 setAssetData({
                     warehouseId: "",
@@ -116,7 +128,7 @@ export function PartnerContributionWizard({
                 setProductUoMs([])
             }, 0)
         }
-    }, [open, initialPartnerId])
+    }, [open, initialPartnerId, initialAmount])
 
     // Load product details when productId changes
     useEffect(() => {
@@ -148,18 +160,26 @@ export function PartnerContributionWizard({
 
     // Helpers
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
-    const selectedUoM = productUoMs.find(u => u.id.toString() === assetData.uomId)
-    const baseUoM = typeof productDetails?.uom === 'object' ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
-
+    const equityPctById = useMemo(() => netEquityPercentages(partners), [partners])
     const assetTotalValue = (Number(assetData.quantity) || 0) * (Number(assetData.unitCost) || 0)
 
     const handleComplete = async () => {
         setIsCompleting(true)
         try {
             if (method === "CASH") {
+                const amountToSubmit = lockAmount && initialAmount
+                    ? parseFloat(initialAmount)
+                    : parseFloat(cashData.amount)
+
+                if (!amountToSubmit || amountToSubmit <= 0) {
+                    toast.error("El importe del pago debe ser mayor a cero.")
+                    setIsCompleting(false)
+                    return
+                }
+
                 await partnersApi.createTransaction(parseInt(partnerId), {
                     transaction_type: 'CAPITAL_CASH',
-                    amount: parseFloat(cashData.amount),
+                    amount: amountToSubmit,
                     date: cashData.date,
                     treasury_account_id: parseInt(cashData.treasuryAccountId),
                     description: cashData.description
@@ -224,7 +244,7 @@ export function PartnerContributionWizard({
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-[9px] text-muted-foreground font-medium uppercase">Participación</p>
-                                    <p className="text-sm font-black text-primary font-mono">{selectedPartner.partner_equity_percentage}%</p>
+                                    <p className="text-sm font-black text-primary font-mono">{equityPctById[selectedPartner.id] ?? "0"}%</p>
                                 </div>
                             </div>
                         </div>
@@ -238,49 +258,26 @@ export function PartnerContributionWizard({
             description: "¿Qué se está aportando?",
             isValid: !!method,
             component: (
-                <div className="grid grid-cols-2 gap-4 py-8">
-                    <Button
-                        onClick={() => setMethod("CASH")}
-                        className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
-                            method === "CASH"
-                                ? "border-success bg-success/5 shadow-floating shadow-success/10"
-                                : "border-muted hover:border-success/30 hover:bg-muted/50"
-                        )}
-                    >
-                        <div className={cn(
-                            "p-4 rounded-full transition-transform group-hover:scale-110",
-                            method === "CASH" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
-                        )}>
-                            <Wallet className="h-8 w-8" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="font-black text-sm uppercase tracking-tight">Efectivo</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Caja, banco o transferencia bancaria electrónica.</p>
-                        </div>
-                    </Button>
-
-                    <Button
-                        onClick={() => setMethod("ASSETS")}
-                        className={cn(
-                            "group flex flex-col items-center gap-4 p-6 rounded-md border-2 transition-all text-center",
-                            method === "ASSETS"
-                                ? "border-warning bg-warning/5 shadow-floating shadow-warning/10"
-                                : "border-muted hover:border-warning/30 hover:bg-muted/50"
-                        )}
-                    >
-                        <div className={cn(
-                            "p-4 rounded-full transition-transform group-hover:scale-110",
-                            method === "ASSETS" ? "bg-warning text-warning-foreground" : "bg-muted text-muted-foreground"
-                        )}>
-                            <Package className="h-8 w-8" />
-                        </div>
-                        <div className="space-y-1">
-                            <p className="font-black text-sm uppercase tracking-tight">Bienes / Stock</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Materias primas, insumos o productos para la venta.</p>
-                        </div>
-                    </Button>
-                </div>
+                <RadioGroup
+                    value={method}
+                    onValueChange={(v) => setMethod(v as ContributionMethod)}
+                    className="grid grid-cols-2 gap-4 py-8"
+                >
+                    <RadioCard
+                        id="method-cash"
+                        value="CASH"
+                        label="Efectivo"
+                        description="Caja, banco o transferencia bancaria electrónica."
+                        icon={<Wallet className="h-6 w-6" />}
+                    />
+                    <RadioCard
+                        id="method-assets"
+                        value="ASSETS"
+                        label="Bienes / Stock"
+                        description="Materias primas, insumos o productos para la venta."
+                        icon={<Package className="h-6 w-6" />}
+                    />
+                </RadioGroup>
             )
         },
         {
@@ -292,12 +289,24 @@ export function PartnerContributionWizard({
                 : (!!assetData.productId && !!assetData.warehouseId && !!assetData.quantity && Number(assetData.unitCost) > 0),
             component: method === "CASH" ? (
                 <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    {lockAmount && (
+                        <Alert variant="info" className="py-2" icon={null}>
+                            <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2 text-info">
+                                    <Lock className="h-3.5 w-3.5" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Pago total del capital pendiente</span>
+                                </div>
+                                <span className="text-sm font-black text-info font-mono">{formatCurrency(parseFloat(cashData.amount) || 0)}</span>
+                            </div>
+                        </Alert>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledInput
                             label="Importe en Efectivo"
                             type="number"
                             value={cashData.amount}
                             onChange={(e) => setCashData(prev => ({ ...prev, amount: e.target.value }))}
+                            disabled={lockAmount}
                             className="font-mono text-lg font-black"
                             placeholder="0"
                             icon={<Banknote className="h-4 w-4 opacity-50" />}

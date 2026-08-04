@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/incompatible-library */
-/* eslint-disable no-restricted-syntax */
+ 
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -15,19 +14,20 @@ import {
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
+import { ChevronDown, Search, Check, Plus } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { useReactToPrint } from "react-to-print"
-import { PrintableLayout } from "@/features/_shared"
-import { useDrawerIdentity, type DrawerMode } from "@/features/_shared"
+import { useDrawerIdentity, usePrintableDrawer, PrintableLayout, type DrawerMode } from "@/features/_shared"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
+    name_singular: z.string().optional().default(""),
+    name_plural: z.string().optional().default(""),
+    abbreviation: z.string().optional().default(""),
     category: z.number({ message: "La categoría es requerida" }).min(1, "La categoría es requerida"),
     uom_type: z.enum(["REFERENCE", "BIGGER", "SMALLER"], { message: "El tipo es requerido" }),
     ratio: z.coerce.number().min(0.00001, "El ratio debe ser mayor a 0").optional(),
@@ -51,8 +51,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
-    const printRef = useRef<HTMLDivElement>(null)
-    const handlePrint = useReactToPrint({ contentRef: printRef })
+    const { printRef, handlePrint } = usePrintableDrawer()
 
     const { categories, isLoading: isCategoriesLoading, saveUoM, isSaving, refetch } = useUoMs()
     const isFetchingInitialData = open && isCategoriesLoading
@@ -61,6 +60,9 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
         resolver: zodResolver(uomSchema) as unknown as Resolver<UoMFormValues>,
         defaultValues: {
             name: "",
+            name_singular: "",
+            name_plural: "",
+            abbreviation: "",
             category: undefined,
             uom_type: undefined,
             ratio: undefined,
@@ -86,6 +88,9 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
             if (initialData && Object.keys(initialData).length > 0) {
                 form.reset({
                     name: initialData.name || "",
+                    name_singular: initialData.name_singular || "",
+                    name_plural: initialData.name_plural || "",
+                    abbreviation: initialData.abbreviation || "",
                     category: initialData.category,
                     uom_type: initialData.uom_type,
                     ratio: initialData.ratio ? parseFloat(initialData.ratio) : undefined,
@@ -93,6 +98,9 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
             } else {
                 form.reset({
                     name: "",
+                    name_singular: "",
+                    name_plural: "",
+                    abbreviation: "",
                     category: undefined,
                     uom_type: undefined,
                     ratio: undefined,
@@ -131,6 +139,8 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const identity = useDrawerIdentity('inventory.uom', mode, initialData, {
         overrideSubtitle: initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión.",
+        onPrint: handlePrint,
+        printable: (mode === 'view' || mode === 'edit') && !!initialData?.id,
     })
 
     return (
@@ -158,6 +168,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 </PrintableLayout>
             )}
             <Drawer
+                fillContent
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
@@ -165,7 +176,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 mode={mode}
                 icon={identity.icon}
                 title={identity.title}
-                headerActions={(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}
+                headerActions={identity.headerActions}
                 subtitle={identity.subtitle}
                 footer={isView ? undefined : (
                     <FormFooter
@@ -211,6 +222,48 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                                 />
                                             )}
                                         />
+
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="name_singular"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Singular"
+                                                        placeholder="Ej: Kilogramo"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                        value={field.value ?? ""}
+                                                    />
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="name_plural"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Plural"
+                                                        placeholder="Ej: Kilogramos"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                        value={field.value ?? ""}
+                                                    />
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="abbreviation"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Abreviación"
+                                                        placeholder="Ej: kg"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                        value={field.value ?? ""}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
 
                                         <FormField
                                             control={form.control}

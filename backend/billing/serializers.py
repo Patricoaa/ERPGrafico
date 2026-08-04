@@ -5,6 +5,122 @@ from core.serializers import AttachmentSerializer
 from .models import Invoice
 
 
+class InvoiceListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for Invoice list views.
+    Omits heavy nested serialization (sale_order_detail, related_stock_moves,
+    related_returns, lines, work_orders, adjustments) that trigger N+1 queries."""
+
+    dte_type_display = serializers.CharField(source="get_dte_type_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    payment_method_display = serializers.CharField(
+        source="get_payment_method_display", read_only=True
+    )
+    sale_order_number = serializers.CharField(
+        source="sale_order.number", read_only=True, allow_null=True
+    )
+    purchase_order_number = serializers.CharField(
+        source="purchase_order.number", read_only=True, allow_null=True
+    )
+    partner_name = serializers.SerializerMethodField()
+    partner_id = serializers.SerializerMethodField()
+    pending_amount = serializers.SerializerMethodField()
+    is_tax_exempt = serializers.ReadOnlyField()
+    is_sale_document = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Invoice
+        fields = [
+            "id",
+            "dte_type",
+            "dte_type_display",
+            "sii_document_code",
+            "number",
+            "date",
+            "sale_order",
+            "purchase_order",
+            "contact",
+            "status",
+            "status_display",
+            "payment_method",
+            "payment_method_display",
+            "total_net",
+            "total_tax",
+            "total_discount_amount",
+            "total",
+            "sale_order_number",
+            "purchase_order_number",
+            "partner_name",
+            "partner_id",
+            "pending_amount",
+            "is_tax_exempt",
+            "is_sale_document",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id", "number", "status", "total_net", "total_tax", "total",
+        ]
+
+    def get_partner_name(self, obj):
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.name
+        if obj.purchase_order and obj.purchase_order.supplier:
+            return obj.purchase_order.supplier.name
+        if obj.contact:
+            return obj.contact.name
+        return ""
+
+    def get_partner_id(self, obj):
+        if obj.sale_order and obj.sale_order.customer:
+            return obj.sale_order.customer.id
+        if obj.purchase_order and obj.purchase_order.supplier:
+            return obj.purchase_order.supplier.id
+        if obj.contact:
+            return obj.contact.id
+        return None
+
+    def get_pending_amount(self, obj):
+        total_paid = sum(p.amount for p in obj.payments.all())
+        total_allocated = sum(a.amount for a in obj.payment_allocations.all())
+        return obj.total - (total_paid + total_allocated)
+
+class InvoiceWriteSerializer(serializers.ModelSerializer):
+    """Optimized serializer for create and update views.
+    Omits all computed and related read-only fields."""
+    
+    class Meta:
+        model = Invoice
+        fields = [
+            "id",
+            "dte_type",
+            "sii_document_code",
+            "number",
+            "document_attachment",
+            "date",
+            "sale_order",
+            "purchase_order",
+            "corrected_invoice",
+            "contact",
+            "status",
+            "payment_method",
+            "total_net",
+            "total_tax",
+            "total_discount_amount",
+            "total",
+            "journal_entry",
+            "tax_period_closed",
+        ]
+        read_only_fields = [
+            "id",
+            "number",
+            "status",
+            "total_net",
+            "total_tax",
+            "total",
+            "journal_entry",
+            "tax_period_closed",
+        ]
+
 class InvoiceSerializer(serializers.ModelSerializer):
     attachments = AttachmentSerializer(many=True, read_only=True)
     dte_type_display = serializers.CharField(source="get_dte_type_display", read_only=True)
