@@ -37,7 +37,7 @@ export function PageSectionHeader({ title, description, tabs, subTabs }: PageSec
                 {(displayTitle || description) && (
                     <div className="flex flex-col min-w-0">
                         {displayTitle && (
-                            <h2 className="text-sm font-semibold text-foreground">{displayTitle}</h2>
+                            <h2 className="text-lg font-semibold tracking-tight text-foreground">{displayTitle}</h2>
                         )}
                         {description && (
                             <p className="text-xs text-muted-foreground">{description}</p>

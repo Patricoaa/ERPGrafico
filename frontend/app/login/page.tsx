@@ -36,9 +36,9 @@ export default function LoginPage() {
                                 </div>
                             )}
                             {companyName && (
-                                <h1 className=" font-bold text-sm uppercase tracking-tighter text-muted-foreground">
+                                <p className=" font-bold text-sm uppercase tracking-tighter text-muted-foreground">
                                     {companyName}
-                                </h1>
+                                </p>
                             )}
                         </div>
 

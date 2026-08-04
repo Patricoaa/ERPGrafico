@@ -138,7 +138,8 @@ function ProductGridComponent({
                                     <Button
                                         variant="ghost"
                                         className={cn(
-                                            "flex h-7 w-7 items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
+                                            "flex items-center justify-center rounded-full bg-background/90 backdrop-blur-sm border shadow-floating hover:scale-110 active:scale-95 transition-all p-0",
+                                            isTouchPOS ? "h-10 w-10" : "h-7 w-7",
                                             product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
                                         )}
                                         onClick={(e) => {
@@ -149,7 +150,8 @@ function ProductGridComponent({
                                     >
                                         <Heart
                                             className={cn(
-                                                "h-3.5 w-3.5 transition-colors",
+                                                "transition-colors",
+                                                isTouchPOS ? "h-5 w-5" : "h-3.5 w-3.5",
                                                 product.is_favorite ? "fill-current" : ""
                                             )}
                                         />
@@ -161,7 +163,7 @@ function ProductGridComponent({
 
                                 {/* Stock/Availability Badge */}
                                 {product.product_type === 'STORABLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
@@ -169,7 +171,7 @@ function ProductGridComponent({
 
                                 {/* MANUFACTURABLE badges */}
                                 {isManufacturable && mfgSubType === 'SIMPLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
