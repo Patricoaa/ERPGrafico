@@ -145,6 +145,7 @@ Capital por Cobrar: Juan Pérez (OV-88)
 | ``PAGO_CUOTA`` | `Pago Cuota` | Loan installment payment |
 | ``DEVENGO_INTERESES`` | `Devengo Intereses` | Monthly interest accrual |
 | ``AJUSTE_BANCARIO`` | `Ajuste Bancario` | Bank reconciliation difference |
+| ``TRASPASO_CONCILIACION`` | `Traspaso por Conciliación` | Bank reconciliation bridge transfer (usado en `treasury/services.py` y `treasury/matching_service.py`) |
 | ``SUSCRIPCION_CAPITAL`` | `Suscripción Capital` | Capital subscription |
 | ``APORTE_CAPITAL`` | `Aporte Capital` | Capital contribution (cash) |
 | ``REDUCCION_CAPITAL`` | `Reducción Capital` | Capital reduction |
@@ -203,6 +204,7 @@ When a new automatic entry is created, a new constant **must** be added to
 | ``PENALIZACION`` | `Penalización` | Penalty / late fee |
 | ``BANCO`` | `Banco` | Bank accounts |
 | ``EFECTIVO`` | `Efectivo` | Cash / treasury accounts |
+| ``TRANSFERENCIA`` | `Transferencia` | Treasury transfers / reconciliation (usado en `matching_service.py`) |
 | ``IVA_PAGAR`` | `IVA por Pagar` | VAT payable (net after F29) |
 | ``IVA_REMANENTE`` | `IVA Remanente` | VAT credit carry-forward |
 | ``RESULTADO`` | `Resultado` | P&L result account |
@@ -264,9 +266,7 @@ JournalEntryService.reverse_entry(
 )
 ```
 
-> The reversal engine in ``JournalEntryService.reverse_entry`` already prepends
-> ``Anulación {rol}: …`` to item labels, so only the header description needs
-> the ``build_reversal`` call.
+> The reversal engine in ``JournalEntryService.reverse_entry`` ([\_accounting/services.py:47](../../backend/accounting/services.py#L47)) already mirrors items via ``GlosaBuilder.item_reversal(role, doc_ref=reversal.id)`` (→ `Anulación ROL: …`) and the header via ``GlosaBuilder.build_reversal(original, doc)`` (→ `Anulación DOC: …`), so the caller only overrides the header description when needed.
 
 ---
 

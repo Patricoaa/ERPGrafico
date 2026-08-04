@@ -79,7 +79,7 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `OUTSOURCING_ASSIGNMENT` | `info` | `PREPRESS`, `CANCELLED` |
 | `PREPRESS` | `info` | `PRESS`, `CANCELLED` |
 | `PRESS` | `primary` | `POSTPRESS`, `CANCELLED` |
-| `POSTPRESS` | `warning` | `OUTSOURCING_VERIFICATION`, `RECTIFICATION`, `CANCELLED` |
+| `POSTPRESS` | `primary` | `OUTSOURCING_VERIFICATION`, `RECTIFICATION`, `CANCELLED` |
 | `OUTSOURCING_VERIFICATION` | `info` | `RECTIFICATION`, `CANCELLED` |
 | `RECTIFICATION` | `warning` | `FINISHED`, `CANCELLED` |
 | `FINISHED` | `success` | — (terminal) |
@@ -116,7 +116,7 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 |--------|--------|------------------------|
 | `DRAFT` | `info` | `POSTED`, `CANCELLED` |
 | `POSTED` | `success` | `CLOSED` (period closed), — (creates `REVERSAL` linked via `reversal_of`, original unchanged) |
-| `CLOSED` | `warning` | `POSTED` (period reopened), — (creates `REVERSAL` linked via `reversal_of`, original unchanged) |
+| `CLOSED` | `info` | `POSTED` (period reopened), — (creates `REVERSAL` linked via `reversal_of`, original unchanged) |
 | `REVERSAL` | `primary` | — |
 | `CANCELLED` | `destructive` | — |
 
@@ -189,7 +189,7 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 | ReconciliationStatus | Intent | Transitions allowed to |
 |---------------------|--------|------------------------|
-| `UNRECONCILED` | `warning` | `MATCHED`, `EXCLUDED` |
+| `UNRECONCILED` | `info` | `MATCHED`, `EXCLUDED` |
 | `MATCHED` | `info` | `RECONCILED`, `UNRECONCILED` |
 | `RECONCILED` | `success` | — |
 | `DISPUTED` | `destructive` | `MATCHED`, `EXCLUDED` |
@@ -221,10 +221,10 @@ Campos no editables: `treasury_account` (snapshot).
 
 | Status | Intent | Transitions allowed to |
 |--------|--------|------------------------|
-| `PENDING` | `info` | `SETTLED` |
-| `SETTLED` | `warning` | `RECONCILED`, `INVOICED` |
+| `PENDING` | `warning` | `SETTLED` |
+| `SETTLED` | `success` | `RECONCILED`, `INVOICED` |
 | `RECONCILED` | `success` | — |
-| `INVOICED` | `success` | — |
+| `INVOICED` | `info` | — |
 
 **Edit restrictions:** Campos inmutables: `settlement_journal_entry`, `bank_statement_line`, `supplier_invoice`.
 
@@ -356,7 +356,7 @@ Backend: `treasury.CreditCardStatement`. Lifecycle gobernado por
 
 | Status | Intent | Transitions allowed to | Acción de servicio |
 |--------|--------|------------------------|--------------------|
-| `OPEN` | `warning` | `PAID`, `OVERDUE`, `CANCELED` | (inicial tras crear el statement) |
+| `OPEN` | `success` | `PAID`, `OVERDUE`, `CANCELED` | (inicial tras crear el statement) |
 | `PAID` | `success` | — (terminal) | `pay_statement()` (TRANSFER banco→tarjeta) |
 | `OVERDUE` | `destructive` | `PAID`, `CANCELED` | `mark_overdue_card_statements` (BEAT diario, F3.7 futuro) |
 | `CANCELED` | `neutral` | — (terminal) | Cancelación manual del statement |
@@ -388,13 +388,13 @@ statement esté en `OPEN` (no pagado, no anulado).
 | `ACTIVE` | `success` | `PAUSED`, `CANCELLED`, `EXPIRED` |
 | `PAUSED` | `warning` | `ACTIVE`, `CANCELLED` |
 | `CANCELLED` | `destructive` | — |
-| `EXPIRED` | `neutral` | — |
+| `EXPIRED` | `warning` | — |
 
 ## Task (Workflow)
 
 | Status | Intent | Transitions allowed to |
 |--------|--------|------------------------|
-| `PENDING` | `info` | `IN_PROGRESS`, `COMPLETED`, `REJECTED`, `CANCELLED` |
+| `PENDING` | `warning` | `IN_PROGRESS`, `COMPLETED`, `REJECTED`, `CANCELLED` |
 | `IN_PROGRESS` | `warning` | `COMPLETED`, `REJECTED`, `CANCELLED` |
 | `COMPLETED` | `success` | — |
 | `REJECTED` | `destructive` | `PENDING` (reassign) |
