@@ -30,6 +30,8 @@ El `DataTable` opera en cuatro modos excluyentes:
 
 **Regla:** Siempre declarar `variant` explícitamente. La prop `cardMode` está deprecada y no debe usarse en código nuevo.
 
+**Densidad:** el `DataTable` acepta `density?: 'compact' | 'comfortable'` (default `'compact'` — ver [density-system.md](./density-system.md)). No confundir con `variant="compact"` (layout CSS Grid); `density` controla el padding/altura de filas, no el modo de renderizado.
+
 ```tsx
 // ✅ Correcto
 <DataTable variant="embedded" ... />

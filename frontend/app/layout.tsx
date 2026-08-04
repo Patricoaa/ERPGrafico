@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Onest } from "next/font/google";
+import { Onest, JetBrains_Mono } from "next/font/google";
 import { GlobalHubPanel } from "@/features/orders";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext"
@@ -11,6 +11,11 @@ import Providers from "./providers"
 
 const onest = Onest({
   variable: "--font-onest",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
@@ -27,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${onest.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${onest.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}
       >
         <a href="#main-content" className="skip-to-content">
           Ir al contenido principal

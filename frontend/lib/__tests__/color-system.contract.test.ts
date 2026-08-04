@@ -91,6 +91,18 @@ describe('color-system contract', () => {
     expect(/--ring-raw\s*:\s*0\.65 0\.25 301/.test(css)).toBe(false);
   });
 
+  it('primary is Process Black K100 — 0 0 0 light / 0.99 0 0 dark (ADR 0070)', () => {
+    expect(/--primary-raw\s*:\s*0 0 0/.test(rootBlock)).toBe(true);
+    expect(/--primary-raw\s*:\s*0\.99 0 0/.test(darkBlock)).toBe(true);
+    // no stale Process Cyan primary anywhere
+    expect(/--primary-raw\s*:\s*0\.65 0\.18 235/.test(css)).toBe(false);
+  });
+
+  it('sidebar-primary and sidebar-ring derive from primary (ADR 0070)', () => {
+    expect(/--color-sidebar-primary\s*:\s*oklch\(var\(--primary-raw\)\)/.test(css)).toBe(true);
+    expect(/--color-sidebar-ring\s*:\s*oklch\(var\(--primary-raw\)\)/.test(css)).toBe(true);
+  });
+
   it('Layer 1 inks are FIXED — never re-declared in .dark', () => {
     for (const ink of LAYER1) {
       expect(definesVar(darkBlock, `${ink}-raw`), `${ink}-raw must NOT appear in .dark`).toBe(false);

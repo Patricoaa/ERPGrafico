@@ -58,6 +58,12 @@ export interface DataTableProps<TData, TValue> {
     defaultAction?: (row: TData) => void
     /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
     variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'
+    /**
+     * Visual density for operators. Default: 'compact' (power-user default,
+     * see density-system.md). 'comfortable' opts into roomier rows for
+     * mixed audiences — adds the `table-comfortable` CSS density scope.
+     */
+    density?: 'compact' | 'comfortable'
     /** CSS Grid template class for compact variant. Required when variant='compact'. Example: "grid-cols-[2rem_1fr_auto_auto_auto]" */
     gridTemplate?: string
     /** Gap between columns in compact variant. Default: "gap-x-3" */
@@ -178,6 +184,7 @@ export function DataTable<TData, TValue>({
     onRowClick,
     defaultAction,
     variant,
+    density = 'compact',
     isLoading = false,
     isRefetching = false,
     skeletonRows,
@@ -817,7 +824,7 @@ export function DataTable<TData, TValue>({
     // ─── Classic Mode ──────────────────────────────────────────────────
     const classicHeaderGroups = table.getHeaderGroups()
     return (
-        <div ref={containerRef} className={cn("w-full space-y-4", className)}>
+        <div ref={containerRef} className={cn("w-full space-y-4", density === 'comfortable' && 'table-comfortable', className)}>
             {kpiCardsNode}
             {showToolbar && (
                 <div className={cn(

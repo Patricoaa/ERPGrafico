@@ -20,6 +20,7 @@ last_review: 2026-06-19
 | Layer | Folder | Purpose | When to read |
 |-------|--------|---------|--------------|
 | 00 | `00-context/` | What project is, domain vocabulary, stack | First contact with repo |
+| 00 (design) | `../DESIGN.md` | Consolidated design source of truth (concept, principles, contract map) | Any UI/design decision |
 | 10 | `10-architecture/` | How pieces fit together, ADRs | Before structural change |
 | 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state, **entity identity**) | Before consuming or exposing API |
 | 30 | `30-playbooks/` | Step-by-step recipes for common tasks | Every implementation task |

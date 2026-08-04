@@ -8,6 +8,8 @@ last_review: 2026-05-28
 
 # Design System
 
+> **Puerta de entrada:** para una vista consolidada (concepto, principios, mapas de referencia) consulta **[DESIGN.md](../../DESIGN.md)** en la raíz del repo. Este documento detalla la arquitectura del design system; los contratos normativos viven en `docs/20-contracts/`.
+
 ## Overview
 ERPGrafico utilizes a unified design system. The goal is to provide a highly functional, data-dense interface suitable for an ERP, while maintaining a modern, polished, and distinctive aesthetic.
 
@@ -38,12 +40,12 @@ The color system follows a **3-layer architecture** orchestrated in `globals.css
 | Layer | Purpose | Examples | Dark mode |
 |-------|---------|----------|-----------|
 | **Layer 1 — Process** | CMYK + Pantone identity (fixed inks) | `--cyan`, `--magenta`, `--yellow`, `--black` | Fixed (inks don't change) |
-| **Layer 2 — Semantic** | System intents aliased to Layer 1 | `--primary` → `--cyan`, `--info` → `--blue` | Layer 2 carries the dark-mode adaptation |
+| **Layer 2 — Semantic** | System intents aliased to Layer 1 | `--primary` → `--black` (K100), `--info` → `--blue` | Layer 2 carries the dark-mode adaptation |
 | **Layer 3 — Domain** | Business domain natures aliased to Layer 2 | `--income` → `--success`, `--asset` → `--info` | Inherits from Layer 2 |
 
 ### Primary identity
 
-Primary = **Process Cyan** (`oklch(0.65 0.18 235)`) via `text-primary` / `bg-primary`.
+Primary = **Process Black K100 (placa Key)** (`oklch(0 0 0)` light / `oklch(0.99 0 0)` dark) via `text-primary` / `bg-primary`. Cyan is the **emphasis** accent (sidebar, ring, chart-1, chips). See [ADR-0070](adr/0070-primary-process-black.md).
 
 ### Color Architecture
 Colors must be defined as raw OKLCH channels in `app/globals.css` to support Tailwind v4 opacity modifiers (e.g., `bg-primary/10`).
