@@ -501,6 +501,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "treasury.tasks.accrue_monthly_loan_interest",
         "schedule": crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
     },
+    # ── Core / Idempotency ───────────────────────────────────────────────────
+    # Purges IdempotencyRecord rows older than the 24h TTL defined by contract
+    # (docs/20-contracts/idempotency.md). Runs off-peak so a reused key after
+    # 24h is treated as a fresh request instead of colliding with the cached one.
+    "purge_idempotency_records_daily": {
+        "task": "core.tasks.purge_idempotency_records",
+        "schedule": crontab(hour=2, minute=30),  # Daily at 02:30 AM
+    },
 }
 
 # ── Observability: Sentry (errores y trazas) ────────────────────────────────
