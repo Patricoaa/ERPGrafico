@@ -65,7 +65,7 @@ La tabla refleja los scopes reales decorados con `@idempotent_endpoint` en el c�
 
 **Convención del header:** el cliente genera **UUIDv4** al crear la intención de acción (click del botón). Reenvío del header con el mismo valor en retries. Una nueva acción del usuario genera nuevo UUID.
 
-**TTL del registro:** 24 horas. La tarea `core.tasks.purge_idempotency_records(retention_hours=24)` existe y borra registros viejos, pero **NO está programada en `CELERY_BEAT_SCHEDULE`** ([settings.py:435-502](../../backend/config/settings.py#L435)) — hueco operativo real: hasta que se agende, los registros viven indefinidamente (un key reusado tras 24h colisiona).
+**TTL del registro:** 24 horas. La tarea `core.tasks.purge_idempotency_records(retention_hours=24)` borra registros viejos y está programada a diario en `CELERY_BEAT_SCHEDULE` (`purge_idempotency_records_daily`, 02:30 AM, [settings.py:505-511](../../backend/config/settings.py#L505)).
 
 ---
 
@@ -328,4 +328,4 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta “¿una do
 >
 > 1. **Ningún modelo de negocio tiene el campo `idempotency_key`** todavía (capa DB inaplicada). El modelo `PaymentRequest` que la migración `0010` iba a introducir fue eliminado en `0017_remove_paymentrequest.py`. Candidatos cuando se implemente: `Invoice`, `TreasuryMovement`, `JournalEntry`.
 > 2. **El patrón Celery del §"Patrón canónico — Celery" es aspiracional**: ninguna tarea Celery usa `IdempotencyRecord` todavía; solo los endpoints HTTP están decorados.
-> 3. **El purge task (`core.tasks.purge_idempotency_records`, TTL 24h) no está agendado** en `CELERY_BEAT_SCHEDULE` — hueco operativo hasta que se programe.
+> 3. **El purge task (`core.tasks.purge_idempotency_records`, TTL 24h) está agendado** a diario (02:30 AM) en `CELERY_BEAT_SCHEDULE` desde 2026-08-04 (`purge_idempotency_records_daily`) — hueco operativo cerrado.

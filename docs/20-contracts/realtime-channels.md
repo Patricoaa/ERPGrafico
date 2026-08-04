@@ -145,10 +145,13 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class POSDraftConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        if not self.scope["user"].is_authenticated:
+            await self.close(code=4001)
+            return
         self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
         self.group_name = f"pos_session_{self.session_id}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
-        await self.accept()  # sin check de auth en connect
+        await self.accept()
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
@@ -182,9 +185,9 @@ Los tres `routing.py` (`core`, `sales`, `workflow`) se concatenan en `backend/co
 const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
 const wsProtocol = baseUrl.startsWith('https') ? 'wss' : 'ws'
 const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '')
-const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/`
+const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/?token=${encodeURIComponent(getClientToken() ?? '')}`
 
-const socket = new WebSocket(wsUrl)   // ⚠️ POS se conecta SIN ?token=
+const socket = new WebSocket(wsUrl)
 socket.onmessage = (event) => { /* parsea msg.event / msg.data */ }
 ```
 
@@ -192,7 +195,7 @@ socket.onmessage = (event) => { /* parsea msg.event / msg.data */ }
 - Hook por feature en `features/[feature]/hooks/use*Sync.ts`. **Nunca** un hook genérico `useWebSocket` global — el manejo de mensajes es siempre específico del dominio.
 - Reconexión con backoff exponencial (1s, 2s, 4s, …; cap 30s). Detener si el código de cierre es 4001 (no autorizado) o 4003 (forbidden).
 - Heartbeat: el cliente envía `{ "event": "HEARTBEAT", "draft_id, session_key }` (protocolo real de POS — renueva el lock de sesión). Detectar TCP-half-open y reconectar.
-- **Auth:** JWT como query param `?token=<jwt>` — mecanismo implementado por `core/ws_auth.JWTAuthMiddleware` y usado por `ws/notifications/` y `ws/entity-bus/`. **Excepción real:** el consumer de POS no valida auth en `connect` (acepta anónimos; la autorización ocurre dentro de `receive` al renovar el lock). Aceptado pese a que el token queda en logs de Nginx — mitigación: tokens de vida corta (15 min, ver [security.md](../40-quality/security.md)).
+- **Auth:** JWT como query param `?token=<jwt>` — mecanismo implementado por `core/ws_auth.JWTAuthMiddleware` y usado por `ws/notifications/` y `ws/entity-bus/`. **POS incluido desde 2026-08-04:** `POSDraftConsumer.connect` rechaza anónimos con `close(code=4001)` y el cliente agrega `?token=` (vía `getClientToken()`); la autorización previa dentro de `receive` se mantiene. El token queda en logs de Nginx — mitigación: tokens de vida corta (15 min, ver [security.md](../40-quality/security.md)).
 
 ---
 
