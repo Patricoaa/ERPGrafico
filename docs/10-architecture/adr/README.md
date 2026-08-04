@@ -93,7 +93,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0027](0027-basedrawer-crud-forms.md) | BaseDrawer as Primary Surface for Embedded CRUD Forms | Accepted |
 | [0028](0028-entity-drawer-registry.md) | Global entity-drawer registry + dual-mode drawers (replaces TransactionViewModal) | Accepted |
 | [0029](0029-color-system-robustening.md) | Color system robustening — info→blue, neutral accent, fixed L1 / adaptive L2, data-viz palette | Accepted |
-| [0030](0030-datatable-compact-variant.md) | DataTable compact variant (CSS Grid for modals/drawers) | Proposed |
+| [0030](0030-datatable-compact-variant.md) | DataTable compact variant (CSS Grid for modals/drawers) | Accepted |
 | [0031](0031-treasury-account-vs-payment-method-taxonomy.md) | Treasury account vs payment method — two-layer taxonomy (wizard + auto-provision + convergence) | Accepted |
 | [0032](0032-check-portfolio-cuenta-puente.md) | Cheques recibidos — cartera con cuenta puente CHECK_PORTFOLIO | Accepted |
 | [0033](0033-bank-loans-liabilidad-y-uf.md) | Créditos bancarios — deuda como pasivo + amortización (CLP/UF) | Accepted |
@@ -132,5 +132,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0067](0067-entity-fields-placement-surface-and-weight.md) | Entity Fields — placement surface, header-last list order, zone-driven font-weight, numericFlow reintroduced | Accepted |
 | [0068](0068-badge-currencyflow-default.md) | Badge default adopts the CurrencyFlow aesthetic (font-sans text-xs font-medium, borderless rounded-sm); supersedes ghost-pill table cells | Proposed |
 | [0069](0069-badge-consumer-migration-and-exceptions.md) | Badge consumer migration (zero direct ui/badge imports) + audited justified visual exceptions (bubbles, tag pills, mono codes, callouts, POS density) | Proposed |
+| [0070](0070-primary-process-black.md) | Primary = Process Black K100 (placa Key) — ratificación de la decisión de julio | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

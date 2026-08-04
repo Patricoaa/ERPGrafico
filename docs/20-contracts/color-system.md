@@ -103,8 +103,8 @@ Pantone tokens exist for cases where a spot color is needed outside the CMYK gam
 The **Light OKLCH** column is the value the intent inherits from its Layer 1 source; the **Dark OKLCH** column is the adapted value applied in `.dark` (lighter for perceptual contrast). Layer 1 itself never changes — only these Layer 2 intents do.
 
 | Intent | Light OKLCH | Dark OKLCH | Source Layer 1 | UI Role |
-|--------|-------------|-------------|----------------|---------|
-| `primary` | `0.65 0.18 235` | `0.72 0.16 235` | `cyan` | Brand identity, primary actions, **emphasis** |
+|--------|-------------|------------|----------------|---------|
+| `primary` | `0 0 0` | `0.99 0 0` | `black` (Process Black K100) | Primary actions, focus, **high-contrast action surface** (ADR-0070) |
 | `info` | `0.45 0.22 280` | `0.58 0.20 280` | `blue` | Informational, neutral states (draft, sent, in-review) |
 | `success` | `0.65 0.18 145` | `0.68 0.16 145` | `green` | Positive, active, approved, completed |
 | `warning` | `0.90 0.18 95` | `0.94 0.15 95` | `yellow` | Pending, attention required, caution |
@@ -192,7 +192,7 @@ shadow-[0_0_8px_var(--{intent})]
 | `STORABLE` | `info` | `0.45 0.22 280` | Physical inventory (blue = informational) |
 | `CONSUMABLE` | `warning` | `0.90 0.18 95` | Consumable supplies (yellow = caution) |
 | `MANUFACTURABLE` | `success` | `0.65 0.18 145` | Manufactured goods (green = production) |
-| `SERVICE` | `primary` | `0.65 0.18 235` | Services (cyan = brand) |
+| `SERVICE` | `primary` | `0 0 0` | Services (K100 = brand action) |
 | `SUBSCRIPTION` | `destructive` | `0.55 0.24 25` | Recurring billing (red = financial flow) |
 
 These are identifiers, not status signals — they use semantic tokens for visual distinction, not for state meaning. Defined in: `typography-scale.md`.
@@ -212,7 +212,7 @@ These are identifiers, not status signals — they use semantic tokens for visua
 | `FINISHED` | `success` | Green | Complete (C+Y) |
 | `CANCELLED` | `destructive` | Red | Terminated (M+Y) |
 
-> **Note:** the *CMYK Plate* column is the conceptual print-process metaphor for each stage, not the literal rendered color. The **rendered** color is always the mapped Layer 2 intent: `info` now renders **blue**, `primary` cyan, `warning` yellow, `success` green, `destructive` red. Process Magenta is reserved for ColorBar / graphic-industry components (§8) and is no longer wired to any stage.
+> **Note:** the *CMYK Plate* column is the conceptual print-process metaphor for each stage, not the literal rendered color. The **rendered** color is always the mapped Layer 2 intent: `info` renders **blue**, `primary` renders **Process Black K100** (ADR-0070), `warning` yellow, `success` green, `destructive` red. Process Magenta is reserved for ColorBar / graphic-industry components (§8) and is no longer wired to any stage.
 
 Defined in `state-map.md`.
 
@@ -275,7 +275,7 @@ Rules: Layer 1 chip intents are **fixed** across light/dark (they carry no `.dar
 | Layer / token | Dark-mode behavior |
 |---------------|--------------------|
 | Layer 1 inks + mixes (`cyan`…`blue`, `black`, pantone) | **No change** — fixed identity |
-| Layer 2 intents (`primary`, `info`, `success`, `warning`, `destructive`) | Explicit lighter value in `.dark` (≈ +0.07–0.13 L) |
+| Layer 2 intents (`primary`, `info`, `success`, `warning`, `destructive`) | Explicit lighter value in `.dark` (≈ +0.07–0.13 L); **exception:** `primary` inverts 0 → 0.99 (K100 key plate flips to a light key plate, ADR-0070) |
 | `neutral` | No change |
 | `accent` | Follows `secondary` (auto) |
 | `muted` | Invert lightness: `0.95 → 0.22` |
@@ -296,12 +296,12 @@ Values below mirror `globals.css` exactly (`:root` / `.dark` raws fed through `@
 |-------|-------------|-------------|------------|
 | `sidebar` | neutral surface | `0.96 0.005 240` | `0.15 0.02 240` |
 | `sidebar-foreground` | neutral text | `0.30 0.03 240` | `0.95 0.01 240` |
-| `sidebar-primary` | `primary` (raw) | `0.65 0.18 235` | `0.72 0.16 235` |
-| `sidebar-primary-foreground` | `primary-foreground` (raw) | `0.20 0.04 235` | `0.10 0.02 235` |
+| `sidebar-primary` | `primary` (raw) | `0 0 0` | `0.99 0 0` |
+| `sidebar-primary-foreground` | `primary-foreground` (raw) | `0.99 0 0` | `0 0 0` |
 | `sidebar-accent` | sidebar surface @ 5% | `0.96 0.005 240 / 0.05` | `0.95 0.01 240 / 0.05` |
 | `sidebar-accent-foreground` | sidebar surface | `0.96 0.005 240` | `0.95 0.01 240` |
 | `sidebar-border` | neutral @ 10% | `0.88 0.02 240 / 0.1` | `0.95 0.01 240 / 0.1` |
-| `sidebar-ring` | `primary` (raw) | `0.65 0.18 235` | `0.72 0.16 235` |
+| `sidebar-ring` | `primary` (raw) | `0 0 0` | `0.99 0 0` |
 
 ---
 

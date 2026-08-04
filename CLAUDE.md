@@ -16,6 +16,7 @@ Layer map:
 | Layer | Folder | When to read |
 |-------|--------|--------------|
 | 00 | [docs/00-context/](docs/00-context/) | First contact: project overview, domain glossary, stack rationale |
+| 00 (design) | [DESIGN.md](DESIGN.md) | Any UI/design decision — consolidated design source of truth (concept, principles, contract map) |
 | 10 | [docs/10-architecture/](docs/10-architecture/) | Before any structural change; includes ADRs |
 | 20 | [docs/20-contracts/](docs/20-contracts/) | Before consuming or exposing components, hooks, endpoints, states |
 | 30 | [docs/30-playbooks/](docs/30-playbooks/) | Every implementation task |
@@ -162,6 +163,7 @@ celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:Database
 
 Reading order for a new agent:
 
+0. [DESIGN.md](DESIGN.md) — consolidated design source of truth (concept, principles, contract map) before any UI/design work.
 1. [docs/00-context/project-overview.md](docs/00-context/project-overview.md) — what ERPGrafico is, 13 Django apps.
 2. [docs/10-architecture/system-diagram.md](docs/10-architecture/system-diagram.md) — runtime topology, request lifecycle, trust boundaries.
 3. [docs/10-architecture/frontend-fsd.md](docs/10-architecture/frontend-fsd.md) — Feature-Sliced layout, import rules, data flow (`lib/api` → feature hook → component).
