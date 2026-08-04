@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: api-contracts
 status: active
 owner: backend-team
-last_review: 2026-05-28
+last_review: 2026-08-04
 stability: contract-changes-require-ADR
 ---
 
@@ -13,13 +13,14 @@ Backend REST surface under `/api/`. Every endpoint has request schema, response 
 
 ## Global conventions
 
-- Base URL: `/api/[app]/`
-- Auth: JWT `Authorization: Bearer <access>` on all except `/api/token/*`.
+- Base URL: `/api/[app]/` (excepción: `finances` usa `/api/finances/api/...` — ver sección finances).
+- Auth: JWT `Authorization: Bearer <access>` on all except `/api/token/*` y `/api/logout/`.
 - Content-Type: `application/json` (except uploads).
-- Pagination: DRF page-number — `?page=N&page_size=M` (default `page_size=50`, max `200`). Response: `{ count, next, previous, results }`. Contrato cruzado backend↔hook↔DataTable: [pagination-contract.md](./pagination-contract.md). _Nota 2026-05-23: el contrato actualmente aplica solo a `inventory/*` y `treasury/*` (las únicas apps con `pagination_class` declarado). El resto devuelve `T[]` plano hasta que se active `DEFAULT_PAGINATION_CLASS` global — ver [pagination-contract.md §1.3 + §5 paso 5](./pagination-contract.md#13-configuración-django-must)._
+- Pagination: DRF page-number — `?page=N&page_size=M` (default `page_size=50`, max `200`). Response: `{ count, next, previous, results }`. **Activa globalmente** via `REST_FRAMEWORK.DEFAULT_PAGINATION_CLASS = core.api.pagination.StandardResultsSetPagination` (`config/settings.py`). Contrato cruzado backend↔hook↔DataTable: [pagination-contract.md](./pagination-contract.md). Excepciones documentadas (endpoints que devuelven `T[]` plano): ver [pagination-contract.md](./pagination-contract.md).
 - Filtering: `django_filter` query params.
 - Ordering: `?ordering=field,-other`.
-- Errors: DRF standard — `{ detail }` or `{ field: [msg] }`.
+- Errors: DRF standard — `{ detail }` or `{ field: [msg] }`, vía `core.api.exceptions.erpgrafico_exception_handler`.
+- Permisos: `core.api.permissions.StandardizedModelPermissions` por defecto.
 
 ## Serializer Integrity & Performance (Zero N+1)
 
@@ -48,28 +49,33 @@ Queda estrictamente **PROHIBIDO** ejecutar consultas a la base de datos (uso del
 ## Auth endpoints
 
 ```
-POST   /api/token/            body: {username, password}     → {access, refresh}
-POST   /api/token/refresh/    body: {refresh}                → {access}
-POST   /api/token/verify/     body: {token}                  → 200/401
+POST   /api/token/             body: {username, password}     → {access, refresh}   (CustomTokenObtainPairView)
+POST   /api/token/refresh/     body: {refresh}                → {access}
+POST   /api/logout/            (JWT)                          → 205                 (blacklist refresh)
+GET    /api/auth/user/         (JWT)                          → CurrentUserSerializer (usuario + rol + empresa)
 ```
+
+> **No existe `/api/token/verify/`.** La verificación del token se hace en el cliente decodificando el JWT y comprobando expiración; ante `401` se refresca. No añadir el endpoint sin ADR.
 
 ## App routes — overview
 
 | App | Base | Key resources |
 |-----|------|---------------|
-| `accounting` | `/api/accounting/` | `journal-entries/`, `accounts/`, `periods/` |
-| `billing` | `/api/billing/` | `invoices/`, `credit-notes/`, `folios/` |
-| `contacts` | `/api/contacts/` | `customers/`, `suppliers/` |
-| `core` | `/api/core/` | `users/`, `roles/` |
-| `finances` | `/api/finances/` | `reports/`, `cashflow/` |
-| `hr` | `/api/hr/` | `employees/`, `payrolls/` |
-| `inventory` | `/api/inventory/` | `items/`, `warehouses/`, `movements/` |
-| `production` | `/api/production/` | `work-orders/`, `routes/`, `operations/` |
-| `purchasing` | `/api/purchasing/` | `purchase-orders/`, `reconciliations/` |
-| `sales` | `/api/sales/` | `orders/`, `quotes/` |
-| `tax` | `/api/tax/` | `rates/`, `fiscal-documents/` |
-| `treasury` | `/api/treasury/` | `accounts/`, `transactions/`, `reconciliations/` |
-| `workflow` | `/api/workflow/` | `transitions/`, `approvals/` |
+| `accounting` | `/api/accounting/` | `accounts/`, `entries/`, `fiscal-years/`, `budgets/`, `budget-items/`, `settings/` |
+| `billing` | `/api/billing/` | `invoices/`, `note-workflows/` |
+| `contacts` | `/api/contacts/` | root `contacts/`, `profit-distributions/` |
+| `core` | `/api/core/` | `users/`, `groups/`, `company/`, `action-logs/`, `jobs/` + `auth/*`, `audit/`, `entity-prefixes/`, `entity-config/`, `preferences/`, `search/`, `server-time/`, `status/` |
+| `finances` | `/api/finances/api/` | `balance-sheet/`, `trial-balance/`, `income-statement/`, `cash-flow/`, `analysis/`, `bi-analytics/`, `report-status/{task_id}/` (solo reportes GET) |
+| `hr` | `/api/hr/` | `employees/`, `payrolls/`, `payroll-items/` (nested), `payroll-payments/`, `absences/`, `advances/`, `afps/`, `concepts/`, `global-settings/` |
+| `inventory` | `/api/inventory/` | `products/`, `categories/`, `warehouses/`, `moves/`, `uoms/`, `uom-categories/`, `uom-prices/`, `attributes/`, `attribute-values/`, `pricing-rules/`, `subscriptions/`, `documents/`, `counts/` |
+| `production` | `/api/production/` | `orders/`, `boms/` |
+| `purchasing` | `/api/purchasing/` | `orders/`, `receipts/`, `returns/` |
+| `sales` | `/api/sales/` | `orders/`, `deliveries/`, `returns/`, `pos-drafts/`, `settings/`, `pricing/`, `credit_history/` |
+| `tax` | `/api/tax/` | `periods/`, `accounting-periods/`, `declarations/`, `payments/` |
+| `treasury` | `/api/treasury/` | `accounts/`, `movements/`, `payments/` (= movements), `statements/`, `statement-lines/`, `banks/`, `payment-methods/`, `checks/`, `loans/`, `loan-installments/`, `credit-lines/`, `card-statements/`, `pos-terminals/`, `terminal-batches/`, `terminal-providers/`, `terminal-devices/`, `pos-sessions/`, `dashboard/`, `reconciliation-settings/` |
+| `workflow` | `/api/workflow/` | `tasks/`, `notifications/`, `assignment-rules/`, `notification-rules/`, `settings/` |
+
+> **Prefijos de ruta:** los routers registran el **sustantivo real** de cada app (`orders/`, `entries/`, `moves/`, `periods/`, `statements/`, `declarations/`), no nombres largos estilo `journal-entries/`. El frontend mapea a su propia URL de navegación (que puede diferir, p.ej. `/inventory/stock-moves` en el navegador vs `/api/inventory/moves/` en la API).
 
 ## Example — SaleOrder resource
 
@@ -79,8 +85,22 @@ POST   /api/sales/orders/                create
 GET    /api/sales/orders/{id}/           detail
 PATCH  /api/sales/orders/{id}/           partial update
 DELETE /api/sales/orders/{id}/           transactional doc — annul via status=CANCELLED, not hard-delete (deletion-policy.md)
-POST   /api/sales/orders/{id}/transition/  body: {to_state, comment?}
+GET    /api/sales/orders/{id}/cancel_impact/   preview impacto de cancelación
+POST   /api/sales/orders/{id}/confirm/         confirmar
+POST   /api/sales/orders/{id}/cancel/          cancelar (solo DRAFT)
+POST   /api/sales/orders/{id}/dispatch/        despacho parcial/total
+POST   /api/sales/orders/{id}/partial_dispatch/
+POST   /api/sales/orders/{id}/annul/           anular (requiere idempotency_key)
+POST   /api/sales/orders/{id}/write_off/       castigo
+POST   /api/sales/orders/{id}/register_note/   registrar nota (crédito/débito)
+POST   /api/sales/orders/{id}/register_merchandise_return/   devolución mercadería
+GET    /api/sales/orders/{id}/deliveries/      entregas vinculadas
+GET    /api/sales/orders/{id}/comments/        hilo de comentarios (GET/POST)
+GET    /api/sales/orders/filter-suggestions/   sugerencias de filtro (server-side)
+GET    /api/sales/credit_history/              historial crediticio (top-level)
 ```
+
+> **No existe `/transition/` genérico** para órdenes de venta. Las transiciones son acciones explícitas (`confirm`, `cancel`, `dispatch`, `annul`, …). El único ViewSet con `transition` es `production` (work orders).
 
 Request schema (create) — mirrored by frontend Zod `SaleOrderCreateSchema`:
 
@@ -162,13 +182,13 @@ Response key fields:
 }
 ```
 
-### journal-entries/
+### entries/ (JournalEntry)
 
 ```
-GET    /api/accounting/journal-entries/          list (filtros: user, action_type, etc vía JournalEntryFilterSet)
-POST   /api/accounting/journal-entries/          create (manual entries)
-GET    /api/accounting/journal-entries/{id}/     detail
-PATCH  /api/accounting/journal-entries/{id}/     update
+GET    /api/accounting/entries/               list (filtros vía JournalEntryFilterSet)
+POST   /api/accounting/entries/               create (manual entries)
+GET    /api/accounting/entries/{id}/          detail
+PATCH  /api/accounting/entries/{id}/          update
 ```
 
 Response key fields:
@@ -190,12 +210,27 @@ Response key fields:
 }
 ```
 
-### periods/ (fiscal years)
+### fiscal-years/
 
 ```
-GET    /api/accounting/fiscal-years/              list
-POST   /api/accounting/fiscal-years/{id}/close/   close fiscal year (action)
-GET    /api/accounting/fiscal-years/{year}/mappings/  snapshot de mapeos históricos (ver ADR-NNNN)
+GET    /api/accounting/fiscal-years/                       list
+POST   /api/accounting/fiscal-years/<year>/close/          close fiscal year (año, no id)
+GET    /api/accounting/fiscal-years/<year>/mappings/       snapshot de mapeos históricos
+```
+
+### budgets/ + settings/
+
+```
+GET    /api/accounting/budgets/          list
+POST   /api/accounting/budgets/          create
+GET    /api/accounting/budgets/{id}/     detail
+PATCH  /api/accounting/budgets/{id}/     update
+DELETE /api/accounting/budgets/{id}/     delete
+
+GET    /api/accounting/budgets/{id}/versus/   comparativo vs real (action)
+
+GET    /api/accounting/settings/          configuración contable (get/put/patch)
+GET    /api/accounting/budget-items/      ítems de presupuesto
 ```
 
 ---
@@ -207,13 +242,22 @@ Base: `/api/billing/`
 ### invoices/
 
 ```
-GET    /api/billing/invoices/          list, paginated (filtros vía InvoiceFilterSet)
-POST   /api/billing/invoices/          create
-GET    /api/billing/invoices/{id}/     detail
-PATCH  /api/billing/invoices/{id}/     update (limited — use actions for status)
-DELETE /api/billing/invoices/{id}/     cancel
-POST   /api/billing/invoices/{id}/complete/   body: {number, date, document_attachment?} — mark POSTED
+GET    /api/billing/invoices/                list, paginated (filtros vía InvoiceFilterSet)
+POST   /api/billing/invoices/                create
+GET    /api/billing/invoices/{id}/           detail
+PATCH  /api/billing/invoices/{id}/           update (limited — use actions for status)
+GET    /api/billing/invoices/{id}/cancel_impact/   preview impacto de cancelación
+POST   /api/billing/invoices/check_folio/         valida folio disponible (detail=False)
+POST   /api/billing/invoices/create_from_order/   crea factura desde una orden (detail=False)
+POST   /api/billing/invoices/pos_checkout/        checkout POS (detail=False)
+POST   /api/billing/invoices/request_credit/      solicitud de crédito (detail=False)
+POST   /api/billing/invoices/{id}/confirm/        confirma/marca POSTED
+POST   /api/billing/invoices/{id}/annul/          anula (genera NOTA_CREDITO)
+POST   /api/billing/invoices/{id}/cancel/         cancela
+POST   /api/billing/invoices/{id}/process_logistics/   procesa logística
 ```
+
+> **No existen** `complete/`, `issue/` ni un sub-recurso `credit-notes/`. Las notas de crédito se generan via la acción `annul` o el flujo de `note-workflows/`.
 
 Request schema (create via `CreateInvoiceSerializer`):
 
@@ -257,6 +301,17 @@ Response key fields:
 ```
 
 Note: monetary amounts are plain `decimal`, NOT cents. The `_cents` convention in the SaleOrder example is legacy documentation — actual DB/serializer values are decimals (CLP integers stored without fraction).
+
+### note-workflows/ (NotaWorkflow)
+
+Flujo de notas de crédito/débito generadas desde una factura.
+
+```
+GET    /api/billing/note-workflows/          list
+POST   /api/billing/note-workflows/          create
+GET    /api/billing/note-workflows/{id}/     detail
+PATCH  /api/billing/note-workflows/{id}/     update
+```
 
 ---
 
@@ -341,6 +396,7 @@ POST   /api/inventory/products/          create (multipart/form-data for image)
 GET    /api/inventory/products/{id}/     detail
 PATCH  /api/inventory/products/{id}/     update
 DELETE /api/inventory/products/{id}/     soft-delete (sets active=false)
+GET    /api/inventory/products/analytics/    agregación servidor (ProductAnalyticsService)
 ```
 
 Request schema (create/update key fields — partial; see serializer for full schema):
@@ -398,7 +454,7 @@ POST   /api/inventory/warehouses/       create
 PATCH  /api/inventory/warehouses/{id}/  update
 ```
 
-### stock-moves/ (`moves`)
+### moves/ (StockMove)
 
 Ruta real del router: `/api/inventory/moves/` (`StockMoveViewSet`, basename `stockmove`).
 Nota: `/inventory/stock-moves/` en el frontend es solo la ruta de navegación de detalle (redirige a la lista con `?selected=`).
@@ -467,22 +523,39 @@ Analytics response shape (`StockMoveAnalyticsService.get_consolidated`):
 
 Dirección del movimiento (clasificada en DB, prioridad TRANSFER > ADJUSTMENT > IN > OUT > OTHER): ver ADR-0058.
 
+### Otros recursos de master data
+
+```
+GET/POST/PATCH/DELETE   /api/inventory/categories/        categorías de producto
+GET/POST/PATCH/DELETE   /api/inventory/uoms/              unidades de medida
+GET/POST/PATCH/DELETE   /api/inventory/uom-categories/    categorías de UoM
+GET/POST/PATCH/DELETE   /api/inventory/attributes/        atributos (color, talla, …)
+GET/POST/PATCH/DELETE   /api/inventory/attribute-values/  valores de atributo
+GET/POST/PATCH/DELETE   /api/inventory/pricing-rules/     reglas de precio
+GET/POST/PATCH/DELETE   /api/inventory/subscriptions/     suscripciones de producto
+GET/POST/PATCH/DELETE   /api/inventory/uom-prices/        precios por UoM
+GET/POST/PATCH/DELETE   /api/inventory/documents/         documentos de inventario (InventoryDocument)
+GET/POST/PATCH/DELETE   /api/inventory/counts/            conteos (InventoryCount)
+```
+
 ---
 
 ## purchasing
 
 Base: `/api/purchasing/`
 
-### purchase-orders/
+### orders/ (PurchaseOrder)
 
 ```
-GET    /api/purchasing/purchase-orders/          list, paginated (filtros vía PurchaseOrderFilterSet)
-POST   /api/purchasing/purchase-orders/          create
-GET    /api/purchasing/purchase-orders/{id}/     detail
-PATCH  /api/purchasing/purchase-orders/{id}/     update
-DELETE /api/purchasing/purchase-orders/{id}/     delete
-POST   /api/purchasing/purchase-orders/{id}/confirm/     action — confirm order
-POST   /api/purchasing/purchase-orders/{id}/receive/     action — create receipt
+GET    /api/purchasing/orders/                list, paginated (filtros vía PurchaseOrderFilterSet)
+POST   /api/purchasing/orders/                create
+GET    /api/purchasing/orders/{id}/           detail
+PATCH  /api/purchasing/orders/{id}/           update
+GET    /api/purchasing/orders/{id}/cancel_impact/   preview impacto de cancelación
+POST   /api/purchasing/orders/{id}/confirm/          action — confirmar
+POST   /api/purchasing/orders/{id}/receive/          action — registrar recepción
+POST   /api/purchasing/orders/{id}/cancel/           action — cancelar
+POST   /api/purchasing/orders/{id}/annul/            action — anular
 ```
 
 Request schema (create/update via `WritePurchaseOrderSerializer`):
@@ -524,19 +597,17 @@ Response key fields (`PurchaseOrderSerializer`):
 }
 ```
 
-### purchase-receipts/
+### receipts/ + returns/
 
 ```
-GET    /api/purchasing/purchase-receipts/          list
-POST   /api/purchasing/purchase-receipts/          create
-GET    /api/purchasing/purchase-receipts/{id}/     detail
-```
+GET    /api/purchasing/receipts/          list
+POST   /api/purchasing/receipts/          create (genera StockMove IN)
+GET    /api/purchasing/receipts/{id}/     detail
 
-### purchase-returns/
-
-```
-GET    /api/purchasing/purchase-returns/     list
-POST   /api/purchasing/purchase-returns/     create
+GET    /api/purchasing/returns/           list
+POST   /api/purchasing/returns/           create
+GET    /api/purchasing/returns/{id}/      detail
+POST   /api/purchasing/returns/{id}/annul/   action
 ```
 
 ---
@@ -581,9 +652,16 @@ POST   /api/treasury/movements/          create payment or cash movement
 GET    /api/treasury/movements/{id}/     detail
 PATCH  /api/treasury/movements/{id}/     update (limited)
 DELETE /api/treasury/movements/{id}/     delete
-POST   /api/treasury/movements/{id}/reconcile/  action — reconcile with bank statement line
 GET    /api/treasury/movements/analytics/  analytics — agregación servidor para el panel (ADR-0058)
+POST   /api/treasury/movements/{id}/cancel/   action — cancelar
+GET    /api/treasury/movements/{id}/cancel_impact/
+POST   /api/treasury/movements/{id}/annul/    action — anular (reverso)
+GET    /api/treasury/movements/current/       sesión/caja actual (detail=False)
+POST   /api/treasury/movements/open_session/  abrir sesión
+POST   /api/treasury/movements/{id}/close_session/   cerrar sesión
 ```
+
+> `/api/treasury/payments/` registra el **mismo** `TreasuryMovementViewSet` (basename `treasury-payment`) — es un alias de router, no un ViewSet distinto. **No existe `/movements/{id}/reconcile/`**: la conciliación vive en los statements (ver abajo).
 
 Filter params: `?is_reconciled=true|false`, `?movement_type=INBOUND|OUTBOUND|TRANSFER`, `?payment_method=<id>`, `?contact=<id>`, `?bank=<id>`, `?treasury_account=<id>`, `?date=YYYY-MM-DD`, `?date_from=YYYY-MM-DD`, `?date_to=YYYY-MM-DD`, `?amount_min=<num>`, `?amount_max=<num>`, `?direction=IN|OUT`, `?search=<text>`
 
@@ -624,14 +702,25 @@ Response key fields (`TreasuryMovementSerializer`):
 }
 ```
 
-### bank-statements/
+### statements/ (BankStatement) + statement-lines/
 
 ```
-GET    /api/treasury/bank-statements/            list
-POST   /api/treasury/bank-statements/            import (multipart)
-GET    /api/treasury/bank-statements/{id}/       detail (includes lines)
-POST   /api/treasury/bank-statements/{id}/reconcile/  action
+GET    /api/treasury/statements/                    list
+POST   /api/treasury/statements/                    import (multipart) — ver import-csv-xlsx.md
+GET    /api/treasury/statements/{id}/               detail (includes lines)
+GET    /api/treasury/statements/formats/            formatos de import disponibles
+POST   /api/treasury/statements/{id}/auto_match/    conciliación automática (async)
+GET    /api/treasury/statements/{id}/auto_match_status/
+POST   /api/treasury/statements/{id}/confirm/       confirmar conciliación
+POST   /api/treasury/statements/{id}/unmatch/       desconciliar
+GET    /api/treasury/statements/{id}/suggested_difference/
+GET    /api/treasury/statements/{id}/match/         match manual (statement line)
+
+GET    /api/treasury/statement-lines/               líneas de estado de cuenta
+GET    /api/treasury/statement-lines/{id}/          detail
 ```
+
+La conciliación se opera sobre `statement-lines` (métodos `match` / `unmatch` en el workbench) y las acciones `confirm` / `auto_match` del statement.
 
 ### loans/ (BankLoan) — F2.11
 
@@ -681,9 +770,26 @@ DELETE /api/treasury/card-statements/{id}/               delete
 POST   /api/treasury/card-statements/{id}/pay/           action — pagar (payload: payment_account, date?)
 POST   /api/treasury/card-statements/{id}/apply-charges/ action — imputar interés/comisiones (payload: interest_expense_account?, fees_expense_account?)
 POST   /api/treasury/card-statements/{id}/cancel/        action — anular (payload: notes?)
+GET    /api/treasury/card-statements/analytics/          analytics de tarjeta (CardAnalyticsService)
 ```
 
 Display ID: `EST-{id}`. El pago crea una TRANSFER banco→tarjeta (ADR-0034).
+
+### Otros recursos de tesorería
+
+```
+GET/POST/PATCH/DELETE   /api/treasury/banks/                    bancos
+GET/POST/PATCH/DELETE   /api/treasury/payment-methods/          métodos de pago
+GET/POST/PATCH/DELETE   /api/treasury/checks/                   cheques (CheckService: receive/issue)
+GET/POST/PATCH/DELETE   /api/treasury/credit-lines/             líneas de crédito (ADR-0049/0050)
+GET/POST/PATCH/DELETE   /api/treasury/pos-terminals/            terminales POS
+GET/POST/PATCH/DELETE   /api/treasury/terminal-batches/         lotes de terminal
+GET/POST/PATCH/DELETE   /api/treasury/terminal-providers/       proveedores de terminal
+GET/POST/PATCH/DELETE   /api/treasury/terminal-devices/         dispositivos de terminal
+GET/POST/PATCH/DELETE   /api/treasury/pos-sessions/             sesiones POS
+GET/POST/PATCH/DELETE   /api/treasury/reconciliation-settings/  settings de conciliación
+GET                     /api/treasury/dashboard/                dashboard agregado
+```
 
 ---
 
@@ -691,17 +797,30 @@ Display ID: `EST-{id}`. El pago crea una TRANSFER banco→tarjeta (ADR-0034).
 
 Base: `/api/production/`
 
-### work-orders/
+### orders/ (WorkOrder)
 
 ```
-GET    /api/production/work-orders/          list, paginated
-POST   /api/production/work-orders/          create
-GET    /api/production/work-orders/{id}/     detail
-PATCH  /api/production/work-orders/{id}/     update
-DELETE /api/production/work-orders/{id}/     delete
-POST   /api/production/work-orders/{id}/advance/      action — advance to next stage
-POST   /api/production/work-orders/{id}/consume/      action — register material consumption
-POST   /api/production/work-orders/{id}/finish/       action — mark finished
+GET    /api/production/orders/                  list, paginated
+POST   /api/production/orders/                  create
+GET    /api/production/orders/{id}/             detail
+PATCH  /api/production/orders/{id}/             update
+DELETE /api/production/orders/{id}/             delete
+POST   /api/production/orders/create_manual/    create manual (detail=False)
+POST   /api/production/orders/{id}/transition/  action — transición de etapa (body: to_stage, comment?)
+POST   /api/production/orders/{id}/advance/     no existe — usar transition
+POST   /api/production/orders/{id}/annul/       action — anular
+POST   /api/production/orders/{id}/rectify/     action — rectificar
+POST   /api/production/orders/{id}/duplicate/   action — duplicar
+PATCH  /api/production/orders/{id}/update_section/   action — actualizar sección
+POST   /api/production/orders/{id}/restart/     action — reiniciar
+POST   /api/production/orders/{id}/add_material/     action — agregar material
+POST   /api/production/orders/{id}/update_material/  action — actualizar material
+POST   /api/production/orders/{id}/remove_material/  action — quitar material
+GET    /api/production/orders/{id}/print_pdf/   action — PDF (WeasyPrint)
+POST   /api/production/orders/bulk_transition/  action — transición masiva (detail=False)
+POST   /api/production/orders/bulk_print/       action — impresión masiva (detail=False)
+GET    /api/production/orders/{id}/comments/    hilo de comentarios (GET/POST)
+GET    /api/production/orders/metrics/          métricas agregadas (detail=False)
 ```
 
 Filter params: `?status=DRAFT|IN_PROGRESS|DONE`, `?product=<id>`, `?search=<text>`, `?active=true|false`
@@ -731,14 +850,14 @@ Response key fields (`WorkOrderSerializer` — partial; see serializer for full 
 }
 ```
 
-### bom/ (Bill of Materials)
+### boms/ (Bill of Materials)
 
 ```
-GET    /api/production/bom/           list
-POST   /api/production/bom/           create
-GET    /api/production/bom/{id}/      detail
-PATCH  /api/production/bom/{id}/      update
-DELETE /api/production/bom/{id}/      delete
+GET    /api/production/boms/           list
+POST   /api/production/boms/           create
+GET    /api/production/boms/{id}/      detail
+PATCH  /api/production/boms/{id}/      update
+DELETE /api/production/boms/{id}/      delete
 ```
 
 ---
@@ -844,7 +963,7 @@ Response key fields (detail — `PayrollDetailSerializer`):
 
 ### payroll-items/ (Nested)
 
-Manejados como sub-recurso o directo en la misma app para ítems individuales. Filtrar por `?payroll=id`.
+Router anidado bajo payroll: `/api/hr/payrolls/{payroll_pk}/items/`. Filtrar por `?payroll=id`.
 
 ```json
 {
@@ -858,7 +977,7 @@ Manejados como sub-recurso o directo en la misma app para ítems individuales. F
 }
 ```
 
-### payments/ (PayrollPayment)
+### payroll-payments/ (PayrollPayment)
 
 Filtros: `?payroll=id`, `?payment_type=SALARIO|PREVIRED`
 
@@ -874,18 +993,28 @@ Filtros: `?payroll=id`, `?payment_type=SALARIO|PREVIRED`
 }
 ```
 
+### Otros recursos de RRHH
+
+```
+GET/POST/PATCH/DELETE   /api/hr/absences/          ausencias
+GET/POST/PATCH/DELETE   /api/hr/advances/          anticipos
+GET/POST/PATCH/DELETE   /api/hr/afps/              AFP
+GET/POST/PATCH/DELETE   /api/hr/concepts/          conceptos de remuneración
+GET/PATCH               /api/hr/global-settings/   settings globales
+```
+
 ---
 
 ## tax
 
 Base: `/api/tax/`
 
-### tax-periods/
+### periods/ (TaxPeriod)
 
 ```
-GET    /api/tax/tax-periods/          list
-GET    /api/tax/tax-periods/{id}/     detail
-POST   /api/tax/tax-periods/{id}/close/   action — close period
+GET    /api/tax/periods/          list
+GET    /api/tax/periods/{id}/     detail
+POST   /api/tax/periods/{id}/close/   action — close period
 ```
 
 Response key fields:
@@ -915,15 +1044,23 @@ GET    /api/tax/accounting-periods/{id}/     detail
 POST   /api/tax/accounting-periods/{id}/close/   action
 ```
 
-### f29-declarations/
+### declarations/ (F29Declaration)
 
 ```
-GET    /api/tax/f29-declarations/           list
-GET    /api/tax/f29-declarations/{id}/      detail
-POST   /api/tax/f29-declarations/{id}/pay/  action — register F29 payment
+GET    /api/tax/declarations/           list
+GET    /api/tax/declarations/{id}/      detail
+POST   /api/tax/declarations/{id}/pay/  action — register F29 payment
+GET    /api/tax/declarations/{id}/pdf/  action — PDF
 ```
 
 Key computed fields: `net_taxed_sales`, `net_taxed_purchases`, `vat_debit`, `vat_credit`, `total_amount_due`, `vat_to_pay`.
+
+### payments/ (F29Payment)
+
+```
+GET    /api/tax/payments/          list
+GET    /api/tax/payments/{id}/     detail
+```
 
 ---
 
@@ -939,7 +1076,7 @@ POST   /api/workflow/tasks/          create
 GET    /api/workflow/tasks/{id}/     detail
 PATCH  /api/workflow/tasks/{id}/     update
 DELETE /api/workflow/tasks/{id}/     delete
-POST   /api/workflow/tasks/{id}/complete/   action
+POST   /api/workflow/tasks/{id}/complete/   action — completar
 ```
 
 Request schema (create):
@@ -979,27 +1116,35 @@ Response key fields:
 
 ```
 GET    /api/workflow/notifications/         list (own notifications)
-PATCH  /api/workflow/notifications/{id}/    mark read
+POST   /api/workflow/notifications/{id}/mark_read/   action — marcar leída
+```
+
+### Otros recursos de workflow
+
+```
+GET/POST/PATCH/DELETE   /api/workflow/assignment-rules/    reglas de asignación
+GET/POST/PATCH/DELETE   /api/workflow/notification-rules/  reglas de notificación
+GET/PUT/PATCH           /api/workflow/settings/            settings
 ```
 
 ---
 
 ## finances
 
-Base: `/api/finances/`
+Base: `/api/finances/api/` — **nota el doble prefijo**: `config/urls.py` incluye `finances.urls` bajo `api/finances/`, y `finances/urls.py` registra a su vez las rutas bajo `api/`. La URL completa es `/api/finances/api/<reporte>/`.
 
 Esta app expone únicamente reportes (sin CRUD). Todos los endpoints son `GET` (excepto por el parámetro `is_async` que lanza un proceso de fondo).
 
 ### Reportes disponibles
 
 ```
-GET /api/finances/balance-sheet/     Balance general
-GET /api/finances/trial-balance/     Balance de comprobación
-GET /api/finances/income-statement/  Estado de resultados
-GET /api/finances/cash-flow/         Flujo de caja
-GET /api/finances/analysis/          Análisis financiero (ratios)
-GET /api/finances/bi-analytics/      BI Analytics
-GET /api/finances/report-status/{task_id}/  Polling de reportes async
+GET /api/finances/api/balance-sheet/     Balance general
+GET /api/finances/api/trial-balance/     Balance de comprobación
+GET /api/finances/api/income-statement/  Estado de resultados
+GET /api/finances/api/cash-flow/         Flujo de caja
+GET /api/finances/api/analysis/          Análisis financiero (ratios)
+GET /api/finances/api/bi-analytics/      BI Analytics
+GET /api/finances/api/report-status/{task_id}/  Polling de reportes async
 ```
 
 **Query params comunes (todos los reportes):**
@@ -1034,7 +1179,7 @@ Response shape (balance-sheet / income-statement / cash-flow):
 
 ## core
 
-Base: `/api/core/` (users, roles, permissions — partial; see serializer for full schema)
+Base: `/api/core/` — usuarios, grupos, empresa, configuración y endpoints de soporte.
 
 ```
 GET    /api/core/users/           list
@@ -1043,7 +1188,31 @@ GET    /api/core/users/{id}/      detail
 PATCH  /api/core/users/{id}/      update
 
 GET    /api/core/groups/          list (permission groups)
+
+# Empresa y configuración
+GET/PUT/PATCH   /api/core/company/              settings de la empresa
+GET/PATCH       /api/core/preferences/          preferencias del usuario actual
+
+# Auditoría y jobs
+GET    /api/core/action-logs/     log de acciones
+GET    /api/core/audit/global/    auditoría global
+GET    /api/core/jobs/            background jobs (Celery) + estado
+
+# Soporte (consultados por el frontend en bootstrap)
+GET    /api/core/entity-prefixes/   prefijos de display id por entidad
+GET    /api/core/entity-config/     configuración de entidades (getEntityConfig)
+GET    /api/core/search/            Universal Search
+GET    /api/core/server-time/       hora del servidor (useServerDate)
+GET    /api/core/status/            estado del sistema
+
+# Auth propio
+GET    /api/core/auth/me/               usuario actual
+GET    /api/core/auth/my-profile/       perfil del usuario
+POST   /api/core/auth/change-password/  cambio de password
+POST   /api/core/auth/change-pin/       cambio de PIN
 ```
+
+> `/api/auth/user/` (top-level, `config/urls.py`) y `/api/core/auth/me/` exponen el mismo usuario actual — `/api/auth/user/` es el punto de entrada del bootstrap de sesión.
 
 ---
 
@@ -1057,7 +1226,7 @@ GET    /api/core/groups/          list (permission groups)
 ## ID format
 
 - Primary keys: integer auto-increment PK (ver ADR-0016 — no se migró a UUID).
-- Never expose integer auto-increment in API.
+- Display IDs: `{PREFIJO}-{id}` generados desde `core/api/entity_prefixes` (ej. `OV-`, `OC-`, `JE-`, `PAY-`, `MOV-`, `OT-`, `CRE-`, `CUO-`, `EST-`). Ver [entity-identity.md](./entity-identity.md).
 
 ## Date/time
 
@@ -1097,22 +1266,21 @@ instead of creating a generic `TreasuryMovement`.
 
 ## Rate limits
 
+Definidos en `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES` (`config/settings.py`), aplicados via `AnonRateThrottle` + `UserRateThrottle`:
+
 | Scope | Limit |
 |-------|-------|
-| Anonymous | 60 req/min |
-| Authenticated | 600 req/min |
-| `/api/token/` | 5 req/min per IP |
+| `anon` | 30 req/min |
+| `user` | 300 req/min |
+| `heavy_report` | 10 req/min (endpoints de reportes pesados) |
+| `search` | 60 req/min (Universal Search) |
 
-**Action Endpoints (Throttled limits):**
-| Endpoint pattern | Limit |
-|---|---|
-| `POST /{id}/transition/` | 30 req/min per user |
-| `POST /billing/invoices/{id}/issue/` | 5 req/min per user |
-| `POST /treasury/loans/{id}/disburse/` | 3 req/min per user |
-| `POST /production/work-orders/{id}/finish/` | 3 req/min per user |
+Los endpoints de acciones de negocio (confirm/annul/disburse) no tienen throttle extra declarado; heredan el scope `user`. Si un endpoint necesita un límite menor, definir un scope dedicado en settings (y documentarlo aquí).
 
-Headers: `X-RateLimit-Remaining`, `X-RateLimit-Reset`.
+## Idempotency
+
+Los endpoints de escritura de alto riesgo aceptan `Idempotency-Key` (header) — ver [idempotency.md](./idempotency.md) para la lista completa de scopes y el contrato.
 
 ## OpenAPI
 
-Auto-generated via `drf-spectacular` at `/api/schema/` + Swagger UI at `/api/docs/`. Keep serializer docstrings up to date — they populate the spec.
+**No configurado.** `drf-spectacular` no está instalado ni hay `/api/schema/` / `/api/docs/`. La documentación canónica es este contrato. Si se introduce OpenAPI, requiere ADR.
