@@ -115,6 +115,7 @@ export function SalesInvoicesClientView() {
                     isRefetching={isRefetching}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
+                    hidePagination={isLoading}
                     renderCard={(data: Invoice) => {
                         const label = 'billing.invoice'
                         const d = data as unknown as Record<string, unknown>
@@ -131,6 +132,7 @@ export function SalesInvoicesClientView() {
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={isNC ? "text-warning bg-warning/10" : undefined}
+                                actions={salesInvoiceActions.render(data, { onHub: (doc) => toggleSelection(doc) })}
                             />
                         )
                     }}
