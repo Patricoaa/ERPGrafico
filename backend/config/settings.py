@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -148,7 +149,13 @@ MIDDLEWARE = [
     "core.middleware.AuditMiddleware",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS: en desarrollo se permite todo origen por conveniencia (igual que DEBUG).
+# En producción (DEBUG=False) el default es restringido: solo los orígenes
+# explícitos en CORS_ALLOWED_ORIGINS / CORS_ALLOWED_ORIGIN_REGEXES.
+# Se puede forzar con la env CORS_ALLOW_ALL_ORIGINS=1 / 0.
+CORS_ALLOW_ALL_ORIGINS = os.environ.get(
+    "CORS_ALLOW_ALL_ORIGINS", "1" if DEBUG else "0"
+) == "1"
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://erpgrafico\.vercel\.app$",
@@ -160,6 +167,10 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 # Dominios de producción propios (Docker / servidor propio)
 _CORS_EXTRA = os.environ.get("CORS_ALLOWED_ORIGINS", "")
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _CORS_EXTRA.split(",") if o.strip()]
+
+# Incluye Idempotency-Key (usado por el checkout POS) en los headers permitidos
+# por el preflight CORS; sin esto el navegador bloquea la petición.
+CORS_ALLOWED_HEADERS = [*default_headers, "idempotency-key"]
 
 CORS_ALLOW_CREDENTIALS = True
 

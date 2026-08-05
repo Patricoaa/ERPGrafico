@@ -2,6 +2,8 @@
 HR Services: Logic for payroll calculations and accounting entries.
 """
 
+import ast
+import operator
 import re
 from decimal import Decimal
 
@@ -14,6 +16,26 @@ from django.utils.translation import gettext_lazy as _
 from accounting.glosa_builder import GlosaBuilder, Roles
 
 from .models import Employee, EmployeeConceptAmount, Payroll
+
+
+_COMPARISON_OPS = {
+    ast.Eq: operator.eq,
+    ast.NotEq: operator.ne,
+    ast.Lt: operator.lt,
+    ast.LtE: operator.le,
+    ast.Gt: operator.gt,
+    ast.GtE: operator.ge,
+}
+
+_ARITHMETIC_OPS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+}
 
 
 class EmployeeService:
@@ -258,7 +280,55 @@ class PayrollService:
         cond_str = cond_str.strip()
         if not cond_str:
             return False
-        return bool(eval(cond_str, {"__builtins__": {}}))
+        tree = ast.parse(cond_str, mode="eval")
+        return bool(PayrollService._eval_ast(tree.body))
+
+    @staticmethod
+    def _eval_ast(node):
+        """Evalúa un subconjunto seguro del AST (números, booleanos, comparaciones,
+        operadores aritméticos y and/or/not). Rechaza cualquier otra construcción
+        (llamadas, atributos, subscripts, etc.) para evitar ejecución de código."""
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float, bool)):
+                return node.value
+            raise ValueError(f"Literal no permitido en condición: {node.value!r}")
+        if isinstance(node, ast.Name):
+            if node.id in ("True", "False"):
+                return node.id == "True"
+            raise ValueError(f"Nombre no permitido en condición: {node.id}")
+        if isinstance(node, ast.Compare):
+            left = PayrollService._eval_ast(node.left)
+            for op, comparator in zip(node.ops, node.comparators):
+                right = PayrollService._eval_ast(comparator)
+                try:
+                    cmp_fn = _COMPARISON_OPS[type(op)]
+                except KeyError:
+                    raise ValueError(f"Comparador no permitido en condición: {type(op).__name__}")
+                left = cmp_fn(left, right)
+            return left
+        if isinstance(node, ast.BinOp):
+            left = PayrollService._eval_ast(node.left)
+            right = PayrollService._eval_ast(node.right)
+            try:
+                arith_fn = _ARITHMETIC_OPS[type(node.op)]
+            except KeyError:
+                raise ValueError(f"Operador no permitido en condición: {type(node.op).__name__}")
+            return arith_fn(left, right)
+        if isinstance(node, ast.UnaryOp):
+            if isinstance(node.op, ast.Not):
+                return not PayrollService._eval_ast(node.operand)
+            if isinstance(node.op, (ast.UAdd, ast.USub)):
+                operand = PayrollService._eval_ast(node.operand)
+                return +operand if isinstance(node.op, ast.UAdd) else -operand
+            raise ValueError(f"Operador unario no permitido: {type(node.op).__name__}")
+        if isinstance(node, ast.BoolOp):
+            values = [PayrollService._eval_ast(v) for v in node.values]
+            if isinstance(node.op, ast.And):
+                return all(bool(v) for v in values)
+            if isinstance(node.op, ast.Or):
+                return any(bool(v) for v in values)
+            raise ValueError(f"Operador lógico no permitido: {type(node.op).__name__}")
+        raise ValueError(f"Expresión no permitida en condición: {type(node).__name__}")
 
     @staticmethod
     def _resolve_ternary(formula_str):
