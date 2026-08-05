@@ -80,7 +80,8 @@ export interface AutoEntityCardProps<TData> {
     variant?: 'highlights' | 'summary' | 'full' | 'workflow' | 'overview'
     /**
      * Hub status renderer — called for summary/full/workflow variants to render domain-specific
-     * status content in the header center area.
+     * status content in the header center area. Composes with the centerDetail fields
+     * (placement 'detail' → center header); it never replaces them.
      */
     hubStatusRenderer?: (data: TData) => React.ReactNode
     /**
@@ -350,9 +351,12 @@ export function AutoEntityCard<TData>({
         </div>
     ) : undefined
 
-    // 5. Build Center content: explicit prop → hubStatusRenderer → centerDetail fields
+    // 5. Build Center content: explicit prop wins; otherwise compose hubStatusRenderer content
+    //    with the centerDetail fields. Both live in the header center zone, so detail-placed
+    //    fields (secondary, temporal, etc.) must never be dropped when a hub status renderer
+    //    is present — they coexist in the same center slot.
     const showCenterLabels = classified.centerDetail.length > 1
-    const centerDetailNode = classified.centerDetail.length > 0 && (
+    const centerDetailNode = classified.centerDetail.length > 0 ? (
         <div className="flex items-center gap-4 min-w-0">
             {classified.centerDetail.map(f => {
                 const isEmpty = f.value == null || f.value === '' || (Array.isArray(f.value) && f.value.length === 0)
@@ -364,12 +368,19 @@ export function AutoEntityCard<TData>({
                 )
             })}
         </div>
-    )
+    ) : null
+
+    const hubStatusNode = hubStatusRenderer && (effectiveVariant === 'summary' || effectiveVariant === 'full' || effectiveVariant === 'workflow')
+        ? hubStatusRenderer(data)
+        : null
 
     const centerContent = center ?? (
-        hubStatusRenderer && (effectiveVariant === 'summary' || effectiveVariant === 'full' || effectiveVariant === 'workflow')
-            ? hubStatusRenderer(data)
-            : centerDetailNode || undefined
+        (hubStatusNode != null || centerDetailNode != null) ? (
+            <div className="flex items-center gap-4 min-w-0">
+                {hubStatusNode}
+                {centerDetailNode}
+            </div>
+        ) : undefined
     )
 
     // 6. Render subtitle items

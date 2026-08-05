@@ -7,7 +7,6 @@ import {ActionConfirmModal, DataTableView, AutoEntityCard, UnifiedSearchBar, use
 import { salesInvoiceFields } from "@/features/billing/salesInvoiceFields"
 import { salesInvoiceActions } from "@/features/billing/salesInvoiceActions"
 import { invoiceUnifiedSearchDef } from "@/features/billing/unifiedSearchDef"
-import { GitBranch } from "lucide-react"
 import { treasuryApi } from "@/features/treasury"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { type Invoice, type InvoiceFilters } from "@/features/billing/types"
@@ -17,12 +16,12 @@ import { PaymentModal } from "@/features/treasury"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
-import { getEntityIcon, getDtePrefix, formatEntityDisplay } from "@/lib/entity-registry"
+import { getEntityIcon, getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
     const search = useUnifiedSearch(invoiceUnifiedSearchDef)
     const { invoices, isLoading, isRefetching, refetch, annulInvoice } = useInvoices({ filters: { ...search.filters, mode: 'sale' } as InvoiceFilters })
-    const { openHub, hubConfig, isHubOpen } = useHubPanel()
+    const { hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const router = useRouter()
@@ -120,7 +119,6 @@ export function SalesInvoicesClientView() {
                         const label = 'billing.invoice'
                         const d = data as unknown as Record<string, unknown>
                         const isNC = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(String(d.dte_type ?? ''))
-                        const adjustments = (d.adjustments || []) as Array<Record<string, unknown>>
 
                         return (
                             <AutoEntityCard
@@ -133,31 +131,6 @@ export function SalesInvoicesClientView() {
                                 className={isHubOpen && hubConfig?.invoiceId === data.id ? "accent-visible" : isHubOpen ? "opacity-40 grayscale-[0.2] blur-[0.2px]" : ""}
                                 icon={getEntityIcon(label)}
                                 iconClassName={isNC ? "text-warning bg-warning/10" : undefined}
-                                hubStatusRenderer={(hubData) => {
-                                    const hubD = hubData as unknown as Record<string, unknown>
-                                    return (
-                                    <div className="hidden sm:flex items-center gap-3">
-                                        {adjustments.length > 0 && (
-                                            <div className="flex items-center gap-1.5">
-                                                {adjustments.map((adj) => (
-                                                    <span
-                                                        key={adj.id as number}
-                                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/5 text-primary border border-primary/10 cursor-pointer hover:bg-primary/10"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation()
-                                                            openHub({ invoiceId: adj.id as number, type: 'sale' })
-                                                        }}
-                                                    >
-                                                        <GitBranch className="h-3 w-3" />
-                                                        {formatEntityDisplay(label, hubD)}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                    )
-                                }}
-
                             />
                         )
                     }}
