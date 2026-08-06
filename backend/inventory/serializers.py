@@ -439,7 +439,23 @@ class ProductListSerializer(serializers.ModelSerializer):
         if hasattr(obj, "annotated_qty_reserved") and hasattr(obj, "annotated_current_stock"):
             return float(obj.annotated_current_stock or 0.0) - float(obj.annotated_qty_reserved or 0.0)
         return 0.0
-        
+
+    manufacturable_quantity = serializers.SerializerMethodField()
+    def get_manufacturable_quantity(self, obj):
+        qty = obj.get_manufacturable_quantity()
+        return float(qty) if qty is not None else None
+
+    available_uoms = serializers.SerializerMethodField()
+    def get_available_uoms(self, obj):
+        base = obj.uom
+        if not base:
+            return []
+        uoms = {base.id: base}
+        for uom in obj.allowed_sale_uoms.all():
+            if uom.is_active:
+                uoms[uom.id] = uom
+        return UoMSerializer(list(uoms.values()), many=True).data
+
     image_thumbnail = serializers.SerializerMethodField()
     def get_image_thumbnail(self, obj):
         if obj.image and hasattr(obj, "image_thumbnail"):
@@ -456,12 +472,15 @@ class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "internal_code", "code", "name", "category", "category_name", 
-            "product_type", "image_thumbnail", "is_active", "is_favorite",
-            "uom", "uom_name", "sale_uom", "sale_uom_name", 
-            "sale_price", "cost_price", "effective_price", 
-            "current_stock", "qty_reserved", "qty_available",
+            "id", "internal_code", "code", "name", "category", "category_name",
+            "product_type", "image", "image_thumbnail", "is_active", "is_favorite",
+            "uom", "uom_name", "sale_uom", "sale_uom_name",
+            "sale_price", "sale_price_gross", "cost_price", "effective_price",
+            "current_stock", "qty_reserved", "qty_available", "manufacturable_quantity",
+            "available_uoms",
             "track_inventory", "can_be_sold", "can_be_purchased",
+            "has_bom", "requires_advanced_manufacturing", "mfg_auto_finalize",
+            "mfg_enable_prepress", "mfg_enable_press", "mfg_enable_postpress",
             "has_variants", "is_variable_amount", "is_dynamic_pricing"
         ]
 
