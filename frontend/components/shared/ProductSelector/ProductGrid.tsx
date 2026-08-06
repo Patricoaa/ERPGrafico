@@ -161,8 +161,16 @@ function ProductGridComponent({
                                 {/* Right side badges (Availability) */}
                                 <div className="flex flex-col gap-2 items-end">
 
+                                {/* Variant templates: la disponibilidad vive en las variantes, no en la plantilla */}
+                                {product.has_variants && (
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
+                                        <div className="h-2 w-2 rounded-full bg-primary/70" />
+                                        {product.variants_count ?? 0} variantes
+                                    </div>
+                                )}
+
                                 {/* Stock/Availability Badge */}
-                                {product.product_type === 'STORABLE' && (
+                                {!product.has_variants && product.product_type === 'STORABLE' && (
                                     <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
@@ -170,14 +178,14 @@ function ProductGridComponent({
                                 )}
 
                                 {/* MANUFACTURABLE badges */}
-                                {isManufacturable && mfgSubType === 'SIMPLE' && (
+                                {!product.has_variants && isManufacturable && mfgSubType === 'SIMPLE' && (
                                     <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
                                 )}
 
-                                {isManufacturable && mfgSubType === 'EXPRESS' && (
+                                {!product.has_variants && isManufacturable && mfgSubType === 'EXPRESS' && (
                                     <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         {!product.has_bom ? (
                                             <>
@@ -193,7 +201,7 @@ function ProductGridComponent({
                                     </div>
                                 )}
 
-                                {isManufacturable && mfgSubType === 'ADVANCED' && (
+                                {!product.has_variants && isManufacturable && mfgSubType === 'ADVANCED' && (
                                     <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
                                         {product.has_bom ? (
                                             <>
@@ -209,7 +217,7 @@ function ProductGridComponent({
                                     </div>
                                 )}
 
-                                {(product.product_type === 'SERVICE' ||
+                                {!product.has_variants && (product.product_type === 'SERVICE' ||
                                     product.product_type === 'SUBSCRIPTION' ||
                                     product.product_type === 'CONSUMABLE') && (
                                         <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">

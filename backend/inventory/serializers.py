@@ -415,6 +415,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     uom_name = serializers.CharField(source="uom.name", read_only=True)
     sale_uom_name = serializers.CharField(source="sale_uom.name", read_only=True)
+    variants_count = serializers.IntegerField(read_only=True)
     
     is_favorite = serializers.SerializerMethodField()
     def get_is_favorite(self, obj):
@@ -481,7 +482,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "track_inventory", "can_be_sold", "can_be_purchased",
             "has_bom", "requires_advanced_manufacturing", "mfg_auto_finalize",
             "mfg_enable_prepress", "mfg_enable_press", "mfg_enable_postpress",
-            "has_variants", "is_variable_amount", "is_dynamic_pricing"
+            "has_variants", "variants_count", "is_variable_amount", "is_dynamic_pricing"
         ]
 
 class ProductWriteSerializer(serializers.ModelSerializer):

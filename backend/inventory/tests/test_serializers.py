@@ -122,3 +122,24 @@ class TestProductListSerializerManufacturingFields:
         assert "image" in data
         assert len(data["available_uoms"]) == 1
         assert data["available_uoms"][0]["id"] == uom.id
+
+    def test_exposes_variants_count(self, product_factory, uom):
+        from django.db.models import Count
+
+        template = product_factory("MANUFACTURABLE", has_variants=True)
+        Product.objects.create(
+            name="Variante A",
+            internal_code="PROD-VA",
+            product_type="MANUFACTURABLE",
+            uom=uom,
+            category=template.category,
+            parent_template=template,
+        )
+        qs = Product.objects.filter(pk=template.pk).annotate(
+            variants_count=Count("variants")
+        )
+
+        data = ProductListSerializer(qs.first()).data
+
+        assert data["has_variants"] is True
+        assert data["variants_count"] == 1
