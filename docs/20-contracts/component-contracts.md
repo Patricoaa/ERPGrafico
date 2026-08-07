@@ -657,7 +657,7 @@ Single source of truth for money rendering. Tabular, monospace, locale-aware.
 | `inline` | `boolean` | ❌ | `false` | `display: inline` vs `inline-block` |
 | `weight` | `DataCellWeight` | ❌ | `'medium'` | Peso tipográfico (via `WEIGHT_MAP`) |
 
-Font: default `font-medium tabular-nums`. Override con `weight` (prop) o `className` (tailwind-merge last-wins). Do NOT render currency with raw JS `.toLocaleString()` outside this component.
+Font: default `font-medium` con cifras proporcionales (sin `tabular-nums`). En celdas de tabla (`DataCell.Currency`/`Variance`) se alinea a la derecha. Override con `weight` (prop) o `className` (tailwind-merge last-wins). Do NOT render currency with raw JS `.toLocaleString()` outside this component.
 
 ---
 
@@ -1206,4 +1206,4 @@ Componentes de uso estrictamente interno, no consumir directamente en features:
 - Passing raw Tailwind color classes to any shared component.
 - Modifying `/components/ui/` (Shadcn base).
 - Calling `.toLocaleString()` for money formatting — use `MoneyDisplay`.
-- Rendering currency in tables without `MoneyDisplay` (breaks tabular alignment).
+- Rendering currency in tables without `MoneyDisplay` (breaks numeric-cell consistency and right alignment).

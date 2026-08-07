@@ -58,7 +58,7 @@ Colors must be defined as raw OKLCH channels in `app/globals.css` to support Tai
 
 ## Typography
 - Use modern, clean typography suitable for data-heavy applications.
-- Ensure tabular numbers (`tabular-nums`) are used in DataTables and any financial/metric displays to prevent layout shifts.
+- Right-align numeric values in DataTables and financial/metric displays, anchoring the right edge to prevent layout shifts. Numeric table cells use proportional figures (no `tabular-nums`).
 
 ## Component Guidelines
 

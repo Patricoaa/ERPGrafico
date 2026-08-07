@@ -21,15 +21,15 @@ export const unbilledChargeFields = createEntityFields<UnbilledItemRow>()({
         render: (i) => {
             if (i.source === 'pending') {
                 return (
-                    <div className="flex justify-center w-full">
+                    <div className="flex justify-end w-full">
                         <span className="text-xs text-muted-foreground">N/A</span>
                     </div>
                 )
             }
             if (!i.installmentNumber || !i.totalInstallments) return null
             return (
-                <div className="flex justify-center w-full">
-                    <span className="text-xs font-medium tabular-nums">
+                <div className="flex justify-end w-full">
+                    <span className="text-xs font-medium">
                         {i.installmentNumber}/{i.totalInstallments}
                     </span>
                 </div>

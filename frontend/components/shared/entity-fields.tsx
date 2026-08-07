@@ -102,6 +102,14 @@ const TYPE_TO_ROLE: Record<FieldType, FieldRole> = {
 }
 
 /**
+ * FieldTypes that render numeric readouts in tables.
+ * Numeric columns default their header to right alignment so header and cell content align
+ * (cell content is right-aligned by DataCell.Number/Currency/Variance). Explicit
+ * `tableOptions.align` in a FieldDef always overrides this default.
+ */
+const NUMERIC_TYPES: ReadonlySet<FieldType> = new Set(['number', 'currency', 'numericFlow', 'currencyFlow'])
+
+/**
  * FieldRole → default Placement mapping.
  * Explicit placement in FieldDef always overrides this.
  *
@@ -861,7 +869,7 @@ export function createEntityFields<T>(): (
                 .map(([fieldKey, def]): ColumnDef<T> => {
                     const headerLabel = def.header ?? def.label
                     const enableSorting = def.tableOptions?.enableSorting ?? true
-                    const align = def.tableOptions?.align ?? "center"
+                    const align = def.tableOptions?.align ?? (NUMERIC_TYPES.has(def.type) ? "right" : "center")
                     const headerAlign = align === "center" ? "justify-center" : align === "right" ? "justify-end" : "justify-start"
                     const hasAccessorFn = !!def.tableOptions?.accessorFn
 

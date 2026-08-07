@@ -62,7 +62,7 @@ export const statementChargeFields = createEntityFields<StatementChargeRow>()({
         render: (item) => {
             if (!item.installmentNumber || !item.totalInstallments) return null
             return (
-                <div className="flex justify-center text-xs font-medium tabular-nums">
+                <div className="flex justify-end text-right text-xs font-medium">
                     {item.installmentNumber}/{item.totalInstallments}
                 </div>
             )
