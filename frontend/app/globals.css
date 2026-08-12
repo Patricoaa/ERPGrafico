@@ -926,45 +926,6 @@ table [data-notched-field] {
 
 
 
-  /*
-   * GRAPHIC INDUSTRY — Canvas Prepress (dot‑grid background)
-   * Apply via className="canvas-prepress" on any container.
-   * Renders a faint dot grid pattern for industrial/prepress texture.
-   *
-   * Registration marks (círculos concéntricos) are now rendered by the
-   * <PrepressPanel> React component using <CmykRing /> in each corner.
-   */
-  .canvas-prepress {
-    position: relative;
-    background-image: radial-gradient(var(--grid-line-color) 1px, transparent 0);
-    background-size: 24px 24px;
-    background-position: -19px -19px;
-  }
-
-  /*
-   * Clean header support: Keeps any header elements inside prepress panels flat and free of grid/marks
-   */
-  .canvas-prepress [data-slot="sheet-header"],
-  .canvas-prepress [data-slot="dialog-header"],
-  .canvas-prepress header,
-  .canvas-prepress .sheet-header,
-  .canvas-prepress .panel-header {
-    position: relative;
-    z-index: 10;
-    /* Ensure a solid background to cover parent canvas-prepress elements */
-    background-color: var(--color-card);
-  }
-
-  /* When the panel itself has a sidebar variant, use the sidebar background */
-  .canvas-prepress.bg-sidebar [data-slot="sheet-header"],
-  .canvas-prepress.bg-sidebar [data-slot="dialog-header"],
-  .canvas-prepress.bg-sidebar header,
-  .canvas-prepress.bg-sidebar .sheet-header,
-  .canvas-prepress.bg-sidebar .panel-header {
-    background-color: var(--color-sidebar);
-  }
-
-
 
   /*
    * INDUSTRIAL SECTION DIVIDER
