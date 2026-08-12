@@ -161,7 +161,7 @@ function ThemeSelectionCard() {
                         onClick={() => changeTheme('light')}
                         onKeyDown={(e) => handleThemeKeyDown(e, 'light')}
                         className={cn(
-                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'light'
                                 ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
@@ -181,7 +181,7 @@ function ThemeSelectionCard() {
                         onClick={() => changeTheme('dark')}
                         onKeyDown={(e) => handleThemeKeyDown(e, 'dark')}
                         className={cn(
-                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'dark'
                                 ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
@@ -201,7 +201,7 @@ function ThemeSelectionCard() {
                         onClick={() => changeTheme('system')}
                         onKeyDown={(e) => handleThemeKeyDown(e, 'system')}
                         className={cn(
-                            "card-focus-spin-cmyk cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            "cursor-pointer border-2 p-5 rounded-md flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
                             theme === 'system'
                                 ? "border-primary bg-primary/5 scale-[1.01] shadow-card accent-visible"
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
