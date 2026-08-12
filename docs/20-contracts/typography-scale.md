@@ -47,7 +47,7 @@ Definidos en `frontend/app/globals.css @layer base`. El estilo base es heredado 
 
 ## Sistema de jerarquía por contexto
 
-Esta escala es **hardcoded con valores `text-[Npx]`** deliberadamente — el diseño industrial denso requiere precisión sub-Tailwind. No reemplazar con clases semánticas (`text-xs`, `text-sm`).
+Esta matriz es el contrato tipográfico (diseño denso). Note que la escala está ajustada con tokens de Tailwind para garantizar accesibilidad.
 
 | Contexto | Dónde | Tipografía | Tracking | Transform | Ejemplos |
 |----------|-------|------------|----------|-----------|----------|
@@ -241,11 +241,11 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 <span className="text-blue-500">
 <span className="text-red-400">
 
-// ❌ Reemplazar sistema de capas con clases semánticas
-<legend className="text-xs">  // Usar text-[10px] para N2
+// ❌ Reemplazar sistema de capas con clases semánticas incorrectas
+// (Asegurar siempre el uso de tokens como text-xs)
 
 // ❌ font-bold en botones de acción
-<Button className="font-bold">  // Usar font-black
+<Button className="font-bold">  // Usar font-medium
 
 // ❌ Mezcla de pesos en el mismo patrón semántico
 // (Label+Value con semibold/bold/medium mezclados)
