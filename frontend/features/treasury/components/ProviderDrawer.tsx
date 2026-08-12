@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -58,35 +59,31 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
         }
     })
 
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                if (provider) {
-                    form.reset({
-                        name: provider.name,
-                        provider_type: provider.provider_type,
-                        supplier: provider.supplier?.toString() || null,
-                        receivable_account: provider.receivable_account?.toString() || null,
-                        commission_expense_account: provider.commission_expense_account?.toString() || null,
-                        commission_iva_account: provider.commission_iva_account?.toString() || null,
-                        commission_product: provider.commission_product?.toString() || null,
-                        default_deposit_account: provider.default_deposit_account?.toString() || null,
-                    })
-                } else {
-                    form.reset({
-                        name: "",
-                        provider_type: "MANUAL",
-                        supplier: null,
-                        receivable_account: null,
-                        commission_expense_account: null,
-                        commission_iva_account: null,
-                        commission_product: null,
-                        default_deposit_account: null,
-                    })
-                }
-            })
-        }
-    }, [open, provider, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: provider,
+        defaultValues: () => ({
+            name: "",
+            provider_type: "MANUAL",
+            supplier: null,
+            receivable_account: null,
+            commission_expense_account: null,
+            commission_iva_account: null,
+            commission_product: null,
+            default_deposit_account: null,
+        }),
+        mapData: (data) => ({
+            name: data.name,
+            provider_type: data.provider_type,
+            supplier: data.supplier?.toString() || null,
+            receivable_account: data.receivable_account?.toString() || null,
+            commission_expense_account: data.commission_expense_account?.toString() || null,
+            commission_iva_account: data.commission_iva_account?.toString() || null,
+            commission_product: data.commission_product?.toString() || null,
+            default_deposit_account: data.default_deposit_account?.toString() || null,
+        }),
+    })
 
     const onSubmit = async (values: ProviderFormValues) => {
         if (!values.name) {
@@ -265,6 +262,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                                                 value={field.value || null}
                                                 onChange={(v) => field.onChange(v)}
                                                 label="Producto Servicio Comisión"
+                                                productTypes={['SERVICE']}
                                             />
                                         )}
                                     />

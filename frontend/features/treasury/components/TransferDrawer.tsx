@@ -2,6 +2,7 @@
 
 import React, {useState, useEffect} from "react"
 import { useForm, useWatch } from "react-hook-form"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showApiError } from "@/lib/errors"
@@ -54,6 +55,18 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
             amount: "",
             notes: "",
         }
+    })
+
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: null,
+        defaultValues: () => ({
+            from_account_id: "",
+            to_account_id: "",
+            amount: "",
+            notes: "",
+        })
     })
 
     const fromAccountId = useWatch({ control: form.control, name: "from_account_id" })

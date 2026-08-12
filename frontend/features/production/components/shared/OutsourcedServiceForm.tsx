@@ -132,9 +132,8 @@ export function OutsourcedServiceForm({
               set({ productId: p?.id?.toString() ?? null, productObj: p as ProductMinimal, uomId })
             }}
             disabled={productLocked}
-            customFilter={(p: Product) =>
-              p.product_type === 'SERVICE' && !!p.can_be_purchased
-            }
+            productTypes={['SERVICE']}
+            canBePurchased
           />
         </div>
 

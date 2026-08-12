@@ -316,8 +316,10 @@ export function PartnerWithdrawalWizard({
                             <ProductSelector
                                 value={assetData.productId}
                                 onChange={(val) => setAssetData(prev => ({ ...prev, productId: val || "" }))}
-                                allowedTypes={["STORABLE", "MANUFACTURABLE"]}
-                                simpleOnly={true}
+                                productTypes={["STORABLE", "MANUFACTURABLE"]}
+                                customFilter={(p) =>
+                                    !(p.product_type === 'MANUFACTURABLE' && (p.requires_advanced_manufacturing || p.mfg_auto_finalize))
+                                }
                             />
                         </LabeledContainer>
                     </div>

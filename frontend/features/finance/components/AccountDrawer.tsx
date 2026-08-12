@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -90,26 +91,23 @@ export function AccountDrawer({
     const hasPostedItems = isEditMode && !!init?.has_posted_items
     const hasChildren = isEditMode && !init?.is_selectable
 
-    // Reset form when opening or initialData changes
-    useEffect(() => {
-        if (open) {
-            if (initialData) {
-                form.reset({
-                    code: initialData.code as string,
-                    name: initialData.name as string,
-                    account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
-                    parent: (typeof initialData.parent === 'object' ? String((initialData.parent as Record<string, unknown>).id ?? '') : String(initialData.parent ?? '')) || undefined,
-                })
-            } else {
-                form.reset({
-                    code: "",
-                    name: "",
-                    account_type: "ASSET",
-                    parent: parentId || undefined,
-                })
-            }
-        }
-    }, [open, initialData, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        mapData: (data) => ({
+            code: data.code as string,
+            name: data.name as string,
+            account_type: data.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
+            parent: (typeof data.parent === 'object' ? String((data.parent as Record<string, unknown>).id ?? '') : String(data.parent ?? '')) || undefined,
+        }),
+        defaultValues: () => ({
+            code: "",
+            name: "",
+            account_type: "ASSET",
+            parent: parentId || undefined,
+        }),
+    })
 
     // Effect to handle parent changes: Update account_type and suggest categories
     const watchParentId = form.watch("parent")

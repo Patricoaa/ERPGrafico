@@ -18,12 +18,12 @@ const SUBTITLE_DOT_COLORS: Record<string, string> = {
 }
 
 const SUBTITLE_INTENT_BORDER: Record<string, string> = {
-    neutral:     'border-border/40 text-muted-foreground',
-    info:        'border-info text-info',
-    success:     'border-success text-success',
-    warning:     'border-warning text-warning',
-    destructive: 'border-destructive text-destructive',
-    primary:     'border-primary text-primary',
+    neutral:     'border-border/40 text-muted-foreground bg-muted/60',
+    info:        'border-info/20 text-info bg-info/10',
+    success:     'border-success/20 text-success bg-success/10',
+    warning:     'border-warning/20 text-warning bg-warning/10',
+    destructive: 'border-destructive/20 text-destructive bg-destructive/10',
+    primary:     'border-primary/20 text-primary bg-primary/10',
 }
 
 export interface AutoEntityCardProps<TData> {
@@ -405,6 +405,9 @@ export function AutoEntityCard<TData>({
                         {item.content}
                     </span>
                 )
+            }
+            if (item.kind === 'node') {
+                return <React.Fragment key={i}>{item.content}</React.Fragment>
             }
             return null
         })

@@ -205,6 +205,7 @@ export function MaterialAssignmentStep({
                             }}
                             disabled={!!editingMaterialId}
                             shouldResolveVariants={false}
+                            productTypes={['STORABLE', 'MANUFACTURABLE']}
                             customFilter={(p: Product) => {
                               if (order.main_product_id && p.id.toString() === order.main_product_id.toString()) return false
                               if (p.product_type === 'CONSUMABLE') return false

@@ -1,7 +1,20 @@
 import { createEntityFields } from '@/components/shared'
-import { DataCell, Chip } from '@/components/shared'
+import { DataCell, Chip, type SubtitleItem } from '@/components/shared'
 import type { Product } from '@/features/inventory/types'
 import { translateProductType } from '@/lib/utils'
+
+function AvailabilityBadges({ product, inline = false }: { product: Product; inline?: boolean }) {
+    const badges = (
+        <>
+            {product.can_be_sold && <Chip size="sm" intent="success">Venta</Chip>}
+            {product.can_be_purchased && <Chip size="sm" intent="info">Compra</Chip>}
+        </>
+    )
+    if (inline) {
+        return <span className="inline-flex items-center gap-1 align-middle">{badges}</span>
+    }
+    return <div className="flex justify-center gap-1">{badges}</div>
+}
 
 export const productFields = createEntityFields<Product>()({
     internal_code: { key: 'internal_code', type: 'code', label: 'Código Interno' },
@@ -43,12 +56,24 @@ export const productFields = createEntityFields<Product>()({
         placement: 'subtitle',
         render: (p) => (
             <div className="flex justify-center gap-1">
-                {p.can_be_sold && <Chip size="xs">Venta</Chip>}
-                {p.can_be_purchased && <Chip size="xs">Compra</Chip>}
+                <AvailabilityBadges product={p} />
                 {!p.can_be_sold && !p.can_be_purchased && (
                     <span className="text-[10px] text-muted-foreground italic">Ninguno</span>
                 )}
             </div>
         ),
+    },
+}, {
+    subtitle: {
+        excludeKeys: ['name', 'availability'],
+        renderer: (p): SubtitleItem[] => {
+            const items: SubtitleItem[] = []
+            if (p.name) items.push({ kind: 'text', content: p.name })
+            if (p.can_be_sold || p.can_be_purchased) {
+                if (items.length > 0) items.push({ kind: 'separator' })
+                items.push({ kind: 'node', content: <AvailabilityBadges product={p} inline /> })
+            }
+            return items
+        },
     },
 })

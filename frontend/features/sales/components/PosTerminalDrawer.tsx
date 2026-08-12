@@ -1,6 +1,7 @@
 "use client"
 
-import {useState, useEffect} from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -61,36 +62,36 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         }
     })
 
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                if (terminal) {
-                    form.reset({
-                        name: terminal.name,
-                        code: terminal.code,
-                        location: terminal.location || "",
-                        serial_number: terminal.serial_number || "",
-                        ip_address: terminal.ip_address || "",
-                        device_id: (() => {
-                            const dId = terminal.payment_terminal_device;
-                            return typeof dId === 'object' && dId !== null ? (dId as { id: number }).id.toString() : dId?.toString() || "";
-                        })(),
-                    })
-                    setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
-                } else {
-                    form.reset({
-                        name: "",
-                        code: "",
-                        location: "",
-                        serial_number: "",
-                        ip_address: "",
-                        device_id: "",
-                    })
-                    setSelectedMethodIds([])
-                }
-            })
-        }
-    }, [open, terminal, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: terminal,
+        mapData: (data) => {
+            setSelectedMethodIds(data.allowed_payment_methods?.map(m => m.id) ?? [])
+            return {
+                name: data.name,
+                code: data.code,
+                location: data.location || "",
+                serial_number: data.serial_number || "",
+                ip_address: data.ip_address || "",
+                device_id: (() => {
+                    const dId = data.payment_terminal_device;
+                    return typeof dId === 'object' && dId !== null ? (dId as { id: number }).id.toString() : dId?.toString() || "";
+                })(),
+            }
+        },
+        defaultValues: () => {
+            setSelectedMethodIds([])
+            return {
+                name: "",
+                code: "",
+                location: "",
+                serial_number: "",
+                ip_address: "",
+                device_id: "",
+            }
+        },
+    })
 
     const toggleMethod = (methodId: number) => {
         if (isView) return

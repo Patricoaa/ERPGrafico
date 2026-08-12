@@ -230,7 +230,7 @@ export function Step1_ProductSelection({
                             <TableCell className="py-2 px-3">
                                 <ProductSelector
                                     value={lineProductId}
-                                    context="purchase"
+                                    canBePurchased
                                     onChange={(val) => handleProductChange(index, val)}
                                     variant="inline"
                                     placeholder="Seleccionar..."

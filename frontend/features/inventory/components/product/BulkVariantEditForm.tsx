@@ -217,6 +217,7 @@ export function BulkVariantEditForm({
         <TabBar
           value={activeTab}
           onValueChange={setActiveTab}
+          variant="underline"
           items={[
             { value: 'precios', label: 'Precios', icon: DollarSign },
             { value: 'ldm', label: 'LDM', icon: Factory, badge: variantsWithBOM > 0 ? `${variantsWithBOM}/${selectedVariants.length}` : undefined },

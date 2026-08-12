@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -72,6 +73,32 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const isView = mode === 'view' || isSystemManaged
     const { printRef, handlePrint } = usePrintableDrawer()
 
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: entityData,
+        defaultValues: () => ({
+            name: "",
+            account_type: "CASH",
+            currency: "CLP",
+            account: null,
+            bank: null,
+            account_number: "",
+            card_number: "",
+            credit_limit: "",
+        }),
+        mapData: (accountData) => ({
+            name: accountData.name,
+            account_type: accountData.account_type,
+            currency: accountData.currency,
+            account: accountData.account ? accountData.account.toString() : null,
+            bank: accountData.bank ? accountData.bank.toString() : null,
+            account_number: accountData.account_number || "",
+            card_number: accountData.card_number || "",
+            credit_limit: accountData.credit_limit?.toString() ?? "",
+        }),
+    })
+
     useEffect(() => {
         const fetchData = async () => {
             if (!open) return
@@ -98,29 +125,6 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 } else {
                     setCreditLineData(null)
                 }
-                if (accountData) {
-                    form.reset({
-                        name: accountData.name,
-                        account_type: accountData.account_type,
-                        currency: accountData.currency,
-                        account: accountData.account ? accountData.account.toString() : null,
-                        bank: accountData.bank ? accountData.bank.toString() : null,
-                        account_number: accountData.account_number || "",
-                        card_number: accountData.card_number || "",
-                        credit_limit: accountData.credit_limit?.toString() ?? "",
-                    })
-                } else {
-                    form.reset({
-                        name: "",
-                        account_type: "CASH",
-                        currency: "CLP",
-                        account: null,
-                        bank: null,
-                        account_number: "",
-                        card_number: "",
-                        credit_limit: "",
-                    })
-                }
             } catch (err) {
                 showApiError(err, "Error al cargar datos de la cuenta")
             } finally {
@@ -128,7 +132,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
             }
         }
         fetchData()
-    }, [open, accountId, form])
+    }, [open, accountId])
 
     const requiresBank = (accountType: string) => {
         return ['CHECKING', 'CREDIT_CARD', 'LOAN'].includes(accountType)

@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -52,10 +53,17 @@ export function TransactionNumberDrawer({
         },
     })
 
-    // Update form values if initialValue changes (when modal opens for different payment)
-    useEffect(() => {
-        if (open) form.reset({ transaction_number: initialValue })
-    }, [open, initialValue, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: paymentId ? { id: paymentId, value: initialValue } : undefined,
+        mapData: (data) => ({
+            transaction_number: data.value,
+        }),
+        defaultValues: () => ({
+            transaction_number: initialValue,
+        }),
+    })
 
     const onSubmit = async (data: FormData) => {
         if (!paymentId) return

@@ -18,7 +18,7 @@ export default function LoginPage() {
                 <div
                     className="w-full max-w-sm relative z-10 mx-6 animate-in fade-in slide-in-from-bottom-3 ease-premium fill-mode-both duration-[600ms]"
                 >
-                    <PrepressPanel className="rounded-xl border bg-card shadow-card p-8 card-cmyk-animated-border">
+                    <PrepressPanel className="rounded-xl border bg-card shadow-card p-8">
                         {/* Logo */}
                         <div className="mb-8 flex flex-col items-center">
                             {logo ? (

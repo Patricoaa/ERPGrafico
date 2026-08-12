@@ -1,8 +1,9 @@
 import * as React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { usersApi } from "../api/usersApi"
 
 import {
@@ -100,27 +101,17 @@ export function GroupDrawer({
 
     const width = formDrawerWidth("micro", !!initialData?.id)
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
-    useEffect(() => {
-        if (!isOpen) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen || isNewData) {
-            form.reset({
-                name: initialData?.name || "",
-            })
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [isOpen, initialData, form])
+    useInitializeDrawerForm({
+        form,
+        open: isOpen,
+        initialData,
+        mapData: (data) => ({
+            name: data.name || "",
+        }),
+        defaultValues: () => ({
+            name: "",
+        }),
+    })
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)

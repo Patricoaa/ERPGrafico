@@ -1201,6 +1201,7 @@ export type SubtitleItem =
   | { kind: 'currency'; value: number; currency?: string }
   | { kind: 'status'; label: string; status: string }
   | { kind: 'chip'; content: string; intent?: string }
+  | { kind: 'node'; content: ReactNode }
   | { kind: 'separator' }
 
 export function getEntityIcon(label: string) {

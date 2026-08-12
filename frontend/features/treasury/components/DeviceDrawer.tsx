@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -51,29 +52,25 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
         }
     })
 
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                if (device) {
-                    form.reset({
-                        name: device.name,
-                        provider: device.provider.toString(),
-                        serial_number: device.serial_number,
-                        model: device.model || "",
-                        supported_payment_methods: (device.supported_payment_methods || []).map((m: number) => m.toString()),
-                    })
-                } else {
-                    form.reset({
-                        name: "",
-                        provider: "",
-                        serial_number: "",
-                        model: "",
-                        supported_payment_methods: ["1", "2"],
-                    })
-                }
-            })
-        }
-    }, [open, device, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: device,
+        defaultValues: () => ({
+            name: "",
+            provider: "",
+            serial_number: "",
+            model: "",
+            supported_payment_methods: ["1", "2"],
+        }),
+        mapData: (data) => ({
+            name: data.name,
+            provider: data.provider.toString(),
+            serial_number: data.serial_number,
+            model: data.model || "",
+            supported_payment_methods: (data.supported_payment_methods || []).map((m: number) => m.toString()),
+        })
+    })
 
     const onSubmit = async (values: DeviceFormValues) => {
         if (!values.provider) {

@@ -297,8 +297,10 @@ export function InventoryContributionModal({
                         <ProductSelector
                             value={productId}
                             onChange={(val) => setProductId(val || "")}
-                            allowedTypes={["STORABLE", "MANUFACTURABLE"]}
-                            simpleOnly={true}
+                            productTypes={["STORABLE", "MANUFACTURABLE"]}
+                            customFilter={(p) =>
+                                !(p.product_type === 'MANUFACTURABLE' && (p.requires_advanced_manufacturing || p.mfg_auto_finalize))
+                            }
                         />
                     </LabeledContainer>
                 </div>

@@ -1,10 +1,11 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import {
     Form,
     FormField,
@@ -59,23 +60,24 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
 
 
 
-    // Reset form when initialData changes or modal opens
-    useEffect(() => {
-        if (open) {
-            if (initialData) {
-                form.reset({
-                    ...initialData,
-                    account: (initialData.account as { id?: number } | undefined)?.id?.toString() || initialData.account?.toString() || "",
-                })
-            } else {
-                form.reset({
-                    name: "",
-                    code: "",
-                    currency: "CLP",
-                })
-            }
-        }
-    }, [open, initialData, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData,
+        mapData: (data) => ({
+            ...data,
+            name: (data.name as string) || "",
+            code: (data.code as string) || "",
+            currency: (data.currency as string) || "CLP",
+            account: (data.account as { id?: number } | undefined)?.id?.toString() || (data.account as string | number)?.toString() || "",
+        }),
+        defaultValues: () => ({
+            name: "",
+            code: "",
+            currency: "CLP",
+            account: "",
+        }),
+    })
 
     async function onSubmit(data: JournalFormValues) {
         setLoading(true)

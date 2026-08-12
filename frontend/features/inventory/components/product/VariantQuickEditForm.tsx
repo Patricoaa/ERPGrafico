@@ -207,6 +207,7 @@ export function VariantQuickEditForm({
       <TabBar
           value={activeTab}
           onValueChange={setActiveTab}
+          variant="underline"
           items={[
             { value: 'precios', label: 'Precios', icon: DollarSign },
             { value: 'ldm', label: 'LDM', icon: Factory, badge: availableBOMs.length > 0 ? availableBOMs.length : undefined },

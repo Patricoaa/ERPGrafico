@@ -208,7 +208,7 @@ export function WorkOrderBasicInfo({
                                             value={field.value}
                                             onChange={field.onChange}
                                             onSelect={(p: Product) => handleManualProductSelect(p as ProductMinimal)}
-                                            productType="MANUFACTURABLE"
+                                            productTypes={['MANUFACTURABLE']}
                                             label="Producto a Fabricar (Stock)"
                                             error={fieldState.error?.message}
                                             customFilter={(p: Product) =>

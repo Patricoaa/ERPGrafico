@@ -275,7 +275,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                     <div className="space-y-1">
                                                                         <ProductSelector
                                                                             value={field.value}
-                                                                            context="purchase"
+                                                                            canBePurchased
                                                                             excludeVariantTemplates={true}
                                                                             onChange={(val) => {
                                                                                 field.onChange(val)
@@ -432,7 +432,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                                                                 <div className="space-y-1">
                                                                     <ProductSelector
                                                                         value={field.value}
-                                                                        context="purchase"
+                                                                        canBePurchased
                                                                         excludeVariantTemplates={true}
                                                                         onChange={(val) => {
                                                                             field.onChange(val)

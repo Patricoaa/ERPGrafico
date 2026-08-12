@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -89,50 +90,35 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
         },
     })
 
-    const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
-
     useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
-        const currentId = terminal?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
-
-        if (isNewOpen) {
+        if (open) {
             fetchTreasuryAccounts()
         }
+    }, [open])
 
-        if (isNewOpen || isNewData) {
-            if (terminal) {
-                const allowedIds = terminal.allowed_treasury_accounts?.map(acc => acc.id) || []
-                form.reset({
-                    name: terminal.name || "",
-                    code: terminal.code || "",
-                    location: terminal.location || "",
-                    serial_number: terminal.serial_number || "",
-                    ip_address: terminal.ip_address || "",
-                    allowed_treasury_account_ids: allowedIds,
-                    default_treasury_account: terminal.default_treasury_account?.toString() || "",
-                })
-            } else {
-                form.reset({
-                    name: "",
-                    code: "",
-                    location: "",
-                    serial_number: "",
-                    ip_address: "",
-                    allowed_treasury_account_ids: [],
-                    default_treasury_account: "",
-                })
-            }
-            lastResetId.current = currentId
-            wasOpen.current = true
-        }
-    }, [open, terminal, form])
+    useInitializeDrawerForm({
+        form,
+        open,
+        initialData: terminal,
+        defaultValues: () => ({
+            name: "",
+            code: "",
+            location: "",
+            serial_number: "",
+            ip_address: "",
+            allowed_treasury_account_ids: [],
+            default_treasury_account: "",
+        }),
+        mapData: (data) => ({
+            name: data.name || "",
+            code: data.code || "",
+            location: data.location || "",
+            serial_number: data.serial_number || "",
+            ip_address: data.ip_address || "",
+            allowed_treasury_account_ids: data.allowed_treasury_accounts?.map((acc: TreasuryAccount) => acc.id) || [],
+            default_treasury_account: data.default_treasury_account?.toString() || "",
+        })
+    })
 
     const isFetchingInitialData = open && isFetchingDeps
 
