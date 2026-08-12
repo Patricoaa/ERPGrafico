@@ -66,7 +66,7 @@ export function TabBar({
         )
         : isUnderline
             ? cn(
-                "group relative w-auto transition-all duration-200 bg-transparent rounded-none tab-underline-cmyk",
+                "group relative w-auto transition-all duration-200 bg-transparent rounded-none tab-underline-primary",
                 dense ? "h-8" : "h-12",
                 "data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                 "data-[state=inactive]:text-foreground/60 data-[state=inactive]:font-bold hover:text-foreground",

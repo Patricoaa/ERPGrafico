@@ -558,7 +558,43 @@
   @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
 }
 
+/*
+ * TAB UNDERLINE PRIMARY — Bottom border for underline variant
+ * Applied via className="tab-underline-primary" on TabsTrigger when variant="underline"
+ * Uses ::after pseudo-element for active (primary color), focus-visible (ring), and hover (muted).
+ *
+ * Base ::after always present (position absolute — no layout shift).
+ */
+.tab-underline-primary::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
 
+.tab-underline-primary[data-state="active"]::after {
+  background: var(--color-primary);
+  opacity: 1;
+}
+
+.tab-underline-primary:focus-visible::after {
+  background: var(--color-ring);
+  opacity: 0.5;
+}
+
+.tab-underline-primary:hover::after {
+  background: var(--color-muted-foreground);
+  opacity: 0.2;
+}
+
+.tab-underline-primary[data-state="active"]:hover::after {
+  background: var(--color-primary);
+  opacity: 1;
+}
 
 /*
  * TABLE SYSTEM — Shared utility classes
