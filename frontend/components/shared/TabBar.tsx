@@ -210,7 +210,7 @@ export function TabBar({
         if (isUnderline) {
             return (
                 <div className={cn("relative flex items-end justify-start w-full bg-transparent", dense ? "px-3 h-8" : "px-6 h-12", headerClassName)}>
-                    <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-border/40" />
+                    <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-border/50" />
                     <div className="w-fit">
                         {list}
                     </div>
