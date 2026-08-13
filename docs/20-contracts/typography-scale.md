@@ -24,7 +24,7 @@ stability: contract-changes-require-ADR
 - Toda la jerarquía tipográfica se construye con: weight, size, tracking y text-transform.
 - `font-sans` es el default del `body` — no necesita declararse explícitamente en componentes.
 - El tamaño mínimo absoluto para cualquier texto body/lectura es `text-xs` (12px). Los tamaños menores (11px, 10px, 9px) están confinados a la capa N5 (Micro) exclusivamente para alta densidad.
-- Las columnas numéricas de tablas y cifras financieras DEBEN usar `tabular-nums` para que los números encajen perfectamente y se eviten saltos visuales. Se alinean a la derecha (`justify-end` + `text-right`).
+- Las columnas numéricas de tablas y cifras financieras se alinean a la derecha (`justify-end` + `text-right`). `tabular-nums` se usa donde se exige tabulación exacta (KPIs, `EntityCard.Metrics`); el default de `DataCell.Currency`/`MoneyDisplay` es cifras proporcionales (ADR-0061).
 
 ---
 
@@ -66,12 +66,12 @@ Esta matriz es el contrato tipográfico (diseño denso). Note que la escala est�
 | **N2 — Wizard step** | GenericWizard step indicator | `text-xs font-semibold` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
 | **N2 — Paginación** | DataTablePagination | `text-xs font-medium` | normal | normal | "Registros por página" |
 | **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |
-| **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-sm font-medium` | normal | normal | "15/03/2026" |
-| **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs text-muted-foreground` | normal | normal | "3 documentos" |
-| **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-mono font-medium tabular-nums` | normal | `uppercase` | "OV-000123" |
-| **N3 — Valor financiero** | DataCell.Currency, StatCard number | `text-sm font-medium tabular-nums` (right-aligned en tablas) | normal | normal | "$1.234.567" |
-| **N3 — Fecha** | DataCell.Date | `text-sm font-medium tabular-nums` | normal | normal | "15/03/2026" |
-| **N3 — Fecha-hora** | DataCell.Date `showTime`, FieldType `dateTime` | fecha `text-sm font-medium tabular-nums` + hora `text-xs font-normal tabular-nums` | normal | normal | "15/03/2026 · 14:30" |
+| **N3 — Dato primario** | DataCell.Text, DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Dato secundario** | DataCell.Secondary, helper hints | `text-xs font-medium text-muted-foreground` | normal | normal | "3 documentos" |
+| **N3 — Código/ID** | DataCell.Code, DataCell.Entity | `text-xs font-medium` | normal | `uppercase` | "OV-000123" |
+| **N3 — Valor financiero** | DataCell.Currency, StatCard number | `text-xs font-medium` (right-aligned en tablas) | normal | normal | "$1.234.567" |
+| **N3 — Fecha** | DataCell.Date | `text-xs font-medium` | normal | normal | "15/03/2026" |
+| **N3 — Fecha-hora** | DataCell.Date `showTime`, FieldType `dateTime` | fecha `text-xs font-medium` + hora `text-xs text-muted-foreground` | normal | normal | "15/03/2026 · 14:30" |
 | **N3 — Descripción** | EmptyState description, notes | `text-sm text-muted-foreground` | normal | normal | "Defina la lista de materiales..." |
 | **N4 — Tab label** | PageTabs, TabBar trigger | `text-xs sm:text-sm font-medium` | normal | normal | "Perfil", "Cliente" |
 | **N4 — Tooltip** | TooltipTrigger content | `text-xs font-medium` | normal | normal | "Editar" |
@@ -83,6 +83,24 @@ Esta matriz es el contrato tipográfico (diseño denso). Note que la escala est�
 > **Nota sobre N5:** N5 (`text-2xs` 11px, `text-3xs` 10px, `text-4xs` 9px) solo debe usarse en layouts extremadamente densos (tablas financieras, timelines, reportes operativos) donde el scroll o el espacio lo exijan. No usar en layouts estándar de marketing o settings generales. En micro no usar `font-black`: máximo `font-bold`.
 >
 > **Token-first (obligatorio):** los tamaños raw (`text-[9px]`, `text-[13px]`, …) están **prohibidos** en JSX. Usar los tokens de esta tabla o la escala fluid (`text-xs`…`text-3xl`). Regla ESLint `typography/token-first` (error).
+
+---
+
+## Cards — política de tipografía
+
+Las tres superficies del motor de campos (DataTable / EntityCard / Kanban) renderizan los **valores de campo con la misma tipografía**: la que define el `DataCell` resuelto por `renderCell()`. Los contenedores de card **no estampan tamaño ni peso** sobre los valores (DRY: la primitiva es la fuente de verdad; ver ADR-0067 enmienda).
+
+| Pieza | Regla |
+|-------|-------|
+| **Valores de campo** | Tipografía del `DataCell` resuelto. Zona `header` → `font-semibold` (threading); `title`/`detail`/`subtitle` → `font-medium`. |
+| **Título de card** | `text-sm font-medium` (default de la primitiva; `resolveTitle()` no inyecta peso). |
+| **Labels de campo en card** | Chrome de card: `text-4xs uppercase`, máx. `font-bold` (N5). |
+| **Subtitle** | Chrome de card: `text-xs text-muted-foreground`. |
+| **`EntityCard.Metrics`** | Contexto N0-KPI: `text-sm font-bold tabular-nums` + label `text-3xs uppercase`. |
+| **`EntityCard.ListItem`** | Lista densa: label `text-xs font-medium`, sublabel `text-3xs text-muted-foreground`. |
+| **`EntityCard.WorkflowBody`** | Alineado a `DataCell.WorkflowSummary`: labels `text-4xs` (máx. `font-bold`), valores `text-xs font-medium`. |
+
+> Cards/kanban de features que renderizan datos fuera del motor `entity-fields` (`WorkOrderKanban`, `PhaseCard`, `PayrollCard`, …) deben alinear sus tokens a esta escala en un ticket independiente.
 
 ---
 

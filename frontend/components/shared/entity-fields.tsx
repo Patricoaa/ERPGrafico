@@ -1017,23 +1017,23 @@ export function createEntityFields<T>(): (
             if (meta?.title?.field) {
                 const titleField = meta.title.field
                 const def = Object.values(defs).find(d => d.key === titleField)
-                if (def) return renderCell(def, entity, { weight: 'bold' })
+                if (def) return renderCell(def, entity)
                 // Fallback: raw value from entity
                 const raw = entity[meta.title.field as keyof T]
                 if (raw != null) return String(raw)
             }
             // Priority 3: field with placement:'title' (backwards compat)
             const cardTitleField = Object.values(defs).find(d => d.placement === 'title')
-            if (cardTitleField) return renderCell(cardTitleField, entity, { weight: 'bold' })
+            if (cardTitleField) return renderCell(cardTitleField, entity)
             // Priority 4: first identifier field
             const identifier = Object.values(defs).find(d => {
                 const role = d.fieldRole ?? TYPE_TO_ROLE[d.type]
                 return role === 'identifier'
             })
-            if (identifier) return renderCell(identifier, entity, { weight: 'bold' })
+            if (identifier) return renderCell(identifier, entity)
             // Priority 5: first field
             const first = Object.values(defs)[0]
-            if (first) return renderCell(first, entity, { weight: 'bold' })
+            if (first) return renderCell(first, entity)
             return '---'
         },
 

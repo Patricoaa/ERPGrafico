@@ -153,7 +153,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                         </div>
                     ) : null}
                     <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-bold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
+                        <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                             {title}
                         </div>
                         {subtitle && (
@@ -188,7 +188,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                     </div>
                 ) : null}
                 <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-bold leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
+                    <div className="truncate text-sm font-medium leading-tight tracking-tight [&>div]:w-auto [&>div]:justify-start [&>div]:text-left">
                         {title}
                     </div>
                     {subtitle && (
@@ -263,7 +263,7 @@ function EntityCardField({ label, value, full, className, icon: Icon }: EntityCa
             <span className="text-3xs font-medium uppercase tracking-widest text-muted-foreground/60">
                 {label}
             </span>
-            <span className="flex items-center gap-1 text-xs font-medium text-foreground/80">
+            <span className="flex items-center gap-1 text-xs font-medium text-foreground">
                 {Icon && <Icon className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
                 {value ?? <span className="text-muted-foreground/40">—</span>}
             </span>
@@ -428,7 +428,7 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
         <EntityCardBody className={cn("flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1", className)}>
             <div className="flex flex-wrap gap-x-6 gap-y-1.5 flex-1">
                 {lines.map((line, idx) => (
-                    <div key={idx} className="text-sm text-foreground/70 flex flex-col leading-tight min-w-0">
+                    <div key={idx} className="text-xs text-foreground/70 flex flex-col leading-tight min-w-0">
                         <span>
                             <span className="font-medium text-foreground">{Math.round(parseFloat(String(line.quantity || 0)))}</span>
                             <span className="text-muted-foreground/40 mx-1">×</span>
@@ -440,19 +440,19 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
             <div className="flex items-start gap-4 shrink-0 pr-9">
                 {deliveryDate ? (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-4xs text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{dateLabel}</span>
-                        <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
+                        <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">{dateLabel}</span>
+                        <span className="text-xs font-medium tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
                     </div>
                 ) : null}
                 {pending != null && pending > 0 && (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-4xs text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
-                        <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
+                        <span className="text-4xs text-warning/80 uppercase tracking-widest font-bold mb-0.5">Pendiente</span>
+                        <MoneyDisplay amount={pending} showColor={false} className="text-xs font-medium tracking-tight text-warning" />
                     </div>
                 )}
                 <div className="flex flex-col items-end min-w-[80px]">
-                    <span className="text-4xs text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
-                    <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
+                    <span className="text-4xs text-muted-foreground uppercase tracking-widest font-bold mb-0.5">Total</span>
+                    <MoneyDisplay amount={total} showColor={false} className="text-xs font-medium tracking-tight" />
                 </div>
             </div>
         </EntityCardBody>

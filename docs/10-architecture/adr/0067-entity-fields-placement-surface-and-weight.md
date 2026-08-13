@@ -90,3 +90,22 @@ Cells in the `header` zone render in `font-semibold`; `title`, `detail`, and `su
 - ADR-0062 — dateTime weights (weight threading builds on it)
 - `docs/20-contracts/component-contracts.md` — DataCell primitives
 - Implementación: `frontend/components/shared/entity-fields.tsx`
+
+---
+
+## Amendment (2026-08-13) — Card typography driven solely by DataCell threading
+
+**Motivo:** las cards (vista de tarjeta) estampaban tipografía hardcodeada sobre los valores renderizados por el motor `entity-fields`, produciendo drift con la vista de lista del mismo campo. La regla declarada en "Alternatives considered" — *"`font-medium` en la primitiva gana sobre una clase heredada del padre; el peso debe ir por threading, no por CSS del contenedor"* — se aplica ahora de forma completa.
+
+### Cambios a D-03
+
+1. **`resolveTitle()` deja de inyectar `weight: 'bold'`.** El título de card renderiza a `font-medium` (default de la primitiva), idéntico a la columna de título en lista. `component-contracts.md` §Peso por zona ya declaraba `title` en `font-medium`.
+2. **Los contenedores de valor de card no estampan tamaño/peso.** Se elimina:
+   - `AutoEntityCard` header trailing: `<span className="text-xs font-bold">` → span neutro (el valor header ya recibe `font-semibold` vía threading, igual que la lista).
+   - `AutoEntityCard` centro/detalle: `text-xs font-normal` + `[&>*]:text-xs [&>*]:font-normal` → span neutro (solo `truncate min-w-0`); el `DataCell` detalle queda en su default `text-xs font-medium`.
+   - `EntityCard.Header` título: `text-sm font-bold` → `text-sm font-medium`.
+   - `EntityCard.Field` valor: `text-foreground/80` → `text-foreground` (igual al default de `DataCell.Text`).
+3. **`EntityCard.WorkflowBody` alinea con su gemelo de lista `DataCell.WorkflowSummary`:** labels `font-extrabold` → `font-bold` (máx. N5) y valores `text-sm` → `text-xs font-medium`.
+4. **Chrome de card que se conserva:** labels de campo (`text-4xs` uppercase, máx. `font-bold`) y `EntityCard.Metrics` / `ListItem` (contextos N0-KPI / listas densas) no contradicen columnas de lista.
+
+**Fuera de alcance de esta enmienda:** cards y kanban de features (`WorkOrderKanban`, `PhaseCard`, `PayrollCard`, …) que renderizan datos fuera del motor `entity-fields`; su alineación a DataCell es un ticket independiente.

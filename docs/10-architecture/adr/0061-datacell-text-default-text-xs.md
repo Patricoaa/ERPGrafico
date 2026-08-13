@@ -1,12 +1,14 @@
 ---
 id: 0061
 title: DataCell text primitives default to text-xs
-status: Proposed
+status: Accepted
 date: 2026-08-02
 author: core-team
 ---
 
 # 0061 — DataCell text primitives default to text-xs
+
+> **Amendment (2026-08-13):** confirmed **Accepted**. The `text-xs` default is live in `DataTableCells.tsx`; `typography-scale.md` §N3 rows were synced to the implementation (see ADR-0067 amendment for the card-surface corollary).
 
 **Related:** ADR-0060 (Flow DataCells as square tinted badges), `component-contracts.md` §DataCell primitives, `typography-scale.md` §N3
 
