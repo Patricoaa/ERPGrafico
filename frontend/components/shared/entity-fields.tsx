@@ -217,7 +217,10 @@ type FieldDef<T> = SharedFieldDef<T> & (
     | { type: 'status'; getLabel?: (entity: T) => string }
 
     // ── Relation ─────────────────────────────────────────────────────────────
-    | { type: 'contact' }
+    // `contact` renders a registered person/company via DataCell.ContactLink.
+    // The field value is the contact id; `getDisplay` overrides the visible text
+    // when it differs from the id (e.g. supplier_id + supplier_name).
+    | { type: 'contact'; getDisplay?: (entity: T) => string }
 
     // ── Tags ─────────────────────────────────────────────────────────────────
     | {
@@ -478,7 +481,7 @@ function renderCell<T>(def: FieldDef<T>, entity: T, opts?: { weight?: DataCellWe
         }
 
         case "contact":
-            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{toDisplayValue(value)}</DataCell.ContactLink>
+            return <DataCell.ContactLink contactId={value as number | string} className={resolvedClassName}>{def.getDisplay ? def.getDisplay(entity) : toDisplayValue(value)}</DataCell.ContactLink>
 
         case "chip": {
             const intentValue = typeof def.intent === "function" ? def.intent(entity) : def.intent

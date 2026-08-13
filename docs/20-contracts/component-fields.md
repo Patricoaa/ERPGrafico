@@ -118,7 +118,7 @@ Mapeo real del motor (switch `renderCell`). Cada `type` solo acepta sus opciones
 | `currency` | `DataCell.Currency` | `currency`, `showZeroAsDash`, `tooltip`, `showColor`, `intent`, `weight`, `size` | `primary-value` → header (keys `total`/`salary` rankean más alto) |
 | `number` | `DataCell.Number` | `suffix`, `suffixGap`, `weight` | `descriptive` → detail |
 | `status` | `DataCell.Status` (badge) | `getLabel` | `primary-value` → header |
-| `contact` | `DataCell.ContactLink` | — | `relation` → subtitle/detail |
+| `contact` | `DataCell.ContactLink` | `getDisplay` | `relation` → subtitle/detail |
 | `chip` | `DataCell.Chip` | `intent`, `chipIcon` | `tag` → header |
 | `chip-category` | `DataCell.Category` (chips por dominio) | `domain` (valor o `(e) => Domain`) | `tag` → header |
 | `currencyFlow` | `DataCell.CurrencyFlow` (badge tintado, ADR-0060) | `direction`, `currency`, `showIcon` | `flow` → header center |
@@ -137,6 +137,25 @@ Mapeo real del motor (switch `renderCell`). Cada `type` solo acepta sus opciones
 `fieldRole` cae en `descriptive` → detail. Para replicar el routing always-header del antiguo
 `complex`, declarar `fieldRole: 'complex'` (o el rol que describa la intención: `'status'` →
 badge header, `'primary-value'` → header monetario, `'identifier'` → título).
+
+### 3.2 `contact` — id como valor, nombre como display
+
+`type: 'contact'` renderiza una persona/empresa registrada vía `DataCell.ContactLink`. El valor
+del campo (via `get` o acceso directo) es el **id** del contacto; si el texto visible difiere del
+id (p. ej. `supplier_id` + `supplier_name`), declarar `getDisplay: (entity) => string`:
+
+```tsx
+supplierName: {
+    key: 'supplier_id',
+    type: 'contact',
+    label: 'Proveedor',
+    get: (s) => s.supplier_id,
+    getDisplay: (s) => s.supplier_name,
+},
+```
+
+Sin `getDisplay`, el propio valor se usa como texto visible (un campo cuyo valor ya sea el nombre
+o un id legible). Ver [ADR-0072](../10-architecture/adr/0072-entity-fields-contact-display.md).
 
 ---
 

@@ -1,7 +1,6 @@
 import { createEntityFields } from '@/components/shared'
 import { DataCell, Chip, type SubtitleItem } from '@/components/shared'
 import type { Product } from '@/features/inventory/types'
-import { translateProductType } from '@/lib/utils'
 
 function AvailabilityBadges({ product, inline = false }: { product: Product; inline?: boolean }) {
     const badges = (
@@ -24,12 +23,12 @@ export const productFields = createEntityFields<Product>()({
         type: 'text',
         label: 'Nombre',
     },
-    category_name: { key: 'category_name', type: 'text', label: 'Categoría' },
+    category_name: { key: 'category_name', type: 'secondary', label: 'Categoría' },
     product_type: {
         key: 'product_type',
-        type: 'text',
+        type: 'chip-category',
+        domain: 'product_type',
         label: 'Tipo',
-        get: (p) => translateProductType(p.product_type),
     },
     total: {
         key: 'sale_price',

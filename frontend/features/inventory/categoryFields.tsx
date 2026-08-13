@@ -22,7 +22,7 @@ export const categoryFields = createEntityFields<Category>()({
     },
     prefix: {
         key: "prefix",
-        type: "text",
+        type: "code",
         label: "Siglas",
     },
     name: {
