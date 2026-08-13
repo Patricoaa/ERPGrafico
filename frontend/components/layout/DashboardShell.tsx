@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { UserActions } from "@/components/layout/UserActions"
+import { UserSidebarMenu } from "@/components/layout/UserSidebarMenu"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -179,8 +180,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             {/* ── MAIN LAYOUT ────────────────────────────────────────────── */}
             <div className="flex-1 flex overflow-hidden">
                 {/* ── LEFT SIDEBAR (MODULES) ──────────────────────────────────────── */}
-                <div className="w-[60px] shrink-0 h-full border-r border-border/40 flex flex-col items-center justify-center py-4 bg-muted/10 gap-3 z-40">
-                    <TooltipProvider delayDuration={0}>
+                <div className="w-[60px] shrink-0 h-full border-r border-border/40 flex flex-col items-center py-4 bg-muted/10 z-40">
+                    {/* Top spacer to center modules */}
+                    <div className="flex-1" />
+                    
+                    <div className="flex flex-col items-center gap-3">
+                        <TooltipProvider delayDuration={0}>
                         {MODULE_ORDER.map(modId => {
                             const mod = getModuleConfig(modId)
                             if (!mod) return null
@@ -210,6 +215,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                             )
                         })}
                     </TooltipProvider>
+                    </div>
+
+                    {/* Bottom part (User menu) */}
+                    <div className="flex-1 flex flex-col justify-end items-center pb-2">
+                        <UserSidebarMenu />
+                    </div>
                 </div>
 
                 {/* ── CONTENT AREA ────────────────────────────────────────────── */}
