@@ -118,7 +118,7 @@ export function BaseModal({
                                     {title}
                                 </DialogTitle>
                             }
-                            titleClassName={titleClassName}
+                            titleClassName={titleClassName ?? ""}
                             centered={centered}
                             subtitle={description ? (
                                 <DialogDescription

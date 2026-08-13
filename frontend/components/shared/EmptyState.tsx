@@ -49,7 +49,7 @@ const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: strin
  * Standardized Industrial Empty State
  * 
  * Follows the design aesthetic:
- * - Typography:  (Syne) + uppercase + extrabold
+ * - Typography: N0 Empty state (font-bold tracking-tight) per typography-scale.md
  * - Palette: muted-foreground / subtle borders
  * - Layouts: full, compact, minimal
  */
@@ -74,7 +74,7 @@ export function EmptyState({
         return (
             <div className={cn("flex items-center gap-3 py-4 px-2 text-muted-foreground", className)}>
                 {React.createElement(iconCmp, { className: "h-4 w-4 shrink-0" })}
-                <span className="text-3xs  font-bold uppercase tracking-tighter">{displayTitle}</span>
+                <span className="text-xs font-medium">{displayTitle}</span>
                 {action && <div className="ml-auto">{action}</div>}
             </div>
         )
@@ -91,18 +91,18 @@ export function EmptyState({
             {/* Precision Icon Container */}
             <div className={cn(
                 "relative flex items-center justify-center rounded-md border border-border bg-muted shadow-card mb-6",
-                variant === 'full' ? "h-20 w-20" : "h-14 w-14"
+                variant === 'full' ? "h-20 w-20" : "h-12 w-12"
             )}>
                 {React.createElement(iconCmp, { className: cn(
                     "text-muted-foreground/40",
-                    variant === 'full' ? "h-10 w-10" : "h-6 w-6"
+                    variant === 'full' ? "h-10 w-10" : "h-5 w-5"
                 ) })}
             </div>
 
             {/* Content Section */}
             <div className="flex max-w-md flex-col items-center space-y-2 text-center whitespace-normal">
                 <h3 className={cn(
-                    "w-full text-center  font-black uppercase tracking-tighter text-foreground/90",
+                    "w-full text-center font-bold tracking-tight text-foreground",
                     variant === 'full' ? "text-lg" : "text-sm"
                 )}>
                     {displayTitle}
@@ -111,7 +111,7 @@ export function EmptyState({
                 {description && (
                     <p className={cn(
                         "w-full text-center text-muted-foreground leading-relaxed break-words",
-                        variant === 'full' ? "text-sm" : "text-2xs"
+                        variant === 'full' ? "text-sm" : "text-xs"
                     )}>
                         {description}
                     </p>

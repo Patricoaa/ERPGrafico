@@ -175,13 +175,13 @@ export function CollapsibleSheet({
                         <div className="relative">
                             <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
                             {badge !== undefined && badge > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-destructive text-destructive-foreground text-[8px] font-black rounded-full px-1 shadow-card border-2 border-primary/95">
+                                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] flex items-center justify-center bg-destructive text-destructive-foreground text-4xs font-bold rounded-full px-1 shadow-card border-2 border-primary/95">
                                     {badge > 99 ? '99+' : badge}
                                 </span>
                             )}
                         </div>
                         <div className="flex flex-col items-center whitespace-nowrap">
-                            <span className="text-xs font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest leading-none">
+                            <span className="text-xs font-bold text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-looser leading-none">
                                 {tabLabel}
                             </span>
                         </div>

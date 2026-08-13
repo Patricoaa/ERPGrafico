@@ -137,16 +137,16 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-48 gap-3">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/55" />
-                            <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/50">Cargando Archivo...</span>
+                            <span className="text-xs font-medium text-muted-foreground/60">Cargando Archivo...</span>
                         </div>
                     ) : error ? (
                         <div className="text-center py-12 border border-dashed border-destructive/25 rounded-md bg-destructive/5">
-                            <p className="text-xs font-black uppercase tracking-wider text-destructive px-4">{error}</p>
+                            <p className="text-xs font-medium text-destructive px-4">{error}</p>
                         </div>
                     ) : history.length === 0 ? (
                         <div className="text-center py-16 border border-dashed border-border/60 rounded-md bg-muted/10">
                             <User className="h-8 w-8 text-muted-foreground/20 mx-auto mb-3" />
-                            <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/50">
+                            <p className="text-xs font-medium text-muted-foreground/60">
                                 Sin actividad registrada
                             </p>
                         </div>

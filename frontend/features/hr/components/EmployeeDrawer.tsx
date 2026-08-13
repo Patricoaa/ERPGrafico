@@ -479,7 +479,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                         "flex items-center justify-between p-3.5 rounded-md border transition-all",
                                                                         field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
                                                                     )}>
-                                                                        <label className="text-3xs font-bold uppercase tracking-widest">{sw.label}</label>
+                                                                        <label className="text-xs font-medium text-muted-foreground">{sw.label}</label>
                                                                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                                                                     </div>
                                                                 )} />

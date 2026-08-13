@@ -117,7 +117,6 @@ export function OrderHubPanel({
                                 icon={TopLeftIcon}
                                 onClose={onClose}
                                 closeTooltip="Cerrar Hub"
-                                titleClassName="text-sm font-semibold tracking-tight"
                             />
                         </div>
                     )}

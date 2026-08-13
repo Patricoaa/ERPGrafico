@@ -33,7 +33,6 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
                     icon={Inbox}
                     onClose={onClose}
                     closeTooltip="Cerrar bandeja"
-                    titleClassName="text-sm font-semibold tracking-tight"
                 />
             </div>
 

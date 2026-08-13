@@ -54,6 +54,7 @@ Esta matriz es el contrato tipográfico (diseño denso). Note que la escala est�
 | **N0 — Brand/Hero** | Login, 404, landing | `text-3xl font-black` | `tracking-tighter` | `uppercase` | "ERPGrafico" |
 | **N0 — KPI/Metric** | StatCard value, PieChart center | `text-2xl/3xl font-bold tabular-nums` | `tracking-tight` | normal | "1.234" |
 | **N0 — Empty state** | EmptyState title | `text-lg font-bold` | `tracking-tight` | normal | "Sin resultados" |
+| **N0 — Empty state (compact)** | EmptyState `variant="compact"` title | `text-sm font-bold` | `tracking-tight` | normal | "No tienes aprobaciones" |
 | **N0 — Error page** | ErrorBoundary, app/error | `text-2xl font-bold` | `tracking-tight` | normal | "Algo salió mal" |
 | **N1 — Sección** | FormSection, SectionHeader, sidebar título | `text-xs font-semibold text-muted-foreground` | `tracking-wider` | `uppercase` | "Roles", "Identidad del Contacto" |
 | **N2 — Etiqueta de campo** | LabeledInput legend | `text-xs font-medium text-muted-foreground` | normal | normal | "Nombre / Razón Social" |
@@ -63,6 +64,7 @@ Esta matriz es el contrato tipográfico (diseño denso). Note que la escala est�
 | **N2 — StatusBadge** | StatusBadge (badge) | `text-xs font-medium font-sans` | normal | normal | "En Proceso", "Sin Conciliar" |
 | **N2 — Drawer/Modal title** | SheetTitle, DialogTitle | `text-xl font-bold` | `tracking-tight` | normal | "Nuevo Contacto" |
 | **N2 — Drawer subtitle** | `subtitle` prop (PanelHeader, via `PanelBaseProps`) | `text-xs font-medium text-muted-foreground` | normal | normal | "Ficha Maestra • CRM" |
+| **N2 — Panel title** | PanelHeader default (hub, bandeja de entrada) | `text-sm font-semibold` | `tracking-tight` | normal | "Bandeja de Entrada" |
 | **N2 — Wizard step** | GenericWizard step indicator | `text-xs font-semibold` | `tracking-wider` | `uppercase` | "PASO 1 DE 3" |
 | **N2 — Paginación** | DataTablePagination | `text-xs font-medium` | normal | normal | "Registros por página" |
 | **N3 — Valor de input** | LabeledInput input | `text-sm` | normal | normal | "Juan Pérez" |

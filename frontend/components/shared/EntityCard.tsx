@@ -581,7 +581,7 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
                         {item.icon && (
                             <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
                         )}
-                        <span className="text-3xs font-medium uppercase tracking-widest text-muted-foreground/60">
+            <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/60">
                             {item.label}
                         </span>
                         <span className={cn("text-sm font-bold tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>

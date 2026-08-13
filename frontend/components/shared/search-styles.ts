@@ -2,13 +2,13 @@
 // All consumers (shared + route-specific) MUST import from here.
 // This is the single source of truth — never inline these values.
 
-export const SEG_TEXT = 'text-xs font-semibold'
+export const SEG_TEXT = 'text-xs font-medium'
 
 export const SEG_WRAPPER =
   'flex items-center shrink-0 bg-background rounded-sm px-1 h-9'
 
 export const SEG_TRIGGER =
-  'h-7 px-2 text-xs font-semibold tracking-tight gap-1 rounded-sm shrink-0'
+  'h-7 px-2 text-xs font-medium gap-1 rounded-sm shrink-0'
 
 export const SEG_ACTIVE = 'bg-accent/50 text-foreground'
 export const SEG_INACTIVE = 'text-muted-foreground hover:text-foreground'
@@ -30,4 +30,4 @@ export const TOOLBAR_MENU_ITEM =
   'relative flex cursor-pointer select-none items-center rounded-sm px-3 py-1.5 text-xs font-semibold outline-none transition-colors'
 
 export const TAB_TOOLBAR_TRIGGER =
-  'h-7 px-2.5 text-xs font-semibold tracking-tight gap-1.5'
+  'h-7 px-2.5 text-xs font-medium gap-1.5'

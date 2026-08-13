@@ -129,7 +129,6 @@ export function TabBar({
                                 <span
                                     className={cn(
                                         SEG_TEXT + " leading-tight",
-                                                                                "tracking-widest",
                                         "whitespace-nowrap text-center",
                                         isVertical && "group-data-[state=inactive]:hidden group-hover:!block"
                                     )}
@@ -138,8 +137,7 @@ export function TabBar({
                                 </span>
                                 {item.badge !== undefined && (
                                     <span className={cn(
-                                        "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-black leading-none",
-                                        dense ? "h-[14px] min-w-[14px] text-4xs" : "h-4 min-w-[1rem] text-4xs",
+                                        "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-bold tabular-nums leading-none h-4 min-w-[1rem] text-xs",
                                         isVertical && "rotate-90",
                                         isToolbar && "border-transparent bg-accent/30",
                                         "group-data-[state=active]:bg-primary-foreground/20 group-data-[state=active]:text-primary-foreground group-data-[state=active]:border-primary-foreground/30",

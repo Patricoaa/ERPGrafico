@@ -315,7 +315,7 @@ export const ActionCategory = forwardRef(({
                         <div className="flex items-center gap-2 pb-2 border-b border-border">
                             {category.icon && (
                                 <div className="p-1.5 rounded bg-primary/10 text-primary border border-primary/10">
-                                    <category.icon className="h-4 w-4" />
+                                    <category.icon className="h-3.5 w-3.5" />
                                 </div>
                             )}
                             {category.label && <h3 className=" font-bold uppercase text-xs tracking-wider">{category.label}</h3>}
