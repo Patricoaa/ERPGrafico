@@ -98,7 +98,7 @@ export function OrderHeaderDashboard({
                 className="card-flat bg-card/50 backdrop-blur-sm"
             >
                 <div className="mt-3 space-y-1">
-                    <div className="flex justify-between text-2xs font-medium text-foreground/80">
+                    <div className="flex justify-between text-xs font-medium text-foreground/80">
                         <span>Pagado: {formatCurrency(paidAmount)}</span>
                         <span className="text-muted-foreground/50">{Math.round(paymentProgress)}%</span>
                     </div>
