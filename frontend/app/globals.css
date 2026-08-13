@@ -148,7 +148,7 @@
   --liability-foreground: var(--warning-foreground);
 
   /* GEOMETRY & TYPOGRAPHY */
-  --radius: 0.5rem;
+  --radius: 0;
   /* Base Radius (8px) — Industrial Atomic unit */
   --sidebar-width: 4rem; /* 64px - Activity Sidebar width */
   --sidebar-gap: 1rem;   /* 16px - Gap between sidebar and main content */
@@ -239,13 +239,13 @@
    * Use via bg-overlay/40, bg-overlay/50… instead of raw bg-black/N.
    */
   --color-overlay: oklch(0.12 0.02 240);
-  --radius-sm: var(--radius);
+  --radius-sm: 0;
   /* 8px */
-  --radius-md: calc(var(--radius) + 4px);
+  --radius-md: 0;
   /* 12px (Nested Cards) */
-  --radius-lg: calc(var(--radius) + 8px);
+  --radius-lg: 0;
   /* 16px (Overlays) */
-  --radius-xl: calc(var(--radius) + 12px);
+  --radius-xl: 0;
   /* 20px */
 
   /*
