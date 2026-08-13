@@ -215,7 +215,7 @@ export function resolveEntity(label: string, data: Record<string, unknown>): Res
 // CATEGORY & ENUM MAPPINGS (for Chip.Category)
 // ----------------------------------------------------------------------
 
-export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method' | 'account_type'
+export type CategoryDomain = 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type' | 'payment_method' | 'account_type' | 'channel'
 
 interface CategoryEntry {
     intent: BadgeIntent
@@ -270,6 +270,10 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, CategoryEntry>> = {
         'EQUITY':   { intent: 'neutral',    label: 'Patrimonio' },
         'INCOME':   { intent: 'success',    label: 'Ingresos' },
         'EXPENSE':  { intent: 'destructive',label: 'Gastos' },
+    },
+    channel: {
+        'SYSTEM': { intent: 'neutral', label: 'Sistema' },
+        'POS':    { intent: 'primary', label: 'Punto de Venta (POS)' },
     }
 }
 
