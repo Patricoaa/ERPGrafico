@@ -38,7 +38,7 @@ export function UserSidebarMenu() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="relative h-10 w-10 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
+                                className="relative h-8 w-8 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                             >
                                 <Avatar className="h-full w-full rounded-full bg-transparent">
                                     <AvatarFallback className="bg-transparent text-current font-black text-xs rounded-full">

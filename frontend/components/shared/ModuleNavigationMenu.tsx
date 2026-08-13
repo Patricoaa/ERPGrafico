@@ -55,13 +55,13 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                                 <NavigationMenuItem key={item.value}>
                                     <NavigationMenuTrigger 
                                         className={cn(
-                                            "h-10 px-3 bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 transition-colors",
+                                            "h-8 px-3 bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50 transition-colors",
                                             isActive && "text-primary bg-primary/5 hover:bg-primary/10 data-[state=open]:bg-primary/10"
                                         )}
                                     >
                                         <div className="flex items-center gap-2">
                                             {item.iconName && (
-                                                <DynamicIcon name={item.iconName} className="h-5 w-5 shrink-0" />
+                                                <DynamicIcon name={item.iconName} className="h-4 w-4 shrink-0" />
                                             )}
                                             <span className="font-medium text-sm tracking-tight">{item.label}</span>
                                         </div>
@@ -89,14 +89,14 @@ export function ModuleNavigationMenu({ navigation }: ModuleNavigationMenuProps) 
                                 <NavigationMenuLink asChild
                                         className={cn(
                                             navigationMenuTriggerStyle(),
-                                            "h-10 px-3 bg-transparent hover:bg-muted/50 transition-colors",
+                                            "h-8 px-3 bg-transparent hover:bg-muted/50 transition-colors",
                                             isActive && "text-primary bg-primary/5 hover:bg-primary/10"
                                         )}
                                 >
                                     <Link href={item.href}>
                                         <div className="flex items-center gap-2">
                                             {item.iconName && (
-                                                <DynamicIcon name={item.iconName} className="h-5 w-5 shrink-0" />
+                                                <DynamicIcon name={item.iconName} className="h-4 w-4 shrink-0" />
                                             )}
                                             <span className="font-medium text-sm tracking-tight">{item.label}</span>
                                         </div>

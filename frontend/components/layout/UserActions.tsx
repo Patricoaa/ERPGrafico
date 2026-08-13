@@ -141,9 +141,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <Link
                                 href="/pos"
                                 target="_blank"
-                                className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+                                className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
                             >
-                                <Store className="h-5 w-5" />
+                                <Store className="h-4 w-4" />
                             </Link>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
@@ -160,13 +160,13 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             size="icon"
                             onClick={() => setIsCalculatorOpen(true)}
                             className={cn(
-                                "rounded-md transition-all duration-200 active:scale-95",
+                                "h-8 w-8 rounded-md transition-all duration-200 active:scale-95",
                                 isCalculatorOpen
                                     ? ""
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
-                            <Calculator className="h-5 w-5" />
+                            <Calculator className="h-4 w-4" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
@@ -182,13 +182,13 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             size="icon"
                             onClick={onInboxToggle}
                             className={cn(
-                                "relative rounded-md transition-all duration-200 active:scale-95",
+                                "relative h-8 w-8 rounded-md transition-all duration-200 active:scale-95",
                                 isInboxOpen
                                     ? ""
                                     : "text-foreground/50 hover:bg-accent hover:text-accent-foreground"
                             )}
                         >
-                            <Inbox className="h-5 w-5" />
+                            <Inbox className="h-4 w-4" />
                             {pendingTasksCount > 0 && !isInboxOpen && (
                                 <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-4xs font-medium rounded-full px-1 shadow-card border-2 border-background">
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
@@ -210,9 +210,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="relative rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95"
+                                    className="relative h-8 w-8 rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95"
                                 >
-                                    <Bell className="h-5 w-5" />
+                                    <Bell className="h-4 w-4" />
                                     {unreadCount > 0 && (
                                         <span className="absolute top-1 right-1 flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>

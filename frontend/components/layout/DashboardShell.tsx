@@ -79,12 +79,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex flex-col h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR (FULL WIDTH) ────────────────────────────────────────────── */}
-            <div className="flex-none h-14 flex items-center bg-background z-30 pr-4 md:pr-6">
+            <div className="flex-none h-12 flex items-center bg-background z-30 pr-4 md:pr-6">
                 {/* ── LEFT: Logo (Aligned with Sidebar, sin bordes) ──────────────── */}
-                <div className="w-12 shrink-0 h-full flex items-center justify-center bg-muted/10">
+                <div className="w-10 shrink-0 h-full flex items-center justify-center bg-muted/10">
                     <div className="pointer-events-auto flex items-center justify-center">
                         {logo ? (
-                            <div className="relative h-8 w-10">
+                            <div className="relative h-8 w-8">
                                 <Image
                                     src={logo}
                                     alt={companyName || "Logo"}
@@ -183,7 +183,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             {/* ── MAIN LAYOUT ────────────────────────────────────────────── */}
             <div className="flex-1 flex overflow-hidden">
                 {/* ── LEFT SIDEBAR (MODULES) ──────────────────────────────────────── */}
-                <div className="w-12 shrink-0 h-full border-r border-border/40 flex flex-col items-center py-4 bg-muted/10 z-40">
+                <div className="w-10 shrink-0 h-full border-r border-border/40 flex flex-col items-center py-4 bg-muted/10 z-40">
                     {/* Top spacer to center modules */}
                     <div className="flex-1" />
                     
@@ -200,13 +200,13 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                         <Link 
                                             href={mod.defaultUrl}
                                             className={cn(
-                                                "relative w-10 h-10 rounded-md transition-all duration-200 group flex items-center justify-center",
+                                                "relative w-8 h-8 rounded-md transition-all duration-200 group flex items-center justify-center",
                                                 isActive 
                                                   ? "text-primary" 
                                                   : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
                                             )}
                                         >
-                                            <Icon className="w-5 h-5 transition-colors" />
+                                            <Icon className="w-4 h-4 transition-colors" />
                                             {/* Borde inferior grueso al estar seleccionado */}
                                             {isActive && (
                                                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[3px] bg-primary rounded-t-sm" />
