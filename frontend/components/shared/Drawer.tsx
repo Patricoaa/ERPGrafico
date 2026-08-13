@@ -187,10 +187,10 @@ export function Drawer({
 
     // Render classes for side specific logic
     const sideStyles = {
-        bottom: "rounded-t-xl! rounded-b-none! border-t-0! bottom-0! top-auto! w-full! left-0! right-0! m-0!",
-        top: "rounded-b-xl! rounded-t-none! border-b-0! top-0! bottom-auto! w-full! left-0! right-0! m-0!",
-        right: "rounded-l-xl! rounded-r-none! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none! m-0!",
-        left: "rounded-r-xl! rounded-l-none! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none! m-0!",
+        bottom: "rounded-none! border-t-0! bottom-0! top-auto! w-full! left-0! right-0! m-0!",
+        top: "rounded-none! border-b-0! top-0! bottom-auto! w-full! left-0! right-0! m-0!",
+        right: "rounded-none! border-l-0! h-full! right-0! left-auto! top-0! bottom-0! sm:max-w-none! m-0!",
+        left: "rounded-none! border-r-0! h-full! left-0! right-auto! top-0! bottom-0! sm:max-w-none! m-0!",
     }
 
     const iconElement: React.ReactNode = icon
