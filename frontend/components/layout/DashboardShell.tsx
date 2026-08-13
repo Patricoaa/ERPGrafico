@@ -79,9 +79,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex flex-col h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR (FULL WIDTH) ────────────────────────────────────────────── */}
-            <div className="flex-none h-16 flex items-center bg-background z-30 pr-4 md:pr-6 border-b border-border/40">
-                {/* ── LEFT: Logo (Aligned with Sidebar) ──────────────────────────────── */}
-                <div className="w-[60px] shrink-0 h-full flex items-center justify-center border-r border-border/40 bg-muted/10">
+            <div className="flex-none h-14 flex items-center bg-background z-30 pr-4 md:pr-6">
+                {/* ── LEFT: Logo (Aligned with Sidebar, sin bordes) ──────────────── */}
+                <div className="w-12 shrink-0 h-full flex items-center justify-center bg-muted/10">
                     <div className="pointer-events-auto flex items-center justify-center">
                         {logo ? (
                             <div className="relative h-8 w-10">
@@ -100,87 +100,90 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </div>
                 </div>
 
-                {/* ── MIDDLE: Page Title & Meta ──────────────────────────────── */}
-                <div className="flex-1 flex items-center gap-4 pl-4 md:pl-6 min-w-0 pointer-events-none">
-                    {config ? (
-                        <div
-                            key={pathname + config.title}
-                            className="flex items-center gap-3 pointer-events-auto min-w-0 animate-in fade-in slide-in-from-left-1 ease-premium duration-300 fill-mode-both"
-                        >
-                            {config.isLoading && (
-                                <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-card shrink-0">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                </Skeleton>
-                            )}
-
-                            {/* Texts & Icons Wrapper */}
-                            <div className="flex items-center gap-5">
-                                {/* Left: Title — dropdown nav or static */}
-                                {config.navigation ? (
-                                    <ModuleNavigationMenu
-                                        navigation={config.navigation}
-                                    />
-                                ) : (
-                                    <div className="flex flex-col w-min">
-                                        <h1 className="text-base font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
-                                            {config.icon ? (
-                                                <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
-                                            ) : config.iconName ? (
-                                                <DynamicIcon name={config.iconName} className="h-4 w-4 text-primary/70 shrink-0" />
-                                            ) : null}
-                                            {config.title}
-                                        </h1>
-                                    </div>
+                {/* ── REST OF TOP BAR (border-b empieza después del logo) ───────── */}
+                <div className="flex-1 self-stretch flex items-center border-b border-border/40">
+                    {/* ── MIDDLE: Page Title & Meta ──────────────────────────────── */}
+                    <div className="flex-1 flex items-center gap-4 pl-4 md:pl-6 min-w-0 pointer-events-none">
+                        {config ? (
+                            <div
+                                key={pathname + config.title}
+                                className="flex items-center gap-3 pointer-events-auto min-w-0 animate-in fade-in slide-in-from-left-1 ease-premium duration-300 fill-mode-both"
+                            >
+                                {config.isLoading && (
+                                    <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-card shrink-0">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    </Skeleton>
                                 )}
 
-                                {/* Right: Icons & Actions */}
-                                <div className="flex items-center gap-2 shrink-0">
-                                    {config.status && (
-                                        config.status.type === 'saving' ? (
-                                            <Skeleton className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
-                                                {config.status.label}
-                                            </Skeleton>
-                                        ) : (
-                                            <div className={cn(
-                                                "px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0",
-                                                config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
-                                                config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
-                                                !config.status.type && "bg-muted text-muted-foreground border-border"
-                                            )}>
-                                                {config.status.label}
-                                            </div>
-                                        )
-                                    )}
-
-                                    {config.titleActions && (
-                                        <div className="flex items-center ml-1">
-                                            {config.titleActions}
+                                {/* Texts & Icons Wrapper */}
+                                <div className="flex items-center gap-5">
+                                    {/* Left: Title — dropdown nav or static */}
+                                    {config.navigation ? (
+                                        <ModuleNavigationMenu
+                                            navigation={config.navigation}
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col w-min">
+                                            <h1 className="text-base font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
+                                                {config.icon ? (
+                                                    <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
+                                                ) : config.iconName ? (
+                                                    <DynamicIcon name={config.iconName} className="h-4 w-4 text-primary/70 shrink-0" />
+                                                ) : null}
+                                                {config.title}
+                                            </h1>
                                         </div>
                                     )}
+
+                                    {/* Right: Icons & Actions */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {config.status && (
+                                            config.status.type === 'saving' ? (
+                                                <Skeleton className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                                                    {config.status.label}
+                                                </Skeleton>
+                                            ) : (
+                                                <div className={cn(
+                                                    "px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0",
+                                                    config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
+                                                    config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
+                                                    !config.status.type && "bg-muted text-muted-foreground border-border"
+                                                )}>
+                                                    {config.status.label}
+                                                </div>
+                                            )
+                                        )}
+
+                                        {config.titleActions && (
+                                            <div className="flex items-center ml-1">
+                                                {config.titleActions}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+
+                                {config.children && (
+                                    <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border shrink-0">
+                                        {config.children}
+                                    </div>
+                                )}
                             </div>
+                        ) : (
+                            <PageHeaderSkeleton />
+                        )}
+                    </div>
 
-                            {config.children && (
-                                <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border shrink-0">
-                                    {config.children}
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <PageHeaderSkeleton />
-                    )}
-                </div>
-
-                {/* Right: UserActions */}
-                <div className="flex-none flex items-center gap-4">
-                    <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
+                    {/* Right: UserActions */}
+                    <div className="flex-none flex items-center gap-4">
+                        <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
+                    </div>
                 </div>
             </div>
 
             {/* ── MAIN LAYOUT ────────────────────────────────────────────── */}
             <div className="flex-1 flex overflow-hidden">
                 {/* ── LEFT SIDEBAR (MODULES) ──────────────────────────────────────── */}
-                <div className="w-[60px] shrink-0 h-full border-r border-border/40 flex flex-col items-center py-4 bg-muted/10 z-40">
+                <div className="w-12 shrink-0 h-full border-r border-border/40 flex flex-col items-center py-4 bg-muted/10 z-40">
                     {/* Top spacer to center modules */}
                     <div className="flex-1" />
                     
