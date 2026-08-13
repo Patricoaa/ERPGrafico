@@ -96,7 +96,6 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     }
 
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => {
-        const [nameCol, codeCol, addressCol] = warehouseFields.toColumns()
         return [
             {
                 id: "select",
@@ -120,9 +119,9 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                 enableHiding: false,
                 size: 40,
             },
-            nameCol,
-            codeCol,
-            addressCol,
+            warehouseFields.column("name"),
+            warehouseFields.column("code"),
+            warehouseFields.column("address"),
             warehouseActions.auto(actionsCtx),
         ]
     }, [actionsCtx])

@@ -125,7 +125,6 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
     }
 
     const columns = useMemo<ColumnDef<WorkOrder>[]>(() => {
-        const [, saleOrderCol, startDateCol, productDescCol, stageCol, dueDateCol] = workOrderFields.toColumns()
         return [
             {
                 id: "select",
@@ -166,9 +165,9 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                     </div>
                 ),
             },
-            saleOrderCol,
-            startDateCol,
-            productDescCol,
+            workOrderFields.column("sale_order_number"),
+            workOrderFields.column("start_date"),
+            workOrderFields.column("product_description"),
             {
                 accessorKey: "status",
                 header: ({ column }) => (
@@ -189,8 +188,8 @@ export default function WorkOrdersPageClient({ initialOrders }: WorkOrdersPageCl
                     return value.includes(row.getValue(id))
                 },
             },
-            stageCol,
-            dueDateCol,
+            workOrderFields.column("current_stage"),
+            workOrderFields.column("due_date"),
             workOrderActions.auto(workOrderActionsCtx) as ColumnDef<WorkOrder>,
         ]
     }, [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname, workOrderActionsCtx])

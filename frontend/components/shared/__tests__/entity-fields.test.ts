@@ -88,6 +88,63 @@ describe("createEntityFields", () => {
         })
     })
 
+    describe("column (keyed accessor)", () => {
+        it("returns the column selected by data key", () => {
+            const col = testFields.column("code")
+            expect(getAccessorKey(col)).toBe("code")
+        })
+
+        it("selects by data key, not by definition key", () => {
+            const fields = createEntityFields<TestEntity>()({
+                total: { key: "amount", type: "currency", label: "Total", get: (e) => parseFloat(e.amount) },
+                name: { key: "name", type: "text", label: "Nombre" },
+            })
+            expect(getAccessorKey(fields.column("amount"))).toBe("amount")
+        })
+
+        it("returns an accessorFn column for computed fields", () => {
+            const fields = createEntityFields<TestEntity>()({
+                total: { key: "amount", type: "currency", label: "Total", tableOptions: { accessorFn: (e) => parseFloat(e.amount) } },
+            })
+            const col = fields.column("amount")
+            expect("accessorFn" in col).toBe(true)
+        })
+
+        it("throws on unknown key", () => {
+            expect(() => testFields.column("nonexistent")).toThrow(/column/)
+        })
+
+        it("throws when the field has no table surface", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio", surfaces: ["card", "kanban"] },
+                name: { key: "name", type: "text", label: "Nombre" },
+            })
+            expect(() => fields.column("code")).toThrow(/column/)
+        })
+
+        it("applies header-zone weight, matching toColumns for the same field", () => {
+            const fields = createEntityFields<TestEntity>()({
+                code: { key: "code", type: "code", label: "Folio" },
+                total: { key: "total_amount", type: "currency", label: "Total", placement: "header" },
+                description: { key: "description", type: "text", label: "Descripción" },
+            })
+            const cellMarkup = (col: ColumnDef<TestEntity>): string =>
+                renderToStaticMarkup(
+                    createElement(
+                        React.Fragment,
+                        null,
+                        (col.cell as unknown as (ctx: { row: { original: TestEntity } }) => React.ReactNode)({
+                            row: { original: sampleEntity },
+                        }),
+                    ),
+                )
+
+            expect(cellMarkup(fields.column("total_amount"))).toContain("font-semibold")
+            expect(cellMarkup(fields.column("code"))).toContain("font-medium")
+            expect(cellMarkup(fields.column("code"))).not.toContain("font-bold")
+        })
+    })
+
     describe("toCardFields", () => {
         it("returns CardField[] with key, label, and value", () => {
             const fields = testFields.toCardFields(sampleEntity)

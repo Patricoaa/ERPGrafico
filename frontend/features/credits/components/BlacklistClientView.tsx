@@ -214,8 +214,6 @@ export function BlacklistClientView() {
         return search.filterFn(result)
     }, [rawContacts, search.filterFn, search.filters.risk_level])
 
-    const [balanceCol, evaluatedCol] = blacklistFields.toColumns()
-
     const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
         createExpanderColumn<CreditContact>(),
         {
@@ -228,9 +226,9 @@ export function BlacklistClientView() {
             ),
             meta: { title: "Cliente" },
         },
-        balanceCol,
-        evaluatedCol,
-    ], [balanceCol, evaluatedCol])
+        blacklistFields.column("credit_balance_used"),
+        blacklistFields.column("credit_last_evaluated"),
+    ], [])
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">

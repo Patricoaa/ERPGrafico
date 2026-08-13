@@ -199,11 +199,9 @@ export function UnbilledChargesClientView({
         toast.success('Cargos facturados exitosamente')
     }
 
-    const [dateCol, amountCol, cuotaCol] = unbilledChargeFields.toColumns()
-
     const columns: ColumnDef<UnbilledItemRow, unknown>[] = [
-        dateCol,
-        cuotaCol,
+        unbilledChargeFields.column("date"),
+        unbilledChargeFields.column("installmentNumber"),
         {
             id: 'compra',
             header: ({ column }) => (
@@ -242,7 +240,7 @@ export function UnbilledChargesClientView({
             enableSorting: false,
         },
         {
-            ...amountCol,
+            ...unbilledChargeFields.column("amount"),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Currency

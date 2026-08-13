@@ -50,6 +50,7 @@ API del factory:
 | Método | Devuelve | Uso |
 |--------|----------|-----|
 | `toColumns()` | `ColumnDef<T>[]` | Columnas de DataTable (header con ordenamiento) |
+| `column(key)` | `ColumnDef<T>` | Columna individual seleccionada por data key. Preferida sobre destructuring posicional de `toColumns()` (ver §1.1) |
 | `toCardFields(entity, opts?)` | `CardField[]` | Campos de EntityCard (resuelve `placement`/`fieldRole`) |
 | `toKanbanFields(entity, opts?)` | `KanbanField[]` | Campos compactos de Kanban |
 | `render(key, entity)` | `ReactNode` | Render de un campo individual (casos ad-hoc) |
@@ -62,6 +63,32 @@ API del factory:
 **Excepción documentada**: los renderers `computed` y columnas fuera de entidad (BOMManager,
 statementFields, checkFields) pueden usar `DataCell.*` directamente. En columnas regulares de
 entidad **nunca** se usa `DataCell.*` inline — se declara `type` y el motor resuelve.
+
+### 1.1 Seleccionar columnas individuales — `column(key)`, no destructuring
+
+`toColumns()` devuelve las columnas ordenadas por **zonas de placement** (title → subtitle →
+detail → header; ver ADR-0059/0067), NO en el orden en que se definieron los campos. Por eso
+destructurear el arreglo posicionalmente (`const [a, b, c] = fields.toColumns()`) es inválido:
+el índice no corresponde a ningún campo. Ya causó un crash (`WorkOrdersPageClient`) y columnas
+equivocadas silenciosas en varios views.
+
+Para incluir una o varias columnas de `*Fields.ts` en una tabla, usar el acceso por clave:
+
+```tsx
+const columns: ColumnDef<Order>[] = [
+  { id: "select", ... },
+  orderFields.column("display_id"),       // key de DATOS, no la clave del objeto de definición
+  orderFields.column("date"),
+  { accessorKey: "status", ... },         // columnas inline siguen permitidas
+  orderActions.auto(actionsCtx),
+]
+```
+
+* `column(key)` lanza un `Error` claro si el campo no existe o no tiene superficie `table`.
+* El key es el **data key** (`def.key`), no la clave del objeto en `createEntityFields`.
+* Aplica el mismo `weight` semibold de la zona header que `toColumns()`.
+* **Anti-patrón (prohibido)**: `const [a, b, c] = fields.toColumns()` — destructuring posicional.
+
 
 ---
 

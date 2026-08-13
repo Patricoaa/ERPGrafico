@@ -137,5 +137,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0072](0072-entity-fields-contact-display.md) | Entity Fields — contact fieldtype reactivated with display override (getDisplay) | Accepted |
 | [0073](0073-drawers-zero-border-radius.md) | Drawers y CollapsibleSheets con radio cero (bordes sin redondear) en todo contexto | Accepted |
 | [0074](0074-drawers-background-main-content.md) | Drawers con fondo del color del main content (bg-card) en todo boundary | Accepted |
+| [0075](0075-entity-fields-column-key.md) | Entity Fields — acceso a columnas por clave (column(key)) y prohibición del destructuring posicional de toColumns() | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
