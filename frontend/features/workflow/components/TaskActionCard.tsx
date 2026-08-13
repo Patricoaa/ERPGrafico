@@ -41,7 +41,7 @@ export function TaskActionCard({
                         {isPending ? <Circle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                     </div>
                     <div className="space-y-0.5">
-                        <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
                             {task.title}
                             {!isPending && (
                                 <Chip size="sm" intent="neutral">
@@ -49,12 +49,12 @@ export function TaskActionCard({
                                 </Chip>
                             )}
                         </h4>
-                        <p className="text-xs text-muted-foreground">{task.description}</p>
+                        <p className="text-xs font-medium text-muted-foreground">{task.description}</p>
                     </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                    <div className="flex items-center gap-1.5 text-3xs text-muted-foreground font-medium">
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                         <User className="h-3 w-3 text-primary/60" />
                         {task.assigned_to_data ? (
                             <span><span className="text-foreground">{task.assigned_to_data.username}</span></span>
