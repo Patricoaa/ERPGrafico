@@ -78,8 +78,29 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex flex-col h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR (FULL WIDTH) ────────────────────────────────────────────── */}
-            <div className="flex-none h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6 border-b border-border/40">                {/* Left: page title & meta — fills remaining space */}
-                <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
+            <div className="flex-none h-16 flex items-center bg-background z-30 pr-4 md:pr-6 border-b border-border/40">
+                {/* ── LEFT: Logo (Aligned with Sidebar) ──────────────────────────────── */}
+                <div className="w-[60px] shrink-0 h-full flex items-center justify-center border-r border-border/40 bg-muted/10">
+                    <div className="pointer-events-auto flex items-center justify-center">
+                        {logo ? (
+                            <div className="relative h-8 w-10">
+                                <Image
+                                    src={logo}
+                                    alt={companyName || "Logo"}
+                                    fill
+                                    className="object-contain"
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-8 h-8 rounded-md flex items-center justify-center bg-primary/10 text-primary font-bold text-[10px]">
+                                {initials}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* ── MIDDLE: Page Title & Meta ──────────────────────────────── */}
+                <div className="flex-1 flex items-center gap-4 pl-4 md:pl-6 min-w-0 pointer-events-none">
                     {config ? (
                         <div
                             key={pathname + config.title}
@@ -149,24 +170,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     )}
                 </div>
 
-                {/* Right: UserActions & Logo */}
+                {/* Right: UserActions */}
                 <div className="flex-none flex items-center gap-4">
-                    {/* Logo Section */}
-                    {logo ? (
-                        <div className="relative h-7 w-24">
-                            <Image
-                                src={logo}
-                                alt={companyName || "Logo"}
-                                fill
-                                className="object-contain object-right"
-                            />
-                        </div>
-                    ) : (
-                        <div className="w-8 h-8 rounded-md flex items-center justify-center bg-primary/10 text-primary font-bold text-[10px]">
-                            {initials}
-                        </div>
-                    )}
-
                     <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
                 </div>
             </div>
