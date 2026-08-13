@@ -490,14 +490,17 @@
 }
 
 /*
- * CARD FLAT — Flat selection card: no shadow, hairline border, subtle hover.
+ * CARD FLAT — Flat selection card: 2px border, no shadow, subtle hover.
  * Use for: AutoEntityCard lists, TaskInbox items, Settings selectors.
  * Never use on KPI cards, dashboard panels, or floating modals — use card-base there.
  * Apply via className="card-flat".
+ * NOTE: twMerge does not see inside custom utilities, so a consumer whose base
+ * emits `border`/`shadow-card` (e.g. StatCard default) must also pass explicit
+ * `border-2`/`shadow-none` to override deterministically.
  */
 @utility card-flat {
-  @apply relative overflow-hidden rounded-sm border border-border/15 bg-card text-foreground shadow-none outline-none transition-all;
-  @apply hover:border-border/40 hover:bg-muted/20;
+  @apply relative overflow-hidden rounded-sm border-2 border-border/40 bg-card text-foreground shadow-none outline-none transition-all;
+  @apply hover:border-border/60 hover:bg-muted/30;
   @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
 }
 
