@@ -78,7 +78,7 @@ Seguir este orden dentro del flujo vertical del formulario para mejorar la cogni
 - **Between Sections**: Use `FormSection` with icons and a standard vertical gap (`space-y-6` on form, but `pt-4` inside `FormSection`).
 - **Between Fields**: `gap-4` (Standard) or `gap-6` (Complex grids).
 - **Internal Padding (forma directa, sin FormSplitLayout)**: Usar `px-4 pb-4 pt-2` en el contenedor `<form>`. El padding del surface (Drawer: default `px-8 pb-8`; BaseModal: `p-6` con ScrollArea) se mantiene intacto.
-- **Internal Padding (con FormSplitLayout en Drawer)**: Pasar `contentClassName="p-0"` al `Drawer`. El padding lo inyecta `FormSplitLayout` en su área principal.
+- **Internal Padding (con FormSplitLayout en Drawer)**: Pasar `fillContent` al `Drawer`. El padding lo inyecta `FormSplitLayout` en su área principal.
 - **Internal Padding (con FormSplitLayout en BaseModal)**: Pasar `contentClassName="p-0"` **y** `hideScrollArea={true}` al `BaseModal`. El padding lo inyecta `FormSplitLayout`.
 
 > **Anti-patrón “double padding”**: Nunca dejar el padding por defecto del surface (Drawer: `px-8 pb-8`; BaseModal: `p-6`) activo cuando `FormSplitLayout` es el hijo directo. Obtendrás padding duplicado y dos barras de scroll. Ver [§6](#6-split-layouts-formspitlayout).
@@ -221,7 +221,7 @@ Sidebar de auditoría que muestra el historial de cambios de una entidad (via Dj
 El sidebar **siempre** ocupa el lado derecho del área del formulario. Lo posiciona `FormSplitLayout`; no se debe mover ni reposicionar manualmente.
 
 ```
-Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="p-0")
+Drawer (fillContent) o BaseModal (hideScrollArea + contentClassName="p-0")
   └─ FormTabs [opcional]
        └─ FormTabsContent
             └─ FormSplitLayout          ← gestiona la bipartición
@@ -249,7 +249,7 @@ Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="
 <BaseModal
     size={initialData ? "xl" : "lg"}
     hideScrollArea={true}
-    contentClassName="p-0"
+    fillContent
     allowOverflow={true}
     footer={<FormFooter actions={<>...</>} />}
 >
@@ -318,7 +318,7 @@ Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente 
 
 ### Implementation Pattern
 > [!WARNING]
-> **Anti-Patrón de Doble Padding:** `Drawer` inyecta padding (`px-8 pb-8`) y scroll por defecto. `BaseModal` inyecta padding (`p-6`) y ScrollArea. `FormSplitLayout` también inyecta su propio padding y scroll. Si usas el surface + `FormSplitLayout` sin configuración, obtendrás barras de scroll dobles y paddings gigantes. **SIEMPRE** debes pasar `contentClassName="p-0"` al surface cuando su hijo directo sea `FormSplitLayout`. En `BaseModal` además debes pasar `hideScrollArea={true}`.
+> **Anti-Patrón de Doble Padding:** `Drawer` inyecta padding y scroll por defecto si no se le indica lo contrario. `BaseModal` inyecta padding (`p-6`) y ScrollArea. `FormSplitLayout` también inyecta su propio padding y scroll. Si usas el surface + `FormSplitLayout` sin configuración, obtendrás barras de scroll dobles y paddings gigantes. **SIEMPRE** debes pasar `fillContent` al Drawer cuando su hijo directo sea `FormSplitLayout`. En `BaseModal` debes pasar `hideScrollArea={true}` y `contentClassName="p-0"`.
 
 ```tsx
 <BaseModal
@@ -326,7 +326,7 @@ Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente 
     onOpenChange={setOpen}
     size="lg"
     hideScrollArea={true}   // 1. Elimina el ScrollArea default y su p-6
-    contentClassName="p-0"  // 2. Asegura que el contenedor no tenga margen
+    fillContent  // 2. Desactiva el ScrollArea del Drawer y remueve paddings
 >
     <FormSplitLayout 
         sidebar={<ActivitySidebar entityId={id} entityType="type" />}
@@ -441,7 +441,7 @@ export function AccountForm({ open, onOpenChange, initialData }: Props) {
       onOpenChange={onOpenChange}
       side="left"
       defaultSize={width}
-      contentClassName={initialData?.id ? "p-0" : undefined}
+      fillContent
       footer={<FormFooter actions={<><CancelButton/><ActionSlideButton>Guardar</ActionSlideButton></>} />}
     >
       <FormSplitLayout
@@ -469,7 +469,7 @@ export function PurchaseOrderForm({ open, onOpenChange, initialData }: Props) {
       onOpenChange={onOpenChange}
       size={size}
       hideScrollArea
-      contentClassName="p-0"
+      fillContent
       // ...
     >
       {/* form */}

@@ -60,3 +60,18 @@ To avoid visual fatigue, icons within components (selectors, sections, etc.) mus
 1.  **Structural Icons**: (Sections, search icons) Use `text-muted-foreground/50`.
 2.  **Semantic Icons**: (Warning, Info) Use their respective functional colors (`destructive`, `warning`).
 3.  **Active Elements**: (Selected items in dropdowns) Can use `text-primary` or `text-foreground`.
+
+---
+
+## Shape Consistency
+
+All border-radius values must follow the **Shape Consistency Lock** — a four-level hierarchy enforced across the entire application:
+
+| Level | Class | px | Used on |
+|---|---|---|---|
+| Atomic | `rounded-sm` | 8px | Buttons, inputs, badges, icon backgrounds (small) |
+| Container | `rounded-md` | 12px | Cards, alerts, DataTable, form blocks, empty states |
+| Overlay | `rounded-lg` | 16px | Modals, popovers, dropdowns, select content |
+| Shell | `rounded-xl` | 20px | Main shell and global panels (via `panel-surface` only) |
+
+> Full rules, component-by-component examples, and invariants → **[shape-consistency-lock.md](shape-consistency-lock.md)**

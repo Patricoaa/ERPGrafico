@@ -21,7 +21,7 @@ class ProductionValidator:
         return data
 
     @staticmethod
-    def validate_bom_line(data):
+    def validate_bom_line(data, is_new=True):
         from inventory.services import UoMService
         component = data.get('component')
         uom = data.get('uom')
@@ -33,10 +33,15 @@ class ProductionValidator:
         if is_outsourced:
             if component and component.product_type != 'SERVICE':
                 raise serializers.ValidationError({'component': 'Líneas tercerizadas solo permiten productos Servicio.'})
+            if is_new and component and not component.can_be_purchased:
+                raise serializers.ValidationError({'component': 'El servicio tercerizado debe ser comprable (can_be_purchased).'})
             if not data.get('supplier'):
                 raise serializers.ValidationError({'supplier': 'Seleccione proveedor para servicio tercerizado.'})
             if not data.get('unit_price') or float(data.get('unit_price')) <= 0:
                 raise serializers.ValidationError({'unit_price': 'Precio debe ser mayor a 0.'})
+        else:
+            if is_new and component and component.product_type != 'STORABLE':
+                raise serializers.ValidationError({'component': 'Las materias primas y componentes deben ser productos almacenables (STORABLE).'})
                 
         if component and uom and not is_outsourced:
             if not UoMService.validate_uom_compatibility(component.uom, uom):

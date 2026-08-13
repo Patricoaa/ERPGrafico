@@ -91,6 +91,7 @@ last_review: 2026-06-19
 | “disaster recovery”, “el ERP no levanta”, “runbook incidente”, “DB corrupta”, “host caído”, “restore en emergencia” | [disaster-recovery-pyme.md](30-playbooks/disaster-recovery-pyme.md) | 30 |
 | “aggregator”, “features/orders”, “feature sin barrel root”, “hub de visualización”, “agregar varias entities” | [frontend-fsd.md#aggregator-pattern](10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel) | 10 |
 | “créditos bancarios”, “préstamos”, “cuotas”, “amortización”, “UF”, “tarjeta de crédito estado/pago”, “cheques propios/girados”, “endoso”, “Centro de Bancos”, “roadmap bancos”, “pendientes de tesorería” | [50-audit/bancos/README.md](50-audit/bancos/README.md) | 50 |
+| "rounded", "border-radius", "radius", "esquinas redondeadas", "rounded-sm correcto", "forma de botón", "shape consistency" | [shape-consistency-lock.md](20-contracts/shape-consistency-lock.md) | 20 |
 
 ## Global invariants (violate = PR rejected)
 
@@ -109,6 +110,7 @@ last_review: 2026-06-19
 11. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
 13. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM. Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Creación de grafos en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md).
+14. **Shape Consistency Lock** — Cada elemento tiene un radio de esquina único según su nivel: `rounded-sm` (atómico: botones, inputs), `rounded-md` (contenedores: cards, alertas), `rounded-lg` (overlays: modales, popovers), `rounded-xl` (shell, vía `panel-surface`). Ver [shape-consistency-lock.md](20-contracts/shape-consistency-lock.md).
 
 ## Agentic model instructions
 
@@ -119,6 +121,7 @@ You are operating on ERPGrafico. Before any implementation:
 - [ ] Read all preconditions listed in playbook frontmatter
 - [ ] **UI Pre-flight:** Consulted `docs/20-contracts/component-decision-tree.md` to avoid re-inventing components.
 - [ ] **Styling Pre-flight:** Read `frontend/app/globals.css` to verify available semantic color tokens.
+- [ ] **Shape Pre-flight:** Consulted [shape-consistency-lock.md](20-contracts/shape-consistency-lock.md) to verify radius usage (`rounded-sm` atómico / `rounded-md` contenedor / `rounded-lg` overlay).
 - [ ] Verified invariants above are not violated by proposed change
 - [ ] Ran validation commands listed in playbook
 

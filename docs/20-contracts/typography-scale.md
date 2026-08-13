@@ -23,7 +23,7 @@ stability: contract-changes-require-ADR
 - Onest es la única fuente del sistema. No existe `font-heading`.
 - Toda la jerarquía tipográfica se construye con: weight, size, tracking y text-transform.
 - `font-sans` es el default del `body` — no necesita declararse explícitamente en componentes.
-- El tamaño mínimo absoluto para cualquier texto visible en la UI es de 12px (`text-xs`).
+- El tamaño mínimo absoluto para cualquier texto body/lectura es `text-xs` (12px). Los tamaños menores (11px, 10px, 9px) están confinados a la capa N5 (Micro) exclusivamente para alta densidad.
 - Las columnas numéricas de tablas y cifras financieras DEBEN usar `tabular-nums` para que los números encajen perfectamente y se eviten saltos visuales. Se alinean a la derecha (`justify-end` + `text-right`).
 
 ---
@@ -77,6 +77,10 @@ Esta matriz es el contrato tipográfico (diseño denso). Note que la escala est�
 | **N4 — Tooltip** | TooltipTrigger content | `text-xs font-medium` | normal | normal | "Editar" |
 | **N4 — Timestamp** | ActivitySidebar time | `text-xs font-medium text-muted-foreground/60` | normal | normal | "hace 2 horas" |
 | **N4 — Badge count** | TabBar badge number | `text-xs font-bold tabular-nums` | normal | normal | 3, 15 |
+| **N5 — Micro density** | Data dense grids, minor statuses | `text-[10px]` o `text-3xs` | `tracking-looser` | `uppercase` | "PAGADO", "SIN CONCILIAR" |
+| **N5 — Ultra micro** | Timeline stamps extreme density | `text-[9px]` o `text-4xs` | `tracking-looser` | `uppercase` | "08:30" |
+
+> **Nota sobre N5:** N5 (`text-2xs` a `text-4xs`) solo debe usarse en layouts extremadamente densos (tablas financieras, timelines, reportes operativos) donde el scroll o el espacio lo exijan. No usar en layouts estándar de marketing o settings generales.
 
 ---
 
@@ -138,19 +142,17 @@ El componente `<StatusBadge>` tiene su propio sistema de tamaños intencional:
 
 ## Escala de KPIs y métricas
 
-Para números grandes con alto impacto visual:
+Para números grandes con alto impacto visual, usar las utilidades globales que garantizan consistencia en toda la aplicación:
 
-```
-text-3xl  font-bold  tracking-tight  tabular-nums
-```
+```tsx
+// KPI estándar (ej. Dashboard main stats)
+<div className="kpi-value">1.234.567</div> // → text-3xl font-bold tracking-tight tabular-nums
 
-Variante compacta (espacio limitado):
-
-```
-text-2xl  font-bold  tracking-tight  tabular-nums
+// KPI compacto (ej. Cards en listas densas)
+<div className="kpi-value-compact">1.234.567</div> // → text-2xl font-bold tracking-tight tabular-nums
 ```
 
-> Siempre `font-bold` + `tracking-tight` + `tabular-nums`. 
+> Siempre usan `font-bold` + `tracking-tight` + `tabular-nums`. 
 
 **StatCard labels**:
 
@@ -223,11 +225,13 @@ Los colores de tipo de producto en `ProductTypeSelector` son identificadores vis
 | `tracking-tight` | `-0.02em` | Texto denso, modal titles |
 | `tracking-normal` | `0` | Body text (default) |
 | `tracking-wider` | `0.05em` | Wizard steps, PageTabs tabs, elementos secundarios |
-| `tracking-widest` | `0.1em` | Botones de acción, badges estándar |
-| `tracking-widest` | `0.1em` | N2: LabeledInput / LabeledContainer legend |
+| `tracking-widest` | `0.1em` | Botones de acción, badges estándar, N2 legends |
+| `tracking-loose` | `0.15em` | Elementos N5, minor hints |
+| `tracking-looser` | `0.2em` | N5 badges, ultra-micro dense text |
 | `tracking-[0.25em]` | `0.25em` | N1: FormSection title |
 
-> El valor custom (`[0.25em]`) es parte del sistema de capas N1/N2 — no es ad-hoc.
+> El valor custom (`[0.25em]`) es parte del sistema de capas N1 — no es ad-hoc.
+> No utilizar variaciones arbitrarias como `[0.18em]` o `[0.3em]`. Si necesita espaciado amplio, use `tracking-loose` o `tracking-looser`.
 
 ---
 

@@ -42,6 +42,7 @@ Task routing — common intents:
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
 | Naming a component / hook / file / type / sufijo incorrecto | [naming-conventions.md](docs/90-governance/naming-conventions.md) |
+| Border-radius / rounded / esquinas / shape consistency | [shape-consistency-lock.md](docs/20-contracts/shape-consistency-lock.md) |
 
 Full routing table in [docs/README.md](docs/README.md).
 
@@ -52,6 +53,7 @@ Before writing any code, verify:
 - [ ] Matched intent in routing table and read target playbook fully
 - [ ] Consulted [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) — do not reinvent components that exist
 - [ ] Read `frontend/app/globals.css` to verify available semantic color tokens before adding styles
+- [ ] Checked [shape-consistency-lock.md](docs/20-contracts/shape-consistency-lock.md) — `rounded-sm` atómico / `rounded-md` contenedor / `rounded-lg` overlay
 - [ ] Verified global invariants below are not violated
 
 ## Global invariants (violate = PR rejected)
@@ -67,6 +69,7 @@ Before writing any code, verify:
 9. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
 10. **Component suffix must match its surface** — `Drawer` (slide-over), `Modal` (dialog), `Sheet`, `Wizard`, `Form` (no surface), `View` (page-level). `FormModal` / `FormDrawer` are **prohibited**. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
 11. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM (`.objects.filter/get/create`). Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Grafos de objetos se crean en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](docs/90-governance/zero-n-plus-one-policy.md).
+12. **Shape Consistency Lock** — Radius de esquinas sigue jerarquía estricta: `rounded-sm` (botón/input), `rounded-md` (card/alerta/contenedor), `rounded-lg` (modal/popover/dropdown), `rounded-xl` (shell vía `panel-surface`). Ver [shape-consistency-lock.md](docs/20-contracts/shape-consistency-lock.md).
 
 ## Stack (short)
 

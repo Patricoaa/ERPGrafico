@@ -133,5 +133,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0068](0068-badge-currencyflow-default.md) | Badge default adopts the CurrencyFlow aesthetic (font-sans text-xs font-medium, borderless rounded-sm); supersedes ghost-pill table cells | Proposed |
 | [0069](0069-badge-consumer-migration-and-exceptions.md) | Badge consumer migration (zero direct ui/badge imports) + audited justified visual exceptions (bubbles, tag pills, mono codes, callouts, POS density) | Proposed |
 | [0070](0070-primary-process-black.md) | Primary = Process Black K100 (placa Key) — ratificación de la decisión de julio | Accepted |
+| [0071](0071-productselector-context-filters.md) | ProductSelector filtering by context — productTypes + canBeSold/canBePurchased | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

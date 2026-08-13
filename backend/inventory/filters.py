@@ -10,7 +10,7 @@ class ProductFilter(filters.FilterSet):
     class Meta:
         model = Product
         fields = {
-            "product_type": ["exact"],
+            "product_type": ["exact", "in"],
             "category": ["exact"],
             "can_be_sold": ["exact"],
             "can_be_purchased": ["exact"],

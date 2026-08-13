@@ -255,25 +255,25 @@ Un Drawer CRUD recibe `initialData` (objeto) o vacío y necesita limpiar/rellena
 
 ### Patrón canónico
 
-La "clave de reset" cambia cuando el drawer abre con datos nuevos O se abre en creación. 
+La lógica "Adjust state during render" para modales/drawers ha sido abstraída en el hook `useInitializeDrawerForm` para evitar código repetitivo y boilerplate (Variante 4 del contrato de sync).
 
 ```tsx
-const prevResetKeyRef = useRef<string>("")
+import { useInitializeDrawerForm } from "@/hooks/useInitializeDrawerForm"
 
-const resetKey = open 
-    ? (initialData?.id?.toString() ?? "__new__") 
-    : "__closed__"
-
-if (resetKey !== prevResetKeyRef.current) {
-    prevResetKeyRef.current = resetKey
-    if (open) {
-        form.reset(initialData ? mapEntityToForm(initialData) : defaultFormValues)
-    }
-}
+useInitializeDrawerForm({
+    form,
+    open,
+    initialData,
+    // (Opcional) Si la data carga asíncronamente mientras el drawer está abierto, se puede postergar el reset:
+    // open: open && !isLoadingDeps,
+    defaultValues: () => defaultFormValues,
+    mapData: (data) => mapEntityToForm(data)
+})
 ```
 
 **Beneficios:**
-- Un solo ref (frente a `wasOpen` + `lastResetId`).
+- Cero boilerplate manual con refs.
+- Abstrae el patrón de clave de reset sincronizando id y estado de apertura.
 - Sincrónico, libre de flashes, sin `requestAnimationFrame`.
 - Compliant con React Compiler ([ADR-0051](../10-architecture/adr/0051-adjust-state-during-render.md)).
 

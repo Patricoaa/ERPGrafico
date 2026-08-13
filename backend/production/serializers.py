@@ -564,7 +564,7 @@ class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         from .validators import ProductionValidator
-        return ProductionValidator.validate_bom_line(data)
+        return ProductionValidator.validate_bom_line(data, is_new=self.instance is None)
 
 
 class BillOfMaterialsSerializer(serializers.ModelSerializer):

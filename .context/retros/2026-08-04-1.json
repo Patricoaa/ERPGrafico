@@ -1,0 +1,49 @@
+{
+  "date": "2026-08-04",
+  "window": "7d",
+  "metrics": {
+    "commits": 190,
+    "contributors": 2,
+    "prs_merged": 1,
+    "insertions": 23008,
+    "deletions": 11503,
+    "net_loc": 11505,
+    "test_loc": 1886,
+    "test_ratio": 0.082,
+    "active_days": 8,
+    "sessions": 26,
+    "deep_sessions": 14,
+    "avg_session_minutes": 70,
+    "loc_per_session_hour": 758,
+    "feat_pct": 0.29,
+    "fix_pct": 0.41,
+    "peak_hour": 17,
+    "ai_assisted_commits": 0,
+    "weighted_commits": 816
+  },
+  "authors": {
+    "AdminImprenta": { "commits": 188, "insertions": 23008, "deletions": 11503, "test_ratio": 0.082, "top_area": "frontend/" },
+    "github-actions[bot]": { "commits": 1, "insertions": 635, "deletions": 2, "test_ratio": 0.0, "top_area": "release" }
+  },
+  "version_range": ["0.3.0", "0.3.0"],
+  "streak_days": 8,
+  "tweetable": "Semana del 28 Jul: 190 commits (1 contribuidor principal), 23.0k LOC, 8.2% tests, 1 PR (#167), pico: 17:00 | Streak: 8d",
+  "focus_score": 0.74,
+  "focus_area": "frontend/",
+  "hotspots": [
+    "frontend/features/treasury/components/PaymentMethodSelector.tsx (16)",
+    "frontend/components/shared/DataTableCells.tsx (16)",
+    "frontend/features/inventory/components/ProductInsightsPanel.tsx (14)",
+    "docs/20-contracts/component-contracts.md (14)",
+    "frontend/features/settings/components/partners/PartnersClientView.tsx (13)",
+    "frontend/components/shared/entity-fields.tsx (12)",
+    "frontend/lib/entity-registry.ts (11)",
+    "frontend/app/globals.css (11)"
+  ],
+  "test_health": {
+    "total_test_files": 14,
+    "tests_added_this_period": 6,
+    "regression_test_commits": 0,
+    "test_files_changed": 6
+  }
+}

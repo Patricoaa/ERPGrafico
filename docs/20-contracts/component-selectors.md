@@ -103,7 +103,8 @@ Combobox for inventory products. Popover + advanced modal. Shows price and stock
 <ProductSelector
   value={productId}
   onChange={setProductId}
-  context="sale"
+  productTypes={['STORABLE', 'MANUFACTURABLE']}
+  canBePurchased
   restrictStock
   label="Producto"
 />
@@ -114,12 +115,12 @@ Combobox for inventory products. Popover + advanced modal. Shows price and stock
 | `value` | `string \| number \| null` | ❌ | — | Product `id` |
 | `onChange` | `(value: string \| null) => void` | ✅ | — | |
 | `placeholder` | `string` | ❌ | — | |
-| `productType` | `string` | ❌ | — | Filter by `product_type` |
-| `allowedTypes` | `string[]` | ❌ | — | Multiple type filter |
+| `productTypes` | `ProductType[]` | ❌ | — | Server-side type filter. 1 → `product_type`, N → `product_type__in` (replaces legacy `productType` / `allowedTypes` / `simpleOnly`) |
+| `canBeSold` | `boolean` | ❌ | `false` | Server filter `can_be_sold` |
+| `canBePurchased` | `boolean` | ❌ | `false` | Server filter `can_be_purchased` (replaces `context="purchase"`) |
 | `disabled` | `boolean` | ❌ | `false` | |
 | `restrictStock` | `boolean` | ❌ | `false` | Warn when item has no stock |
 | `excludeIds` | `(string \| number)[]` | ❌ | — | Exclude specific products |
-| `context` | `'sale' \| 'purchase'` | ❌ | — | Adjusts price display |
 | `excludeVariantTemplates` | `boolean` | ❌ | `false` | Hide variant parent templates |
 | `onSelect` | `(product: Product) => void` | ❌ | — | Full product object on select (for price auto-fill) |
 | `customFilter` | `(product: Product) => boolean` | ❌ | — | Additional client-side filter |
