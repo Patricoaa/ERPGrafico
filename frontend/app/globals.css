@@ -450,23 +450,19 @@
  * border/radius/shadow/background so panels read as parallel frames
  * when they sit side-by-side.
  *
- * Tokens used: --radius-xl (20px), --color-border @ 0.10, shadow-surface,
- * --color-card. Never override these individually in components —
+ * Tokens used: --radius-none, border-l border-border/40, bg-background. Never override these individually in components —
  * use this utility.
  *
- * The `!` important modifier on border / shadow guarantees this utility
+ * The `!` important modifier guarantees this utility
  * wins the cascade over Shadcn `SheetContent`'s default `border border-border
- * rounded-lg` (full opacity) base classes that still appear in the same
- * className. Without it, the order of class generation in the
- * stylesheet determines the winner, which produces visible drift
- * between Main and the side panels.
+ * rounded-lg`.
  *
  * See: docs/20-contracts/component-contracts.md (CollapsibleSheet)
  *      docs/20-contracts/component-drawer.md (embedded Drawer)
  *      docs/10-architecture/design-system.md (Radius Hierarchy)
  */
-@utility panel-surface {
-  @apply rounded-xl border! border-border/15! shadow-surface! bg-card;
+@utility flush-panel {
+  @apply bg-background border-border/40! rounded-none! shadow-none!;
 }
 
 

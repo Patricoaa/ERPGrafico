@@ -73,7 +73,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     return (
         <div className="relative h-screen bg-background overflow-hidden font-sans">
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6">
+            <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6 border-b border-border/40">
                 {/* Module launcher: shows current module icon, hover → hamburger */}
                 <Button
                     variant="ghost"
@@ -191,7 +191,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             </div>
 
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pt-[var(--page-padding-top)] pl-[var(--page-gap-left)] pr-[var(--page-gap-right)] pb-[var(--page-gap-bottom)]"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pt-[var(--header-height)]"
                 style={{
                     marginRight: `${totalSheetsWidth}px`,
                 }}
@@ -214,7 +214,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 )}
                 <PrepressPanel
                     id="main-content"
-                    className="flex-1 flex flex-col overflow-hidden relative panel-surface"
+                    className="flex-1 flex flex-col overflow-hidden relative flush-panel"
                 >
                     <div
                         className="w-full flex-1 flex flex-col min-h-0 animate-in fade-in ease-premium fill-mode-both motion-reduce:animate-none motion-reduce:opacity-100"
