@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-table"
 import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableExpandHeader } from '@/components/shared'
 import { IconButton } from "@/components/shared"
 
 import { AccountDrawer } from "@/features/finance"
@@ -97,8 +98,11 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         return [
         {
             accessorKey: "code",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Código" className="justify-center" />
+            header: ({ column, table }) => (
+                <div className="flex items-center gap-1.5">
+                    <DataTableExpandHeader table={table} />
+                    <DataTableColumnHeader column={column} title="Código" />
+                </div>
             ),
             cell: ({ row }) => {
                 const canExpand = row.getCanExpand()
