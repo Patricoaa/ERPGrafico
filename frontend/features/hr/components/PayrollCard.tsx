@@ -43,21 +43,21 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
         <TableRow className="group border-none hover:bg-muted/50 transition-colors">
             <TableCell className="py-3 pl-8">
                 <div className="flex flex-col">
-                    <DataCell.Text className="text-2xs font-bold text-foreground uppercase tracking-tight">
+                    <DataCell.Text className="uppercase tracking-tight">
                         {item.concept_detail?.name}
                     </DataCell.Text>
                     {item.description && (
-                        <DataCell.Secondary className="text-3xs text-muted-foreground leading-none mt-0.5 italic">
+                        <DataCell.Secondary className="leading-none mt-0.5 italic">
                             {item.description}
                         </DataCell.Secondary>
                     )}
                 </div>
             </TableCell>
             <TableCell className="text-right py-3 tabular-nums">
-                {type === 'HABER' && <DataCell.Currency value={item.amount} weight="black" className="text-2xs text-success" />}
+                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-success" />}
             </TableCell>
             <TableCell className="text-right py-3 pr-8 tabular-nums">
-                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} weight="black" className="text-2xs text-expense" />}
+                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-expense" />}
             </TableCell>
             {!isReadOnly && (
                 <TableCell className="w-[80px] p-0 text-right">
@@ -161,17 +161,17 @@ export function PayrollCard({
                             <div className="space-y-1">
                                 <p className={LABEL_STYLE}>Datos del Empleado</p>
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-foreground leading-tight">
+                                    <span className="text-sm font-medium text-foreground leading-tight">
                                         {payroll.employee_detail?.contact_detail?.name || payroll.employee_name || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.name as string || "—"}
                                     </span>
                                     {(payroll.employee_detail?.contact_detail?.tax_id || (payroll as unknown as Record<string, unknown>).employee_tax_id as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.tax_id as string) ? (
-                                        <span className="text-2xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
                                             RUT: <span className="font-bold text-foreground">{payroll.employee_detail?.contact_detail?.tax_id || (payroll as unknown as Record<string, unknown>).employee_tax_id as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.tax_id as string}</span>
                                         </span>
                                     ) : (
-                                        <span className="text-2xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">RUT: —</span>
+                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-0.5">RUT: —</span>
                                     )}
-                                    <span className="text-3xs text-primary/70 font-bold uppercase tracking-widest mt-1">
+                                    <span className="text-xs text-primary/70 font-medium uppercase tracking-widest mt-1">
                                         {payroll.employee_detail?.position || (payroll as unknown as Record<string, unknown>).employee_position as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.position as string || "Personal"} <span className="opacity-30">|</span> {payroll.employee_detail?.department || (payroll as unknown as Record<string, unknown>).employee_department as string || ((payroll as unknown as Record<string, unknown>).employee as Record<string, unknown> | undefined)?.department as string || "General"}
                                     </span>
                                 </div>
@@ -179,10 +179,10 @@ export function PayrollCard({
                             <div className="space-y-1 text-right">
                                 <p className={LABEL_STYLE}>Periodo Laboral</p>
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-foreground leading-tight">
+                                    <span className="text-sm font-medium text-foreground leading-tight">
                                         {payroll.period_label}
                                     </span>
-                                    <span className="text-2xs text-muted-foreground font-medium uppercase tracking-widest mt-0.5">
+                                    <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest mt-0.5">
                                         Folio <span className="opacity-30">|</span> <span className="font-bold text-primary/80">{formatEntityDisplay('hr.payroll', payroll as unknown as Record<string, unknown>)}</span>
                                     </span>
                                 </div>
@@ -220,7 +220,7 @@ export function PayrollCard({
                         <p className={cn(LABEL_STYLE, "text-primary/70")}>Sueldo Base</p>
                         <div className="flex items-center justify-center gap-1">
                             <span className="text-3xs font-bold text-primary/40">$</span>
-                            <MoneyDisplay amount={parseFloat(payroll.base_salary || "0")} className="text-sm font-black text-primary" />
+                            <MoneyDisplay amount={parseFloat(payroll.base_salary || "0")} className="text-sm font-bold text-primary" />
                         </div>
                     </div>
                 </div>
@@ -250,7 +250,7 @@ export function PayrollCard({
                             <TableRow className="bg-muted/30 hover:bg-muted/30 border-y">
                                 <TableCell className="py-2 pl-6 text-2xs font-bold text-muted-foreground uppercase tracking-wider">Subtotal Haberes</TableCell>
                                 <TableCell className="py-2 text-right">
-                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-black text-success" />
+                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-bold text-success" />
                                 </TableCell>
                                 <TableCell colSpan={isReadOnly ? 1 : 2}></TableCell>
                             </TableRow>
@@ -267,7 +267,7 @@ export function PayrollCard({
                                 <TableCell className="py-2.5 pl-8 text-2xs font-bold text-muted-foreground uppercase tracking-wider">Subtotal Descuentos</TableCell>
                                 <TableCell></TableCell>
                                 <TableCell className="py-2.5 text-right pr-8">
-                                    <MoneyDisplay amount={parseFloat(payroll.total_descuentos || "0")} className="text-sm font-black text-expense" />
+                                    <MoneyDisplay amount={parseFloat(payroll.total_descuentos || "0")} className="text-sm font-bold text-expense" />
                                 </TableCell>
                                 {!isReadOnly && <TableCell></TableCell>}
                             </TableRow>
@@ -297,7 +297,7 @@ export function PayrollCard({
                                 <FormSection title="Costo Empresa / Aportes Patronales" icon={AlertCircle} className="mb-2" />
                                 <div className="space-y-2.5">
                                     {employerContributions.map(c => (
-                                        <div key={c.id} className="flex justify-between items-center text-2xs group/item">
+                                        <div key={c.id} className="flex justify-between items-center text-xs group/item">
                                             <span className="text-muted-foreground group-hover/item:text-foreground transition-colors">{c.concept_detail?.name}</span>
                                             <MoneyDisplay amount={parseFloat(c.amount)} className="font-bold text-foreground" />
                                         </div>
@@ -323,7 +323,7 @@ export function PayrollCard({
                             </div>
                             <div className="relative z-10 flex flex-col gap-1">
                                 <p className="text-3xs font-bold uppercase tracking-[0.25em] opacity-80">Líquido a Percibir</p>
-                                <MoneyDisplay amount={netSalary} className="text-5xl font-black tracking-tighter" />
+                                <MoneyDisplay amount={netSalary} className="text-5xl font-bold tracking-tighter" />
                             </div>
                         </div>
 
@@ -350,14 +350,14 @@ export function PayrollCard({
                                                     {formatPlainDate(p.date)}
                                                 </span>
                                             </div>
-                                            <MoneyDisplay amount={p.amount} className="text-xs font-black text-foreground tabular-nums" />
+                                            <MoneyDisplay amount={p.amount} className="text-xs font-bold text-foreground tabular-nums" />
                                         </div>
                                     ))}
                                 </div>
                                 {pendingToPay > 0 && isPosted && (
                                     <div className="pt-3 border-t border/60 flex justify-between items-center">
                                         <span className="text-3xs font-bold uppercase text-warning tracking-wider">Saldo Pendiente de Pago</span>
-                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-black text-warning" />
+                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-bold text-warning" />
                                     </div>
                                 )}
                             </div>

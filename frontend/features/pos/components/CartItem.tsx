@@ -131,7 +131,7 @@ function CartItemComponent({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <span className={cn(
-                                "font-bold truncate block cursor-default text-foreground/90", 
+                                "font-medium truncate block cursor-default text-foreground/90", 
                                 isTouchMode ? "text-base" : "text-sm"
                             )}>
                                 {item.name}
@@ -200,7 +200,7 @@ function CartItemComponent({
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <span className={cn(
-                                "font-black text-primary leading-none cursor-help",
+                                "font-bold text-primary leading-none cursor-help",
                                 isTouchMode ? "text-lg ml-1" : "text-base ml-1"
                             )}>
                                 {formatCurrency(item.total_gross)}
@@ -286,7 +286,7 @@ function CartItemComponent({
                         {isTouchMode ? (
                             <div className="w-12 text-center cursor-pointer select-none flex items-center justify-center h-full" onClick={() => onOpenNumpad(item.cartItemId, 'qty', item.qty)}>
                                 <span className={cn(
-                                    "font-black text-foreground", 
+                                    "font-bold text-foreground", 
                                     isOverLimit && "text-destructive", 
                                     isTouchMode ? "text-sm" : "text-xs"
                                 )}>
@@ -331,7 +331,7 @@ function CartItemComponent({
                 {maxQty !== undefined && maxQty !== Infinity && (
                     <div className={cn(
                         "absolute -bottom-2 flex items-center px-1.5 py-px rounded-full font-bold uppercase tracking-wider border shadow-sm",
-                        isTouchMode ? "text-4xs" : "text-[8px]",
+                        isTouchMode ? "text-4xs" : "text-4xs",
                         isOverLimit 
                             ? "bg-destructive text-destructive-foreground border-destructive" 
                             : "bg-background text-muted-foreground border-border/70"
