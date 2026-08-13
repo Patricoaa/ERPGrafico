@@ -57,18 +57,28 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         }
     }
 
-    // Sync global data attributes for repelling fixed UI elements (like Sheets)
+    // Sync global data attributes for repelling fixed UI elements (like Sheets).
+    // Attribute removal is deferred ~220ms so consumers (ActionDock, sheet padding)
+    // shift back in sync with the 200ms panel exit instead of snapping.
     useEffect(() => {
+        let inboxTimeout: NodeJS.Timeout | undefined
+        let hubTimeout: NodeJS.Timeout | undefined
+
         if (isInboxOpen) {
             document.body.setAttribute('data-inbox-open', 'true')
         } else {
-            document.body.removeAttribute('data-inbox-open')
+            inboxTimeout = setTimeout(() => document.body.removeAttribute('data-inbox-open'), 220)
         }
 
         if (isHubEffectivelyOpen) {
             document.body.setAttribute('data-hub-open', 'true')
         } else {
-            document.body.removeAttribute('data-hub-open')
+            hubTimeout = setTimeout(() => document.body.removeAttribute('data-hub-open'), 220)
+        }
+
+        return () => {
+            clearTimeout(inboxTimeout)
+            clearTimeout(hubTimeout)
         }
     }, [isInboxOpen, isHubEffectivelyOpen])
 

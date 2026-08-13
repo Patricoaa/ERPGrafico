@@ -1062,6 +1062,36 @@ table [data-notched-field] {
     }
   }
 
+  /*
+   * EDGE PANEL ENTER/EXIT (embedded boundary)
+   * Combined slide + fade so the panel reads as a physical layer lifting off
+   * the canvas, not a slab. GPU-only (transform + opacity). Asymmetric:
+   * fast enter with the premium overshoot curve, quicker exit on --ease-exit.
+   */
+  @keyframes panel-enter-right {
+    from {
+      transform: translate3d(100%, 0, 0);
+      opacity: 0.4;
+    }
+
+    to {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes panel-exit-right {
+    from {
+      transform: translate3d(0, 0, 0);
+      opacity: 1;
+    }
+
+    to {
+      transform: translate3d(100%, 0, 0);
+      opacity: 0;
+    }
+  }
+
   [data-slot="sheet-content"] {
     animation-duration: 400ms !important;
     animation-timing-function: var(--ease-premium) !important;
@@ -1204,6 +1234,17 @@ table [data-notched-field] {
     transition: filter 400ms var(--ease-premium);
   }
 
+  /*
+   * GLOBAL EDGE PANEL SCRIM
+   * Gentler canvas reaction for edge panels (Inbox, HUB, CollapsibleSheet):
+   * slight blur + dim, visual-only (canvas stays interactive — rows keep
+   * driving the HUB). Placed BEFORE the modal-overlay rule so a modal drawer
+   * (blur(6px)/0.65) wins when both are present.
+   */
+  #main-content:has([data-slot="sheet-content"][data-state="open"]) > div:first-child {
+    filter: blur(2px) brightness(0.8);
+  }
+
   #main-content:has([data-slot="sheet-overlay"]) > div:first-child {
     filter: blur(6px) brightness(0.65);
   }
@@ -1214,26 +1255,51 @@ table [data-notched-field] {
    * it is a square edge panel (`rounded-none`, ADR-0073). The radius comes from
    * the component-level `rounded-none!`; nothing here must reintroduce
    * border-radius on the panel or its header.
-   * Here we only manage:
-   *   - The smooth transition for open/close animation
-   *   - The entrance transform override (Radix slide-in is disabled for embedded)
+   * Here we manage:
+   *   - The unified entrance/exit keyframes (panel-enter/exit-right, asymmetric)
+   *   - The edge shadow that lifts the panel off the canvas on open
    *   - The close-state fade-out of shadow/border before the DOM is pruned
    */
   #main-content [data-slot="sheet-content"] {
     isolation: isolate;
+    animation-duration: 240ms !important;
     transition:
       box-shadow 400ms var(--ease-premium),
       border-color 400ms var(--ease-premium),
-      transform 500ms var(--ease-premium) !important;
+      transform 240ms var(--ease-premium) !important;
   }
 
   #main-content [data-slot="sheet-content"][data-state="open"] {
-    transform: none !important;
+    animation-name: panel-enter-right !important;
+    box-shadow: -16px 0 32px oklch(0.12 0.02 240 / 0.18);
   }
 
   #main-content [data-slot="sheet-content"][data-state="closed"] {
+    animation-name: panel-exit-right !important;
+    animation-duration: 200ms !important;
+    animation-timing-function: var(--ease-exit) !important;
     box-shadow: none !important;
     border-color: transparent !important;
+  }
+
+  /* Reduced motion (WCAG 2.1 SC 2.3.3): collapse panel motion to a 100ms opacity fade */
+  @media (prefers-reduced-motion: reduce) {
+    #main-content [data-slot="sheet-content"][data-state="open"] {
+      animation-name: sheet-fade-in !important;
+      animation-duration: 100ms !important;
+      transform: none !important;
+    }
+
+    #main-content [data-slot="sheet-content"][data-state="closed"] {
+      animation-name: sheet-fade-out !important;
+      animation-duration: 100ms !important;
+      animation-timing-function: var(--ease-micro) !important;
+      transform: none !important;
+    }
+
+    #main-content:has([data-slot="sheet-content"][data-state="open"]) > div:first-child {
+      filter: none !important;
+    }
   }
 }
 

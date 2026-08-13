@@ -66,7 +66,7 @@ interface TaskInboxProps {
 export function TaskInbox({ onCountChange }: TaskInboxProps) {
     const { approvalTasks, operationalTasks, isLoading, refetch } = useTasks()
     const [actioningTask, setActioningTask] = useState<number | null>(null)
-    const [activeTab, setActiveTab] = useState("approvals")
+    const [activeTab, setActiveTab] = useState("tasks")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
     const { openEntity } = useGlobalModalActions()
@@ -248,8 +248,8 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
     }
 
     const tabItems: TabItem[] = [
-        { value: 'approvals', label: 'Aprobaciones', icon: CheckCircle2, badge: approvalsPending.length },
-        { value: 'tasks', label: 'Tareas', icon: ListTodo, badge: operationalTasks.length },
+        { value: 'tasks', label: 'Tareas', badge: operationalTasks.length },
+        { value: 'approvals', label: 'Aprobaciones', badge: approvalsPending.length },
     ]
 
     return (

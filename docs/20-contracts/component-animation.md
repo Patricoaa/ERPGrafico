@@ -135,7 +135,33 @@ A continuación se realiza una auditoría completa del árbol de páginas del fr
 
 ---
 
-## 5. Próximos Pasos de Implementación
+## 5. Paneles de Borde (CollapsibleSheet / Drawer embebido)
+
+Los paneles de borde (`CollapsibleSheet`, `Drawer` con `boundary="embedded"`) usan su propio sistema de movimiento, distinto del `<FadeIn>` de sub-vistas. Vive en `frontend/app/globals.css` (sección "PREMIUM ANIMATIONS - SHEET OVERRIDES") y aplica a todo `[data-slot="sheet-content"]` dentro de `#main-content`.
+
+### Especificación
+
+| Fase | Duración | Easing | Propiedades |
+|---|---|---|---|
+| Entrada del panel | 240ms | `--ease-premium` | `transform` (translate3d 100%→0) + `opacity` (0.4→1) |
+| Salida del panel | 200ms | `--ease-exit` | `transform` (0→100%) + `opacity` (1→0) |
+| Sombra de borde | 400ms | `--ease-premium` | `box-shadow` izquierda (despega el panel del canvas) |
+| Scrim del canvas | 400ms | `--ease-premium` | `filter: blur(2px) brightness(0.8)` sobre `#main-content > div:first-child` |
+| Entrada del contenido interno | 200ms + delay 60ms | `--ease-premium` | wrapper en `CollapsibleSheet` (`fade-in` + `slide-in-from-right-4`) |
+| `prefers-reduced-motion` | 100ms | `--ease-micro` | solo `opacity`, sin transform, sin scrim |
+
+### Reglas invariables
+
+1. **GPU-only.** Solo `opacity`, `transform`, `filter` y `box-shadow`. Prohibido animar layout (width/height/margin/padding) — mismo criterio que la sección 3.
+2. **Asimétrico.** Entrada más rápida y con overshoot (premium); salida más corta con `--ease-exit`. Nunca el mismo timing en ambos sentidos.
+3. **Scrim visual-only.** El canvas queda interactivo (sin bloqueo de pointer-events) — las filas del listado deben seguir conduciendo el panel (ej. HUB).
+4. **El primitivo compartido es la única vía.** No duplicar animaciones en páginas; ajustar `CollapsibleSheet.tsx` o las reglas embebidas de `globals.css`.
+5. **Prune sincronizado.** `CollapsibleSheet` mantiene el DOM ~240ms tras la salida (hide) y ~260ms (unmount) para dejar correr la keyframe de 200ms.
+
+> [!NOTE]
+> Los keyframes `sheet-slide-in-*` (400ms) quedan para sheets no embebidos (boundary `screen`). El path embebido usa `panel-enter-right`/`panel-exit-right` (240/200ms).
+
+## 6. Próximos Pasos de Implementación
 
 Para ejecutar la unificación estética módulo a módulo con el menor riesgo:
 
