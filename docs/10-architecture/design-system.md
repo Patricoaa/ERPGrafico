@@ -65,6 +65,11 @@ Colors must be defined as raw OKLCH channels in `app/globals.css` to support Tai
 ### Data Cells
 For legacy and modern pages, all data display should be routed through centralized `DataCell` components. Do not build ad-hoc styled spans or divs for status badges, tags, or money displays. Use `MoneyDisplay` and `QuantityDisplay` strictly.
 
+### Elevation & Shadows
+- **No pure-black drop shadows:** Never use Tailwind default shadows (`shadow-sm`, `shadow-md`, `shadow-lg`, `shadow-2xl`). Always use the tinted semantic tokens: `shadow-card`, `shadow-elevated`, `shadow-floating`, `shadow-overlay`, and `shadow-surface`.
+- **Flat by default:** Do not use shadows on informational components (Badges, Empty States, form inputs). Reserve shadows exclusively for interactive overlays (dropdowns, modals, popovers) and primary layout shells.
+- **Dark mode shadows:** Pure shadows are invisible in dark mode. Rely on `border-border` to define edges in `.dark` rather than increasing shadow opacity.
+
 ### Consuming Base Components (Shadcn/UI)
 - **Immutability:** The `components/ui/` directory contains auto-generated components and must never be manually modified to add domain or business logic.
 - **Extensibility:** If you need to alter the behavior or fixed styles of a base component, create a *wrapper* or a new specialization inside `components/shared/` that imports and consumes the primitive from `ui/`.

@@ -266,6 +266,7 @@
   --shadow-elevated: 0 4px 16px oklch(0.12 0.02 240 / 0.08), 0 1px 4px oklch(0.12 0.02 240 / 0.04);
   --shadow-floating: 0 8px 32px oklch(0.12 0.02 240 / 0.12), 0 2px 8px oklch(0.12 0.02 240 / 0.06);
   --shadow-overlay: 0 16px 48px oklch(0.12 0.02 240 / 0.16);
+  --shadow-surface: 0 24px 64px oklch(0.12 0.02 240 / 0.18), 0 8px 24px oklch(0.12 0.02 240 / 0.08);
 
   --color-sidebar: oklch(var(--sidebar-raw));
   --color-sidebar-foreground: oklch(var(--sidebar-foreground-raw));
@@ -301,8 +302,13 @@
 
   /*
    * FLUID TYPOGRAPHY — Override Tailwind defaults with viewport-scaled sizes.
-   * Enforces a minimum of 12px (0.75rem) to maintain legibility.
+   * Enforces a minimum of 12px (0.75rem) to maintain legibility for main text.
+   * N5 Micro scale is fixed (not fluid) and strictly for high-density badges/labels.
    */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-3xs: 0.625rem; /* 10px */
+  --text-4xs: 0.5625rem; /* 9px */
+  
   --text-xs: clamp(0.75rem, 0.4vw + 0.5rem, 0.875rem);
   --text-sm: clamp(0.875rem, 0.5vw + 0.55rem, 1rem);
   --text-base: clamp(1rem, 0.6vw + 0.6rem, 1.125rem);
@@ -310,6 +316,12 @@
   --text-xl: clamp(1.25rem, 1vw + 0.6rem, 1.5rem);
   --text-2xl: clamp(1.5rem, 1.2vw + 0.6rem, 1.875rem);
   --text-3xl: clamp(1.875rem, 1.5vw + 0.6rem, 2.25rem);
+
+  /*
+   * TRACKING EXTENSIONS
+   */
+  --tracking-loose: 0.15em;
+  --tracking-looser: 0.2em;
 
   /*
    * MOTION TOKENS — Standardized easing & durations
@@ -438,7 +450,7 @@
  * border/radius/shadow/background so panels read as parallel frames
  * when they sit side-by-side.
  *
- * Tokens used: --radius-xl (20px), --color-border @ 0.10, shadow-2xl,
+ * Tokens used: --radius-xl (20px), --color-border @ 0.10, shadow-surface,
  * --color-card. Never override these individually in components —
  * use this utility.
  *
@@ -454,7 +466,7 @@
  *      docs/10-architecture/design-system.md (Radius Hierarchy)
  */
 @utility panel-surface {
-  @apply rounded-xl border! border-border/15! shadow-2xl! bg-card;
+  @apply rounded-xl border! border-border/15! shadow-surface! bg-card;
 }
 
 
@@ -491,6 +503,17 @@
   @apply relative overflow-hidden rounded-md border border-border/15 bg-card outline-none transition-all;
   @apply hover:border-border/30 hover:shadow-elevated;
   @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+}
+
+/*
+ * KPI VALUES — Standardized large data typography
+ */
+@utility kpi-value {
+  @apply text-3xl font-bold tracking-tight tabular-nums;
+}
+
+@utility kpi-value-compact {
+  @apply text-2xl font-bold tracking-tight tabular-nums;
 }
 
 /*
@@ -620,7 +643,7 @@ table [data-notched-field] {
   /* Skip-to-content accessibility link */
   .skip-to-content {
     @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-[100];
-    @apply focus:px-6 focus:py-3 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:font-black focus:uppercase focus:text-xs focus:tracking-widest focus:shadow-2xl;
+    @apply focus:px-6 focus:py-3 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:font-black focus:uppercase focus:text-xs focus:tracking-widest focus:shadow-surface;
   }
 
   /* REUSABLE SKELETON SHIMMER */
