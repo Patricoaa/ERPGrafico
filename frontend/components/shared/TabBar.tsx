@@ -66,7 +66,7 @@ export function TabBar({
         )
         : isUnderline
             ? cn(
-                "group relative w-auto transition-all duration-200 bg-transparent rounded-none tab-underline-primary",
+                "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
                 dense ? "h-8" : "h-12",
                 "data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                 "data-[state=inactive]:text-foreground/60 data-[state=inactive]:font-bold hover:text-foreground",
@@ -162,6 +162,9 @@ export function TabBar({
                                     </span>
                                 )}
                             </span>
+                            {isUnderline && (
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[3px] bg-primary rounded-t-sm opacity-0 transition-opacity duration-200 group-data-[state=active]:opacity-100" />
+                            )}
                         </TabsTrigger>
                     )
                 })}
