@@ -490,16 +490,16 @@
 }
 
 /*
- * CARD FLAT — Flat selection card: 2px border, no shadow, subtle hover.
+ * CARD FLAT — Flat selection card: hairline border, no shadow, subtle hover.
  * Use for: AutoEntityCard lists, TaskInbox items, Settings selectors.
  * Never use on KPI cards, dashboard panels, or floating modals — use card-base there.
  * Apply via className="card-flat".
  * NOTE: twMerge does not see inside custom utilities, so a consumer whose base
  * emits `border`/`shadow-card` (e.g. StatCard default) must also pass explicit
- * `border-2`/`shadow-none` to override deterministically.
+ * `border`/`shadow-none` to override deterministically.
  */
 @utility card-flat {
-  @apply relative overflow-hidden rounded-sm border-2 border-border/40 bg-card text-foreground shadow-none outline-none transition-all;
+  @apply relative overflow-hidden rounded-sm border border-border/40 bg-card text-foreground shadow-none outline-none transition-all;
   @apply hover:border-border/60 hover:bg-muted/30;
   @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
 }
@@ -513,47 +513,6 @@
 
 @utility kpi-value-compact {
   @apply text-2xl font-bold tracking-tight tabular-nums;
-}
-
-/*
- * TAB UNDERLINE PRIMARY — Bottom border for underline variant
- * Applied via className="tab-underline-primary" on TabsTrigger when variant="underline"
- * Uses ::after pseudo-element for active (primary color), focus-visible (ring), and hover (muted).
- *
- * Base ::after always present (position absolute — no layout shift).
- */
-.tab-underline-primary::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 20%;
-  right: 20%;
-  height: 3px;
-  border-top-left-radius: 0.125rem;
-  border-top-right-radius: 0.125rem;
-  pointer-events: none;
-  opacity: 0;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
-}
-
-.tab-underline-primary[data-state="active"]::after {
-  background: var(--color-primary);
-  opacity: 1;
-}
-
-.tab-underline-primary:focus-visible::after {
-  background: var(--color-ring);
-  opacity: 0.5;
-}
-
-.tab-underline-primary:hover::after {
-  background: var(--color-muted-foreground);
-  opacity: 0.2;
-}
-
-.tab-underline-primary[data-state="active"]:hover::after {
-  background: var(--color-primary);
-  opacity: 1;
 }
 
 /*

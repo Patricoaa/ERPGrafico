@@ -13,7 +13,7 @@ import { UserSidebarMenu } from "@/components/layout/UserSidebarMenu"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { ModuleNavigationMenu, PageHeaderSkeleton, PrepressPanel, TabBar, DynamicIcon } from '@/components/shared'
+import { ModuleNavigationMenu, PageHeaderSkeleton, PrepressPanel, TabBar, DynamicIcon, CMYK_ACCENT } from '@/components/shared'
 import { Loader2 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { getModuleIconName, MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-registry"
@@ -189,11 +189,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     
                     <div className="flex flex-col items-center gap-3">
                         <TooltipProvider delayDuration={0}>
-                        {MODULE_ORDER.map(modId => {
+                        {MODULE_ORDER.map((modId, index) => {
                             const mod = getModuleConfig(modId)
                             if (!mod) return null
                             const isActive = currentModuleId === modId
                             const Icon = getModuleIcon(modId)
+                            const accent = CMYK_ACCENT[index % CMYK_ACCENT.length]
                             return (
                                 <Tooltip key={modId}>
                                     <TooltipTrigger asChild>
@@ -201,16 +202,20 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                             href={mod.defaultUrl}
                                             className={cn(
                                                 "relative w-8 h-8 rounded-md transition-all duration-200 group flex items-center justify-center",
+                                                "border-r border-border/40",
                                                 isActive 
-                                                  ? "text-primary" 
-                                                  : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
+                                                  ? accent.text
+                                                  : cn("text-muted-foreground", accent.hoverText)
                                             )}
                                         >
                                             <Icon className="w-4 h-4 transition-colors" />
-                                            {/* Borde inferior grueso al estar seleccionado */}
-                                            {isActive && (
-                                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[3px] bg-primary rounded-t-sm" />
-                                            )}
+                                            {/* Borde derecho grueso al estar seleccionado / en hover */}
+                                            <div className={cn(
+                                                "absolute right-0 top-1/2 -translate-y-1/2 h-[60%] w-[4px] rounded-l-sm",
+                                                "transition-opacity duration-200",
+                                                accent.bar,
+                                                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                                            )} />
                                         </Link>
                                     </TooltipTrigger>
                                     <TooltipContent side="right" className="font-semibold text-xs border-border/50">{mod.label}</TooltipContent>

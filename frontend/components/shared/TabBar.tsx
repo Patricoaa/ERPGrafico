@@ -6,6 +6,19 @@ import { SEG_TEXT, TAB_TOOLBAR_TRIGGER } from './search-styles'
 import { cn } from "@/lib/utils"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
+/**
+ * Positional CMYK accent cycle for navigation surfaces (TabBar underline +
+ * module rail). Each element gets its process ink by position: 1º Cyan, 2º
+ * Magenta, 3º Yellow, 4º Black (Key), cycling every 4. Authorized as a
+ * Layer-1 consumer by ADR-0076 — restricted to navigation decoration.
+ */
+export const CMYK_ACCENT = [
+    { text: "text-cyan", hoverText: "hover:text-cyan", activeText: "data-[state=active]:text-cyan", bar: "bg-cyan" },
+    { text: "text-magenta", hoverText: "hover:text-magenta", activeText: "data-[state=active]:text-magenta", bar: "bg-magenta" },
+    { text: "text-yellow", hoverText: "hover:text-yellow", activeText: "data-[state=active]:text-yellow", bar: "bg-yellow" },
+    { text: "text-black", hoverText: "hover:text-black", activeText: "data-[state=active]:text-black", bar: "bg-black" },
+] as const
+
 export interface TabItem {
     value: string
     label: string
@@ -68,8 +81,8 @@ export function TabBar({
             ? cn(
                 "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
                 dense ? "h-8" : "h-12",
-                "data-[state=active]:text-foreground data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                "data-[state=inactive]:text-foreground/60 data-[state=inactive]:font-bold hover:text-foreground",
+                "font-medium border-b border-border/40 data-[state=inactive]:text-foreground/60",
+                "hover:font-bold data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                 "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
             )
             : cn(
@@ -108,14 +121,18 @@ export function TabBar({
                     marginLeft: "-2.64rem",
                 } : undefined}
             >
-                {visible.map((item) => {
+                {visible.map((item, index) => {
                     const Icon = item.icon
+                    const accent = isUnderline ? CMYK_ACCENT[index % CMYK_ACCENT.length] : null
                     return (
                         <TabsTrigger
                             key={item.value}
                             value={item.value}
                             disabled={item.disabled}
-                            className={triggerStyles}
+                            className={cn(
+                                triggerStyles,
+                                accent && cn(accent.hoverText, accent.activeText)
+                            )}
                         >
                             <span
                                 className={cn(
@@ -160,8 +177,12 @@ export function TabBar({
                                     </span>
                                 )}
                             </span>
-                            {isUnderline && (
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[3px] bg-primary rounded-t-sm opacity-0 transition-opacity duration-200 group-data-[state=active]:opacity-100" />
+                            {isUnderline && accent && (
+                                <div className={cn(
+                                    "absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[4px] rounded-t-sm opacity-0 transition-opacity duration-200",
+                                    "group-hover:opacity-100 group-data-[state=active]:opacity-100",
+                                    accent.bar
+                                )} />
                             )}
                         </TabsTrigger>
                     )

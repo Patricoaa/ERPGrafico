@@ -138,5 +138,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0073](0073-drawers-zero-border-radius.md) | Drawers y CollapsibleSheets con radio cero (bordes sin redondear) en todo contexto | Accepted |
 | [0074](0074-drawers-background-main-content.md) | Drawers con fondo del color del main content (bg-card) en todo boundary | Accepted |
 | [0075](0075-entity-fields-column-key.md) | Entity Fields — acceso a columnas por clave (column(key)) y prohibición del destructuring posicional de toColumns() | Accepted |
+| [0076](0076-navigation-cmyk-positional-accent.md) | Tab underline & module rail — positional CMYK accent (Layer 1 inks for navigation) | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -3,8 +3,8 @@ import { useState, useEffect } from "react"
 import { type Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, ArrowRight, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
+import { DataCell, TabBar, TabBarContent, type TabItem, SkeletonShell, EmptyState } from "@/components/shared"
+import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, Package, FileText, Wallet, TrendingUp, CreditCard, Wrench, ShoppingCart, Receipt, CalendarX2, ClipboardList } from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -214,7 +214,10 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             task.title
                         )}
                     </h3>
-                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-60 transition-all duration-150 -translate-x-1 group-hover:translate-x-0 shrink-0" />
+                    <DataCell.ActionSingle
+                        title="Abrir"
+                        onClick={() => navigateToTask(task)}
+                    />
                 </div>
 
                 {/* Credit: approve/reject buttons only */}
@@ -256,9 +259,9 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                 value={activeTab}
                 onValueChange={setActiveTab}
                 orientation="horizontal"
+                variant="underline"
                 dense
                 className="w-full px-4"
-                containerClassName="w-full justify-start"
                 contentClassName="mt-3 bg-transparent flex flex-col"
             >
                 <TabBarContent value="approvals" className="h-full flex flex-col mt-0">
