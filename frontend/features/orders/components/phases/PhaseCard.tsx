@@ -160,8 +160,8 @@ export function PhaseCard({
                 </div>
                 <div className="flex-1 flex items-center gap-2">
                     <h3 className={cn(
-                        " font-black uppercase tracking-looser text-foreground leading-none",
-                        "text-[11.5px]"
+                        " font-bold uppercase tracking-widest text-foreground leading-none",
+                        "text-xs"
                     )}>
                         {title}
                     </h3>
@@ -220,7 +220,7 @@ export function PhaseCard({
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <span className={cn(
-                                                                    "font-black text-foreground/90 truncate",
+                                                                    "font-medium text-foreground/90 truncate",
                                                                     "text-sm max-w-full"
                                                                 )}>
                                                                     {doc.number}
