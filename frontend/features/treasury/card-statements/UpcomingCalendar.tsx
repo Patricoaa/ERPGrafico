@@ -61,7 +61,7 @@ export function UpcomingCalendar({ byMonth, currency = 'CLP', className }: Upcom
                                 style={{ width: `${Math.max(pct, 4)}%` }}
                             />
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
+                        <div className="text-3xs text-muted-foreground">
                             {item.count} {item.count === 1 ? 'cuota' : 'cuotas'}
                         </div>
                     </div>

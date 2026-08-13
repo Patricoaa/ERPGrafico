@@ -146,7 +146,7 @@ function CartItemComponent({
                             onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)} 
                             className={cn(
                                 "text-primary text-left underline-offset-2 hover:underline font-medium transition-colors mt-0.5", 
-                                isTouchMode ? "text-xs" : "text-[11px]"
+                                isTouchMode ? "text-xs" : "text-2xs"
                             )} 
                             type="button"
                         >
@@ -164,7 +164,7 @@ function CartItemComponent({
                                     <Button
                                         variant="ghost"
                                         className={cn(
-                                            "font-bold transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
+                                            "font-medium transition-colors rounded-md shrink-0 border-none shadow-none cursor-pointer text-destructive bg-destructive/10 hover:bg-destructive/20",
                                             isTouchMode ? "h-10 px-2 text-sm" : "h-7 px-2 text-xs opacity-0 group-hover:opacity-100"
                                         )}
                                         onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
@@ -331,7 +331,7 @@ function CartItemComponent({
                 {maxQty !== undefined && maxQty !== Infinity && (
                     <div className={cn(
                         "absolute -bottom-2 flex items-center px-1.5 py-px rounded-full font-bold uppercase tracking-wider border shadow-sm",
-                        isTouchMode ? "text-[9px]" : "text-[8px]",
+                        isTouchMode ? "text-4xs" : "text-[8px]",
                         isOverLimit 
                             ? "bg-destructive text-destructive-foreground border-destructive" 
                             : "bg-background text-muted-foreground border-border/70"
@@ -355,7 +355,7 @@ function CartItemComponent({
                                 type="button"
                                 className={cn(
                                     "w-full text-center px-4 py-3 text-sm rounded-lg hover:bg-muted transition-colors border border-transparent shadow-none",
-                                    item.uom === uom.id && "bg-primary/5 border-primary/20 text-primary font-bold"
+                                    item.uom === uom.id && "bg-primary/5 border-primary/20 text-primary font-medium"
                                 )}
                                 onClick={() => {
                                     handleUomChange(String(uom.id))

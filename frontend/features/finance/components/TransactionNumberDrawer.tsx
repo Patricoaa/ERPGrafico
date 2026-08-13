@@ -97,7 +97,7 @@ export function TransactionNumberDrawer({
         <>
             {(mode === 'view' || mode === 'edit') && paymentId && (
                 <PrintableLayout ref={printRef} title="N° de Transacción" displayId={`#${paymentId}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>N° de Transacción:</span>
                             <span>{initialValue ?? '-'}</span>

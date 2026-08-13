@@ -146,7 +146,7 @@ export function CreditPortfolioClientView({
                         <ul className="list-disc list-inside space-y-1 font-medium text-muted-foreground">
                             <li>Se generará un asiento contable de pérdida por <span className="text-foreground"><MoneyDisplay amount={writeOffContact?.credit_balance_used} inline weight="bold" /></span>.</li>
                             <li>El cliente quedará bloqueado permanentemente.</li>
-                            <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
+                            <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-3xs">Crítico</span>.</li>
                             <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
                         </ul>
                     </div>

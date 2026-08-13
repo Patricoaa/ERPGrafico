@@ -138,7 +138,7 @@ export function GenericWizard({
             </span>
             <span className={cn(
                 "font-black uppercase tracking-wider text-muted-foreground",
-                touchMode ? "text-xs" : "text-[10px]"
+                touchMode ? "text-xs" : "text-3xs"
             )}>
                 {currentStepData.title}
             </span>

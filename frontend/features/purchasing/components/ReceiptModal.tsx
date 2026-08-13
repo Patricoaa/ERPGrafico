@@ -312,10 +312,10 @@ export function ReceiptModal({
                                                             {line.product_name}
                                                         </DataCell.Text>
                                                         <div className="flex items-center gap-1">
-                                                            <span className="text-[10px] text-muted-foreground">Original:</span>
+                                                            <span className="text-3xs text-muted-foreground">Original:</span>
                                                             <DataCell.Currency
                                                                 value={line.unit_cost}
-                                                                className="justify-start text-[10px] text-muted-foreground w-auto"
+                                                                className="justify-start text-3xs text-muted-foreground w-auto"
                                                                 weight="normal"
                                                             />
                                                         </div>

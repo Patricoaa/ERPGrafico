@@ -58,7 +58,7 @@ export const productFields = createEntityFields<Product>()({
             <div className="flex justify-center gap-1">
                 <AvailabilityBadges product={p} />
                 {!p.can_be_sold && !p.can_be_purchased && (
-                    <span className="text-[10px] text-muted-foreground italic">Ninguno</span>
+                    <span className="text-3xs text-muted-foreground italic">Ninguno</span>
                 )}
             </div>
         ),

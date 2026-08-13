@@ -95,7 +95,7 @@ export class ErrorBoundary extends Component<Props, State> {
                             </p>
                         </div>
 
-                        <p className="text-muted-foreground/60 text-[10px] uppercase font-bold tracking-widest pt-2">
+                        <p className="text-muted-foreground/60 text-3xs uppercase font-bold tracking-widest pt-2">
                             La operación no pudo completarse. Los logs han sido registrados.
                         </p>
 
@@ -105,7 +105,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                 onClick={this.handleFullReset}
                                 className="h-10 px-6 rounded-none border-foreground group relative overflow-hidden"
                             >
-                                <span className="relative z-10 flex items-center gap-2 uppercase font-black tracking-widest text-[11px]">
+                                <span className="relative z-10 flex items-center gap-2 uppercase font-medium tracking-widest text-2xs">
                                     <RefreshCw className="h-3 w-3 group-hover:rotate-180 transition-transform duration-500" />
                                     Reiniciar Interfaz
                                 </span>

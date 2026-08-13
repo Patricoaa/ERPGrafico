@@ -28,7 +28,7 @@ export function PurchaseOrderSummaryCard({
             <div className="flex-1 overflow-auto custom-scrollbar">
                 <div className="p-6 space-y-6">
                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 flex items-center gap-2">
+                        <h3 className="text-3xs font-bold uppercase tracking-loose text-muted-foreground/60 flex items-center gap-2">
                             <ShoppingBag className="h-4 w-4" />
                             Detalle de Productos
                         </h3>
@@ -74,7 +74,7 @@ export function PurchaseOrderSummaryCard({
                 )}
                 <Separator className="my-2 opacity-50" />
                 <div className="flex justify-between items-center pt-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Compra</span>
+                    <span className="text-3xs font-bold uppercase tracking-looser text-muted-foreground/60">Total Compra</span>
                     <span className="text-2xl font-black text-destructive tracking-tighter whitespace-nowrap">
                         {formatCurrency(total)}
                     </span>

@@ -33,7 +33,7 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
         displayId={displayId}
         subtitle={movementType}
       >
-        <div className="text-[9px] space-y-1 mb-2">
+        <div className="text-4xs space-y-1 mb-2">
           <div className="flex justify-between">
             <span>Origen:</span>
             <span>{movement?.from_container_name ?? movement?.from_account_name ?? '-'}</span>

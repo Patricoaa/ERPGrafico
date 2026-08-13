@@ -181,7 +181,7 @@ export function CollapsibleSheet({
                             )}
                         </div>
                         <div className="flex flex-col items-center whitespace-nowrap">
-                            <span className="text-[13px] font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest leading-none">
+                            <span className="text-xs font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest leading-none">
                                 {tabLabel}
                             </span>
                         </div>

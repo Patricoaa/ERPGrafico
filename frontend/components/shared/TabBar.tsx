@@ -139,7 +139,7 @@ export function TabBar({
                                 {item.badge !== undefined && (
                                     <span className={cn(
                                         "shrink-0 flex px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground font-black leading-none",
-                                        dense ? "h-[14px] min-w-[14px] text-[9px]" : "h-4 min-w-[1rem] text-[9px]",
+                                        dense ? "h-[14px] min-w-[14px] text-4xs" : "h-4 min-w-[1rem] text-4xs",
                                         isVertical && "rotate-90",
                                         isToolbar && "border-transparent bg-accent/30",
                                         "group-data-[state=active]:bg-primary-foreground/20 group-data-[state=active]:text-primary-foreground group-data-[state=active]:border-primary-foreground/30",
@@ -152,7 +152,7 @@ export function TabBar({
                                     <span
                                         aria-label="Errores en pestaña"
                                         className={cn(
-                                            "shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-black",
+                                            "shrink-0 flex h-4 w-4 items-center justify-center rounded-full text-4xs font-bold",
                                             isVertical && "rotate-90",
                                             "bg-destructive text-destructive-foreground shadow",
                                             "ring-2 ring-primary"

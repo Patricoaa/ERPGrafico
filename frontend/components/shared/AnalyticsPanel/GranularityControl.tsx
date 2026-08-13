@@ -18,7 +18,7 @@ const OPTIONS: { value: Granularity; label: string; icon: typeof CalendarDays }[
 export function GranularityControl({ value, onChange }: GranularityControlProps) {
     return (
         <div className="px-3 py-2">
-            <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-2">
+            <p className="text-3xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
                 Agrupación
             </p>
             <ToggleGroup

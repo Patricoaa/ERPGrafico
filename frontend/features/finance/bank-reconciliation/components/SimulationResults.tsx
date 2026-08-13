@@ -23,10 +23,10 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                     <DataCell.Text className="text-left justify-start font-black text-foreground/80">
                         {row.original.line.description}
                     </DataCell.Text>
-                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    <div className="text-3xs font-mono text-muted-foreground mt-0.5">
                         {formatPlainDate(row.original.line.date)} •{" "}
                         <span className="font-bold text-foreground/60">
-                            <MoneyDisplay amount={row.original.line.amount} inline className="text-[10px]" />
+                            <MoneyDisplay amount={row.original.line.amount} inline className="text-3xs" />
                         </span>
                     </div>
                 </div>
@@ -39,10 +39,10 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                     <DataCell.Text className="text-left justify-start font-black text-foreground/80">
                         {row.original.payment.partner || 'Concepto General'}
                     </DataCell.Text>
-                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    <div className="text-3xs font-mono text-muted-foreground mt-0.5">
                         Ref: <span className="font-bold">{row.original.payment.reference || 'N/A'}</span> •{" "}
                         <span className="font-bold">
-                            <MoneyDisplay amount={row.original.payment.amount} inline className="text-[10px]" />
+                            <MoneyDisplay amount={row.original.payment.amount} inline className="text-3xs" />
                         </span>
                     </div>
                 </div>

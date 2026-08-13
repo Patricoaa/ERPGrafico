@@ -169,7 +169,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                         size="sm"
                                         onClick={() => handleEditClick(row.original.originalIndex)}
                                         className={cn(
-                                            "h-7 text-[10px] font-bold uppercase tracking-tight",
+                                            "h-7 text-3xs font-medium uppercase tracking-tight",
                                             !hasConfig && "bg-primary hover:bg-primary/90 text-primary-foreground shadow-card"
                                         )}
                                     >

@@ -215,7 +215,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                         <span className="text-xs text-muted-foreground">Total OTs que usaron este producto:</span>
                                                         <span className="font-bold text-lg">{data.production_usage.length}</span>
                                                     </div>
-                                                    <div className="text-[10px] text-muted-foreground italic">
+                                                    <div className="text-3xs text-muted-foreground italic">
                                                         * Muestra las últimas 20 utilizaciones en el taller.
                                                     </div>
                                                 </div>
@@ -378,7 +378,7 @@ function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
         {
             header: "N°",
             cell: ({ row }) => (
-                <span className="font-mono text-[10px] font-bold">{row.original.display_id}</span>
+                <span className="font-mono text-3xs font-bold">{row.original.display_id}</span>
             ),
         },
         {

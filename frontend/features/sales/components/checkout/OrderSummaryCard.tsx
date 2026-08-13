@@ -44,7 +44,7 @@ export function OrderSummaryCard({
             <div className="flex-1 overflow-auto custom-scrollbar">
                 <div className="p-6 space-y-6">
                     <div className="space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 flex items-center gap-2">
+                        <h3 className="text-3xs font-bold uppercase tracking-loose text-muted-foreground/60 flex items-center gap-2">
                             <ShoppingBag className="h-4 w-4" />
                             Detalle de Productos
                         </h3>
@@ -70,7 +70,7 @@ export function OrderSummaryCard({
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[9px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded leading-none">
+                                            <span className="text-4xs font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded leading-none">
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
                                             </span>
                                             {line.product_type === 'MANUFACTURABLE' && (
@@ -115,7 +115,7 @@ export function OrderSummaryCard({
                 )}
                 <Separator className="my-2 opacity-50" />
                 <div className="flex justify-between items-center pt-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Total Venta</span>
+                    <span className="text-3xs font-bold uppercase tracking-looser text-muted-foreground/60">Total Venta</span>
                     <span className="text-2xl font-black text-primary tracking-tighter whitespace-nowrap">
                         {formatCurrency(total)}
                     </span>

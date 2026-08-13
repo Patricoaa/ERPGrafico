@@ -87,7 +87,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
             <div className="mb-6 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-destructive" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Historial de Castigos</span>
+                    <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Historial de Castigos</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button
@@ -124,7 +124,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/50">
+                            <tr className="text-3xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50">
                                 <th className="pb-2 text-center">N° Documento</th>
                                 <th className="pb-2 text-center">Fecha</th>
                                 <th className="pb-2 text-center">Total</th>
@@ -135,7 +135,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                         </thead>
                         <tbody className="divide-y divide-border/20">
                             {ledger.map((entry) => (
-                                <tr key={entry.id} className="text-[12px] group">
+                                <tr key={entry.id} className="text-xs group">
                                     <td className="py-2 pr-4 text-center">
                                         {creditLedgerEntryFields.render('document', entry)}
                                     </td>
@@ -160,7 +160,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                     </table>
                 </div>
             ) : (
-                <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin registros de deudas castigadas.</p>
+                <p className="text-xs text-muted-foreground italic text-center py-4">Sin registros de deudas castigadas.</p>
             )}
 
             <ActionConfirmModal

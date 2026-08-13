@@ -445,11 +445,11 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                         <TableCell>
                                             <div>
                                                 <div className="font-medium">{line.product_name}</div>
-                                                <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{line.description}</div>
+                                                <div className="text-2xs text-muted-foreground mt-0.5 line-clamp-1">{line.description}</div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            <span className="text-[10px] font-bold uppercase text-muted-foreground/60 px-1.5 py-0.5 rounded bg-muted/30">
+                                            <span className="text-3xs font-bold uppercase text-muted-foreground/60 px-1.5 py-0.5 rounded bg-muted/30">
                                                 {line.uom_name}
                                             </span>
                                         </TableCell>
@@ -483,17 +483,17 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                                                         size="sm"
                                                                         variant="badge"
                                                                     />
-                                                                    <span className="text-[9px] text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
+                                                                    <span className="text-4xs text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
                                                                 </div>
                                                             ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
                                                                 <span className={cn(
-                                                                    "text-[10px] font-black",
+                                                                    "text-3xs font-bold",
                                                                     (line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "text-success" : "text-destructive"
                                                                 )}>
                                                                     {line.manufacturable_quantity ?? 0}
                                                                 </span>
                                                             ) : line.requires_advanced_manufacturing ? (
-                                                                <span className="text-[9px] text-destructive">Sin OT registrada</span>
+                                                                <span className="text-4xs text-destructive">Sin OT registrada</span>
                                                             ) : null}
                                                         </>
                                                     )}

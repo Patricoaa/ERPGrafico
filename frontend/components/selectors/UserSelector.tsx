@@ -64,7 +64,7 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                     <>
                         <div className="flex flex-col flex-1 min-w-0">
                             <span className="font-medium">{user.username}</span>
-                            <span className="text-[10px] text-muted-foreground">{user.email}</span>
+                            <span className="text-3xs text-muted-foreground">{user.email}</span>
                         </div>
                         {selectedUser?.id === user.id && (
                             <Check className="ml-auto h-4 w-4 shrink-0 opacity-100" />
@@ -83,7 +83,7 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <UserIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
                                 <span className="font-medium text-sm truncate">{selectedUser.username}</span>
-                                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{selectedUser.email}</span>
+                                <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">{selectedUser.email}</span>
                             </div>
                         ) : (
                             <span className="text-muted-foreground truncate">{placeholder}</span>

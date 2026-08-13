@@ -918,7 +918,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                                                     setIsWaitingApproval(false)
                                                     setCreditApprovalRequired(false)
                                                 }}
-                                                className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-bold text-[10px]"
+                                                className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-medium text-3xs"
                                             >
                                                 Entendido
                                             </Button>
@@ -1006,7 +1006,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                     <div className="w-full pt-4">
                         <Button
                             variant="default"
-                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm "
+                            className="w-full h-12 font-medium uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {

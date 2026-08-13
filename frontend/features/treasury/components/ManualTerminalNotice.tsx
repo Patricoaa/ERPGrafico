@@ -154,14 +154,14 @@ export function ManualTerminalNotice({
                     </h4>
                     {paymentMethodName && (
                         <div className="flex justify-center">
-                            <span className="rounded-sm border border-warning/20 bg-warning/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-foreground"> {/* intentional: badge density */}
+                            <span className="rounded-sm border border-warning/20 bg-warning/10 px-3 py-0.5 text-3xs font-bold uppercase tracking-widest text-warning-foreground"> {/* intentional: badge density */}
                                 {paymentMethodName}
                             </span>
                         </div>
                     )}
                     {reason === "TERMINAL_BYPASS" && failureReason && (
                         <div className="flex justify-center pt-1">
-                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-sm"> {/* intentional: badge density */}
+                            <span className="font-mono text-3xs text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-sm"> {/* intentional: badge density */}
                                 REF: {failureReason}
                             </span>
                         </div>
@@ -200,7 +200,7 @@ export function ManualTerminalNotice({
                 <div className="flex w-full gap-3">
                     <Button
                         variant="outline"
-                        className="flex-1 rounded-md h-12 border-muted-foreground/20 hover:bg-muted/5 font-bold uppercase tracking-widest text-xs"
+                        className="flex-1 rounded-md h-12 border-muted-foreground/20 hover:bg-muted/5 font-medium uppercase tracking-widest text-xs"
                         onClick={onCancel}
                         disabled={isLoading}
                     >
@@ -219,7 +219,7 @@ export function ManualTerminalNotice({
                 {canSwitchMethod && (
                     <Button
                         variant="ghost"
-                        className="w-full h-10 text-xs uppercase font-bold tracking-widest text-primary hover:bg-primary/5"
+                        className="w-full h-10 text-xs uppercase font-medium tracking-widest text-primary hover:bg-primary/5"
                         onClick={onSwitchPaymentMethod}
                         disabled={isLoading}
                     >
@@ -229,7 +229,7 @@ export function ManualTerminalNotice({
                 )}
             </div>
 
-            <p className="text-[10px] text-center text-muted-foreground uppercase tracking-[0.2em] font-medium opacity-50"> {/* intentional: badge density */}
+            <p className="text-3xs text-center text-muted-foreground uppercase tracking-looser font-medium opacity-50"> {/* intentional: badge density */}
                 Operación requiere verificación física del cajero
             </p>
         </div>

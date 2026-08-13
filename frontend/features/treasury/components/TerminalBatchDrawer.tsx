@@ -31,7 +31,7 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
         title="Lote de Terminal"
         displayId={displayId}
       >
-        <div className="text-[9px] space-y-1 mb-2">
+        <div className="text-4xs space-y-1 mb-2">
           <div className="flex justify-between">
             <span>Bruto:</span>
             <span>{formatCurrency(Number(batch?.gross_amount ?? 0))}</span>

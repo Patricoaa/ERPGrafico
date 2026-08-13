@@ -131,13 +131,13 @@ export function AdvancedContactSelector({
                                     ? <Building2 className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
                                     : <User className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
                                 }
-                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-[11px]")}>{selectedContact.name}</span>
-                                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-2xs")}>{selectedContact.name}</span>
+                                <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
                                     {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
                                 </span>
                             </div>
                         ) : (
-                            <span className={cn("text-muted-foreground", variant === 'inline' && "text-[11px]")}>{placeholder}</span>
+                            <span className={cn("text-muted-foreground", variant === 'inline' && "text-2xs")}>{placeholder}</span>
                         )}
                     </div>
                     {!disabled && <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />}

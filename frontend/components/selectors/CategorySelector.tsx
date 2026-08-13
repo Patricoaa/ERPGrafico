@@ -121,10 +121,10 @@ export function CategorySelector({
                             {selectedCategory ? (
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     {!icon && <Tag className="h-3 w-3 shrink-0 text-primary" />}
-                                    <span className="font-bold text-[11px] truncate uppercase tracking-tight text-foreground leading-none">{selectedCategory.name}</span>
+                                    <span className="font-medium text-2xs truncate uppercase tracking-tight text-foreground leading-none">{selectedCategory.name}</span>
                                 </div>
                             ) : (
-                                <span className="text-[11px] text-muted-foreground opacity-50 truncate leading-none">{placeholder}</span>
+                                <span className="text-2xs text-muted-foreground opacity-50 truncate leading-none">{placeholder}</span>
                             )}
                         </div>
                         {!disabled && <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-30" />}

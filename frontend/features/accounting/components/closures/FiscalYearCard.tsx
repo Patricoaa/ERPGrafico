@@ -100,7 +100,7 @@ export function FiscalYearCard({
                                 onClick={() => onPreviewClosing(year)}
                                 disabled={!canCloseFiscalYear}
                                 loading={isFiscalYearLoading}
-                                className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest text-[10px] h-8 px-3"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest text-3xs h-8 px-3"
                                 icon={<ShieldAlert className="w-3.5 h-3.5 mr-1.5" />}
                             >
                                 Cerrar Ejercicio

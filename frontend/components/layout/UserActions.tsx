@@ -190,7 +190,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         >
                             <Inbox className="h-5 w-5" />
                             {pendingTasksCount > 0 && !isInboxOpen && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[9px] font-black rounded-full px-1 shadow-card border-2 border-background">
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-4xs font-medium rounded-full px-1 shadow-card border-2 border-background">
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
                                 </span>
                             )}
@@ -232,7 +232,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                 <span className="font-bold text-sm tracking-tight text-foreground">Notificaciones</span>
                             </div>
                             {unreadCount > 0 && (
-                                <Button variant="ghost" size="sm" className="h-7 text-[11px] font-bold uppercase" onClick={handleMarkAllRead}>
+                                <Button variant="ghost" size="sm" className="h-7 text-2xs font-medium uppercase" onClick={handleMarkAllRead}>
                                     Leer Todo
                                 </Button>
                             )}
@@ -245,7 +245,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                     <DropdownMenuItem key={n.id} className="p-3 cursor-pointer" onClick={() => handleNotificationClick(n)}>
                                         <div className="flex flex-col gap-1">
                                             <span className="font-bold text-xs">{n.title}</span>
-                                            <p className="text-[11px] text-muted-foreground line-clamp-2">{n.message}</p>
+                                            <p className="text-2xs text-muted-foreground line-clamp-2">{n.message}</p>
                                         </div>
                                     </DropdownMenuItem>
                                 ))

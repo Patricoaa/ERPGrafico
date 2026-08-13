@@ -79,7 +79,7 @@ export function SearchBarMenu({
     <div className={`grid ${gridCols} gap-0`}>
       {/* Column 1: Filtrar por */}
       <div className="border-r border-border/60">
-        <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
+        <div className="flex items-center gap-1.5 px-3 py-2 text-2xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
           <Filter className="h-3 w-3" />
           Filtrar por
         </div>
@@ -100,7 +100,7 @@ export function SearchBarMenu({
       {/* Column 2: Agrupar por */}
       {hasGroupBySection && (
         <div className="border-r border-border/60">
-          <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
+          <div className="flex items-center gap-1.5 px-3 py-2 text-2xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/60">
             <Layers className="h-3 w-3" />
             Agrupar por
           </div>

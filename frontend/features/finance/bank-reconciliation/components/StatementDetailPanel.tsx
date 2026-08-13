@@ -152,7 +152,7 @@ export function StatementDetailPanel({
                         <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
                     </Tooltip>
                     {row.original.reference && (
-                        <span className="text-[10px] text-muted-foreground truncate">{row.original.reference}</span>
+                        <span className="text-3xs text-muted-foreground truncate">{row.original.reference}</span>
                     )}
                 </div>
             ),
@@ -198,7 +198,7 @@ export function StatementDetailPanel({
                 const info = row.original.matched_payment_info
                 if (!info) return <span className="text-muted-foreground/30 ml-4">-</span>
                 return (
-                    <span className="text-[10px] font-mono font-bold text-primary flex items-center gap-1">
+                    <span className="text-3xs font-mono font-bold text-primary flex items-center gap-1">
                         {info.display_id}
                     </span>
                 )
@@ -245,7 +245,7 @@ export function StatementDetailPanel({
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xl font-bold font-mono">{formatCurrency(statement.opening_balance)}</div>
-                                <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                <p className="text-3xs text-muted-foreground mt-0.5 flex items-center gap-1">
                                     <Calendar className="h-2.5 w-2.5" />
                                     {format(new Date(statement.statement_date), 'dd MMMM yyyy', { locale: es })}
                                 </p>
@@ -258,7 +258,7 @@ export function StatementDetailPanel({
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xl font-bold font-mono">{formatCurrency(statement.closing_balance)}</div>
-                                <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}>
+                                <p className={`text-3xs font-bold mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}>
                                     {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                                     {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
                                 </p>
@@ -271,7 +271,7 @@ export function StatementDetailPanel({
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xl font-bold font-mono"><DataCell.CurrencyFlow value={totalDebits} direction="outflow" showIcon={false} /></div>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                <p className="text-3xs text-muted-foreground mt-0.5">
                                     {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
                                 </p>
                             </CardContent>
@@ -283,7 +283,7 @@ export function StatementDetailPanel({
                             </CardHeader>
                             <CardContent>
                                 <div className="text-xl font-bold font-mono"><DataCell.CurrencyFlow value={totalCredits} direction="inflow" showIcon={false} /></div>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                <p className="text-3xs text-muted-foreground mt-0.5">
                                     {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados
                                 </p>
                             </CardContent>
@@ -300,7 +300,7 @@ export function StatementDetailPanel({
                             <span className="text-sm font-bold text-primary">{statement.reconciliation_progress}% completado</span>
                         </div>
                         <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
-                        <div className="mt-2 text-[10px] text-muted-foreground flex justify-between">
+                        <div className="mt-2 text-3xs text-muted-foreground flex justify-between">
                             <span>{statement.reconciled_lines} líneas procesadas</span>
                             <span>{statement.total_lines - statement.reconciled_lines} sin conciliar</span>
                         </div>
@@ -345,16 +345,16 @@ export function StatementDetailPanel({
             {!detailOnly && (
                 <div className="flex items-center justify-between px-2 pt-2">
                     <div className="flex gap-4">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-1 text-3xs text-muted-foreground">
                             <span className="font-semibold uppercase">Importado:</span>
                             <span>{format(new Date(statement.imported_at), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-1 text-3xs text-muted-foreground">
                             <span className="font-semibold uppercase">Por:</span>
                             <span>{statement.imported_by_name}</span>
                         </div>
                     </div>
-                    <div className="text-[10px] text-muted-foreground/40 italic">Referencia del sistema: #{statement.id}</div>
+                    <div className="text-3xs text-muted-foreground/40 italic">Referencia del sistema: #{statement.id}</div>
                 </div>
             )}
 

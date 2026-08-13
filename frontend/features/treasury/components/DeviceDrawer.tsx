@@ -114,7 +114,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
         <>
             {(mode === 'view' || mode === 'edit') && device?.id && (
                 <PrintableLayout ref={printRef} title="Dispositivo" displayId={`#${device.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{device?.name ?? '-'}</span>

@@ -124,7 +124,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         accent="primary"
                         className="h-full rounded-md"
                     >
-                        <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${sales.growth >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${sales.growth >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {sales.growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                             {Math.abs(sales.growth)}% vs período anterior
                         </div>
@@ -141,7 +141,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         className="h-full rounded-md"
                     >
                         {showComparison && cd && (
-                            <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold">
+                            <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold">
                                 Variación: <DeltaBadge current={purchasing.purchase_total} previous={cd?.purchasing?.purchase_total} inverse />
                             </div>
                         )}
@@ -157,7 +157,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         accent="destructive"
                         className="h-full rounded-md"
                     >
-                        <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
                             <Users className="h-3 w-3" /> {payroll.employee_count} empleados
                         </div>
                     </StatCard>
@@ -172,7 +172,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         accent="info"
                         className="h-full rounded-md"
                     >
-                        <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
                             <Factory className="h-3 w-3" /> {production.finished_wo} completadas
                         </div>
                     </StatCard>
@@ -187,7 +187,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         accent="accent"
                         className="h-full rounded-md"
                     >
-                        <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
                             <Package className="h-3 w-3" /> {inventory.item_count} SKU activos
                         </div>
                     </StatCard>
@@ -202,7 +202,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         accent="accent"
                         className="h-full rounded-md"
                     >
-                        <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
+                        <div className="mt-1.5 flex items-center gap-1 text-3xs font-bold text-muted-foreground">
                             <Truck className="h-3 w-3" /> órdenes en espera
                         </div>
                     </StatCard>
@@ -295,7 +295,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         </div>
 
                         <div>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Top 3 Proveedores</span>
+                            <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Top 3 Proveedores</span>
                             <div className="mt-2 space-y-2">
                                 {(purchasing.top_suppliers || []).slice(0, 3).map((s, i) => (
                                     <div key={i} className="flex justify-between items-center text-sm">
@@ -344,7 +344,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                             .sort((a,b) => b.value - a.value)
                             .slice(0, 4)
                             .map((d, i) => (
-                            <div key={i} className="flex justify-between items-center text-[11px]">
+                            <div key={i} className="flex justify-between items-center text-2xs">
                                 <span className="truncate font-medium">{d.category}</span>
                                 <span className="text-muted-foreground">{formatMoney(d.value)}</span>
                             </div>

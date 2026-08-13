@@ -188,7 +188,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
         <>
             {(mode === 'view' || mode === 'edit') && accountId && entityData && (
                 <PrintableLayout ref={printRef} title="Cuenta" displayId={`#${accountId}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{entityData?.name ?? '-'}</span>

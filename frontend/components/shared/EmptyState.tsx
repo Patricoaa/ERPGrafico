@@ -74,7 +74,7 @@ export function EmptyState({
         return (
             <div className={cn("flex items-center gap-3 py-4 px-2 text-muted-foreground", className)}>
                 {React.createElement(iconCmp, { className: "h-4 w-4 shrink-0" })}
-                <span className="text-[10px]  font-black uppercase tracking-tighter">{displayTitle}</span>
+                <span className="text-3xs  font-bold uppercase tracking-tighter">{displayTitle}</span>
                 {action && <div className="ml-auto">{action}</div>}
             </div>
         )
@@ -111,7 +111,7 @@ export function EmptyState({
                 {description && (
                     <p className={cn(
                         "w-full text-center text-muted-foreground leading-relaxed break-words",
-                        variant === 'full' ? "text-sm" : "text-[11px]"
+                        variant === 'full' ? "text-sm" : "text-2xs"
                     )}>
                         {description}
                     </p>

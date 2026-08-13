@@ -435,7 +435,7 @@ export function SessionCloseModal({
                     className="h-20 flex flex-col items-center justify-center border-2 hover:border-primary hover:bg-primary/5 group"
                     onClick={() => setStepIndex(3)}
                 >
-                    <span className="font-bold">Sí, realizar retiro/traspaso</span>
+                    <span className="font-medium">Sí, realizar retiro/traspaso</span>
                     <span className="text-xs text-muted-foreground">Configurar monto y destino</span>
                 </Button>
                 <Button
@@ -444,7 +444,7 @@ export function SessionCloseModal({
                     onClick={() => handleCloseSession({ withdrawal_amount: 0 })}
                     disabled={submitting}
                 >
-                    <span className="font-bold text-success">No, cerrar sin retirar</span>
+                    <span className="font-medium text-success">No, cerrar sin retirar</span>
                     <span className="text-xs text-muted-foreground">Finaliza la sesión ahora</span>
                 </Button>
             </div>

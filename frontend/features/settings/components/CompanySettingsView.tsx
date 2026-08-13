@@ -227,7 +227,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                             <RefreshCw className={`h-5 w-5 ${syncing ? 'animate-spin' : ''}`} />
                                                         </Button>
                                                     </div>
-                                                    <p className="text-[10px] text-muted-foreground pl-1">
+                                                    <p className="text-3xs text-muted-foreground pl-1">
                                                         {isLinked
                                                             ? "Los datos legales están sincronizados desde el contacto vinculado."
                                                             : "Vincule un contacto para sincronizar razón social, RUT y dirección."}
@@ -370,7 +370,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                 </CardHeader>
                                 <CardContent className="space-y-8">
                                     <div className="space-y-4">
-                                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Logo de la Empresa</p>
+                                        <p className="text-3xs font-bold uppercase text-muted-foreground">Logo de la Empresa</p>
                                         <div className="flex flex-col md:flex-row gap-6 items-start">
                                             <div
                                                 className="h-32 w-32 rounded-md border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner cursor-pointer hover:bg-muted/50 transition-colors"
@@ -391,7 +391,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                                 type="button"
                                                                 variant="secondary"
                                                                 size="sm"
-                                                                className="h-8 px-2 text-[10px] font-bold"
+                                                                className="h-8 px-2 text-3xs font-medium"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation()
                                                                     fileInputRef.current?.click()
@@ -413,7 +413,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                 ) : (
                                                     <div className="text-center p-2 text-muted-foreground">
                                                         <Upload className="h-8 w-8 mx-auto mb-1 opacity-50" />
-                                                        <span className="text-[10px] font-bold uppercase tracking-tight">Subir Logo</span>
+                                                        <span className="text-3xs font-bold uppercase tracking-tight">Subir Logo</span>
                                                     </div>
                                                 )}
                                                 <input
@@ -437,7 +437,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                         />
                                                     )}
                                                 />
-                                                <p className="text-[11px] text-muted-foreground italic">
+                                                <p className="text-2xs text-muted-foreground italic">
                                                     Se recomienda usar una imagen con fondo transparente (PNG)
                                                     y dimensiones equilibradas.
                                                 </p>

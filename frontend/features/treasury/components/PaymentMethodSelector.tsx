@@ -457,7 +457,7 @@ export function PaymentMethodSelector({
 
                                     {isSingleSelected && paymentData.amount > 0 && m.id !== 'CREDIT_BALANCE' && (
                                         <div className="text-right shrink-0">
-                                            <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                            <div className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">MONTO</div>
                                             <div className="text-base font-semibold tabular-nums">
                                                 <MoneyDisplay amount={paymentData.amount} showColor={false} />
                                             </div>
@@ -468,14 +468,14 @@ export function PaymentMethodSelector({
                                         <div className="flex items-center gap-4 shrink-0">
                                             {paymentData.amount > 0 && (
                                                 <div className="text-right">
-                                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                                    <div className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">MONTO</div>
                                                     <div className="text-base font-semibold tabular-nums">
                                                         <MoneyDisplay amount={paymentData.amount} showColor={false} />
                                                     </div>
                                                 </div>
                                             )}
                                             <div className="text-right">
-                                                <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">DISP.</div>
+                                                <div className="text-3xs font-medium uppercase tracking-widest text-muted-foreground">DISP.</div>
                                                 <div className="text-base font-semibold tabular-nums">
                                                     <MoneyDisplay amount={customerCreditBalance} showColor={false} />
                                                 </div>
@@ -501,7 +501,7 @@ export function PaymentMethodSelector({
                                 <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
                             </div>
                             <div className="text-right shrink-0">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                <div className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">MONTO</div>
                                 <div className="text-base font-semibold tabular-nums">
                                     <MoneyDisplay amount={total - paymentData.amount} showColor={false} />
                                 </div>
@@ -527,7 +527,7 @@ export function PaymentMethodSelector({
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                     <div className="text-base font-semibold leading-tight">Múltiple</div>
-                                    <span className="text-[10px] font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
+                                    <span className="text-3xs font-bold uppercase bg-primary-foreground text-primary px-1.5 py-0.5 rounded-sm leading-none">Activo</span>
                                 </div>
                             </div>
                         </div>
@@ -536,13 +536,13 @@ export function PaymentMethodSelector({
                                 {paymentsList.map((p, i) => (
                                     <span
                                         key={i}
-                                        className="text-[10px] font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
+                                        className="text-3xs font-semibold bg-primary-foreground/20 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap"
                                     >
                                         {METHOD_META[p.method]?.label || p.method}: {formatMoney(p.amount)}
                                     </span>
                                 ))}
                                 {!isFullyPaid && remaining > 0 && (
-                                    <span className="text-[10px] font-semibold bg-primary-foreground/15 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap">
+                                    <span className="text-3xs font-semibold bg-primary-foreground/15 text-primary-foreground px-2 py-0.5 rounded-sm whitespace-nowrap">
                                         Crédito: {formatMoney(remaining)}
                                     </span>
                                 )}
@@ -655,7 +655,7 @@ export function PaymentMethodSelector({
                                     <span className="text-base font-semibold">{m.label}</span>
                                 </div>
                                 {!m.isAllowed && (
-                                    <div className="text-[10px] font-black text-destructive uppercase tracking-widest mt-2">
+                                    <div className="text-3xs font-medium text-destructive uppercase tracking-widest mt-2">
                                         NO DISPONIBLE
                                     </div>
                                 )}
@@ -681,7 +681,7 @@ export function PaymentMethodSelector({
                                 <span className="text-base font-semibold text-foreground">Crédito Asignado</span>
                             </div>
                             <div className="text-right shrink-0">
-                                <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MONTO</div>
+                                <div className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">MONTO</div>
                                 <div className="text-base font-semibold tabular-nums">
                                     <MoneyDisplay amount={remaining} showColor={false} />
                                 </div>

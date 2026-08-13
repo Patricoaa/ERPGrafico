@@ -98,7 +98,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                     noBorder
                 />
             ) : (
-                <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin documentos pendientes.</p>
+                <p className="text-xs text-muted-foreground italic text-center py-4">Sin documentos pendientes.</p>
             )}
 
             <ActionConfirmModal

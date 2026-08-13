@@ -316,7 +316,7 @@ export function BOMDrawer({
         <>
             {isView && bomToEdit?.id && (
                 <PrintableLayout ref={printRef} title="BOM" displayId={`#${bomToEdit.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{bomToEdit.name ?? '-'}</span>
@@ -457,10 +457,10 @@ export function BOMDrawer({
                                                         <Box className="h-3.5 w-3.5 text-primary" />
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
-                                                        <span className="text-[9px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">
+                                                        <span className="text-4xs font-bold uppercase text-primary/60 tracking-widest leading-none mb-0.5">
                                                             {selectedVariant ? "Variante" : (selectedProduct?.has_variants ? "Plantilla Base" : "Producto")}
                                                         </span>
-                                                        <span className="text-[10px] font-black text-foreground truncate uppercase">
+                                                        <span className="text-3xs font-bold text-foreground truncate uppercase">
                                                             {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
                                                         </span>
                                                     </div>
@@ -529,14 +529,14 @@ export function BOMDrawer({
             const totalUnitCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + (Number(m.component_cost) || 0), 0)
             const totalLineCost = materials.reduce((sum: number, m: z.infer<typeof materialLineSchema>) => sum + ((Number(m.quantity) || 0) * (Number(m.component_cost) || 0)), 0)
                                             return (
-                                                <div className="flex flex-col items-end text-[10px] font-black uppercase text-foreground/80 pr-12 gap-1">
+                                                <div className="flex flex-col items-end text-3xs font-bold uppercase text-foreground/80 pr-12 gap-1">
                                                     <div className="flex items-center gap-4">
                                                         <span className="text-muted-foreground">Total Unitarios:</span>
-                                                        <DataCell.Currency value={totalUnitCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
+                                                        <DataCell.Currency value={totalUnitCost} weight="bold" className="text-primary w-auto justify-end text-3xs" />
                                                     </div>
                                                     <div className="flex items-center gap-4 pt-1">
                                                         <span className="text-muted-foreground">Total Receta:</span>
-                                                        <DataCell.Currency value={totalLineCost} weight="bold" className="text-primary w-auto justify-end text-[10px]" />
+                                                        <DataCell.Currency value={totalLineCost} weight="bold" className="text-primary w-auto justify-end text-3xs" />
                                                     </div>
                                                 </div>
                                             )
@@ -722,7 +722,7 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={form.watch(`lines.${index}.component_cost`) || 0}
-                                                            className="justify-end text-muted-foreground pr-1 text-[10px]"
+                                                            className="justify-end text-muted-foreground pr-1 text-3xs"
                                                             weight="medium"
                                                         />
                                                     </TableCell>
@@ -731,7 +731,7 @@ export function BOMDrawer({
                                                     <TableCell className="py-1 px-3">
                                                         <DataCell.Currency
                                                             value={(Number(form.watch(`lines.${index}.quantity`)) || 0) * (Number(form.watch(`lines.${index}.component_cost`)) || 0)}
-                                                            className="justify-end text-primary pr-1 text-[10px]"
+                                                            className="justify-end text-primary pr-1 text-3xs"
                                                             weight="bold"
                                                         />
                                                     </TableCell>
@@ -789,11 +789,11 @@ export function BOMDrawer({
                                             const services = form.watch("service_lines") || []
                                             const totalGrossPrice = services.reduce((sum: number, s: z.infer<typeof serviceLineSchema>) => sum + (Number(s.gross_price) || 0), 0)
                                             return (
-                                                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-foreground/80 pr-24">
+                                                <div className="flex items-center gap-4 text-3xs font-bold uppercase tracking-widest text-foreground/80 pr-24">
                                                     <span className="text-muted-foreground">Total Bruto Unit.:</span>
                                                     <DataCell.Currency
                                                         value={totalGrossPrice}
-                                                        className="w-auto text-primary text-[10px]"
+                                                        className="w-auto text-primary text-3xs"
                                                         weight="black"
                                                     />
                                                 </div>

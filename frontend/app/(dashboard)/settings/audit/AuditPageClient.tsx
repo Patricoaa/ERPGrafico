@@ -230,7 +230,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                                     <LogIn className="h-5 w-5 text-success" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-success font-black uppercase tracking-tight">Logins (Sesión)</p>
+                                    <p className="text-3xs text-success font-bold uppercase tracking-tight">Logins (Sesión)</p>
                                     <p className="text-2xl font-black text-success tabular-nums">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
                                 </div>
                             </CardContent>
@@ -242,7 +242,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                                     <Activity className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-primary font-black uppercase tracking-tight">Cambios Datos</p>
+                                    <p className="text-3xs text-primary font-bold uppercase tracking-tight">Cambios Datos</p>
                                     <p className="text-2xl font-black text-primary tabular-nums">{logs.filter(l => l.source === 'history').length}</p>
                                 </div>
                             </CardContent>
@@ -254,7 +254,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                                     <Settings className="h-5 w-5 text-info" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-info font-black uppercase tracking-tight">Configuración</p>
+                                    <p className="text-3xs text-info font-bold uppercase tracking-tight">Configuración</p>
                                     <p className="text-2xl font-black text-info tabular-nums">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
                                 </div>
                             </CardContent>
@@ -266,7 +266,7 @@ export default function AuditPageClient({ initialLogs }: AuditPageClientProps) {
                                     <ShieldAlert className="h-5 w-5 text-destructive" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-destructive font-black uppercase tracking-tight">Incidentes</p>
+                                    <p className="text-3xs text-destructive font-bold uppercase tracking-tight">Incidentes</p>
                                     <p className="text-2xl font-black text-destructive tabular-nums">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
                                 </div>
                             </CardContent>

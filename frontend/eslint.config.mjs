@@ -10,6 +10,7 @@ import paginationNoEnvelopeDiscard from "./eslint-rules/pagination-no-envelope-d
 import paginationNoRawResponseData from "./eslint-rules/pagination-no-raw-response-data.mjs";
 import paginationDatatableNeedsRowcount from "./eslint-rules/pagination-datatable-needs-rowcount.mjs";
 import noRawTailwindColors from "./eslint-rules/no-raw-tailwind-colors.mjs";
+import typographyTokenFirst from "./eslint-rules/typography-token-first.mjs";
 import formsMustUseHook from "./eslint-rules/forms-must-use-hook.mjs";
 import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
@@ -335,6 +336,15 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
     // Promoted warn → error on 2026-05-30 (ADR 0029): the regex was repaired and
     // the violation count reached 0. Any new raw color / literal hex-rgb blocks the build.
     "tw/no-raw-color": "error",
+  },
+}, // Typography token-first — typography-scale.md (raw px sizes, arbitrary tracking, font-bold buttons)
+{
+  files: ["**/*.tsx", "**/*.ts"],
+  plugins: {
+    typography: { rules: { "token-first": typographyTokenFirst } },
+  },
+  rules: {
+    "typography/token-first": "error",
   },
 }, // Forms must use react-hook-form + zodResolver — GOVERNANCE.md §6 rule 29
 {

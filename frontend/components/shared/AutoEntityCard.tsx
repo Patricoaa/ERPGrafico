@@ -320,7 +320,7 @@ export function AutoEntityCard<TData>({
                 const isEmpty = f.value == null || f.value === '' || (Array.isArray(f.value) && f.value.length === 0)
                 return (
                     <div key={f.key} className={cn(showHeaderLabels ? "flex flex-col items-end" : "flex items-end gap-1.5", f.cardClassName)}>
-                        {showHeaderLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
+                        {showHeaderLabels && <span className="text-4xs uppercase tracking-widest text-muted-foreground/60 font-bold">{f.label}</span>}
                         <span className="text-xs font-bold">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
                     </div>
                 )
@@ -346,7 +346,7 @@ export function AutoEntityCard<TData>({
                 const isEmpty = f.value == null || f.value === '' || (Array.isArray(f.value) && f.value.length === 0)
                 return (
                     <div key={f.key} className={cn(showCenterLabels ? "flex flex-col items-end min-w-0" : "flex items-end gap-1.5 min-w-0", f.cardClassName)}>
-                        {showCenterLabels && <span className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
+                        {showCenterLabels && <span className="text-4xs uppercase tracking-widest text-muted-foreground/60 font-bold whitespace-nowrap">{f.label}</span>}
                         <span className="text-xs font-normal truncate min-w-0 [&>*]:text-xs [&>*]:font-normal">{isEmpty ? <span className="opacity-40">—</span> : f.value}</span>
                     </div>
                 )

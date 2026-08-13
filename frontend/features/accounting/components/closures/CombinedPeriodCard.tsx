@@ -64,12 +64,12 @@ export function CombinedPeriodCard({
                     {/* Contable row */}
                     <div className="flex items-center justify-between py-1 px-1.5 rounded-md min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
+                            <span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
                             {acct ? (
                                 <StatusBadge status={acct.status} label={acct.status_display} variant="dot" size="xs" />
                             ) : (
                                 <Button
-                                    className="inline-flex items-center justify-center rounded-sm text-[9px] font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-5 px-1.5 text-muted-foreground/60 border border-dashed border-border"
+                                    className="inline-flex items-center justify-center rounded-sm text-4xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground h-5 px-1.5 text-muted-foreground/60 border border-dashed border-border"
                                     onClick={() => onCreatePeriod(year, month)}
                                     disabled={isPeriodActionLoading}
                                 >
@@ -112,7 +112,7 @@ export function CombinedPeriodCard({
                     {/* F29 row */}
                     <div className="flex items-center justify-between py-1 px-1.5 rounded-md min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
+                            <span className="text-3xs font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
                             {tax ? (
                                 <StatusBadge
                                     status={taxClosed ? 'CLOSED' : hasDeclaration ? (isFullyPaid && requiresPayment ? 'PAID' : 'UNDER_REVIEW') : 'OPEN'}
@@ -121,7 +121,7 @@ export function CombinedPeriodCard({
                                     size="xs"
                                 />
                             ) : (
-                                <span className="text-[9px] text-muted-foreground/40 italic">—</span>
+                                <span className="text-4xs text-muted-foreground/40 italic">—</span>
                             )}
                         </div>
                         {(!tax || (!taxClosed && !hasDeclaration)) && (

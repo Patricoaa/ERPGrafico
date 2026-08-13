@@ -235,14 +235,14 @@ export function InventoryContributionModal({
                     <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-11 p-1 border">
                         <TabsTrigger
                             value="IN"
-                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-card h-full"
+                            className="rounded-full text-2xs uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-card h-full"
                         >
                             <ArrowDownCircle className="mr-2 h-4 w-4" />
                             Aporte
                         </TabsTrigger>
                         <TabsTrigger
                             value="OUT"
-                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-card h-full"
+                            className="rounded-full text-2xs uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-card h-full"
                         >
                             <ArrowUpCircle className="mr-2 h-4 w-4" />
                             Retiro
@@ -253,7 +253,7 @@ export function InventoryContributionModal({
                 {/* Section: Clasificación */}
                 <div className="flex items-center gap-2 pt-2 pb-2">
                     <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Clasificación</span>
+                    <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">Clasificación</span>
                     <div className="flex-1 h-px bg-border" />
                 </div>
 
@@ -269,7 +269,7 @@ export function InventoryContributionModal({
                         label: (
                             <span>
                                 {p.name}
-                                {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
+                                {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-3xs">{p.tax_id}</span>}
                             </span>
                         ),
                     }))}
@@ -278,7 +278,7 @@ export function InventoryContributionModal({
                 {/* Section: Producto y Ubicación */}
                 <div className="flex items-center gap-2 pt-2 pb-2">
                     <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Almacén y Producto</span>
+                    <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">Almacén y Producto</span>
                     <div className="flex-1 h-px bg-border" />
                 </div>
 
@@ -308,7 +308,7 @@ export function InventoryContributionModal({
                 {/* Section: Detalles del Movimiento */}
                 <div className="flex items-center gap-2 pt-2 pb-2">
                     <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Detalles del Movimiento</span>
+                    <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">Detalles del Movimiento</span>
                     <div className="flex-1 h-px bg-border" />
                 </div>
 
@@ -350,7 +350,7 @@ export function InventoryContributionModal({
                             onChange={(e) => isCostEditable && setUnitCost(e.target.value)}
                             className={cn("text-right font-mono text-sm", !isCostEditable && "opacity-80 bg-muted/50 focus-visible:ring-0 cursor-default")}
                         />
-                        <div className="flex justify-between text-[11px] items-center px-1 font-bold">
+                        <div className="flex justify-between text-2xs items-center px-1 font-bold">
                             <span className="text-muted-foreground mr-1">V. Total:</span>
                             <span className="text-primary text-xs font-black font-mono">
                                 {formatCurrency(totalValue)}
@@ -369,7 +369,7 @@ export function InventoryContributionModal({
 
                 {/* Stock Info */}
                 {productDetails && (
-                    <div className="flex items-center gap-4 text-[10px] font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-md border">
+                    <div className="flex items-center gap-4 text-3xs font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-md border">
                         <span>Stock actual: <strong className="font-mono">{productDetails.qty_on_hand ?? '—'}</strong></span>
                         <span>Costo promedio: <strong className="font-mono">{formatCurrency(productDetails.cost_price || 0)}</strong></span>
                     </div>

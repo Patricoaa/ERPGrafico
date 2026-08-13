@@ -332,7 +332,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text className="font-normal uppercase text-[11px]">{row.original.dte_type_display}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text className="font-normal uppercase text-2xs">{row.original.dte_type_display}</DataCell.Text>,
         },
         {
             accessorKey: "number",

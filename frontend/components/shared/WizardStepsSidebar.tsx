@@ -23,7 +23,7 @@ export interface WizardStepsSidebarProps {
 export function WizardStepsSidebar({ title, currentStep, steps, className }: WizardStepsSidebarProps) {
     return (
         <div className={cn("w-64 border-r bg-transparent p-4 space-y-2 hidden md:block overflow-y-auto", className)}>
-            <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 mb-4 px-2">
+            <h3 className="text-3xs font-bold uppercase tracking-loose text-muted-foreground/60 mb-4 px-2">
                 {title}
             </h3>
 

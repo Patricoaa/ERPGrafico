@@ -38,10 +38,10 @@ export function UserSidebarMenu() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="relative h-10 w-10 rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
+                                className="relative h-10 w-10 rounded-full text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95 border-border/60"
                             >
-                                <Avatar className="h-full w-full rounded-md bg-transparent">
-                                    <AvatarFallback className="bg-transparent text-current font-black text-xs rounded-md">
+                                <Avatar className="h-full w-full rounded-full bg-transparent">
+                                    <AvatarFallback className="bg-transparent text-current font-black text-xs rounded-full">
                                         {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                     </AvatarFallback>
                                 </Avatar>
@@ -56,7 +56,7 @@ export function UserSidebarMenu() {
                     <DropdownMenuLabel className="font-normal">
                         <div className="flex items-center gap-2 rounded-lg bg-muted p-1.5">
                             <Avatar className="h-7 w-7 rounded-md">
-                                <AvatarFallback className="rounded-md font-black text-[10px]">
+                                <AvatarFallback className="rounded-md font-bold text-3xs">
                                     {user?.username?.substring(0, 2).toUpperCase() || 'US'}
                                 </AvatarFallback>
                             </Avatar>
@@ -64,7 +64,7 @@ export function UserSidebarMenu() {
                                 <p className="text-xs font-bold text-foreground leading-tight">
                                     {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.username || 'Usuario'}
                                 </p>
-                                <p className="text-[10px] uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
+                                <p className="text-3xs uppercase text-muted-foreground leading-tight">{user?.groups?.[0] || 'Sin Rol'}</p>
                             </div>
                         </div>
                     </DropdownMenuLabel>

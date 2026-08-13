@@ -89,7 +89,7 @@ function ItemCard({
     return (
         <div className="rounded-md border border-border/50 bg-background overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border/40">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
+                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60">
                     Ítem {index + 1}
                 </span>
                 <DataCell.Action action="delete" onClick={onRemove} />
@@ -616,7 +616,7 @@ function SummaryRow({
         <div className="px-4 py-3 flex items-start gap-3">
             <Icon className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 block">
+                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/60 block">
                     {label}
                 </span>
                 <span className="font-bold text-sm truncate block">{value}</span>

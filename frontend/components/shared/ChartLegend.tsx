@@ -23,7 +23,7 @@ export function ChartLegend({ items }: ChartLegendProps) {
             className="h-2 w-2 rounded-full shrink-0"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+          <span className="text-3xs text-muted-foreground whitespace-nowrap">
             {item.label}
           </span>
         </div>

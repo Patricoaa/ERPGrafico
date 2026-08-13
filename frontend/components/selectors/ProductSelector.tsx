@@ -208,7 +208,7 @@ export function ProductSelector({
                                 <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
                                 <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
                             </div>
-                            <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-[10px]" : "text-xs")}>
+                            <span className={cn("text-muted-foreground shrink-0 pr-1 text-right", variant === 'inline' ? "text-3xs" : "text-xs")}>
                                 {PricingUtils.formatCurrency(Number(selectedProduct.sale_price_gross ?? selectedProduct.sale_price))}
                             </span>
                         </div>
@@ -319,13 +319,13 @@ export function ProductSelector({
                                                 ) : null}
                                             </div>
 
-                                            <span className="text-[10px] font-bold whitespace-nowrap ml-2">
+                                            <span className="text-3xs font-bold whitespace-nowrap ml-2">
                                                 {product.is_dynamic_pricing ? (
                                                     <Badge intent="warning" size="xs">Precio Dinámico</Badge>
                                                 ) : (
                                                     <>
                                                         <MoneyDisplay amount={Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))} inline />
-                                                        <span className="text-[9px] text-muted-foreground ml-0.5">IVA Inc.</span>
+                                                        <span className="text-4xs text-muted-foreground ml-0.5">IVA Inc.</span>
                                                     </>
                                                 )}
                                             </span>

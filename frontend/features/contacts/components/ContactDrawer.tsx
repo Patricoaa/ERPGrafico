@@ -222,7 +222,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                     title="Contact"
                     displayId={`#${contact.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{contact?.name ?? '-'}</span>

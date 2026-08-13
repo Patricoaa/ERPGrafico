@@ -120,7 +120,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         <>
             {(mode === 'view' || mode === 'edit') && absence?.id && (
                 <PrintableLayout ref={printRef} title="Inasistencia" displayId={`#${absence.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Empleado:</span>
                             <span>{absence?.employee_name ?? '-'}</span>

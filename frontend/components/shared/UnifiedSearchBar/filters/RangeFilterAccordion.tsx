@@ -63,13 +63,13 @@ export function RangeFilterAccordion({
       >
         <ChevronRight className={cn("h-3 w-3 transition-transform", expanded && "rotate-90")} />
         <span>{def.label}</span>
-        {isActive && <span className="ml-auto text-[10px] text-muted-foreground">✓</span>}
+        {isActive && <span className="ml-auto text-3xs text-muted-foreground">✓</span>}
       </Button>
 
       {expanded && (
         <div className="ml-4 border-l border-border/40 pl-2 space-y-1.5 py-1.5">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground w-10 shrink-0">Desde</span>
+            <span className="text-3xs text-muted-foreground w-10 shrink-0">Desde</span>
             <Input
               type="number"
               value={from}
@@ -79,7 +79,7 @@ export function RangeFilterAccordion({
             />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground w-10 shrink-0">Hasta</span>
+            <span className="text-3xs text-muted-foreground w-10 shrink-0">Hasta</span>
             <Input
               type="number"
               value={to}
@@ -93,7 +93,7 @@ export function RangeFilterAccordion({
               variant="ghost"
               size="sm"
               onClick={handleApply}
-              className="h-auto px-2 py-0.5 text-[11px] font-semibold text-primary hover:text-primary/80 rounded-sm"
+              className="h-auto px-2 py-0.5 text-2xs font-semibold text-primary hover:text-primary/80 rounded-sm"
             >
               Aplicar
             </Button>
@@ -102,7 +102,7 @@ export function RangeFilterAccordion({
                 variant="ghost"
                 size="sm"
                 onClick={handleClear}
-                className="h-auto px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground rounded-sm"
+                className="h-auto px-2 py-0.5 text-2xs text-muted-foreground hover:text-foreground rounded-sm"
               >
                 Limpiar
               </Button>

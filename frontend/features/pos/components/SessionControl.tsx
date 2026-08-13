@@ -241,7 +241,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 {!hideSessionInfo && session && (
                     <>
                         <span className={cn(
-                            "gap-1 px-3 py-1.5 flex items-center text-[10px] font-bold uppercase rounded-full border",
+                            "gap-1 px-3 py-1.5 flex items-center text-3xs font-bold uppercase rounded-full border",
                             isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
                         )}>
                             <div className={cn("h-2 w-2 rounded-full animate-pulse", isSharedSession ? 'bg-primary' : 'bg-success')} />

@@ -567,7 +567,7 @@ export function DataTable<TData, TValue>({
             return (
                 <div ref={containerRef} className="relative">
                     <div className={cn("grid", effectiveGridTemplate, gridGap)}>
-                        <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
+                        <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-3xs font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
                             {table.getHeaderGroups()[0]?.headers.map((header) => (
                                 <div key={header.id} className="text-center">
                                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -596,7 +596,7 @@ export function DataTable<TData, TValue>({
                     <ScrollArea className={compactMaxHeight}>
                         <div className={cn("grid", effectiveGridTemplate, gridGap)}>
                             {/* Header */}
-                            <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
+                            <div className={cn("grid grid-cols-subgrid col-span-full px-3 py-1.5 text-3xs font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
                                 {table.getHeaderGroups()[0]?.headers.map((header) => (
                                     <div key={header.id} role="columnheader">
                                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}

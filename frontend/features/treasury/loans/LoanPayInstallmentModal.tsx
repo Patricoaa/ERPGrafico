@@ -171,7 +171,7 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                                 <MoneyDisplay amount={estimatedPenalty} />
                             </div>
                         </div>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-2xs text-muted-foreground">
                             Estimación con prorrateo 1/30 por día; el monto definitivo se calcula al
                             registrar el pago{isUF ? ' (convertido a CLP con el valor UF del día)' : ''}.
                         </p>

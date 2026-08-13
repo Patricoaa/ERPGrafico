@@ -311,7 +311,7 @@ export function VariantQuickEditForm({
 
               {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') &&
                 !!((templateData as unknown as Record<string, unknown>)?.discount_active) && (
-                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-[11px] font-bold text-warning-foreground">
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-2xs font-bold text-warning-foreground">
                     <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                     El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado de esta variante.
                   </div>
@@ -376,7 +376,7 @@ export function VariantQuickEditForm({
                 <h4 className="text-sm font-black uppercase tracking-widest text-foreground">
                   Recetas de esta Variante
                 </h4>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-2xs text-muted-foreground mt-0.5">
                   {availableBOMs.length > 0
                     ? `${availableBOMs.length} receta(s) configurada(s) para esta variante.`
                     : "Esta variante aún no tiene recetas de producción propias."}
@@ -399,7 +399,7 @@ export function VariantQuickEditForm({
                       <CheckCircle2 className={cn("h-4 w-4 shrink-0", bom.active ? "text-success" : "text-muted-foreground")} />
                       <div className="min-w-0">
                         <p className="text-xs font-bold truncate">{bom.name || `LDM #${bom.id}`}</p>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-3xs text-muted-foreground">
                           {bom.active ? "Activa" : "Inactiva"} · Rend.&nbsp;{bom.yield_quantity ?? 1}
                         </span>
                       </div>
@@ -435,7 +435,7 @@ export function VariantQuickEditForm({
               <div className="rounded-md border border-dashed border-muted-foreground/30 p-6 text-center bg-muted/5">
                 <Factory className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground font-medium">Sin recetas de producción</p>
-                <p className="text-[10px] text-muted-foreground/70 mt-1">
+                <p className="text-3xs text-muted-foreground/70 mt-1">
                   Cree una nueva receta o clone desde el template padre u otra variante.
                 </p>
               </div>
@@ -445,7 +445,7 @@ export function VariantQuickEditForm({
             <Button
               type="button"
               variant="outline"
-              className="w-full h-9 text-xs font-bold border-dashed"
+              className="w-full h-9 text-xs font-medium border-dashed"
               onClick={() => { setBomToEdit(undefined); setBomModalOpen(true) }}
             >
               <PlusCircle className="h-3.5 w-3.5 mr-2" />
@@ -457,7 +457,7 @@ export function VariantQuickEditForm({
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t" />
               </div>
-              <div className="relative flex justify-center text-[10px]">
+              <div className="relative flex justify-center text-3xs">
                 <span className="bg-card px-2 text-muted-foreground font-bold uppercase tracking-widest">
                   O clonar desde
                 </span>
@@ -467,7 +467,7 @@ export function VariantQuickEditForm({
             {/* Clone source selector */}
             {cloneSources.length <= 1 ? (
               <div className="p-3 bg-muted/10 border rounded-md text-center">
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-2xs text-muted-foreground">
                   No hay fuentes disponibles para clonar.
                   {!templateData?.has_active_bom && " El template padre tampoco tiene LDM configurada."}
                 </p>
@@ -483,7 +483,7 @@ export function VariantQuickEditForm({
                 />
                 <Button
                   type="button"
-                  className="w-full font-bold h-9"
+                  className="w-full font-medium h-9"
                   variant="secondary"
                   disabled={cloneSourceId === 'none'}
                   onClick={handleCloneBOM}

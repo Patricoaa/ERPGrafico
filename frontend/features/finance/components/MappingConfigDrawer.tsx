@@ -248,7 +248,7 @@ export function MappingConfigDrawer({
                                         onValueChange={field.onChange}
                                     >
                                         <SelectTrigger className={cn(
-                                            "h-8 text-[11px] font-medium w-[200px]",
+                                            "h-8 text-2xs font-medium w-[200px]",
                                             isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
                                             (!fieldValue || fieldValue === "none") && !isModified && "text-warning border-warning/30 bg-warning/5"
                                         )}>

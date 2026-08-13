@@ -133,7 +133,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                                         <Icon className="h-6 w-6" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-bold">{label}</span>
+                                        <span className="font-medium">{label}</span>
                                         <span className="text-xs text-muted-foreground">{hint}</span>
                                     </div>
                                 </Button>
@@ -254,7 +254,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                                     onClick={() => setUsage(value)}
                                 >
                                     <Icon className="h-5 w-5 text-primary" />
-                                    <span className="font-bold">{label}</span>
+                                    <span className="font-medium">{label}</span>
                                     <span className="text-xs text-muted-foreground">{hint}</span>
                                 </Button>
                             ))}

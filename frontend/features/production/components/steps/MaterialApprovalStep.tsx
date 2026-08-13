@@ -49,7 +49,7 @@ export function MaterialApprovalStep({
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right mr-2">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
+                  <p className="text-3xs font-bold uppercase text-muted-foreground">En Bodega</p>
                   <p className={cn(
                     'text-sm font-bold',
                     (m.stock_available ?? 0) >= m.quantity_planned ? 'text-success' : 'text-destructive',

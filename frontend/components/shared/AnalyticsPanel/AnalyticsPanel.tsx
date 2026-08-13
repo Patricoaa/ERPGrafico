@@ -78,7 +78,7 @@ export function AnalyticsPanelContent({
                             <span className="truncate">{t.label}</span>
                             {t.badge && (
                                 <span className={cn(
-                                    "ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-bold",
+                                    "ml-auto text-3xs px-1.5 py-0.5 rounded-full font-medium",
                                     isActive ? "bg-primary-foreground/20" : "bg-muted-foreground/20"
                                 )}>
                                     {t.badge}

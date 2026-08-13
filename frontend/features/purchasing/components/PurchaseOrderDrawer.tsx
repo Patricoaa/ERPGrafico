@@ -41,7 +41,7 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
         subtitle={contactName}
       >
         {orderLines?.map((line: Record<string, unknown>, idx: number) => (
-          <div key={Number(line.id) || idx} className="flex justify-between text-[10px]">
+          <div key={Number(line.id) || idx} className="flex justify-between text-3xs">
             <span className="flex-1">{String(line.product_name)}</span>
             <span className="w-12 text-right">{Math.round(Number(line.quantity))}</span>
             <span className="w-16 text-right">{formatCurrency(Number(line.unit_cost))}</span>

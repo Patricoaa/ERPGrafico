@@ -256,7 +256,7 @@ export function DraftCartsClientView({
                 const lockedByOther = lockInfo.isLocked && !lockInfo.isOwnLock
                 return (
                     <span className={cn(
-                        "text-center text-[11px] font-mono font-bold",
+                        "text-center text-2xs font-mono font-bold",
                         lockedByOther ? "text-destructive/60" : "text-primary/70"
                     )}>
                         {row.original.session_local_id}
@@ -319,7 +319,7 @@ export function DraftCartsClientView({
                                 </Chip>
                             )}
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-2 mt-0.5 text-3xs text-muted-foreground">
                             {draft.customer_name && (
                                 <span className="flex items-center gap-0.5 truncate max-w-[140px]">
                                     <User className="h-2.5 w-2.5 shrink-0" />
@@ -336,7 +336,7 @@ export function DraftCartsClientView({
             id: 'items',
             header: 'Ítems',
             cell: ({ row }) => (
-                <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground justify-center">
+                <span className="flex items-center gap-0.5 text-2xs text-muted-foreground justify-center">
                     <ShoppingCart className="h-3 w-3" />
                     {row.original.item_count}
                 </span>
@@ -360,7 +360,7 @@ export function DraftCartsClientView({
                     <Archive className="h-4 w-4 mr-2" />
                     Ver Borradores
                     {drafts.length > 0 && (
-                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                        <span className="ml-2 text-4xs font-medium uppercase px-1.5 py-0.5 rounded-full border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
                             {drafts.length}
                         </span>
                     )}
@@ -376,7 +376,7 @@ export function DraftCartsClientView({
                         <Archive className="h-4 w-4 text-muted-foreground" />
                         <span>Borradores</span>
                         {drafts.length > 0 && (
-                            <span className="text-[10px] h-4 px-1.5 font-bold bg-muted text-muted-foreground rounded-full border border-muted-foreground/20 leading-none flex items-center">
+                            <span className="text-3xs h-4 px-1.5 font-bold bg-muted text-muted-foreground rounded-full border border-muted-foreground/20 leading-none flex items-center">
                                 {drafts.length}
                             </span>
                         )}
@@ -421,7 +421,7 @@ export function DraftCartsClientView({
                                             size="sm"
                                             variant="ghost"
                                             className={cn(
-                                                "h-7 px-2 text-[11px] font-medium gap-0.5",
+                                                "h-7 px-2 text-2xs font-medium gap-0.5",
                                                 cannotLoad
                                                     ? "text-muted-foreground cursor-not-allowed"
                                                     : "hover:bg-primary/10 hover:text-primary"

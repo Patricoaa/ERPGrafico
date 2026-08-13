@@ -135,7 +135,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
         <>
             {(mode === 'view' || mode === 'edit') && provider?.id && (
                 <PrintableLayout ref={printRef} title="Proveedor" displayId={`#${provider.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{provider?.name ?? '-'}</span>

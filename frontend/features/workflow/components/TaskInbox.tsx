@@ -232,7 +232,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                         </Button>
                         <Button
                             size="sm"
-                            className="flex-1 text-xs h-7 bg-success/90 hover:bg-success text-success-foreground font-bold"
+                            className="flex-1 text-xs h-7 bg-success/90 hover:bg-success text-success-foreground font-medium"
                             onClick={(e) => handleCreditAction(e, task, 'APPROVE')}
                             disabled={actioningTask === task.id}
                         >

@@ -116,7 +116,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                     title="Libro Mayor"
                     displayId={`${accountCode} - ${accountName}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Desde:</span>
                             <span>{startStr ? format(new Date(startStr + 'T00:00:00'), 'dd/MM/yyyy') : '-'}</span>
@@ -126,7 +126,7 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger, noT
                             <span>{endStr ? format(new Date(endStr + 'T00:00:00'), 'dd/MM/yyyy') : '-'}</span>
                         </div>
                     </div>
-                    <div className="text-[9px]">
+                    <div className="text-4xs">
                         <div className="grid grid-cols-[60px,1fr,50px,50px,50px] gap-1 font-bold border-b mb-1 pb-1">
                             <span>Fecha</span>
                             <span>Descripción</span>
@@ -241,11 +241,11 @@ function LedgerContent({
                         <Calculator className="h-3.5 w-3.5 text-foreground" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground/80">Saldo Inicial</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-foreground/80">Saldo Inicial</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.opening_balance} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        <p className="text-3xs text-muted-foreground mt-0.5">
                             Al {dateRange?.from ? format(dateRange.from, 'dd/MM/yy', { locale: es }) : '-'}
                         </p>
                     </div>
@@ -257,11 +257,11 @@ function LedgerContent({
                         <ArrowUpRight className="h-3.5 w-3.5 text-cyan" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-cyan">Cargos (Debe)</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-cyan">Cargos (Debe)</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.period_debit} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Total del periodo</p>
+                        <p className="text-3xs text-muted-foreground mt-0.5">Total del periodo</p>
                     </div>
                 </div>
 
@@ -271,11 +271,11 @@ function LedgerContent({
                         <ArrowDownRight className="h-3.5 w-3.5 text-magenta" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-magenta">Abonos (Haber)</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-magenta">Abonos (Haber)</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.period_credit} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Total del periodo</p>
+                        <p className="text-3xs text-muted-foreground mt-0.5">Total del periodo</p>
                     </div>
                 </div>
 
@@ -285,11 +285,11 @@ function LedgerContent({
                         <Scale className="h-3.5 w-3.5 text-yellow" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-yellow">Saldo Final</p>
+                        <p className="text-3xs font-semibold uppercase tracking-widest text-yellow">Saldo Final</p>
                         <p className="text-sm font-bold text-foreground font-mono truncate">
                             <MoneyDisplay amount={data?.closing_balance} showColor={false} />
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        <p className="text-3xs text-muted-foreground mt-0.5">
                             Al {dateRange?.to ? format(dateRange.to, 'dd/MM/yy', { locale: es }) : '-'}
                         </p>
                     </div>

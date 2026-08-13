@@ -230,7 +230,7 @@ export function UserDrawer({ initialData, onSuccess, trigger, open: controlledOp
 
             {(mode === 'view' || mode === 'edit') && initialData?.id && (
                 <PrintableLayout ref={printRef} title="Ficha de Usuario" displayId={`#${initialData.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Usuario:</span>
                             <span>{initialData?.username ?? '-'}</span>

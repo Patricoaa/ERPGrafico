@@ -99,7 +99,7 @@ export function NewFiscalYearDrawer({
 
                 <LabeledContainer
                     label="Seleccione el Ejercicio Fiscal"
-                    labelClassName="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1"
+                    labelClassName="text-3xs font-bold uppercase tracking-looser text-muted-foreground ml-1"
                 >
                     <div className="grid grid-cols-4 gap-3 p-1">
                         {years.map(y => {

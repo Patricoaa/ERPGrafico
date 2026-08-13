@@ -84,7 +84,7 @@ export function WarehouseSelector({
                         <div className="flex flex-col flex-1 min-w-0">
                             <span className="font-medium">{warehouse.name}</span>
                             {warehouse.code && (
-                                <span className="text-[10px] text-muted-foreground font-mono">{warehouse.code}</span>
+                                <span className="text-3xs text-muted-foreground font-mono">{warehouse.code}</span>
                             )}
                         </div>
                         {selectedWarehouse?.id === warehouse.id && (

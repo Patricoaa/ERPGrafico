@@ -209,7 +209,7 @@ export function BulkVariantEditForm({
       <div className="px-5 pt-4 pb-1 bg-muted/5">
           <div className="flex items-center gap-2 mb-3">
             <Users className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] font-black uppercase tracking-widest text-primary">
+            <span className="text-2xs font-bold uppercase tracking-widest text-primary">
               {selectedVariants.length} variantes seleccionadas
             </span>
           </div>
@@ -322,7 +322,7 @@ export function BulkVariantEditForm({
 
               {(currentMode === 'INHERIT' || currentMode === 'SURCHARGE') &&
                 !!((templateData as unknown as Record<string, unknown>)?.discount_active) && (
-                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-[11px] font-bold text-warning-foreground">
+                  <div className="p-3 bg-warning/10 border border-warning/20 rounded-md flex gap-2 items-center text-2xs font-bold text-warning-foreground">
                     <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                     El template tiene descuentos configurados. Estos se aplicarán sobre el precio final calculado de estas variantes.
                   </div>
@@ -342,7 +342,7 @@ export function BulkVariantEditForm({
                 <h4 className="text-sm font-black uppercase tracking-widest text-foreground">
                   Recetas de Producción
                 </h4>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-2xs text-muted-foreground mt-0.5">
                   {variantsWithBOM === selectedVariants.length
                     ? `Todas las variantes tienen LDM configurada.`
                     : variantsWithBOM > 0
@@ -361,13 +361,13 @@ export function BulkVariantEditForm({
             <Button
               type="button"
               variant="outline"
-              className="w-full h-9 text-xs font-bold border-dashed"
+              className="w-full h-9 text-xs font-medium border-dashed"
               onClick={() => setBomModalOpen(true)}
             >
               <PlusCircle className="h-3.5 w-3.5 mr-2" />
               Crear Receta y Clonar a Todas
             </Button>
-            <p className="text-[10px] text-muted-foreground text-center -mt-2">
+            <p className="text-3xs text-muted-foreground text-center -mt-2">
               Crea una receta nueva y la replica automáticamente al resto de la selección.
             </p>
 
@@ -376,7 +376,7 @@ export function BulkVariantEditForm({
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t" />
               </div>
-              <div className="relative flex justify-center text-[10px]">
+              <div className="relative flex justify-center text-3xs">
                 <span className="bg-card px-2 text-muted-foreground font-bold uppercase tracking-widest">
                   O clonar desde existente
                 </span>
@@ -386,7 +386,7 @@ export function BulkVariantEditForm({
             {/* Clone source selector */}
             {cloneSources.length <= 1 ? (
               <div className="p-3 bg-muted/10 border rounded-md text-center">
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-2xs text-muted-foreground">
                   No hay fuentes disponibles para clonar.
                   {!templateData?.has_active_bom && " El template padre tampoco tiene LDM configurada."}
                 </p>
@@ -402,7 +402,7 @@ export function BulkVariantEditForm({
                 />
                 <Button
                   type="button"
-                  className="w-full font-bold h-9"
+                  className="w-full font-medium h-9"
                   variant="secondary"
                   disabled={cloneSourceId === 'none'}
                   onClick={handleCloneBOM}

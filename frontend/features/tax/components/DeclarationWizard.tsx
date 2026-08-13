@@ -216,7 +216,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                                         <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-bold" />
                                     </div>
                                     {calcData?.sales_taxed_by_dte?.map(item => (
-                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                        <div key={item.dte_type} className="flex justify-between items-center text-2xs text-muted-foreground/50 pl-4 mt-0.5">
                                             <span>{item.dte_type_display} ({item.count})</span>
                                             <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
                                         </div>
@@ -228,7 +228,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                                         <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold" />
                                     </div>
                                     {calcData?.sales_exempt_by_dte?.map(item => (
-                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                        <div key={item.dte_type} className="flex justify-between items-center text-2xs text-muted-foreground/50 pl-4 mt-0.5">
                                             <span>{item.dte_type_display} ({item.count})</span>
                                             <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
                                         </div>
@@ -251,7 +251,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                                         <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-bold" />
                                     </div>
                                     {calcData?.purchases_taxed_by_dte?.map(item => (
-                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                        <div key={item.dte_type} className="flex justify-between items-center text-2xs text-muted-foreground/50 pl-4 mt-0.5">
                                             <span>{item.dte_type_display} ({item.count})</span>
                                             <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
                                         </div>
@@ -263,7 +263,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                                         <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold" />
                                     </div>
                                     {calcData?.purchases_exempt_by_dte?.map(item => (
-                                        <div key={item.dte_type} className="flex justify-between items-center text-[11px] text-muted-foreground/50 pl-4 mt-0.5">
+                                        <div key={item.dte_type} className="flex justify-between items-center text-2xs text-muted-foreground/50 pl-4 mt-0.5">
                                             <span>{item.dte_type_display} ({item.count})</span>
                                             <MoneyDisplay amount={item.total} showColor={false} className="font-bold" />
                                         </div>
@@ -286,8 +286,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                                 <div className="grid grid-cols-2 gap-4">
                                     {calcData.drafts_summary.invoices.slice(0, 2).map(inv => (
                                         <div key={inv.id} className="flex items-center justify-between bg-muted/50 p-3 rounded-md border border-warning/10">
-                                            <span className="text-[11px] font-bold">{inv.display_id}</span>
-                                            <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black" onClick={() => openHub({ type: inv.type, invoiceId: inv.id })}>Abrir Hub</Button>
+                                            <span className="text-2xs font-bold">{inv.display_id}</span>
+                                            <Button variant="ghost" size="sm" className="h-7 text-4xs font-medium" onClick={() => openHub({ type: inv.type, invoiceId: inv.id })}>Abrir Hub</Button>
                                         </div>
                                     ))}
                                 </div>
@@ -421,7 +421,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, year: propYe
                             }
                         </p>
                     </div>
-                    <Button onClick={() => onOpenChange(false)} className="px-10 h-11 font-black uppercase tracking-widest text-[11px]">Finalizar Proceso</Button>
+                    <Button onClick={() => onOpenChange(false)} className="px-10 h-11 font-medium uppercase tracking-widest text-2xs">Finalizar Proceso</Button>
                 </div>
             </Drawer>
         )

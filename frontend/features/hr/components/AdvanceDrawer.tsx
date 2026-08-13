@@ -115,7 +115,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
         <>
             {(mode === 'view' || mode === 'edit') && advance?.id && (
                 <PrintableLayout ref={printRef} title="Anticipo" displayId={`#${advance.id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Empleado:</span>
                             <span>{advance?.employee_name ?? '-'}</span>

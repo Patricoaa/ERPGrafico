@@ -205,7 +205,7 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                         <p className="text-sm font-medium">
                             ¿Confirma la eliminación del almacén <span className="font-black text-foreground underline">{warehouseToDelete?.name}</span>?
                         </p>
-                        <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/10 p-3 rounded-md">
+                        <p className="text-2xs text-muted-foreground bg-destructive/5 border border-destructive/10 p-3 rounded-md">
                             <strong className="text-destructive uppercase">Advertencia:</strong> Esta acción es irreversible y podría afectar la integridad de los stocks registrados en esta ubicación.
                         </p>
                     </div>

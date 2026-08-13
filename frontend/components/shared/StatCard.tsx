@@ -232,7 +232,7 @@ export function StatCard({
   if (variant === "minimal") {
     inner = (
       <>
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
+        <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
           {label}
         </p>
         {renderValue()}
@@ -245,7 +245,7 @@ export function StatCard({
     inner = (
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">
             {label}
           </p>
           {renderArrowIcon()}

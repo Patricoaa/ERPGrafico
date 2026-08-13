@@ -332,7 +332,7 @@ export function UnifiedNoteWizard({
                         variant="outline"
                         onClick={handleBack}
                         disabled={!canGoBack || submitting || initializing}
-                        className="h-12 px-6 font-bold"
+                        className="h-12 px-6 font-medium"
                     >
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Atrás

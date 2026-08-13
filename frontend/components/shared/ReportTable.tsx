@@ -150,7 +150,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                             
                             <div className="flex items-baseline gap-2 min-w-0">
                                 {node.code && (
-                                    <span className="font-mono text-[11px] text-muted-foreground/60 leading-none">
+                                    <span className="font-mono text-2xs text-muted-foreground/60 leading-none">
                                         {node.code}
                                     </span>
                                 )}
@@ -173,7 +173,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     const level = row.depth;
                     const isTotal = row.original.isTotalRow;
                     return (
-                        <div className={cn("text-right font-mono", isTotal ? "text-base font-bold text-primary" : level === 0 ? "text-[15px] font-semibold text-foreground/90" : "text-sm text-foreground/80")}>
+                        <div className={cn("text-right font-mono", isTotal ? "text-base font-bold text-primary" : level === 0 ? "text-sm font-semibold text-foreground/90" : "text-sm text-foreground/80")}>
                             <MoneyDisplay amount={val} showColor={false} />
                         </div>
                     );
@@ -184,7 +184,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     columnHelper.accessor('comp_balance', {
                         header: () => <div className="text-right text-muted-foreground/70">{compPeriodLabel || 'Anterior'}</div>,
                         cell: ({ getValue }) => (
-                            <div className="text-right font-mono text-[13px] text-muted-foreground font-medium">
+                            <div className="text-right font-mono text-xs text-muted-foreground font-medium">
                                 <MoneyDisplay amount={getValue() || 0} showColor={false} />
                             </div>
                         ),
@@ -224,7 +224,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                         />
                                     </div>
                                     {pct && (
-                                        <span className="text-[10px] text-muted-foreground/70 font-semibold mt-0.5 inline-block bg-muted/50 px-1.5 py-0.5 rounded-sm">
+                                        <span className="text-3xs text-muted-foreground/70 font-semibold mt-0.5 inline-block bg-muted/50 px-1.5 py-0.5 rounded-sm">
                                             {pct}%
                                         </span>
                                     )}
@@ -275,7 +275,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                                         {headerGroup.headers.map((header) => (
                                             <th 
                                                 key={header.id} 
-                                                className="h-10 px-3 text-left align-middle font-semibold text-[11px] uppercase tracking-widest text-muted-foreground/80 whitespace-nowrap"
+                                                className="h-10 px-3 text-left align-middle font-semibold text-2xs uppercase tracking-widest text-muted-foreground/80 whitespace-nowrap"
                                             >
                                                 {header.isPlaceholder
                                                     ? null

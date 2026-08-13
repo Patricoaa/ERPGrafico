@@ -98,7 +98,7 @@ export function OrderHeaderDashboard({
                 className="card-flat bg-card/50 backdrop-blur-sm"
             >
                 <div className="mt-3 space-y-1">
-                    <div className="flex justify-between text-[11px] font-medium text-foreground/80">
+                    <div className="flex justify-between text-2xs font-medium text-foreground/80">
                         <span>Pagado: {formatCurrency(paidAmount)}</span>
                         <span className="text-muted-foreground/50">{Math.round(paymentProgress)}%</span>
                     </div>
@@ -135,7 +135,7 @@ export function OrderHeaderDashboard({
                                         )}
                                     </div>
                                     <span className={cn(
-                                        "text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 hidden sm:block",
+                                        "text-3xs font-bold uppercase tracking-wider transition-colors duration-300 hidden sm:block",
                                         isActive ? "text-primary" : "text-muted-foreground/70",
                                         step.status === 'success' && "text-success/80"
                                     )}>
@@ -143,7 +143,7 @@ export function OrderHeaderDashboard({
                                     </span>
 
                                     {/* Mobile Label (only for active step) */}
-                                    <span className={cn("sm:hidden text-[9px] font-bold absolute -bottom-5 whitespace-nowrap", isActive ? "text-primary block" : "hidden")}>
+                                    <span className={cn("sm:hidden text-4xs font-bold absolute -bottom-5 whitespace-nowrap", isActive ? "text-primary block" : "hidden")}>
                                         {step.label}
                                     </span>
                                 </div>

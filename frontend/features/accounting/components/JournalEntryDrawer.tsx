@@ -470,7 +470,7 @@ export function JournalEntryDrawer({
                     title="Asiento Contable"
                     displayId={`#${entityId}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Descripción:</span>
                             <span>{formValues.description || '-'}</span>
@@ -490,7 +490,7 @@ export function JournalEntryDrawer({
                             <span>{formValues.date ? format(formValues.date, 'dd/MM/yyyy') : '-'}</span>
                         </div>
                     </div>
-                    <div className="text-[9px]">
+                    <div className="text-4xs">
                         <div className="grid grid-cols-[1fr,50px,50px] gap-1 font-bold border-b mb-1 pb-1">
                             <span>Cuenta</span>
                             <span className="text-right">Debe</span>

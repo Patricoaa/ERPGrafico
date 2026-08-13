@@ -470,7 +470,7 @@ export const DataCell = {
                         </div>
                     </TooltipTrigger>
                     {title && (
-                        <TooltipContent side="top" className="text-xs font-semibold uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
+                        <TooltipContent side="top" className="text-xs font-semibold uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                             {title}
                         </TooltipContent>
                     )}
@@ -530,7 +530,7 @@ export const DataCell = {
                 {title && (
                     <TooltipContent
                         side="top"
-                        className="text-xs font-semibold uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200"
+                        className="text-xs font-semibold uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200"
                     >
                         {title}
                     </TooltipContent>
@@ -615,7 +615,7 @@ export const DataCell = {
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent side="top" className="text-xs font-semibold uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
+                <TooltipContent side="top" className="text-xs font-semibold uppercase tracking-looser px-2 py-1 shadow-floating rounded-sm animate-in fade-in zoom-in-95 duration-200">
                     {title}
                 </TooltipContent>
             </Tooltip>
@@ -695,15 +695,15 @@ export const DataCell = {
             <div className={cn("flex flex-col items-end justify-center gap-0.5", className)} {...props}>
                 <div className="flex items-center gap-1.5 min-w-0">
                     {lines && lines.length > 0 && (
-                        <span className="text-[9px] uppercase font-medium tracking-wider text-muted-foreground/60">{lines.length} {lines.length === 1 ? 'item' : 'items'}</span>
+                        <span className="text-4xs uppercase font-medium tracking-wider text-muted-foreground/60">{lines.length} {lines.length === 1 ? 'item' : 'items'}</span>
                     )}
                     <span className="text-xs font-medium tracking-tight">{formatCurrency(total)}</span>
                 </div>
                 {(pending != null && pending > 0) && (
-                    <span className="text-[9px] text-warning font-medium uppercase tracking-widest leading-none">Pend.: {formatCurrency(pending)}</span>
+                    <span className="text-4xs text-warning font-medium uppercase tracking-widest leading-none">Pend.: {formatCurrency(pending)}</span>
                 )}
                 {deliveryDate && (
-                    <span className="text-[9px] font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis max-w-full leading-none">
+                    <span className="text-4xs font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis max-w-full leading-none">
                         {dateLabel}: {formatPlainDate(deliveryDate)}
                     </span>
                 )}

@@ -83,7 +83,7 @@ export function LabeledCheckboxGroup({
                 />
                 <span className="text-sm font-bold cursor-pointer">{selectAllLabel}</span>
               </div>
-              <span className="text-[11px] font-mono font-black text-muted-foreground">
+              <span className="text-2xs font-mono font-bold text-muted-foreground">
                 {items.length}
               </span>
             </div>

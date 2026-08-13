@@ -38,7 +38,7 @@ export function PaymentHistoryModal({
                 <div className="flex flex-col gap-0.5">
                     <DataCell.Date value={row.original.date} />
                     {row.original.created_by_name && (
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <span className="text-3xs text-muted-foreground flex items-center gap-1">
                             <User className="h-3 w-3" /> {row.original.created_by_name}
                         </span>
                     )}
@@ -68,7 +68,7 @@ export function PaymentHistoryModal({
                             </span>
                         )}
                         {!p.reference && !p.transaction_number && (
-                            <span className="text-[10px] text-muted-foreground italic">Sin referencias</span>
+                            <span className="text-3xs text-muted-foreground italic">Sin referencias</span>
                         )}
                     </div>
                 )

@@ -136,7 +136,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                     title="UoM"
                     displayId={`#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{initialData?.name ?? '-'}</span>

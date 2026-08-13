@@ -97,7 +97,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             header: "Socio",
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-3xs font-bold text-primary shrink-0">
                         #{row.index + 1}
                     </div>
                     <DataCell.Text className="justify-start text-left font-medium">{row.original.name}</DataCell.Text>

@@ -48,13 +48,13 @@ export function NoteReviewStep({
                     {/* Header info */}
                     <div className="grid grid-cols-2 gap-6">
                         <div>
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Tipo de Documento</p>
+                            <p className="text-3xs uppercase font-bold text-muted-foreground mb-1">Tipo de Documento</p>
                             <p className="font-bold text-lg">
                                 {noteType === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'}
                             </p>
                         </div>
                         <div>
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Número de Folio</p>
+                            <p className="text-3xs uppercase font-bold text-muted-foreground mb-1">Número de Folio</p>
                             <p className="font-bold text-lg font-mono tracking-wider">
                                 {registration.isPending ? '(Pendiente)' : registration.documentNumber || '—'}
                             </p>
@@ -66,7 +66,7 @@ export function NoteReviewStep({
                     {/* Line items */}
                     <div>
                         <div className="flex justify-between items-center mb-4">
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Ítems Afectados</p>
+                            <p className="text-3xs uppercase font-bold text-muted-foreground">Ítems Afectados</p>
                             <span className="text-xs font-bold bg-muted px-2 py-1 rounded">{activeLines.length}</span>
                         </div>
 

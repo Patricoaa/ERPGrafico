@@ -266,7 +266,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
         <>
             {isView && employee?.id && (
                 <PrintableLayout ref={printRef} title="Employee" displayId={`${employee.display_id}`}>
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{employee.contact_detail?.name ?? '-'}</span>
@@ -479,7 +479,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                                         "flex items-center justify-between p-3.5 rounded-md border transition-all",
                                                                         field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
                                                                     )}>
-                                                                        <label className="text-[10px] font-black uppercase tracking-widest">{sw.label}</label>
+                                                                        <label className="text-3xs font-bold uppercase tracking-widest">{sw.label}</label>
                                                                         <Switch checked={field.value} onCheckedChange={field.onChange} />
                                                                     </div>
                                                                 )} />
@@ -599,7 +599,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, mode: mo
                                                         <div className="py-20 border-4 border-dashed rounded-md flex flex-col items-center justify-center text-center px-10 bg-muted/5">
                                                             <Plus className="h-10 w-10 text-muted-foreground/20 mb-4" />
                                                             <h4 className="font-black uppercase tracking-widest text-muted-foreground/80 text-xs">Sin Conceptos Definidos</h4>
-                                                            <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
+                                                            <p className="text-3xs text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
                                                                 No existen haberes específicos pactados para este perfil de empleado.
                                                             </p>
                                                         </div>

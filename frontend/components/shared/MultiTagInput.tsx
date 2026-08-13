@@ -94,7 +94,7 @@ export function MultiTagInput({
             >
                 {label && (
                     <legend className={cn(
-                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                        "px-1.5 text-3xs font-bold uppercase tracking-loose transition-colors duration-200",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
                     )}>
                         {label}
@@ -180,13 +180,13 @@ export function MultiTagInput({
             )}
 
             {hasError && (
-                <p role="alert" className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">
+                <p role="alert" className="text-3xs font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">
                     {error}
                 </p>
             )}
 
             {hint && !hasError && (
-                <p className="text-[10px] text-muted-foreground pl-1">
+                <p className="text-3xs text-muted-foreground pl-1">
                     {hint}
                 </p>
             )}

@@ -74,7 +74,7 @@ export function FiscalYearClosingWizard({
                                 <p>El Balance de Comprobación presenta descuadres. No se puede proceder con el cierre.</p>
                                 <Button
                                     variant="outline" size="sm"
-                                    className="w-fit h-7 text-[10px] font-black uppercase tracking-widest bg-destructive/10 border-destructive/30 hover:bg-destructive/20 text-destructive"
+                                    className="w-fit h-7 text-3xs font-medium uppercase tracking-widest bg-destructive/10 border-destructive/30 hover:bg-destructive/20 text-destructive"
                                     onClick={() => setShowTrialBalance(true)}
                                 >
                                     <Scale className="w-3 h-3 mr-2" /> Ver Balance
@@ -88,7 +88,7 @@ export function FiscalYearClosingWizard({
                                 <p>Se ha verificado la integridad de la partida doble para el ejercicio {year}.</p>
                                 <Button
                                     variant="outline" size="sm"
-                                    className="w-fit h-7 text-[10px] font-black uppercase tracking-widest bg-success/10 border-success/30 hover:bg-success/20 text-success"
+                                    className="w-fit h-7 text-3xs font-medium uppercase tracking-widest bg-success/10 border-success/30 hover:bg-success/20 text-success"
                                     onClick={() => setShowTrialBalance(true)}
                                 >
                                     <Scale className="w-3 h-3 mr-2" /> Ver Balance
@@ -99,7 +99,7 @@ export function FiscalYearClosingWizard({
 
                     {preview && (
                         <div className="space-y-2">
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Validaciones Críticas</p>
+                            <p className="text-3xs font-bold uppercase text-muted-foreground tracking-widest px-1">Validaciones Críticas</p>
                             <div className="grid grid-cols-1 gap-2">
                                 {Object.entries(preview.validations).map(([key, val]: [string, { passed: boolean; message: string; is_warning?: boolean }]) => (
                                     <div key={key} className={cn(
@@ -133,7 +133,7 @@ export function FiscalYearClosingWizard({
                             <p>Visualice el detalle de cuentas de resultados del ejercicio {year}.</p>
                             <Button
                                 variant="outline" size="sm"
-                                className="w-fit h-7 text-[10px] font-black uppercase tracking-widest bg-primary/10 border-primary/30 hover:bg-primary/20 text-primary"
+                                className="w-fit h-7 text-3xs font-medium uppercase tracking-widest bg-primary/10 border-primary/30 hover:bg-primary/20 text-primary"
                                 onClick={() => setShowIncomeStatement(true)}
                             >
                                 <PieChart className="w-3 h-3 mr-2" /> Ver Estado de Resultados
@@ -156,7 +156,7 @@ export function FiscalYearClosingWizard({
                                     {formatCurrency(parseFloat(preview.net_result || '0'))}
                                 </span>
                                 <div className={cn(
-                                    "px-3 py-1.5 rounded-sm text-[10px] font-black uppercase tracking-[0.2em]",
+                                    "px-3 py-1.5 rounded-sm text-3xs font-bold uppercase tracking-looser",
                                     parseFloat(preview.net_result || '0') >= 0 ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"
                                 )}>
                                     {parseFloat(preview.net_result || '0') >= 0 ? "Utilidad" : "Pérdida"}
@@ -182,7 +182,7 @@ export function FiscalYearClosingWizard({
 
                     <LabeledContainer
                         label="Cuenta de Capital/Utilidades"
-                        labelClassName="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1"
+                        labelClassName="text-3xs font-bold uppercase text-muted-foreground tracking-widest px-1"
                     >
                         <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-md flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -209,12 +209,12 @@ export function FiscalYearClosingWizard({
                     <div className="bg-muted/30 border border-border rounded-md overflow-hidden text-center">
                         <div className="p-5 space-y-4">
                             <div>
-                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Ejercicio Fiscal a Cerrar</p>
+                                <p className="text-3xs font-bold uppercase text-muted-foreground tracking-looser mb-1">Ejercicio Fiscal a Cerrar</p>
                                 <p className="text-4xl  font-black tabular-nums">{year}</p>
                             </div>
                             <div className="h-[1px] bg-border w-24 mx-auto" />
                             <div>
-                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Transferencia Patrimonial</p>
+                                <p className="text-3xs font-bold uppercase text-muted-foreground tracking-looser mb-1">Transferencia Patrimonial</p>
                                 <p className="text-2xl font-mono font-bold text-primary">{formatCurrency(parseFloat(preview.net_result || '0'))}</p>
                             </div>
                         </div>
@@ -222,7 +222,7 @@ export function FiscalYearClosingWizard({
 
                     <Alert variant="warning">
                         <AlertTitle className="text-warning-foreground font-extrabold uppercase tracking-tight">Advertencia</AlertTitle>
-                        <AlertDescription className="text-warning-foreground/90 text-[10px] font-medium mt-1 leading-relaxed">
+                        <AlertDescription className="text-warning-foreground/90 text-3xs font-medium mt-1 leading-relaxed">
                             Esta acción generará el asiento de cierre y bloqueará todos los periodos del año {year}.
                             El re-abierto de periodos quedará registrado en el historial de auditoría.
                         </AlertDescription>
@@ -245,7 +245,7 @@ export function FiscalYearClosingWizard({
                 footer={
                     <div className="flex flex-col gap-3 w-full">
                         <SubmitButton
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] h-11"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-2xs h-11"
                             onClick={() => {
                                 onClose();
                                 window.location.href = `/finances/partners/distributions?modal=new-distribution&yearId=${year}`;
@@ -255,7 +255,7 @@ export function FiscalYearClosingWizard({
                             Iniciar Distribución de Utilidades
                         </SubmitButton>
                         <CancelButton
-                            className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]"
+                            className="text-muted-foreground font-bold uppercase tracking-widest text-3xs"
                             onClick={onClose}
                         >
                             Finalizar Proceso

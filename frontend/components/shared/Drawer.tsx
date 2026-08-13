@@ -292,7 +292,7 @@ export function Drawer({
                             headerActions={
                                 <>
                                     {mode === "view" && (
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 border border-border/30 rounded-md px-2 py-0.5 select-none">
+                                        <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground/50 border border-border/30 rounded-md px-2 py-0.5 select-none">
                                             Vista
                                         </span>
                                     )}

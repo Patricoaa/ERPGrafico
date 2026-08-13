@@ -490,7 +490,7 @@ function TesoreriasForm() {
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         <div>
-                                            <p className="text-[11px] font-bold uppercase text-primary/60 mb-3 tracking-wider">Ingresos POS</p>
+                                            <p className="text-2xs font-bold uppercase text-primary/60 mb-3 tracking-wider">Ingresos POS</p>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <AccountField form={form} name="pos_tip_account" label="Recaudación Propinas" accountType="INCOME" />
                                                 <AccountField form={form} name="pos_other_inflow_account" label="Otros Ingresos Operativos" accountType="INCOME" />
@@ -500,7 +500,7 @@ function TesoreriasForm() {
                                         </div>
                                         <Separator />
                                         <div>
-                                            <p className="text-[11px] font-bold uppercase text-primary/60 mb-3 tracking-wider">Egresos POS</p>
+                                            <p className="text-2xs font-bold uppercase text-primary/60 mb-3 tracking-wider">Egresos POS</p>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <AccountField form={form} name="pos_partner_withdrawal_account" label="Retiro de Socios desde POS" accountType="EQUITY" />
                                                 <AccountField form={form} name="pos_system_error_account" label="Ajuste Operativo (Corrección)" accountType="EXPENSE" />
@@ -511,7 +511,7 @@ function TesoreriasForm() {
                                         </div>
                                         <Separator />
                                         <div>
-                                            <p className="text-[11px] font-bold uppercase text-primary/60 mb-3 tracking-wider">Diferencias de Arqueo</p>
+                                            <p className="text-2xs font-bold uppercase text-primary/60 mb-3 tracking-wider">Diferencias de Arqueo</p>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <AccountField form={form} name="pos_cash_difference_gain_account" label="Sobrante de Caja (Ganancia)" accountType="INCOME" />
                                                 <AccountField form={form} name="pos_cash_difference_loss_account" label="Faltante de Caja (Pérdida)" accountType="EXPENSE" />
@@ -812,11 +812,11 @@ function EstructuraForm() {
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <fieldset className="notched-field border-primary/20 pointer-events-none select-none">
-                                        <legend className="px-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-primary/80">
+                                        <legend className="px-1.5 text-3xs font-bold uppercase tracking-loose text-primary/80">
                                             Vista Previa del Formato
                                         </legend>
                                         <div className="flex items-center justify-between w-full min-h-[2.5rem] py-1">
-                                            <p className="text-[10px] text-muted-foreground uppercase opacity-75 font-bold pl-2.5">
+                                            <p className="text-3xs text-muted-foreground uppercase opacity-75 font-bold pl-2.5">
                                                 Ejemplo nivel {formValues.hierarchy_levels}
                                             </p>
                                             <span className="text-lg font-mono font-bold tracking-tighter text-primary mr-1">
@@ -866,20 +866,20 @@ function EstructuraForm() {
                                 <CardContent className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <FormField control={form.control} name="asset_prefix" render={({ field, fieldState }) => (
-                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Activos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Activos" error={fieldState.error?.message} className="font-mono text-2xs" />
                                         )} />
                                         <FormField control={form.control} name="liability_prefix" render={({ field, fieldState }) => (
-                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Pasivos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Pasivos" error={fieldState.error?.message} className="font-mono text-2xs" />
                                         )} />
                                         <FormField control={form.control} name="equity_prefix" render={({ field, fieldState }) => (
-                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Patrimonio" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Patrimonio" error={fieldState.error?.message} className="font-mono text-2xs" />
                                         )} />
                                         <FormField control={form.control} name="income_prefix" render={({ field, fieldState }) => (
-                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Ingresos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                            <LabeledInput {...field} value={field.value?.toString() || ""} label="Ingresos" error={fieldState.error?.message} className="font-mono text-2xs" />
                                         )} />
                                         <div className="col-span-2 md:col-span-1">
                                             <FormField control={form.control} name="expense_prefix" render={({ field, fieldState }) => (
-                                                <LabeledInput {...field} value={field.value?.toString() || ""} label="Gastos" error={fieldState.error?.message} className="font-mono text-[11px]" />
+                                                <LabeledInput {...field} value={field.value?.toString() || ""} label="Gastos" error={fieldState.error?.message} className="font-mono text-2xs" />
                                             )} />
                                         </div>
                                     </div>

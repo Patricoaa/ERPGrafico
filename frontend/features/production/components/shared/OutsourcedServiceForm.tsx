@@ -182,7 +182,7 @@ export function OutsourcedServiceForm({
             onFocus={(e) => e.target.select()}
           />
           {parseFloat(value.grossPrice) > 0 && (
-            <p className="text-[10px] text-muted-foreground font-mono">
+            <p className="text-3xs text-muted-foreground font-mono">
               Neto: {formatCurrency(parseFloat(value.netPrice))}
             </p>
           )}

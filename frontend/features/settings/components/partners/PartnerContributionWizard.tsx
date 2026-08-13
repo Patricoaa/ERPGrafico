@@ -226,24 +226,24 @@ export function PartnerContributionWizard({
                             label: (
                                 <span>
                                     {p.name}
-                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
+                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-3xs">{p.tax_id}</span>}
                                 </span>
                             ),
                         }))}
                     />
                     {selectedPartner && (
                         <div className="p-3 bg-muted/30 border-2 border-dashed rounded-md space-y-2 animate-in fade-in zoom-in-95 duration-300">
-                            <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
+                            <div className="flex justify-between items-center text-3xs text-muted-foreground uppercase font-bold">
                                 <span>Estado Societario</span>
                                 <Chip size="xs" intent="primary">Activo</Chip>
                             </div>
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] text-muted-foreground font-medium uppercase">Capital Pendiente</p>
+                                    <p className="text-4xs text-muted-foreground font-medium uppercase">Capital Pendiente</p>
                                     <p className="text-sm font-black text-warning font-mono">{formatCurrency(selectedPartner.partner_pending_capital)}</p>
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-[9px] text-muted-foreground font-medium uppercase">Participación</p>
+                                    <p className="text-4xs text-muted-foreground font-medium uppercase">Participación</p>
                                     <p className="text-sm font-black text-primary font-mono">{equityPctById[selectedPartner.id] ?? "0"}%</p>
                                 </div>
                             </div>
@@ -294,7 +294,7 @@ export function PartnerContributionWizard({
                             <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-2 text-info">
                                     <Lock className="h-3.5 w-3.5" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Pago total del capital pendiente</span>
+                                    <span className="text-3xs font-bold uppercase tracking-widest">Pago total del capital pendiente</span>
                                 </div>
                                 <span className="text-sm font-black text-info font-mono">{formatCurrency(parseFloat(cashData.amount) || 0)}</span>
                             </div>
@@ -393,7 +393,7 @@ export function PartnerContributionWizard({
                             <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-2 text-success">
                                     <ArrowDownCircle className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Valorización Total del Aporte</span>
+                                    <span className="text-3xs font-bold uppercase tracking-widest">Valorización Total del Aporte</span>
                                 </div>
                                 <span className="text-sm font-black text-success font-mono">{formatCurrency(assetTotalValue)}</span>
                             </div>

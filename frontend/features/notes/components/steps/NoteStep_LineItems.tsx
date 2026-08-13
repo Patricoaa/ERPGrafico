@@ -148,7 +148,7 @@ function SelectModeTable({
                             <span className="font-bold text-xs tabular-nums text-muted-foreground/60">
                                 {Math.floor(line.originalQuantity)}
                             </span>
-                            <span className="text-[10px] font-medium opacity-70 text-muted-foreground/60">
+                            <span className="text-3xs font-medium opacity-70 text-muted-foreground/60">
                                 {line.uomName}
                             </span>
                         </div>
@@ -165,7 +165,7 @@ function SelectModeTable({
                             <span className="font-black text-xs tabular-nums text-success">
                                 {Math.floor(line.originalQuantity)}
                             </span>
-                            <span className="text-[10px] font-bold text-success/60 uppercase">
+                            <span className="text-3xs font-bold text-success/60 uppercase">
                                 {line.uomName}
                             </span>
                         </div>
@@ -375,7 +375,7 @@ function EditModeTable({
                     const idx = row.index
                     return (
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-3xs text-muted-foreground">$</span>
                             <Input
                                 type="number"
                                 className={cn(

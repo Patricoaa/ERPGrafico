@@ -156,7 +156,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                                     />
                                                     {sourceAccount && (
                                                         <div className="absolute -bottom-5 right-1 px-1.5 py-0.5 rounded bg-muted/30 border border-muted/50">
-                                                            <p className="text-[10px] font-mono leading-none">
+                                                            <p className="text-3xs font-mono leading-none">
                                                                 DISP: <span className="text-success"><MoneyDisplay amount={sourceAccount.current_balance} weight="bold" /></span>
                                                             </p>
                                                         </div>
@@ -215,7 +215,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                                         />
                                         {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
                                             <div className="p-2.5 rounded-md bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
-                                                <p className="text-[10px] text-warning font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
+                                                <p className="text-3xs text-warning font-bold uppercase tracking-widest mb-1">Impacto en Origen</p>
                                                 <p className="text-xs font-black text-warning">
                                                     <MoneyDisplay amount={(sourceAccount.current_balance ?? 0) - parseFloat(amount)} />
                                                 </p>

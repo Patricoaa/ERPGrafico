@@ -47,7 +47,7 @@ export default function LoginPage() {
 
                         {/* Version footer */}
                         <div className="mt-10 pt-6 border-t border-border/40">
-                            <p className="text-[10px] text-muted-foreground/50 text-center font-mono uppercase tracking-widest">
+                            <p className="text-3xs text-muted-foreground/50 text-center font-mono uppercase tracking-widest">
                                 v{getFrontendVersion()}
                             </p>
                         </div>

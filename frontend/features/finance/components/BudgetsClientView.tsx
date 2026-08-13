@@ -152,7 +152,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                         actions={
                             <>
                                 <CancelButton onClick={() => handleCreateOpenChange(false)} />
-                                <Button onClick={handleCreate} className="px-6 font-bold ">
+                                <Button onClick={handleCreate} className="px-6 font-medium">
                                     Crear Presupuesto Anual
                                 </Button>
                             </>
@@ -184,7 +184,7 @@ export function BudgetsClientView({ externalOpen, onExternalOpenChange, createAc
                                 })
                             }}
                         />
-                        <p className="text-[10px] text-muted-foreground mt-1">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
+                        <p className="text-3xs text-muted-foreground mt-1">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
                     </div>
                     <LabeledInput
                         label="Descripción"

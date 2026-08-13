@@ -206,11 +206,11 @@ export function LogisticsPhase({
 
                         return (
                             <div key={idx} className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[10px] gap-2">
+                                <div className="flex items-center justify-between text-3xs gap-2">
                                     <span className="text-foreground/70 line-clamp-1 flex-1 leading-tight">
                                         {line.product_name || line.description}
                                     </span>
-                                    <span className="shrink-0 font-black text-primary text-[11px]">
+                                    <span className="shrink-0 font-bold text-primary text-2xs">
                                         {Math.round(showAnimations ? current : 0)} / {Math.round(total)}
                                     </span>
                                 </div>
@@ -228,7 +228,7 @@ export function LogisticsPhase({
                         )
                     })}
                     {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
-                        <div className="text-[9px] text-muted-foreground/40 italic flex justify-center py-1 border-t border-border mt-1 uppercase tracking-tighter font-bold">
+                        <div className="text-4xs text-muted-foreground/40 italic flex justify-center py-1 border-t border-border mt-1 uppercase tracking-tighter font-bold">
                             + {(activeDoc?.lines || activeDoc?.items || []).length - 3} ítems adicionales en proceso
                         </div>
                     )}

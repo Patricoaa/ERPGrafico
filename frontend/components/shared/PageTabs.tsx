@@ -74,7 +74,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
 
                             const tabClass = cn(
                                 "flex items-center justify-center gap-2 px-6 py-3 transition-all duration-300 relative group cursor-pointer",
-                                "text-[10px] sm:text-[11px] font-black uppercase tracking-wider focus:outline-none",
+                                "text-3xs sm:text-2xs font-bold uppercase tracking-wider focus:outline-none",
                                 isActive
                                     ? "text-primary bg-primary/5"
                                     : "text-muted-foreground hover:text-foreground hover:bg-muted/10",
@@ -115,7 +115,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                                                 <div className="w-3.5 h-3.5" />
                                                             )}
                                                             <span className={cn(
-                                                                "text-[10px]  uppercase tracking-wider font-black",
+                                                                "text-3xs  uppercase tracking-wider font-bold",
                                                                 isSubActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                                                             )}>
                                                                 {sub.label}

@@ -100,7 +100,7 @@ export function WorkOrderBasicInfo({
 
             {initialData ? (
                 <div className="p-4 bg-muted/20 border rounded-md space-y-4">
-                    <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                    <Label className="text-3xs uppercase text-muted-foreground font-bold flex items-center gap-1">
                         <FileText className="h-3.5 w-3.5" /> Detalle de Producto {otType === "LINKED" ? "en Venta" : "en Stock"}
                     </Label>
 
@@ -141,7 +141,7 @@ export function WorkOrderBasicInfo({
                 <>
                     {otType === "LINKED" && (
                         <div className="p-4 bg-muted/20 border rounded-md space-y-4">
-                            <Label className="text-[10px] uppercase text-muted-foreground font-bold flex items-center gap-1">
+                            <Label className="text-3xs uppercase text-muted-foreground font-bold flex items-center gap-1">
                                 <FileText className="h-3.5 w-3.5" /> Detalle de Producto en Venta
                             </Label>
                             <div className="space-y-6">
@@ -175,15 +175,15 @@ export function WorkOrderBasicInfo({
                                                     return (
                                                         <>
                                                             <div>
-                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Cantidad</p>
+                                                                <p className="text-3xs text-muted-foreground uppercase font-bold">Cantidad</p>
                                                                 <p className="text-sm font-medium">{l.quantity} {l.uom_name}</p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Precio Unit.</p>
+                                                                <p className="text-3xs text-muted-foreground uppercase font-bold">Precio Unit.</p>
                                                                 <p className="text-sm font-medium">{formatCurrency(parseFloat(String(l.unit_price)))}</p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
+                                                                <p className="text-3xs text-muted-foreground uppercase font-bold">Subtotal</p>
                                                                 <p className="text-sm font-bold text-primary">{formatCurrency(parseFloat(String((l as unknown as { subtotal?: number }).subtotal || 0)))}</p>
                                                             </div>
                                                         </>
@@ -306,7 +306,7 @@ export function WorkOrderBasicInfo({
                                     <User className="h-3.5 w-3.5 text-primary shrink-0" />
                                     <span className="font-semibold text-sm truncate">{selectedContact.name}</span>
                                     {selectedContact.tax_id && (
-                                        <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                        <span className="text-3xs text-muted-foreground shrink-0 hidden sm:inline">
                                             [{selectedContact.tax_id}]
                                         </span>
                                     )}

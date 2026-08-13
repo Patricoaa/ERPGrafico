@@ -67,11 +67,11 @@ export function F29PaymentModal({
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="p-4 rounded-md bg-muted/30 border border-border/50">
-                            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Impuesto Determinado</div>
+                            <div className="text-3xs uppercase font-bold text-muted-foreground tracking-wider mb-1">Impuesto Determinado</div>
                             <div className="text-xl font-bold font-mono">{formatCurrency(declaration.vat_to_pay)}</div>
                         </div>
                         <div className="p-4 rounded-md bg-success/5 border border-success/10">
-                            <div className="text-[10px] uppercase font-bold text-success tracking-wider mb-1">Total Pagado</div>
+                            <div className="text-3xs uppercase font-bold text-success tracking-wider mb-1">Total Pagado</div>
                             <div className="text-xl font-bold text-success font-mono">{formatCurrency(declaration.total_paid)}</div>
                         </div>
                         <div className={cn(
@@ -80,7 +80,7 @@ export function F29PaymentModal({
                                 ? "bg-success/10 border-success/20"
                                 : "bg-primary/5 border-primary/10"
                         )}>
-                            <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1">Saldo Pendiente</div>
+                            <div className="text-3xs uppercase font-bold text-muted-foreground tracking-wider mb-1">Saldo Pendiente</div>
                             <div className={cn(
                                 "text-xl font-bold font-mono",
                                 isFullyPaid ? "text-success" : "text-primary"

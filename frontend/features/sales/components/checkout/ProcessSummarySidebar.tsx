@@ -76,7 +76,7 @@ export function ProcessSummarySidebar({
             <div className="space-y-0.5">
                 <p className="text-xs font-semibold">{deliveryLabels[deliveryData.type]}</p>
                 {deliveryData.date && (
-                    <p className="text-[10px]">{formatPlainDate(deliveryData.date)}</p>
+                    <p className="text-3xs">{formatPlainDate(deliveryData.date)}</p>
                 )}
             </div>
         ) : undefined
@@ -91,7 +91,7 @@ export function ProcessSummarySidebar({
                 <p className="text-xs font-semibold">{methodLabels[paymentData.method]}</p>
                 <MoneyDisplay amount={paymentData.amount} className="text-xs font-bold" />
                 {paymentData.creditAssigned !== undefined && paymentData.creditAssigned > 0 && (
-                    <div className="text-[10px] text-warning font-semibold flex items-center gap-1">
+                    <div className="text-3xs text-warning font-semibold flex items-center gap-1">
                         Crédito: <MoneyDisplay amount={paymentData.creditAssigned} inline />
                     </div>
                 )}

@@ -30,7 +30,7 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                 title="Movimiento de Stock"
                 displayId={displayId}
             >
-                <div className="text-[9px] space-y-1 mb-2">
+                <div className="text-4xs space-y-1 mb-2">
                     <div className="flex justify-between">
                         <span>Producto:</span>
                         <span>{move?.product_name ?? '-'}</span>

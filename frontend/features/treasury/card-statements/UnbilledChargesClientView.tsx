@@ -216,7 +216,7 @@ export function UnbilledChargesClientView({
                 return (
                     <div className="flex flex-col items-center gap-0.5 w-full">
                         {inst.partner_name && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[140px] leading-tight">
+                            <span className="text-3xs text-muted-foreground truncate max-w-[140px] leading-tight">
                                 {inst.partner_name}
                             </span>
                         )}

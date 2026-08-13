@@ -34,7 +34,7 @@ export function SaleOrderDrawer({ id, open, onOpenChange, orderId, segmenter }: 
                 subtitle={order?.customer_name}
             >
                 {order?.lines?.map((line, idx) => (
-                    <div key={line.id ?? idx} className="flex justify-between text-[10px]">
+                    <div key={line.id ?? idx} className="flex justify-between text-3xs">
                         <span className="flex-1">{line.description || line.product_name}</span>
                         <span className="w-12 text-right">{Math.round(Number(line.quantity))}</span>
                         <span className="w-16 text-right">{formatCurrency(Number(line.unit_price))}</span>

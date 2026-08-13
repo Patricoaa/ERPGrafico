@@ -61,10 +61,10 @@ const badgeVariants = cva(
              * xs/sm follow Chip scale. md/lg follow StatusBadge scale.
              */
             size: {
-                xs: 'h-[18px] px-2 text-[9px] gap-1',
-                sm: 'h-[22px] px-2.5 text-[10px] gap-1',
+                xs: 'h-[18px] px-2 text-4xs gap-1',
+                sm: 'h-[22px] px-2.5 text-3xs gap-1',
                 md: 'px-2 py-0.5 text-xs gap-1',
-                lg: 'h-8 px-4 text-[14px] gap-1.5',
+                lg: 'h-8 px-4 text-sm gap-1.5',
                 xl: 'h-10 px-6 text-base gap-2',
             },
 
@@ -216,7 +216,7 @@ Badge.Dot = function BadgeDot({ intent = 'neutral', size = 'md', children, class
             <div className={cn('h-2 w-2 rounded-full animate-pulse', dotColor[intent ?? 'neutral'])} />
             <span className={cn(
                 'font-sans font-medium tracking-tight leading-none',
-                size === 'xs' || size === 'sm' ? 'text-[10px]' : 'text-[11px] text-muted-foreground',
+                size === 'xs' || size === 'sm' ? 'text-3xs' : 'text-2xs text-muted-foreground',
             )}>
                 {children}
             </span>
@@ -313,7 +313,7 @@ Badge.Hub = function BadgeHub({ intent = 'neutral', icon: Icon, tooltip, size = 
                 <TooltipTrigger asChild>{hubEl}</TooltipTrigger>
                 <TooltipContent
                     side="top"
-                    className=" font-extrabold uppercase text-[10px] tracking-tighter"
+                    className=" font-extrabold uppercase text-3xs tracking-tighter"
                 >
                     {tooltip}
                 </TooltipContent>

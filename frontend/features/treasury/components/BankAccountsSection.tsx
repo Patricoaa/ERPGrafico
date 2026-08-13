@@ -66,7 +66,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                                 <Wallet className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                                                 <span className="text-xs font-medium truncate">{acc.name}</span>
                                                 {acc.account_number && (
-                                                    <span className="text-[11px] font-mono text-muted-foreground truncate">
+                                                    <span className="text-2xs font-mono text-muted-foreground truncate">
                                                         {acc.account_number}
                                                     </span>
                                                 )}
@@ -75,14 +75,14 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                         <div className="flex items-baseline gap-3 text-xs shrink-0">
                                             {creditLine > 0 && (
                                                 <span className="text-muted-foreground">
-                                                    Línea <MoneyDisplay amount={creditLine} className="text-xs font-bold tabular-nums" showColor={false} />
+                                                    Línea <MoneyDisplay amount={creditLine} className="text-xs font-medium tabular-nums" showColor={false} />
                                                 </span>
                                             )}
                                             <span>
-                                                <MoneyDisplay amount={acc.current_balance} className="text-xs font-bold tabular-nums" />
+                                                <MoneyDisplay amount={acc.current_balance} className="text-xs font-medium tabular-nums" />
                                             </span>
                                             <span className="font-semibold text-muted-foreground">
-                                                Disp. <MoneyDisplay amount={available} className="text-xs font-bold tabular-nums" showColor={available >= 0} />
+                                                Disp. <MoneyDisplay amount={available} className="text-xs font-medium tabular-nums" showColor={available >= 0} />
                                             </span>
                                         </div>
                                         <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
@@ -119,7 +119,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                         <div className="font-mono text-sm tracking-widest mb-3">
                                             {formatCardNumber(card.card_number || card.account_number || card.code)}
                                         </div>
-                                        <div className="text-[10px] opacity-70 mb-0.5">Titular</div>
+                                        <div className="text-3xs opacity-70 mb-0.5">Titular</div>
                                         <div className="text-sm font-medium mb-3">{companyName}</div>
                                         <div className="flex items-center justify-between text-xs">
                                             <div>

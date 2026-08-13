@@ -54,7 +54,7 @@ export function TaskActionCard({
                 </div>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium">
+                    <div className="flex items-center gap-1.5 text-3xs text-muted-foreground font-medium">
                         <User className="h-3 w-3 text-primary/60" />
                         {task.assigned_to_data ? (
                             <span><span className="text-foreground">{task.assigned_to_data.username}</span></span>
@@ -71,7 +71,7 @@ export function TaskActionCard({
                         <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="h-6 text-[10px] px-2 text-muted-foreground hover:text-primary"
+                            className="h-6 text-3xs px-2 text-muted-foreground hover:text-primary"
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
                             {isExpanded ? "Ocultar detalles" : "Añadir Evidencia"}
@@ -98,7 +98,7 @@ export function TaskActionCard({
                                     href={att.file}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 px-2 py-1 bg-background border border-success/20 rounded text-[10px] text-success hover:bg-success/10 transition-colors"
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-background border border-success/20 rounded text-3xs text-success hover:bg-success/10 transition-colors"
                                 >
                                     <Paperclip className="h-3 w-3 text-success" />
                                     <span className="max-w-[150px] truncate font-medium">{att.original_filename}</span>
@@ -132,14 +132,14 @@ export function TaskActionCard({
                                             onChange={(e) => onFileChange?.(e.target.files ? e.target.files[0] : null)}
                                         />
                                     </LabeledContainer>
-                                    <p className="text-[10px] text-warning/80 italic leading-tight">
+                                    <p className="text-3xs text-warning/80 italic leading-tight">
                                         * Al avanzar a la siguiente etapa, esta validación se marcará como completada automáticamente.
                                     </p>
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1.5 text-[10px] bg-destructive/10 px-3 py-2 rounded text-destructive border border-destructive/20">
+                        <div className="flex items-center gap-1.5 text-3xs bg-destructive/10 px-3 py-2 rounded text-destructive border border-destructive/20">
                             <AlertCircle className="h-3 w-3 shrink-0" />
                             Requiere validación por: {task.assigned_to_data?.username || task.assigned_group_name || task.data?.candidate_group}
                         </div>

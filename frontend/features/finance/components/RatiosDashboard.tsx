@@ -172,7 +172,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                     accent="primary"
                                     className="h-full rounded-md"
                             >
-                                <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
+                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
                                     {health.icon}{health.label}
                                     {showComparison && cd && (
                                         <DeltaBadge current={d.liquidity.current_ratio} previous={cd.liquidity.current_ratio} />
@@ -195,7 +195,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 accent="info"
                                 className="h-full rounded-md"
                             >
-                                <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
+                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
                                     {health.icon}{health.label}
                                     {showComparison && cd && (
                                         <DeltaBadge current={d.liquidity.acid_test || 0} previous={cd.liquidity.acid_test || 0} />
@@ -218,7 +218,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 accent="warning"
                                 className="h-full rounded-md"
                             >
-                                <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
+                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
                                     {health.icon}{health.label}
                                     {showComparison && cd && (
                                         <DeltaBadge current={d.structure.debt_to_equity} previous={cd.structure.debt_to_equity} />
@@ -241,7 +241,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 accent="success"
                                 className="h-full rounded-md"
                             >
-                                <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
+                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
                                     {health.icon}{health.label}
                                     {showComparison && cd && (
                                         <DeltaBadge current={d.solvency.solvency_ratio} previous={cd.solvency.solvency_ratio} />
@@ -264,7 +264,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 accent="accent"
                                 className="h-full rounded-md"
                             >
-                                <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
+                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
                                     {health.icon}{health.label}
                                     {showComparison && cd && (
                                         <DeltaBadge current={d.profitability?.gross_margin || 0} previous={cd.profitability?.gross_margin || 0} />
@@ -287,7 +287,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 accent="muted"
                                 className="h-full rounded-md"
                             >
-                                <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${health.color}`}>
+                                <div className={`mt-1.5 flex items-center gap-1 text-3xs font-bold ${health.color}`}>
                                     {health.icon}{health.label}
                                     {showComparison && cd && (
                                         <DeltaBadge current={d.profitability?.net_margin || 0} previous={cd.profitability?.net_margin || 0} />
@@ -365,7 +365,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     {showComparison && cd ? (
                         <div className="flex h-full gap-2">
                             <div className="flex-1 flex flex-col items-center">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actual</span>
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Actual</span>
                                 <div className="w-full h-full">
                                     <PieChart
                                         data={structureData}
@@ -383,7 +383,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 </div>
                             </div>
                             <div className="flex-1 flex flex-col items-center">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Anterior</span>
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Anterior</span>
                                 <div className="w-full h-full">
                                     <PieChart
                                         data={structureDataComp}
@@ -430,7 +430,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                     {showComparison && cd ? (
                         <div className="flex h-full gap-2">
                             <div className="flex-1 flex flex-col items-center">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actual</span>
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Actual</span>
                                 <div className="w-full h-full">
                                     <PieChart
                                         data={assetsDistribution}
@@ -448,7 +448,7 @@ export const RatiosDashboard: React.FC<RatiosDashboardProps> = ({ date, showComp
                                 </div>
                             </div>
                             <div className="flex-1 flex flex-col items-center">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Anterior</span>
+                                <span className="text-3xs font-bold uppercase tracking-widest text-muted-foreground">Anterior</span>
                                 <div className="w-full h-full">
                                     <PieChart
                                         data={assetsDistributionComp}

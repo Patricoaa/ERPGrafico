@@ -93,7 +93,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 />
                             </div>
                         ) : (
-                            <div className="w-8 h-8 rounded-md flex items-center justify-center bg-primary/10 text-primary font-bold text-[10px]">
+                            <div className="w-8 h-8 rounded-md flex items-center justify-center bg-primary/10 text-primary font-bold text-3xs">
                                 {initials}
                             </div>
                         )}
@@ -139,12 +139,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                     <div className="flex items-center gap-2 shrink-0">
                                         {config.status && (
                                             config.status.type === 'saving' ? (
-                                                <Skeleton className="px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                                                <Skeleton className="px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
                                                     {config.status.label}
                                                 </Skeleton>
                                             ) : (
                                                 <div className={cn(
-                                                    "px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-tighter border shrink-0",
+                                                    "px-2 py-0.5 rounded-full text-2xs font-bold uppercase tracking-tighter border shrink-0",
                                                     config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
                                                     config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
                                                     !config.status.type && "bg-muted text-muted-foreground border-border"

@@ -186,8 +186,8 @@ export function TreasuryPhase({
             >
                 <div className="flex items-center justify-between py-2 px-2 border-y border-border/10 my-2">
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pagado</span>
-                        <span className="text-[14px]  font-black text-success tracking-tight">
+                        <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/50 leading-none">Pagado</span>
+                        <span className="text-sm  font-black text-success tracking-tight">
                             {formatCurrency(Number(activeDoc.total || 0) - Number(activeDoc.pending_amount || 0))}
                         </span>
                     </div>
@@ -195,9 +195,9 @@ export function TreasuryPhase({
                     <div className="h-6 w-[1px] bg-border/20 mx-2" />
 
                     <div className="flex flex-col gap-0.5 text-right">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pendiente</span>
+                        <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/50 leading-none">Pendiente</span>
                         <span className={cn(
-                            "text-[14px]  font-black tracking-tight",
+                            "text-sm  font-black tracking-tight",
                             parseFloat(String(activeDoc.pending_amount || '0')) > 0 ? "text-warning" : "text-muted-foreground/30"
                         )}>
                             {formatCurrency(Number(activeDoc.pending_amount || 0))}
@@ -234,7 +234,7 @@ export function TreasuryPhase({
                     <div className="flex w-full gap-2">
                         <CancelButton onClick={() => setAnnulPaymentState(prev => ({ ...prev, open: false }))} className="flex-1" />
                         <Button
-                            className="flex-[2] bg-warning hover:bg-warning/90 h-12 text-lg font-bold"
+                            className="flex-[2] bg-warning hover:bg-warning/90 h-12 text-lg font-medium"
                             onClick={async () => {
                                 setIsAnnuling(true)
                                 try {

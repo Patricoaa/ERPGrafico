@@ -160,7 +160,7 @@ export function PhaseCard({
                 </div>
                 <div className="flex-1 flex items-center gap-2">
                     <h3 className={cn(
-                        " font-black uppercase tracking-[0.2em] text-foreground leading-none",
+                        " font-black uppercase tracking-looser text-foreground leading-none",
                         "text-[11.5px]"
                     )}>
                         {title}
@@ -215,7 +215,7 @@ export function PhaseCard({
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             <div className="flex flex-col overflow-hidden">
                                                 <div className="flex flex-col justify-center">
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>
+                                                    <span className="text-3xs font-bold text-muted-foreground uppercase">{doc.type}</span>
                                                     <div className="flex items-center gap-2">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -274,7 +274,7 @@ export function PhaseCard({
                                 ))
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-1.5 border border-dashed border-border/10 rounded-md">
-                                    <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
+                                    <span className="text-4xs text-muted-foreground/30 font-bold uppercase tracking-widest">{emptyMessage}</span>
                                 </div>
                             )}
                         </div>
@@ -283,7 +283,7 @@ export function PhaseCard({
                         {children && (
                             <div className={cn(
                                 "flex-1 flex flex-col justify-center",
-                                "px-1 text-[12px]"
+                                "px-1 text-xs"
                             )}>
                                 {children}
                             </div>

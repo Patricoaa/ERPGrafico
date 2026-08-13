@@ -260,7 +260,7 @@ export function AccountDrawer({
                     title="Comprobante Contable"
                     displayId={(initialData?.code as string) || `#${initialData.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{(initialData?.name as string) ?? '-'}</span>

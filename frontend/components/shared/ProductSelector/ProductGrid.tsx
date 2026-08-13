@@ -163,7 +163,7 @@ function ProductGridComponent({
 
                                 {/* Variant templates: la disponibilidad vive en las variantes, no en la plantilla */}
                                 {product.has_variants && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-2xs font-bold text-muted-foreground">
                                         <div className="h-2 w-2 rounded-full bg-primary/70" />
                                         {product.variants_count ?? 0} variantes
                                     </div>
@@ -171,7 +171,7 @@ function ProductGridComponent({
 
                                 {/* Stock/Availability Badge */}
                                 {!product.has_variants && product.product_type === 'STORABLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-2xs font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
@@ -179,14 +179,14 @@ function ProductGridComponent({
 
                                 {/* MANUFACTURABLE badges */}
                                 {!product.has_variants && isManufacturable && mfgSubType === 'SIMPLE' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[11px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-2xs font-bold text-muted-foreground">
                                         <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0 ? 'bg-success' : 'bg-destructive'}`} />
                                         {limits[`prod_${product.id}`] ?? product.qty_available ?? 0}
                                     </div>
                                 )}
 
                                 {!product.has_variants && isManufacturable && mfgSubType === 'EXPRESS' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-3xs font-bold text-muted-foreground">
                                         {!product.has_bom ? (
                                             <>
                                                 <div className="h-2 w-2 rounded-full bg-muted-foreground" />
@@ -202,7 +202,7 @@ function ProductGridComponent({
                                 )}
 
                                 {!product.has_variants && isManufacturable && mfgSubType === 'ADVANCED' && (
-                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                    <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-3xs font-bold text-muted-foreground">
                                         {product.has_bom ? (
                                             <>
                                                 <div className={`h-2 w-2 rounded-full ${(product.manufacturable_quantity ?? 0) > 0 ? 'bg-primary' : 'bg-warning'}`} />
@@ -220,7 +220,7 @@ function ProductGridComponent({
                                 {!product.has_variants && (product.product_type === 'SERVICE' ||
                                     product.product_type === 'SUBSCRIPTION' ||
                                     product.product_type === 'CONSUMABLE') && (
-                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-[10px] font-bold text-muted-foreground">
+                                        <div className="flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-floating border text-3xs font-bold text-muted-foreground">
                                             <div className="h-2 w-2 rounded-full bg-success" />
                                             Disponible
                                         </div>
@@ -245,13 +245,13 @@ function ProductGridComponent({
                             )}>
                                 {priceRenderer ? priceRenderer(product) : (
                                     product.is_dynamic_pricing ? (
-                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-warning/20 bg-warning/10 text-warning">
+                                        <span className="text-4xs font-bold uppercase px-1.5 py-0.5 rounded border border-warning/20 bg-warning/10 text-warning">
                                             Dinámico
                                         </span>
                                     ) : (
                                         <div className="flex flex-col items-end">
                                             <span>{formatCurrency(PricingUtils.netToGross(Number(product.sale_price || 0)))}</span>
-                                            <span className="text-[9px] text-muted-foreground uppercase font-semibold leading-none mt-0.5">c/IVA</span>
+                                            <span className="text-4xs text-muted-foreground uppercase font-semibold leading-none mt-0.5">c/IVA</span>
                                         </div>
                                     )
                                 )}

@@ -198,7 +198,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                     title="Terminal"
                     displayId={terminal.code ? `#${terminal.code}` : `#${terminal.id}`}
                 >
-                    <div className="text-[9px] space-y-1 mb-2">
+                    <div className="text-4xs space-y-1 mb-2">
                         <div className="flex justify-between">
                             <span>Nombre:</span>
                             <span>{terminal?.name ?? '-'}</span>
@@ -342,7 +342,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                         {type === 'CARD' && <CreditCard className="h-4 w-4" />}
                                                         {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
                                                         {type === 'CHECK' && <FileCheck className="h-4 w-4" />}
-                                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
+                                                        <h4 className="text-2xs font-bold uppercase tracking-looser">
                                                             {getTypeLabel(type)}
                                                         </h4>
                                                     </div>
@@ -375,7 +375,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                         )}>
                                                                             {method.name}
                                                                         </span>
-                                                                        <span className="text-[10px] text-muted-foreground/70 font-medium">
+                                                                        <span className="text-3xs text-muted-foreground/70 font-medium">
                                                                             {`Cta: ${method.treasury_account_name}`}
                                                                         </span>
                                                                     </div>

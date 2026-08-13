@@ -260,7 +260,7 @@ interface EntityCardFieldProps {
 function EntityCardField({ label, value, full, className, icon: Icon }: EntityCardFieldProps) {
     return (
         <div className={cn("flex flex-col gap-0.5 min-w-0", full && "col-span-2", className)}>
-            <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
+            <span className="text-3xs font-medium uppercase tracking-widest text-muted-foreground/60">
                 {label}
             </span>
             <span className="flex items-center gap-1 text-xs font-medium text-foreground/80">
@@ -440,18 +440,18 @@ function EntityCardWorkflowBody({ lines, total, pending, deliveryDate, dateLabel
             <div className="flex items-start gap-4 shrink-0 pr-9">
                 {deliveryDate ? (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{dateLabel}</span>
+                        <span className="text-4xs text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">{dateLabel}</span>
                         <span className="text-sm tracking-tight whitespace-nowrap">{formatPlainDate(deliveryDate)}</span>
                     </div>
                 ) : null}
                 {pending != null && pending > 0 && (
                     <div className="flex flex-col items-end min-w-[80px]">
-                        <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
+                        <span className="text-4xs text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">Pendiente</span>
                         <MoneyDisplay amount={pending} showColor={false} className="text-sm tracking-tight text-warning" />
                     </div>
                 )}
                 <div className="flex flex-col items-end min-w-[80px]">
-                    <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
+                    <span className="text-4xs text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">Total</span>
                     <MoneyDisplay amount={total} showColor={false} className="text-sm tracking-tight" />
                 </div>
             </div>
@@ -498,11 +498,11 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
             <div className="flex-1 min-w-0">
                 <span className="text-xs font-medium truncate block">{label}</span>
                 {sublabel && (
-                    <span className="text-[10px] text-muted-foreground truncate block">{sublabel}</span>
+                    <span className="text-3xs text-muted-foreground truncate block">{sublabel}</span>
                 )}
             </div>
             {trailing ?? (value != null && (
-                <span className="text-xs font-bold tabular-nums shrink-0">{value}</span>
+                <span className="text-xs font-medium tabular-nums shrink-0">{value}</span>
             ))}
             {onClick && (
                 <ArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-all shrink-0" />
@@ -581,7 +581,7 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
                         {item.icon && (
                             <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
                         )}
-                        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/60">
+                        <span className="text-3xs font-medium uppercase tracking-widest text-muted-foreground/60">
                             {item.label}
                         </span>
                         <span className={cn("text-sm font-bold tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>

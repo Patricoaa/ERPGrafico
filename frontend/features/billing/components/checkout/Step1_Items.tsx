@@ -90,12 +90,12 @@ export function Step1_Items({
                             <TableHead className="w-14 text-center">
                                 <Tag className="h-4 w-4 mx-auto text-muted-foreground" />
                             </TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Producto/Servicio</TableHead>
-                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Original</TableHead>
-                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Entregado</TableHead>
-                            <TableHead className="w-28 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Cantidad Corregir</TableHead>
-                            <TableHead className="w-32 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Precio</TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Motivo / Razón</TableHead>
+                            <TableHead className="font-bold uppercase text-3xs tracking-widest text-muted-foreground/60">Producto/Servicio</TableHead>
+                            <TableHead className="text-right font-bold uppercase text-3xs tracking-widest text-muted-foreground/60">Original</TableHead>
+                            <TableHead className="text-right font-bold uppercase text-3xs tracking-widest text-muted-foreground/60">Entregado</TableHead>
+                            <TableHead className="w-28 text-center font-bold uppercase text-3xs tracking-widest text-muted-foreground/60">Cantidad Corregir</TableHead>
+                            <TableHead className="w-32 text-center font-bold uppercase text-3xs tracking-widest text-muted-foreground/60">Precio</TableHead>
+                            <TableHead className="font-bold uppercase text-3xs tracking-widest text-muted-foreground/60">Motivo / Razón</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -146,13 +146,13 @@ export function Step1_Items({
                                     <TableCell className="text-right font-bold text-xs tabular-nums text-muted-foreground/60">
                                         <div className="flex flex-col">
                                             <span>{Math.floor(line.quantity)}</span>
-                                            <span className="text-[10px] font-medium opacity-70">{line.uom_name}</span>
+                                            <span className="text-3xs font-medium opacity-70">{line.uom_name}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right font-black text-xs tabular-nums text-success px-3">
                                         <div className="flex flex-col">
                                             <span>{Math.floor(line.quantity_delivered || 0)}</span>
-                                            <span className="text-[10px] font-bold text-success/60 uppercase">{line.uom_name}</span>
+                                            <span className="text-3xs font-bold text-success/60 uppercase">{line.uom_name}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="px-4">
