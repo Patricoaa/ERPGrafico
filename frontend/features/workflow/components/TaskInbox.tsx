@@ -193,9 +193,9 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
         return (
             <Card
                 key={task.id}
+                variant="flat"
                 className={cn(
-                    "card-base rounded-sm px-3 py-2.5 cursor-pointer group flex flex-col gap-2 w-full",
-                    "transition-all duration-150 ease-out hover:shadow-sm hover:bg-muted/40",
+                    "px-3 py-2.5 cursor-pointer group flex flex-col gap-2 w-full",
                     isRejected && "opacity-40 grayscale-[0.5]"
                 )}
                 onClick={() => navigateToTask(task)}
@@ -287,7 +287,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                             )}
 
                              {approvalTasks.length === 0 && (
-                                 <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/30 rounded-sm border border-dashed text-muted-foreground">
+                                 <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/30 rounded-md border border-dashed text-muted-foreground">
                                      <CheckCircle2 className="h-8 w-8 mb-2 opacity-20" />
                                      <p className="text-xs">No tienes aprobaciones</p>
                                  </div>
@@ -299,7 +299,7 @@ export function TaskInbox({ onCountChange }: TaskInboxProps) {
                  <TabBarContent value="tasks" className="h-full flex flex-col mt-0">
                      <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tareas">
                          {operationalTasks.length === 0 ? (
-                             <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/10 rounded-sm border border-dashed text-muted-foreground">
+                             <div className="flex flex-1 flex-col items-center justify-center text-center bg-muted/10 rounded-md border border-dashed text-muted-foreground">
                                  <ListTodo className="h-8 w-8 mb-2 opacity-20" />
                                  <p className="text-xs">No tienes tareas pendientes</p>
                              </div>

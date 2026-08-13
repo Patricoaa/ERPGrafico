@@ -38,7 +38,7 @@ export function BankCheckSection({ data, bankId }: Props) {
                             key={chk.id}
                             onClick={() => router.push(`/treasury/bank-center/${bankId}/checks?selected=${chk.id}`)}
                             className={cn(
-                                "w-full text-left rounded-lg border border-border/50 bg-card p-3 border-l-4",
+                                "w-full text-left rounded-md border border-border/50 bg-card p-3 border-l-4",
                                 isOverdue ? "border-l-warning" : "border-l-muted-foreground/30",
                                 "hover:bg-accent hover:border-border transition-all",
                             )}

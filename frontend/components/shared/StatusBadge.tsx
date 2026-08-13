@@ -97,23 +97,33 @@ export function StatusBadge({
     }
 
     if (variant === 'badge') {
+        // Kept for backward compatibility, behaves the same as default now
         return (
-            <Badge intent={intent} size={size} appearance={appearance} className={className}>
-                <span className="inline-flex items-center gap-1.5">
-                    <span className={cn('inline-block h-1.5 w-1.5 rounded-full shrink-0', DOT_COLORS[intent])} />
-                    {displayLabel}
-                </span>
+            <Badge intent={intent} size={size} appearance={appearance} className={className} dot={true}>
+                {displayLabel}
             </Badge>
         )
     }
 
-    return (
-        <div className={cn('inline-flex items-center gap-1.5', className)}>
-            <span className={cn('rounded-full shrink-0', DOT_SIZES[size], DOT_COLORS[intent])} />
-            <span className={cn('font-sans font-medium text-foreground leading-none', TEXT_SIZES[size])}>
+    if (variant === 'dot') {
+        return (
+            <Badge.Dot intent={intent} size={size as any} className={className}>
                 {displayLabel}
-            </span>
-        </div>
+            </Badge.Dot>
+        )
+    }
+
+    return (
+        <Badge
+            intent={intent}
+            size={size}
+            appearance={appearance}
+            className={className}
+            dot={true}
+            icon={Icon}
+        >
+            {displayLabel}
+        </Badge>
     )
 }
 

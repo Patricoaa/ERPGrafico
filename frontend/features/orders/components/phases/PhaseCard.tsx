@@ -113,7 +113,7 @@ export function PhaseCard({
 
     return (
         <Card className={cn(
-            "card-base flex flex-col duration-300 relative group/card bg-card/50 backdrop-blur-sm py-2 gap-2",
+            "card-flat flex flex-col duration-300 relative group/card py-2 gap-2",
             open && collapsible && "accent-visible",
             className
         )}>

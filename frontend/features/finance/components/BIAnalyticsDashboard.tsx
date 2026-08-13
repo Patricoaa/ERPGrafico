@@ -122,7 +122,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={sales.total_sales} previous={cd?.sales?.total_sales} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="primary"
-                        className="h-full rounded-sm"
+                        className="h-full rounded-md"
                     >
                         <div className={`mt-1.5 flex items-center gap-1 text-[10px] font-bold ${sales.growth >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {sales.growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -138,7 +138,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={purchasing.purchase_total} previous={cd?.purchasing?.purchase_total} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="warning"
-                        className="h-full rounded-sm"
+                        className="h-full rounded-md"
                     >
                         {showComparison && cd && (
                             <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold">
@@ -155,7 +155,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={payroll.total_cost} previous={cd?.payroll?.total_cost} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="destructive"
-                        className="h-full rounded-sm"
+                        className="h-full rounded-md"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Users className="h-3 w-3" /> {payroll.employee_count} empleados
@@ -170,7 +170,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={production.efficiency} previous={cd?.production?.efficiency} showComparison={showComparison} isPercentage />}
                         valueSize="xl"
                         accent="info"
-                        className="h-full rounded-sm"
+                        className="h-full rounded-md"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Factory className="h-3 w-3" /> {production.finished_wo} completadas
@@ -185,7 +185,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={inventory.total_value} previous={cd?.inventory?.total_value} showComparison={showComparison} isCurrency />}
                         valueSize="xl"
                         accent="accent"
-                        className="h-full rounded-sm"
+                        className="h-full rounded-md"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Package className="h-3 w-3" /> {inventory.item_count} SKU activos
@@ -200,7 +200,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                         value={<KPIValue current={sales.pending_deliveries} previous={cd?.sales?.pending_deliveries} showComparison={showComparison} />}
                         valueSize="xl"
                         accent="accent"
-                        className="h-full rounded-sm"
+                        className="h-full rounded-md"
                     >
                         <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
                             <Truck className="h-3 w-3" /> órdenes en espera
@@ -215,7 +215,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Tendencia de Ventas" 
                     description="Evolución mensual de ventas (sin impuestos)"
                     headerRight={hasValidTrend ? <ChartLegend items={[{ label: "Ventas", color: palette[0] }]} /> : undefined}
-                    className="rounded-sm"
+                    className="rounded-md"
                 >
                     <div className="h-full">
                         {hasValidTrend ? (
@@ -244,7 +244,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                 <SectionCard
                     title="Top Clientes"
                     description="Por volumen de compras facturadas"
-                    className="rounded-sm"
+                    className="rounded-md"
                 >
                     <div className="h-full">
                         {sales.top_customers && sales.top_customers.length > 0 ? (
@@ -284,10 +284,10 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Proveedores y CxP"
                     description="Análisis de pasivos y principales proveedores"
                     chartHeight="auto"
-                    className="h-full rounded-sm"
+                    className="h-full rounded-md"
                 >
                     <div className="space-y-4 flex-1">
-                        <div className="flex flex-col bg-muted/30 p-3 rounded-lg border border-border/50">
+                        <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cuentas por Pagar (Facturas Pendientes)</span>
                             <span className="text-2xl font-bold text-liability mt-1">
                                 <MoneyDisplay amount={billing.ap_total} />
@@ -316,7 +316,7 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Inventario"
                     description="Composición del valor en almacén por categoría"
                     chartHeight="auto"
-                    className="h-full flex flex-col rounded-sm"
+                    className="h-full flex flex-col rounded-md"
                 >
                     <div className="h-[220px] -mx-2">
                         {inventory.stock_distribution && inventory.stock_distribution.length > 0 ? (
@@ -357,17 +357,17 @@ export const BIAnalyticsDashboard: React.FC<BIAnalyticsDashboardProps> = ({ date
                     title="Cuentas por Cobrar"
                     description="Facturas emitidas y pendientes de cobro"
                     chartHeight="auto"
-                    className="h-full rounded-sm"
+                    className="h-full rounded-md"
                 >
                     <div className="space-y-4 flex-1">
-                        <div className="flex flex-col bg-muted/30 p-3 rounded-lg border border-border/50">
+                        <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Monto Pendiente</span>
                             <span className="text-2xl font-bold text-primary mt-1">
                                 <MoneyDisplay amount={billing.ar_total} />
                             </span>
                         </div>
                         
-                        <div className="flex flex-col bg-muted/30 p-3 rounded-lg border border-border/50">
+                        <div className="flex flex-col bg-muted/30 p-3 rounded-md border border-border/50">
                             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Facturado en el Período</span>
                             <span className="text-2xl font-bold mt-1">
                                 <MoneyDisplay amount={sales.invoiced_period} />

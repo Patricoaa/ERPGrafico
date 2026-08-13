@@ -154,14 +154,14 @@ export function ManualTerminalNotice({
                     </h4>
                     {paymentMethodName && (
                         <div className="flex justify-center">
-                            <span className="rounded-md border border-warning/20 bg-warning/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-foreground"> {/* intentional: badge density */}
+                            <span className="rounded-sm border border-warning/20 bg-warning/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-foreground"> {/* intentional: badge density */}
                                 {paymentMethodName}
                             </span>
                         </div>
                     )}
                     {reason === "TERMINAL_BYPASS" && failureReason && (
                         <div className="flex justify-center pt-1">
-                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-md"> {/* intentional: badge density */}
+                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-sm"> {/* intentional: badge density */}
                                 REF: {failureReason}
                             </span>
                         </div>
@@ -178,7 +178,7 @@ export function ManualTerminalNotice({
                             dangerouslySetInnerHTML={{
                                 __html: line.replace(
                                     "{amount}",
-                                    `<span class="font-mono font-bold text-foreground bg-muted/50 px-1.5 py-0.5 rounded-md border-b-2 border-warning/30">${formattedAmount}</span>`
+                                    `<span class="font-mono font-bold text-foreground bg-muted/50 px-1.5 py-0.5 rounded-sm border-b-2 border-warning/30">${formattedAmount}</span>`
                                 ),
                             }}
                         />

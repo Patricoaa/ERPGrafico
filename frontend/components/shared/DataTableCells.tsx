@@ -362,7 +362,7 @@ export const DataCell = {
     // --- Status & Badges ---
 
     /** Mapped status badge — tinted square badge. Internally uses the standardized StatusBadge (ADR-0065 / ADR-0066). */
-    Status: ({ status, label, size = "sm", className }: { status: string, label?: string, size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
+    Status: ({ status, label, size = "md", className }: { status: string, label?: string, size?: "xs" | "sm" | "md" | "lg" | "xl", className?: string }) => {
         return (
             <div className={cn("flex justify-center items-center w-full", className)}>
                 <StatusBadge
@@ -376,14 +376,14 @@ export const DataCell = {
     },
 
     /** Chip for intent-based labels within table cells (wraps shared Chip component) */
-    Chip: ({ children, intent = "neutral", size = "sm", icon, className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", icon?: LucideIcon, className?: string } & HTMLAttributes<HTMLDivElement>) => (
+    Chip: ({ children, intent = "neutral", size = "md", icon, className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", icon?: LucideIcon, className?: string } & HTMLAttributes<HTMLDivElement>) => (
         <div className={cn("flex justify-center items-center w-full", className)} {...props}>
             <ChipComponent intent={intent} size={size} icon={icon}>{children}</ChipComponent>
         </div>
     ),
 
     /** One or more domain-resolved category chips (wraps shared Chip.Category). Empty renders the unified null dash. */
-    Category: ({ value, domain, size = "sm", className, ...props }: { value: string | string[] | null | undefined, domain?: CategoryDomain, size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => {
+    Category: ({ value, domain, size = "md", className, ...props }: { value: string | string[] | null | undefined, domain?: CategoryDomain, size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => {
         const values = (Array.isArray(value) ? value : value ? [value] : []) as string[]
         if (values.length === 0 || !domain) {
             return (

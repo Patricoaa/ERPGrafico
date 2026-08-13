@@ -171,7 +171,7 @@ export function AccountingPeriodCloseChecklistModal({
                                 <div
                                     key={idx}
                                     className={cn(
-                                        "flex items-start gap-3 p-3 border rounded-sm transition-colors",
+                                        "flex items-start gap-3 p-3 border rounded-md transition-colors",
                                         item.passed
                                             ? "border-success/30 bg-success/5"
                                             : item.critical

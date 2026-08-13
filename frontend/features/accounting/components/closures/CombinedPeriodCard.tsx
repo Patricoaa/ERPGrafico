@@ -62,7 +62,7 @@ export function CombinedPeriodCard({
 
                 <div className="space-y-1">
                     {/* Contable row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[28px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-md min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">Cont</span>
                             {acct ? (
@@ -110,7 +110,7 @@ export function CombinedPeriodCard({
                     </div>
 
                     {/* F29 row */}
-                    <div className="flex items-center justify-between py-1 px-1.5 rounded-sm min-h-[28px]">
+                    <div className="flex items-center justify-between py-1 px-1.5 rounded-md min-h-[28px]">
                         <div className="flex items-center gap-1.5 min-w-0">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-11 shrink-0">F29</span>
                             {tax ? (
@@ -173,7 +173,7 @@ export function CombinedPeriodCard({
                         {tax?.declaration_summary?.document && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <a href={tax.declaration_summary.document} target="_blank" rel="noopener noreferrer" className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors">
+                                    <a href={tax.declaration_summary.document} target="_blank" rel="noopener noreferrer" className="h-7 w-7 inline-flex items-center justify-center rounded-sm hover:bg-accent hover:text-accent-foreground text-muted-foreground transition-colors">
                                         <FileText className="w-3.5 h-3.5" />
                                     </a>
                                 </TooltipTrigger>

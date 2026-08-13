@@ -24,15 +24,16 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             fullWidth={320}
             priority={0}
             badge={taskCount}
+            className="w-[320px] max-w-[320px]"
         >
             {/* Header */}
-            <div className="border-b shrink-0 px-6 pt-6 pb-4">
+            <div className="border-b border-border/40 shrink-0 px-4 pt-4 pb-3">
                 <PanelHeader
                     title="Bandeja de Entrada"
                     icon={Inbox}
                     onClose={onClose}
                     closeTooltip="Cerrar bandeja"
-                    titleClassName="text-md font-black tracking-tight"
+                    titleClassName="text-sm font-semibold tracking-tight"
                 />
             </div>
 

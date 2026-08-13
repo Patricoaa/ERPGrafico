@@ -990,7 +990,7 @@ export const SalesCheckoutWizardView = forwardRef<SalesCheckoutWizardViewHandle,
                 size="sm"
             >
                 <div className="flex flex-col items-center gap-6 py-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-sm border border-destructive/30 bg-destructive/10">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-md border border-destructive/30 bg-destructive/10">
                         <FileWarning className="h-8 w-8 text-destructive" />
                     </div>
                     <div className="text-center space-y-2">

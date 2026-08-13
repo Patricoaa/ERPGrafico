@@ -106,7 +106,7 @@ export function BankAccountsSection({ data, bankId }: BankAccountsSectionProps) 
                                         key={card.id}
                                         onClick={() => router.push(`/treasury/bank-center/${bankId}/cards/unbilled?card=${card.id}`)}
                                         className={cn(
-                                            "relative w-full rounded-xl bg-gradient-to-br p-4 text-white shadow-lg overflow-hidden text-left transition-all hover:brightness-110",
+                                            "relative w-full rounded-md bg-gradient-to-br p-4 text-white shadow-lg overflow-hidden text-left transition-all hover:brightness-110",
                                             GRADIENTS[idx % GRADIENTS.length]
                                         )}
                                     >

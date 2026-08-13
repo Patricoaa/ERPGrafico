@@ -217,18 +217,37 @@ export function Drawer({
                     maxWidth: isHorizontal ? (maxSize ?? '100vw') : undefined,
                     minHeight: !isHorizontal ? minSize : undefined,
                     maxHeight: !isHorizontal ? (maxSize ?? '100vh') : undefined,
-                    ...(side === "right" ? { right: 0, top: 0, bottom: 0, height: '100%' } : {}),
-                    ...(side === "left" ? { left: 0, top: 0, bottom: 0, height: '100%' } : {}),
+                    ...(boundary === "embedded" ? { position: 'absolute' } : {}),
+                    ...(side === "right" ? { 
+                        right: 0, 
+                        top: boundary === "embedded" ? 0 : 'var(--header-height)', 
+                        bottom: 0, 
+                        height: boundary === "embedded" ? '100%' : 'calc(100vh - var(--header-height))' 
+                    } : {}),
+                    ...(side === "left" ? { 
+                        left: 0, 
+                        top: boundary === "embedded" ? 0 : 'var(--header-height)', 
+                        bottom: 0, 
+                        height: boundary === "embedded" ? '100%' : 'calc(100vh - var(--header-height))' 
+                    } : {}),
                     ...(side === "bottom" ? { left: 0, right: 0, bottom: 0, width: '100%' } : {}),
-                    ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
+                    ...(side === "top" ? { left: 0, right: 0, top: boundary === "embedded" ? 0 : 'var(--header-height)', width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 flex flex-col overflow-hidden flush-panel",
-                    boundary === "embedded" ? "absolute!" : "fixed!",
+                    "p-0 flex flex-col overflow-hidden text-foreground rounded-none!",
+                    // Entity/embedded drawers: solid background
+                    boundary === "embedded"
+                        ? "absolute! border border-border/40 bg-background"
+                        : "fixed! bg-muted/35 backdrop-blur-sm",
                     sideStyles[side],
+                    // Fixed panels: hairline border, no shadow, no rounding
+                    boundary !== "embedded" && side === "right" && "rounded-none! border-l border-border/40",
+                    boundary !== "embedded" && side === "left" && "rounded-none! border-r border-border/40",
                     boundary === "embedded" && isHorizontal
-                        ? (side === "right" ? "border-l! border-border/15! border-t-0! border-r-0! border-b-0!" : "border-r! border-border/15! border-t-0! border-l-0! border-b-0!")
-                        : undefined,
+                        ? "h-full"
+                        : boundary === "embedded" && !isHorizontal
+                        ? "w-full"
+                        : "",
                     className
                 )}
             >
@@ -261,7 +280,7 @@ export function Drawer({
                 )}
 
                 {(title || subtitle || headerActions || icon) && (
-                    <SheetHeader className={cn("px-6 py-3 border-b shrink-0", headerClassName)}>
+                    <SheetHeader className={cn("px-6 py-3 border-b border-border/40 shrink-0 bg-background", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
                             title={
@@ -304,7 +323,7 @@ export function Drawer({
                 )}
 
                 {footer && (
-                    <div className={cn("border-t px-6 py-3 flex-shrink-0", footerClassName)}>
+                    <div className={cn("border-t border-border/40 px-6 py-3 flex-shrink-0 bg-background", footerClassName)}>
                         {footer}
                     </div>
                 )}

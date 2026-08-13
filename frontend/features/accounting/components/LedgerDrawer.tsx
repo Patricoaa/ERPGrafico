@@ -236,8 +236,8 @@ function LedgerContent({
         <div className="flex-1 flex flex-col h-full min-h-0 overflow-hidden gap-4 p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
                 {/* Black/Base — Saldo Inicial */}
-                <div className="rounded-lg border border-foreground/20 bg-foreground/5 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-foreground/10 p-1.5 shrink-0">
+                <div className="rounded-md border border-foreground/20 bg-foreground/5 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-foreground/10 p-1.5 shrink-0">
                         <Calculator className="h-3.5 w-3.5 text-foreground" />
                     </div>
                     <div className="min-w-0">
@@ -252,8 +252,8 @@ function LedgerContent({
                 </div>
 
                 {/* Cyan — Cargos (Debe) */}
-                <div className="rounded-lg border border-cyan/30 bg-cyan/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-cyan/20 p-1.5 shrink-0">
+                <div className="rounded-md border border-cyan/30 bg-cyan/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-cyan/20 p-1.5 shrink-0">
                         <ArrowUpRight className="h-3.5 w-3.5 text-cyan" />
                     </div>
                     <div className="min-w-0">
@@ -266,8 +266,8 @@ function LedgerContent({
                 </div>
 
                 {/* Magenta — Abonos (Haber) */}
-                <div className="rounded-lg border border-magenta/30 bg-magenta/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-magenta/20 p-1.5 shrink-0">
+                <div className="rounded-md border border-magenta/30 bg-magenta/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-magenta/20 p-1.5 shrink-0">
                         <ArrowDownRight className="h-3.5 w-3.5 text-magenta" />
                     </div>
                     <div className="min-w-0">
@@ -280,8 +280,8 @@ function LedgerContent({
                 </div>
 
                 {/* Yellow — Saldo Final */}
-                <div className="rounded-lg border border-yellow/40 bg-yellow/10 px-3 py-2.5 flex items-start gap-2.5">
-                    <div className="rounded-md bg-yellow/20 p-1.5 shrink-0">
+                <div className="rounded-md border border-yellow/40 bg-yellow/10 px-3 py-2.5 flex items-start gap-2.5">
+                    <div className="rounded-sm bg-yellow/20 p-1.5 shrink-0">
                         <Scale className="h-3.5 w-3.5 text-yellow" />
                     </div>
                     <div className="min-w-0">

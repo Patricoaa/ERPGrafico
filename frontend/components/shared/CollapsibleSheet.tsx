@@ -127,8 +127,8 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 h-full flush-panel border-l",
-                "top-[var(--header-height)] bottom-0 right-0 h-[calc(100vh-var(--header-height))]",
+                "p-0 rounded-none! border-l border-border/40 bg-muted/35 backdrop-blur-sm text-foreground",
+                "top-[var(--header-height)] bottom-0 h-[calc(100dvh-var(--header-height))]",
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
                 allowOverflow ? "overflow-visible" : "overflow-hidden",
@@ -142,11 +142,12 @@ export function CollapsibleSheet({
             onFocusOutside={(e) => e.preventDefault()}
             onInteractOutside={(e) => e.preventDefault()}
             style={{
-                transform: (!open || isCollapsed) ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
+                right: offset,
+                transform: (!open || isCollapsed) ? `translateX(100%)` : 'translateX(0)',
                 zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
                 // If full size, use 100vw but keep offset for layering if needed
-                maxWidth: size === "full" ? '100vw' : calculatedWidth,
-                width: size === "full" ? '100vw' : calculatedWidth,
+                maxWidth: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
+                width: size === "full" ? '100vw' : (typeof calculatedWidth === 'number' ? `${calculatedWidth}px` : calculatedWidth),
                 '--stack-offset': `${offset}px`
             } as React.CSSProperties}
         >

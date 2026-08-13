@@ -12,10 +12,12 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { ModuleNavigationMenu, PageHeaderSkeleton, ModuleLauncher, PrepressPanel, TabBar, DynamicIcon } from '@/components/shared'
-import { Loader2, Menu } from "lucide-react"
+import { ModuleNavigationMenu, PageHeaderSkeleton, PrepressPanel, TabBar, DynamicIcon } from '@/components/shared'
+import { Loader2 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
-import { getModuleIconName } from "@/lib/module-registry"
+import { getModuleIconName, MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-registry"
+import Link from "next/link"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -28,11 +30,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const router = useRouter()
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
-    const [isModuleLauncherOpen, setIsModuleLauncherOpen] = useState(false)
-    const [isLauncherHovered, setIsLauncherHovered] = useState(false)
 
     const currentModuleId = pathname.split('/').filter(Boolean)[0] || 'dashboard'
-    const currentModuleIcon = getModuleIconName(currentModuleId)
 
     const { config } = useHeader()
     const { isHubEffectivelyOpen } = useHubPanel()
@@ -71,49 +70,44 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="relative h-screen bg-background overflow-hidden font-sans">
-            {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6 border-b border-border/40">
-                {/* Module launcher: shows current module icon, hover → hamburger */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsModuleLauncherOpen(true)}
-                    onMouseEnter={() => setIsLauncherHovered(true)}
-                    onMouseLeave={() => setIsLauncherHovered(false)}
-                    className="flex-none rounded-md border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
-                    aria-label="Seleccionar módulo"
-                >
-                    <AnimatePresence mode="wait" initial={false}>
-                        {isLauncherHovered ? (
-                            <motion.div
-                                key="hamburger"
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                transition={{ duration: 0.15 }}
-                            >
-                                <Menu className="h-5 w-5" />
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key={`module-${currentModuleId}`}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                transition={{ duration: 0.15 }}
-                            >
-                                <DynamicIcon name={currentModuleIcon} className="h-5 w-5" />
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </Button>
-                <ModuleLauncher
-                    open={isModuleLauncherOpen}
-                    onClose={() => setIsModuleLauncherOpen(false)}
-                />
+        <div className="flex h-screen bg-background overflow-hidden font-sans">
+            {/* ── LEFT SIDEBAR (MODULES) ──────────────────────────────────────── */}
+            <div className="w-[60px] shrink-0 h-full border-r border-border/40 flex flex-col items-center py-4 bg-muted/10 gap-3 z-40">
+                <TooltipProvider delayDuration={0}>
+                    {MODULE_ORDER.map(modId => {
+                        const mod = getModuleConfig(modId)
+                        if (!mod) return null
+                        const isActive = currentModuleId === modId
+                        const Icon = getModuleIcon(modId)
+                        return (
+                            <Tooltip key={modId}>
+                                <TooltipTrigger asChild>
+                                    <Link 
+                                        href={mod.defaultUrl}
+                                        className={cn(
+                                            "relative w-10 h-10 rounded-md transition-all duration-200 group flex items-center justify-center",
+                                            isActive 
+                                              ? "text-primary" 
+                                              : "text-muted-foreground hover:bg-muted/50 hover:text-primary"
+                                        )}
+                                    >
+                                        <Icon className="w-5 h-5 transition-colors" />
+                                        {/* Borde inferior grueso al estar seleccionado */}
+                                        {isActive && (
+                                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[3px] bg-primary rounded-t-sm" />
+                                        )}
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="font-semibold text-xs border-border/50">{mod.label}</TooltipContent>
+                            </Tooltip>
+                        )
+                    })}
+                </TooltipProvider>
+            </div>
 
-                {/* Left: page title & meta — fills remaining space */}
+            <div className="flex-1 flex flex-col min-w-0 relative h-full">
+                {/* ── TOP BAR ────────────────────────────────────────────── */}
+                <div className="absolute top-0 left-0 right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6 border-b border-border/40">                {/* Left: page title & meta — fills remaining space */}
                 <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
                     {config ? (
                         <div
@@ -226,6 +220,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                         {children}
                     </div>
                 </PrepressPanel>
+            </div>
+
             </div>
 
             {/* Task Inbox Sidebar (Right) */}

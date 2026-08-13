@@ -118,7 +118,7 @@ export function StatCard({
   }
 
   const baseCardClasses =
-    "rounded-sm border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0 h-full"
+    "rounded-md border bg-card text-card-foreground shadow-card flex flex-col flex-1 min-h-0 h-full"
 
   const Container = variant === "minimal" || variant === "fill" ? "div" : Card
 

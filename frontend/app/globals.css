@@ -461,9 +461,7 @@
  *      docs/20-contracts/component-drawer.md (embedded Drawer)
  *      docs/10-architecture/design-system.md (Radius Hierarchy)
  */
-@utility flush-panel {
-  @apply bg-background border-border/40! rounded-none! shadow-none!;
-}
+
 
 
 /*
@@ -498,6 +496,18 @@
 @utility card-base {
   @apply relative overflow-hidden rounded-md border border-border/15 bg-card outline-none transition-all;
   @apply hover:border-border/30 hover:shadow-elevated;
+  @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+}
+
+/*
+ * CARD FLAT — Flat selection card: no shadow, hairline border, subtle hover.
+ * Use for: AutoEntityCard lists, TaskInbox items, Settings selectors.
+ * Never use on KPI cards, dashboard panels, or floating modals — use card-base there.
+ * Apply via className="card-flat".
+ */
+@utility card-flat {
+  @apply relative overflow-hidden rounded-sm border border-border/15 bg-card text-foreground shadow-none outline-none transition-all;
+  @apply hover:border-border/40 hover:bg-muted/20;
   @apply focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
 }
 
@@ -1329,4 +1339,7 @@ table [data-notched-field] {
  */
 .text-foreground-secondary {
   color: oklch(var(--foreground-raw) / 0.85);
+}
+@utility flush-panel {
+  @apply bg-card border-border/100! rounded-none! shadow-none!;
 }

@@ -1,30 +1,14 @@
 "use client"
 
 import React from "react"
-import { EntityCard, headerPriorityIndex } from "@/components/shared"
+import { EntityCard, headerPriorityIndex, Badge } from "@/components/shared"
 import type { LucideIcon } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { getEntityMetadata, getEntityIcon, type SubtitleItem } from "@/lib/entity-registry"
 import { resolveStatus } from "@/lib/badge-resolvers"
 import type { CardField, EntityFieldsMeta, SubtitleItem as FieldsSubtitleItem } from "@/components/shared"
 
-const SUBTITLE_DOT_COLORS: Record<string, string> = {
-    neutral:     'bg-muted-foreground',
-    info:        'bg-info',
-    success:     'bg-success',
-    warning:     'bg-warning',
-    destructive: 'bg-destructive',
-    primary:     'bg-primary',
-}
 
-const SUBTITLE_INTENT_BORDER: Record<string, string> = {
-    neutral:     'border-border/40 text-muted-foreground bg-muted/60',
-    info:        'border-info/20 text-info bg-info/10',
-    success:     'border-success/20 text-success bg-success/10',
-    warning:     'border-warning/20 text-warning bg-warning/10',
-    destructive: 'border-destructive/20 text-destructive bg-destructive/10',
-    primary:     'border-primary/20 text-primary bg-primary/10',
-}
 
 export interface AutoEntityCardProps<TData> {
     /** The raw entity data */
@@ -393,17 +377,16 @@ export function AutoEntityCard<TData>({
             if (item.kind === 'status') {
                 const { intent } = resolveStatus(item.status)
                 return (
-                    <span key={i} className={cn('inline-flex items-center gap-1 rounded-full border px-1.5 py-px leading-none align-middle', SUBTITLE_INTENT_BORDER[intent])}>
-                        <span className={cn('inline-block h-1 w-1 rounded-full', SUBTITLE_DOT_COLORS[intent])} />
+                    <Badge key={i} intent={intent} size="sm" dot className="align-middle">
                         {item.label}
-                    </span>
+                    </Badge>
                 )
             }
             if (item.kind === 'chip') {
                 return (
-                    <span key={i} className={cn('inline-flex items-center rounded-full border px-1.5 py-px leading-none align-middle', SUBTITLE_INTENT_BORDER[item.intent as string])}>
+                    <Badge key={i} intent={item.intent as any} size="sm" tracking="wide" className="align-middle">
                         {item.content}
-                    </span>
+                    </Badge>
                 )
             }
             if (item.kind === 'node') {

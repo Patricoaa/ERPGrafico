@@ -103,7 +103,7 @@ export function FiscalYearClosingWizard({
                             <div className="grid grid-cols-1 gap-2">
                                 {Object.entries(preview.validations).map(([key, val]: [string, { passed: boolean; message: string; is_warning?: boolean }]) => (
                                     <div key={key} className={cn(
-                                        "flex items-center justify-between p-3 border rounded-sm transition-colors",
+                                        "flex items-center justify-between p-3 border rounded-md transition-colors",
                                         val.passed ? (val.is_warning ? "bg-warning/5 border-warning/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"
                                     )}>
                                         <span className={cn(
@@ -184,7 +184,7 @@ export function FiscalYearClosingWizard({
                         label="Cuenta de Capital/Utilidades"
                         labelClassName="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1"
                     >
-                        <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-sm flex items-center justify-between">
+                        <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-md flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Scale className="w-5 h-5 text-muted-foreground" />
                                 {preview && (
@@ -206,7 +206,7 @@ export function FiscalYearClosingWizard({
             isValid: !!preview?.can_close,
             component: preview ? (
                 <div className="space-y-6">
-                    <div className="bg-muted/30 border border-border rounded-sm overflow-hidden text-center">
+                    <div className="bg-muted/30 border border-border rounded-md overflow-hidden text-center">
                         <div className="p-5 space-y-4">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-1">Ejercicio Fiscal a Cerrar</p>
