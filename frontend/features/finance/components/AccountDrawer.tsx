@@ -104,7 +104,7 @@ export function AccountDrawer({
         defaultValues: () => ({
             code: "",
             name: "",
-            account_type: "ASSET",
+            account_type: "ASSET" as const,
             parent: parentId || undefined,
         }),
     })

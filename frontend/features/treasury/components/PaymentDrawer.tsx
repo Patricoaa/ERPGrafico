@@ -118,7 +118,7 @@ export function PaymentDrawer({
         open,
         initialData: paymentData ?? initialData,
         defaultValues: () => ({
-            payment_type: "INBOUND",
+            payment_type: "INBOUND" as const,
             customer_id: "",
             supplier_id: "",
             invoice_id: "",

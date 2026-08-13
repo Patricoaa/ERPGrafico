@@ -72,7 +72,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         }),
         defaultValues: () => ({
             employee: "",
-            absence_type: "AUSENTISMO",
+            absence_type: "AUSENTISMO" as const,
             start_date: "",
             end_date: "",
             days: 1,
