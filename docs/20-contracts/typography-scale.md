@@ -95,7 +95,7 @@ Las tres superficies del motor de campos (DataTable / EntityCard / Kanban) rende
 | **Valores de campo** | Tipografía del `DataCell` resuelto. Zona `header` → `font-semibold` (threading); `title`/`detail`/`subtitle` → `font-medium`. |
 | **Título de card** | `text-sm font-medium` (default de la primitiva; `resolveTitle()` no inyecta peso). |
 | **Labels de campo en card** | Chrome de card: `text-4xs uppercase`, máx. `font-bold` (N5). |
-| **Subtitle** | Chrome de card: `text-xs text-muted-foreground`. |
+| **Subtitle** | `text-xs font-medium text-muted-foreground` (paridad con `DataCell.Secondary`; el wrapper no estampa `tracking-tight` para no afectar Badges internos). |
 | **`EntityCard.Metrics`** | Contexto N0-KPI: `text-sm font-bold tabular-nums` + label `text-3xs uppercase`. |
 | **`EntityCard.ListItem`** | Lista densa: label `text-xs font-medium`, sublabel `text-3xs text-muted-foreground`. |
 | **`EntityCard.WorkflowBody`** | Alineado a `DataCell.WorkflowSummary`: labels `text-4xs` (máx. `font-bold`), valores `text-xs font-medium`. |

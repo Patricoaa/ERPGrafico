@@ -157,7 +157,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                             {title}
                         </div>
                         {subtitle && (
-                            <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                            <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
                                 {subtitle}
                             </div>
                         )}
@@ -192,7 +192,7 @@ function EntityCardHeader({ title, subtitle, trailing, actions, center, icon: Ic
                         {title}
                     </div>
                     {subtitle && (
-                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <div className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
                             {subtitle}
                         </div>
                     )}
