@@ -33,7 +33,7 @@ export function PageSectionHeader({ title, description, tabs, subTabs }: PageSec
 
     return (
         <div>
-            <div className="flex items-center justify-between gap-4 py-3">
+            <div className="flex items-center justify-between gap-4">
                 {(displayTitle || description) && (
                     <div className="flex flex-col min-w-0">
                         {displayTitle && (
