@@ -13,10 +13,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
  * Layer-1 consumer by ADR-0076 — restricted to navigation decoration.
  */
 export const CMYK_ACCENT = [
-    { text: "text-cyan", hoverText: "hover:text-cyan", activeText: "data-[state=active]:text-cyan", bar: "bg-cyan" },
-    { text: "text-magenta", hoverText: "hover:text-magenta", activeText: "data-[state=active]:text-magenta", bar: "bg-magenta" },
-    { text: "text-yellow", hoverText: "hover:text-yellow", activeText: "data-[state=active]:text-yellow", bar: "bg-yellow" },
-    { text: "text-black", hoverText: "hover:text-black", activeText: "data-[state=active]:text-black", bar: "bg-black" },
+    { text: "text-cyan", hoverText: "hover:text-cyan", bar: "bg-cyan" },
+    { text: "text-magenta", hoverText: "hover:text-magenta", bar: "bg-magenta" },
+    { text: "text-yellow", hoverText: "hover:text-yellow", bar: "bg-yellow" },
+    { text: "text-black", hoverText: "hover:text-black", bar: "bg-black" },
 ] as const
 
 export interface TabItem {
@@ -81,9 +81,9 @@ export function TabBar({
             ? cn(
                 "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
                 dense ? "h-8" : "h-12",
-                "font-medium border-b border-border/40 data-[state=inactive]:text-foreground/60",
-                "hover:font-bold data-[state=active]:font-bold data-[state=active]:bg-transparent data-[state=active]:shadow-none",
-                "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
+                "border-b border-border/40",
+                "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
             )
             : cn(
                 "group relative w-auto h-auto transition-all duration-200",
@@ -111,7 +111,7 @@ export function TabBar({
                         : isToolbar
                             ? "h-7 p-0 gap-0 bg-transparent items-center"
                             : isUnderline
-                                ? "h-full w-auto flex-row items-end justify-start gap-2 px-1 pb-0"
+                                ? "h-full w-auto flex-row items-end justify-start gap-0 px-0 pb-0"
                                 : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
                     listClassName
                 )}
@@ -123,6 +123,7 @@ export function TabBar({
             >
                 {visible.map((item, index) => {
                     const Icon = item.icon
+                    const isActive = value === item.value
                     const accent = isUnderline ? CMYK_ACCENT[index % CMYK_ACCENT.length] : null
                     return (
                         <TabsTrigger
@@ -131,7 +132,10 @@ export function TabBar({
                             disabled={item.disabled}
                             className={cn(
                                 triggerStyles,
-                                accent && cn(accent.hoverText, accent.activeText)
+                                accent && cn(
+                                    isActive ? accent.text : cn("text-foreground/60", accent.hoverText),
+                                    isActive ? "font-bold" : "font-medium hover:font-bold"
+                                )
                             )}
                         >
                             <span
@@ -179,9 +183,9 @@ export function TabBar({
                             </span>
                             {isUnderline && accent && (
                                 <div className={cn(
-                                    "absolute bottom-0 left-1/2 -translate-x-1/2 w-[60%] h-[4px] rounded-t-sm opacity-0 transition-opacity duration-200",
-                                    "group-hover:opacity-100 group-data-[state=active]:opacity-100",
-                                    accent.bar
+                                    "absolute bottom-0 w-full h-[4px] rounded-t-sm transition-opacity duration-200",
+                                    accent.bar,
+                                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                                 )} />
                             )}
                         </TabsTrigger>

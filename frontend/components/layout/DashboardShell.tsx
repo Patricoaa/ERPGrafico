@@ -202,7 +202,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                             href={mod.defaultUrl}
                                             className={cn(
                                                 "relative w-8 h-8 rounded-md transition-all duration-200 group flex items-center justify-center",
-                                                "border-r border-border/40",
                                                 isActive 
                                                   ? accent.text
                                                   : cn("text-muted-foreground", accent.hoverText)

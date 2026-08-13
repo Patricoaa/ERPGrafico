@@ -16,7 +16,7 @@ author: core-team
 
 The underline tabs (`TabBar` `variant="underline"`) and the left module rail showed their active state with a single `bg-primary` (K100) indicator and a static hover. The design direction requests:
 
-- A thin 1px baseline border always visible under/next to every option.
+- A thin 1px baseline border always visible under every underline tab.
 - A thick second border on hover/active.
 - Lighter font weight at rest, bold on hover/active.
 - A **positional CMYK cycle** for the hover/active accent: elements enumerated in order get cyan → magenta → yellow → black, repeating every 4.
@@ -49,7 +49,7 @@ The underline tabs (`TabBar` `variant="underline"`) and the left module rail sho
 ### Archivos modificados
 
 - `frontend/components/shared/TabBar.tsx` — `CMYK_ACCENT` + underline trigger styles (baseline, weights, hover/active ink, thick bar)
-- `frontend/components/layout/DashboardShell.tsx` — module rail right-side baseline + ink hover/active + right thick bar
+- `frontend/components/layout/DashboardShell.tsx` — module rail ink hover/active + right thick bar (no thin baseline, by request)
 - `frontend/app/globals.css` — removed dead `.tab-underline-primary` block
 - `docs/20-contracts/color-system.md` — §8 exception + §11 note
 
