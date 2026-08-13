@@ -29,7 +29,7 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 3. **Compact es el default.** Todas las superficies de datos (tablas, listas, kanban) nacen compactas. `comfortable` es opt-out explícito. → [density-system.md](docs/20-contracts/density-system.md)
 4. **Una fuente sans (Onest) + una fuente mono real (JetBrains Mono).** Onest para UI; JetBrains Mono (bundleado vía `next/font`) para cifras, códigos y datos tabulares. → [typography-scale.md](docs/20-contracts/typography-scale.md)
 5. **Movimiento con propósito.** Transiciones locales vía `<FadeIn>`, sin framer-motion directo en páginas, sin animaciones que frenen al operador. → [component-animation.md](docs/20-contracts/component-animation.md)
-6. **Esquinas e industriales.** Jerarquía de radio 8/12/16/20 con anidamiento de esquinas. → [design-system.md](docs/10-architecture/design-system.md)
+6. **Esquinas e industriales.** Jerarquía de radio 8/12/16/20 con anidamiento de esquinas. Los **paneles de borde (Drawer y CollapsibleSheet) son siempre cuadrados** (`rounded-none`), sin redondeado en ningún contexto — el radio queda reservado para superficies flotantes (modales, popovers) y el shell. Además, los **paneles de borde usan el fondo del main content** (`bg-card`) como superficie, para leerse como extensión contigua del contenido. → [design-system.md](docs/10-architecture/design-system.md) · [ADR-0073](docs/10-architecture/adr/0073-drawers-zero-border-radius.md) · [ADR-0074](docs/10-architecture/adr/0074-drawers-background-main-content.md)
 7. **Semántico sobre estético.** Nunca tokens raw de Tailwind (`bg-red-500`); siempre tokens semánticos (`bg-destructive`). → [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md)
 
 ---
@@ -44,6 +44,8 @@ Cada decisión de diseño se evalúa contra este criterio: ¿este píxel ayuda a
 | Animación y transiciones | [component-animation.md](docs/20-contracts/component-animation.md) |
 | Componentes compartidos (qué usar en cada caso) | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
 | Arquitectura del design system, radios | [design-system.md](docs/10-architecture/design-system.md) |
+| Paneles de borde cuadrados (Drawer/CollapsibleSheet) | [ADR-0073](docs/10-architecture/adr/0073-drawers-zero-border-radius.md) |
+| Fondo de paneles de borde = fondo del main content (bg-card) | [ADR-0074](docs/10-architecture/adr/0074-drawers-background-main-content.md) |
 | Primary = K100 (ADR) | [ADR-0070](docs/10-architecture/adr/0070-primary-process-black.md) |
 | DataTable compact variant (ADR) | [ADR-0030](docs/10-architecture/adr/0030-datatable-compact-variant.md) |
 | Sistema de color robustecido (ADR) | [ADR-0029](docs/10-architecture/adr/0029-color-system-robustening.md) |

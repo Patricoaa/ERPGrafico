@@ -127,7 +127,7 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 rounded-none! border-l border-border/40 bg-muted/35 backdrop-blur-sm text-foreground",
+                "p-0 rounded-none! border-l border-border/40 bg-card text-foreground",
                 "top-[var(--header-height)] bottom-0 h-[calc(100dvh-var(--header-height))]",
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",

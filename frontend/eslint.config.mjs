@@ -15,6 +15,7 @@ import formsMustUseHook from "./eslint-rules/forms-must-use-hook.mjs";
 import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
 import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
 import mutationMustMarkLocal from "./eslint-rules/mutation-must-mark-local.mjs";
+import drawerNoRounded from "./eslint-rules/drawer-no-rounded.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -381,6 +382,15 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   },
   rules: {
     "mutation/must-mark-local": "warn",
+  },
+}, // Edge panels are always square — ADR-0073 (Drawer/CollapsibleSheet, rounded-none)
+{
+  files: ["**/*.tsx"],
+  plugins: {
+    drawer: { rules: { "no-rounded": drawerNoRounded } },
+  },
+  rules: {
+    "drawer/no-rounded": "error",
   },
 }, ...storybook.configs["flat/recommended"]]);
 

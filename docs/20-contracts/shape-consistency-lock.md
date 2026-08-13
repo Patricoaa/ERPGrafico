@@ -24,10 +24,10 @@ Los tokens de Tailwind v4 están **remapeados** en `app/globals.css` para servir
 | **Atómico** | `rounded-sm` | `var(--radius)` = **8px** | Botones, Inputs, Checkboxes, Badges, Fondos de íconos pequeños (`p-1` / `p-2`), Tabs, Pills dentro de toolbars, Items de menú, Filas interactivas inline |
 | **Contenedor** | `rounded-md` | `var(--radius-md)` = **12px** | Cards, StatCards, DataTable wrapper, Alertas/Info banners, Bloques de formulario (`FormSection`), Estados vacíos (placeholders), Áreas de contenido bordeadas |
 | **Overlay** | `rounded-lg` | `var(--radius-lg)` = **16px** | Modales (`Dialog`), Sheets flotantes, Popovers, Dropdowns, `Select` content, Tooltips container (no sus items) |
-| **Shell** | `rounded-xl` | `var(--radius-xl)` = **20px** | Main `<main>` shell, `CollapsibleSheet`, Global Drawers. Exclusivamente vía `@utility panel-surface` — **nunca aplicar directamente**. |
+| **Shell** | `rounded-xl` | `var(--radius-xl)` = **20px** | Main `<main>` shell. **Excepción — paneles de borde cuadrados:** `Drawer` y `CollapsibleSheet` usan `rounded-none` en todo contexto (ADR-0073). |
 | **Especial** | `rounded-full` | 50% | Avatares, Dots de estado, Progress bars, Icon-only buttons circulares, Spinners, Pulsing indicators |
 
-> **Nota:** `rounded-none` solo se permite en bordes internos (divisores de tablas) o cuando el diseño funde dos superficies (e.g. header flush). Requiere comentario inline explicativo.
+> **Nota:** `rounded-none` solo se permite en bordes internos (divisores de tablas), cuando el diseño funde dos superficies (e.g. header flush), o en los paneles de borde `Drawer`/`CollapsibleSheet` (ADR-0073). Requiere comentario inline explicativo.
 
 ---
 
@@ -82,12 +82,12 @@ Los tokens de Tailwind v4 están **remapeados** en `app/globals.css` para servir
 ### 2.4 Overlays (Modales, Popovers, Dropdowns)
 
 ```tsx
-// ✅ Correcto — todos los overlays flotantes
+// ✅ Correcto — overlays flotantes con radio; paneles de borde cuadrados
 <Dialog />                       // → rounded-lg (definido en ui/dialog.tsx)
 <PopoverContent />               // → rounded-lg (definido en ui/popover.tsx)
 <DropdownMenuContent />          // → rounded-lg (definido en ui/dropdown-menu.tsx)
 <SelectContent />                // → rounded-lg (definido en ui/select.tsx)
-<Sheet />                        // → rounded-xl (panel-surface)
+<Sheet />                        // → rounded-none si es Drawer/CollapsibleSheet (ADR-0073)
 
 // ❌ PROHIBIDO — no sobreescribir con radius menor
 <DropdownMenuContent className="rounded-sm ..." />  // viola el contrato de overlay
@@ -154,8 +154,8 @@ Las áreas de estado vacío son contenedores de información — usan `rounded-m
 | `PopoverContent` | `rounded-lg` | |
 | `DropdownMenuContent` | `rounded-lg` | |
 | `SelectContent` | `rounded-lg` | |
-| `Sheet` (floating) | `rounded-xl` | Vía `panel-surface` |
-| Main shell `<main>` | `rounded-xl` | Vía `panel-surface` |
+| `Drawer` / `CollapsibleSheet` | `rounded-none` | Paneles de borde — ADR-0073 |
+| Main shell `<main>` | `rounded-xl` | |
 | Avatar | `rounded-full` | |
 | Status dot | `rounded-full` | |
 | Progress bar | `rounded-full` | |

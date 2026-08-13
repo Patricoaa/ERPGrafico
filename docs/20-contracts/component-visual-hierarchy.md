@@ -72,6 +72,6 @@ All border-radius values must follow the **Shape Consistency Lock** — a four-l
 | Atomic | `rounded-sm` | 8px | Buttons, inputs, badges, icon backgrounds (small) |
 | Container | `rounded-md` | 12px | Cards, alerts, DataTable, form blocks, empty states |
 | Overlay | `rounded-lg` | 16px | Modals, popovers, dropdowns, select content |
-| Shell | `rounded-xl` | 20px | Main shell and global panels (via `panel-surface` only) |
+| Shell | `rounded-xl` | 20px | Main `<main>` shell. **Paneles de borde (`Drawer`, `CollapsibleSheet`) son `rounded-none`** — ADR-0073 |
 
 > Full rules, component-by-component examples, and invariants → **[shape-consistency-lock.md](shape-consistency-lock.md)**

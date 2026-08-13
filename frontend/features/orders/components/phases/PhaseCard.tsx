@@ -112,11 +112,14 @@ export function PhaseCard({
     })()
 
     return (
-        <Card className={cn(
-            "card-flat flex flex-col duration-300 relative group/card py-2 gap-2",
-            open && collapsible && "accent-visible",
-            className
-        )}>
+        <Card
+            variant="flat"
+            className={cn(
+                "flex flex-col duration-300 relative group/card py-2 gap-2",
+                open && collapsible && "accent-visible",
+                className
+            )}
+        >
 
             {/* HEADER — Clickable when collapsible */}
             <div

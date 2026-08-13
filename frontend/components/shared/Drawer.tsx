@@ -235,10 +235,10 @@ export function Drawer({
                 }}
                 className={cn(
                     "p-0 flex flex-col overflow-hidden text-foreground rounded-none!",
-                    // Entity/embedded drawers: solid background
+                    // Drawer surface = main content background (bg-card, ADR-0074)
                     boundary === "embedded"
-                        ? "absolute! border border-border/40 bg-background"
-                        : "fixed! bg-muted/35 backdrop-blur-sm",
+                        ? "absolute! border border-border/40 bg-card"
+                        : "fixed! bg-card",
                     sideStyles[side],
                     // Fixed panels: hairline border, no shadow, no rounding
                     boundary !== "embedded" && side === "right" && "rounded-none! border-l border-border/40",
@@ -280,7 +280,7 @@ export function Drawer({
                 )}
 
                 {(title || subtitle || headerActions || icon) && (
-                    <SheetHeader className={cn("px-6 py-3 border-b border-border/40 shrink-0 bg-background", headerClassName)}>
+                    <SheetHeader className={cn("px-6 py-3 border-b border-border/40 shrink-0 bg-card", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
                             title={
@@ -323,7 +323,7 @@ export function Drawer({
                 )}
 
                 {footer && (
-                    <div className={cn("border-t border-border/40 px-6 py-3 flex-shrink-0 bg-background", footerClassName)}>
+                    <div className={cn("border-t border-border/40 px-6 py-3 flex-shrink-0 bg-card", footerClassName)}>
                         {footer}
                     </div>
                 )}

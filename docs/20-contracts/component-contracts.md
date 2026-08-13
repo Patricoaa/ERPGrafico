@@ -916,11 +916,13 @@ Side panel with collapsible tab. Supports multi-sheet stacking via `GlobalModalP
 Requires `GlobalModalProvider` in layout for correct z-index stacking.
 DOM unmounts 500ms after close for exit animation.
 
-### Surface treatment (parallel framing)
+### Surface treatment (cuadrado, sin radio)
 
-The outer `SheetContent` uses the shared `@utility panel-surface` (defined in `app/globals.css`): `rounded-xl` + `border border-border/10` + `shadow-2xl` + `bg-card`. This is **the same** treatment applied to the main `<main>` shell in `DashboardShell` and to the embedded `Drawer` (see [component-drawer.md](./component-drawer.md)). All three surfaces read as parallel frames when they sit side-by-side.
+The outer `SheetContent` of `CollapsibleSheet` is a **square edge panel** — `border-radius: 0` (`rounded-none`), like the `Drawer` (see [component-drawer.md](./component-drawer.md) and [ADR-0073](../10-architecture/adr/0073-drawers-zero-border-radius.md)). It reads as a contiguous edge panel next to the main shell, not as a floating rounded surface. Squareness is enforced at the component level (`rounded-none!` in `components/shared/CollapsibleSheet.tsx`); `globals.css` must not reintroduce radius rules for `[data-slot="sheet-content"]`.
 
-> **Do not** override `border`, `shadow`, `rounded-*` or `bg-*` on `CollapsibleSheet` instances. If a variant is needed, add a new prop that composes with `panel-surface` instead of replacing it.
+Its **background is the same as the main content background** (`bg-card`, `--color-card`), opaque, no frosted/translucent treatment (`bg-muted/35 backdrop-blur-sm` is removed) — see [ADR-0074](../10-architecture/adr/0074-drawers-background-main-content.md). Inner content (Hub, Inbox, Profile, OrderActionPanel, Intelligence/Reconciliation) keeps its own surface tokens.
+
+> **Do not** override `border`, `shadow`, `rounded-*` or `bg-*` on `CollapsibleSheet` instances. If a variant is needed, add a new prop that composes with the shared surface treatment instead of replacing it. Passing a `rounded-*` class is blocked by the ESLint rule `drawer/no-rounded`.
 
 ### Surface textures (industrial/prepress)
 
@@ -937,7 +939,7 @@ POS panels, product grids, and other industrial-themed surfaces use background t
 **Rules:**
 - Apply only to surfaces with `bg-card` as base.
 - Do not combine two background textures on the same element.
-- Do not apply to overlays (modals, sheets) — those use `panel-surface`.
+- Do not apply to overlays (modals, sheets) — those keep the plain shared surface treatment (see §CollapsibleSheet and [component-drawer.md](./component-drawer.md)).
 - Full definitions and examples in `app/globals.css` and [`design-system.md`](../10-architecture/design-system.md).
 
 ---

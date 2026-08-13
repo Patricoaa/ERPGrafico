@@ -219,24 +219,15 @@ Para subvistas de datos (tablas, libros mayores, históricos) sin formulario:
 - No usar `FormFooter` ni `FormSplitLayout`.
 - Acepta un `<Button>Cerrar</Button>` en footer, o ningún footer.
 
-## Surface treatment (parallel framing)
+## Surface treatment (cuadrado, sin radio)
 
-The `SheetContent` shell of the `Drawer` consumes the shared `@utility panel-surface` (defined in `app/globals.css`): `rounded-xl` + `border border-border/10` + `shadow-2xl` + `bg-card`. This is **the same** treatment applied to the main `<main>` shell in `DashboardShell` and to `CollapsibleSheet` (see [component-contracts.md §CollapsibleSheet](./component-contracts.md)). All three surfaces read as parallel frames when they sit side-by-side.
+The `SheetContent` shell of the `Drawer` is a **square edge panel**: `border-radius: 0` (`rounded-none`) in **every context** — all sides (`top`/`right`/`bottom`/`left`), both boundaries (`screen`/`embedded`), all modes (`create`/`edit`/`view`), resizable or not, and including the `surface="drawer"` variant of `GenericWizard`, entity drawers, `CostCalculatorDrawer` and `AnalyticsPanel`. See [ADR-0073](../10-architecture/adr/0073-drawers-zero-border-radius.md).
 
-### Side-specific corner overrides
+The squareness is enforced at the component level (`rounded-none!` in `components/shared/Drawer.tsx`). **No `rounded-*` class is ever applied to the drawer surface**, and `globals.css` must not reintroduce radius rules for `[data-slot="sheet-content"]` (residual `#main-content … border-*-radius` overrides were removed).
 
-The `sideStyles` table in `components/shared/Drawer.tsx` keeps the `rounded-xl` family but selects one side so the Drawer reads as a true edge panel:
+The drawer surface **background is the same as the main content background**: `bg-card` (`--color-card`), in every context and both boundaries. A `Drawer` reads as a contiguous extension of the `<main>` shell (`#main-content` → `flush-panel` → `bg-card`), not as a tinted or translucent panel. The header inherits the panel background (`background-color: inherit`); the `screen` boundary is opaque `bg-card` (no `bg-muted/35 backdrop-blur-sm` frosted treatment). `CollapsibleSheet` (Hub, Inbox, Profile, OrderActionPanel) follows the same surface — see [ADR-0074](../10-architecture/adr/0074-drawers-background-main-content.md). Inner elements (cards, `StatCard`, form sections, `DataTable`) keep their own surface tokens.
 
-| `side` | overrides |
-|--------|-----------|
-| `'right'` | `rounded-l-xl border-l-0` |
-| `'left'`  | `rounded-r-xl border-r-0` |
-| `'bottom'` | `rounded-t-xl border-t-0` |
-| `'top'`   | `rounded-b-xl border-b-0` |
-
-The `border-{side}-0` removes the border on the side that touches the parent container (the screen edge, or the `<main>` shell), so the panel appears flush with that edge while keeping the other three borders at `border-border/10`. The shadow and background are inherited from `panel-surface`.
-
-> **Do not** pass `border`, `shadow`, `rounded-*` or `bg-*` overrides via `className` on `Drawer`. If a variant is needed, add a new prop that composes with `panel-surface` and `sideStyles` instead of replacing them.
+> **Do not** pass `border`, `shadow`, `rounded-*` or `bg-*` overrides via `className` on `Drawer`. If a variant is needed, add a new prop that composes with the shared surface treatment instead of replacing it. Passing a `rounded-*` class is blocked by the ESLint rule `drawer/no-rounded` (see `frontend/eslint-rules/drawer-no-rounded.mjs`).
 
 ## Excepciones Documentadas
 

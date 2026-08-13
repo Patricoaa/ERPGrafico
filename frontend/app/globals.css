@@ -437,22 +437,19 @@
 }
 
 /*
- * PANEL SURFACE — Unified visual treatment for the main shell and
- * every floating side panel (CollapsibleSheet — Hub, Inbox, Profile,
- * OrderActionPanel — and embedded Drawer). Guarantees a single
- * border/radius/shadow/background so panels read as parallel frames
- * when they sit side-by-side.
+ * EDGE PANEL SURFACE — Visual treatment for every edge-anchored panel:
+ * Drawer (all sides / screen + embedded boundary) and CollapsibleSheet
+ * (Hub, Inbox, Profile, OrderActionPanel). These panels are ALWAYS square
+ * (`rounded-none`), in every context — see ADR-0073.
  *
- * Tokens used: --radius-none, border-l border-border/40, bg-background. Never override these individually in components —
- * use this utility.
- *
- * The `!` important modifier guarantees this utility
- * wins the cascade over Shadcn `SheetContent`'s default `border border-border
- * rounded-lg`.
+ * The `rounded-none!` important modifier in the components wins the cascade
+ * over Shadcn `SheetContent`'s default `rounded-lg`. Do NOT reintroduce
+ * border-radius rules for `[data-slot="sheet-content"]` here: the main
+ * `<main>` shell keeps its own radius, but edge panels must stay square.
  *
  * See: docs/20-contracts/component-contracts.md (CollapsibleSheet)
- *      docs/20-contracts/component-drawer.md (embedded Drawer)
- *      docs/10-architecture/design-system.md (Radius Hierarchy)
+ *      docs/20-contracts/component-drawer.md (Drawer)
+ *      docs/10-architecture/adr/0073-drawers-zero-border-radius.md
  */
 
 
@@ -1209,39 +1206,16 @@ table [data-notched-field] {
 
   /* 
    * PREMIUM SHEET & DIALOG HEADER OVERRIDES
-   * 1. Ensures drawer/sheet and modal/dialog headers inherit the exact background color of their container's body,
-   *    maintaining a seamless, unified background instead of a separate card/sidebar color.
-   * 2. Dynamically inherits top corner rounded-radii from the parent content container to prevent sharp,
-   *    square headers from overflowing and breaking premium rounded corners.
+   * Ensures sheet and modal/dialog headers inherit the exact background color of their
+   * container's body, maintaining a seamless, unified background instead of a separate
+   * card/sidebar color.
+   *
+   * Drawer/CollapsibleSheet headers stay SQUARE (ADR-0073): no radius overrides are
+   * applied here — the edge panel itself is `rounded-none`, so the header inherits 0.
+   * Only modal (dialog) headers keep inherited top corner radii.
    */
   [data-slot="sheet-content"] [data-slot="sheet-header"] {
     background-color: inherit !important;
-  }
-
-  /* Drawers from the right → only top-right corner of header is rounded */
-  [data-slot="sheet-content"][data-side="right"] [data-slot="sheet-header"] {
-    border-top-right-radius: inherit !important;
-    border-top-left-radius: 0 !important;
-  }
-
-  /* Drawers from the left → only top-right corner of header is rounded (the visible edge).
-   * top-left corner matches the parent container's border-radius (var(--radius-xl))
-   * so the header hugs the rounded corner of #main-content without a sharp notch. */
-  [data-slot="sheet-content"][data-side="left"] [data-slot="sheet-header"] {
-    border-top-right-radius: inherit !important;
-    border-top-left-radius: var(--radius-xl) !important;
-  }
-
-  /* Drawers from top → both top corners rounded */
-  [data-slot="sheet-content"][data-side="top"] [data-slot="sheet-header"] {
-    border-top-left-radius: inherit !important;
-    border-top-right-radius: inherit !important;
-  }
-
-  /* Drawers from bottom → no top radius on header (header is at top of panel which is the open edge) */
-  [data-slot="sheet-content"][data-side="bottom"] [data-slot="sheet-header"] {
-    border-top-left-radius: inherit !important;
-    border-top-right-radius: inherit !important;
   }
 
   [data-slot="dialog-content"] [data-slot="dialog-header"] {
@@ -1273,12 +1247,11 @@ table [data-notched-field] {
   }
 
   /*
-   * EMBEDDED DRAWER — PARALLEL FRAMING
+   * EMBEDDED DRAWER — SQUARE EDGE PANELS
    * When a sheet-content is rendered inside #main-content (embedded boundary),
-   * it must share the same visual treatment as the main shell and
-   * CollapsibleSheet so the three surfaces read as parallel frames
-   * side-by-side. Visual tokens (border, shadow, background, radius)
-   * come from the @utility panel-surface applied at the component level.
+   * it is a square edge panel (`rounded-none`, ADR-0073). The radius comes from
+   * the component-level `rounded-none!`; nothing here must reintroduce
+   * border-radius on the panel or its header.
    * Here we only manage:
    *   - The smooth transition for open/close animation
    *   - The entrance transform override (Radix slide-in is disabled for embedded)
@@ -1290,20 +1263,6 @@ table [data-notched-field] {
       box-shadow 400ms var(--ease-premium),
       border-color 400ms var(--ease-premium),
       transform 500ms var(--ease-premium) !important;
-  }
-
-  /* Left drawers embedded in #main-content: force top-left corner to match
-   * the container's border-radius so the panel blends into the rounded corner
-   * of the parent surface instead of showing a sharp notch. */
-  #main-content [data-slot="sheet-content"][data-side="left"] {
-    border-top-left-radius: var(--radius-xl) !important;
-    border-bottom-left-radius: var(--radius-xl) !important;
-  }
-
-  /* Right drawers embedded in #main-content: mirror treatment for right side */
-  #main-content [data-slot="sheet-content"][data-side="right"] {
-    border-top-right-radius: var(--radius-xl) !important;
-    border-bottom-right-radius: var(--radius-xl) !important;
   }
 
   #main-content [data-slot="sheet-content"][data-state="open"] {

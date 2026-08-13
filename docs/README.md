@@ -110,7 +110,7 @@ last_review: 2026-06-19
 11. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
 12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
 13. **Zero N+1** — Ningún `Serializer` o `SerializerMethodField` ejecuta queries ORM. Toda relación se precarga en el `ViewSet` con `select_related`/`prefetch_related`. Creación de grafos en `services.py` con `@transaction.atomic`. Ver [zero-n-plus-one-policy.md](90-governance/zero-n-plus-one-policy.md).
-14. **Shape Consistency Lock** — Cada elemento tiene un radio de esquina único según su nivel: `rounded-sm` (atómico: botones, inputs), `rounded-md` (contenedores: cards, alertas), `rounded-lg` (overlays: modales, popovers), `rounded-xl` (shell, vía `panel-surface`). Ver [shape-consistency-lock.md](20-contracts/shape-consistency-lock.md).
+14. **Shape Consistency Lock** — Cada elemento tiene un radio de esquina único según su nivel: `rounded-sm` (atómico: botones, inputs), `rounded-md` (contenedores: cards, alertas), `rounded-lg` (overlays: modales, popovers), `rounded-xl` (shell), **`rounded-none` (paneles de borde: `Drawer` y `CollapsibleSheet` en todo contexto — ADR-0073)**. Ver [shape-consistency-lock.md](20-contracts/shape-consistency-lock.md).
 
 ## Agentic model instructions
 
