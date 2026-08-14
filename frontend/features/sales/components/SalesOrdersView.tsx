@@ -64,19 +64,19 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
             ...(search.filters as SaleOrderFilters),
             pos_session: posSessionId || undefined,
             page: isGrouping ? 1 : pageState.pageIndex + 1,
-            page_size: isGrouping ? 5000 : pageState.pageSize,
+            page_size: isGrouping ? 200 : pageState.pageSize,
         },
     })
     const { page: pageNotes, notes, isLoading: isLoadingNotes, isRefetching: isRefetchingNotes } = useSalesNotes({
         filters: {
             ...(search.filters as Record<string, string>),
             page: isGrouping ? 1 : pageStateNotes.pageIndex + 1,
-            page_size: isGrouping ? 5000 : pageStateNotes.pageSize,
+            page_size: isGrouping ? 200 : pageStateNotes.pageSize,
         }
     })
 
     const totalCount = viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)
-    const isOverLimit = isGrouping && totalCount > 5000
+    const isOverLimit = isGrouping && totalCount > 200
     const effectiveGrouping = isGrouping && !isOverLimit
 
     useEffect(() => {
@@ -410,7 +410,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onSelectOrder, selecte
                         : (pageNotes ? Math.ceil(pageNotes.count / pageNotes.pageSize) : 0)
                     }
                     rowCount={viewMode === 'orders' ? (page?.count ?? 0) : (pageNotes?.count ?? 0)}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : viewMode === 'orders' ? pageState : pageStateNotes}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 200 } : viewMode === 'orders' ? pageState : pageStateNotes}
                     onPaginationChange={effectiveGrouping ? undefined : (viewMode === 'orders' ? setPageState : setPageStateNotes) as unknown as React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>}
                     unifiedSearch={<UnifiedSearchBar
                         config={unifiedSearchDef}

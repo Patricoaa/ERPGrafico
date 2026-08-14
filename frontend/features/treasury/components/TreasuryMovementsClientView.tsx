@@ -47,10 +47,10 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
         ...(allFilters as TreasuryMovementFilters),
         page: isGrouping ? 1 : pageState.pageIndex + 1,
-        page_size: isGrouping ? 5000 : pageState.pageSize,
+        page_size: isGrouping ? 200 : pageState.pageSize,
     })
 
-    const isOverLimit = isGrouping && totalCount > 5000
+    const isOverLimit = isGrouping && totalCount > 200
     const effectiveGrouping = isGrouping && !isOverLimit
 
     useEffect(() => {
@@ -377,7 +377,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     manualPagination={!effectiveGrouping}
                     pageCount={effectiveGrouping ? 1 : page ? Math.ceil(page.count / page.pageSize) : 0}
                     rowCount={totalCount}
-                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 5000 } : pageState}
+                    pagination={effectiveGrouping ? { pageIndex: 0, pageSize: 200 } : pageState}
                     onPaginationChange={effectiveGrouping ? undefined : setPageState}
                     unifiedSearch={<UnifiedSearchBar
                         config={treasuryMovementsUnifiedSearchDef}
