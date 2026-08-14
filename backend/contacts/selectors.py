@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Exists, OuterRef, QuerySet, Subquery, Sum, DecimalField as Df, Value
+from django.db.models import Exists, OuterRef, Prefetch, QuerySet, Subquery, Sum, DecimalField as Df, Value
 from django.db.models.functions import Coalesce, Replace
 from decimal import Decimal
 
@@ -128,19 +128,28 @@ def customer_aging_report(*, cutoff_date, limit: int = 20) -> list[dict]:
                      se ignoran para que el reporte sea determinista en snapshots.
         limit:       número máximo de contactos a devolver (default 20).
 
-    Nota: usa `Contact.credit_aging` pero fijando `today = cutoff_date` para
-    reproducibilidad. La propiedad usa `timezone.now().date()` internamente;
-    aquí recalculamos la lógica directamente.
+    Nota: replica la lógica de `Contact.credit_aging` fijando `today = cutoff_date`
+    para reproducibilidad, pero iterando sobre órdenes prefetched (payments +
+    invoices) → round-trips O(1) en vez de Θ(C+O).
     """
     from datetime import timedelta
     from decimal import Decimal
 
+    from sales.models import SaleOrder
+
     results = []
+
+    orders_qs = (
+        SaleOrder.objects.filter(date__lte=cutoff_date)
+        .exclude(status__in=["DRAFT", "CANCELLED"])
+        .prefetch_related("payments", "invoices")
+    )
 
     contacts_with_sales = (
         Contact.objects.filter(sale_orders__date__lte=cutoff_date)
         .exclude(sale_orders__status__in=["DRAFT", "CANCELLED"])
         .distinct()
+        .prefetch_related(Prefetch("sale_orders", queryset=orders_qs))
     )
 
     for contact in contacts_with_sales:
@@ -153,11 +162,9 @@ def customer_aging_report(*, cutoff_date, limit: int = 20) -> list[dict]:
             "overdue_90plus": Decimal("0"),
         }
 
-        orders = contact.sale_orders.filter(date__lte=cutoff_date).exclude(
-            status__in=["DRAFT", "CANCELLED"]
-        )
+        orders = contact.sale_orders.all()
         for order in orders:
-            payments = order.payments.filter(is_pending_registration=False)
+            payments = [p for p in order.payments.all() if not p.is_pending_registration]
             paid_in = sum(
                 (p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]),
                 Decimal("0"),
@@ -221,12 +228,21 @@ def supplier_aging_report(*, cutoff_date, limit: int = 20) -> list[dict]:
     from datetime import timedelta
     from decimal import Decimal
 
+    from purchasing.models import PurchaseOrder
+
     results = []
+
+    orders_qs = (
+        PurchaseOrder.objects.filter(date__lte=cutoff_date)
+        .exclude(status__in=["DRAFT", "CANCELLED"])
+        .prefetch_related("payments")
+    )
 
     contacts_with_purchases = (
         Contact.objects.filter(purchase_orders__date__lte=cutoff_date)
         .exclude(purchase_orders__status__in=["DRAFT", "CANCELLED"])
         .distinct()
+        .prefetch_related(Prefetch("purchase_orders", queryset=orders_qs))
     )
 
     for contact in contacts_with_purchases:
@@ -239,18 +255,13 @@ def supplier_aging_report(*, cutoff_date, limit: int = 20) -> list[dict]:
             "overdue_90plus": Decimal("0"),
         }
 
-        orders = contact.purchase_orders.filter(date__lte=cutoff_date).exclude(
-            status__in=["DRAFT", "CANCELLED"]
-        )
+        orders = contact.purchase_orders.all()
         for order in orders:
-            # Payments on purchase orders are stored as TreasuryMovements
-            # linked via order.payments (OUTBOUND = paying the supplier).
-            payments = order.payments.filter(is_pending_registration=False)
+            payments = [p for p in order.payments.all() if not p.is_pending_registration]
             paid_out = sum(
                 (p.amount for p in payments if p.movement_type == "OUTBOUND"),
                 Decimal("0"),
             )
-            # Inbound refunds from supplier reduce the balance
             paid_in = sum(
                 (p.amount for p in payments if p.movement_type == "INBOUND"),
                 Decimal("0"),
@@ -317,10 +328,51 @@ class ContactSelector:
     @staticmethod
     def get_credit_portfolio_data(is_blacklist: bool) -> dict:
         from decimal import Decimal
-        from .serializers import ContactSerializer
-        
+        from django.utils import timezone
+
+        from treasury.models import TreasuryMovement
+        from sales.models import SaleOrder
+
         contacts = list_credit_portfolio(is_blacklist=is_blacklist)
 
+        write_offs_sq = (
+            TreasuryMovement.objects.filter(
+                contact_id=OuterRef("pk"),
+                payment_method="WRITE_OFF",
+                is_pending_registration=False,
+            )
+            .values("contact_id")
+            .annotate(total=Sum("amount"))
+            .values("total")
+        )
+        recoveries_sq = (
+            TreasuryMovement.objects.filter(
+                contact_id=OuterRef("pk"),
+                reference="RECUPERACION",
+                is_pending_registration=False,
+            )
+            .values("contact_id")
+            .annotate(total=Sum("amount"))
+            .values("total")
+        )
+
+        orders_qs = (
+            SaleOrder.objects.exclude(status__in=["DRAFT", "CANCELLED"]).prefetch_related(
+                "payments", "invoices"
+            )
+        )
+        contacts = contacts.prefetch_related(Prefetch("sale_orders", queryset=orders_qs)).annotate(
+            _write_offs=Coalesce(
+                Subquery(write_offs_sq, output_field=Df()),
+                Value(Decimal("0"), output_field=Df()),
+            ),
+            _recoveries=Coalesce(
+                Subquery(recoveries_sq, output_field=Df()),
+                Value(Decimal("0"), output_field=Df()),
+            ),
+        )
+
+        today = timezone.now().date()
         contact_list = []
         summary = {
             "total_debt": Decimal("0"),
@@ -343,19 +395,18 @@ class ContactSelector:
         }
 
         for contact in contacts:
-            balance_used = contact.credit_balance_used
-            aging = contact.credit_aging
-
             if is_blacklist:
-                from django.db.models import Sum
+                balance_used = contact._write_offs - contact._recoveries
+                quantize_balance = False
+            else:
+                balance_used = _credit_balance_used_from_orders(contact.sale_orders.all())
+                quantize_balance = True
 
-                write_offs = contact.treasury_movements.filter(
-                    payment_method="WRITE_OFF", is_pending_registration=False
-                ).aggregate(Sum("amount"))["amount__sum"] or Decimal("0")
-                recoveries = contact.treasury_movements.filter(
-                    reference="RECUPERACION", is_pending_registration=False
-                ).aggregate(Sum("amount"))["amount__sum"] or Decimal("0")
-                balance_used = write_offs - recoveries
+            aging = _aging_buckets(
+                contact.sale_orders.all(),
+                payment_term=contact.credit_days or 30,
+                today=today,
+            )
 
             if (
                 balance_used > 0
@@ -392,10 +443,11 @@ class ContactSelector:
                     if overdue > 0:
                         summary["count_overdue"] += 1
 
-                data = ContactSerializer(contact).data
-                if is_blacklist:
-                    data["credit_balance_used"] = str(balance_used)
-                contact_list.append(data)
+                contact_list.append(
+                    _portfolio_contact_payload(
+                        contact, balance_used=balance_used, aging=aging, quantize_balance=quantize_balance
+                    )
+                )
 
         summary["utilization_rate"] = "0.00"
         if summary["total_exposure"] > 0:
@@ -535,6 +587,130 @@ class ContactSelector:
             qs = qs.filter(partner_id=partner_id)
         return PartnerEquityStakeSerializer(qs, many=True).data
 
+
+def _order_balance(order) -> Decimal:
+    """
+    Saldo pendiente de una orden: total efectivo menos pagos netos.
+    Lee `order.payments.all()` / `order.invoices.all()` desde el prefetch
+    (no dispara queries por orden).
+    """
+    from decimal import Decimal
+
+    payments = [p for p in order.payments.all() if not p.is_pending_registration]
+    paid_in = sum(
+        (p.amount for p in payments if p.movement_type in ["INBOUND", "ADJUSTMENT"]),
+        Decimal("0"),
+    )
+    paid_out = sum(
+        (p.amount for p in payments if p.movement_type == "OUTBOUND"),
+        Decimal("0"),
+    )
+    return order.effective_total - (paid_in - paid_out)
+
+
+def _credit_balance_used_from_orders(orders) -> Decimal:
+    """
+    Suma de saldos pendientes positivos (semántica de `Contact.credit_balance_used`)
+    computada sobre órdenes prefetched, sin N+1.
+    """
+    from decimal import Decimal
+
+    balance = Decimal("0")
+    for order in orders:
+        order_balance = _order_balance(order)
+        if order_balance > Decimal("0"):
+            balance += order_balance
+    return balance
+
+
+def _aging_buckets(orders, *, payment_term: int, today) -> dict:
+    """
+    Bucketiza el saldo pendiente de las órdenes `orders` (prefetched) en
+    rangos de morosidad, replicando la lógica de `Contact.credit_aging` sin
+    disparar queries por orden (usa `order.payments.all()` / `order.invoices.all()`
+    desde el prefetch).
+    """
+    from datetime import timedelta
+    from decimal import Decimal
+
+    buckets = {
+        "current": Decimal("0"),
+        "overdue_30": Decimal("0"),
+        "overdue_60": Decimal("0"),
+        "overdue_90": Decimal("0"),
+        "overdue_90plus": Decimal("0"),
+    }
+
+    for order in orders:
+        balance = _order_balance(order)
+
+        if balance <= Decimal("0"):
+            continue
+
+        order_date = order.date
+        if hasattr(order_date, "date"):
+            order_date = order_date.date()
+        due_date = order_date + timedelta(days=payment_term)
+        days_overdue = (today - due_date).days
+
+        if days_overdue <= 0:
+            buckets["current"] += balance
+        elif days_overdue <= 30:
+            buckets["overdue_30"] += balance
+        elif days_overdue <= 60:
+            buckets["overdue_60"] += balance
+        elif days_overdue <= 90:
+            buckets["overdue_90"] += balance
+        else:
+            buckets["overdue_90plus"] += balance
+
+    return buckets
+
+
+def _portfolio_contact_payload(contact, *, balance_used, aging, quantize_balance: bool = True) -> dict:
+    """
+    Payload ligero de contacto para la cartera de crédito, sin pasar por
+    `ContactSerializer` (que disparaba ~10+ queries por contacto al evaluar
+    properties como credit_aging/credit_balance_used).
+
+    Mantiene el contrato previo: en la ruta normal los montos se cuantizan a
+    0 decimales (como el DecimalField del serializer); en blacklist
+    `credit_balance_used` se serializa crudo (override previo del view).
+    """
+    from decimal import Decimal
+
+    available = Decimal("0")
+    if contact.credit_limit:
+        available = contact.credit_limit - balance_used
+        if available < Decimal("0"):
+            available = Decimal("0")
+
+    quantizer = Decimal("1")
+
+    return {
+        "id": contact.id,
+        "code": contact.code,
+        "display_id": contact.display_id,
+        "name": contact.name,
+        "tax_id": contact.tax_id,
+        "email": contact.email,
+        "phone": contact.phone,
+        "credit_enabled": contact.credit_enabled,
+        "credit_blocked": contact.credit_blocked,
+        "credit_auto_blocked": contact.credit_auto_blocked,
+        "credit_risk_level": contact.credit_risk_level,
+        "credit_last_evaluated": contact.credit_last_evaluated,
+        "credit_days": contact.credit_days,
+        "credit_limit": (
+            str(contact.credit_limit.quantize(quantizer)) if contact.credit_limit is not None else None
+        ),
+        "is_default_customer": contact.is_default_customer,
+        "credit_balance_used": (
+            str(balance_used.quantize(quantizer)) if quantize_balance else str(balance_used)
+        ),
+        "credit_available": str(available.quantize(quantizer)),
+        "credit_aging": aging,
+    }
 
 class ContactSelectorExt:
     @staticmethod
