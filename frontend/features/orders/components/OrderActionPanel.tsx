@@ -73,7 +73,7 @@ export function OrderActionPanel({
         >
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando panel de acciones">
             <div className="flex flex-col h-full">
-                <div className="shrink-0 px-6 pt-6 pb-4 border-b">
+                <div className="shrink-0 px-6 pt-6 pb-4 border-b border-border">
                     <PanelHeader
                         title={
                             <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export function OrderActionPanel({
 
                                 {/* Document Count */}
                                 {((order?.related_documents?.invoices || order?.invoices)?.length || 0) > 0 && (
-                                    <div className="pt-2 border-t border-border/50">
+                                    <div className="pt-2 border-t border-border">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-muted-foreground">Documentos</span>
                                             <Chip.Count value={(order?.related_documents?.invoices || order?.invoices)?.length || 0} hideOnZero={false} intent="neutral" />

@@ -81,7 +81,6 @@ export function TabBar({
             ? cn(
                 "group relative w-auto transition-all duration-200 bg-transparent rounded-none",
                 dense ? "h-8" : "h-12",
-                "border-b border-border/40",
                 "data-[state=active]:bg-transparent data-[state=active]:shadow-none",
                 "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
             )
@@ -183,7 +182,7 @@ export function TabBar({
                             </span>
                             {isUnderline && accent && (
                                 <div className={cn(
-                                    "absolute bottom-0 w-full h-[4px] rounded-t-sm transition-opacity duration-200",
+                                    "absolute bottom-[-1px] w-full h-[5px] rounded-t-sm transition-opacity duration-200",
                                     accent.bar,
                                     isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                                 )} />
@@ -210,7 +209,7 @@ export function TabBar({
         if (isUnderline) {
             return (
                 <div className={cn("relative flex items-end justify-start w-full bg-transparent", dense ? "px-3 h-8" : "px-6 h-12", headerClassName)}>
-                    <div aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-border/50" />
+                    <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-border" />
                     <div className="w-fit">
                         {list}
                     </div>

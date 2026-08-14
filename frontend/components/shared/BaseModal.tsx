@@ -63,7 +63,7 @@ export function BaseModal({
         isTransaction && "bg-primary text-primary-foreground border-b-0",
         isWizard && "border-b pb-2",
         isFormTabs && "border-b bg-background/50 backdrop-blur-sm",
-        !isRaw && "border-b",
+        !isRaw && "border-b border-border",
         headerClassName
     )
 
@@ -79,7 +79,7 @@ export function BaseModal({
 
     const footerStyles = cn(
         "px-6 py-3 flex-shrink-0",
-        !isRaw && "border-t",
+        !isRaw && "border-t border-border",
         footerClassName
     )
 

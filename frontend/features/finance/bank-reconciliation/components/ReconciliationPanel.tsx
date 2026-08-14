@@ -1448,7 +1448,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     fullWidth={400}
                 >
                     <div className="flex flex-col h-full bg-background rounded-md overflow-hidden text-foreground">
-                        <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
+                        <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center shrink-0">
                             <div className="flex items-center gap-2">
                                 <div className="bg-primary/10 p-1.5 rounded-sm">
                                     <Brain className="h-4 w-4 text-primary" />

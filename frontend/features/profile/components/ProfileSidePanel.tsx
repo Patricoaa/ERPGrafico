@@ -47,7 +47,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-3 w-full opacity-60" />
                                         <div className="h-3 w-2/3 opacity-40" />
                                     </div>
-                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                    <div className="pt-2 border-t border-border flex justify-end">
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>
@@ -60,7 +60,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-3 w-full opacity-60" />
                                         <div className="h-3 w-2/3 opacity-40" />
                                     </div>
-                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                    <div className="pt-2 border-t border-border flex justify-end">
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>
@@ -73,7 +73,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                                         <div className="h-3 w-full opacity-60" />
                                         <div className="h-3 w-2/3 opacity-40" />
                                     </div>
-                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                    <div className="pt-2 border-t border-border flex justify-end">
                                         <div className="h-8 w-24 rounded" />
                                     </div>
                                 </div>

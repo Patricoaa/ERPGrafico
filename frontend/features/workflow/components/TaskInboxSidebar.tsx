@@ -27,7 +27,7 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             className="w-[320px] max-w-[320px]"
         >
             {/* Header */}
-            <div className="border-b border-border/40 shrink-0 px-4 pt-4 pb-3">
+            <div className="border-b border-border shrink-0 px-4 pt-4 pb-3">
                 <PanelHeader
                     title="Bandeja de Entrada"
                     icon={Inbox}

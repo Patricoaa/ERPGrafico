@@ -280,7 +280,7 @@ export function Drawer({
                 )}
 
                 {(title || subtitle || headerActions || icon) && (
-                    <SheetHeader className={cn("px-6 py-3 border-b border-border/40 shrink-0 bg-card", headerClassName)}>
+                    <SheetHeader className={cn("px-6 py-3 border-b border-border shrink-0 bg-card", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
                             title={
@@ -323,7 +323,7 @@ export function Drawer({
                 )}
 
                 {footer && (
-                    <div className={cn("border-t border-border/40 px-6 py-3 flex-shrink-0 bg-card", footerClassName)}>
+                    <div className={cn("border-t border-border px-6 py-3 flex-shrink-0 bg-card", footerClassName)}>
                         {footer}
                     </div>
                 )}
