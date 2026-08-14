@@ -486,7 +486,7 @@ function EntityCardListItem({ icon: Icon, iconClassName, label, sublabel, value,
             onClick={onClick}
             className={cn(
                 "w-full flex items-center gap-3 py-2 px-2 text-left justify-start",
-                "card-base",
+                "card-base border border-border",
                 "transition-all group",
                 onClick && "cursor-pointer",
                 className
@@ -567,16 +567,13 @@ const METRIC_VARIANT_CLASSES: Record<MetricVariant, string> = {
 
 function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: EntityCardMetricsProps) {
     return (
-        <div className={cn("flex items-stretch justify-start gap-px border-t border-border mt-1", className)}>
+        <div className={cn("flex items-stretch justify-start border-t border-border mt-1", className)}>
             {metrics.map((item, idx) => {
                 const variant = item.variant ?? defaultVariant
                 return (
                     <div
                         key={idx}
-                        className={cn(
-                            "shrink-0 flex flex-col gap-0.5 px-4 py-2",
-                            "relative after:absolute after:inset-y-1 after:right-0 after:w-px after:bg-border last:after:hidden"
-                        )}
+                        className={cn("shrink-0 flex flex-col gap-0.5 px-4 py-2")}
                     >
                         {item.icon && (
                             <item.icon className={cn("h-3 w-3 mb-0.5", METRIC_VARIANT_CLASSES[variant])} />
@@ -584,7 +581,7 @@ function EntityCardMetrics({ metrics, defaultVariant = 'default', className }: E
             <span className="text-4xs font-bold uppercase tracking-looser text-muted-foreground/60">
                             {item.label}
                         </span>
-                        <span className={cn("text-sm font-bold tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
+                        <span className={cn("text-xs font-sans font-medium tabular-nums tracking-tight", METRIC_VARIANT_CLASSES[variant])}>
                             {item.value}
                         </span>
                     </div>
