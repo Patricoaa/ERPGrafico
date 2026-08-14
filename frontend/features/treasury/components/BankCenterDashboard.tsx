@@ -1,8 +1,9 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import { EntityCard, PageSectionHeader, StaleDataBanner } from "@/components/shared"
+import { usePathname, useRouter } from "next/navigation"
+import { EntityCard, PageSectionHeader, StaleDataBanner, TabBar } from "@/components/shared"
 import { useBankOverview, type BankOverviewData } from "../hooks/useBankOverview"
+import { getSubViewTabs } from "../constants"
 import { BankUpcomingMaturitiesPanel } from "./BankUpcomingMaturities"
 import { BankRecentActivity } from "./BankRecentActivity"
 import { BankCheckingSection } from "./BankCheckingSection"
@@ -26,6 +27,7 @@ const SUB_VIEW_LABELS: Record<string, string> = {
 
 export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab?: string }) {
     const pathname = usePathname()
+    const router = useRouter()
     const segments = pathname.split("/").filter(Boolean)
     const activeTab = segments[3] || "overview"
     const queryResult = useBankOverview(bankId)
@@ -37,18 +39,40 @@ export function BankCenterDashboard({ bankId, subtab }: { bankId: number; subtab
         ? overviewData.accounts.filter((a: { account_type: string }) => a.account_type === "CHECKING").map((a: { id: number; name: string }) => ({ id: a.id, name: a.name }))
         : []
 
+    const subViewTabs = getSubViewTabs(bankId)
+
     const cardSubTabs = activeTab === "cards" ? [
         { value: "unbilled", label: "Cargos No Facturados", href: `/treasury/bank-center/${bankId}/cards/unbilled` },
         { value: "statements", label: "Cargos Facturados", href: `/treasury/bank-center/${bankId}/cards/statements` },
     ] : undefined
+    const activeCardSubTab = activeTab === "cards" ? (segments[4] || "unbilled") : undefined
 
     return (
         <div className="flex-1 min-h-0 flex flex-col overflow-y-auto custom-scrollbar">
             <PageSectionHeader
                 title={SUB_VIEW_LABELS[activeTab] || "Resumen"}
                 description={bankName}
-                subTabs={cardSubTabs}
+                subTabs={subViewTabs}
+                subTabsBelow
             />
+            {activeTab === "cards" && cardSubTabs && (
+                <div className="flex justify-start pt-2">
+                    <TabBar
+                        items={cardSubTabs.map(t => ({ value: t.value, label: t.label }))}
+                        value={activeCardSubTab ?? "unbilled"}
+                        onValueChange={(value) => {
+                            const tab = cardSubTabs.find(t => t.value === value)
+                            if (tab) router.push(tab.href)
+                        }}
+                        variant="underline"
+                        dense
+                        className="w-full"
+                        containerClassName="justify-start"
+                    >
+                        <div className="hidden" />
+                    </TabBar>
+                </div>
+            )}
             {activeTab === "overview" && isLoading && <OverviewSkeleton />}
             {activeTab === "overview" && !isLoading && overviewData && (
                 <div>

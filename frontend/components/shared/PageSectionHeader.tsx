@@ -14,9 +14,11 @@ interface PageSectionHeaderProps {
     description?: string
     tabs?: PageSectionTab[]
     subTabs?: PageSectionTab[]
+    /** Render subTabs as a full-width underline row directly below the title/description block */
+    subTabsBelow?: boolean
 }
 
-export function PageSectionHeader({ title, description, tabs, subTabs }: PageSectionHeaderProps) {
+export function PageSectionHeader({ title, description, tabs, subTabs, subTabsBelow = false }: PageSectionHeaderProps) {
     const pathname = usePathname()
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -59,7 +61,7 @@ export function PageSectionHeader({ title, description, tabs, subTabs }: PageSec
                         <div className="hidden" />
                     </TabBar>
                 )}
-                {hasSubTabs && !hasTabs && (
+                {hasSubTabs && !hasTabs && !subTabsBelow && (
                     <TabBar
                         items={subTabs.map(t => ({ value: t.value, label: t.label }))}
                         value={activeSubTab}
@@ -76,7 +78,25 @@ export function PageSectionHeader({ title, description, tabs, subTabs }: PageSec
                     </TabBar>
                 )}
             </div>
-            {hasSubTabs && hasTabs && (
+            {hasSubTabs && subTabsBelow && (
+                <div className="flex justify-start pt-2">
+                    <TabBar
+                        items={subTabs.map(t => ({ value: t.value, label: t.label }))}
+                        value={activeSubTab}
+                        onValueChange={(value) => {
+                            const tab = subTabs.find(t => t.value === value)
+                            if (tab) router.push(tab.href)
+                        }}
+                        variant="underline"
+                        dense
+                        className="w-full"
+                        containerClassName="justify-start"
+                    >
+                        <div className="hidden" />
+                    </TabBar>
+                </div>
+            )}
+            {hasSubTabs && hasTabs && !subTabsBelow && (
                 <div className="flex justify-end pb-2">
                     <TabBar
                         items={subTabs.map(t => ({ value: t.value, label: t.label }))}

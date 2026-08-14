@@ -34,6 +34,8 @@ Es el cerebro de la navegación del módulo. Debe ser un **Client Component** qu
 - **Gestión de Breadcrumbs**: Configurar el objeto `navigation` para el `PageHeader` inyectando el `moduleName`.
 - **Sub-tabs**: Manejar sub-navegación mediante el parámetro `?tab=`.
 
+> **Nota (ADR-0077, 2026-08-13):** los sub-tabs de tercer nivel ya NO se renderizan desde el shell (se eliminó `subSubActiveValue` de `NavigationConfig` y el bloque `l4Tabs` de `DashboardShell`). Las vistas que tengan sub-navegación bajo un título de página deben renderizarla con `PageSectionHeader` + `subTabs` + `subTabsBelow` (fila underline a ancho completo bajo el bloque título/subtítulo). Referencias de uso: `BankCenterDashboard` (bank-center), `uoms/units` + `uoms/categories` (inventario), `settings/accounts/[tab]` (cuentas contables).
+
 ### Ejemplo de Contrato de Navegación:
 ```tsx
 const navigation = {

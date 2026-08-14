@@ -89,9 +89,6 @@ export function SettingsHeader() {
     const subActiveValue = activeValue === 'accounts'
         ? 'cuentas'
         : segments[2] ?? undefined
-    const subSubActiveValue = activeValue === 'accounts'
-        ? segments[2] ?? undefined
-        : undefined
 
     const navigation = {
         moduleName: "Configuración Global",
@@ -99,7 +96,6 @@ export function SettingsHeader() {
         tabs: SETTINGS_TABS,
         activeValue,
         subActiveValue,
-        subSubActiveValue,
     }
 
     const getHeaderConfig = () => {

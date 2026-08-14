@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -13,7 +13,7 @@ import { UserSidebarMenu } from "@/components/layout/UserSidebarMenu"
 import { useHeader } from "@/components/providers/HeaderProvider"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { ModuleNavigationMenu, PageHeaderSkeleton, PrepressPanel, TabBar, DynamicIcon, CMYK_ACCENT } from '@/components/shared'
+import { ModuleNavigationMenu, PageHeaderSkeleton, PrepressPanel, DynamicIcon, CMYK_ACCENT } from '@/components/shared'
 import { Loader2 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { getModuleIconName, MODULE_ORDER, getModuleConfig, getModuleIcon } from "@/lib/module-registry"
@@ -30,7 +30,6 @@ const TaskInboxSidebar = dynamic(
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const router = useRouter()
 
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
@@ -45,17 +44,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const initials = companyName?.substring(0, 2).toUpperCase() || "ERP"
 
     const nav = config?.navigation
-    let l4Tabs: { value: string; label: string; href: string }[] = []
-    let activeL4Tab = ""
-
-    if (nav && nav.subSubActiveValue) {
-        const activeTab = nav.tabs.find(t => t.value === nav.activeValue)
-        const activeSubTab = activeTab?.subTabs?.find(st => st.value === nav.subActiveValue)
-        if (activeSubTab?.subTabs) {
-            l4Tabs = activeSubTab.subTabs.map(t => ({ value: t.value, label: t.label, href: t.href }))
-            activeL4Tab = nav.subSubActiveValue
-        }
-    }
 
     // Sync global data attributes for repelling fixed UI elements (like Sheets).
     // Attribute removal is deferred ~220ms so consumers (ActionDock, sheet padding)
@@ -247,22 +235,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     marginRight: `${totalSheetsWidth}px`,
                 }}
             >
-                {l4Tabs.length > 0 && (
-                    <div className="flex-none px-8 pb-2">
-                        <TabBar
-                            items={l4Tabs}
-                            value={activeL4Tab}
-                            onValueChange={(val) => {
-                                const tab = l4Tabs.find(t => t.value === val)
-                                if (tab) router.push(tab.href)
-                            }}
-                            variant="underline"
-                            dense
-                        >
-                            <div className="hidden" />
-                        </TabBar>
-                    </div>
-                )}
                 <PrepressPanel
                     id="main-content"
                     className="flex-1 flex flex-col overflow-hidden relative flush-panel"
